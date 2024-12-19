@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { promises } from "fs";
 createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
@@ -15,7 +16,9 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
       preload: path.join(__dirname, "preload.mjs")
-    }
+    },
+    width: 1400,
+    height: 800
   });
   win.webContents.on("did-finish-load", () => {
     win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
@@ -25,6 +28,7 @@ function createWindow() {
   } else {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
+  win.setMinimumSize(800, 600);
 }
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -38,6 +42,37 @@ app.on("activate", () => {
   }
 });
 app.whenReady().then(createWindow);
+ipcMain.handle("readFile", async (event, filePath) => {
+  try {
+    await promises.mkdir(path.dirname(filePath), { recursive: true });
+    return await promises.readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw error;
+    }
+    throw error;
+  }
+});
+ipcMain.handle("writeFile", async (event, filePath, content) => {
+  try {
+    await promises.mkdir(path.dirname(filePath), { recursive: true });
+    await promises.writeFile(filePath, content, "utf8");
+  } catch (error) {
+    throw error;
+  }
+});
+ipcMain.handle("selectFile", async (event, options) => {
+  const result = await dialog.showOpenDialog({
+    properties: ["openFile", "createDirectory"],
+    filters: [
+      { name: "Markdown", extensions: ["md"] }
+    ]
+  });
+  if (!result.canceled) {
+    return result.filePaths[0];
+  }
+  return null;
+});
 export {
   MAIN_DIST,
   RENDERER_DIST,

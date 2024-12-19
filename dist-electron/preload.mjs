@@ -1,5 +1,10 @@
 "use strict";
 const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("electron", {
+  readFile: (path) => electron.ipcRenderer.invoke("readFile", path),
+  writeFile: (path, content) => electron.ipcRenderer.invoke("writeFile", path, content),
+  selectFile: () => electron.ipcRenderer.invoke("selectFile")
+});
 electron.contextBridge.exposeInMainWorld("ipcRenderer", {
   on(...args) {
     const [channel, listener] = args;

@@ -1,28 +1,52 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import HelloWorld from '../views/HelloWorld.vue'
 import MainLayout from '../layouts/MainLayout.vue'
-
+import Home from '../views/Home.vue'
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
-    {
-        path: '/hello',
-        name: 'hello',
-        component: HelloWorld
-    },
     {
         path: '/',
         component: MainLayout,
         children: [
             {
-                path: '/hello',
-                name: 'hello',
-                component: HelloWorld
+                path: '/home',
+                name: 'home',
+                component: Home
             },
             {
-                path: '/task',
-                name: 'task',
-                component: () => import('../views/Task.vue')
+                path: '/document',
+                name: 'document',
+                component: () => import('../views/Document.vue')
+            },
+            {
+                path: '/goal/:id',
+                component: () => import('../views/Goal.vue'),
+                children: [
+                    {
+                        path: 'maindoc',
+                        name: 'MainDoc',
+                        component: () => import('../components/goals/MainDoc.vue')
+                    },
+                    {
+                        path: 'note',
+                        name: 'Note',
+                        component: () => import('../components/goals/Note.vue')
+                    },
+                    {
+                        path: 'settings',
+                        name: 'Settings',
+                        component: () => import('../components/goals/Settings.vue')
+                    },
+                    {
+                        path: '',
+                        redirect: 'maindoc'
+                    }
+                ]
+            },
+            {
+                path: '/todolist',
+                name: 'todolist',
+                component: () => import('../views/ToDoList.vue')
             },
             {
                 path: '/profile',

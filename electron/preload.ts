@@ -1,6 +1,12 @@
 import { ipcRenderer, contextBridge } from 'electron'
 
 // --------- Expose some API to the Renderer process ---------
+contextBridge.exposeInMainWorld('electron', {
+  readFile: (path: string) => ipcRenderer.invoke('readFile', path),
+  writeFile: (path: string, content: string) => ipcRenderer.invoke('writeFile', path, content),
+  selectFile: () => ipcRenderer.invoke('selectFile')
+})
+
 contextBridge.exposeInMainWorld('ipcRenderer', {
   on(...args: Parameters<typeof ipcRenderer.on>) {
     const [channel, listener] = args

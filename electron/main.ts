@@ -1,7 +1,8 @@
-import { app, BrowserWindow } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog } from 'electron'
 import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
+import { promises as fs } from 'fs'
 
 const require = createRequire(import.meta.url)
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
@@ -32,6 +33,8 @@ function createWindow() {
     webPreferences: {
       preload: path.join(__dirname, 'preload.mjs'),
     },
+    width: 1400,
+    height: 800,
   })
 
   // Test active push message to Renderer-process.
@@ -45,6 +48,9 @@ function createWindow() {
     // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
+
+  // 可选：设置最小窗口大小
+  win.setMinimumSize(800, 600)
 }
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -66,3 +72,41 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(createWindow)
+
+ipcMain.handle('readFile', async (event, filePath) => {
+  try {
+    // 确保目录存在
+    await fs.mkdir(path.dirname(filePath), { recursive: true })
+    return await fs.readFile(filePath, 'utf8')
+  } catch (error) {
+    if ((error as { code?: string }).code === 'ENOENT') {
+      // 文件不存在
+      throw error
+    }
+    throw error
+  }
+})
+
+ipcMain.handle('writeFile', async (event, filePath, content) => {
+  try {
+    // 确保目录存在
+    await fs.mkdir(path.dirname(filePath), { recursive: true })
+    await fs.writeFile(filePath, content, 'utf8')
+  } catch (error) {
+    throw error
+  }
+})
+
+ipcMain.handle('selectFile', async (event, options) => {
+  const result = await dialog.showOpenDialog({
+    properties: ['openFile', 'createDirectory'],
+    filters: [
+      { name: 'Markdown', extensions: ['md'] }
+    ]
+  })
+  
+  if (!result.canceled) {
+    return result.filePaths[0]
+  }
+  return null
+})
