@@ -1,10 +1,9 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron'
-import { createRequire } from 'node:module'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { promises as fs } from 'fs'
 
-const require = createRequire(import.meta.url)
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 // The built directory structure
@@ -31,6 +30,7 @@ function createWindow() {
   win = new BrowserWindow({
     icon: path.join(process.env.VITE_PUBLIC, 'electron-vite.svg'),
     webPreferences: {
+      webSecurity: false,
       preload: path.join(__dirname, 'preload.mjs'),
     },
     width: 1400,
@@ -73,7 +73,7 @@ app.on('activate', () => {
 
 app.whenReady().then(createWindow)
 
-ipcMain.handle('readFile', async (event, filePath) => {
+ipcMain.handle('readFile', async (_event, filePath) => {
   try {
     // 确保目录存在
     await fs.mkdir(path.dirname(filePath), { recursive: true })
@@ -87,7 +87,7 @@ ipcMain.handle('readFile', async (event, filePath) => {
   }
 })
 
-ipcMain.handle('writeFile', async (event, filePath, content) => {
+ipcMain.handle('writeFile', async (_event, filePath, content) => {
   try {
     // 确保目录存在
     await fs.mkdir(path.dirname(filePath), { recursive: true })
@@ -97,7 +97,7 @@ ipcMain.handle('writeFile', async (event, filePath, content) => {
   }
 })
 
-ipcMain.handle('selectFile', async (event, options) => {
+ipcMain.handle('selectFile', async (_event, _options) => {
   const result = await dialog.showOpenDialog({
     properties: ['openFile', 'createDirectory'],
     filters: [

@@ -1,80 +1,57 @@
-import { app, BrowserWindow, ipcMain, dialog } from "electron";
-import { createRequire } from "node:module";
-import { fileURLToPath } from "node:url";
-import path from "node:path";
-import { promises } from "fs";
-createRequire(import.meta.url);
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path.join(__dirname, "..");
-const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
-const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
-const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
-let win;
-function createWindow() {
-  win = new BrowserWindow({
-    icon: path.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
+import { app as o, BrowserWindow as l, ipcMain as a, dialog as _ } from "electron";
+import { fileURLToPath as h } from "node:url";
+import e from "node:path";
+import { promises as t } from "fs";
+const d = e.dirname(h(import.meta.url));
+process.env.APP_ROOT = e.join(d, "..");
+const s = process.env.VITE_DEV_SERVER_URL, E = e.join(process.env.APP_ROOT, "dist-electron"), p = e.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = s ? e.join(process.env.APP_ROOT, "public") : p;
+let r;
+function m() {
+  r = new l({
+    icon: e.join(process.env.VITE_PUBLIC, "electron-vite.svg"),
     webPreferences: {
-      preload: path.join(__dirname, "preload.mjs")
+      webSecurity: !1,
+      preload: e.join(d, "preload.mjs")
     },
     width: 1400,
     height: 800
-  });
-  win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  });
-  if (VITE_DEV_SERVER_URL) {
-    win.loadURL(VITE_DEV_SERVER_URL);
-  } else {
-    win.loadFile(path.join(RENDERER_DIST, "index.html"));
-  }
-  win.setMinimumSize(800, 600);
+  }), r.webContents.on("did-finish-load", () => {
+    r == null || r.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  }), s ? r.loadURL(s) : r.loadFile(e.join(p, "index.html")), r.setMinimumSize(800, 600);
 }
-app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") {
-    app.quit();
-    win = null;
-  }
+o.on("window-all-closed", () => {
+  process.platform !== "darwin" && (o.quit(), r = null);
 });
-app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
-    createWindow();
-  }
+o.on("activate", () => {
+  l.getAllWindows().length === 0 && m();
 });
-app.whenReady().then(createWindow);
-ipcMain.handle("readFile", async (event, filePath) => {
+o.whenReady().then(m);
+a.handle("readFile", async (c, i) => {
   try {
-    await promises.mkdir(path.dirname(filePath), { recursive: true });
-    return await promises.readFile(filePath, "utf8");
-  } catch (error) {
-    if (error.code === "ENOENT") {
-      throw error;
-    }
-    throw error;
+    return await t.mkdir(e.dirname(i), { recursive: !0 }), await t.readFile(i, "utf8");
+  } catch (n) {
+    throw n.code === "ENOENT", n;
   }
 });
-ipcMain.handle("writeFile", async (event, filePath, content) => {
+a.handle("writeFile", async (c, i, n) => {
   try {
-    await promises.mkdir(path.dirname(filePath), { recursive: true });
-    await promises.writeFile(filePath, content, "utf8");
-  } catch (error) {
-    throw error;
+    await t.mkdir(e.dirname(i), { recursive: !0 }), await t.writeFile(i, n, "utf8");
+  } catch (w) {
+    throw w;
   }
 });
-ipcMain.handle("selectFile", async (event, options) => {
-  const result = await dialog.showOpenDialog({
+a.handle("selectFile", async (c, i) => {
+  const n = await _.showOpenDialog({
     properties: ["openFile", "createDirectory"],
     filters: [
       { name: "Markdown", extensions: ["md"] }
     ]
   });
-  if (!result.canceled) {
-    return result.filePaths[0];
-  }
-  return null;
+  return n.canceled ? null : n.filePaths[0];
 });
 export {
-  MAIN_DIST,
-  RENDERER_DIST,
-  VITE_DEV_SERVER_URL
+  E as MAIN_DIST,
+  p as RENDERER_DIST,
+  s as VITE_DEV_SERVER_URL
 };

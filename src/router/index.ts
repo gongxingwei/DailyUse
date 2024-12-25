@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
+import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import Home from '../views/Home.vue'
 
@@ -9,7 +9,7 @@ const routes: RouteRecordRaw[] = [
         component: MainLayout,
         children: [
             {
-                path: '/home',
+                path: '',
                 name: 'home',
                 component: Home
             },
@@ -59,12 +59,12 @@ const routes: RouteRecordRaw[] = [
 
 // 创建路由实例
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHashHistory(),
   routes
 })
 
 // 全局前置守卫（可选）
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   // 例如：修改页面标题
   document.title = `${to.meta.title || '默认标题'}`
   next()

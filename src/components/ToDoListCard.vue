@@ -48,10 +48,10 @@ const formatTime = (datetime: string) => {
 const showInfo = ref(false)
 const selectedTodo = ref<Todo | null>(null)
 
-const showTodoInfo = (todo: Todo) => {
-  selectedTodo.value = todo
-  showInfo.value = true
-}
+// const showTodoInfo = (todo: Todo) => {
+//   selectedTodo.value = todo
+//   showInfo.value = true
+// }
 
 defineEmits(['show-info', 'edit', 'complete'])
 </script>
