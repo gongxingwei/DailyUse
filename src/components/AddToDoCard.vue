@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, defineProps, defineEmits, computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useTodoStore } from '../stores/todo'
 
 const props = defineProps({

@@ -1,1 +1,27 @@
-"use strict";const r=require("electron");r.contextBridge.exposeInMainWorld("electron",{readFile:e=>r.ipcRenderer.invoke("readFile",e),writeFile:(e,n)=>r.ipcRenderer.invoke("writeFile",e,n),selectFile:()=>r.ipcRenderer.invoke("selectFile")});r.contextBridge.exposeInMainWorld("ipcRenderer",{on(...e){const[n,i]=e;return r.ipcRenderer.on(n,(o,...t)=>i(o,...t))},off(...e){const[n,...i]=e;return r.ipcRenderer.off(n,...i)},send(...e){const[n,...i]=e;return r.ipcRenderer.send(n,...i)},invoke(...e){const[n,...i]=e;return r.ipcRenderer.invoke(n,...i)}});
+"use strict";
+const electron = require("electron");
+electron.contextBridge.exposeInMainWorld("electron", {
+  readFile: (path) => electron.ipcRenderer.invoke("readFile", path),
+  writeFile: (path, content) => electron.ipcRenderer.invoke("writeFile", path, content),
+  selectFile: () => electron.ipcRenderer.invoke("selectFile")
+});
+electron.contextBridge.exposeInMainWorld("ipcRenderer", {
+  on(...args) {
+    const [channel, listener] = args;
+    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
+  },
+  off(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.off(channel, ...omit);
+  },
+  send(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.send(channel, ...omit);
+  },
+  invoke(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.invoke(channel, ...omit);
+  }
+  // You can expose other APTs you need here.
+  // ...
+});

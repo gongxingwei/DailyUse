@@ -1,57 +1,79 @@
-import { app as o, BrowserWindow as c, ipcMain as a, dialog as _ } from "electron";
-import { fileURLToPath as h } from "node:url";
-import e from "node:path";
-import { promises as t } from "fs";
-const d = e.dirname(h(import.meta.url));
-process.env.APP_ROOT = e.join(d, "..");
-const s = process.env.VITE_DEV_SERVER_URL, v = e.join(process.env.APP_ROOT, "dist-electron"), p = e.join(process.env.APP_ROOT, "dist");
-process.env.VITE_PUBLIC = s ? e.join(process.env.APP_ROOT, "public") : p;
-let r;
-function m() {
-  r = new c({
-    icon: e.join(process.env.VITE_PUBLIC, "DailyUse.svg"),
+import { app, BrowserWindow, ipcMain, dialog } from "electron";
+import { fileURLToPath } from "node:url";
+import path from "node:path";
+import { promises } from "fs";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path.join(__dirname, "..");
+const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
+const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
+const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
+process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
+let win;
+function createWindow() {
+  win = new BrowserWindow({
+    icon: path.join(process.env.VITE_PUBLIC, "DailyUse.svg"),
     webPreferences: {
-      webSecurity: !1,
-      preload: e.join(d, "preload.mjs")
+      webSecurity: false,
+      preload: path.join(__dirname, "preload.mjs")
     },
     width: 1400,
     height: 800
-  }), r.webContents.on("did-finish-load", () => {
-    r == null || r.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  }), s ? r.loadURL(s) : r.loadFile(e.join(p, "index.html")), r.setMinimumSize(800, 600);
+  });
+  win.webContents.on("did-finish-load", () => {
+    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
+  });
+  if (VITE_DEV_SERVER_URL) {
+    win.loadURL(VITE_DEV_SERVER_URL);
+  } else {
+    win.loadFile(path.join(RENDERER_DIST, "index.html"));
+  }
+  win.setMinimumSize(800, 600);
 }
-o.on("window-all-closed", () => {
-  process.platform !== "darwin" && (o.quit(), r = null);
-});
-o.on("activate", () => {
-  c.getAllWindows().length === 0 && m();
-});
-o.whenReady().then(m);
-a.handle("readFile", async (l, n) => {
-  try {
-    return await t.mkdir(e.dirname(n), { recursive: !0 }), await t.readFile(n, "utf8");
-  } catch (i) {
-    throw i.code === "ENOENT", i;
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin") {
+    app.quit();
+    win = null;
   }
 });
-a.handle("writeFile", async (l, n, i) => {
-  try {
-    await t.mkdir(e.dirname(n), { recursive: !0 }), await t.writeFile(n, i, "utf8");
-  } catch (w) {
-    throw w;
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
   }
 });
-a.handle("selectFile", async (l, n) => {
-  const i = await _.showOpenDialog({
+app.whenReady().then(createWindow);
+ipcMain.handle("readFile", async (_event, filePath) => {
+  try {
+    await promises.mkdir(path.dirname(filePath), { recursive: true });
+    return await promises.readFile(filePath, "utf8");
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      throw error;
+    }
+    throw error;
+  }
+});
+ipcMain.handle("writeFile", async (_event, filePath, content) => {
+  try {
+    await promises.mkdir(path.dirname(filePath), { recursive: true });
+    await promises.writeFile(filePath, content, "utf8");
+  } catch (error) {
+    throw error;
+  }
+});
+ipcMain.handle("selectFile", async (_event, _options) => {
+  const result = await dialog.showOpenDialog({
     properties: ["openFile", "createDirectory"],
     filters: [
       { name: "Markdown", extensions: ["md"] }
     ]
   });
-  return i.canceled ? null : i.filePaths[0];
+  if (!result.canceled) {
+    return result.filePaths[0];
+  }
+  return null;
 });
 export {
-  v as MAIN_DIST,
-  p as RENDERER_DIST,
-  s as VITE_DEV_SERVER_URL
+  MAIN_DIST,
+  RENDERER_DIST,
+  VITE_DEV_SERVER_URL
 };

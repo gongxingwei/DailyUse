@@ -25,44 +25,10 @@ export const useTodoStore = defineStore('todo', {
         content: '讨论下周工作计划',
         completed: false,
         datetime: '2024-12-17T14:30:00.000Z'
-      },
-      {
-        id: 3,
-        title: '代码审查',
-        content: '审查新功能的代码实现',
-        completed: false,
-        datetime: '2024-12-18T09:00:00.000Z'
-      },
-      {
-        id: 4,
-        title: '代码审查',
-        content: '审查新功能的代码实现',
-        completed: false,
-        datetime: '2024-12-18T09:00:00.000Z'
-      },
-      {
-        id: 5,
-        title: '代码审查',
-        content: '审查新功能的代码实现',
-        completed: false,
-        datetime: '2024-12-19T09:00:00.000Z'
-      },
-      {
-        id: 6,
-        title: '代码审查',
-        content: '审查新功能的代码实现',
-        completed: false,
-        datetime: '2024-12-20T09:00:00.000Z'
-      },
-      {
-        id: 7,
-        title: '代码审查',
-        content: '审查新功能的代码实现',
-        completed: false,
-        datetime: '2024-12-18T09:00:00.000Z'
       }
     ] as Todo[]
   }),
+  persist: true,
 
   getters: {
     // 按日期分组获取任务
