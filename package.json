@@ -1,6 +1,10 @@
 {
   "name": "daily-use",
   "private": true,
+  "author": {
+    "name": "bakersean"
+  },
+  "description": "DailyUse",
   "version": "0.0.2",
   "type": "module",
   "scripts": {
