@@ -16,6 +16,8 @@ const showEditDialog = ref(false)
 // 在组件挂载时加载数据
 onMounted(() => {
   console.log('Store中的数据:', todoStore.todos)
+
+  console.log('生成的日期数组:', dateList);
 })
 
 // 生成未来几天的日期数组
@@ -59,6 +61,29 @@ const toggleComplete = (todoId: number) => {
           @show-info="showTodoInfo"
           @edit="editTodo"
           @complete="toggleComplete"
+          :showFullDate="false"
+        />
+      </v-col>
+    </v-row>
+    <v-row>
+      <v-col cols="6">
+        <ToDoListCard 
+          :todo-date=-1
+          :todos="todoStore.getTodosBeforeToday"
+          @show-info="showTodoInfo"
+          @edit="editTodo"
+          @complete="toggleComplete"
+          :showFullDate="true"
+        />
+      </v-col>
+      <v-col cols="6">
+        <ToDoListCard 
+          :todo-date=4
+          :todos="todoStore.getTodosAfter4Days"
+          @show-info="showTodoInfo"
+          @edit="editTodo"
+          @complete="toggleComplete"
+          :showFullDate="true"
         />
       </v-col>
     </v-row>

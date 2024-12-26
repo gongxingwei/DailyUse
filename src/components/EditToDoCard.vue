@@ -51,7 +51,10 @@ import type { Todo } from '../stores/todo'
 import type { PropType } from 'vue'
 
 const props = defineProps({
-  modelValue: Boolean,
+  modelValue: {
+    type: Boolean,
+    required: true
+  },
   todo: {
     type: Object as PropType<Todo | null>,
     required: true

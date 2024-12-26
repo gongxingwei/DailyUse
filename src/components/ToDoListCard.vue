@@ -1,6 +1,7 @@
 <!-- src/components/ToDoListCard.vue -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import ShowToDoInfo from './ShowToDoInfo.vue'
 
 interface Todo {
   id: number
@@ -13,16 +14,19 @@ interface Todo {
 const props = defineProps<{
   todoDate: number
   todos: Todo[]
+  showFullDate: boolean
 }>()
 
 const today = new Date()
 
 const toDoDateLabel = computed(() => {
   switch(props.todoDate) {
+    case -1: return '已过期'
     case 0: return '今天'
     case 1: return '明天'
     case 2: return '后天'
     case 3: return '大后天'
+    case 4: return '4 天后'
     default: return ''
   }
 })
@@ -38,12 +42,10 @@ const toDoDate = computed(() => {
   })
 })
 
-const formatTime = (datetime: string) => {
-  return new Date(datetime).toLocaleTimeString('zh-CN', {
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+const todosTime = (datetime: string) => {
+  const date = new Date(datetime);
+  return props.showFullDate ? date.toLocaleDateString('zh-CN') : date.toDateString();
+};
 
 const showInfo = ref(false)
 const selectedTodo = ref<Todo | null>(null)
@@ -76,7 +78,7 @@ defineEmits(['show-info', 'edit', 'complete'])
               >
                 {{ todo.title }}
               </v-list-item-title>
-              <v-list-item-subtitle>{{ formatTime(todo.datetime) }}</v-list-item-subtitle>
+              <v-list-item-subtitle>{{ todosTime(todo.datetime) }}</v-list-item-subtitle>
             </v-col>
             <v-col cols="4" class="d-flex justify-end">
               <v-btn icon="mdi-pencil" @click.stop="$emit('edit', todo)"></v-btn>

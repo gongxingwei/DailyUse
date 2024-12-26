@@ -43,6 +43,29 @@ export const useTodoStore = defineStore('todo', {
         const todoDate = new Date(todo.datetime)
         return todoDate >= start && todoDate <= end
       })
+    },
+
+    getTodosBeforeToday: (state) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      return state.todos.filter(todo => {
+        const todoDate = new Date(todo.datetime);
+        return todoDate < today;
+      })
+    },
+
+    getTodosAfter4Days: (state) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const fourDaysLater = new Date(today);
+      fourDaysLater.setDate(today.getDate() + 4);
+
+      return state.todos.filter(todo => {
+        const todoDate = new Date(todo.datetime);
+        return todoDate > fourDaysLater;
+      })
     }
   },
 
