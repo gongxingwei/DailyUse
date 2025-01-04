@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useTodoStore } from '../stores/todo'
+import { useTodoStore } from '../../stores/todo'
 
 const props = defineProps({
   modelValue: Boolean

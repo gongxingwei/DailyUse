@@ -35,17 +35,16 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { PropType } from 'vue'
-import type { Todo } from '../stores/todo'
+import type { Todo } from '../../stores/todo'
 
-const props = defineProps({
-  modelValue: {
-    type: Boolean,
-    required: true
-  },
-  todo: {
-    type: Object as PropType<Todo | null>,
-    required: true
-  }
+interface Props {
+  modelValue: boolean
+  todo: Todo | null  // 允许为 null
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  modelValue: false,
+  todo: null
 })
 
 const emit = defineEmits(['update:modelValue'])

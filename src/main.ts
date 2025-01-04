@@ -4,22 +4,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import './style.css'
 import App from './App.vue'
 import router from './router'
-
-// Vuetify
-import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
-
-import '@mdi/font/css/materialdesignicons.css'
-
-const vuetify = createVuetify({
-  components,
-  directives,
-  icons: {
-    defaultSet: 'mdi', // 设置默认图标集为 mdi
-  },
-})
+import vuetify from './plugins/vuetify'
 
 // 创建 Pinia 实例并使用插件
 const pinia = createPinia()

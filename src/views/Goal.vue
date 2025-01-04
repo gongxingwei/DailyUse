@@ -1,45 +1,35 @@
 <template>
-  <v-container fluid>
-    <v-row>
-      <!-- 导航栏 -->
-      <v-col cols="12">
-        <v-tabs>
-          <v-tab :to="`/goal/${goalId}/maindoc`">主文档</v-tab>
-          <v-tab :to="`/goal/${goalId}/note`">笔记</v-tab>
-          <v-tab :to="`/goal/${goalId}/settings`">设置</v-tab>
-        </v-tabs>
-      </v-col>
-      
-      <!-- 子路由内容 -->
-      <v-col cols="12">
-        <router-view v-if="goalStore.currentGoal"></router-view>
-        <div v-else>加载中...</div>
-      </v-col>
-    </v-row>
-  </v-container>
+  <v-navigation-drawer permanent>
+    <FileExplorer :root-path="currentRepo?.path" @settings="showSettings = true" @select-file="handleFileSelect" />
+  </v-navigation-drawer>
+  <v-main>
+    <MarkdownEditor :file-path="selectedFile" />
+  </v-main>
+  <RepoSettings 
+    v-model="showSettings"
+    :repo="currentRepo"
+  />
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, watch } from 'vue'
+import FileExplorer from '../components/goals/FileExplorer.vue'
+import RepoSettings from '../components/goals/RepoSettings.vue'
+import MarkdownEditor from '../components/goals/MarkdownEditor.vue'
 import { useRoute } from 'vue-router'
-import { useGoalStore } from '../stores/goal'
+import { useRepoStore } from '../stores/repo'
+import { ref, computed } from 'vue'
 
 const route = useRoute()
-const goalStore = useGoalStore()
+const repoStore = useRepoStore()
+const showSettings = ref(false)
+const selectedFile = ref<string>()
 
-const goalId = computed(() => route.params.id)
+const handleFileSelect = (filePath: string) => {
+  selectedFile.value = filePath
+}
 
-onMounted(async () => {
-  if (goalId.value) {
-    console.log('Mounting with goalId:', goalId.value)
-    await goalStore.loadGoal(Number(goalId.value))
-    console.log('After loading:', goalStore.currentGoal)
-  }
+const currentRepo = computed(() => {
+  const title = decodeURIComponent(route.params.title as string)
+  return repoStore.getRepoByTitle(title) || null
 })
-
-watch(() => route.params.id, async (newId) => {
-  if (newId) {
-    await goalStore.loadGoal(Number(newId))
-  }
-}, { immediate: true })
 </script>

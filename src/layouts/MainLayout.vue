@@ -1,15 +1,18 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useRoute } from 'vue-router';
-import { useGoalStore } from '../stores/goal';
+import { useRepoStore } from '../stores/repo';
+import CreateRepo from '../components/goals/CreateRepo.vue'
 
-const goalStore = useGoalStore();
+const goalStore = useRepoStore();
 const route = useRoute();
 
 const drawer_left = ref(false); 
 const drawer_right = ref(false); 
 
 const theme = ref('dark')
+
+const showCreateDialog = ref(false)
 
 // 计算当前页面标题
 const currentTitle = computed(() => {
@@ -26,34 +29,44 @@ function toggleTheme () {
 
 <template>
     <v-app :theme="theme">
+        <!-- 左侧导航栏 -->
         <v-navigation-drawer v-model="drawer_left" location="left">
             <v-list>
                 <v-list-item title="Home" :to="'/'"></v-list-item>
                 <v-list-item title="ToDoList" :to="'/todolist'"></v-list-item>
-                <v-list-item title="Document" :to="'/document'"></v-list-item>
             </v-list>
             <v-divider></v-divider>
             <v-container>
             <v-row align="center">
                 <v-col class="text-left" style="font-size: 0.8rem;">My Goals</v-col>
-                </v-row>
+                <v-col>
+                    <v-btn 
+                        color="#4CAF50" 
+                        prepend-icon="mdi-plus" 
+                        @click="showCreateDialog = true"
+                    >
+                        New
+                    </v-btn>
+                </v-col>
+            </v-row>
             </v-container>
             <v-list>
                 <v-list-item 
-                    v-for="goal in goalStore.goals" 
-                    :key="goal.id"
-                    :title="goal.title" 
-                    :to="`/goal/${goal.id}/maindoc`"
-                    @click="console.log('Clicked goal:', goal.id)"
+                    v-for="repo in goalStore.repos" 
+                    :key="repo.title"
+                    :title="repo.title" 
+                    :to="`/repo/${repo.title}`"
+                    @click="console.log('Clicked goal:', repo.title)"
                 ></v-list-item>
             </v-list>
         </v-navigation-drawer>
+        <!-- 右侧导航栏 profile -->
         <v-navigation-drawer v-model="drawer_right" location="right">
-      <v-list>
-        <v-list-item title="Profile" router-link to="/profile"></v-list-item>
-      </v-list>
-    </v-navigation-drawer>
-
+            <v-list>
+                <v-list-item title="Profile" router-link to="/profile"></v-list-item>
+            </v-list>
+        </v-navigation-drawer>
+        <!-- 顶部导航栏 -->
         <v-app-bar density="compact">
             <v-app-bar-nav-icon @click="drawer_left = !drawer_left">
                 <v-icon>mdi-dots-horizontal</v-icon>
@@ -78,6 +91,7 @@ function toggleTheme () {
         <v-main>
             <router-view />
         </v-main>
+        <CreateRepo v-model="showCreateDialog" />
     </v-app>
 </template>
 

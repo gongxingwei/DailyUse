@@ -14,36 +14,6 @@ const routes: RouteRecordRaw[] = [
                 component: Home
             },
             {
-                path: '/document',
-                name: 'document',
-                component: () => import('../views/Document.vue')
-            },
-            {
-                path: '/goal/:id',
-                component: () => import('../views/Goal.vue'),
-                children: [
-                    {
-                        path: 'maindoc',
-                        name: 'MainDoc',
-                        component: () => import('../components/goals/MainDoc.vue')
-                    },
-                    {
-                        path: 'note',
-                        name: 'Note',
-                        component: () => import('../components/goals/Note.vue')
-                    },
-                    {
-                        path: 'settings',
-                        name: 'Settings',
-                        component: () => import('../components/goals/Settings.vue')
-                    },
-                    {
-                        path: '',
-                        redirect: 'maindoc'
-                    }
-                ]
-            },
-            {
                 path: '/todolist',
                 name: 'todolist',
                 component: () => import('../views/ToDoList.vue')
@@ -52,6 +22,11 @@ const routes: RouteRecordRaw[] = [
                 path: '/profile',
                 name: 'profile',
                 component: () => import('../views/Pro.vue')
+            },
+            {
+                path: '/repo/:title',
+                name: 'repo',
+                component: () => import('../views/Goal.vue')
             }
         ]
     }
