@@ -82,6 +82,15 @@ ipcMain.handle("selectFolder", async () => {
 ipcMain.handle("readFile", async (_event, filePath) => {
   return await promises.readFile(filePath, "utf8");
 });
+ipcMain.handle("writeFile", async (_event, filePath, content) => {
+  try {
+    await promises.writeFile(filePath, content, "utf8");
+    return true;
+  } catch (error) {
+    console.error("写入文件失败:", error);
+    throw error;
+  }
+});
 ipcMain.handle("getRootDir", async (event) => {
   const result = await dialog.showOpenDialog({
     properties: ["openDirectory"]

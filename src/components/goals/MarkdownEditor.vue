@@ -1,7 +1,7 @@
 <template>
   <div class="markdown-editor">
     <v-toolbar density="compact" color="surface">
-      <v-btn icon @click="saveContent">
+      <v-btn icon @click="saveContent" :disabled="!props.filePath">
         <v-icon>mdi-content-save</v-icon>
       </v-btn>
       <v-divider vertical class="mx-2"></v-divider>
@@ -10,38 +10,72 @@
         <v-btn value="preview" icon="mdi-eye"></v-btn>
         <v-btn value="split" icon="mdi-view-split-vertical"></v-btn>
       </v-btn-toggle>
+      <v-spacer></v-spacer>
+      <div v-if="props.filePath" class="text-caption">
+        {{ electron.path.basename(props.filePath) }}
+      </div>
     </v-toolbar>
 
     <div class="editor-container" :class="viewMode">
-      <div class="edit-area" v-show="viewMode !== 'preview'" ref="editorContainer"></div>
+      <div class="edit-area" v-show="viewMode !== 'preview'">
+        <MonacoEditor
+          v-model:value="content"
+          :options="editorOptions"
+          theme="vs-dark"
+          language="markdown"
+          @keydown.ctrl.s.prevent="saveContent"
+          @keydown.meta.s.prevent="saveContent"
+        />
+      </div>
       <div class="preview-area markdown-body" v-show="viewMode !== 'edit'" v-html="renderedContent"></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import * as monaco from 'monaco-editor'
+import { ref, computed, watch, onMounted } from 'vue'
+import MonacoEditor from 'monaco-editor-vue3'
 import MarkdownIt from 'markdown-it'
 import 'github-markdown-css'
+
+const electron = window.electron
 
 const props = defineProps<{
   filePath: string | undefined
 }>()
 
+// 初始化 markdown-it
 const md = new MarkdownIt({
   html: true,
   linkify: true,
   typographer: true
 })
 
+// 状态管理
 const content = ref('')
 const viewMode = ref('edit')
-const editorContainer = ref<HTMLElement>()
-let editor: monaco.editor.IStandaloneCodeEditor | undefined
 
+// 编辑器配置
+const editorOptions = {
+  minimap: { enabled: true },
+  wordWrap: 'on',
+  lineNumbers: 'on',
+  renderWhitespace: 'boundary',
+  scrollBeyondLastLine: false,
+  automaticLayout: true,
+  fontSize: 14,
+  padding: { top: 16 }
+}
+
+// 计算属性
 const renderedContent = computed(() => {
-  return md.render(content.value)
+  console.log('当前内容:', content.value)
+  return md.render(content.value || '')
+})
+
+// 监听视图模式变化
+watch(viewMode, (newMode) => {
+  console.log('视图模式变化:', newMode)
 })
 
 // 监听文件路径变化
@@ -50,61 +84,43 @@ watch(() => props.filePath, async (newPath) => {
     try {
       const fileContent = await window.electron.readFile(newPath)
       content.value = fileContent
-      editor?.setValue(fileContent)
+      console.log('读取文件内容:', fileContent)
     } catch (error) {
       console.error('读取文件失败:', error)
       content.value = ''
-      editor?.setValue('')
     }
   } else {
     content.value = ''
-    editor?.setValue('')
   }
-}, { immediate: true })
+}, {
+  immediate: true,
+  deep: true
+})
+
+// 确保组件挂载后也能读取文件
+onMounted(async () => {
+  if (props.filePath) {
+    try {
+      const fileContent = await window.electron.readFile(props.filePath)
+      content.value = fileContent
+    } catch (error) {
+      console.error('读取文件失败:', error)
+      content.value = ''
+    }
+  }
+})
 
 // 保存内容
 const saveContent = async () => {
-  if (props.filePath) {
-    try {
-      const currentContent = editor?.getValue() || ''
-      await window.electron.writeFile(props.filePath, currentContent)
-    } catch (error) {
-      console.error('保存文件失败:', error)
-      alert('保存失败')
-    }
+  if (!props.filePath) return
+
+  try {
+    await window.electron.writeFile(props.filePath, content.value)
+  } catch (error) {
+    console.error('保存文件失败:', error)
+    alert('保存失败')
   }
 }
-
-// 初始化编辑器
-onMounted(() => {
-  if (editorContainer.value) {
-    editor = monaco.editor.create(editorContainer.value, {
-      value: content.value,
-      language: 'markdown',
-      theme: 'vs-dark',
-      minimap: { enabled: true },
-      wordWrap: 'on',
-      lineNumbers: 'on',
-      renderWhitespace: 'boundary',
-      scrollBeyondLastLine: false,
-      automaticLayout: true,
-      fontSize: 14
-    })
-
-    // 监听内容变化
-    editor.onDidChangeModelContent(() => {
-      content.value = editor?.getValue() || ''
-    })
-
-    // 添加快捷键
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveContent)
-  }
-})
-
-// 销毁编辑器
-onBeforeUnmount(() => {
-  editor?.dispose()
-})
 </script>
 
 <style scoped>
@@ -112,6 +128,9 @@ onBeforeUnmount(() => {
   height: 100%;
   display: flex;
   flex-direction: column;
+  background-color: #1e1e1e;
+  margin: 0;
+  padding: 0;
 }
 
 .editor-container {
@@ -141,6 +160,8 @@ onBeforeUnmount(() => {
 .preview-area {
   padding: 16px;
   border-left: 1px solid rgba(128, 128, 128, 0.2);
+  background-color: #1e1e1e;
+  color: #d4d4d4;
 }
 
 :deep(.markdown-body) {
@@ -148,6 +169,55 @@ onBeforeUnmount(() => {
   min-width: 200px;
   max-width: 980px;
   margin: 0 auto;
-  padding: 45px;
+  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  color: #d4d4d4;
+}
+
+:deep(.markdown-body h1) { font-size: 2em; margin: 0.67em 0; }
+:deep(.markdown-body h2) { font-size: 1.5em; margin: 0.83em 0; }
+:deep(.markdown-body p) { margin: 1em 0; }
+:deep(.markdown-body code) { 
+  background-color: #2d2d2d;
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+}
+:deep(.markdown-body pre) {
+  background-color: #2d2d2d;
+  padding: 16px;
+  overflow: auto;
+  border-radius: 3px;
+}
+
+:deep(.monaco-editor) {
+  height: 100% !important;
+}
+
+:deep(.markdown-body a) {
+  color: #58a6ff;
+}
+
+:deep(.markdown-body blockquote) {
+  color: #8b949e;
+  border-left: 0.25em solid #30363d;
+}
+
+:deep(.markdown-body hr) {
+  background-color: #30363d;
+}
+
+:deep(.markdown-body table) {
+  border-color: #30363d;
+}
+
+:deep(.markdown-body tr) {
+  background-color: #1e1e1e;
+  border-color: #30363d;
+}
+
+:deep(.markdown-body th, .markdown-body td) {
+  border-color: #30363d;
+  padding: 6px 13px;
 }
 </style> 

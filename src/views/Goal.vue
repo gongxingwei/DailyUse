@@ -1,14 +1,16 @@
 <template>
-  <v-navigation-drawer permanent>
-    <FileExplorer :root-path="currentRepo?.path" @settings="showSettings = true" @select-file="handleFileSelect" />
-  </v-navigation-drawer>
-  <v-main>
-    <MarkdownEditor :file-path="selectedFile" />
-  </v-main>
-  <RepoSettings 
-    v-model="showSettings"
-    :repo="currentRepo"
-  />
+  <div class="goal-container">
+    <v-navigation-drawer permanent>
+      <FileExplorer :root-path="currentRepo?.path" @settings="showSettings = true" @select-file="handleFileSelect" />
+    </v-navigation-drawer>
+    <v-main>
+      <MarkdownEditor :file-path="selectedFile" />
+    </v-main>
+    <RepoSettings 
+      v-model="showSettings"
+      :repo="currentRepo"
+    />
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -33,3 +35,17 @@ const currentRepo = computed(() => {
   return repoStore.getRepoByTitle(title) || null
 })
 </script>
+
+<style scoped>
+.goal-container {
+  height: 100vh;
+  display: flex;
+}
+
+:deep(.v-main) {
+  flex: 1;
+  height: 100%;
+  padding: 0 !important;
+  padding-top: 48px;
+}
+</style>

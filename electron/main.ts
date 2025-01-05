@@ -125,6 +125,17 @@ ipcMain.handle('readFile', async (_event, filePath) => {
   return await fs.readFile(filePath, 'utf8');
 });
 
+// 写入文件
+ipcMain.handle('writeFile', async (_event, filePath: string, content: string) => {
+  try {
+    await fs.writeFile(filePath, content, 'utf8');
+    return true;
+  } catch (error) {
+    console.error('写入文件失败:', error);
+    throw error;
+  }
+});
+
 // 获取根目录
 ipcMain.handle('getRootDir', async (event) => {
   const result = await dialog.showOpenDialog({
