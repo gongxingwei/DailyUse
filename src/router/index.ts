@@ -1,6 +1,9 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import MainLayout from '../layouts/MainLayout.vue'
 import Home from '../views/Home.vue'
+import Goal from '../views/Goal.vue'
+import Repository from '../views/Repository.vue'
+import Setting from '../views/Setting.vue'
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
@@ -24,9 +27,19 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('../views/Pro.vue')
             },
             {
+                path: '/repository',  
+                name: 'repository',
+                component: Repository
+            },
+            {
                 path: '/repo/:title',
                 name: 'repo',
-                component: () => import('../views/Goal.vue')
+                component: Goal
+            },
+            {
+                path: '/setting',
+                name: 'setting',
+                component: Setting
             }
         ]
     }

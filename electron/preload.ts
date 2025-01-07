@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('electron', {
   readClipboardFiles: () => ipcRenderer.invoke('readClipboardFiles'),
   writeClipboardFiles: (filePaths: string[]) => ipcRenderer.invoke('writeClipboardFiles', filePaths),
   refreshFolder: (path: string) => ipcRenderer.invoke('refreshFolder', path),
+  windowControl: (command: string) => ipcRenderer.send('window-control', command),
   path: {
     join: (...args: string[]) => join(...args),
     dirname: (p: string) => dirname(p),

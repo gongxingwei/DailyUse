@@ -62,6 +62,7 @@ interface ElectronAPI {
     basename: (p: string) => string;
   }
   refreshFolder: (path: string) => Promise<{ folderTreeData: TreeNode[]; directoryPath: string }>;
+  windowControl: (command: string) => void;
 }
 
 interface Window {

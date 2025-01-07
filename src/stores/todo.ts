@@ -91,8 +91,7 @@ export const useTodoStore = defineStore('todo', {
       }
     },
 
-    toggleComplete(todoId: number) {
-      const todo = this.todos.find(t => t.id === todoId)
+    toggleComplete(todo: Todo) {
       if (todo) {
         todo.completed = !todo.completed
         this.saveTodos()

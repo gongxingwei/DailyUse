@@ -28,6 +28,7 @@ let win: BrowserWindow | null
 
 function createWindow() {
   win = new BrowserWindow({
+    frame: false,
     icon: path.join(process.env.VITE_PUBLIC, 'DailyUse.svg'),
     webPreferences: {
       webSecurity: false,
@@ -37,6 +38,8 @@ function createWindow() {
     width: 1400,
     height: 800,
   })
+
+  // win.setMenu(null)
 
   // Test active push message to Renderer-process.
   win.webContents.on('did-finish-load', () => {
@@ -289,4 +292,23 @@ ipcMain.handle('writeClipboardFiles', (_event, filePaths: string[]) => {
 ipcMain.handle('refreshFolder', async (_event, directoryPath: string) => {
   const folderTreeData = await generateTree(directoryPath)
   return { folderTreeData, directoryPath }
+})
+
+// 窗口控制
+ipcMain.on('window-control', (_event, command) => {
+  switch (command) {
+    case 'minimize':
+      win?.minimize()
+      break
+    case 'maximize':
+      if (win?.isMaximized()) {
+        win?.unmaximize()
+      } else {
+        win?.maximize()
+      }
+      break
+    case 'close':
+      win?.close()
+      break
+  }
 })

@@ -16,6 +16,7 @@ electron.contextBridge.exposeInMainWorld("electron", {
   readClipboardFiles: () => electron.ipcRenderer.invoke("readClipboardFiles"),
   writeClipboardFiles: (filePaths) => electron.ipcRenderer.invoke("writeClipboardFiles", filePaths),
   refreshFolder: (path2) => electron.ipcRenderer.invoke("refreshFolder", path2),
+  windowControl: (command) => electron.ipcRenderer.send("window-control", command),
   path: {
     join: (...args) => path.join(...args),
     dirname: (p) => path.dirname(p),

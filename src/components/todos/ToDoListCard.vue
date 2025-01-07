@@ -2,14 +2,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import ShowToDoInfo from './ShowToDoInfo.vue'
-
-interface Todo {
-  id: number
-  title: string
-  content: string
-  datetime: string
-  completed: boolean
-}
+import type { Todo } from '../../stores/todo'
 
 const props = defineProps<{
   todoDate: number
@@ -56,6 +49,7 @@ const selectedTodo = ref<Todo | null>(null)
 // }
 
 defineEmits(['show-info', 'edit', 'complete'])
+
 </script>
 
 <template>
@@ -65,32 +59,48 @@ defineEmits(['show-info', 'edit', 'complete'])
         <v-col>{{ toDoDateLabel }}</v-col>
         <v-col class="text-right">{{ toDoDate }}</v-col>
       </v-row>
-      <v-list>
-        <v-list-item 
-          v-for="todo in todos" 
-          :key="todo.id"
-          @click="$emit('show-info', todo)"
-        >
-          <v-row align="center" justify="space-between">
-            <v-col cols="8">
-              <v-list-item-title 
-                :class="{ 'text-decoration-line-through': todo.completed, 'text-grey': todo.completed }"
-              >
-                {{ todo.title }}
-              </v-list-item-title>
-              <v-list-item-subtitle>{{ todosTime(todo.datetime) }}</v-list-item-subtitle>
-            </v-col>
-            <v-col cols="4" class="d-flex justify-end">
-              <v-btn icon="mdi-pencil" @click.stop="$emit('edit', todo)"></v-btn>
-              <v-btn 
-                :icon="todo.completed ? 'mdi-check-circle' : 'mdi-check'" 
-                :color="todo.completed ? 'success' : 'default'"
-                @click.stop="$emit('complete', todo.id)"
-              ></v-btn>
-            </v-col>
-          </v-row>
-        </v-list-item>
-      </v-list>
+      <v-card-text>
+        <template v-if="todos.length > 0">
+          <v-list>
+            <v-list-item
+              v-for="todo in todos"
+              :key="todo.id"
+              :class="{ 'text-decoration-line-through': todo.completed }"
+            >
+              <template v-slot:prepend>
+                <v-checkbox
+                  :model-value="todo.completed"
+                  @change="$emit('complete', todo)"
+                  hide-details
+                ></v-checkbox>
+              </template>
+
+              <v-list-item-title>{{ todo.title }}</v-list-item-title>
+
+              <template v-slot:append>
+                <v-btn
+                  icon="mdi-information"
+                  variant="text"
+                  size="small"
+                  @click="$emit('show-info', todo)"
+                ></v-btn>
+                <v-btn
+                  icon="mdi-pencil"
+                  variant="text"
+                  size="small"
+                  @click="$emit('edit', todo)"
+                ></v-btn>
+              </template>
+            </v-list-item>
+          </v-list>
+        </template>
+        <template v-else>
+          <div class="text-center text-medium-emphasis py-4">
+            <v-icon size="large" color="grey-lighten-1">mdi-check-circle</v-icon>
+            <div class="text-body-2 mt-2">暂无待办事项</div>
+          </div>
+        </template>
+      </v-card-text>
     </v-container>
 
     <!-- 添加详情对话框 -->

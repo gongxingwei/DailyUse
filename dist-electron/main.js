@@ -11,6 +11,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 let win;
 function createWindow() {
   win = new BrowserWindow({
+    frame: false,
     icon: path.join(process.env.VITE_PUBLIC, "DailyUse.svg"),
     webPreferences: {
       webSecurity: false,
@@ -174,6 +175,23 @@ ipcMain.handle("writeClipboardFiles", (_event, filePaths) => {
 ipcMain.handle("refreshFolder", async (_event, directoryPath) => {
   const folderTreeData = await generateTree(directoryPath);
   return { folderTreeData, directoryPath };
+});
+ipcMain.on("window-control", (_event, command) => {
+  switch (command) {
+    case "minimize":
+      win == null ? void 0 : win.minimize();
+      break;
+    case "maximize":
+      if (win == null ? void 0 : win.isMaximized()) {
+        win == null ? void 0 : win.unmaximize();
+      } else {
+        win == null ? void 0 : win.maximize();
+      }
+      break;
+    case "close":
+      win == null ? void 0 : win.close();
+      break;
+  }
 });
 export {
   MAIN_DIST,
