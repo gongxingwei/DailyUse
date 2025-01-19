@@ -22,6 +22,13 @@ declare namespace NodeJS {
 }
 
 // Used in Renderer process, expose in `preload.ts`
+
+declare global {
+  interface Window {
+    electron: import('./electron-api').ElectronAPI;
+  }
+}
+
 interface Window {
   ipcRenderer: import('electron').IpcRenderer
 }
@@ -56,6 +63,10 @@ interface ElectronAPI {
   writeClipboard: (text: string) => Promise<void>;
   readClipboardFiles: () => Promise<string[]>;
   writeClipboardFiles: (filePaths: string[]) => Promise<void>;
+  ipcRenderer: {
+    send: (channel: string, data: any) => void;
+    on: (channel: string, func: (...args: any[]) => void) => void;
+  };
   path: {
     join: (...args: string[]) => string;
     dirname: (p: string) => string;

@@ -4,6 +4,8 @@ import Home from '../views/Home.vue'
 import Goal from '../views/Goal.vue'
 import Repository from '../views/Repository.vue'
 import Setting from '../views/Setting.vue'
+import Test from '../views/Test.vue'
+import Popup from '../views/Popup.vue'
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
@@ -30,6 +32,10 @@ const routes: RouteRecordRaw[] = [
                 path: '/repository',  
                 name: 'repository',
                 component: Repository
+            },{
+                path: '/reminder',
+                name: 'reminder',
+                component: () => import('../views/Reminder.vue')
             },
             {
                 path: '/repo/:title',
@@ -40,9 +46,19 @@ const routes: RouteRecordRaw[] = [
                 path: '/setting',
                 name: 'setting',
                 component: Setting
+            },
+            {
+                path: '/test',
+                name: 'test',
+                component: Test
             }
         ]
-    }
+    },
+    {
+        path: '/popup',
+        name: 'popup',
+        component: Popup
+    },
 ]
 
 // 创建路由实例

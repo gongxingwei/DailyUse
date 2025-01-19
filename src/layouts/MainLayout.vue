@@ -73,6 +73,8 @@ const toggleDrawer = () => {
                         <v-list-item prepend-icon="mdi-home" title="Home" :to="'/'"></v-list-item>
                         <v-list-item prepend-icon="mdi-list-box" title="ToDoList" :to="'/todolist'"></v-list-item>
                         <v-list-item prepend-icon="mdi-database" title="Repository" :to="'/repository'"></v-list-item>
+                        <v-list-item prepend-icon="mdi-bell" title="Reminder" :to="'/reminder'"></v-list-item>
+                        <v-list-item prepend-icon="mdi-bell" title="Test" :to="'/test'"></v-list-item>
                     </v-list>
                     
                     <v-divider></v-divider>
@@ -131,7 +133,6 @@ const toggleDrawer = () => {
     height: 100vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
 }
 
 .content-container {
@@ -149,6 +150,8 @@ const toggleDrawer = () => {
 .main-content {
     flex: 1;
     overflow: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 :deep(.v-navigation-drawer__content) {
@@ -164,6 +167,7 @@ const toggleDrawer = () => {
     margin-top: 32px !important;
     padding-bottom: 32px !important;
 }
+
 
 /* 标题栏样式 */
 .title-bar {
@@ -199,5 +203,6 @@ const toggleDrawer = () => {
     -webkit-app-region: no-drag;
     margin-right: 8px;
 }
+
 
 </style>

@@ -21,25 +21,9 @@ electron.contextBridge.exposeInMainWorld("electron", {
     join: (...args) => path.join(...args),
     dirname: (p) => path.dirname(p),
     basename: (p) => path.basename(p)
+  },
+  ipcRenderer: {
+    send: (channel, data) => electron.ipcRenderer.send(channel, data),
+    on: (channel, func) => electron.ipcRenderer.on(channel, (event, ...args) => func(...args))
   }
-});
-electron.contextBridge.exposeInMainWorld("ipcRenderer", {
-  on(...args) {
-    const [channel, listener] = args;
-    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
-  },
-  off(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.off(channel, ...omit);
-  },
-  send(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.send(channel, ...omit);
-  },
-  invoke(...args) {
-    const [channel, ...omit] = args;
-    return electron.ipcRenderer.invoke(channel, ...omit);
-  }
-  // You can expose other APTs you need here.
-  // ...
 });

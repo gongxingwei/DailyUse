@@ -37,8 +37,8 @@ const editTodo = (todo: Todo) => {
   showEditDialog.value = true
 }
 
-const toggleComplete = (todoId: number) => {
-  todoStore.toggleComplete(todoId)
+const toggleComplete = (todo: Todo) => {
+  todoStore.toggleComplete(todo)
 }
 </script>
 

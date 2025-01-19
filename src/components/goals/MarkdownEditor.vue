@@ -133,9 +133,16 @@ const saveContent = async () => {
   padding: 0;
 }
 
+.toolbar {
+  padding: 8px;
+  border-bottom: 1px solid rgba(128, 128, 128, 0.2);
+  flex-shrink: 0;
+}
+
 .editor-container {
   flex: 1;
   display: flex;
+  min-height: 0;
   overflow: hidden;
 }
 
@@ -153,7 +160,7 @@ const saveContent = async () => {
 }
 
 .edit-area, .preview-area {
-  height: 100%;
+  flex: 1;
   overflow: auto;
 }
 
