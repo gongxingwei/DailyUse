@@ -2,6 +2,12 @@
 const electron = require("electron");
 const path = require("path");
 electron.contextBridge.exposeInMainWorld("electron", {
+  platform: process.platform,
+  ipcRenderer: {
+    send: (channel, data) => electron.ipcRenderer.send(channel, data),
+    on: (channel, func) => electron.ipcRenderer.on(channel, func),
+    invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args)
+  },
   createFolder: (currentPath) => electron.ipcRenderer.invoke("createFolder", currentPath),
   createFile: (currentPath, content) => electron.ipcRenderer.invoke("createFile", currentPath, content),
   deleteFileOrFolder: (path2, isDirectory) => electron.ipcRenderer.invoke("deleteFileOrFolder", path2, isDirectory),
@@ -21,9 +27,5 @@ electron.contextBridge.exposeInMainWorld("electron", {
     join: (...args) => path.join(...args),
     dirname: (p) => path.dirname(p),
     basename: (p) => path.basename(p)
-  },
-  ipcRenderer: {
-    send: (channel, data) => electron.ipcRenderer.send(channel, data),
-    on: (channel, func) => electron.ipcRenderer.on(channel, (event, ...args) => func(...args))
   }
 });

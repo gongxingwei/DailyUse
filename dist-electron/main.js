@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog, clipboard, screen } from "electron
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { promises } from "fs";
+const notificationWindows = /* @__PURE__ */ new Map();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -191,6 +192,107 @@ async function generateTree(dir) {
     return [];
   }
 }
+const NOTIFICATION_WIDTH = 320;
+const NOTIFICATION_HEIGHT = 120;
+const NOTIFICATION_MARGIN = 10;
+function getNotificationPosition() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
+  const y = NOTIFICATION_MARGIN + notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
+  return { x, y };
+}
+function reorderNotifications() {
+  let index = 0;
+  for (const [, window] of notificationWindows) {
+    const y = NOTIFICATION_MARGIN + index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
+    window.setPosition(window.getPosition()[0], y);
+    index++;
+  }
+}
+ipcMain.handle("show-notification", async (_event, options) => {
+  console.log("主进程收到显示通知请求:", options);
+  if (!win) {
+    console.error("主窗口未创建，无法显示通知");
+    return;
+  }
+  if (notificationWindows.has(options.id)) {
+    console.log("关闭已存在的相同ID通知:", options.id);
+    const existingWindow = notificationWindows.get(options.id);
+    existingWindow == null ? void 0 : existingWindow.close();
+    notificationWindows.delete(options.id);
+    reorderNotifications();
+  }
+  const { x, y } = getNotificationPosition();
+  console.log("新通知位置:", { x, y });
+  console.log("创建通知窗口...");
+  const notificationWindow = new BrowserWindow({
+    width: NOTIFICATION_WIDTH,
+    height: NOTIFICATION_HEIGHT,
+    x,
+    y,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(MAIN_DIST, "preload.mjs"),
+      contextIsolation: true,
+      nodeIntegration: true,
+      webSecurity: false
+    }
+  });
+  notificationWindows.set(options.id, notificationWindow);
+  console.log("通知窗口已存储，当前活动通知数:", notificationWindows.size);
+  notificationWindow.once("ready-to-show", () => {
+    console.log("通知窗口准备就绪");
+    if (!notificationWindow.isDestroyed()) {
+      notificationWindow.show();
+      console.log("通知窗口已显示");
+    }
+  });
+  notificationWindow.on("closed", () => {
+    console.log("通知窗口已关闭:", options.id);
+    notificationWindows.delete(options.id);
+    reorderNotifications();
+  });
+  try {
+    const url = VITE_DEV_SERVER_URL ? `${VITE_DEV_SERVER_URL}#/notification?${new URLSearchParams(options)}` : `file://${path.join(RENDERER_DIST, "index.html")}#/notification?${new URLSearchParams(options)}`;
+    console.log("加载通知页面:", url);
+    if (VITE_DEV_SERVER_URL) {
+      await notificationWindow.loadURL(url);
+    } else {
+      await notificationWindow.loadFile(path.join(RENDERER_DIST, "index.html"), {
+        hash: `/notification?${new URLSearchParams(options)}`
+      });
+    }
+    console.log("通知页面加载成功");
+  } catch (error) {
+    console.error("加载通知页面失败:", error);
+    notificationWindow.close();
+    return options.id;
+  }
+  return options.id;
+});
+ipcMain.on("notification-action", (_event, id, action) => {
+  const window = notificationWindows.get(id);
+  if (window) {
+    window.close();
+    notificationWindows.delete(id);
+    reorderNotifications();
+  }
+});
+ipcMain.on("close-notification", (_event, id) => {
+  const window = notificationWindows.get(id);
+  if (window) {
+    window.close();
+    notificationWindows.delete(id);
+    reorderNotifications();
+    win == null ? void 0 : win.webContents.send("notification-action", id, { text: "close", type: "action" });
+  }
+});
 ipcMain.handle("renameFileOrFolder", async (_event, oldPath, newPath) => {
   try {
     const exists = await promises.access(newPath).then(() => true).catch(() => false);

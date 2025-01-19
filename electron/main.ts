@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { promises as fs } from 'fs';
 
+// 存储通知窗口的Map
+const notificationWindows = new Map<string, BrowserWindow>();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -260,47 +262,147 @@ async function generateTree(dir: string): Promise<any[]> {
   }
 }
 
-// // 复制文件或文件夹
-// ipcMain.handle('copy', async (_event, sourcePath: string, targetPath: string, isDirectory: boolean) => {
-//   try {
-//     // 检查目标是否存在
-//     const exists = await fs.access(targetPath)
-//       .then(() => true)
-//       .catch(() => false);
+// 通知窗口的位置管理
+const NOTIFICATION_WIDTH = 320;
+const NOTIFICATION_HEIGHT = 120;
+const NOTIFICATION_MARGIN = 10;
 
-//     if (exists) {
-//       // 弹出确认对话框
-//       const { response } = await dialog.showMessageBox({
-//         type: 'question',
-//         buttons: ['覆盖', '取消'],
-//         defaultId: 1,
-//         title: '确认覆盖',
-//         message: '目标文件/文件夹已存在，是否覆盖？',
-//         detail: `目标路径: ${targetPath}`
-//       });
+// 获取通知窗口的位置
+function getNotificationPosition(): { x: number, y: number } {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  
+  // 计算新通知的位置
+  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
+  const y = NOTIFICATION_MARGIN + (notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN));
+  
+  return { x, y };
+}
 
-//       // 用户选择取消
-//       if (response === 1) {
-//         return false;
-//       }
-//     }
+// 重新排列所有通知窗口
+function reorderNotifications() {
+  let index = 0;
+  for (const [, window] of notificationWindows) {
+    const y = NOTIFICATION_MARGIN + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN));
+    window.setPosition(window.getPosition()[0], y);
+    index++;
+  }
+}
 
-//     // 执行复制
-//     if (isDirectory) {
-//       await fs.cp(sourcePath, targetPath, { 
-//         recursive: true,
-//         force: true,  // 改为 true 允许覆盖
-//         preserveTimestamps: true
-//       });
-//     } else {
-//       await fs.copyFile(sourcePath, targetPath);
-//     }
-//     return true;
-//   } catch (error) {
-//     console.error('Copy error:', error);
-//     throw error;
-//   }
-// });
+// 处理桌面通知
+ipcMain.handle('show-notification', async (_event, options: {
+  id: string
+  title: string
+  body: string
+  icon?: string
+  urgency?: 'normal' | 'critical' | 'low'
+  actions?: Array<{ text: string, type: 'confirm' | 'cancel' | 'action' }>
+}) => {
+  console.log('主进程收到显示通知请求:', options);
+  
+  if (!win) {
+    console.error('主窗口未创建，无法显示通知');
+    return;
+  }
+
+  // 如果存在相同ID的通知，先关闭它
+  if (notificationWindows.has(options.id)) {
+    console.log('关闭已存在的相同ID通知:', options.id);
+    const existingWindow = notificationWindows.get(options.id);
+    existingWindow?.close();
+    notificationWindows.delete(options.id);
+    reorderNotifications();
+  }
+
+  // 获取新通知的位置
+  const { x, y } = getNotificationPosition();
+  console.log('新通知位置:', { x, y });
+
+  // 创建通知窗口
+  console.log('创建通知窗口...');
+  const notificationWindow = new BrowserWindow({
+    width: NOTIFICATION_WIDTH,
+    height: NOTIFICATION_HEIGHT,
+    x,
+    y,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    skipTaskbar: true,
+    alwaysOnTop: true,
+    show: false,
+    webPreferences: {
+      preload: path.join(MAIN_DIST, 'preload.mjs'),
+      contextIsolation: true,
+      nodeIntegration: true,
+      webSecurity: false
+    }
+  });
+
+  // 存储窗口引用
+  notificationWindows.set(options.id, notificationWindow);
+  console.log('通知窗口已存储，当前活动通知数:', notificationWindows.size);
+
+  // 监听窗口准备就绪事件
+  notificationWindow.once('ready-to-show', () => {
+    console.log('通知窗口准备就绪');
+    if (!notificationWindow.isDestroyed()) {
+      notificationWindow.show();
+      console.log('通知窗口已显示');
+    }
+  });
+
+  // 监听窗口关闭
+  notificationWindow.on('closed', () => {
+    console.log('通知窗口已关闭:', options.id);
+    notificationWindows.delete(options.id);
+    reorderNotifications();
+  });
+
+  try {
+    // 加载通知页面
+    const url = VITE_DEV_SERVER_URL 
+      ? `${VITE_DEV_SERVER_URL}#/notification?${new URLSearchParams(options as any)}`
+      : `file://${path.join(RENDERER_DIST, 'index.html')}#/notification?${new URLSearchParams(options as any)}`;
+    
+    console.log('加载通知页面:', url);
+    
+    if (VITE_DEV_SERVER_URL) {
+      await notificationWindow.loadURL(url);
+    } else {
+      await notificationWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), {
+        hash: `/notification?${new URLSearchParams(options as any)}`
+      });
+    }
+    console.log('通知页面加载成功');
+  } catch (error) {
+    console.error('加载通知页面失败:', error);
+    notificationWindow.close();
+    return options.id;
+  }
+
+  return options.id;
+});
+
+// 通知相关的IPC处理
+ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
+  const window = notificationWindows.get(id);
+  if (window) {
+    window.close();
+    notificationWindows.delete(id);
+    reorderNotifications();
+  }
+});
+
+ipcMain.on('close-notification', (_event, id: string) => {
+  const window = notificationWindows.get(id);
+  if (window) {
+    window.close();
+    notificationWindows.delete(id);
+    reorderNotifications();
+    win?.webContents.send('notification-action', id, { text: 'close', type: 'action' });
+  }
+});
 
 // 重命名文件或文件夹
 ipcMain.handle('renameFileOrFolder', async (_event, oldPath: string, newPath: string) => {

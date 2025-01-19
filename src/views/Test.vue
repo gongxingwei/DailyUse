@@ -1,104 +1,161 @@
 <template>
-  <v-container>
-    <div class="container">
+  <div class="test-container">
+    <h2>通知测试</h2>
+    
+    <div class="button-group">
+      <button @click="showSimpleNotification">
+        简单通知
+      </button>
       
-      <v-row justify="center" class="mt-5">
-      <v-btn color="primary" @click="newPopup">
-        点击我显示弹窗
-      </v-btn>
-    </v-row>
-      <v-row>
-        <v-col cols="12">
-          <v-card>
-            <v-card-title>测试功能</v-card-title>
-            <v-card-text>
-              <v-row>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="testTitle"
-                    label="测试消息标题"
-                    placeholder="输入测试消息标题"
-                  ></v-text-field>
-                </v-col>
-                <v-col cols="12" md="6">
-                  <v-text-field
-                    v-model="testMessage"
-                    label="测试消息内容"
-                    placeholder="输入测试消息内容"
-                  ></v-text-field>
-                </v-col>
-              </v-row>
-              <v-btn
-                color="primary"
-                @click="addTestMessage"
-                :loading="loading"
-                class="mr-4"
-              >
-                发送测试消息
-              </v-btn>
-              <v-btn
-                color="secondary"
-                @click="addMultipleMessages"
-                :loading="loading"
-              >
-                发送多条测试消息
-              </v-btn>
-            </v-card-text>
-          </v-card>
-        </v-col>
-      </v-row>
+      <button @click="showWarningNotification">
+        警告通知
+      </button>
+      
+      <button @click="showCustomNotification">
+        自定义通知（带按钮）
+      </button>
+
+      <button @click="showMultipleNotifications">
+        多个通知
+      </button>
     </div>
-  </v-container>
+
+    <div class="status">
+      <h3>通知历史</h3>
+      <div v-for="(item, index) in notificationHistory" 
+           :key="index" 
+           class="history-item">
+        <span class="time">{{ item.time }}</span>
+        <span class="title">{{ item.title }}</span>
+        <span class="type">{{ item.type }}</span>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useReminderStore } from '../stores/reminder';
+import { notification } from '@/utils/notification';
 
-const store = useReminderStore();
-const testTitle = ref('测试标题');
-const testMessage = ref('这是一条测试消息');
-const loading = ref(false);
-
-const newPopup = () => {
-  window.electron.ipcRenderer.send('newPopup',1);
+interface NotificationHistoryItem {
+  time: string;
+  title: string;
+  type: string;
 }
 
-const addTestMessage = () => {
-  loading.value = true;
+const notificationHistory = ref<NotificationHistoryItem[]>([]);
+
+const addToHistory = (title: string, type: string) => {
+  const time = new Date().toLocaleTimeString();
+  notificationHistory.value.unshift({ time, title, type });
+};
+
+const showSimpleNotification = async () => {
+  console.log('开始显示简单通知...');
   try {
-    // 添加消息到队列
-    const messageId = store.addMessage(testTitle.value, testMessage.value);
-    console.log('添加测试消息成功，消息ID:', messageId);
+    console.log('调用 notification.showSimple...');
+    const id = await notification.showSimple(
+      '简单通知', 
+      '这是一条基本的通知消息'
+    );
+    console.log('notification.showSimple 返回的 ID:', id);
+    addToHistory('简单通知', `ID: ${id}`);
+    console.log('通知历史已更新');
   } catch (error) {
-    console.error('添加测试消息失败:', error);
-  } finally {
-    loading.value = false;
+    console.error('显示通知时发生错误:', error);
   }
 };
 
-// 添加多条测试消息的函数
-const addMultipleMessages = async () => {
-  loading.value = true;
-  try {
-    // 添加三条测试消息
-    for (let i = 1; i <= 3; i++) {
-      await new Promise(resolve => setTimeout(resolve, 500)); // 间隔 500ms
-      const title = `测试标题 ${i}`;
-      const message = `这是第 ${i} 条测试消息`;
-      const messageId = store.addMessage(title, message);
-      console.log(`添加第 ${i} 条测试消息成功，消息ID:`, messageId);
-    }
-  } catch (error) {
-    console.error('添加多条测试消息失败:', error);
-  } finally {
-    loading.value = false;
-  }
+const showWarningNotification = async () => {
+  const id = await notification.showWarning(
+    '警告通知', 
+    '这是一条警告消息，需要你的注意！'
+  );
+  addToHistory('警告通知', `ID: ${id}`);
+};
+
+const showCustomNotification = async () => {
+  const id = await notification.show({
+    title: '自定义通知',
+    body: '这是一条带有自定义按钮的通知',
+    urgency: 'normal',
+    actions: [
+      { text: '确认', type: 'confirm' },
+      { text: '取消', type: 'cancel' },
+      { text: '稍后提醒', type: 'action' }
+    ]
+  });
+  addToHistory('自定义通知', `ID: ${id}`);
+};
+
+const showMultipleNotifications = async () => {
+  // 连续发送3条不同的通知
+  const id1 = await notification.showSimple('通知 1', '第一条通知消息');
+  addToHistory('通知 1', `ID: ${id1}`);
+  
+  const id2 = await notification.show({
+    title: '通知 2',
+    body: '第二条通知消息',
+    urgency: 'low',
+  });
+  addToHistory('通知 2', `ID: ${id2}`);
+  
+  const id3 = await notification.showWarning('通知 3', '第三条警告消息');
+  addToHistory('通知 3', `ID: ${id3}`);
 };
 </script>
 
 <style scoped>
-.container {
+.test-container {
   padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background-color: #1890ff;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #40a9ff;
+}
+
+.status {
+  background: #f5f5f5;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.history-item {
+  display: flex;
+  gap: 15px;
+  padding: 8px;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.time {
+  color: #888;
+  min-width: 100px;
+}
+
+.title {
+  font-weight: 500;
+  flex: 1;
+}
+
+.type {
+  color: #1890ff;
 }
 </style>

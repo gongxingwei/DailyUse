@@ -2,6 +2,12 @@ import { ipcRenderer, contextBridge } from 'electron';
 import { join, dirname, basename } from 'path';
 
 contextBridge.exposeInMainWorld('electron', {
+  platform: process.platform,
+  ipcRenderer: {
+    send: (channel: string, data: any) => ipcRenderer.send(channel, data),
+    on: (channel: string, func: (...args: any[]) => void) => ipcRenderer.on(channel, func),
+    invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
+  },
   createFolder: (currentPath: string) => ipcRenderer.invoke('createFolder', currentPath),
   createFile: (currentPath: string, content: string) => ipcRenderer.invoke('createFile', currentPath, content),
   deleteFileOrFolder: (path: string, isDirectory: boolean) => ipcRenderer.invoke('deleteFileOrFolder', path, isDirectory),
@@ -21,9 +27,5 @@ contextBridge.exposeInMainWorld('electron', {
     join: (...args: string[]) => join(...args),
     dirname: (p: string) => dirname(p),
     basename: (p: string) => basename(p)
-  },
-  ipcRenderer: {
-    send: (channel: string, data: any) => ipcRenderer.send(channel, data),
-    on: (channel: string, func: (...args: any[]) => void) => ipcRenderer.on(channel, (event, ...args) => func(...args)),
   },
 } as ElectronAPI);

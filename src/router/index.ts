@@ -4,11 +4,15 @@ import Home from '../views/Home.vue'
 import Goal from '../views/Goal.vue'
 import Repository from '../views/Repository.vue'
 import Setting from '../views/Setting.vue'
-import Test from '../views/Test.vue'
-import Popup from '../views/Popup.vue'
+import NotificationWindow from '../components/notification/NotificationWindow.vue'
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
+    {
+        path: '/notification',
+        name: 'notification',
+        component: NotificationWindow
+    },
     {
         path: '/',
         component: MainLayout,
@@ -50,14 +54,9 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/test',
                 name: 'test',
-                component: Test
+                component: () => import('../views/Test.vue')
             }
         ]
-    },
-    {
-        path: '/popup',
-        name: 'popup',
-        component: Popup
     },
 ]
 

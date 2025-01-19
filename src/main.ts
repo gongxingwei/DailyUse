@@ -7,7 +7,6 @@ import router from './router'
 import vuetify from './plugins/vuetify'
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-import { reminderService } from './services/reminder'
 
 // 配置 Monaco Editor 的 worker
 (window as any).MonacoEnvironment = {
@@ -31,6 +30,3 @@ createApp(App)
       console.log(message)
     })
   })
-
-// 启动提醒服务
-reminderService.startAll()

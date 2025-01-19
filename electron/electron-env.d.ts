@@ -64,8 +64,9 @@ interface ElectronAPI {
   readClipboardFiles: () => Promise<string[]>;
   writeClipboardFiles: (filePaths: string[]) => Promise<void>;
   ipcRenderer: {
-    send: (channel: string, data: any) => void;
+    send: (channel: string, ...args: any[]) => void;
     on: (channel: string, func: (...args: any[]) => void) => void;
+    invoke: (channel: string, ...args: any[]) => Promise<any>;
   };
   path: {
     join: (...args: string[]) => string;
@@ -74,6 +75,7 @@ interface ElectronAPI {
   }
   refreshFolder: (path: string) => Promise<{ folderTreeData: TreeNode[]; directoryPath: string }>;
   windowControl: (command: string) => void;
+  platform: string;
 }
 
 interface Window {
