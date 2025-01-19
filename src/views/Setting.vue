@@ -101,6 +101,23 @@
       </v-card-text>
     </v-card>
 
+    <v-card class="mb-4">
+      <v-card-title>系统</v-card-title>
+      <v-card-text>
+        <v-row>
+          <v-col cols="12">
+            <v-switch
+              v-model="autoLaunch"
+              label="开机自动启动"
+              color="primary"
+              hide-details
+              @change="handleAutoLaunchChange"
+            ></v-switch>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
     <v-card>
       <v-card-title>关于</v-card-title>
       <v-card-text>
@@ -123,18 +140,46 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useSettingStore } from '../stores/setting'
+import { useTheme } from 'vuetify'
 
 const settingStore = useSettingStore()
+const theme = useTheme()
 
 const isDark = computed({
-  get: () => settingStore.theme === 'dark',
-  set: (value) => settingStore.theme = value ? 'dark' : 'light'
+  get: () => theme.global.current.value.dark,
+  set: (value) => {
+    theme.global.name.value = value ? 'dark' : 'light'
+    settingStore.theme = value ? 'dark' : 'light'
+  }
 })
 
 const editorSettings = computed({
   get: () => settingStore.editor,
   set: (value) => settingStore.updateEditorSettings(value)
 })
+
+// 开机自启动设置
+const autoLaunch = ref(false)
+
+// 初始化时获取当前开机自启动状态
+onMounted(async () => {
+  try {
+    const isAutoLaunch = await window.electron?.ipcRenderer.invoke('get-auto-launch')
+    autoLaunch.value = isAutoLaunch
+  } catch (error) {
+    console.error('获取开机自启动状态失败:', error)
+  }
+})
+
+// 处理开机自启动变更
+const handleAutoLaunchChange = async () => {
+  try {
+    const result = await window.electron?.ipcRenderer.invoke('set-auto-launch', autoLaunch.value)
+    autoLaunch.value = result
+  } catch (error) {
+    console.error('设置开机自启动失败:', error)
+  }
+}
 </script>

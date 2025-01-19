@@ -23,6 +23,8 @@ electron.contextBridge.exposeInMainWorld("electron", {
   writeClipboardFiles: (filePaths) => electron.ipcRenderer.invoke("writeClipboardFiles", filePaths),
   refreshFolder: (path2) => electron.ipcRenderer.invoke("refreshFolder", path2),
   windowControl: (command) => electron.ipcRenderer.send("window-control", command),
+  getAutoLaunch: () => electron.ipcRenderer.invoke("get-auto-launch"),
+  setAutoLaunch: (enable) => electron.ipcRenderer.invoke("set-auto-launch", enable),
   path: {
     join: (...args) => path.join(...args),
     dirname: (p) => path.dirname(p),

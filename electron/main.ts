@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, screen } from 'electron'
+import { app, BrowserWindow, ipcMain, dialog, clipboard, screen, Tray, Menu, nativeImage } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { promises as fs } from 'fs';
+import { join } from 'path';
 
 // 存储通知窗口的Map
 const notificationWindows = new Map<string, BrowserWindow>();
@@ -28,6 +29,7 @@ process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 
 
 let win: BrowserWindow | null;
 let popupWindow: BrowserWindow | null;
+let tray: Tray | null = null
 
 function createWindow() {
   win = new BrowserWindow({
@@ -58,6 +60,58 @@ function createWindow() {
 
   // 可选：设置最小窗口大小
   win.setMinimumSize(800, 600)
+
+  createTray(win)
+
+  // 修改窗口关闭行为
+  win.on('close', (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault()
+      win?.hide()
+    }
+    return false
+  })
+}
+
+function createTray(win: BrowserWindow) {
+  // 使用已有的ico文件
+  const icon = nativeImage.createFromPath(join(__dirname, '../public/DailyUse-256.ico'))
+  tray = new Tray(icon)
+
+  // 设置托盘图标提示文字
+  tray.setToolTip('DailyUse')
+
+  // 创建托盘菜单
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: '显示主窗口',
+      click: () => {
+        win.show()
+      }
+    },
+    {
+      label: '设置',
+      click: () => {
+        win.show()
+        win.webContents.send('navigate-to', '/setting')
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '退出',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+
+  // 设置托盘菜单
+  tray.setContextMenu(contextMenu)
+
+  // 点击托盘图标显示主窗口
+  tray.on('click', () => {
+    win.show()
+  })
 }
 
 function createPopupWindow() {
@@ -217,7 +271,7 @@ ipcMain.handle('writeFile', async (_event, filePath: string, content: string) =>
 });
 
 // 获取根目录
-ipcMain.handle('getRootDir', async (event) => {
+ipcMain.handle('getRootDir', async () => {
   const result = await dialog.showOpenDialog({
     properties: ['openDirectory'],
   });
@@ -392,6 +446,7 @@ ipcMain.on('notification-action', (_event, id: string, action: { text: string, t
     notificationWindows.delete(id);
     reorderNotifications();
   }
+  win?.webContents.send('notification-action', id, action);
 });
 
 ipcMain.on('close-notification', (_event, id: string) => {
@@ -488,4 +543,23 @@ ipcMain.on('window-control', (_event, command) => {
       win?.close()
       break
   }
+})
+
+// 设置开机自启动
+ipcMain.handle('get-auto-launch', () => {
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+ipcMain.handle('set-auto-launch', (_event, enable: boolean) => {
+  if (process.platform === 'win32') {
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      path: process.execPath
+    });
+  }
+  return app.getLoginItemSettings().openAtLogin;
+});
+
+app.on('before-quit', () => {
+  app.isQuitting = true
 })

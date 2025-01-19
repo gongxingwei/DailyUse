@@ -1,7 +1,8 @@
-import { app, BrowserWindow, ipcMain, dialog, clipboard, screen } from "electron";
+import { app, BrowserWindow, ipcMain, dialog, clipboard, nativeImage, Tray, Menu, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import { promises } from "fs";
+import { join } from "path";
 const notificationWindows = /* @__PURE__ */ new Map();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname, "..");
@@ -11,6 +12,7 @@ const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
 let popupWindow;
+let tray = null;
 function createWindow() {
   win = new BrowserWindow({
     frame: false,
@@ -32,6 +34,45 @@ function createWindow() {
     win.loadFile(path.join(RENDERER_DIST, "index.html"));
   }
   win.setMinimumSize(800, 600);
+  createTray(win);
+  win.on("close", (event) => {
+    if (!app.isQuitting) {
+      event.preventDefault();
+      win == null ? void 0 : win.hide();
+    }
+    return false;
+  });
+}
+function createTray(win2) {
+  const icon = nativeImage.createFromPath(join(__dirname, "../public/DailyUse-256.ico"));
+  tray = new Tray(icon);
+  tray.setToolTip("DailyUse");
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: "显示主窗口",
+      click: () => {
+        win2.show();
+      }
+    },
+    {
+      label: "设置",
+      click: () => {
+        win2.show();
+        win2.webContents.send("navigate-to", "/setting");
+      }
+    },
+    { type: "separator" },
+    {
+      label: "退出",
+      click: () => {
+        app.quit();
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
+  tray.on("click", () => {
+    win2.show();
+  });
 }
 function createPopupWindow() {
   const { width, height } = screen.getPrimaryDisplay().workAreaSize;
@@ -151,7 +192,7 @@ ipcMain.handle("writeFile", async (_event, filePath, content) => {
     throw error;
   }
 });
-ipcMain.handle("getRootDir", async (event) => {
+ipcMain.handle("getRootDir", async () => {
   const result = await dialog.showOpenDialog({
     properties: ["openDirectory"]
   });
@@ -283,6 +324,7 @@ ipcMain.on("notification-action", (_event, id, action) => {
     notificationWindows.delete(id);
     reorderNotifications();
   }
+  win == null ? void 0 : win.webContents.send("notification-action", id, action);
 });
 ipcMain.on("close-notification", (_event, id) => {
   const window = notificationWindows.get(id);
@@ -352,6 +394,21 @@ ipcMain.on("window-control", (_event, command) => {
       win == null ? void 0 : win.close();
       break;
   }
+});
+ipcMain.handle("get-auto-launch", () => {
+  return app.getLoginItemSettings().openAtLogin;
+});
+ipcMain.handle("set-auto-launch", (_event, enable) => {
+  if (process.platform === "win32") {
+    app.setLoginItemSettings({
+      openAtLogin: enable,
+      path: process.execPath
+    });
+  }
+  return app.getLoginItemSettings().openAtLogin;
+});
+app.on("before-quit", () => {
+  app.isQuitting = true;
 });
 export {
   MAIN_DIST,

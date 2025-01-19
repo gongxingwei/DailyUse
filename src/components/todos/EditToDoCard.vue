@@ -48,7 +48,6 @@
 import { ref, computed, watch } from 'vue'
 import { useTodoStore } from '../../stores/todo'
 import type { Todo } from '../../stores/todo'
-import type { PropType } from 'vue'
 
 interface Props {
   modelValue: boolean

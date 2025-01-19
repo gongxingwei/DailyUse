@@ -17,11 +17,12 @@
 import FileExplorer from '../components/goals/FileExplorer.vue'
 import RepoSettings from '../components/goals/RepoSettings.vue'
 import MarkdownEditor from '../components/goals/MarkdownEditor.vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useRepoStore } from '../stores/repo'
 import { ref, computed, onMounted } from 'vue'
 
 const route = useRoute()
+const router = useRouter()
 const repoStore = useRepoStore()
 const showSettings = ref(false)
 const selectedFile = ref<string>()
@@ -38,8 +39,9 @@ const currentRepo = computed(() => {
 onMounted(async () => {
   if (route.params.title) {
     repoStore.addToRecent(route.params.title as string)
-    const repo = repoStore.getRepoByTitle(route.params.title as string)
-    // ... rest of the code
+    if (!repoStore.getRepoByTitle(route.params.title as string)) {
+      router.push('/')
+    }
   }
 })
 </script>

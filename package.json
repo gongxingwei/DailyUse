@@ -5,7 +5,7 @@
     "name": "bakersean"
   },
   "description": "DailyUse",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

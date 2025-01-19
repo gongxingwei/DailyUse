@@ -49,6 +49,12 @@ interface TreeNode {
   isLeaf?: boolean;
 }
 
+declare namespace Electron {
+  interface App {
+    isQuitting?: boolean;
+  }
+}
+
 interface ElectronAPI {
   readFile: (path: string) => Promise<string>;
   writeFile: (path: string, content: string) => Promise<void>;
@@ -75,7 +81,8 @@ interface ElectronAPI {
   }
   refreshFolder: (path: string) => Promise<{ folderTreeData: TreeNode[]; directoryPath: string }>;
   windowControl: (command: string) => void;
-  platform: string;
+  getAutoLaunch: () => Promise<boolean>
+  setAutoLaunch: (enable: boolean) => Promise<boolean>
 }
 
 interface Window {

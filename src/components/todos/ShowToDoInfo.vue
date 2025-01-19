@@ -34,8 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { PropType } from 'vue'
-import type { Todo } from '../../stores/todo'
+import type { Todo } from '@/stores/todo'
 
 interface Props {
   modelValue: boolean

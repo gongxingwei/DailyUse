@@ -292,7 +292,7 @@
     })
   }
   
-  async function handleEditComplete(event?: Event) {
+  async function handleEditComplete(_event?: Event) {
     if (editingNode.value && editValue.value.trim()) {
       const oldPath = editingNode.value
       const newName = editValue.value.trim()

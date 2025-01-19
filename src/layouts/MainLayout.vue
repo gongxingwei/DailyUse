@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRoute } from 'vue-router';
 import { useRepoStore } from '../stores/repo';
 import { useSettingStore } from '../stores/setting';
 import CreateRepo from '../components/goals/CreateRepo.vue'

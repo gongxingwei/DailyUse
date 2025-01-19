@@ -35,11 +35,6 @@ const toDoDate = computed(() => {
   })
 })
 
-const todosTime = (datetime: string) => {
-  const date = new Date(datetime);
-  return props.showFullDate ? date.toLocaleDateString('zh-CN') : date.toDateString();
-};
-
 const showInfo = ref(false)
 const selectedTodo = ref<Todo | null>(null)
 
