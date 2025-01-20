@@ -18,7 +18,7 @@
     "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
   },
   "win": {
-    "icon": "public/DailyUse-256.ico",
+    "icon": "public/DailyUse-256.png",
     "target": [
       {
         "target": "nsis",

@@ -11,7 +11,6 @@ const MAIN_DIST = path.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path.join(process.env.APP_ROOT, "dist");
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, "public") : RENDERER_DIST;
 let win;
-let popupWindow;
 let tray = null;
 function createWindow() {
   win = new BrowserWindow({
@@ -44,7 +43,7 @@ function createWindow() {
   });
 }
 function createTray(win2) {
-  const icon = nativeImage.createFromPath(join(__dirname, "../public/DailyUse-256.ico"));
+  const icon = nativeImage.createFromPath(join(__dirname, "../public/DailyUse-16.png"));
   tray = new Tray(icon);
   tray.setToolTip("DailyUse");
   const contextMenu = Menu.buildFromTemplate([
@@ -74,43 +73,6 @@ function createTray(win2) {
     win2.show();
   });
 }
-function createPopupWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  const popupWidth = 950;
-  const popupHeight = 1400;
-  popupWindow = new BrowserWindow({
-    width: popupWidth,
-    height: popupHeight,
-    frame: true,
-    title: "弹窗",
-    transparent: true,
-    alwaysOnTop: true,
-    resizable: false,
-    parent: win || void 0,
-    show: false,
-    webPreferences: {
-      preload: path.join(__dirname, "preload.mjs"),
-      webSecurity: false,
-      nodeIntegration: true
-    }
-  });
-  const x = width - popupWidth - 10;
-  const y = height - popupHeight - 10;
-  popupWindow.setBounds({ x, y, width: popupWidth, height: popupHeight });
-  if (process.env.VITE_DEV_SERVER_URL) {
-    popupWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}/#/popup`);
-  } else {
-    popupWindow.loadFile(path.join(__dirname, "../dist/index.html"), { hash: "popup" });
-  }
-  popupWindow.on("closed", () => {
-    popupWindow = null;
-  });
-  popupWindow.once("ready-to-show", () => {
-    popupWindow == null ? void 0 : popupWindow.show();
-    popupWindow == null ? void 0 : popupWindow.setTitle("弹窗");
-    popupWindow == null ? void 0 : popupWindow.webContents.openDevTools();
-  });
-}
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
@@ -127,19 +89,6 @@ app.whenReady().then(() => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
-    }
-  });
-  ipcMain.on("newPopup", () => {
-    if (!popupWindow) {
-      createPopupWindow();
-    } else {
-      popupWindow.show();
-    }
-  });
-  ipcMain.on("closePopup", () => {
-    if (popupWindow) {
-      popupWindow.close();
-      popupWindow = null;
     }
   });
 });

@@ -28,7 +28,6 @@ export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null;
-let popupWindow: BrowserWindow | null;
 let tray: Tray | null = null
 
 function createWindow() {
@@ -75,7 +74,7 @@ function createWindow() {
 
 function createTray(win: BrowserWindow) {
   // 使用已有的ico文件
-  const icon = nativeImage.createFromPath(join(__dirname, '../public/DailyUse-256.ico'))
+  const icon = nativeImage.createFromPath(join(__dirname, '../public/DailyUse-16.png'))
   tray = new Tray(icon)
 
   // 设置托盘图标提示文字
@@ -114,55 +113,7 @@ function createTray(win: BrowserWindow) {
   })
 }
 
-function createPopupWindow() {
-  const { width, height } = screen.getPrimaryDisplay().workAreaSize;
-  const popupWidth = 950;
-  const popupHeight = 1400;
 
-  popupWindow = new BrowserWindow({
-    width: popupWidth,
-    height: popupHeight,
-    frame: true,
-    title: '弹窗',
-    transparent: true,
-    alwaysOnTop: true,
-    resizable: false,
-    parent: win || undefined,
-    show: false,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.mjs'),
-      webSecurity: false,
-      nodeIntegration: true,
-    },
-  });
-
-  const x = width - popupWidth - 10; // 10 像素的边距
-  const y = height - popupHeight - 10; // 10 像素的边距
-
-  popupWindow.setBounds({ x, y, width: popupWidth, height: popupHeight });
-
-  if (process.env.VITE_DEV_SERVER_URL) {
-    popupWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}/#/popup`);
-  } else {
-    popupWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'popup' });
-  }
-
-  //popupWindow.setMenu(null);
-
-  popupWindow.on('closed', () => {
-    popupWindow = null; // 清除对 popupWindow 实例的引用
-  });
-
-  popupWindow.once('ready-to-show', () => {
-    popupWindow?.show();
-    // 动态设置窗口标题
-    popupWindow?.setTitle('弹窗');
-    // 打开开发者工具
-    popupWindow?.webContents.openDevTools();
-  });
-
-  
-}
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -190,22 +141,6 @@ app.whenReady().then(() => {
       createWindow();
     }
   });
-
-  ipcMain.on('newPopup', () => {
-    if (!popupWindow) {
-      createPopupWindow();
-    } else {
-      popupWindow.show();
-    }
-  });
-
-  ipcMain.on('closePopup', () => {
-    if (popupWindow) {
-      popupWindow.close();
-      popupWindow = null;
-    }
-  });
-
 });
 
 // 创建文件夹
