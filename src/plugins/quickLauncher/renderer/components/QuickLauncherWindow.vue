@@ -1,0 +1,498 @@
+<template>
+  <div class="quick-launcher">
+    <v-card class="quick-launcher-card" elevation="0">
+      <v-card-title class="d-flex align-center pa-4 draggable">
+        <v-icon size="24" class="mr-2">mdi-rocket-launch</v-icon>
+        Quick Launcher
+        <v-spacer></v-spacer>
+        <v-text-field
+          v-model="searchQuery"
+          prepend-inner-icon="mdi-magnify"
+          label="Search..."
+          variant="outlined"
+          density="compact"
+          hide-details
+          class="ml-4"
+          style="max-width: 300px"
+          @keydown.esc.stop="closeWindow"
+          @keydown.enter="handleEnter"
+          autofocus
+        ></v-text-field>
+      </v-card-title>
+
+      <v-divider></v-divider>
+
+      <v-card-text class="pa-0">
+        <v-row no-gutters style="height: 500px;">
+          <!-- Left side: Categories -->
+          <v-col cols="2" class="border-r">
+            <v-list density="compact" class="h-100" @contextmenu.stop.prevent="showCategoryListAreaContextMenu($event)">
+              <Draggable
+                v-model="store.categories"
+                group="categories"
+                item-key="id"
+                @end="handleDragEnd"
+              >
+                <template #item="{ element: category }">
+                  <v-list-item
+                    :value="category.id"
+                    :title="category.name"
+                    @click="selectedCategory = category.id"
+                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category)"
+                  >
+                    <template #title>
+                      {{ category.name }}
+                    </template>
+                  </v-list-item>
+                </template>
+              </Draggable>
+            </v-list>
+          </v-col>
+
+          <v-divider vertical></v-divider>
+          <!-- Right side: Shortcuts -->
+          <v-col cols="10" class="shortcuts-container">
+            <v-container 
+              class="pa-4 h-100"
+              @dragover.prevent
+              @drop.prevent="handleDrop"
+              @contextmenu.stop.prevent="showShortcutAreaContextMenu($event)"
+            >
+              <Draggable 
+                v-model="currentCategoryItems" 
+                item-key="id"
+                class="shortcuts-grid"
+                @end="handleDragEnd"
+              >
+                <template #item="{ element }">
+                  <v-card
+                    class="shortcut-item ma-2"
+                    elevation="2"
+                    @click="launchItem(element)"
+                    @contextmenu.stop.prevent="showShortcutItemContextMenu($event, element)"
+                    draggable="true"
+                  >
+                    <v-card-text class="text-center">
+                      <img v-if="element.icon.startsWith('data:image')" :src="element.icon" class="mb-2" style="width: 32px; height: 32px;" />
+                      <v-icon v-else size="32" class="mb-2">{{ element.icon || 'mdi-application' }}</v-icon>
+                      <div class="text-caption">{{ element.name }}</div>
+                    </v-card-text>
+                  </v-card>
+                </template>
+              </Draggable>
+
+              <div v-if="!currentCategoryItems.length" class="empty-state">
+                <v-icon size="48" color="grey-lighten-1">mdi-drag-variant</v-icon>
+                <div class="text-grey mt-2">Drag files here or click Add Shortcut</div>
+              </div>
+            </v-container>
+          </v-col>
+        </v-row>
+      </v-card-text>
+    </v-card>
+
+    <!-- Category Context Menu -->
+    <ContextMenu
+      v-model="showContextMenu"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :items="contextMenuItems"
+      :target="selectedItem"
+    />
+
+    <!-- Rename Category Dialog -->
+    <v-dialog v-model="showRenameDialog" max-width="400">
+      <v-card>
+        <v-card-title class="pa-4">
+          <v-icon size="24" class="mr-2">mdi-pencil</v-icon>
+          Rename Category
+        </v-card-title>
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="newCategoryName"
+            label="Category Name"
+            variant="outlined"
+            density="compact"
+            autofocus
+            @keyup.enter="confirmRenameCategory"
+          ></v-text-field>
+        </v-card-text>
+        <v-card-actions class="pa-4">
+          <v-spacer></v-spacer>
+          <v-btn
+            variant="outlined"
+            @click="showRenameDialog = false"
+          >
+            Cancel
+          </v-btn>
+          <v-btn
+            color="primary"
+            class="ml-2"
+            @click="confirmRenameCategory"
+          >
+            Rename
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, watch } from 'vue';
+import { useQuickLauncherStore } from '../../store';
+import { ShortcutItem, ShortcutCategory } from '../../types';
+import Draggable from 'vuedraggable';
+import { v4 as uuidv4 } from 'uuid';
+import ContextMenu from '@/components/common/ContextMenu.vue';
+
+const store = useQuickLauncherStore();
+const searchQuery = ref('');
+const selectedCategory = ref('');
+const showAddDialog = ref(false);
+
+// Context menu
+const contextMenuItems = ref([] as any[]);
+const showContextMenu = ref(false);
+const contextMenuX = ref(0);
+const contextMenuY = ref(0);
+const contextMenuCategory = ref<ShortcutCategory | null>(null);
+const contextMenuShortcut = ref<ShortcutItem | null>(null);
+const selectedItem = ref<any>(null);
+
+const newShortcut = ref({
+  name: '',
+  path: '',
+  description: '',
+  icon: '',
+});
+
+const showRenameDialog = ref(false);
+const newCategoryName = ref('');
+
+const categoryListAreaContextMenuItems = [
+  { value: 'newCategory', title: '新建分类', action: createCategory }
+]
+  
+const categoryListItemContextMenuItems = [
+  { value: 'renameCategory', title: '重命名分类', action: renameCategory },
+  { value: 'deleteCategory', title: '删除分类', className: 'text-error', action: deleteCategory },
+  { divider: true },
+  ...categoryListAreaContextMenuItems
+]
+
+const shortcutAreaContextMenuItems = [
+  { value: 'newShortcut', title: '新建快捷方式', action: addShortcut },
+  // { value: 'newTitle', title: '新建标题', action: addeTitle },
+  { divider: true },
+]
+
+const shortcutItemContextMenuItems = [
+  { value: 'editShortcut', title: '重命名快捷方式', action: editShortcut },
+  { value: 'deleteShortcut', title: '删除快捷方式', className: 'text-error', action: deleteShortcut },
+  { divider: true },
+  ...shortcutAreaContextMenuItems
+]
+
+
+// 右键菜单
+function showCategoryListAreaContextMenu(e: MouseEvent) {
+  contextMenuItems.value = categoryListAreaContextMenuItems;
+  showContextMenu.value = true;
+  contextMenuX.value = e.clientX;
+  contextMenuY.value = e.clientY;
+}
+
+function showCategoryListItemContextMenu(e: MouseEvent, category: ShortcutCategory) {
+  e.preventDefault();
+  console.log('category', category);
+  selectedItem.value = category;
+  contextMenuItems.value = categoryListItemContextMenuItems;
+  showContextMenu.value = true;
+  contextMenuX.value = e.clientX;
+  contextMenuY.value = e.clientY;
+  contextMenuCategory.value = category;
+}
+
+function showShortcutAreaContextMenu(e: MouseEvent) {
+  e.preventDefault();
+  contextMenuItems.value = shortcutAreaContextMenuItems;
+  showContextMenu.value = true;
+  contextMenuX.value = e.clientX;
+  contextMenuY.value = e.clientY;
+  contextMenuCategory.value = store.categories.find(c => c.id === selectedCategory.value) || null;
+  contextMenuShortcut.value = null;
+}
+
+function showShortcutItemContextMenu(e: MouseEvent, item: ShortcutItem) {
+  e.preventDefault();
+  selectedItem.value = item;
+  contextMenuItems.value = shortcutItemContextMenuItems;
+  showContextMenu.value = true;
+  contextMenuX.value = e.clientX;
+  contextMenuY.value = e.clientY;
+  contextMenuCategory.value = store.categories.find(c => c.id === selectedCategory.value) || null;
+  contextMenuShortcut.value = item;
+}
+
+// 分类区域右键菜单处理函数
+function createCategory() {
+  const newCategory = {
+    id: uuidv4(),
+    name: 'New Category',
+    items: []
+  };
+  store.addCategory(newCategory);
+  showContextMenu.value = false;
+}
+
+function renameCategory() {
+  console.log('selectedItem', selectedItem.value);
+  if (selectedItem.value) {
+    newCategoryName.value = selectedItem.value.name;
+    showRenameDialog.value = true;
+    showContextMenu.value = false;
+  }
+}
+
+function deleteCategory() {
+  const category = contextMenuCategory.value;
+  if (category && 'id' in category) {
+    if (store.categories.length <= 1) {
+      console.log('[ContextMenu] 阻止删除最后一个分类');
+      return;
+    }
+    console.log('[ContextMenu] 删除分类:', category);
+    store.removeCategory(category.id);
+    showContextMenu.value = false;
+  }
+}
+
+// 快捷方式区域右键菜单处理函数
+async function addShortcut() {
+  const result = await window.electron.ipcRenderer.invoke('select-file');
+  const shortcutIcon = async (filePath: string): Promise<string> => {
+    try {
+      const iconBase64 = await window.electron.ipcRenderer.invoke('get-file-icon', filePath);
+      console.log('iconBase64', iconBase64);
+      return iconBase64 || 'mdi-application';
+    } catch (error) {
+      console.warn('获取文件图标失败:', error);
+      return 'mdi-application';
+    }
+  };
+  if (result && result.filePaths && result.filePaths.length > 0) {
+    const filePath = result.filePaths[0];
+    newShortcut.value.path = filePath;
+    if (!newShortcut.value.name) {
+      newShortcut.value.name = filePath.split('\\').pop()?.replace(/\.[^/.]+$/, "") || '';
+    }
+  }
+
+  const shortcut: ShortcutItem = {
+    id: uuidv4(),
+    name: newShortcut.value.name,
+    path: newShortcut.value.path,
+    description: newShortcut.value.description,
+    icon: await shortcutIcon(newShortcut.value.path),
+    lastUsed: new Date(),
+    category: selectedCategory.value
+  };
+
+  store.addShortcut(selectedCategory.value, shortcut);
+
+}
+
+async function launchItem(item: ShortcutItem) {
+  try {
+    await window.electron.ipcRenderer.invoke('launch-application', item.path);
+    store.recordItemUsage(item.id);
+    closeWindow();
+  } catch (error) {
+    console.error('Failed to launch application:', error);
+  }
+}
+
+function deleteShortcut() {
+  if (contextMenuShortcut.value && selectedCategory.value) {
+    console.log('[ContextMenu] 删除快捷方式:', {
+      shortcut: contextMenuShortcut.value,
+      category: selectedCategory.value
+    });
+    store.removeShortcut(selectedCategory.value, contextMenuShortcut.value.id);
+    showContextMenu.value = false;
+  }
+}
+
+function editShortcut() {
+  if (contextMenuShortcut.value) {
+    console.log('[ContextMenu] 开始编辑快捷方式:', contextMenuShortcut.value);
+    newShortcut.value = {
+      name: contextMenuShortcut.value.name,
+      path: contextMenuShortcut.value.path,
+      description: contextMenuShortcut.value.description || '',
+      icon: contextMenuShortcut.value.icon || 'mdi-application',
+    };
+    showAddDialog.value = true;
+    showContextMenu.value = false;
+  }
+}
+
+// Initialize store and select first category
+onMounted(() => {
+  console.log('QuickLauncherWindow mounted, categories:', store.categories);
+  // Ensure default category exists
+  if (store.categories.length === 0) {
+    const defaultCategory = {
+      id: uuidv4(),
+      name: 'General',
+      icon: 'mdi-folder'
+    };
+    store.addCategory(defaultCategory);
+    selectedCategory.value = defaultCategory.id;
+  } else {
+    selectedCategory.value = store.categories[0].id;
+  }
+});
+
+// Watch for store changes
+watch(() => store.categories, (newCategories) => {
+  console.log('Categories changed:', newCategories);
+  // If selected category was deleted, select the first available one
+  if (newCategories.length > 0 && !newCategories.find(c => c.id === selectedCategory.value)) {
+    selectedCategory.value = newCategories[0].id;
+  }
+}, { deep: true });
+
+const currentCategoryItems = computed({
+  get: () => {
+    const category = store.categories.find(c => c.id === selectedCategory.value);
+    console.log('Getting items for category:', category?.name, 'items:', category?.items);
+    return category?.items || [];
+  },
+  set: (items) => {
+    const category = store.categories.find(c => c.id === selectedCategory.value);
+    if (category) {
+      console.log('Updating items for category:', category.name);
+      store.updateCategory(category.id, { ...category, items });
+    }
+  }
+});
+
+// Existing methods
+const filteredItems = computed(() => {
+  if (!searchQuery.value) return currentCategoryItems.value;
+  const query = searchQuery.value.toLowerCase();
+  return currentCategoryItems.value.filter(item => 
+    item.name.toLowerCase().includes(query) || 
+    item.description?.toLowerCase().includes(query)
+  );
+});
+
+async function handleEnter() {
+  const items = filteredItems.value;
+  if (items.length > 0) {
+    await launchItem(items[0]);
+  }
+}
+
+function closeWindow() {
+  window.close();
+}
+
+// Add confirmRenameCategory method
+const confirmRenameCategory = () => {
+  if (newCategoryName.value && selectedItem.value) {
+    store.updateCategory(selectedItem.value.id, { name: newCategoryName.value });
+    showRenameDialog.value = false;
+    newCategoryName.value = '';
+  }
+};
+
+function handleDrop(event: DragEvent) {
+  event.preventDefault();
+  const files = event.dataTransfer?.files;
+  if (files && files.length > 0) {
+    Array.from(files).forEach(file => {
+      const shortcut: ShortcutItem = {
+        id: uuidv4(),
+        name: file.name.replace(/\.[^/.]+$/, ""),
+        path: (file as any).path,
+        description: '',
+        icon: 'mdi-file',
+        lastUsed: new Date(),
+        category: selectedCategory.value
+      };
+      store.addShortcut(selectedCategory.value, shortcut);
+    });
+  }
+}
+
+function handleDragEnd(_event: any) {
+  // The draggable component will automatically update the array
+  // We don't need to do anything here as the computed property will handle the update
+}
+</script>
+
+<style scoped>
+.quick-launcher {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #ffffff;
+}
+
+.quick-launcher-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.draggable {
+  -webkit-app-region: drag;
+}
+
+.draggable .v-text-field {
+  -webkit-app-region: no-drag;
+}
+
+.border-r {
+  border-right: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.shortcuts-container {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.shortcuts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 8px;
+  padding: 8px;
+}
+
+.shortcut-item {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.shortcut-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.empty-state {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+}
+
+/* 右键菜单样式 */
+:deep(.text-error) {
+  color: #ff4d4f !important;
+}
+</style>

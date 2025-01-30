@@ -5,6 +5,8 @@ import './style.css'
 import App from './App.vue'
 import router from './router'
 import vuetify from './plugins/vuetify'
+import { PluginManager } from './plugins/core/PluginManager'
+import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
 
 import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
@@ -19,12 +21,24 @@ import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 const pinia = createPinia()
 pinia.use(piniaPluginPersistedstate)
 
-createApp(App)
+// 创建 Vue 应用实例
+const app = createApp(App)
+
+app
   .use(router)
   .use(vuetify)
-  .use(pinia) // 将 Pinia 实例传递给 Vue 应用
-  .mount('#app')
+  .use(pinia)
+
+// 初始化插件系统
+const pluginManager = new PluginManager()
+// 注册快速启动器插件
+pluginManager.register(quickLauncherPlugin)
+
+app.mount('#app')
   .$nextTick(() => {
+    // 初始化所有插件
+    
+    
     // Use contextBridge
     window.electron.ipcRenderer.on('main-process-message', (_event, message) => {
       console.log(message)

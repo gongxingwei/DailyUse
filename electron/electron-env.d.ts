@@ -23,11 +23,11 @@ declare namespace NodeJS {
 
 // Used in Renderer process, expose in `preload.ts`
 
-declare global {
-  interface Window {
-    electron: import('./electron-api').ElectronAPI;
-  }
-}
+// declare global {
+//   interface Window {
+//     electron: import('./electron-api').ElectronAPI;
+//   }
+// }
 
 interface Window {
   ipcRenderer: import('electron').IpcRenderer
@@ -73,6 +73,7 @@ interface ElectronAPI {
     send: (channel: string, ...args: any[]) => void;
     on: (channel: string, func: (...args: any[]) => void) => void;
     invoke: (channel: string, ...args: any[]) => Promise<any>;
+    removeAllListeners: (channel: string) => void;
   };
   path: {
     join: (...args: string[]) => string;

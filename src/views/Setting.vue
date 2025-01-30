@@ -3,20 +3,27 @@
     <div class="d-flex align-center mb-6">
       <h1 class="text-h5 font-weight-medium">设置</h1>
     </div>
-
     <v-card class="mb-4">
-      <v-card-title>外观</v-card-title>
+      <v-card-title>通用</v-card-title>
       <v-card-text>
         <v-row>
-          <v-col cols="12">
-            <v-switch
-              v-model="isDark"
-              label="深色模式"
-              color="primary"
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="themeMode"
+              label="主题模式"
+              :items="[
+                { title: '跟随系统设置', value: 'system' },
+                { title: '深色模式', value: 'dark' },
+                { title: '浅色模式', value: 'light' }
+              ]"
+              item-title="title"
+              item-value="value"
               hide-details
-            ></v-switch>
+              class="mb-4"
+              @update:model-value="handleThemeModeChange"
+            ></v-select>
           </v-col>
-          <v-col cols="12">
+          <v-col cols="12" md="6">
             <v-select
               v-model="settingStore.language"
               label="语言"
@@ -27,6 +34,22 @@
               item-title="title"
               item-value="value"
               hide-details
+              class="mb-4"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="autoLaunch"
+              label="开机自启动"
+              :items="[
+                { title: '开启', value: true },
+                { title: '关闭', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
+              hide-details
+              class="mb-4"
+              @update:model-value="handleAutoLaunchChange"
             ></v-select>
           </v-col>
         </v-row>
@@ -60,60 +83,72 @@
               class="mb-4"
             ></v-select>
           </v-col>
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="editorSettings.lineNumbers"
+              label="显示行号"
+              :items="[
+                { title: '显示', value: true },
+                { title: '隐藏', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
+              hide-details
+              class="mb-4"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="editorSettings.minimap"
+              label="显示小地图"
+              :items="[
+                { title: '显示', value: true },
+                { title: '隐藏', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
+              hide-details
+              class="mb-4"
+            ></v-select>
+          </v-col>
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="settingStore.autoSave"
+              label="自动保存"
+              :items="[
+                { title: '开启', value: true },
+                { title: '关闭', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
+              hide-details
+              class="mb-4"
+            ></v-select>
+          </v-col>
         </v-row>
-
-        <v-divider class="my-4"></v-divider>
-
-        <v-switch
-          v-model="editorSettings.lineNumbers"
-          label="显示行号"
-          color="primary"
-          hide-details
-          class="mb-2"
-        ></v-switch>
-
-        <v-switch
-          v-model="editorSettings.minimap"
-          label="显示小地图"
-          color="primary"
-          hide-details
-        ></v-switch>
       </v-card-text>
     </v-card>
 
     <v-card class="mb-4">
       <v-card-title>文件</v-card-title>
       <v-card-text>
-        <v-switch
-          v-model="settingStore.autoSave"
-          label="自动保存"
-          color="primary"
-          hide-details
-          class="mb-2"
-        ></v-switch>
-
-        <v-switch
-          v-model="settingStore.showHiddenFiles"
-          label="显示隐藏文件"
-          color="primary"
-          hide-details
-        ></v-switch>
-      </v-card-text>
-    </v-card>
-
-    <v-card class="mb-4">
-      <v-card-title>系统</v-card-title>
-      <v-card-text>
         <v-row>
-          <v-col cols="12">
-            <v-switch
-              v-model="autoLaunch"
-              label="开机自动启动"
-              color="primary"
+          
+          <v-col cols="12" md="6">
+            <v-select
+              v-model="settingStore.showHiddenFiles"
+              label="显示隐藏文件"
+              :items="[
+                { title: '显示', value: true },
+                { title: '隐藏', value: false }
+              ]"
+              item-title="title"
+              item-value="value"
               hide-details
-              @change="handleAutoLaunchChange"
-            ></v-switch>
+              class="mb-4"
+            ></v-select>
           </v-col>
+          
         </v-row>
       </v-card-text>
     </v-card>
@@ -140,12 +175,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, onMounted } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { useSettingStore } from '../stores/setting'
 import { useTheme } from 'vuetify'
 
 const settingStore = useSettingStore()
 const theme = useTheme()
+
+const themeMode = ref('system')
 
 const isDark = computed({
   get: () => theme.global.current.value.dark,
@@ -182,4 +219,18 @@ const handleAutoLaunchChange = async () => {
     console.error('设置开机自启动失败:', error)
   }
 }
+
+// 处理主题模式变更
+const handleThemeModeChange = () => {
+  if (themeMode.value === 'system') {
+    const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)');
+    isDark.value = prefersDarkScheme.matches;
+  } else if (themeMode.value === 'dark') {
+    isDark.value = true;
+  } else {
+    isDark.value = false;
+  }
+}
+
+watch(themeMode, handleThemeModeChange)
 </script>

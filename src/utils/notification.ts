@@ -14,6 +14,12 @@ export class NotificationService {
   private notificationCount = 0;
 
   private constructor() {
+    // 添加空值检查
+    if (!window.electron?.ipcRenderer) {
+      console.error('Electron IPC Renderer is not available');
+      return;
+    }
+
     // 监听通知动作
     window.electron.ipcRenderer.on('notification-action', (_event: any, id: string, action: any) => {
       console.log('Notification action:', id, action);

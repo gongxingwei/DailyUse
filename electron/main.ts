@@ -3,6 +3,8 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import { PluginManager } from '../src/plugins/core/PluginManager';
+import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 
 // 存储通知窗口的Map
 const notificationWindows = new Map<string, BrowserWindow>();
@@ -25,23 +27,47 @@ export const VITE_DEV_SERVER_URL = process.env['VITE_DEV_SERVER_URL']
 export const MAIN_DIST = path.join(process.env.APP_ROOT, 'dist-electron')
 export const RENDERER_DIST = path.join(process.env.APP_ROOT, 'dist')
 
+// 设置环境变量供插件使用
+process.env.MAIN_DIST = MAIN_DIST
+process.env.RENDERER_DIST = RENDERER_DIST
 process.env.VITE_PUBLIC = VITE_DEV_SERVER_URL ? path.join(process.env.APP_ROOT, 'public') : RENDERER_DIST
 
 let win: BrowserWindow | null;
 let tray: Tray | null = null
+let pluginManager: PluginManager | null = null;
 
 function createWindow() {
   win = new BrowserWindow({
     frame: false,
     icon: path.join(process.env.VITE_PUBLIC, 'DailyUse.svg'),
     webPreferences: {
-      webSecurity: false,
       nodeIntegration: true,
-      preload: path.join(__dirname, 'preload.mjs'),
+      contextIsolation: false,
+      webSecurity: true,
+      preload: path.join(MAIN_DIST, 'main_preload.mjs'),
+      additionalArguments: ['--enable-features=SharedArrayBuffer'],
     },
     width: 1400,
     height: 800,
   })
+
+  // 设置 CSP
+  win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+      }
+    });
+  });
+
+  // Initialize plugin system
+  pluginManager = new PluginManager();
+  if (win) {
+    // Register quick launcher plugin
+    pluginManager.register(new QuickLauncherMainPlugin());
+    pluginManager.initializeAll();
+  }
 
   // win.setMenu(null)
 
@@ -321,76 +347,85 @@ ipcMain.handle('show-notification', async (_event, options: {
     alwaysOnTop: true,
     show: false,
     webPreferences: {
-      preload: path.join(MAIN_DIST, 'preload.mjs'),
+      preload: path.join(MAIN_DIST, 'main_preload.mjs'),
       contextIsolation: true,
       nodeIntegration: true,
       webSecurity: false
     }
   });
 
+  // 设置通知窗口的 CSP
+  notificationWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    callback({
+      responseHeaders: {
+        ...details.responseHeaders,
+        'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+      }
+    });
+  });
+
   // 存储窗口引用
   notificationWindows.set(options.id, notificationWindow);
   console.log('通知窗口已存储，当前活动通知数:', notificationWindows.size);
 
-  // 监听窗口准备就绪事件
-  notificationWindow.once('ready-to-show', () => {
-    console.log('通知窗口准备就绪');
-    if (!notificationWindow.isDestroyed()) {
-      notificationWindow.show();
-      console.log('通知窗口已显示');
-    }
-  });
-
-  // 监听窗口关闭
+  // 监听窗口关闭事件
   notificationWindow.on('closed', () => {
     console.log('通知窗口已关闭:', options.id);
     notificationWindows.delete(options.id);
     reorderNotifications();
   });
 
-  try {
-    // 加载通知页面
-    const url = VITE_DEV_SERVER_URL 
-      ? `${VITE_DEV_SERVER_URL}#/notification?${new URLSearchParams(options as any)}`
-      : `file://${path.join(RENDERER_DIST, 'index.html')}#/notification?${new URLSearchParams(options as any)}`;
-    
-    console.log('加载通知页面:', url);
-    
-    if (VITE_DEV_SERVER_URL) {
-      await notificationWindow.loadURL(url);
-    } else {
-      await notificationWindow.loadFile(path.join(RENDERER_DIST, 'index.html'), {
-        hash: `/notification?${new URLSearchParams(options as any)}`
-      });
-    }
-    console.log('通知页面加载成功');
-  } catch (error) {
-    console.error('加载通知页面失败:', error);
-    notificationWindow.close();
-    return options.id;
+  // 构建查询参数
+  const queryParams = new URLSearchParams({
+    id: options.id,
+    title: options.title,
+    body: options.body,
+    urgency: options.urgency || 'normal'
+  });
+
+  if (options.icon) {
+    queryParams.append('icon', options.icon);
   }
+
+  if (options.actions) {
+    queryParams.append('actions', encodeURIComponent(JSON.stringify(options.actions)));
+  }
+
+  // 加载通知页面
+  const notificationUrl = VITE_DEV_SERVER_URL
+    ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}`
+    : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
+
+  console.log('加载通知页面:', notificationUrl);
+  await notificationWindow.loadURL(notificationUrl);
+
+  // 显示窗口
+  notificationWindow.show();
+  console.log('通知窗口已显示');
 
   return options.id;
 });
 
-// 通知相关的IPC处理
-ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
+// 处理通知关闭请求
+ipcMain.on('close-notification', (_event, id: string) => {
+  console.log('收到关闭通知请求:', id);
   const window = notificationWindows.get(id);
-  if (window) {
+  if (window && !window.isDestroyed()) {
     window.close();
-    notificationWindows.delete(id);
-    reorderNotifications();
   }
-  win?.webContents.send('notification-action', id, action);
 });
 
-ipcMain.on('close-notification', (_event, id: string) => {
+// 处理通知动作
+ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
+  console.log('收到通知动作:', id, action);
   const window = notificationWindows.get(id);
-  if (window) {
-    window.close();
-    notificationWindows.delete(id);
-    reorderNotifications();
-    win?.webContents.send('notification-action', id, { text: 'close', type: 'action' });
+  if (window && !window.isDestroyed()) {
+    // 如果是确认或取消按钮，关闭通知
+    if (action.type === 'confirm' || action.type === 'cancel') {
+      window.close();
+    }
+    // 转发动作到主窗口
+    win?.webContents.send('notification-action-received', id, action);
   }
 });
 

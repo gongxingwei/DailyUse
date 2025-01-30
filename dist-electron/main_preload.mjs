@@ -5,8 +5,11 @@ electron.contextBridge.exposeInMainWorld("electron", {
   platform: process.platform,
   ipcRenderer: {
     send: (channel, data) => electron.ipcRenderer.send(channel, data),
-    on: (channel, func) => electron.ipcRenderer.on(channel, func),
-    invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args)
+    on: (channel, func) => {
+      electron.ipcRenderer.on(channel, (_event, ...args) => func(...args));
+    },
+    invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args),
+    removeAllListeners: (channel) => electron.ipcRenderer.removeAllListeners(channel)
   },
   createFolder: (currentPath) => electron.ipcRenderer.invoke("createFolder", currentPath),
   createFile: (currentPath, content) => electron.ipcRenderer.invoke("createFile", currentPath, content),
@@ -29,5 +32,10 @@ electron.contextBridge.exposeInMainWorld("electron", {
     join: (...args) => path.join(...args),
     dirname: (p) => path.dirname(p),
     basename: (p) => path.basename(p)
+  },
+  quickLauncher: {
+    add: (name, command) => electron.ipcRenderer.invoke("quick-launcher-add", name, command),
+    remove: (name) => electron.ipcRenderer.invoke("quick-launcher-remove", name),
+    list: () => electron.ipcRenderer.invoke("quick-launcher-list")
   }
 });
