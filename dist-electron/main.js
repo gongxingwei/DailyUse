@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { BrowserWindow, ipcMain, dialog, app, globalShortcut, clipboard, nativeImage, Tray, Menu, screen } from "electron";
+import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, clipboard, nativeImage, Tray, Menu, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import { promises } from "fs";
@@ -91,8 +91,9 @@ class QuickLauncherMainPlugin {
       skipTaskbar: true,
       show: false,
       webPreferences: {
-        nodeIntegration: false,
+        nodeIntegration: true,
         contextIsolation: true,
+        sandbox: false,
         preload: preloadPath,
         webSecurity: true
       }
@@ -133,9 +134,9 @@ class QuickLauncherMainPlugin {
   registerIpcHandlers() {
     console.log("[QuickLauncherMain] 注册IPC处理器...");
     ipcMain.handle("launch-application", async (_, path2) => {
-      console.log("[QuickLauncherMain] 收到启动应用请求:", path2);
       return new Promise((resolve, reject) => {
-        exec(`start "" "${path2}"`, (error) => {
+        const options = { windowsHide: false };
+        exec(`start "" "${path2}"`, options, (error) => {
           if (error) {
             console.error("[QuickLauncherMain] 启动应用失败:", error);
             reject(error);
@@ -164,6 +165,17 @@ class QuickLauncherMainPlugin {
       } catch (error) {
         console.error("获取文件图标失败:", error);
         return null;
+      }
+    });
+    ipcMain.handle("get-shortcut-target-path", async (_, shortcutPath) => {
+      try {
+        const normalizedPath = path.win32.normalize(shortcutPath);
+        const target = shell.readShortcutLink(normalizedPath);
+        const targetPath = target.target;
+        return targetPath;
+      } catch (error) {
+        console.error("Failed to read shortcut target path:", error);
+        return "";
       }
     });
   }
@@ -211,7 +223,7 @@ function createWindow() {
     icon: path$1.join(process.env.VITE_PUBLIC, "DailyUse.svg"),
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
       webSecurity: true,
       preload: path$1.join(MAIN_DIST, "main_preload.mjs"),
       additionalArguments: ["--enable-features=SharedArrayBuffer"]
@@ -232,9 +244,6 @@ function createWindow() {
     pluginManager.register(new QuickLauncherMainPlugin());
     pluginManager.initializeAll();
   }
-  win.webContents.on("did-finish-load", () => {
-    win == null ? void 0 : win.webContents.send("main-process-message", (/* @__PURE__ */ new Date()).toLocaleString());
-  });
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL);
   } else {
@@ -409,21 +418,16 @@ function reorderNotifications() {
   }
 }
 ipcMain.handle("show-notification", async (_event, options) => {
-  console.log("主进程收到显示通知请求:", options);
   if (!win) {
-    console.error("主窗口未创建，无法显示通知");
     return;
   }
   if (notificationWindows.has(options.id)) {
-    console.log("关闭已存在的相同ID通知:", options.id);
     const existingWindow = notificationWindows.get(options.id);
     existingWindow == null ? void 0 : existingWindow.close();
     notificationWindows.delete(options.id);
     reorderNotifications();
   }
   const { x, y } = getNotificationPosition();
-  console.log("新通知位置:", { x, y });
-  console.log("创建通知窗口...");
   const notificationWindow = new BrowserWindow({
     width: NOTIFICATION_WIDTH,
     height: NOTIFICATION_HEIGHT,
@@ -451,9 +455,7 @@ ipcMain.handle("show-notification", async (_event, options) => {
     });
   });
   notificationWindows.set(options.id, notificationWindow);
-  console.log("通知窗口已存储，当前活动通知数:", notificationWindows.size);
   notificationWindow.on("closed", () => {
-    console.log("通知窗口已关闭:", options.id);
     notificationWindows.delete(options.id);
     reorderNotifications();
   });
@@ -470,21 +472,17 @@ ipcMain.handle("show-notification", async (_event, options) => {
     queryParams.append("actions", encodeURIComponent(JSON.stringify(options.actions)));
   }
   const notificationUrl = VITE_DEV_SERVER_URL ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}` : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
-  console.log("加载通知页面:", notificationUrl);
   await notificationWindow.loadURL(notificationUrl);
   notificationWindow.show();
-  console.log("通知窗口已显示");
   return options.id;
 });
 ipcMain.on("close-notification", (_event, id) => {
-  console.log("收到关闭通知请求:", id);
   const window = notificationWindows.get(id);
   if (window && !window.isDestroyed()) {
     window.close();
   }
 });
 ipcMain.on("notification-action", (_event, id, action) => {
-  console.log("收到通知动作:", id, action);
   const window = notificationWindows.get(id);
   if (window && !window.isDestroyed()) {
     if (action.type === "confirm" || action.type === "cancel") {

@@ -1,11 +1,7 @@
-import { app, globalShortcut, ipcMain, BrowserWindow, dialog } from 'electron';
+import { app, globalShortcut, ipcMain, BrowserWindow, dialog, shell } from 'electron';
 import { ElectronPlugin, PluginMetadata } from '../../core/types';
-import { exec } from 'child_process';
+import { exec, ExecOptions } from 'child_process';
 import path from 'path';
-// import { fileURLToPath } from 'url';
-
-// const __filename = fileURLToPath(import.meta.url);
-// const __dirname = path.dirname(__filename);
 
 // 获取主进程目录
 const MAIN_DIST = process.env.MAIN_DIST ?? path.join(process.env.APP_ROOT ?? process.cwd(), 'dist-electron');
@@ -42,8 +38,9 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
       skipTaskbar: true,
       show: false,
       webPreferences: {
-        nodeIntegration: false,
+        nodeIntegration: true,
         contextIsolation: true,
+        sandbox: false,
         preload: preloadPath,
         webSecurity: true
       }
@@ -96,9 +93,9 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
     
     // 注册IPC处理器来处理应用程序启动请求
     ipcMain.handle('launch-application', async (_, path: string) => {
-      console.log('[QuickLauncherMain] 收到启动应用请求:', path);
       return new Promise((resolve, reject) => {
-        exec(`start "" "${path}"`, (error) => {
+        const options: ExecOptions = { windowsHide: false };  // 使用合法的选项
+        exec(`start "" "${path}"`, options, (error) => {
           if (error) {
             console.error('[QuickLauncherMain] 启动应用失败:', error);
             reject(error);
@@ -131,6 +128,18 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
       } catch (error) {
         console.error('获取文件图标失败:', error);
         return null;
+      }
+    });
+
+    ipcMain.handle('get-shortcut-target-path', async (_, shortcutPath) => {
+      try {
+        const normalizedPath = path.win32.normalize(shortcutPath);
+        const target = shell.readShortcutLink(normalizedPath);
+        const targetPath = target.target;
+        return targetPath;
+      } catch (error) {
+        console.error('Failed to read shortcut target path:', error);
+        return '';
       }
     });
   }

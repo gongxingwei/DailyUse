@@ -1,13 +1,13 @@
 export interface ShortcutItem {
   id: string;
   name: string;
-  path: string;
-  category: string;
-  icon?: string;
+  path?: string;  // 标题项不需要路径
   description?: string;
-  keywords?: string[];
+  icon?: string;
   lastUsed?: Date;
   useCount?: number;
+  category?: string;
+  isTitle?: boolean;  // 添加标识是否为标题的字段
 }
 
 export interface ShortcutCategory {
@@ -30,4 +30,8 @@ export interface QuickLauncherState {
     shortcutKey: string;
     theme: 'light' | 'dark' | 'system';
   };
+}
+
+export interface ShortcutAreaTitle {
+  title: string;
 }

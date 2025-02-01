@@ -5,6 +5,9 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
+import { exec } from 'child_process';
+import { ExecOptions } from 'child_process';
+import { shell } from 'electron';
 
 // 存储通知窗口的Map
 const notificationWindows = new Map<string, BrowserWindow>();
@@ -42,7 +45,7 @@ function createWindow() {
     icon: path.join(process.env.VITE_PUBLIC, 'DailyUse.svg'),
     webPreferences: {
       nodeIntegration: true,
-      contextIsolation: false,
+      contextIsolation: true,
       webSecurity: true,
       preload: path.join(MAIN_DIST, 'main_preload.mjs'),
       additionalArguments: ['--enable-features=SharedArrayBuffer'],
@@ -64,31 +67,20 @@ function createWindow() {
   // Initialize plugin system
   pluginManager = new PluginManager();
   if (win) {
-    // Register quick launcher plugin
     pluginManager.register(new QuickLauncherMainPlugin());
     pluginManager.initializeAll();
   }
 
-  // win.setMenu(null)
-
-  // Test active push message to Renderer-process.
-  win.webContents.on('did-finish-load', () => {
-    win?.webContents.send('main-process-message', (new Date).toLocaleString())
-  })
-
   if (VITE_DEV_SERVER_URL) {
     win.loadURL(VITE_DEV_SERVER_URL)
   } else {
-    // win.loadFile('dist/index.html')
     win.loadFile(path.join(RENDERER_DIST, 'index.html'))
   }
 
-  // 可选：设置最小窗口大小
   win.setMinimumSize(800, 600)
 
   createTray(win)
 
-  // 修改窗口关闭行为
   win.on('close', (event) => {
     if (!app.isQuitting) {
       event.preventDefault()
@@ -138,8 +130,6 @@ function createTray(win: BrowserWindow) {
     win.show()
   })
 }
-
-
 
 // Quit when all windows are closed, except on macOS. There, it's common
 // for applications and their menu bar to stay active until the user quits
@@ -313,16 +303,12 @@ ipcMain.handle('show-notification', async (_event, options: {
   urgency?: 'normal' | 'critical' | 'low'
   actions?: Array<{ text: string, type: 'confirm' | 'cancel' | 'action' }>
 }) => {
-  console.log('主进程收到显示通知请求:', options);
-  
   if (!win) {
-    console.error('主窗口未创建，无法显示通知');
     return;
   }
 
   // 如果存在相同ID的通知，先关闭它
   if (notificationWindows.has(options.id)) {
-    console.log('关闭已存在的相同ID通知:', options.id);
     const existingWindow = notificationWindows.get(options.id);
     existingWindow?.close();
     notificationWindows.delete(options.id);
@@ -331,10 +317,8 @@ ipcMain.handle('show-notification', async (_event, options: {
 
   // 获取新通知的位置
   const { x, y } = getNotificationPosition();
-  console.log('新通知位置:', { x, y });
 
   // 创建通知窗口
-  console.log('创建通知窗口...');
   const notificationWindow = new BrowserWindow({
     width: NOTIFICATION_WIDTH,
     height: NOTIFICATION_HEIGHT,
@@ -366,11 +350,9 @@ ipcMain.handle('show-notification', async (_event, options: {
 
   // 存储窗口引用
   notificationWindows.set(options.id, notificationWindow);
-  console.log('通知窗口已存储，当前活动通知数:', notificationWindows.size);
 
   // 监听窗口关闭事件
   notificationWindow.on('closed', () => {
-    console.log('通知窗口已关闭:', options.id);
     notificationWindows.delete(options.id);
     reorderNotifications();
   });
@@ -396,19 +378,16 @@ ipcMain.handle('show-notification', async (_event, options: {
     ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}`
     : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
 
-  console.log('加载通知页面:', notificationUrl);
   await notificationWindow.loadURL(notificationUrl);
 
   // 显示窗口
   notificationWindow.show();
-  console.log('通知窗口已显示');
 
   return options.id;
 });
 
 // 处理通知关闭请求
 ipcMain.on('close-notification', (_event, id: string) => {
-  console.log('收到关闭通知请求:', id);
   const window = notificationWindows.get(id);
   if (window && !window.isDestroyed()) {
     window.close();
@@ -417,7 +396,6 @@ ipcMain.on('close-notification', (_event, id: string) => {
 
 // 处理通知动作
 ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
-  console.log('收到通知动作:', id, action);
   const window = notificationWindows.get(id);
   if (window && !window.isDestroyed()) {
     // 如果是确认或取消按钮，关闭通知

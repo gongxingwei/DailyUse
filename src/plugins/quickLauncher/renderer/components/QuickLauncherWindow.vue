@@ -135,6 +135,15 @@
         </v-card-actions>
       </v-card>
     </v-dialog>
+
+    <!-- Edit Shortcut Dialog -->
+    <DialogForEdit
+      v-model="showEditShortcutDialog"
+      title="编辑快捷方式"
+      icon="mdi-pencil"
+      :data="shortcutForEdit"
+      @confirm="handleShortcutEdit"
+    />
   </div>
 </template>
 
@@ -145,11 +154,12 @@ import { ShortcutItem, ShortcutCategory } from '../../types';
 import Draggable from 'vuedraggable';
 import { v4 as uuidv4 } from 'uuid';
 import ContextMenu from '@/components/common/ContextMenu.vue';
+import { getShortcutTargetPath, addTitle } from '../../utils';
+import DialogForEdit from '@/components/common/DialogForEdit.vue';
 
 const store = useQuickLauncherStore();
 const searchQuery = ref('');
 const selectedCategory = ref('');
-const showAddDialog = ref(false);
 
 // Context menu
 const contextMenuItems = ref([] as any[]);
@@ -170,6 +180,12 @@ const newShortcut = ref({
 const showRenameDialog = ref(false);
 const newCategoryName = ref('');
 
+const showEditShortcutDialog = ref(false);
+const editingShortcut = ref<ShortcutItem | null>(null);
+const shortcutForEdit = ref({
+  name: '',
+  description: ''
+});
 const categoryListAreaContextMenuItems = [
   { value: 'newCategory', title: '新建分类', action: createCategory }
 ]
@@ -183,12 +199,12 @@ const categoryListItemContextMenuItems = [
 
 const shortcutAreaContextMenuItems = [
   { value: 'newShortcut', title: '新建快捷方式', action: addShortcut },
-  // { value: 'newTitle', title: '新建标题', action: addeTitle },
+  { value: 'newTitle', title: '新建标题', action: addTitle },
   { divider: true },
 ]
 
 const shortcutItemContextMenuItems = [
-  { value: 'editShortcut', title: '重命名快捷方式', action: editShortcut },
+  { value: 'editShortcut', title: '编辑快捷方式', action: editShortcut },
   { value: 'deleteShortcut', title: '删除快捷方式', className: 'text-error', action: deleteShortcut },
   { divider: true },
   ...shortcutAreaContextMenuItems
@@ -205,7 +221,6 @@ function showCategoryListAreaContextMenu(e: MouseEvent) {
 
 function showCategoryListItemContextMenu(e: MouseEvent, category: ShortcutCategory) {
   e.preventDefault();
-  console.log('category', category);
   selectedItem.value = category;
   contextMenuItems.value = categoryListItemContextMenuItems;
   showContextMenu.value = true;
@@ -247,7 +262,6 @@ function createCategory() {
 }
 
 function renameCategory() {
-  console.log('selectedItem', selectedItem.value);
   if (selectedItem.value) {
     newCategoryName.value = selectedItem.value.name;
     showRenameDialog.value = true;
@@ -258,56 +272,60 @@ function renameCategory() {
 function deleteCategory() {
   const category = contextMenuCategory.value;
   if (category && 'id' in category) {
-    if (store.categories.length <= 1) {
-      console.log('[ContextMenu] 阻止删除最后一个分类');
-      return;
-    }
-    console.log('[ContextMenu] 删除分类:', category);
     store.removeCategory(category.id);
     showContextMenu.value = false;
   }
 }
 
 // 快捷方式区域右键菜单处理函数
+
+
 async function addShortcut() {
+  // 重置 newShortcut
+  newShortcut.value = {
+    name: '',
+    path: '',
+    description: '',
+    icon: ''
+  };
+
   const result = await window.electron.ipcRenderer.invoke('select-file');
   const shortcutIcon = async (filePath: string): Promise<string> => {
     try {
       const iconBase64 = await window.electron.ipcRenderer.invoke('get-file-icon', filePath);
-      console.log('iconBase64', iconBase64);
       return iconBase64 || 'mdi-application';
     } catch (error) {
       console.warn('获取文件图标失败:', error);
       return 'mdi-application';
     }
   };
+
   if (result && result.filePaths && result.filePaths.length > 0) {
     const filePath = result.filePaths[0];
-    newShortcut.value.path = filePath;
-    if (!newShortcut.value.name) {
-      newShortcut.value.name = filePath.split('\\').pop()?.replace(/\.[^/.]+$/, "") || '';
-    }
+    // 从文件路径获取文件名
+    const fileName = filePath.split('\\').pop()?.replace(/\.[^/.]+$/, "") || '';
+    
+    // 创建新的快捷方式
+    const shortcut: ShortcutItem = {
+      id: uuidv4(),
+      name: fileName,
+      path: filePath,
+      description: '',
+      icon: await shortcutIcon(filePath),
+      lastUsed: new Date(),
+      category: selectedCategory.value
+    };
+
+    // 保存到 store
+    store.addShortcut(selectedCategory.value, shortcut);
   }
-
-  const shortcut: ShortcutItem = {
-    id: uuidv4(),
-    name: newShortcut.value.name,
-    path: newShortcut.value.path,
-    description: newShortcut.value.description,
-    icon: await shortcutIcon(newShortcut.value.path),
-    lastUsed: new Date(),
-    category: selectedCategory.value
-  };
-
-  store.addShortcut(selectedCategory.value, shortcut);
-
 }
 
 async function launchItem(item: ShortcutItem) {
   try {
+    closeWindow();
     await window.electron.ipcRenderer.invoke('launch-application', item.path);
     store.recordItemUsage(item.id);
-    closeWindow();
   } catch (error) {
     console.error('Failed to launch application:', error);
   }
@@ -315,33 +333,36 @@ async function launchItem(item: ShortcutItem) {
 
 function deleteShortcut() {
   if (contextMenuShortcut.value && selectedCategory.value) {
-    console.log('[ContextMenu] 删除快捷方式:', {
-      shortcut: contextMenuShortcut.value,
-      category: selectedCategory.value
-    });
     store.removeShortcut(selectedCategory.value, contextMenuShortcut.value.id);
     showContextMenu.value = false;
   }
 }
 
 function editShortcut() {
-  if (contextMenuShortcut.value) {
-    console.log('[ContextMenu] 开始编辑快捷方式:', contextMenuShortcut.value);
-    newShortcut.value = {
-      name: contextMenuShortcut.value.name,
-      path: contextMenuShortcut.value.path,
-      description: contextMenuShortcut.value.description || '',
-      icon: contextMenuShortcut.value.icon || 'mdi-application',
-    };
-    showAddDialog.value = true;
+  if (selectedItem.value) {
+    editingShortcut.value = selectedItem.value;
+    const { name, description } = selectedItem.value;
+    shortcutForEdit.value = { name, description: description || '' };
+    showEditShortcutDialog.value = true;
     showContextMenu.value = false;
+  }
+}
+
+async function handleShortcutEdit(data: Record<string, any>) {
+  if (editingShortcut.value && selectedCategory.value) {
+    const updatedShortcut: ShortcutItem = {
+      ...editingShortcut.value,
+      name: data.name,
+      description: data.description
+    };
+
+    store.updateShortcut(selectedCategory.value, updatedShortcut.id, updatedShortcut);
+    editingShortcut.value = null;
   }
 }
 
 // Initialize store and select first category
 onMounted(() => {
-  console.log('QuickLauncherWindow mounted, categories:', store.categories);
-  // Ensure default category exists
   if (store.categories.length === 0) {
     const defaultCategory = {
       id: uuidv4(),
@@ -357,8 +378,6 @@ onMounted(() => {
 
 // Watch for store changes
 watch(() => store.categories, (newCategories) => {
-  console.log('Categories changed:', newCategories);
-  // If selected category was deleted, select the first available one
   if (newCategories.length > 0 && !newCategories.find(c => c.id === selectedCategory.value)) {
     selectedCategory.value = newCategories[0].id;
   }
@@ -367,13 +386,11 @@ watch(() => store.categories, (newCategories) => {
 const currentCategoryItems = computed({
   get: () => {
     const category = store.categories.find(c => c.id === selectedCategory.value);
-    console.log('Getting items for category:', category?.name, 'items:', category?.items);
     return category?.items || [];
   },
   set: (items) => {
     const category = store.categories.find(c => c.id === selectedCategory.value);
     if (category) {
-      console.log('Updating items for category:', category.name);
       store.updateCategory(category.id, { ...category, items });
     }
   }
@@ -409,17 +426,29 @@ const confirmRenameCategory = () => {
   }
 };
 
-function handleDrop(event: DragEvent) {
+async function handleDrop(event: DragEvent) {
   event.preventDefault();
   const files = event.dataTransfer?.files;
+  const shortcutIcon = async (filePath: string): Promise<string> => {
+    try {
+      const iconBase64 = await window.electron.ipcRenderer.invoke('get-file-icon', filePath);
+      return iconBase64 || 'mdi-application';
+    } catch (error) {
+      console.warn('获取文件图标失败:', error);
+      return 'mdi-application';
+    }
+  };
+  
   if (files && files.length > 0) {
-    Array.from(files).forEach(file => {
+    Array.from(files).forEach(async (file) => {
+      const targetPath = await getShortcutTargetPath((file as any).path);
+      const base64Icon = await shortcutIcon(targetPath);
       const shortcut: ShortcutItem = {
         id: uuidv4(),
         name: file.name.replace(/\.[^/.]+$/, ""),
-        path: (file as any).path,
+        path: targetPath,
         description: '',
-        icon: 'mdi-file',
+        icon: base64Icon,
         lastUsed: new Date(),
         category: selectedCategory.value
       };
