@@ -5,8 +5,6 @@ import { promises as fs } from 'fs';
 import { join } from 'path';
 import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
-import { exec } from 'child_process';
-import { ExecOptions } from 'child_process';
 import { shell } from 'electron';
 
 // 存储通知窗口的Map
@@ -172,9 +170,9 @@ ipcMain.handle('createFile', async (_event, filePath: string, content: string = 
 // 删除文件或文件夹
 ipcMain.handle('deleteFileOrFolder', async (_event, path: string, isDirectory: boolean) => {
   if (isDirectory) {
-    await fs.rm(path, { recursive: true, force: true });
+    await shell.trashItem(path);
   } else {
-    await fs.unlink(path);
+    await shell.trashItem(path);
   }
 });
 
@@ -509,5 +507,5 @@ ipcMain.handle('set-auto-launch', (_event, enable: boolean) => {
 });
 
 app.on('before-quit', () => {
-  app.isQuitting = true
+  app.isQuitting = true;
 })

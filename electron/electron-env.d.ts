@@ -79,7 +79,7 @@ interface ElectronAPI {
     join: (...args: string[]) => string;
     dirname: (p: string) => string;
     basename: (p: string) => string;
-  }
+  };
   refreshFolder: (path: string) => Promise<{ folderTreeData: TreeNode[]; directoryPath: string }>;
   windowControl: (command: string) => void;
   getAutoLaunch: () => Promise<boolean>

@@ -317,9 +317,9 @@ ipcMain.handle("createFile", async (_event, filePath, content = "") => {
 });
 ipcMain.handle("deleteFileOrFolder", async (_event, path2, isDirectory) => {
   if (isDirectory) {
-    await promises.rm(path2, { recursive: true, force: true });
+    await shell.trashItem(path2);
   } else {
-    await promises.unlink(path2);
+    await shell.trashItem(path2);
   }
 });
 ipcMain.handle("selectFolder", async () => {
