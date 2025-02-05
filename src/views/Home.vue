@@ -72,12 +72,13 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useTodoStore } from '../stores/todo'
+import { useTodoStore } from '../modules/Todo/todo'
 import { useRepoStore } from '../stores/repo'
-import type { Todo } from '../stores/todo'
-import ToDoListCard from '../components/todos/ToDoListCard.vue'
-import ShowToDoInfo from '../components/todos/ShowToDoInfo.vue'
-import EditToDoCard from '../components/todos/EditToDoCard.vue'
+import type { Todo } from '../modules/Todo/todo'
+import ToDoListCard from '../modules/Todo/components/ToDoListCard.vue'
+import ShowToDoInfo from '../modules/Todo/components/ShowToDoInfo.vue'
+import EditToDoCard from '../modules/Todo/components/EditToDoCard.vue'
+
 
 const todoStore = useTodoStore()
 const repoStore = useRepoStore()

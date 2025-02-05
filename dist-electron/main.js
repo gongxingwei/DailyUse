@@ -4,9 +4,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
 import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, clipboard, nativeImage, Tray, Menu, screen } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
-import { promises } from "fs";
 import path, { join } from "path";
 import { exec } from "child_process";
+import fs from "fs/promises";
 class PluginManager {
   constructor() {
     __publicField(this, "plugins", /* @__PURE__ */ new Map());
@@ -205,9 +205,124 @@ class QuickLauncherMainPlugin {
     }
   }
 }
+function registerFileSystemHandlers() {
+  ipcMain.handle("open-file-explorer", async () => {
+    shell.openPath(path.join(__dirname, "..", "..", "..", "src"));
+  });
+  ipcMain.handle("select-folder", async () => {
+    const result = await dialog.showOpenDialog({
+      properties: ["openDirectory"]
+    });
+    if (result.canceled) {
+      return null;
+    } else {
+      const folderPath = result.filePaths[0];
+      const files = await fs.readdir(folderPath).then(
+        (fileNames) => Promise.all(
+          fileNames.map(async (fileName) => {
+            const filePath = path.join(folderPath, fileName);
+            const stats = await fs.lstat(filePath);
+            return {
+              name: fileName,
+              path: filePath,
+              isDirectory: stats.isDirectory()
+            };
+          })
+        )
+      );
+      return { folderPath, files };
+    }
+  });
+  ipcMain.handle("create-folder", async (_event, filePath) => {
+    await fs.mkdir(filePath, { recursive: true });
+  });
+  ipcMain.handle("create-file", async (_event, filePath, content = "") => {
+    await fs.writeFile(filePath, content, "utf8");
+  });
+  ipcMain.handle("rename-file-or-folder", async (_event, oldPath, newPath) => {
+    try {
+      const exists = await fs.access(newPath).then(() => true).catch(() => false);
+      if (exists) {
+        const { response } = await dialog.showMessageBox({
+          type: "question",
+          buttons: ["覆盖", "取消"],
+          defaultId: 1,
+          title: "确认覆盖",
+          message: "目标已存在，是否覆盖？",
+          detail: `目标路径: ${newPath}`
+        });
+        if (response === 1) {
+          return false;
+        }
+      }
+      await fs.rename(oldPath, newPath);
+      return true;
+    } catch (error) {
+      console.error("Rename error:", error);
+      throw error;
+    }
+  });
+  ipcMain.handle("delete-file-or-folder", async (_event, path2, isDirectory) => {
+    if (isDirectory) {
+      await shell.trashItem(path2);
+    } else {
+      await shell.trashItem(path2);
+    }
+  });
+  ipcMain.handle("read-file", async (_event, filePath) => {
+    return await fs.readFile(filePath, "utf8");
+  });
+  ipcMain.handle("write-file", async (_event, filePath, content) => {
+    try {
+      await fs.writeFile(filePath, content, "utf8");
+      return true;
+    } catch (error) {
+      console.error("写入文件失败:", error);
+      throw error;
+    }
+  });
+  ipcMain.handle("get-folder-tree", async (_event, folderPath) => {
+    const folderTreeData = await generateTree(folderPath);
+    return folderTreeData;
+  });
+  async function generateTree(dir) {
+    try {
+      const items = await fs.readdir(dir, { withFileTypes: true });
+      const children = await Promise.all(
+        items.map(async (item) => {
+          const fullPath = path.join(dir, item.name);
+          const fileType = item.isDirectory() ? "directory" : path.extname(item.name).slice(1) || "file";
+          if (item.isDirectory()) {
+            return {
+              title: item.name,
+              key: fullPath,
+              fileType,
+              children: await generateTree(fullPath)
+            };
+          } else {
+            return {
+              title: item.name,
+              key: fullPath,
+              fileType,
+              isLeaf: true
+            };
+          }
+        })
+      );
+      return children.filter(Boolean);
+    } catch (error) {
+      console.error(`Error reading directory ${dir}:`, error);
+      return [];
+    }
+  }
+  ipcMain.handle("refresh-folder", async (_event, folderPath) => {
+    const folderTreeData = await generateTree(folderPath);
+    return { folderTreeData, folderPath };
+  });
+}
 const notificationWindows = /* @__PURE__ */ new Map();
-const __dirname = path$1.dirname(fileURLToPath(import.meta.url));
-process.env.APP_ROOT = path$1.join(__dirname, "..");
+const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
+process.env.APP_ROOT = path$1.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
 const MAIN_DIST = path$1.join(process.env.APP_ROOT, "dist-electron");
 const RENDERER_DIST = path$1.join(process.env.APP_ROOT, "dist");
@@ -260,7 +375,7 @@ function createWindow() {
   });
 }
 function createTray(win2) {
-  const icon = nativeImage.createFromPath(join(__dirname, "../public/DailyUse-16.png"));
+  const icon = nativeImage.createFromPath(join(__dirname$1, "../public/DailyUse-16.png"));
   tray = new Tray(icon);
   tray.setToolTip("DailyUse");
   const contextMenu = Menu.buildFromTemplate([
@@ -303,102 +418,13 @@ app.on("activate", () => {
 });
 app.whenReady().then(() => {
   createWindow();
+  registerFileSystemHandlers();
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
-ipcMain.handle("createFolder", async (_event, filePath) => {
-  await promises.mkdir(filePath, { recursive: true });
-});
-ipcMain.handle("createFile", async (_event, filePath, content = "") => {
-  await promises.writeFile(filePath, content, "utf8");
-});
-ipcMain.handle("deleteFileOrFolder", async (_event, path2, isDirectory) => {
-  if (isDirectory) {
-    await shell.trashItem(path2);
-  } else {
-    await shell.trashItem(path2);
-  }
-});
-ipcMain.handle("selectFolder", async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"]
-  });
-  if (result.canceled) {
-    return null;
-  } else {
-    const folderPath = result.filePaths[0];
-    const files = await promises.readdir(folderPath).then(
-      (fileNames) => Promise.all(
-        fileNames.map(async (fileName) => {
-          const filePath = path$1.join(folderPath, fileName);
-          const stats = await promises.lstat(filePath);
-          return {
-            name: fileName,
-            path: filePath,
-            isDirectory: stats.isDirectory()
-          };
-        })
-      )
-    );
-    return { folderPath, files };
-  }
-});
-ipcMain.handle("readFile", async (_event, filePath) => {
-  return await promises.readFile(filePath, "utf8");
-});
-ipcMain.handle("writeFile", async (_event, filePath, content) => {
-  try {
-    await promises.writeFile(filePath, content, "utf8");
-    return true;
-  } catch (error) {
-    console.error("写入文件失败:", error);
-    throw error;
-  }
-});
-ipcMain.handle("getRootDir", async () => {
-  const result = await dialog.showOpenDialog({
-    properties: ["openDirectory"]
-  });
-  if (!result.canceled) {
-    const directoryPath = result.filePaths[0];
-    const folderTreeData = await generateTree(directoryPath);
-    return { folderTreeData, directoryPath };
-  }
-  return null;
-});
-async function generateTree(dir) {
-  try {
-    const items = await promises.readdir(dir, { withFileTypes: true });
-    const children = await Promise.all(
-      items.map(async (item) => {
-        const fullPath = path$1.join(dir, item.name);
-        const fileType = item.isDirectory() ? "directory" : path$1.extname(item.name).slice(1) || "file";
-        if (item.isDirectory()) {
-          return {
-            title: item.name,
-            key: fullPath,
-            fileType,
-            children: await generateTree(fullPath)
-          };
-        } else {
-          return {
-            title: item.name,
-            key: fullPath,
-            fileType,
-            isLeaf: true
-          };
-        }
-      })
-    );
-    return children.filter(Boolean);
-  } catch (error) {
-    console.error(`Error reading directory ${dir}:`, error);
-    return [];
-  }
-}
 const NOTIFICATION_WIDTH = 320;
 const NOTIFICATION_HEIGHT = 120;
 const NOTIFICATION_MARGIN = 10;
@@ -491,29 +517,6 @@ ipcMain.on("notification-action", (_event, id, action) => {
     win == null ? void 0 : win.webContents.send("notification-action-received", id, action);
   }
 });
-ipcMain.handle("renameFileOrFolder", async (_event, oldPath, newPath) => {
-  try {
-    const exists = await promises.access(newPath).then(() => true).catch(() => false);
-    if (exists) {
-      const { response } = await dialog.showMessageBox({
-        type: "question",
-        buttons: ["覆盖", "取消"],
-        defaultId: 1,
-        title: "确认覆盖",
-        message: "目标已存在，是否覆盖？",
-        detail: `目标路径: ${newPath}`
-      });
-      if (response === 1) {
-        return false;
-      }
-    }
-    await promises.rename(oldPath, newPath);
-    return true;
-  } catch (error) {
-    console.error("Rename error:", error);
-    throw error;
-  }
-});
 ipcMain.handle("readClipboard", () => {
   return clipboard.readText();
 });
@@ -529,10 +532,6 @@ ipcMain.handle("readClipboardFiles", () => {
 });
 ipcMain.handle("writeClipboardFiles", (_event, filePaths) => {
   clipboard.writeBuffer("FileNameW", Buffer.from(filePaths.join("\0") + "\0", "ucs2"));
-});
-ipcMain.handle("refreshFolder", async (_event, directoryPath) => {
-  const folderTreeData = await generateTree(directoryPath);
-  return { folderTreeData, directoryPath };
 });
 ipcMain.on("window-control", (_event, command) => {
   switch (command) {

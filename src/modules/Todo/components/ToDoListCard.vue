@@ -2,7 +2,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import ShowToDoInfo from './ShowToDoInfo.vue'
-import type { Todo } from '../../stores/todo'
+import type { Todo } from '../todo'
 
 const props = defineProps<{
   todoDate: number

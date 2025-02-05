@@ -1,14 +1,14 @@
 <template>
   <v-dialog v-model="dialogVisible" max-width="500px">
     <v-card>
-      <v-card-title class="text-h5">编辑任务</v-card-title>
+      <v-card-title class="text-h5">添加新任务</v-card-title>
       
       <v-card-text>
         <v-container>
           <v-row>
             <v-col cols="12">
               <v-text-field
-                v-model="editedTodo.title"
+                v-model="newTodo.title"
                 label="标题"
                 required
                 :rules="[v => !!v || '标题不能为空']"
@@ -17,7 +17,7 @@
             
             <v-col cols="12">
               <v-textarea
-                v-model="editedTodo.content"
+                v-model="newTodo.content"
                 label="内容"
                 rows="3"
               ></v-textarea>
@@ -25,7 +25,7 @@
 
             <v-col cols="12">
               <v-text-field
-                v-model="editedTodo.datetime"
+                v-model="newTodo.datetime"
                 label="日期时间"
                 type="datetime-local"
                 required
@@ -45,21 +45,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useTodoStore } from '../../stores/todo'
-import type { Todo } from '../../stores/todo'
+import { ref, computed } from 'vue'
+import { useTodoStore } from '../todo'
 
-interface Props {
-  modelValue: boolean
-  todo: Todo | null  // 允许为 null
-}
 
-const props = withDefaults(defineProps<Props>(), {
-  modelValue: false,
-  todo: null
+const props = defineProps({
+  modelValue: Boolean
 })
 
 const emit = defineEmits(['update:modelValue'])
+
 const todoStore = useTodoStore()
 
 const dialogVisible = computed({
@@ -67,31 +62,32 @@ const dialogVisible = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
-const editedTodo = ref<Todo>({
-  id: 0,
+const newTodo = ref({
   title: '',
   content: '',
-  datetime: '',
-  completed: false
+  datetime: new Date().toISOString().slice(0, 16)
 })
-
-// 监听 todo 属性变化，更新编辑表单
-watch(() => props.todo, (newTodo) => {
-  if (newTodo) {
-    editedTodo.value = { ...newTodo }
-    // 格式化日期时间为 HTML datetime-local 格式
-    editedTodo.value.datetime = new Date(newTodo.datetime).toISOString().slice(0, 16)
-  }
-}, { immediate: true })
 
 const closeDialog = () => {
   dialogVisible.value = false
+  resetForm()
 }
 
 const saveTodo = () => {
-  if (editedTodo.value.title.trim()) {
-    todoStore.updateTodo(editedTodo.value)
+  if (newTodo.value.title.trim()) {
+    todoStore.addTodo({
+      ...newTodo.value,
+      completed: false
+    })
     closeDialog()
   }
 }
-</script> 
+
+const resetForm = () => {
+  newTodo.value = {
+    title: '',
+    content: '',
+    datetime: new Date().toISOString().slice(0, 16)
+  }
+}
+</script>

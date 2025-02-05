@@ -1,17 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useTodoStore } from '../stores/todo'
-import ToDoListCard from '../components/todos/ToDoListCard.vue'
-import AddToDoCard from '../components/todos/AddToDoCard.vue'
-import ShowToDoInfo from '../components/todos/ShowToDoInfo.vue'
-import EditToDoCard from '../components/todos/EditToDoCard.vue'
-import type { Todo } from '../stores/todo'  // 从 store 中导入 Todo 类型
+import { useTodoStore } from './todo'
+import ToDoListCard from './components/ToDoListCard.vue'
+import AddToDoCard from './components/AddToDoCard.vue'
+import ShowToDoInfo from './components/ShowToDoInfo.vue'
+import EditToDoCard from './components/EditToDoCard.vue'
+
+import type { Todo } from './todo'  // 从 store 中导入 Todo 类型
 
 const todoStore = useTodoStore()
 const showAddDialog = ref(false)
 const showInfo = ref(false)
 const selectedTodo = ref<Todo | null>(null)
 const showEditDialog = ref(false)
+
 
 // 在组件挂载时加载数据
 onMounted(() => {
