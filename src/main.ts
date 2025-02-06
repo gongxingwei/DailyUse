@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import './style.css'
 import App from './App.vue'
-import router from './router'
+import router from './shared/router'
 import vuetify from './plugins/vuetify'
 import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';

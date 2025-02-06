@@ -34,7 +34,8 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRepoStore } from '../../stores/repo'
+import { useRepoStore } from '../repo'
+import { fileSystem } from '@/shared/utils/fileSystem';
 
 const props = defineProps<{
   modelValue: boolean
@@ -60,7 +61,7 @@ const repoData = ref({
 
 const selectFolder = async () => {
   try {
-    const result = await window.electron.getRootDir()
+    const result = await fileSystem.selectFolder();
     if (result) {
       repoData.value.path = result.directoryPath
       repoData.value.title = window.electron.path.basename(result.directoryPath)

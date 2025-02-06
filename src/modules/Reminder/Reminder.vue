@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { notification } from '../utils/notification';
+import { notification } from '@/shared/utils/notification/notification';
 
 // 状态
 const interval = ref(45); // 默认45分钟

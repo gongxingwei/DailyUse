@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import { useRepoStore } from '../stores/repo';
-import { useSettingStore } from '../stores/setting';
-import CreateRepo from '../components/goals/CreateRepo.vue'
+import { useRepoStore } from '@/modules/Repo/repo';
+import { useSettingStore } from '@/modules/Setting/setting';
+import CreateRepo from '@/modules/Repo/components/CreateRepo.vue'
 
 const goalStore = useRepoStore();
 const settingStore = useSettingStore();

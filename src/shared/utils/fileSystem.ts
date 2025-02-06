@@ -11,7 +11,7 @@ export const fileSystem = {
    * 选择文件夹
    */
   selectFolder() {
-    return window.electron.ipcRenderer.invoke('select-folder');
+    return window.ipcRenderer.invoke('select-folder');
   },
 
   /**
@@ -26,6 +26,13 @@ export const fileSystem = {
    */
   createFile(path: string, content: string = '') {
     return window.electron.ipcRenderer.invoke('create-file', path, content);
+  },
+
+  /**
+   * 重命名文件或文件夹
+   */
+  rename(oldPath: string, newPath: string) {
+    return window.electron.ipcRenderer.invoke('rename-file-or-folder', oldPath, newPath)
   },
 
   /**

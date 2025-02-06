@@ -1,10 +1,10 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import MainLayout from '../layouts/MainLayout.vue'
-import Home from '../views/Home.vue'
-import Goal from '../views/Goal.vue'
-import Repository from '../views/Repository.vue'
-import Setting from '../views/Setting.vue'
-import NotificationWindow from '../components/notification/NotificationWindow.vue'
+import MainLayout from '@/shared/layouts/MainLayout.vue'
+import Home from '@/modules/Home/Home.vue'
+import Editor from '@/modules/Repo/Editor.vue'
+import Repository from '@/modules/Repo/Repo.vue'
+import Setting from '@/modules/Setting/Setting.vue'
+import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
@@ -25,12 +25,12 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/todolist',
                 name: 'todolist',
-                component: () => import('../views/ToDoList.vue')
+                component: () => import('@/modules/Todo/Todo.vue')
             },
             {
                 path: '/profile',
                 name: 'profile',
-                component: () => import('../views/Pro.vue')
+                component: () => import('@/modules/Profile/Pro.vue')
             },
             {
                 path: '/repository',  
@@ -39,12 +39,12 @@ const routes: RouteRecordRaw[] = [
             },{
                 path: '/reminder',
                 name: 'reminder',
-                component: () => import('../views/Reminder.vue')
+                component: () => import('@/modules/Reminder/Reminder.vue')
             },
             {
                 path: '/repo/:title',
                 name: 'repo',
-                component: Goal
+                component: Editor
             },
             {
                 path: '/setting',
@@ -54,7 +54,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/test',
                 name: 'test',
-                component: () => import('../views/Test.vue')
+                component: () => import('@/modules/Test/Test.vue')
             }
         ]
     },

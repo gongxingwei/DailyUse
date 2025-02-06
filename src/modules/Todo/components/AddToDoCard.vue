@@ -48,7 +48,6 @@
 import { ref, computed } from 'vue'
 import { useTodoStore } from '../todo'
 
-
 const props = defineProps({
   modelValue: Boolean
 })

@@ -1,41 +1,22 @@
 "use strict";
 const electron = require("electron");
-const path = require("path");
-electron.contextBridge.exposeInMainWorld("electron", {
-  platform: process.platform,
-  ipcRenderer: {
-    send: (channel, data) => electron.ipcRenderer.send(channel, data),
-    on: (channel, func) => {
-      electron.ipcRenderer.on(channel, (_event, ...args) => func(...args));
-    },
-    invoke: (channel, ...args) => electron.ipcRenderer.invoke(channel, ...args),
-    removeAllListeners: (channel) => electron.ipcRenderer.removeAllListeners(channel)
+electron.contextBridge.exposeInMainWorld("ipcRenderer", {
+  on(...args) {
+    const [channel, listener] = args;
+    return electron.ipcRenderer.on(channel, (event, ...args2) => listener(event, ...args2));
   },
-  createFolder: (currentPath) => electron.ipcRenderer.invoke("createFolder", currentPath),
-  createFile: (currentPath, content) => electron.ipcRenderer.invoke("createFile", currentPath, content),
-  deleteFileOrFolder: (path2, isDirectory) => electron.ipcRenderer.invoke("deleteFileOrFolder", path2, isDirectory),
-  renameFileOrFolder: (oldPath, newPath) => electron.ipcRenderer.invoke("renameFileOrFolder", oldPath, newPath),
-  readFile: (path2) => electron.ipcRenderer.invoke("readFile", path2),
-  writeFile: (path2, content) => electron.ipcRenderer.invoke("writeFile", path2, content),
-  selectFolder: () => electron.ipcRenderer.invoke("selectFolder"),
-  selectFile: () => electron.ipcRenderer.invoke("selectFile"),
-  getRootDir: () => electron.ipcRenderer.invoke("getRootDir"),
-  readClipboard: () => electron.ipcRenderer.invoke("readClipboard"),
-  writeClipboard: (text) => electron.ipcRenderer.invoke("writeClipboard", text),
-  readClipboardFiles: () => electron.ipcRenderer.invoke("readClipboardFiles"),
-  writeClipboardFiles: (filePaths) => electron.ipcRenderer.invoke("writeClipboardFiles", filePaths),
-  refreshFolder: (path2) => electron.ipcRenderer.invoke("refreshFolder", path2),
-  windowControl: (command) => electron.ipcRenderer.send("window-control", command),
-  getAutoLaunch: () => electron.ipcRenderer.invoke("get-auto-launch"),
-  setAutoLaunch: (enable) => electron.ipcRenderer.invoke("set-auto-launch", enable),
-  path: {
-    join: (...args) => path.join(...args),
-    dirname: (p) => path.dirname(p),
-    basename: (p) => path.basename(p)
+  off(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.off(channel, ...omit);
   },
-  quickLauncher: {
-    add: (name, command) => electron.ipcRenderer.invoke("quick-launcher-add", name, command),
-    remove: (name) => electron.ipcRenderer.invoke("quick-launcher-remove", name),
-    list: () => electron.ipcRenderer.invoke("quick-launcher-list")
+  send(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.send(channel, ...omit);
+  },
+  invoke(...args) {
+    const [channel, ...omit] = args;
+    return electron.ipcRenderer.invoke(channel, ...omit);
   }
+  // You can expose other APTs you need here.
+  // ...
 });

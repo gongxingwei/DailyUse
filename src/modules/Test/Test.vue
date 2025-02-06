@@ -36,7 +36,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { notification } from '@/utils/notification';
+import { notification } from '@/shared/utils/notification/notification';
 
 interface NotificationHistoryItem {
   time: string;

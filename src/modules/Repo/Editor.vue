@@ -14,11 +14,11 @@
 </template>
 
 <script setup lang="ts">
-import FileExplorer from '../components/goals/FileExplorer.vue'
-import RepoSettings from '../components/goals/RepoSettings.vue'
-import MarkdownEditor from '../components/goals/MarkdownEditor.vue'
+import FileExplorer from './components/FileExplorer.vue'
+import RepoSettings from './components/RepoSettings.vue'
+import MarkdownEditor from './components/MarkdownEditor.vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useRepoStore } from '../stores/repo'
+import { useRepoStore } from './repo'
 import { ref, computed, onMounted } from 'vue'
 
 const route = useRoute()

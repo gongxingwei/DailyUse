@@ -53,8 +53,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRepoStore } from '../../stores/repo'
-import type { Repo } from '../../stores/repo'
+import { useRepoStore } from '../repo'
+import type { Repo } from '../repo'
+
 
 const props = defineProps<{
   modelValue: boolean

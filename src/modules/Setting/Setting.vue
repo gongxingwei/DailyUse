@@ -176,7 +176,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, watch } from 'vue'
-import { useSettingStore } from '../stores/setting'
+import { useSettingStore } from './setting'
 import { useTheme } from 'vuetify'
 
 const settingStore = useSettingStore()

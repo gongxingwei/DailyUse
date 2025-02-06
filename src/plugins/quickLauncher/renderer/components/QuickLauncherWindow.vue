@@ -153,9 +153,9 @@ import { useQuickLauncherStore } from '../../store';
 import { ShortcutItem, ShortcutCategory } from '../../types';
 import Draggable from 'vuedraggable';
 import { v4 as uuidv4 } from 'uuid';
-import ContextMenu from '@/components/common/ContextMenu.vue';
+import ContextMenu from '@/shared/components/ContextMenu.vue';
 import { getShortcutTargetPath, addTitle } from '../../utils';
-import DialogForEdit from '@/components/common/DialogForEdit.vue';
+import DialogForEdit from '@/shared/components/DialogForEdit.vue';
 
 const store = useQuickLauncherStore();
 const searchQuery = ref('');

@@ -74,10 +74,10 @@
     </div>
   </template>
   
-  <script setup lang="ts">
-  import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-  import type { TreeNode, FolderData } from '../../types/tree'
-
+<script setup lang="ts">
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import type { TreeNode, FolderData } from '../repo'
+import { fileSystem } from '@/shared/utils/fileSystem'
 
   // 状态管理
   const folderData = ref<FolderData | null>(null)
@@ -152,7 +152,7 @@
         folderData.value.directoryPath,
         'NewFolder'
       )
-      await window.electron.createFolder(newFolderPath)
+      await fileSystem.createFolder(newFolderPath)
       await refreshFolder()
       startEdit(newFolderPath, 'NewFolder')
     } catch (error) {
@@ -166,7 +166,7 @@
       folderData.value.directoryPath,
       'untitled.md'
     )
-    await window.electron.createFile(newFilePath, '')
+    await fileSystem.createFile(newFilePath, '')
     await refreshFolder()
     startEdit(newFilePath, 'untitled')
   }
@@ -185,7 +185,7 @@
       )
 
       // 2. 调用 Electron API 创建文件夹
-      await window.electron.createFolder(newFolderPath)
+      await fileSystem.createFolder(newFolderPath)
 
       // 3. 展开父节点
       openedNodes.value.push(selectedNode.value.key)
@@ -211,7 +211,7 @@
         selectedNode.value.key,
         'untitled.md'
       )
-      await window.electron.createFile(newFilePath, '')
+      await fileSystem.createFile(newFilePath, '')
       openedNodes.value.push(selectedNode.value.key)
       await refreshFolder()
       startEdit(newFilePath, 'untitled')
@@ -303,7 +303,7 @@
       const newPath = window.electron.path.join(parentPath, newNameWithExt)
       
       try {
-        const success = await window.electron.renameFileOrFolder(oldPath, newPath)
+        const success = await fileSystem.rename(oldPath, newPath)
         if (success) {
           await refreshFolder()
         }
@@ -362,7 +362,7 @@
   // 刷新文件夹
   async function refreshFolder() {
     if (folderData.value?.directoryPath) {
-      const result = await window.electron.refreshFolder(folderData.value.directoryPath)
+      const result = await fileSystem.refreshFolder(folderData.value.directoryPath)
       if (result) {
         folderData.value = result
       }
@@ -398,7 +398,7 @@
   watch(() => props.rootPath, async (newPath) => {
     if (newPath) {
       try {
-        const result = await window.electron.refreshFolder(newPath)
+        const result = await fileSystem.refreshFolder(newPath)
         if (result) {
           folderData.value = result
         }
@@ -412,7 +412,7 @@
   watch(() => folderData.value?.directoryPath, async (newPath) => {
     if (newPath && newPath !== props.rootPath) {
       try {
-        const result = await window.electron.refreshFolder(newPath)
+        const result = await fileSystem.refreshFolder(newPath)
         if (result) {
           folderData.value = result
         }
