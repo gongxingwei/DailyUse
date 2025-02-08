@@ -51,14 +51,14 @@ const close = () => {
     clearInterval(progressInterval);
     progressInterval = null;
   }
-  if (window.electron?.ipcRenderer) {
-    window.electron.ipcRenderer.send('close-notification', id.value);
+  if (window.shared?.ipcRenderer) {
+    window.shared.ipcRenderer.send('close-notification', id.value);
   }
 };
 
 const handleAction = (action: { text: string; type: string }) => {
-  if (window.electron?.ipcRenderer) {
-    window.electron.ipcRenderer.send('notification-action', id.value, action);
+  if (window.shared?.ipcRenderer) {
+    window.shared.ipcRenderer.send('notification-action', id.value, action);
   }
 };
 

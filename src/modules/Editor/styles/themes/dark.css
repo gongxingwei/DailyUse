@@ -1,0 +1,13 @@
+/* styles/themes/dark.css */
+:root {
+    --background: #1e1e1e;
+    --foreground: #d4d4d4;
+    --border: #3c3c3c;
+  }
+  
+  /* styles/themes/light.css */
+  :root {
+    --background: #ffffff;
+    --foreground: #333333;
+    --border: #e0e0e0;
+  }

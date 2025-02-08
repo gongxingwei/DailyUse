@@ -1,7 +1,7 @@
 "use strict";
 const electron = require("electron");
 electron.contextBridge.exposeInMainWorld(
-  "electron",
+  "shared",
   {
     ipcRenderer: {
       send: (channel, data) => {

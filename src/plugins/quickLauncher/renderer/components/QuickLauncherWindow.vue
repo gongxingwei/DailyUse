@@ -54,6 +54,7 @@
           <v-col cols="10" class="shortcuts-container">
             <v-container 
               class="pa-4 h-100"
+              @dragenter.prevent
               @dragover.prevent
               @drop.prevent="handleDrop"
               @contextmenu.stop.prevent="showShortcutAreaContextMenu($event)"
@@ -289,10 +290,10 @@ async function addShortcut() {
     icon: ''
   };
 
-  const result = await window.electron.ipcRenderer.invoke('select-file');
+  const result = await window.shared.ipcRenderer.invoke('select-file');
   const shortcutIcon = async (filePath: string): Promise<string> => {
     try {
-      const iconBase64 = await window.electron.ipcRenderer.invoke('get-file-icon', filePath);
+      const iconBase64 = await window.shared.ipcRenderer.invoke('get-file-icon', filePath);
       return iconBase64 || 'mdi-application';
     } catch (error) {
       console.warn('获取文件图标失败:', error);
@@ -324,7 +325,7 @@ async function addShortcut() {
 async function launchItem(item: ShortcutItem) {
   try {
     closeWindow();
-    await window.electron.ipcRenderer.invoke('launch-application', item.path);
+    await window.shared.ipcRenderer.invoke('launch-application', item.path);
     store.recordItemUsage(item.id);
   } catch (error) {
     console.error('Failed to launch application:', error);
@@ -427,22 +428,26 @@ const confirmRenameCategory = () => {
 };
 
 async function handleDrop(event: DragEvent) {
+
   event.preventDefault();
   const files = event.dataTransfer?.files;
+
   const shortcutIcon = async (filePath: string): Promise<string> => {
     try {
-      const iconBase64 = await window.electron.ipcRenderer.invoke('get-file-icon', filePath);
+      const iconBase64 = await window.shared.ipcRenderer.invoke('get-file-icon', filePath);
       return iconBase64 || 'mdi-application';
     } catch (error) {
-      console.warn('获取文件图标失败:', error);
+      console.warn('[Drop] 获取文件图标失败:', error);
       return 'mdi-application';
     }
   };
   
   if (files && files.length > 0) {
-    Array.from(files).forEach(async (file) => {
-      const targetPath = await getShortcutTargetPath((file as any).path);
+    console.log('[Drop] 开始处理文件, 数量:', files.length);
+    Array.from(files).forEach(async (file) => {      
+      const targetPath = await getShortcutTargetPath((file as any).path); 
       const base64Icon = await shortcutIcon(targetPath);
+
       const shortcut: ShortcutItem = {
         id: uuidv4(),
         name: file.name.replace(/\.[^/.]+$/, ""),
@@ -452,8 +457,13 @@ async function handleDrop(event: DragEvent) {
         lastUsed: new Date(),
         category: selectedCategory.value
       };
+
+
       store.addShortcut(selectedCategory.value, shortcut);
+
     });
+  } else {
+    console.log('[Drop] 没有检测到文件');
   }
 }
 

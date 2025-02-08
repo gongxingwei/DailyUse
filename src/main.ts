@@ -37,10 +37,7 @@ pluginManager.register(quickLauncherPlugin)
 app.mount('#app')
   .$nextTick(() => {
     // 初始化所有插件
-    
-    
-    // Use contextBridge
-    window.electron.ipcRenderer.on('main-process-message', (_event, message) => {
+    window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
       console.log(message)
     })
   })

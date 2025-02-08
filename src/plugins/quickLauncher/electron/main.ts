@@ -29,7 +29,6 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
     }
 
     const preloadPath = path.resolve(MAIN_DIST, 'quickLauncher_preload.mjs');
-    console.log('Creating quick launcher window with preload path:', preloadPath);
 
     this.quickLauncherWindow = new BrowserWindow({
       width: 1024,
@@ -82,15 +81,11 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
   }
 
   async init(): Promise<void> {
-    console.log('[QuickLauncherMain] 1. 开始初始化主进程插件');
     this.registerIpcHandlers();
     this.registerShortcuts();
-    console.log('[QuickLauncherMain] 3. 快捷键注册完成');
   }
 
-  registerIpcHandlers(): void {
-    console.log('[QuickLauncherMain] 注册IPC处理器...');
-    
+  registerIpcHandlers(): void {  
     // 注册IPC处理器来处理应用程序启动请求
     ipcMain.handle('launch-application', async (_, path: string) => {
       return new Promise((resolve, reject) => {
@@ -108,11 +103,9 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
     });
 
     ipcMain.handle('select-file', async () => {
-      console.log('[QuickLauncherMain] 打开文件选择对话框');
       const result = await dialog.showOpenDialog({
         properties: ['openFile']
       });
-      console.log('[QuickLauncherMain] 文件选择结果:', result.filePaths);
       return result;
     });
 
@@ -146,10 +139,8 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
 
   
   registerShortcuts(): void {
-    console.log('[QuickLauncherMain] 注册全局快捷键...');
     // 注册全局快捷键
     globalShortcut.register('Alt+Space', () => {
-      console.log('[QuickLauncherMain] 触发Alt+Space快捷键');
       if (this.quickLauncherWindow) {
         if (this.quickLauncherWindow.isVisible()) {
           this.quickLauncherWindow.hide();

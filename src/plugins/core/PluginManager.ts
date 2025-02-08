@@ -7,7 +7,6 @@ export class PluginManager {
   constructor() {}
 
   async register(plugin: Plugin): Promise<void> {
-    console.log(`[PluginManager] 1. 开始注册插件: ${plugin.metadata.name}`);
     
     if (this.plugins.has(plugin.metadata.name)) {
       console.error(`[PluginManager] 错误: 插件 ${plugin.metadata.name} 已经注册过了`);
@@ -15,10 +14,8 @@ export class PluginManager {
     }
     
     this.plugins.set(plugin.metadata.name, plugin);
-    console.log(`[PluginManager] 2. 插件 ${plugin.metadata.name} 注册成功`);
-    
+
     if (this.initialized) {
-      console.log(`[PluginManager] 3. PluginManager已初始化，立即初始化新插件: ${plugin.metadata.name}`);
       await plugin.init();
     }
   }
@@ -32,14 +29,12 @@ export class PluginManager {
   }
 
   async initializeAll(): Promise<void> {
-    console.log('[PluginManager] 开始初始化所有插件...');
     this.initialized = true;
     
     for (const [name, plugin] of this.plugins) {
-      console.log(`[PluginManager] 正在初始化插件: ${name}`);
+
       try {
         await plugin.init();
-        console.log(`[PluginManager] 插件 ${name} 初始化成功`);
       } catch (error) {
         console.error(`[PluginManager] 插件 ${name} 初始化失败:`, error);
       }

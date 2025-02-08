@@ -15,13 +15,13 @@ export class NotificationService {
 
   private constructor() {
     // 添加空值检查
-    if (!window.electron?.ipcRenderer) {
+    if (!window.shared?.ipcRenderer) {
       console.error('Electron IPC Renderer is not available');
       return;
     }
 
     // 监听通知动作
-    window.electron.ipcRenderer.on('notification-action', (_event: any, id: string, action: any) => {
+    window.shared.ipcRenderer.on('notification-action', (_event: any, id: string, action: any) => {
       console.log('Notification action:', id, action);
     });
   }
@@ -48,7 +48,7 @@ export class NotificationService {
     const id = this.generateId();
     try {
       console.log('调用 IPC show-notification，参数:', { id, ...options });
-      const result = await window.electron.ipcRenderer.invoke('show-notification', {
+      const result = await window.shared.ipcRenderer.invoke('show-notification', {
         id,
         ...options
       });
@@ -69,7 +69,7 @@ export class NotificationService {
     console.log('NotificationService.showSimple 被调用:', { title, message });
     const id = this.generateId();
     console.log('调用 IPC show-notification，参数:', { id, title, body: message, urgency: 'normal' });
-    const result = await window.electron.ipcRenderer.invoke('show-notification', {
+    const result = await window.shared.ipcRenderer.invoke('show-notification', {
       id,
       title,
       body: message,

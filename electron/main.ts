@@ -1,13 +1,28 @@
-import { app, BrowserWindow, ipcMain, clipboard, screen, Tray, Menu, nativeImage } from 'electron'
+import { app, BrowserWindow, ipcMain, clipboard, Tray, Menu, nativeImage } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { join } from 'path';
 import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
-import { registerFileSystemHandlers } from './ipc/filesystem';
+import { registerFileSystemHandlers } from './shared/ipc/filesystem';
+import { setupNotificationHandlers } from './modules/notification/notification';
 
-// 存储通知窗口的Map
-const notificationWindows = new Map<string, BrowserWindow>();
+app.setName('DailyUse');
+
+// 防止软件崩溃以及兼容
+// Add these WebGL specific switches
+app.commandLine.appendSwitch('disable-webgl');
+app.commandLine.appendSwitch('disable-webgl2');
+app.commandLine.appendSwitch('use-gl', 'swiftshader');  // Use software rendering
+
+app.commandLine.appendSwitch('no-sandbox');
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+app.commandLine.appendSwitch('disable-gpu-compositing');
+app.commandLine.appendSwitch('disable-gpu-rasterization');
+app.commandLine.appendSwitch('disable-gpu-sandbox');
+app.commandLine.appendSwitch('--no-sandbox');
+app.disableHardwareAcceleration();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -60,7 +75,6 @@ function createWindow() {
       }
     });
   });
-
   // Initialize plugin system
   pluginManager = new PluginManager();
   if (win) {
@@ -149,154 +163,15 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   createWindow();
   registerFileSystemHandlers();
+  if (win) {
+    setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+  }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
 });
-
-// 通知窗口的位置管理
-const NOTIFICATION_WIDTH = 320;
-const NOTIFICATION_HEIGHT = 120;
-const NOTIFICATION_MARGIN = 10;
-
-// 获取通知窗口的位置
-function getNotificationPosition(): { x: number, y: number } {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth } = primaryDisplay.workAreaSize;
-  
-  // 计算新通知的位置
-  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
-  const y = NOTIFICATION_MARGIN + (notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN));
-  
-  return { x, y };
-}
-
-// 重新排列所有通知窗口
-function reorderNotifications() {
-  let index = 0;
-  for (const [, window] of notificationWindows) {
-    const y = NOTIFICATION_MARGIN + (index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN));
-    window.setPosition(window.getPosition()[0], y);
-    index++;
-  }
-}
-
-// 处理桌面通知
-ipcMain.handle('show-notification', async (_event, options: {
-  id: string
-  title: string
-  body: string
-  icon?: string
-  urgency?: 'normal' | 'critical' | 'low'
-  actions?: Array<{ text: string, type: 'confirm' | 'cancel' | 'action' }>
-}) => {
-  if (!win) {
-    return;
-  }
-
-  // 如果存在相同ID的通知，先关闭它
-  if (notificationWindows.has(options.id)) {
-    const existingWindow = notificationWindows.get(options.id);
-    existingWindow?.close();
-    notificationWindows.delete(options.id);
-    reorderNotifications();
-  }
-
-  // 获取新通知的位置
-  const { x, y } = getNotificationPosition();
-
-  // 创建通知窗口
-  const notificationWindow = new BrowserWindow({
-    width: NOTIFICATION_WIDTH,
-    height: NOTIFICATION_HEIGHT,
-    x,
-    y,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    skipTaskbar: true,
-    alwaysOnTop: true,
-    show: false,
-    webPreferences: {
-      preload: path.join(MAIN_DIST, 'main_preload.mjs'),
-      contextIsolation: true,
-      nodeIntegration: true,
-      webSecurity: false
-    }
-  });
-
-  // 设置通知窗口的 CSP
-  notificationWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
-      }
-    });
-  });
-
-  // 存储窗口引用
-  notificationWindows.set(options.id, notificationWindow);
-
-  // 监听窗口关闭事件
-  notificationWindow.on('closed', () => {
-    notificationWindows.delete(options.id);
-    reorderNotifications();
-  });
-
-  // 构建查询参数
-  const queryParams = new URLSearchParams({
-    id: options.id,
-    title: options.title,
-    body: options.body,
-    urgency: options.urgency || 'normal'
-  });
-
-  if (options.icon) {
-    queryParams.append('icon', options.icon);
-  }
-
-  if (options.actions) {
-    queryParams.append('actions', encodeURIComponent(JSON.stringify(options.actions)));
-  }
-
-  // 加载通知页面
-  const notificationUrl = VITE_DEV_SERVER_URL
-    ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}`
-    : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
-
-  await notificationWindow.loadURL(notificationUrl);
-
-  // 显示窗口
-  notificationWindow.show();
-
-  return options.id;
-});
-
-// 处理通知关闭请求
-ipcMain.on('close-notification', (_event, id: string) => {
-  const window = notificationWindows.get(id);
-  if (window && !window.isDestroyed()) {
-    window.close();
-  }
-});
-
-// 处理通知动作
-ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
-  const window = notificationWindows.get(id);
-  if (window && !window.isDestroyed()) {
-    // 如果是确认或取消按钮，关闭通知
-    if (action.type === 'confirm' || action.type === 'cancel') {
-      window.close();
-    }
-    // 转发动作到主窗口
-    win?.webContents.send('notification-action-received', id, action);
-  }
-});
-
-
 
 // 读取剪贴板文本
 ipcMain.handle('readClipboard', () => {
@@ -321,12 +196,10 @@ ipcMain.handle('readClipboardFiles', () => {
   return [];
 });
 
-// 写入文件路径到剪贴板
-ipcMain.handle('writeClipboardFiles', (_event, filePaths: string[]) => {
-  clipboard.writeBuffer('FileNameW', Buffer.from(filePaths.join('\0') + '\0', 'ucs2'));
-});
-
-
+// // 写入文件路径到剪贴板
+// ipcMain.handle('writeClipboardFiles', (_event, filePaths: string[]) => {
+//   clipboard.writeBuffer('FileNameW', Buffer.from(filePaths.join('\0') + '\0', 'ucs2'));
+// });
 
 // 窗口控制
 ipcMain.on('window-control', (_event, command) => {

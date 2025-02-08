@@ -10,7 +10,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
-import NotificationWindow from '../components/notification/NotificationWindow.vue';
+import NotificationWindow from './NotificationWindow.vue';
 
 const route = useRoute();
 const notificationData = ref<any>(null);
@@ -22,10 +22,10 @@ onMounted(() => {
 });
 
 const handleAction = (action: any) => {
-  window.electron.ipcRenderer.send('notification-action', notificationData.value?.id, action);
+  window.shared.send('notification-action', notificationData.value?.id, action);
 };
 
 const handleClose = () => {
-  window.electron.ipcRenderer.send('close-notification', notificationData.value?.id);
+  window.shared.send('close-notification', notificationData.value?.id);
 };
 </script>

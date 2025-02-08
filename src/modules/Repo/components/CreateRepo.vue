@@ -63,12 +63,14 @@ const selectFolder = async () => {
   try {
     const result = await fileSystem.selectFolder();
     if (result) {
-      repoData.value.path = result.directoryPath
-      repoData.value.title = window.electron.path.basename(result.directoryPath)
+      repoData.value.path = result.folderPath
+      repoData.value.title = window.shared.path.basename(result.folderPath)
     }
+
   } catch (error) {
     console.error('选择文件夹失败:', error)
   }
+
 }
 
 const createRepo = async () => {

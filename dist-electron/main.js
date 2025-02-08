@@ -1,7 +1,7 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, clipboard, nativeImage, Tray, Menu, screen } from "electron";
+import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, screen, clipboard, nativeImage, Tray, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path$1 from "node:path";
 import path, { join } from "path";
@@ -13,15 +13,12 @@ class PluginManager {
     __publicField(this, "initialized", false);
   }
   async register(plugin) {
-    console.log(`[PluginManager] 1. 开始注册插件: ${plugin.metadata.name}`);
     if (this.plugins.has(plugin.metadata.name)) {
       console.error(`[PluginManager] 错误: 插件 ${plugin.metadata.name} 已经注册过了`);
       throw new Error(`Plugin ${plugin.metadata.name} is already registered`);
     }
     this.plugins.set(plugin.metadata.name, plugin);
-    console.log(`[PluginManager] 2. 插件 ${plugin.metadata.name} 注册成功`);
     if (this.initialized) {
-      console.log(`[PluginManager] 3. PluginManager已初始化，立即初始化新插件: ${plugin.metadata.name}`);
       await plugin.init();
     }
   }
@@ -33,13 +30,10 @@ class PluginManager {
     }
   }
   async initializeAll() {
-    console.log("[PluginManager] 开始初始化所有插件...");
     this.initialized = true;
     for (const [name, plugin] of this.plugins) {
-      console.log(`[PluginManager] 正在初始化插件: ${name}`);
       try {
         await plugin.init();
-        console.log(`[PluginManager] 插件 ${name} 初始化成功`);
       } catch (error) {
         console.error(`[PluginManager] 插件 ${name} 初始化失败:`, error);
       }
@@ -83,7 +77,6 @@ class QuickLauncherMainPlugin {
       return;
     }
     const preloadPath = path.resolve(MAIN_DIST$1, "quickLauncher_preload.mjs");
-    console.log("Creating quick launcher window with preload path:", preloadPath);
     this.quickLauncherWindow = new BrowserWindow({
       width: 1024,
       height: 576,
@@ -126,13 +119,10 @@ class QuickLauncherMainPlugin {
     });
   }
   async init() {
-    console.log("[QuickLauncherMain] 1. 开始初始化主进程插件");
     this.registerIpcHandlers();
     this.registerShortcuts();
-    console.log("[QuickLauncherMain] 3. 快捷键注册完成");
   }
   registerIpcHandlers() {
-    console.log("[QuickLauncherMain] 注册IPC处理器...");
     ipcMain.handle("launch-application", async (_, path2) => {
       return new Promise((resolve, reject) => {
         const options = { windowsHide: false };
@@ -148,11 +138,9 @@ class QuickLauncherMainPlugin {
       });
     });
     ipcMain.handle("select-file", async () => {
-      console.log("[QuickLauncherMain] 打开文件选择对话框");
       const result = await dialog.showOpenDialog({
         properties: ["openFile"]
       });
-      console.log("[QuickLauncherMain] 文件选择结果:", result.filePaths);
       return result;
     });
     ipcMain.handle("get-file-icon", async (_event, filePath) => {
@@ -180,9 +168,7 @@ class QuickLauncherMainPlugin {
     });
   }
   registerShortcuts() {
-    console.log("[QuickLauncherMain] 注册全局快捷键...");
     globalShortcut.register("Alt+Space", () => {
-      console.log("[QuickLauncherMain] 触发Alt+Space快捷键");
       if (this.quickLauncherWindow) {
         if (this.quickLauncherWindow.isVisible()) {
           this.quickLauncherWindow.hide();
@@ -321,6 +307,112 @@ function registerFileSystemHandlers() {
   });
 }
 const notificationWindows = /* @__PURE__ */ new Map();
+const NOTIFICATION_WIDTH = 320;
+const NOTIFICATION_HEIGHT = 120;
+const NOTIFICATION_MARGIN = 10;
+function getNotificationPosition() {
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width: screenWidth } = primaryDisplay.workAreaSize;
+  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
+  const y = NOTIFICATION_MARGIN + notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
+  return { x, y };
+}
+function reorderNotifications() {
+  let index = 0;
+  for (const [, window] of notificationWindows) {
+    const y = NOTIFICATION_MARGIN + index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
+    window.setPosition(window.getPosition()[0], y);
+    index++;
+  }
+}
+function setupNotificationHandlers(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
+  ipcMain.handle("show-notification", async (_event, options) => {
+    if (!mainWindow) {
+      return;
+    }
+    if (notificationWindows.has(options.id)) {
+      const existingWindow = notificationWindows.get(options.id);
+      existingWindow == null ? void 0 : existingWindow.close();
+      notificationWindows.delete(options.id);
+      reorderNotifications();
+    }
+    const { x, y } = getNotificationPosition();
+    const notificationWindow = new BrowserWindow({
+      width: NOTIFICATION_WIDTH,
+      height: NOTIFICATION_HEIGHT,
+      x,
+      y,
+      frame: false,
+      transparent: true,
+      resizable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      show: false,
+      webPreferences: {
+        preload: path$1.join(MAIN_DIST2, "main_preload.mjs"),
+        contextIsolation: true,
+        nodeIntegration: true,
+        webSecurity: false
+      }
+    });
+    notificationWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          "Content-Security-Policy": ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+        }
+      });
+    });
+    notificationWindows.set(options.id, notificationWindow);
+    notificationWindow.on("closed", () => {
+      notificationWindows.delete(options.id);
+      reorderNotifications();
+    });
+    const queryParams = new URLSearchParams({
+      id: options.id,
+      title: options.title,
+      body: options.body,
+      urgency: options.urgency || "normal"
+    });
+    if (options.icon) {
+      queryParams.append("icon", options.icon);
+    }
+    if (options.actions) {
+      queryParams.append("actions", encodeURIComponent(JSON.stringify(options.actions)));
+    }
+    const notificationUrl = VITE_DEV_SERVER_URL2 ? `${VITE_DEV_SERVER_URL2}#/notification?${queryParams.toString()}` : `file://${RENDERER_DIST2}/index.html#/notification?${queryParams.toString()}`;
+    await notificationWindow.loadURL(notificationUrl);
+    notificationWindow.show();
+    return options.id;
+  });
+  ipcMain.on("close-notification", (_event, id) => {
+    const window = notificationWindows.get(id);
+    if (window && !window.isDestroyed()) {
+      window.close();
+    }
+  });
+  ipcMain.on("notification-action", (_event, id, action) => {
+    const window = notificationWindows.get(id);
+    if (window && !window.isDestroyed()) {
+      if (action.type === "confirm" || action.type === "cancel") {
+        window.close();
+      }
+      mainWindow.webContents.send("notification-action-received", id, action);
+    }
+  });
+}
+app.setName("DailyUse");
+app.commandLine.appendSwitch("disable-webgl");
+app.commandLine.appendSwitch("disable-webgl2");
+app.commandLine.appendSwitch("use-gl", "swiftshader");
+app.commandLine.appendSwitch("no-sandbox");
+app.commandLine.appendSwitch("disable-gpu");
+app.commandLine.appendSwitch("disable-software-rasterizer");
+app.commandLine.appendSwitch("disable-gpu-compositing");
+app.commandLine.appendSwitch("disable-gpu-rasterization");
+app.commandLine.appendSwitch("disable-gpu-sandbox");
+app.commandLine.appendSwitch("--no-sandbox");
+app.disableHardwareAcceleration();
 const __dirname$1 = path$1.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path$1.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -419,103 +511,14 @@ app.on("activate", () => {
 app.whenReady().then(() => {
   createWindow();
   registerFileSystemHandlers();
+  if (win) {
+    setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+  }
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();
     }
   });
-});
-const NOTIFICATION_WIDTH = 320;
-const NOTIFICATION_HEIGHT = 120;
-const NOTIFICATION_MARGIN = 10;
-function getNotificationPosition() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth } = primaryDisplay.workAreaSize;
-  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
-  const y = NOTIFICATION_MARGIN + notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
-  return { x, y };
-}
-function reorderNotifications() {
-  let index = 0;
-  for (const [, window] of notificationWindows) {
-    const y = NOTIFICATION_MARGIN + index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
-    window.setPosition(window.getPosition()[0], y);
-    index++;
-  }
-}
-ipcMain.handle("show-notification", async (_event, options) => {
-  if (!win) {
-    return;
-  }
-  if (notificationWindows.has(options.id)) {
-    const existingWindow = notificationWindows.get(options.id);
-    existingWindow == null ? void 0 : existingWindow.close();
-    notificationWindows.delete(options.id);
-    reorderNotifications();
-  }
-  const { x, y } = getNotificationPosition();
-  const notificationWindow = new BrowserWindow({
-    width: NOTIFICATION_WIDTH,
-    height: NOTIFICATION_HEIGHT,
-    x,
-    y,
-    frame: false,
-    transparent: true,
-    resizable: false,
-    skipTaskbar: true,
-    alwaysOnTop: true,
-    show: false,
-    webPreferences: {
-      preload: path$1.join(MAIN_DIST, "main_preload.mjs"),
-      contextIsolation: true,
-      nodeIntegration: true,
-      webSecurity: false
-    }
-  });
-  notificationWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-    callback({
-      responseHeaders: {
-        ...details.responseHeaders,
-        "Content-Security-Policy": ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
-      }
-    });
-  });
-  notificationWindows.set(options.id, notificationWindow);
-  notificationWindow.on("closed", () => {
-    notificationWindows.delete(options.id);
-    reorderNotifications();
-  });
-  const queryParams = new URLSearchParams({
-    id: options.id,
-    title: options.title,
-    body: options.body,
-    urgency: options.urgency || "normal"
-  });
-  if (options.icon) {
-    queryParams.append("icon", options.icon);
-  }
-  if (options.actions) {
-    queryParams.append("actions", encodeURIComponent(JSON.stringify(options.actions)));
-  }
-  const notificationUrl = VITE_DEV_SERVER_URL ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}` : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
-  await notificationWindow.loadURL(notificationUrl);
-  notificationWindow.show();
-  return options.id;
-});
-ipcMain.on("close-notification", (_event, id) => {
-  const window = notificationWindows.get(id);
-  if (window && !window.isDestroyed()) {
-    window.close();
-  }
-});
-ipcMain.on("notification-action", (_event, id, action) => {
-  const window = notificationWindows.get(id);
-  if (window && !window.isDestroyed()) {
-    if (action.type === "confirm" || action.type === "cancel") {
-      window.close();
-    }
-    win == null ? void 0 : win.webContents.send("notification-action-received", id, action);
-  }
 });
 ipcMain.handle("readClipboard", () => {
   return clipboard.readText();
@@ -529,9 +532,6 @@ ipcMain.handle("readClipboardFiles", () => {
     return clipboard.read("FileNameW").split("\0").filter(Boolean);
   }
   return [];
-});
-ipcMain.handle("writeClipboardFiles", (_event, filePaths) => {
-  clipboard.writeBuffer("FileNameW", Buffer.from(filePaths.join("\0") + "\0", "ucs2"));
 });
 ipcMain.on("window-control", (_event, command) => {
   switch (command) {

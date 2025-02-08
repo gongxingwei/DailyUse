@@ -12,20 +12,16 @@
       </v-btn-toggle>
       <v-spacer></v-spacer>
       <div v-if="props.filePath" class="text-caption">
-        {{ electron.path.basename(props.filePath) }}
+        {{ shared.path.basename(props.filePath) }}
       </div>
     </v-toolbar>
 
+
+
     <div class="editor-container" :class="viewMode">
       <div class="edit-area" v-show="viewMode !== 'preview'">
-        <MonacoEditor
-          v-model:value="content"
-          :options="editorOptions"
-          theme="vs-dark"
-          language="markdown"
-          @keydown.ctrl.s.prevent="saveContent"
-          @keydown.meta.s.prevent="saveContent"
-        />
+        <MonacoEditor v-model:value="content" :options="editorOptions" theme="vs-dark" language="markdown"
+          @keydown.ctrl.s.prevent="saveContent" @keydown.meta.s.prevent="saveContent" />
       </div>
       <div class="preview-area markdown-body" v-show="viewMode !== 'edit'" v-html="renderedContent"></div>
     </div>
@@ -37,12 +33,13 @@ import { ref, computed, watch, onMounted } from 'vue'
 import MonacoEditor from 'monaco-editor-vue3'
 import MarkdownIt from 'markdown-it'
 import 'github-markdown-css'
+import { fileSystem } from '@/shared/utils/fileSystem'
 
-const electron = window.electron
-
+const shared = window.shared
 const props = defineProps<{
   filePath: string | undefined
 }>()
+
 
 // 初始化 markdown-it
 const md = new MarkdownIt({
@@ -82,9 +79,10 @@ watch(viewMode, (newMode) => {
 watch(() => props.filePath, async (newPath) => {
   if (newPath) {
     try {
-      const fileContent = await window.electron.readFile(newPath)
+      const fileContent = await fileSystem.readFile(newPath)
       content.value = fileContent
       console.log('读取文件内容:', fileContent)
+
     } catch (error) {
       console.error('读取文件失败:', error)
       content.value = ''
@@ -101,7 +99,7 @@ watch(() => props.filePath, async (newPath) => {
 onMounted(async () => {
   if (props.filePath) {
     try {
-      const fileContent = await window.electron.readFile(props.filePath)
+      const fileContent = await fileSystem.readFile(props.filePath)
       content.value = fileContent
     } catch (error) {
       console.error('读取文件失败:', error)
@@ -115,7 +113,7 @@ const saveContent = async () => {
   if (!props.filePath) return
 
   try {
-    await window.electron.writeFile(props.filePath, content.value)
+    await fileSystem.writeFile(props.filePath, content.value)
   } catch (error) {
     console.error('保存文件失败:', error)
     alert('保存失败')
@@ -159,7 +157,8 @@ const saveContent = async () => {
   width: 50%;
 }
 
-.edit-area, .preview-area {
+.edit-area,
+.preview-area {
   flex: 1;
   overflow: auto;
 }
@@ -176,20 +175,32 @@ const saveContent = async () => {
   min-width: 200px;
   max-width: 980px;
   margin: 0 auto;
-  font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   font-size: 16px;
   line-height: 1.5;
   color: #d4d4d4;
 }
 
-:deep(.markdown-body h1) { font-size: 2em; margin: 0.67em 0; }
-:deep(.markdown-body h2) { font-size: 1.5em; margin: 0.83em 0; }
-:deep(.markdown-body p) { margin: 1em 0; }
-:deep(.markdown-body code) { 
+:deep(.markdown-body h1) {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+:deep(.markdown-body h2) {
+  font-size: 1.5em;
+  margin: 0.83em 0;
+}
+
+:deep(.markdown-body p) {
+  margin: 1em 0;
+}
+
+:deep(.markdown-body code) {
   background-color: #2d2d2d;
   padding: 0.2em 0.4em;
   border-radius: 3px;
 }
+
 :deep(.markdown-body pre) {
   background-color: #2d2d2d;
   padding: 16px;
@@ -227,4 +238,4 @@ const saveContent = async () => {
   border-color: #30363d;
   padding: 6px 13px;
 }
-</style> 
+</style>

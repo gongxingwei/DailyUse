@@ -14,16 +14,16 @@ const isMaximized = ref(false)
 const isDrawerExpanded = ref(false)
 
 const minimizeWindow = () => {
-  window.electron.windowControl('minimize')
+  window.shared.ipcRenderer.send('window-control', 'minimize')
 }
 
 const maximizeWindow = () => {
-  window.electron.windowControl('maximize')
+  window.shared.ipcRenderer.send('window-control', 'maximize')
   isMaximized.value = !isMaximized.value
 }
 
 const closeWindow = () => {
-  window.electron.windowControl('close')
+  window.shared.ipcRenderer.send('window-control', 'close')
 }
 
 const toggleDrawer = () => {
@@ -73,7 +73,9 @@ const toggleDrawer = () => {
                         <v-list-item prepend-icon="mdi-list-box" title="ToDoList" :to="'/todolist'"></v-list-item>
                         <v-list-item prepend-icon="mdi-database" title="Repository" :to="'/repository'"></v-list-item>
                         <v-list-item prepend-icon="mdi-bell" title="Reminder" :to="'/reminder'"></v-list-item>
+                        <v-list-item prepend-icon="mdi-bell" title="Test" :to="'/editor'"></v-list-item>
                         <v-list-item prepend-icon="mdi-bell" title="Test" :to="'/test'"></v-list-item>
+                        
                     </v-list>
                     
                     <v-divider></v-divider>
@@ -163,7 +165,7 @@ const toggleDrawer = () => {
 }
 
 :deep(.v-navigation-drawer) {
-    margin-top: 32px !important;
+    padding-top: 32px !important;
     padding-bottom: 32px !important;
 }
 

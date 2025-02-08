@@ -56,5 +56,5 @@ declare namespace Electron {
 }
 
 interface Window {
-  electron: ElectronAPI;
+  shared: SharedAPI;
 }

@@ -203,7 +203,7 @@ const autoLaunch = ref(false)
 // 初始化时获取当前开机自启动状态
 onMounted(async () => {
   try {
-    const isAutoLaunch = await window.electron?.ipcRenderer.invoke('get-auto-launch')
+    const isAutoLaunch = await window.shared?.ipcRenderer.invoke('get-auto-launch')
     autoLaunch.value = isAutoLaunch
   } catch (error) {
     console.error('获取开机自启动状态失败:', error)
@@ -213,7 +213,7 @@ onMounted(async () => {
 // 处理开机自启动变更
 const handleAutoLaunchChange = async () => {
   try {
-    const result = await window.electron?.ipcRenderer.invoke('set-auto-launch', autoLaunch.value)
+    const result = await window.shared?.ipcRenderer.invoke('set-auto-launch', autoLaunch.value)
     autoLaunch.value = result
   } catch (error) {
     console.error('设置开机自启动失败:', error)

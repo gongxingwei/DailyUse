@@ -55,7 +55,7 @@ import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRepoStore } from '../repo'
 import type { Repo } from '../repo'
-
+import { fileSystem } from '@/shared/utils/fileSystem'
 
 const props = defineProps<{
   modelValue: boolean
@@ -98,11 +98,13 @@ const saveSettings = async () => {
       if (repoData.value.title !== props.repo.title) {
         // 构建新路径
         const oldPath = props.repo.path
-        const parentPath = window.electron.path.dirname(oldPath)
-        const newPath = window.electron.path.join(parentPath, repoData.value.title)
+        const parentPath = window.shared.path.dirname(oldPath)
+        const newPath = window.shared.path.join(parentPath, repoData.value.title)
+
 
         // 重命名文件夹
-        const success = await window.electron.renameFileOrFolder(oldPath, newPath)
+        const success = await fileSystem.rename(oldPath, newPath)
+
         if (success) {
           // 更新路径
           repoData.value.path = newPath
@@ -135,7 +137,7 @@ const handleDelete = async () => {
   if (deleteConfirm.value === 'delete' && props.repo) {
     try {
       // 先删除文件夹
-      await window.electron.deleteFileOrFolder(props.repo.path, true)
+      await fileSystem.delete(props.repo.path, true)
       
       // 再从 store 中移除
       repoStore.$patch((state) => {

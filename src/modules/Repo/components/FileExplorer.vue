@@ -103,10 +103,10 @@ import { fileSystem } from '@/shared/utils/fileSystem'
   
   // 计算属性
   const getFolderName = computed(() => {
-    if (!folderData.value?.directoryPath || !window?.electron?.path) {
+    if (!folderData.value?.directoryPath || !window?.shared?.path) {
       return '';
     }
-    return window.electron.path.basename(folderData.value.directoryPath);
+    return window.shared.path.basename(folderData.value.directoryPath);
   })
   
   const sortedItems = computed(() => {
@@ -148,7 +148,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
   const createFolderForRepo = async () => {
     if (!folderData.value?.directoryPath) return
     try {
-      const newFolderPath = window.electron.path.join(
+      const newFolderPath = window.shared.path.join(
         folderData.value.directoryPath,
         'NewFolder'
       )
@@ -162,7 +162,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
 
   const createFileForRepo = async () => {
     if (!folderData.value?.directoryPath) return
-    const newFilePath = window.electron.path.join(
+    const newFilePath = window.shared.path.join(
       folderData.value.directoryPath,
       'untitled.md'
     )
@@ -179,7 +179,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
 
     try {
       // 1. 构建新文件夹路径
-      const newFolderPath = window.electron.path.join(
+      const newFolderPath = window.shared.path.join(
         selectedNode.value.key,
         'NewFolder'
       )
@@ -207,7 +207,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
     })
 
     try {
-      const newFilePath = window.electron.path.join(
+      const newFilePath = window.shared.path.join(
         selectedNode.value.key,
         'untitled.md'
       )
@@ -223,7 +223,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
   const deleteFolder = async () => {
     if (!selectedNode.value) return
     try {
-      await window.electron.deleteFileOrFolder(
+      await fileSystem.delete(
         selectedNode.value.key,
         true
       )
@@ -236,7 +236,7 @@ import { fileSystem } from '@/shared/utils/fileSystem'
   const deleteFile = async () => {
     if (!selectedNode.value) return
     try {
-      await window.electron.deleteFileOrFolder(
+      await fileSystem.delete(
         selectedNode.value.key,
         false
       )
@@ -252,10 +252,10 @@ import { fileSystem } from '@/shared/utils/fileSystem'
     startEdit(selectedNode.value.key, selectedNode.value.title)
   }
 
-  const copyToClipboard = () => {
-    if (!selectedNode.value) return
-    window.electron.writeClipboardFiles([selectedNode.value.key])
-  }
+  // const copyToClipboard = () => {
+  //   if (!selectedNode.value) return
+  //   fileSystem.writeClipboardFiles([selectedNode.value.key])
+  // }
   
   // 树节点操作
   function toggleNode(item: TreeNode) {
@@ -299,8 +299,8 @@ import { fileSystem } from '@/shared/utils/fileSystem'
       const newNameWithExt = oldPath.endsWith('.md') 
         ? `${newName}.md` 
         : newName
-      const parentPath = window.electron.path.dirname(oldPath)
-      const newPath = window.electron.path.join(parentPath, newNameWithExt)
+      const parentPath = window.shared.path.dirname(oldPath)
+      const newPath = window.shared.path.join(parentPath, newNameWithExt)
       
       try {
         const success = await fileSystem.rename(oldPath, newPath)
@@ -338,12 +338,12 @@ import { fileSystem } from '@/shared/utils/fileSystem'
           { title: '创建笔记', action: createFile, icon: 'mdi-language-markdown', disabled: false },
           { title: '重命名', action: renameFileOrFolder, icon: 'mdi-pencil', disabled: false },
           { title: '删除', action: deleteFolder, icon: 'mdi-folder-remove', disabled: false },
-          { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
+          // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
         ]
       : [
           { title: '重命名', action: renameFileOrFolder, icon: 'mdi-pencil', disabled: false },
           { title: '删除', action: deleteFile, icon: 'mdi-file-remove', disabled: false },
-          { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
+          // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
         ]
   })
   

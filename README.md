@@ -34,7 +34,7 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 ## 结构
 
-my-app/
+DailyUse/
 ├── electron/                 # Electron 主进程核心代码
 │   ├── main.ts               # 主进程入口
 │   ├── windows/              # 窗口管理模块（主窗口、设置窗口等）
@@ -66,29 +66,6 @@ my-app/
 └── package.json              # 依赖管理 & NPM 脚本
 
 
-my-app/
-├── electron/
-│   ├── main.ts
-│   ├── windows/              # 窗口管理
-│   │   └── quick-launch.ts   # 快速启动窗口逻辑
-│   └── ipc/
-│       └── quick-launch.ts   # 快速启动相关 IPC 通信
-│
-├── src/
-│   ├── plugins/
-│   │   └── quick-launch/     # 快速启动插件目录
-│   │       ├── components/   # 搜索框、命令列表等 UI 组件
-│   │       ├── commands/     # 内置命令插件（如打开文件、计算器等）
-│   │       ├── store.ts      # Pinia 状态管理（搜索关键词、命令列表）
-│   │       └── index.ts      # 插件入口（注册到全局）
-│   ├── views/
-│   │   └── MainLayout.vue    # 主布局组件（包含快速启动窗口的挂载点）
-│   └── main.ts               # 渲染进程入口
-│
-└── shared/
-    └── constants/
-        └── ipc.ts            # IPC 通信事件名常量
-
 # 具体实现
 
 把 todo 、 文档编辑 作为组件，任由用户组合为 待办列表 或 goal 页面
@@ -97,10 +74,101 @@ my-app/
 
 物理分割、逻辑组合
 
+## 编辑器
+
+### 布局
+
+类似 vscode 布局
+
+```
+一、VS Code 布局结构解析
+
+区域	功能描述
+活动栏	左侧垂直图标栏（文件、搜索、Git、调试等入口），点击切换侧边栏内容
+侧边栏	动态内容区（资源管理器、搜索、插件管理等），可折叠
+编辑器区域	多标签页编辑器 + 主内容区
+面板区域	底部或右侧区域（终端、输出、问题面板等），支持拖拽调整高度/宽度
+状态栏	底部状态信息（Git 分支、编码格式、光标位置等）
+
+二、技术选型
+
+功能	推荐工具/库
+布局框架	CSS Grid + Flexbox（原生实现）或 Splitpanes（拖拽分割）
+状态管理	Pinia（Vue 3 官方推荐）
+图标	Material Design Icons 或 Iconify
+多标签页	自定义实现或 Vue Tabs
+主题系统	CSS 变量 + 动态类名
+
+三、项目结构与组件设计
+
+src/
+├── layouts/
+│   └── VSCodeLayout.vue      # 整体布局容器
+├── components/
+│   ├── ActivityBar.vue       # 左侧活动栏（图标按钮）
+│   ├── Sidebar.vue           # 侧边栏（动态内容）
+│   ├── EditorTabs.vue        # 多标签页
+│   ├── EditorArea.vue        # 编辑器主区域
+│   ├── PanelTabs.vue         # 面板标签页（终端/输出）
+│   ├── StatusBar.vue         # 底部状态栏
+│   └── ResizeHandle.vue      # 拖拽分割条
+├── stores/
+│   └── layoutStore.ts        # 布局状态管理（侧边栏宽度、面板高度等）
+└── styles/
+    ├── themes/               # 主题变量
+    └── layout.css            # 布局样式
+```
+
+### markdown 编辑器
+
+- markdown-it  
+    Markdown 解析  
+- Monaco  
+    编辑器核心  
+- DOMPurify  
+    安全渲染，防止 XSS 攻击
+
 ## goals
 
 goals 和 文档编辑 切断，但保留联系，可以选择将 文档 与 goal 相绑定  
 goal 属性
+
+## quicklaunch
+
+### 拖动添加快捷方式
+
+#### 相关知识
+
+##### 拖放事件处理事件
+
+```
+dragstart: 开始拖动
+dragend: 拖动结束
+dragover: 拖动经过
+dragenter: 进入可放置区域
+dragleave: 离开可放置区域
+drop: 放置
+```
+
+## other
+
+### Electron App 性能与稳定性开关说明
+
+```ts
+// 基础安全性和稳定性设置
+app.commandLine.appendSwitch('no-sandbox');      // 禁用沙箱模式，不建议在生产环境使用
+app.disableHardwareAcceleration();               // 禁用硬件加速，可能影响性能
+
+// GPU相关设置
+app.commandLine.appendSwitch('disable-gpu');     // 完全禁用GPU
+app.commandLine.appendSwitch('disable-gpu-compositing');     // 禁用GPU合成
+app.commandLine.appendSwitch('disable-gpu-rasterization');   // 禁用GPU光栅化
+app.commandLine.appendSwitch('disable-software-rasterizer'); // 禁用软件光栅化
+
+// 重复或不必要的设置
+// app.commandLine.appendSwitch('--no-sandbox');    // 与 'no-sandbox' 重复
+// app.commandLine.appendSwitch('disable-gpu-sandbox'); // 通常不需要
+```
 
 # 知识
 
@@ -299,7 +367,7 @@ project/
 
 适用场景：
 巨型企业级应用（如阿里云控制台）。
-
+ss
 整合遗留系统。
 ```
 
@@ -313,6 +381,26 @@ project/
 ## 包
 
 - 'fs/promises'
-- 'path'
+- path  
+    Node.js 的一个核心模块，用于处理和转换文件路径。它提供了一组实用函数，帮助开发者在不同操作系统上处理文件路径时保持一致性。  
 - shell
 
+# 小问题
+
+## 让 app （body） 右侧滚动条消失
+
+在 html 中添加
+```css
+<style>
+  body {
+    /* Remove explicit overflow setting */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;     /* Firefox */
+  }
+  
+  /* 只添加下方代码正确生效，添加上方代码就仍会有滚动条 */
+  body::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+</style>
+```
