@@ -7,15 +7,15 @@ import router from './shared/router'
 import vuetify from './plugins/vuetify'
 import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
+import '@/shared/styles/icons.css'
+// import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
-import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
-
-// 配置 Monaco Editor 的 worker
-(window as any).MonacoEnvironment = {
-  getWorker() {
-    return new editorWorker()
-  }
-}
+// // 配置 Monaco Editor 的 worker
+// (window as any).MonacoEnvironment = {
+//   getWorker() {
+//     return new editorWorker()
+//   }
+// }
 
 // 创建 Pinia 实例并使用插件
 const pinia = createPinia()

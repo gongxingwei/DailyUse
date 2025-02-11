@@ -8,6 +8,16 @@ export const fileSystem = {
   },
 
   /**
+   * 读取文件夹内容
+   */
+  readFolder(path: string) {
+    return window.shared.ipcRenderer.invoke<Array<string>>('read-folder', path).then((result: Array<string>) => {
+      // Ensure the result is serializable
+      return JSON.parse(JSON.stringify(result));
+    });
+  },
+
+  /**
    * 选择文件夹
    */
   selectFolder() {

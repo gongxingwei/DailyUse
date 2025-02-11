@@ -14,6 +14,26 @@ export function registerFileSystemHandlers() {
      * 打开文件
      */
 
+    /**
+     * 读取文件夹
+     * @param folderPath 文件夹路径
+     * @returns 文件夹下的文件列表
+     * @throws {Error} 读取文件夹失败时抛出异常
+     */
+    ipcMain.handle('read-folder', async (_, folderPath) => {
+        try {
+          const files = await fs.readdir(folderPath, { withFileTypes: true });
+          return files.map(file => ({
+            name: file.name,
+            path: path.join(folderPath, file.name),
+            isDirectory: file.isDirectory(),
+            key: path.join(folderPath, file.name),
+          }));
+        } catch (error) {
+          console.error('Error reading folder:', error);
+          throw error;
+        }
+      });
 
     /**
      * 选择文件夹

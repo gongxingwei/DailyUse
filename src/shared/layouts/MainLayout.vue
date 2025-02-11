@@ -73,7 +73,7 @@ const toggleDrawer = () => {
                         <v-list-item prepend-icon="mdi-list-box" title="ToDoList" :to="'/todolist'"></v-list-item>
                         <v-list-item prepend-icon="mdi-database" title="Repository" :to="'/repository'"></v-list-item>
                         <v-list-item prepend-icon="mdi-bell" title="Reminder" :to="'/reminder'"></v-list-item>
-                        <v-list-item prepend-icon="mdi-bell" title="Test" :to="'/editor'"></v-list-item>
+                        <v-list-item prepend-icon="mdi-markdown" title="Editor" :to="'/editor'"></v-list-item>
                         <v-list-item prepend-icon="mdi-bell" title="Test" :to="'/test'"></v-list-item>
                         
                     </v-list>

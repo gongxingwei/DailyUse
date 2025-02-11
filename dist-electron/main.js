@@ -195,6 +195,20 @@ function registerFileSystemHandlers() {
   ipcMain.handle("open-file-explorer", async () => {
     shell.openPath(path.join(__dirname, "..", "..", "..", "src"));
   });
+  ipcMain.handle("read-folder", async (_, folderPath) => {
+    try {
+      const files = await fs.readdir(folderPath, { withFileTypes: true });
+      return files.map((file) => ({
+        name: file.name,
+        path: path.join(folderPath, file.name),
+        isDirectory: file.isDirectory(),
+        key: path.join(folderPath, file.name)
+      }));
+    } catch (error) {
+      console.error("Error reading folder:", error);
+      throw error;
+    }
+  });
   ipcMain.handle("select-folder", async () => {
     const result = await dialog.showOpenDialog({
       properties: ["openDirectory"]

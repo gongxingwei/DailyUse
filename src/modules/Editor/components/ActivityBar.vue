@@ -1,22 +1,35 @@
 <template>
-    <div class="activity-bar">
-      <button 
-        v-for="item in items" 
-        :key="item.id"
-        @click="store.setActiveSidebar(item.id)"
-      >
-        <i :class="item.icon" />
-      </button>
-    </div>
-  </template>
-  
-  <script setup>
-  import { useLayoutStore } from '@/stores/layoutStore';
-  const store = useLayoutStore();
-  
-  const items = [
-    { id: 'explorer', icon: 'mdi-folder' },
-    { id: 'search', icon: 'mdi-magnify' },
-    { id: 'git', icon: 'mdi-git' },
-  ];
-  </script>
+  <div class="activity-bar">
+    <button 
+      v-for="item in store.activityBarItems" 
+      :key="item.id"
+      :title="item.title"
+      @click="store.setActiveActivityBarItemId(item.id)"
+    >
+      <v-icon>{{ item.icon }}</v-icon>
+    </button>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { useActivityBarStore } from '@/modules/Editor/stores/activityBarStore';
+const store = useActivityBarStore();
+</script>
+
+<style scoped>
+.activity-bar button {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.activity-bar button.active {
+  border-left: 2px solid var(--primary-color);
+  background: rgba(255, 255, 255, 0.1);
+}
+</style>

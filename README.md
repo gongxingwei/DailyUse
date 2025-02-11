@@ -23,7 +23,11 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 ## 功能
 
-- 文档编辑  
+- 仓库
+  用于存储文档、资源等的容器  
+  可以创建 文档仓库、图片仓库
+- 文档编辑器  
+  对仓库中的文档进行编辑  
 - todo  
 - 健康提醒
 - quicklaunch  
@@ -34,36 +38,7 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 ## 结构
 
-DailyUse/
-├── electron/                 # Electron 主进程核心代码
-│   ├── main.ts               # 主进程入口
-│   ├── windows/              # 窗口管理模块（主窗口、设置窗口等）
-│   ├── core/                 # 核心逻辑（系统交互、数据库、硬件通信等）
-│   ├── ipc/                  # IPC 通信模块（API 定义、事件处理）
-│   └── plugins/              # 主进程插件系统（可选）
-│
-├── src/                      # 渲染进程 (Vue 3)
-│   ├── views/                # 路由级页面组件
-│   ├── components/           # 公共组件
-│   ├── layouts/              # 全局布局组件
-│   ├── plugins/              # 渲染进程插件系统（动态加载功能）
-│   ├── stores/               # Pinia 状态管理（按模块拆分）
-│   ├── router/               # 动态路由配置（支持懒加载）
-│   ├── assets/               # 静态资源
-│   ├── utils/                # 工具函数（网络请求、日志等）
-│   └── main.ts               # 渲染进程入口
-│
-├── shared/                   # 共享代码（主进程和渲染进程共用）
-│   ├── types/                # TypeScript 类型定义
-│   ├── constants/            # 常量（路由、IPC 事件名、配置项）
-│   └── interfaces/           # 通用接口（数据模型、API 响应格式）
-│
-├── scripts/                  # 构建/部署脚本
-├── tests/                    # 单元测试 & E2E 测试
-├── .env                      # 环境变量（区分开发、生产）
-├── electron-builder.json     # Electron 打包配置
-├── vite.config.ts            # Vite 配置（集成 Electron）
-└── package.json              # 依赖管理 & NPM 脚本
+
 
 
 # 具体实现
@@ -127,6 +102,51 @@ src/
     编辑器核心  
 - DOMPurify  
     安全渲染，防止 XSS 攻击
+
+#### Monaco
+
+https://wf0.github.io/
+
+##### "monaco-editor": "^0.52.2"  
+
+monaco 编辑器核心
+
+##### "monaco-editor-vue3": "^0.1.10",
+
+组件化 monaco 编辑器，方便在 vue 中使用  
+
+##### "vite-plugin-monaco-editor": "^1.1.0",
+
+方便 vite 配置 Monaco  
+
+## 仓库
+
+指定文件夹作为仓库来管理资源  
+
+仓库用 路径 作为 id，
+
+## 编辑器
+
+### 布局
+
+### 文件管理器
+
+#### 如何将选中的仓库的路径传给文件管理器 
+
+在 RepositoryStore 中添加获取方法  
+利用 URL 与 title 有关来获取  
+```ts
+currentRepositoryPath: (state) => {
+            const currentRepo = state.repositories.find(
+                repo => repo.title === window.location.hash.split('/').pop()
+            );
+            return currentRepo?.path || '';
+        }
+```
+
+### markdown 解析
+
+### 
 
 ## goals
 

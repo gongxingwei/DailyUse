@@ -1,27 +1,105 @@
 <template>
+  <div class="editor-header">
     <div class="editor-tabs">
-      <div 
-        v-for="tab in tabs"
-        :key="tab.id"
-        :class="{ 'active': tab.id === store.activeEditorTab }"
-        @click="store.activeEditorTab = tab.id"
-      >
-        {{ tab.name }}
-        <button @click.stop="closeTab(tab.id)">×</button>
+      <div v-for="tab in fileStore.openedFiles" :key="tab.id"
+        :class="{ 'active': tab.path === fileStore.currentFilePath }" @click="fileStore.setCurrentFile(tab.path)"
+        class="tab">
+        <span class="tab-title">{{ tab.title }}</span>
+        <button class="function-icon" @click.stop="fileStore.closeFile(tab.id)">×</button>
       </div>
     </div>
-  </template>
-  
-  <script setup>
-  import { useLayoutStore } from '@/stores/layoutStore';
-  const store = useLayoutStore();
-  
-  const tabs = [
-    { id: 'welcome.md', name: 'Welcome.md' },
-    { id: 'app.vue', name: 'App.vue' },
-  ];
-  
-  const closeTab = (tabId) => {
-    // 关闭标签逻辑
-  };
-  </script>
+    <div class="editor-actions function-group">
+      <button class="function-icon"><v-icon>mdi-eye</v-icon></button>
+      <button class="function-icon"><v-icon>mdi-view-split-vertical</v-icon></button>
+      <button class="function-icon"><v-icon>mdi-dots-horizontal</v-icon></button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { watch } from 'vue'
+import { useFileStore } from '../stores/fileStore'
+import { useEditorLayoutStore } from '../stores/editorLayoutStore';
+
+const fileStore = useFileStore()
+const editorLayoutStore = useEditorLayoutStore()
+
+watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
+  document.documentElement.style.setProperty('--editor-tab-width', `${newWidth}px`)
+}, { immediate: true })
+
+</script>
+
+<style scoped>
+.editor-header {
+  grid-column: 1;
+  grid-row: 1;
+
+  display: grid;
+  grid-template-rows: 30px;
+  grid-template-columns: 1fr auto;
+}
+
+.editor-tabs {
+  grid-row: 1;
+  grid-column: 1;
+  /* min-width: 200px; */
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+
+  &::-webkit-scrollbar {
+    height: 3px;
+    /* Scrollbar thickness */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #1e1e1e;
+    /* Track color */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #141414;
+    /* Scrollbar handle color */
+    border-radius: 3px;
+    /* Rounded corners */
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #dd2c2c;
+    /* Handle color on hover */
+  }
+
+  .button {
+    width: 20px;
+  }
+
+}
+
+.tab {
+  padding: 0 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  width: var(--editor-tab-width);
+
+  .tab-title {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding-right: 5px;
+}
+}
+
+.editor-actions {
+  grid-row: 1;
+  grid-column: 2;
+}
+
+.active {
+  border-top: 1px solid rgb(105, 105, 177);
+}
+
+</style>

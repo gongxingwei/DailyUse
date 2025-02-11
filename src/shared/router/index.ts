@@ -1,8 +1,8 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import MainLayout from '@/shared/layouts/MainLayout.vue'
 import Home from '@/modules/Home/Home.vue'
-import Editor from '@/modules/Repo/Editor.vue'
-import Repository from '@/modules/Repo/Repo.vue'
+import Editor from '@/modules/Editor/Editor.vue'
+import Repository from '@/modules/Repository/Repository.vue'
 import Setting from '@/modules/Setting/Setting.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
 
@@ -59,7 +59,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/editor',
                 name: 'editor',
-                component: () => import('@/modules/Editor/layouts/EditorLayout.vue')
+                component: () => import('@/modules/Editor/Editor.vue')
             },
         ]
     },

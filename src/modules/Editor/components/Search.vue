@@ -1,5 +1,5 @@
 <template>
     <div>
-        PanelTabs
+        Search
     </div>
 </template>

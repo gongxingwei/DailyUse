@@ -2,6 +2,7 @@ import { defineConfig } from 'vite'
 import path from 'node:path'
 import electron from 'vite-plugin-electron/simple'
 import vue from '@vitejs/plugin-vue'
+import monacoEditorPlugin from 'vite-plugin-monaco-editor'
 import fs from 'node:fs'
 
 // 自动发现插件目录
@@ -54,6 +55,7 @@ export default defineConfig({
     }
   },
   plugins: [
+    monacoEditorPlugin.default({}),
     vue(),
     electron({
       main: {
