@@ -2,10 +2,23 @@
     <div class="vs-code-layout">
         <ActivityBar />
         <Sidebar :current-repository="currentRepository?.path" />
-        <ResizeHandle />
+        <ResizeHandleSiderbar />
         <div class="main-area" :class="{ 'sidebar-hidden': !activityBarStore.isSidebarVisible }">
-            <EditorTabs />
-            <EditorArea />
+            <template v-for="(group, index) in editorGroupStore.editorGroups" :key="`group-${group.id}`">
+                <EditorGroup 
+                    
+                    :group-id="group.id"
+                    :class="{ 'active': group.id === editorGroupStore.activeGroupId }"
+                />
+                <!-- 在非最后一个编辑器组后添加 ResizeHandle -->
+                <ResizeHandle
+                    v-if="index < editorGroupStore.editorGroups.length - 1"
+                    :key="`resize-${group.id}`"
+                    type="editor-editor"
+                    :group-id="group.id"
+                    class="editor-resize-handle"
+                />
+            </template>
         </div>
         <StatusBar />
     </div>
@@ -15,23 +28,24 @@
 
 import ActivityBar from '@/modules/Editor/components/ActivityBar.vue'
 import Sidebar from '@/modules/Editor/components/Sidebar.vue'
-import EditorTabs from '@/modules/Editor/components/EditorTabs.vue'
-import EditorArea from '@/modules/Editor/components/EditorArea.vue'
 // import PanelTabs from '@/modules/Editor/components/PanelTabs.vue'
 import StatusBar from '@/modules/Editor/components/StatusBar.vue'
 import ResizeHandle from './components/ResizeHandle.vue'
 import { useRepositoryStore } from '@/modules/Repository/repository'
 import { useEditorLayoutStore } from './stores/editorLayoutStore'
 import { useActivityBarStore } from './stores/activityBarStore'
-import { useRoute, useRouter } from 'vue-router'
+import { useEditorGroupStore } from './stores/editorGroupStore'
+import { useRoute } from 'vue-router'
 import { computed } from 'vue'
+import EditorGroup from './components/EditorGroup.vue'
+import ResizeHandleSiderbar from './components/ResizeHandleSiderbar.vue'
 
 
 const route = useRoute()
-const router = useRouter()
 const repositoryStore = useRepositoryStore()
 const editorLayoutStore = useEditorLayoutStore()
 const activityBarStore = useActivityBarStore()
+const editorGroupStore = useEditorGroupStore()
 
 const currentRepository = computed(() => {
     const title = decodeURIComponent(route.params.title as string)
@@ -75,17 +89,10 @@ const currentRepository = computed(() => {
 .main-area {
     grid-column: 4;
     grid-row: 1;
-    min-width: min(var(--min-editor-width, 300px), 100%);
-    overflow: auto;
-    display: grid;
-    grid-template-columns: 1fr;
-    grid-template-rows: 30px 1fr 50px;
+    display: flex;  /* 改用 flex 布局 */
+    overflow: hidden;
 
 }
-
-
-
-
 
 .main-area.sidebar-hidden {
     grid-column: 2 / -1;
@@ -103,5 +110,4 @@ const currentRepository = computed(() => {
 .vs-code-layout.resizing {
     user-select: none;
 }
-
 </style>

@@ -1,5 +1,0 @@
-<template>
-    <div>
-        PanelTabs
-    </div>
-</template>

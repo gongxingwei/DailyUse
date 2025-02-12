@@ -1,28 +1,50 @@
 <template>
   <div class="editor-header">
     <div class="editor-tabs">
-      <div v-for="tab in fileStore.openedFiles" :key="tab.id"
-        :class="{ 'active': tab.path === fileStore.currentFilePath }" @click="fileStore.setCurrentFile(tab.path)"
+      <div v-for="tab in props.tabs" :key="tab.id"
+        :class="{ 'active': tab.id === props.activeTabId }" @click="handleTabClick(tab.id)"
         class="tab">
         <span class="tab-title">{{ tab.title }}</span>
-        <button class="function-icon" @click.stop="fileStore.closeFile(tab.id)">×</button>
+        <button class="function-icon" @click.stop="handleTabClose(tab.id)">×</button>
       </div>
     </div>
     <div class="editor-actions function-group">
-      <button class="function-icon"><v-icon>mdi-eye</v-icon></button>
-      <button class="function-icon"><v-icon>mdi-view-split-vertical</v-icon></button>
-      <button class="function-icon"><v-icon>mdi-dots-horizontal</v-icon></button>
-    </div>
+      <button 
+        v-for="icon in editorFunctionIconStore.editorFunctionIcons" 
+        :key="icon.id"
+        class="function-icon"
+        :title="icon.title"
+        @click="icon.action"
+      >
+        <v-icon>{{ icon.icon }}</v-icon>
+      </button>
+  </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import { useFileStore } from '../stores/fileStore'
 import { useEditorLayoutStore } from '../stores/editorLayoutStore';
+import { useEditorFunctionIconStore } from '../stores/editorFunctionIconStore';
+import type { EditorTab } from '../stores/editorGroupStore';
 
-const fileStore = useFileStore()
+const props = defineProps<{
+  tabs: EditorTab[];
+  activeTabId: string | null;
+}>()
+
+const emit = defineEmits(['close-tab', 'select-tab'])
+
 const editorLayoutStore = useEditorLayoutStore()
+const editorFunctionIconStore = useEditorFunctionIconStore()
+
+const handleTabClick = (tabId: string) => {
+  emit('select-tab', tabId)
+}
+
+const handleTabClose = (tabId: string) => {
+  emit('close-tab', tabId)
+}
 
 watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   document.documentElement.style.setProperty('--editor-tab-width', `${newWidth}px`)
@@ -83,14 +105,25 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   align-items: center;
   cursor: pointer;
   width: var(--editor-tab-width);
+  border-right: 1px solid var(--vscode-editorGroup-border);
+  background-color: var(--vscode-editor-background);
+}
 
-  .tab-title {
+.tab.active {
+  background-color: var(--vscode-editor-background);
+  border-top: 2px solid var(--vscode-activityBarBadge-background);
+}
+
+.tab:hover {
+  background-color: var(--vscode-list-hoverBackground);
+}
+
+.tab-title {
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-right: 5px;
-}
 }
 
 .editor-actions {

@@ -5,11 +5,12 @@ interface EditorLayoutState {
     sidebarWidth: number;
     minSidebarWidth: number;
     resizeHandleWidth: number;
+
     minEditorWidth: number;
     totalWidth: number;
 
     editorTabWidth: number;
-
+    
 }
 
 export const useEditorLayoutStore = defineStore('editorLayout', {
@@ -22,10 +23,11 @@ export const useEditorLayoutStore = defineStore('editorLayout', {
         totalWidth: window.innerWidth,
 
         editorTabWidth: 150,
+
     }),
 
     getters: {
-        editorWidth: (state) => {
+        editorGroupsWidth: (state) => {
             const availableWidth = state.totalWidth - state.activityBarWidth - state.resizeHandleWidth;
             const remainingWidth = availableWidth - state.sidebarWidth;
             return Math.max(remainingWidth, state.minEditorWidth);

@@ -1,18 +1,38 @@
 <template>
-  <div class="resize-handle" @mousedown="startResize" />
+    <div 
+        class="resize-handle" 
+        :class="{ 'resizing': isResizing }" 
+        @mousedown="startResize" 
+    />
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { useEditorLayoutStore } from '../stores/editorLayoutStore';
-import { s } from 'node_modules/vite/dist/node/types.d-aGj9QkWt';
+import { ref, onUnmounted } from 'vue'
+import { useEditorGroupStore } from '../stores/editorGroupStore'
 
-const store = useEditorLayoutStore();
+const props = defineProps<{
+    groupId: string  // 当前组的ID
+}>()
 
+const editorGroupStore = useEditorGroupStore()
 const isResizing = ref(false)
+const startX = ref(0)
+const initialLeftWidth = ref(0)
+const initialRightWidth = ref(0)
 
 const startResize = (e: MouseEvent) => {
+    e.preventDefault()
+    
+    // 获取当前组和下一个组
+    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.id === props.groupId)
+    const nextGroup = editorGroupStore.editorGroups[currentIndex + 1]
+    if (!nextGroup) return
+
     isResizing.value = true
+    startX.value = e.clientX
+    initialLeftWidth.value = editorGroupStore.getGroupWidth(props.groupId)
+    initialRightWidth.value = editorGroupStore.getGroupWidth(nextGroup.id)
+    console.log('startResize', initialLeftWidth.value, initialRightWidth.value)
     document.body.style.cursor = 'col-resize'
     document.addEventListener('mousemove', handleMouseMove)
     document.addEventListener('mouseup', stopResize)
@@ -20,12 +40,22 @@ const startResize = (e: MouseEvent) => {
 
 const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.value) return
-    const minWidth = store.minSidebarWidth;
-    const maxWidth = store.maxSidebarWidth;
-    const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX - 45)) 
     
-    store.setSidebarWidth(newWidth);
-    document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
+    const deltaX = e.clientX - startX.value
+    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.id === props.groupId)
+    const nextGroup = editorGroupStore.editorGroups[currentIndex + 1]
+    if (!nextGroup) return
+
+    // 计算新的宽度，确保不小于最小宽度
+    const minWidth = 200
+    const newLeftWidth = Math.max(minWidth, initialLeftWidth.value + deltaX)
+    const newRightWidth = Math.max(minWidth, initialRightWidth.value - deltaX)
+    
+    // 检查总宽度约束
+    if (newLeftWidth + newRightWidth === initialLeftWidth.value + initialRightWidth.value) {
+        editorGroupStore.setGroupWidth(props.groupId, newLeftWidth)
+        editorGroupStore.setGroupWidth(nextGroup.id, newRightWidth)
+    }
 }
 
 const stopResize = () => {
@@ -35,36 +65,23 @@ const stopResize = () => {
     document.removeEventListener('mouseup', stopResize)
 }
 
-const handleWindowResize = () => {
-    store.updateTotalWidth(window.innerWidth)
-}
-
-onMounted(() => {
-    window.addEventListener('resize', handleWindowResize)
-})
-
 onUnmounted(() => {
-    document.removeEventListener('mousemove', handleMouseMove)
-    document.removeEventListener('mouseup', stopResize)
-    window.removeEventListener('resize', handleWindowResize)
+    if (isResizing.value) {
+        stopResize()
+    }
 })
-
 </script>
 
 <style scoped>
-
 .resize-handle {
-    grid-column: 3;
-    grid-row: 1;
+    width: 5px;
+    height: 100%;
     cursor: col-resize;
     background-color: transparent;
-    position: relative;
-    width: 5px;
-    z-index: 10;
+    transition: background-color 0.1s;
 }
 
 .resize-handle:hover,
-.resize-handle:active,
 .resize-handle.resizing {
     background-color: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
 }
@@ -78,5 +95,4 @@ onUnmounted(() => {
     width: 1px;
     background-color: var(--vscode-editorGroup-border, #444);
 }
-
 </style>

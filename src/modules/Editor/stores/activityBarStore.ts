@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { Component, markRaw } from "vue";
-import FileExplorer from "@/shared/components/Explorer.vue";
+import FileExplorer from "@/modules/Editor/components/Explorer.vue";
 import Search from "@/modules/Editor/components/Search.vue";
 import Git from "@/modules/Editor/components/Git.vue";
 
