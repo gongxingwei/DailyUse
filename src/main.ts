@@ -8,6 +8,7 @@ import vuetify from './plugins/vuetify'
 import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
 import '@/shared/styles/icons.css'
+import { i18n } from './i18n'
 // import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
 // // 配置 Monaco Editor 的 worker
@@ -28,7 +29,7 @@ app
   .use(router)
   .use(vuetify)
   .use(pinia)
-
+  .use(i18n)
 // 初始化插件系统
 const pluginManager = new PluginManager()
 // 注册快速启动器插件

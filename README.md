@@ -36,6 +36,8 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 - RSS  
 - 动作脚本  
 
+- 主题切换
+
 ## 结构
 
 
@@ -48,6 +50,221 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 用户可以单独编辑组件，在页面中组合
 
 物理分割、逻辑组合
+
+## 主题切换
+
+### 四种实现方法
+
+#### 在 :root 中定义主题变量，通过修改 document 控制生效的变量（CSS 变量 + data-theme 属性）
+
+  ```
+  //style.css
+  :root[data-theme="dark"] {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+  --surface-color: #1e1e1e;
+  --border-color: rgba(255, 255, 255, 0.12);
+  }
+
+  //
+  document.documentElement.setAttribute('data-theme', theme)
+
+  优点：
+  更好的性能，只需切换一个属性值
+  更清晰的主题定义，所有样式集中在CSS文件中
+  更容易调试和维护
+  浏览器原生支持的主题切换方式
+  支持热重载
+
+  缺点：
+  不能动态添加新的主题变量
+  主题配置不够灵活
+  不能在运行时修改具体的颜色值
+  ```
+
+#### 在 store.ts 中存储主题及其样式，在用函数将所有样式应用到 document 中（JavaScript 动态设置样式变量）  
+ 
+  ```
+  Object.entries(themeStyle).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--${key}`, value)
+  })
+  
+  完全动态，可以在运行时修改任何颜色值
+  可以动态添加新的主题
+  主题配置更灵活
+  可以保存用户自定义主题
+
+  性能较差，需要设置多个样式属性
+  可能造成样式闪烁
+  调试相对困难
+  主题定义分散在JS中
+  ```
+
+#### 直接在每个 vue 组件下面用变量使用 css（组件级别的样式变量）  
+
+  ```
+  组件级别的精细控制
+  可以针对特定组件做特殊处理
+  更容易实现组件级别的主题切换
+
+  样式定义分散，难以统一管理
+  代码重复，每个组件都需要定义主题相关样式
+  维护成本高
+  不利于全局主题统一
+  ```
+
+#### 使用 组件
+
+#### 补充
+
+可以结合第二种和第一种
+
+```css
+:root {
+  /* 默认主题变量 */
+  --bg-color: #ffffff;
+  --text-color: #000000;
+}
+
+/* 预定义主题 */
+:root[data-theme="dark"] {
+  --bg-color: #121212;
+  --text-color: #e0e0e0;
+}
+```
+
+```ts
+export const useThemeStore = defineStore('theme', {
+  state: () => ({
+    currentTheme: 'system',
+    customThemes: {} as Record<string, ThemeStyle>
+  }),
+
+  actions: {
+    setTheme(theme: string) {
+      // 设置预定义主题
+      if (['light', 'dark', 'system'].includes(theme)) {
+        document.documentElement.setAttribute('data-theme', theme);
+      } 
+      // 应用自定义主题
+      else if (this.customThemes[theme]) {
+        Object.entries(this.customThemes[theme]).forEach(([key, value]) => {
+          document.documentElement.style.setProperty(`--${key}`, value);
+        });
+      }
+      this.currentTheme = theme;
+    },
+
+    applyThemeSystem() {
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      this.themeMode = prefersDark ? 'dark' : 'light'
+      this.applyTheme()
+    },
+
+
+  }
+});
+```
+
+#### 本次实现方法
+
+结合第三种和第四种
+
+使用 vuetify 控制组件主题  
+对于自定义的组件，在 组件中使用 vuetify 的变量方式接入 vuetify 中
+
+##### vuetify theme 的属性
+
+
+```
+// dark
+{
+    "background": "#121212",
+    "surface": "#212121",
+    "surface-bright": "#ccbfd6",
+    "surface-light": "#424242",
+    "surface-variant": "#a3a3a3",
+    "on-surface-variant": "#424242",
+    "primary": "#2196F3",
+    "primary-darken-1": "#277CC1",
+    "secondary": "#424242",
+    "secondary-darken-1": "#48A9A6",
+    "error": "#FF5252",
+    "info": "#2196F3",
+    "success": "#4CAF50",
+    "warning": "#FB8C00",
+    "accent": "#FF4081",
+    "custom-color": "#BB86FC",
+    "sidebar-bg": "#1E1E1E",
+    "toolbar-bg": "#2D2D2D",
+    "on-background": "#fff",
+    "on-surface": "#fff",
+    "on-surface-bright": "#000",
+    "on-surface-light": "#fff",
+    "on-primary": "#fff",
+    "on-primary-darken-1": "#fff",
+    "on-secondary": "#fff",
+    "on-secondary-darken-1": "#fff",
+    "on-error": "#fff",
+    "on-info": "#fff",
+    "on-success": "#fff",
+    "on-warning": "#fff",
+    "on-accent": "#fff",
+    "on-custom-color": "#fff",
+    "on-sidebar-bg": "#fff",
+    "on-toolbar-bg": "#fff"
+}
+
+// light
+{
+    "background": "#FFFFFF",
+    "surface": "#FFFFFF",
+    "surface-bright": "#FFFFFF",
+    "surface-light": "#EEEEEE",
+    "surface-variant": "#424242",
+    "on-surface-variant": "#EEEEEE",
+    "primary": "#1867C0",
+    "primary-darken-1": "#1F5592",
+    "secondary": "#5CBBF6",
+    "secondary-darken-1": "#018786",
+    "error": "#FF5252",
+    "info": "#2196F3",
+    "success": "#4CAF50",
+    "warning": "#FFC107",
+    "accent": "#4CAF50",
+    "custom-color": "#FF00FF",
+    "sidebar-bg": "#f5f5f5",
+    "toolbar-bg": "#ffffff",
+    "on-background": "#000",
+    "on-surface": "#000",
+    "on-surface-bright": "#000",
+    "on-surface-light": "#000",
+    "on-primary": "#fff",
+    "on-primary-darken-1": "#fff",
+    "on-secondary": "#000",
+    "on-secondary-darken-1": "#fff",
+    "on-error": "#fff",
+    "on-info": "#fff",
+    "on-success": "#fff",
+    "on-warning": "#000",
+    "on-accent": "#fff",
+    "on-custom-color": "#fff",
+    "on-sidebar-bg": "#000",
+    "on-toolbar-bg": "#000"
+}
+```
+
+
+### 主题设置模块
+
+通过设置组件得到用户设置的 themeMode：string  
+再使用 themeStore 来处理   
+
+## 语言切换
+
+vue-i18n@next
+
+
 
 ## 编辑器
 
@@ -128,8 +345,6 @@ monaco 编辑器核心
 ## 编辑器
 
 ### 布局
-
-
 
 ### 文件管理器
 

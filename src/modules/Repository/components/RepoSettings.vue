@@ -59,8 +59,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { useRepositoryStore } from '../repository'
-import type { Repository } from '../repository'
+import { useRepositoryStore } from '../repositoryStore'
+import type { Repository } from '../repositoryStore'
 import { fileSystem } from '@/shared/utils/fileSystem'
 
 const props = defineProps<{

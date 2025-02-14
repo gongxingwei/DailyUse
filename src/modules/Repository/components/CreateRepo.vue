@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRepositoryStore } from '../repository'
+import { useRepositoryStore } from '../repositoryStore'
 import { fileSystem } from '@/shared/utils/fileSystem';
 
 const props = defineProps<{

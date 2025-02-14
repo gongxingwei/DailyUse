@@ -8,7 +8,7 @@
       </template>
       <template v-else>
         <div class="edit-area">
-          <MonacoEditor v-model:value="content" :options="editorOptions" theme="vs-dark" language="markdown"
+          <MonacoEditor v-model:value="content" :options="editorOptions" :theme="editorTheme" language="markdown"
             @keydown.ctrl.s.prevent="saveContent" @keydown.meta.s.prevent="saveContent" />
         </div>
       </template>
@@ -22,6 +22,10 @@ import MonacoEditor from 'monaco-editor-vue3'
 import MarkdownIt from 'markdown-it'
 import 'github-markdown-css'
 import { fileSystem } from '@/shared/utils/fileSystem'
+import { useThemeStore } from '@/modules/Theme/themeStroe'
+import { useSettingStore } from '@/modules/Setting/settingStore'
+
+
 
 const props = defineProps<{
   path: string
@@ -32,6 +36,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   'contentChanged': [isDirty: boolean]
 }>()
+
+const themeStore = useThemeStore()
+const settingStore = useSettingStore()
+const editorTheme = computed(() => `vs-${themeStore.currentThemeStyle}`)
 
 // 初始化 markdown-it
 const md = new MarkdownIt({
@@ -46,16 +54,17 @@ const content = ref('')
 let originalContent = '';
 
 // 编辑器配置
-const editorOptions = {
-  minimap: { enabled: true },
-  wordWrap: 'on',
-  lineNumbers: 'on',
-  renderWhitespace: 'boundary',
-  scrollBeyondLastLine: false,
-  automaticLayout: true,
-  fontSize: 14,
-  padding: { top: 16 }
-}
+const editorOptions = computed(() => settingStore.getMonacoOptions())
+// const editorOptions = {
+//   minimap: { enabled: true },
+//   wordWrap: 'on',
+//   lineNumbers: 'on',
+//   renderWhitespace: 'boundary',
+//   scrollBeyondLastLine: false,
+//   automaticLayout: true,
+//   fontSize: 14,
+//   padding: { top: 16 }
+// }
 
 // 计算属性
 const renderedContent = computed(() => {

@@ -70,28 +70,6 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   overflow-x: auto;
   overflow-y: hidden;
 
-  &::-webkit-scrollbar {
-    height: 3px;
-    /* Scrollbar thickness */
-  }
-
-  &::-webkit-scrollbar-track {
-    background: #1e1e1e;
-    /* Track color */
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: #141414;
-    /* Scrollbar handle color */
-    border-radius: 3px;
-    /* Rounded corners */
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: #dd2c2c;
-    /* Handle color on hover */
-  }
-
   .button {
     width: 20px;
   }

@@ -9,16 +9,19 @@ export interface Repository {
     lastVisitTime?: string;
 }
 
+
+
 export const useRepositoryStore = defineStore("repository", {
     state: () => ({
         repositories: [] as Repository[],
-        recentRepositories: [] as string[],
+        recentRepositories: [] as Repository[],
     }),
 
     getters: {
         getRepositoryByTitle: (state) => (title: string) => {
             return state.repositories.find(repo => repo.title === title);
-        }
+        },
+
     },
 
     actions: {
@@ -35,18 +38,25 @@ export const useRepositoryStore = defineStore("repository", {
         },
 
         addToRecent(title: string) {
-            this.recentRepositories = this.recentRepositories.filter(t => t !== title);
-            this.recentRepositories.unshift(title);
-            this.recentRepositories = this.recentRepositories.slice(0, 5);
-
-            const repository = this.repositories.find(repo => repo.title === title);
-            if (repository) {
-                repository.lastVisitTime = new Date().toISOString();
+            const repository = this.repositories.find(repo => repo.title === title)
+            if (!repository) return
+            // 更新访问时间
+            repository.lastVisitTime = new Date().toISOString()
+            // 从最近列表中移除该仓库（如果存在）
+            const index = this.recentRepositories.findIndex(repo => repo.title === title)
+            if (index !== -1) {
+                this.recentRepositories.splice(index, 1)
+            }
+            // 添加到最近列表开头
+            this.recentRepositories.unshift(repository)
+            // 保持最近列表不超过 5 个
+            if (this.recentRepositories.length > 5) {
+                this.recentRepositories.pop()
             }
         },
 
         getRecentRepositories() {
-            return this.recentRepositories.map(title => this.repositories.find(repo => repo.title === title));
+            return this.recentRepositories;
         },
 
         removeRepository(title: string) {

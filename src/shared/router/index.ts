@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import MainLayout from '@/shared/layouts/MainLayout.vue'
+import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
+import MainLayout from '@/modules/App/MainLayout.vue'
 import Home from '@/modules/Home/Home.vue'
 import Editor from '@/modules/Editor/Editor.vue'
 import Repository from '@/modules/Repository/Repository.vue'
@@ -42,8 +43,8 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/modules/Reminder/Reminder.vue')
             },
             {
-                path: '/repo/:title',
-                name: 'repo',
+                path: '/repository/:title',
+                name: 'repository-detail',
                 component: Editor
             },
             {
@@ -55,11 +56,6 @@ const routes: RouteRecordRaw[] = [
                 path: '/test',
                 name: 'test',
                 component: () => import('@/modules/Test/Test.vue')
-            },
-            {
-                path: '/editor',
-                name: 'editor',
-                component: () => import('@/modules/Editor/Editor.vue')
             },
         ]
     },
@@ -73,8 +69,14 @@ const router = createRouter({
 
 // 全局前置守卫（可选）
 router.beforeEach((to, _from, next) => {
-  // 例如：修改页面标题
-  document.title = `${to.meta.title || '默认标题'}`
+// 设置页面标题
+document.title = `${to.meta.title || '默认标题'}`
+  
+// 检查是否访问仓库
+if (to.name === 'repository-detail' && to.params.title) {
+  const store = useRepositoryStore()
+  store.addToRecent(decodeURIComponent(to.params.title as string))
+}
   next()
 })
 

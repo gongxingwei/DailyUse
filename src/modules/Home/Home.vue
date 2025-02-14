@@ -3,28 +3,29 @@
   <v-container>
     <div class="text-h6 font-weight-light">Recent</div>
     <v-row>
-      <v-col v-for="repo in recentRepos" :key="repo.title" cols="12" md="4">
+      <v-col v-for="repository in getRecentRepositories" :key="repository?.title || ''" cols="12" md="4">
         <v-card
-          :to="`/repo/${encodeURIComponent(repo.title)}`"
+          v-if="repository"
+          :to="`/repo/${encodeURIComponent(repository.title)}`"
           class="recent-repo"
           variant="outlined"
         >
           <v-card-title class="text-subtitle-1">
             <v-icon start color="primary">mdi-folder</v-icon>
-            {{ repo.title }}
+            {{ repository.title }}
           </v-card-title>
           
-          <v-card-subtitle v-if="repo.description">
-            {{ repo.description }}
+          <v-card-subtitle v-if="repository.description">
+            {{ repository.description }}
           </v-card-subtitle>
           
           <v-card-text class="text-caption text-medium-emphasis">
-            最后访问: {{ formatDate(repo.lastVisitTime) }}
+            最后访问: {{ formatDate(repository.lastVisitTime) }}
           </v-card-text>
         </v-card>
       </v-col>
       
-      <v-col v-if="recentRepos.length === 0" cols="12">
+      <v-col v-if="getRecentRepositories.length === 0" cols="12">
         <div class="text-center text-medium-emphasis py-4">
           <v-icon size="large" color="grey-lighten-1">mdi-folder-open</v-icon>
           <div class="text-body-2 mt-2">暂无最近访问的仓库</div>
@@ -73,16 +74,16 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useTodoStore } from '../Todo/todo'
-import { useRepoStore } from '../Repo/repo'
+import { useRepositoryStore } from '../Repository/repositoryStore'
 import type { Todo } from '../Todo/todo'
 import ToDoListCard from '../Todo/components/ToDoListCard.vue'
 import ShowToDoInfo from '../Todo/components/ShowToDoInfo.vue'
 import EditToDoCard from '../Todo/components/EditToDoCard.vue'
-
+import type { Repository } from '../Repository/repositoryStore'
 
 
 const todoStore = useTodoStore()
-const repoStore = useRepoStore()
+const repositoryStore = useRepositoryStore()
 const showInfo = ref(false)
 const showEditDialog = ref(false)
 const selectedTodo = ref<Todo | null>(null)
@@ -93,16 +94,28 @@ const tomorrow = new Date(today)
 tomorrow.setDate(tomorrow.getDate() + 1)
 
 // 获取最近的仓库
-const recentRepos = computed(() => repoStore.getRecentRepos())
+const getRecentRepositories = computed<Repository[]>(() => {
+  const repositories = repositoryStore.getRecentRepositories()
+  // 过滤掉 undefined 值
+  console.log(repositories)
+  return repositories.filter((repo): repo is Repository => repo !== undefined)
+})
 
-const formatDate = (dateStr?: string) => {
+// 修改 formatDate 函数添加类型检查
+const formatDate = (dateStr?: string): string => {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
+  
+  try {
+    return new Date(dateStr).toLocaleString('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch (error) {
+    console.error('Invalid date:', dateStr)
+    return ''
+  }
 }
 
 // 事件处理函数

@@ -136,7 +136,6 @@ onUnmounted(() => {
   padding: 20px;
   max-width: 600px;
   margin: 0 auto;
-  color: #e1e1e1;
 }
 
 h2 {
@@ -145,7 +144,7 @@ h2 {
 }
 
 .reminder-settings {
-  background: #2a2a2a;
+  background: rgb(var(--v-theme-surface));
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 20px;
@@ -161,16 +160,13 @@ h2 {
 .setting-item label {
   flex: 1;
   margin-right: 15px;
-  color: #e1e1e1;
 }
 
 .setting-item input[type="number"] {
   width: 80px;
   padding: 8px;
-  border: 1px solid #444;
+  border: 1px solid #050303;
   border-radius: 4px;
-  background: #1a1a1a;
-  color: #fff;
   outline: none;
 }
 

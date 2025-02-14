@@ -31,8 +31,7 @@ import Sidebar from '@/modules/Editor/components/Sidebar.vue'
 // import PanelTabs from '@/modules/Editor/components/PanelTabs.vue'
 import StatusBar from '@/modules/Editor/components/StatusBar.vue'
 import ResizeHandle from './components/ResizeHandle.vue'
-import { useRepositoryStore } from '@/modules/Repository/repository'
-import { useEditorLayoutStore } from './stores/editorLayoutStore'
+import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
 import { useActivityBarStore } from './stores/activityBarStore'
 import { useEditorGroupStore } from './stores/editorGroupStore'
 import { useRoute } from 'vue-router'
@@ -43,7 +42,6 @@ import ResizeHandleSiderbar from './components/ResizeHandleSiderbar.vue'
 
 const route = useRoute()
 const repositoryStore = useRepositoryStore()
-const editorLayoutStore = useEditorLayoutStore()
 const activityBarStore = useActivityBarStore()
 const editorGroupStore = useEditorGroupStore()
 

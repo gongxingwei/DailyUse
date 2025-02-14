@@ -9,15 +9,8 @@ interface EditorFunctionIcon {
 }
 
 export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
-    // state
     state: () => ({
         editorFunctionIcons: [
-            {
-                id: 'editView',
-                title: 'Edit View',
-                icon: 'mdi-pencil',
-                action: function () { useEditorFunctionIconStore().handleEditView(); }
-            },
             {
                 id: 'preview',
                 title: 'Open Preview to The Side',
@@ -39,12 +32,7 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
         ] as EditorFunctionIcon[]
     }),
 
-    // actions
     actions: {
-        handleEditView() {
-            console.log('handleEditView');
-        },
-
         handlePreview() {
             const editorGroupStore = useEditorGroupStore();
             const currentGroup = editorGroupStore.editorGroups.find(g => g.id === editorGroupStore.activeGroupId);
@@ -52,7 +40,6 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
 
             if (!activeTab) return;
 
-            // 只处理 markdown 文件
             if (!activeTab.path.toLowerCase().endsWith('.md')) {
                 console.log('Only markdown files can be previewed');
                 return;

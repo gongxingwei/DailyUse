@@ -114,7 +114,7 @@ export function registerFileSystemHandlers() {
     });
 
     /**
-     * 删除文件或文件夹
+     * 删除文件或文件夹，移动到回收站
      */
     ipcMain.handle('delete-file-or-folder', async (_event, path: string, isDirectory: boolean) => {
         if (isDirectory) {

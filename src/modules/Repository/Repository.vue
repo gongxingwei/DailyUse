@@ -16,7 +16,7 @@
         <div v-for="repo in repositoryStore.repositories" :key="repo.title" class="repo-item">
           <div class="d-flex align-center">
             <router-link 
-              :to="`/repo/${encodeURIComponent(repo.title)}`"
+              :to="`/repository/${encodeURIComponent(repo.title)}`"
               class="text-h6 text-primary text-decoration-none"
             >
               {{ repo.title }}
@@ -55,8 +55,8 @@
   
   <script setup lang="ts">
   import { ref } from 'vue'
-  import { useRepositoryStore } from './repository'
-  import type { Repository } from './repository'
+  import { useRepositoryStore } from './repositoryStore'
+  import type { Repository } from './repositoryStore'
   import CreateRepo from './components/CreateRepo.vue'
   import RepoSettings from './components/RepoSettings.vue'
   

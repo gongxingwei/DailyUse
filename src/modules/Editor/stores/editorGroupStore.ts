@@ -193,10 +193,22 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             return newGroup
         },
 
+        setActiveGroup(groupId: string) {
+            if (this.activeGroupId !== groupId) {
+                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
+                if (currentActive) {
+                    currentActive.active = false
+                }
+                
+                const newActive = this.editorGroups.find(g => g.id === groupId)
+                if (newActive) {
+                    newActive.active = true
+                    this.activeGroupId = groupId
+                }
+            }
+        },
+
         addEditorGroupPreview() {
-            const currentGroup = this.editorGroups.find(g => g.id === this.activeGroupId)
-
-
             const newGroup: EditorGroup = {
                 id: `group-${Date.now()}`,
                 active: true,
@@ -204,17 +216,10 @@ export const useEditorGroupStore = defineStore('editorGroup', {
                 tabs: [],
                 activeTabId: null
             }
-
-            // 设置活动状态
-            if (this.activeGroupId) {
-                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
-                if (currentActive) {
-                    currentActive.active = false
-                }
-            }
-
+        
             this.editorGroups.push(newGroup)
-            this.activeGroupId = newGroup.id
+            // Use existing setActiveGroup method instead of duplicate code
+            this.setActiveGroup(newGroup.id)
             this.redistributeWidths()
             return newGroup
         },
@@ -242,21 +247,6 @@ export const useEditorGroupStore = defineStore('editorGroup', {
 
             // 重新分配宽度
             this.redistributeWidths(removedGroupWidth)
-        },
-
-        setActiveGroup(groupId: string) {
-            if (this.activeGroupId !== groupId) {
-                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
-                if (currentActive) {
-                    currentActive.active = false
-                }
-                
-                const newActive = this.editorGroups.find(g => g.id === groupId)
-                if (newActive) {
-                    newActive.active = true
-                    this.activeGroupId = groupId
-                }
-            }
         },
 
         getGroupWidth(groupId: string) {
