@@ -28,7 +28,13 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
   可以创建 文档仓库、图片仓库
 - 文档编辑器  
   对仓库中的文档进行编辑  
+- goal  
+  点击添加 goal  
 - todo  
+  把部分完成的 todo 保存起来，作为战绩  
+  多种类型  
+    task：time
+    day：tasks
 - 健康提醒
 - quicklaunch  
 - b站等的订阅消息转发  
@@ -50,6 +56,17 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 用户可以单独编辑组件，在页面中组合
 
 物理分割、逻辑组合
+
+## goal
+
+```
+components
+  GoalCard.vue
+    只负责显示 goal，将事件信号（编辑、删除、相关仓库）传递给主组件  
+  RelativeRepo.vue
+Goal.vue
+goalStore.ts
+```
 
 ## 主题切换
 
@@ -388,6 +405,75 @@ drop: 放置
 ```
 
 ## other
+
+### confirm 组件
+
+#### 实现方法
+
+在事件中显示对话框，对话框按钮事件中处理对应事件  
+
+在事件中显示对话框，根据对话框返回布尔值，事件中根据返回的布尔值处理事件
+
+直接传入一个事件，根据对话框选项决定是否执行这个事件  
+
+#### deepseek 最佳实践建议
+
+
+1. 全局注册确认对话框
+在 main.ts 中创建全局实例：
+```ts
+// 创建Vue插件
+const ConfirmPlugin = {
+  install(app) {
+    app.component('GlobalConfirm', Confirm)
+  }
+}
+app.use(ConfirmPlugin)
+
+使用时直接调用：
+<GlobalConfirm v-model:model-value="showConfirm" />
+```
+
+2. 组合式API封装
+创建 useConfirmDialog 组合函数：
+
+```ts
+export function useConfirmDialog() {
+  const isOpen = ref(false)
+  const resolvePromise = ref<Function>()
+
+  const open = () => {
+    isOpen.value = true
+    return new Promise((resolve) => {
+      resolvePromise.value = resolve
+    })
+  }
+
+  const handleConfirm = () => {
+    isOpen.value = false
+    resolvePromise.value?.(true)
+  }
+
+  const handleCancel = () => {
+    isOpen.value = false
+    resolvePromise.value?.(false)
+  }
+
+  return { isOpen, open, handleConfirm, handleCancel }
+}
+
+使用方式：
+<script setup>
+const { isOpen, open, handleConfirm, handleCancel } = useConfirmDialog()
+
+const deleteItem = async () => {
+  const confirmed = await open()
+  if (confirmed) {
+    // 执行删除
+  }
+}
+</script>
+```
 
 ### Electron App 性能与稳定性开关说明
 

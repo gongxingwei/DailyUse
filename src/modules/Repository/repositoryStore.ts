@@ -78,6 +78,14 @@ export const useRepositoryStore = defineStore("repository", {
                 repository => repository.title === window.location.hash.split('/').pop()
             );
             return currentRepo?.path || '';
+        },
+
+        updateRepoLastVisitTime(title: string) {
+            const repository = this.repositories.find(repo => repo.title === title);
+            if (repository) {
+                repository.lastVisitTime = new Date().toISOString();
+                console.log('updateRepoLastVisitTime', repository.lastVisitTime);
+            }
         }
     },
 

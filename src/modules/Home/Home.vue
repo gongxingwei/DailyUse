@@ -3,26 +3,13 @@
   <v-container>
     <div class="text-h6 font-weight-light">Recent</div>
     <v-row>
-      <v-col v-for="repository in getRecentRepositories" :key="repository?.title || ''" cols="12" md="4">
-        <v-card
+      <v-col v-for="repository in getRecentRepositories" 
+             :key="repository?.title || ''" 
+             cols="12" md="4">
+        <RepoInfoCard 
           v-if="repository"
-          :to="`/repo/${encodeURIComponent(repository.title)}`"
-          class="recent-repo"
-          variant="outlined"
-        >
-          <v-card-title class="text-subtitle-1">
-            <v-icon start color="primary">mdi-folder</v-icon>
-            {{ repository.title }}
-          </v-card-title>
-          
-          <v-card-subtitle v-if="repository.description">
-            {{ repository.description }}
-          </v-card-subtitle>
-          
-          <v-card-text class="text-caption text-medium-emphasis">
-            最后访问: {{ formatDate(repository.lastVisitTime) }}
-          </v-card-text>
-        </v-card>
+          :repository="repository"
+        />
       </v-col>
       
       <v-col v-if="getRecentRepositories.length === 0" cols="12">
@@ -73,14 +60,14 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useTodoStore } from '../Todo/todo'
+import { useTodoStore } from '../Todo/todoStore'
 import { useRepositoryStore } from '../Repository/repositoryStore'
-import type { Todo } from '../Todo/todo'
+import type { Todo } from '../Todo/todoStore'
 import ToDoListCard from '../Todo/components/ToDoListCard.vue'
 import ShowToDoInfo from '../Todo/components/ShowToDoInfo.vue'
 import EditToDoCard from '../Todo/components/EditToDoCard.vue'
 import type { Repository } from '../Repository/repositoryStore'
-
+import RepoInfoCard from '../Repository/components/RepoInfoCard.vue'
 
 const todoStore = useTodoStore()
 const repositoryStore = useRepositoryStore()
@@ -100,23 +87,6 @@ const getRecentRepositories = computed<Repository[]>(() => {
   console.log(repositories)
   return repositories.filter((repo): repo is Repository => repo !== undefined)
 })
-
-// 修改 formatDate 函数添加类型检查
-const formatDate = (dateStr?: string): string => {
-  if (!dateStr) return ''
-  
-  try {
-    return new Date(dateStr).toLocaleString('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  } catch (error) {
-    console.error('Invalid date:', dateStr)
-    return ''
-  }
-}
 
 // 事件处理函数
 const showTodoInfo = (todo: Todo) => {

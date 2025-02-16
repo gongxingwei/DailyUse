@@ -8,7 +8,7 @@
           <v-row>
             <v-col cols="12">
               <div class="text-subtitle-1">内容：</div>
-              <div class="text-body-1">{{ todo?.content }}</div>
+              <div class="text-body-1">{{ todo?.description }}</div>
             </v-col>
             
             <v-col cols="12">
@@ -34,7 +34,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Todo } from '@/modules/Todo/todo'
+import type { Todo } from '@/modules/Todo/todoStore'
 
 interface Props {
   modelValue: boolean

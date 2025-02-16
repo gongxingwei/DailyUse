@@ -17,7 +17,7 @@
             
             <v-col cols="12">
               <v-textarea
-                v-model="newTodo.content"
+                v-model="newTodo.description"
                 label="内容"
                 rows="3"
               ></v-textarea>
@@ -46,7 +46,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useTodoStore } from '../todo'
+import { useTodoStore } from '../todoStore'
 
 const props = defineProps({
   modelValue: Boolean
@@ -63,7 +63,7 @@ const dialogVisible = computed({
 
 const newTodo = ref({
   title: '',
-  content: '',
+  description: '',
   datetime: new Date().toISOString().slice(0, 16)
 })
 
@@ -85,7 +85,7 @@ const saveTodo = () => {
 const resetForm = () => {
   newTodo.value = {
     title: '',
-    content: '',
+    description: '',
     datetime: new Date().toISOString().slice(0, 16)
   }
 }

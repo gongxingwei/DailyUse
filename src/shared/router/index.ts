@@ -24,6 +24,11 @@ const routes: RouteRecordRaw[] = [
                 component: Home
             },
             {
+                path: '/goal',
+                name: 'goal',
+                component: () => import('@/modules/Goal/Goal.vue')
+            },
+            {
                 path: '/todolist',
                 name: 'todolist',
                 component: () => import('@/modules/Todo/Todo.vue')
@@ -76,6 +81,7 @@ document.title = `${to.meta.title || '默认标题'}`
 if (to.name === 'repository-detail' && to.params.title) {
   const store = useRepositoryStore()
   store.addToRecent(decodeURIComponent(to.params.title as string))
+  store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
 }
   next()
 })

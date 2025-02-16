@@ -4,7 +4,7 @@ import { defineStore } from 'pinia'
 export interface Todo {
   id: number
   title: string
-  content: string
+  description: string
   datetime: string
   completed: boolean
 }
@@ -15,14 +15,14 @@ export const useTodoStore = defineStore('todo', {
       {
         id: 1,
         title: '完成项目文档',
-        content: '编写项目技术文档和使用说明',
+        description: '编写项目技术文档和使用说明',
         completed: false,
         datetime: '2024-12-16T10:00:00.000Z'
       },
       {
         id: 2,
         title: '团队会议',
-        content: '讨论下周工作计划',
+        description: '讨论下周工作计划',
         completed: false,
         datetime: '2024-12-17T14:30:00.000Z'
       }
@@ -66,6 +66,10 @@ export const useTodoStore = defineStore('todo', {
         const todoDate = new Date(todo.datetime);
         return todoDate > fourDaysLater;
       })
+    },
+
+    getTodoById: (state) => (id: number) => {
+      return state.todos.find(todo => todo.id === id)
     }
   },
 

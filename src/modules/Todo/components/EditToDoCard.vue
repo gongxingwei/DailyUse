@@ -17,7 +17,7 @@
             
             <v-col cols="12">
               <v-textarea
-                v-model="editedTodo.content"
+                v-model="editedTodo.description"
                 label="内容"
                 rows="3"
               ></v-textarea>
@@ -46,8 +46,8 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { useTodoStore } from '../todo'
-import type { Todo } from '../todo'
+import { useTodoStore } from '../todoStore'
+import type { Todo } from '../todoStore'
 
 interface Props {
   modelValue: boolean
@@ -70,7 +70,7 @@ const dialogVisible = computed({
 const editedTodo = ref<Todo>({
   id: 0,
   title: '',
-  content: '',
+  description: '',
   datetime: '',
   completed: false
 })

@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useTodoStore } from './todo'
+import { useTodoStore } from './todoStore'
 import ToDoListCard from './components/ToDoListCard.vue'
 import AddToDoCard from './components/AddToDoCard.vue'
 import ShowToDoInfo from './components/ShowToDoInfo.vue'
 import EditToDoCard from './components/EditToDoCard.vue'
 
-import type { Todo } from './todo'  // 从 store 中导入 Todo 类型
+import type { Todo } from './todoStore'  // 从 store 中导入 Todo 类型
 
 const todoStore = useTodoStore()
 const showAddDialog = ref(false)
