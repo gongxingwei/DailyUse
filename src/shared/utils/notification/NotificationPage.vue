@@ -29,3 +29,7 @@ const handleClose = () => {
   window.shared.send('close-notification', notificationData.value?.id);
 };
 </script>
+
+<style scoped>
+
+</style>

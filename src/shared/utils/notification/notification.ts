@@ -19,7 +19,6 @@ export class NotificationService {
       console.error('Electron IPC Renderer is not available');
       return;
     }
-
     // 监听通知动作
     window.shared.ipcRenderer.on('notification-action', (_event: any, id: string, action: any) => {
       console.log('Notification action:', id, action);
@@ -40,19 +39,16 @@ export class NotificationService {
   }
 
   /**
-   * 显示桌面通知
+   * 显示桌面通知，关键 show 函数
    * @param options 通知选项
    */
   public async show(options: NotificationOptions): Promise<string> {
-    console.log('NotificationService.show 被调用，参数:', options);
     const id = this.generateId();
     try {
-      console.log('调用 IPC show-notification，参数:', { id, ...options });
       const result = await window.shared.ipcRenderer.invoke('show-notification', {
         id,
         ...options
       });
-      console.log('IPC show-notification 返回结果:', result);
       return result;
     } catch (error) {
       console.error('显示通知失败:', error);
@@ -66,17 +62,11 @@ export class NotificationService {
    * @param message 消息内容
    */
   public async showSimple(title: string, message: string): Promise<string> {
-    console.log('NotificationService.showSimple 被调用:', { title, message });
-    const id = this.generateId();
-    console.log('调用 IPC show-notification，参数:', { id, title, body: message, urgency: 'normal' });
-    const result = await window.shared.ipcRenderer.invoke('show-notification', {
-      id,
+    return await this.show({
       title,
       body: message,
       urgency: 'normal'
     });
-    console.log('IPC show-notification 返回结果:', result);
-    return result;
   }
 
   /**

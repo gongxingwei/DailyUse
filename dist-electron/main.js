@@ -321,8 +321,8 @@ function registerFileSystemHandlers() {
   });
 }
 const notificationWindows = /* @__PURE__ */ new Map();
-const NOTIFICATION_WIDTH = 320;
-const NOTIFICATION_HEIGHT = 120;
+const NOTIFICATION_WIDTH = 620;
+const NOTIFICATION_HEIGHT = 920;
 const NOTIFICATION_MARGIN = 10;
 function getNotificationPosition() {
   const primaryDisplay = screen.getPrimaryDisplay();
@@ -362,6 +362,7 @@ function setupNotificationHandlers(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,
+      backgroundColor: "#00000000",
       webPreferences: {
         preload: path$1.join(MAIN_DIST2, "main_preload.mjs"),
         contextIsolation: true,
@@ -408,10 +409,14 @@ function setupNotificationHandlers(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_
   ipcMain.on("notification-action", (_event, id, action) => {
     const window = notificationWindows.get(id);
     if (window && !window.isDestroyed()) {
+      const serializedAction = {
+        text: action.text,
+        type: action.type
+      };
       if (action.type === "confirm" || action.type === "cancel") {
         window.close();
       }
-      mainWindow.webContents.send("notification-action-received", id, action);
+      mainWindow.webContents.send("notification-action-received", id, serializedAction);
     }
   });
 }

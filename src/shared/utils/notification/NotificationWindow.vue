@@ -1,19 +1,21 @@
 <template>
   <div class="notification-window" :class="urgency">
-    <div class="notification-header">
-      <img v-if="icon" :src="icon" class="notification-icon" />
-      <span class="notification-title">{{ title }}</span>
-      <button class="close-btn" @click="close">×</button>
-    </div>
-    <div class="notification-body">{{ body }}</div>
-    <div v-if="actions && actions.length" class="notification-actions">
-      <button 
-        v-for="action in actions" 
-        :key="action.text"
-        @click="handleAction(action)"
-        :class="action.type">
-        {{ action.text }}
-      </button>
+    <div class="notification-content">
+      <div class="notification-header">
+        <img v-if="icon" :src="icon" class="notification-icon" />
+        <span class="notification-title">{{ title }}</span>
+        <button class="close-btn" @click="close">×</button>
+      </div>
+      <div class="notification-body">{{ body }}</div>
+      <div v-if="actions && actions.length" class="notification-actions">
+        <button 
+          v-for="action in actions" 
+          :key="action.text"
+          @click="handleAction({ text: action.text, type: action.type })"
+          :class="action.type">
+          {{ action.text }}
+        </button>
+      </div>
     </div>
     <div class="progress-bar" :style="{ width: `${progressWidth}%` }"></div>
   </div>
@@ -57,8 +59,12 @@ const close = () => {
 };
 
 const handleAction = (action: { text: string; type: string }) => {
+  const serializedAction = {
+    text: action.text,
+    type: action.type
+  };
   if (window.shared?.ipcRenderer) {
-    window.shared.ipcRenderer.send('notification-action', id.value, action);
+    window.shared.ipcRenderer.send('notification-action', id.value, serializedAction);
   }
 };
 
@@ -99,56 +105,75 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+
 .notification-window {
-  width: 300px;
-  background: #1a1a1a;
-  color: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  padding: 12px;
-  margin: 8px;
-  animation: slide-in 0.3s ease-out;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  width: 100vw;
+  height: 100vh;
+  background: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-on-surface));
+  display: flex;
+  flex-direction: column;
   position: relative;
   overflow: hidden;
+  animation: slide-in 0.3s ease-out;
 }
 
+.notification-content {
+  flex: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.notification-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.notification-body {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+  opacity: 0.9;
+}
+
+.notification-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  padding-bottom: 8px;
+}
+
+/* Update progress bar positioning */
 .progress-bar {
   position: absolute;
   bottom: 0;
   left: 0;
-  height: 2px;
+  height: 3px;
   background: #1890ff;
   transition: width 0.05s linear;
 }
 
-@keyframes slide-in {
-  from {
-    transform: translateX(100%);
-    opacity: 0;
-  }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
-
+/* Update border styles for different urgency levels */
 .notification-window.critical {
-  border-left: 4px solid #ff4d4f;
-}
-
-.notification-window.critical .progress-bar {
-  display: none;
+  border-top: 4px solid #ff4d4f;
 }
 
 .notification-window.normal {
-  border-left: 4px solid #1890ff;
+  border-top: 4px solid #1890ff;
 }
 
 .notification-window.low {
-  border-left: 4px solid #52c41a;
+  border-top: 4px solid #52c41a;
 }
-
 .notification-header {
   display: flex;
   align-items: center;
@@ -233,5 +258,16 @@ onUnmounted(() => {
 
 .notification-actions button.action:hover {
   background: #73d13d;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>

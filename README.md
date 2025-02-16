@@ -57,13 +57,23 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 物理分割、逻辑组合
 
+## Reminder
+
+```
+components
+Reminder.vue
+```
+
 ## goal
 
 ```
 components
   GoalCard.vue
     只负责显示 goal，将事件信号（编辑、删除、相关仓库）传递给主组件  
-  RelativeRepo.vue
+  RelativeRepo.vue  
+    在 GoalCard.vue 中调用，选择 相关仓库  
+  RelativeTodo.vue
+    在 GoalCard.vue 中调用，选择 相关待办  
 Goal.vue
 goalStore.ts
 ```

@@ -3,8 +3,8 @@ import path from 'node:path';
 
 const notificationWindows = new Map<string, BrowserWindow>();
 
-const NOTIFICATION_WIDTH = 320;
-const NOTIFICATION_HEIGHT = 120;
+const NOTIFICATION_WIDTH = 620;
+const NOTIFICATION_HEIGHT = 920;
 const NOTIFICATION_MARGIN = 10;
 
 function getNotificationPosition(): { x: number, y: number } {
@@ -57,6 +57,7 @@ export function setupNotificationHandlers(mainWindow: BrowserWindow, MAIN_DIST: 
       skipTaskbar: true,
       alwaysOnTop: true,
       show: false,
+      backgroundColor: '#00000000',
       webPreferences: {
         preload: path.join(MAIN_DIST, 'main_preload.mjs'),
         contextIsolation: true,
@@ -117,10 +118,14 @@ export function setupNotificationHandlers(mainWindow: BrowserWindow, MAIN_DIST: 
   ipcMain.on('notification-action', (_event, id: string, action: { text: string, type: string }) => {
     const window = notificationWindows.get(id);
     if (window && !window.isDestroyed()) {
+      const serializedAction = {
+        text: action.text,
+        type: action.type
+      };
       if (action.type === 'confirm' || action.type === 'cancel') {
         window.close();
       }
-      mainWindow.webContents.send('notification-action-received', id, action);
+      mainWindow.webContents.send('notification-action-received', id, serializedAction);
     }
   });
 }
