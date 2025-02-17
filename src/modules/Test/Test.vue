@@ -1,16 +1,16 @@
 <template>
   <div class="test-container">
     <h2>通知测试</h2>
-    
+
     <div class="button-group">
       <button @click="showSimpleNotification">
         简单通知
       </button>
-      
+
       <button @click="showWarningNotification">
         警告通知
       </button>
-      
+
       <button @click="showCustomNotification">
         自定义通知（带按钮）
       </button>
@@ -18,36 +18,38 @@
       <button @click="showMultipleNotifications">
         多个通知
       </button>
+
+      <button @click="addTaskSchedule">
+        添加任务
+      </button>
+      <button @click="getTaskSchedule">
+        获取当前所有任务
+      </button>
+      <button @click="cancelTaskSchedule">
+        删除测试任务
+      </button>
     </div>
 
     <div class="status">
       <h3>通知历史</h3>
-      <div v-for="(item, index) in notificationHistory" 
-           :key="index" 
-           class="history-item">
+      <div v-for="(item, index) in notificationHistory" :key="index" class="history-item">
         <span class="time">{{ item.time }}</span>
         <span class="title">{{ item.title }}</span>
         <span class="type">{{ item.type }}</span>
       </div>
     </div>
   </div>
-  <div class="drop-zone" @dragover.prevent="handleDragOver" @drop.prevent="handleDrop">
-      <p>拖拽图标到这里添加应用</p>
-  </div>
 </template>
 <script setup lang="ts">
 import { ref } from 'vue';
 import { notification } from '@/shared/utils/notification/notification';
+import { scheduleService } from '@/shared/utils/schedule/main';
 
-function handleDragOver(event: DragEvent) {
-  (event.currentTarget as HTMLElement).classList.add('dragover');
-  console.log('拖拽中');
-}
+const everySecond = '* * * * * *';
 
-function handleDrop(event: DragEvent) {
-  (event.currentTarget as HTMLElement).classList.remove('dragover');
-  console.log('拖拽结束');
-}
+const everyTenSeconds = '*/10 * * * * *';
+
+const everyMinute = '* * * * *';
 
 interface NotificationHistoryItem {
   time: string;
@@ -62,12 +64,44 @@ const addToHistory = (title: string, type: string) => {
   notificationHistory.value.unshift({ time, title, type });
 };
 
+const addTaskSchedule = async () => {
+  await scheduleService.createSchedule({
+    id: 'daily-task',
+    cron: everyTenSeconds,
+    task: {
+      type: 'notification',
+      payload: {
+        title: '每日提醒',
+        body: '该开始工作了！'
+      }
+    }
+  });
+
+};
+
+const getTaskSchedule = async () => {
+  const tasks = await scheduleService.getSchedules();
+  console.log('当前所有任务:', tasks);
+};
+
+const cancelTaskSchedule = async () => {
+  await scheduleService.cancelSchedule('daily-task');
+};
+
+
+scheduleService.onScheduleTriggered(({ id, task }) => {
+  if (task.type === 'notification') {
+    // 处理通知任务
+    notification.show(task.payload);
+  }
+});
+
 const showSimpleNotification = async () => {
   console.log('开始显示简单通知...');
   try {
     console.log('调用 notification.showSimple...');
     const id = await notification.showSimple(
-      '简单通知', 
+      '简单通知',
       '这是一条基本的通知消息'
     );
     console.log('notification.showSimple 返回的 ID:', id);
@@ -80,7 +114,7 @@ const showSimpleNotification = async () => {
 
 const showWarningNotification = async () => {
   const id = await notification.showWarning(
-    '警告通知', 
+    '警告通知',
     '这是一条警告消息，需要你的注意！'
   );
   addToHistory('警告通知', `ID: ${id}`);
@@ -104,14 +138,14 @@ const showMultipleNotifications = async () => {
   // 连续发送3条不同的通知
   const id1 = await notification.showSimple('通知 1', '第一条通知消息');
   addToHistory('通知 1', `ID: ${id1}`);
-  
+
   const id2 = await notification.show({
     title: '通知 2',
     body: '第二条通知消息',
     urgency: 'low',
   });
   addToHistory('通知 2', `ID: ${id2}`);
-  
+
   const id3 = await notification.showWarning('通知 3', '第三条警告消息');
   addToHistory('通知 3', `ID: ${id3}`);
 };
@@ -174,14 +208,14 @@ button:hover {
 
 
 .drop-zone {
-    width: 200px;
-    height: 200px;
-    border: 2px dashed #ccc;
-    padding: 20px;
-    text-align: center;
+  width: 200px;
+  height: 200px;
+  border: 2px dashed #ccc;
+  padding: 20px;
+  text-align: center;
 }
 
 .dragover {
-    border-color: #2196f3;
+  border-color: #2196f3;
 }
 </style>

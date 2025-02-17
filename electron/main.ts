@@ -6,6 +6,7 @@ import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { registerFileSystemHandlers } from './shared/ipc/filesystem';
 import { setupNotificationHandlers } from './modules/notification/notification';
+import { setupScheduleHandlers } from './modules/taskSchedule/main';
 
 app.setName('DailyUse');
 
@@ -165,6 +166,7 @@ app.whenReady().then(() => {
   registerFileSystemHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+    setupScheduleHandlers();
   }
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

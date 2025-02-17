@@ -57,9 +57,31 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 物理分割、逻辑组合
 
-## Reminder
+## 定时功能  
+
+那年 那天 那一刻  接收一个具体时间，只触发一次  
+每年 每天 那一刻  接收一个时间，每天/月/年，都触发  
+  可以交给 vue 去处理成前者，electron 只处理 前者
 
 ```
+electron
+  modules
+    taskSchedule
+      ipc.ts
+      main.ts
+        定时功能实现
+src
+  shared
+    utils
+      schedule
+        main.ts
+          前端定时功能接口
+
+```
+
+## Reminder
+
+
 components
 Reminder.vue
 ```
@@ -415,6 +437,25 @@ drop: 放置
 ```
 
 ## other
+
+### 时间条组件
+
+初始状态：
+进度条宽度为100%
+开始3秒倒计时
+
+动画过程：
+每50毫秒更新一次宽度
+每次减少约1.67%的宽度
+CSS transition 使变化平滑
+
+结束条件：
+宽度达到0%
+或用户手动关闭通知
+
+清理工作：
+组件卸载时清理定时器
+通知关闭时清理定时器
 
 ### confirm 组件
 
