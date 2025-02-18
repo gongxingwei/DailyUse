@@ -57,7 +57,34 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 物理分割、逻辑组合
 
-## 定时功能  
+## 弹窗服务notification  
+
+```
+electron
+  modules
+    notification
+      ipc.ts
+      notification.ts
+        弹窗功能实现
+src
+  shared
+    utils
+      notification
+        notification.ts
+          前端弹窗功能接口
+```
+
+弹窗属性
+```ts
+id: string
+title: string
+body: string
+icon?: string
+urgency?: 'normal' | 'critical' | 'low'
+actions?: Array<{ text: string, type: 'confirm' | 'cancel' | 'action' }>
+```
+
+## 定时服务taskSchedule  
 
 那年 那天 那一刻  接收一个具体时间，只触发一次  
 每年 每天 那一刻  接收一个时间，每天/月/年，都触发  
@@ -69,19 +96,32 @@ electron
     taskSchedule
       ipc.ts
       main.ts
-        定时功能实现
+        定时功能实现  
+        使用 nodeSchedule 来实现定时  
+        定义了增删改查任务的函数
+        任务定义  
+        options: {
+          id: string;
+          cron: string;
+          task: {
+          type: string;
+          payload: any;
+          };
+         lastRun: string;
+       }
 src
   shared
     utils
       schedule
         main.ts
           前端定时功能接口
+          定义了相应的增删改查的前端接口和 schedule 类型
 
 ```
 
 ## Reminder
 
-
+```
 components
 Reminder.vue
 ```
@@ -545,6 +585,36 @@ app.commandLine.appendSwitch('disable-software-rasterizer'); // 禁用软件光�
 ```
 
 # 知识
+
+## 监听器
+
+```ts
+export class ScheduleService {
+    private listeners: Set<(data: { id: string, task: ScheduleTask }) => void> = new Set();
+
+    constructor() {
+        window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => {
+            this.notifyListeners(data);
+        });
+    }
+    private notifyListeners(data: { id: string, task: ScheduleTask }) {
+        this.listeners.forEach(listener => listener(data));
+    }
+
+    public onScheduleTriggered(callback: (data: { id: string, task: ScheduleTask }) => void) {
+        this.listeners.add(callback);
+        
+        // 返回清理函数
+        return () => {
+            this.listeners.delete(callback);
+        };
+    }
+    // // 监听定时任务触发
+    // public onScheduleTriggered(callback: (data: { id: string, task: ScheduleTask }) => void) {
+    //     window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => callback(data));
+    // }
+}
+```
 
 ## 项目结构
 

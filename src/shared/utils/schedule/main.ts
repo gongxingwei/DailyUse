@@ -1,3 +1,4 @@
+
 export interface ScheduleTask {
     type: string;
     payload: any;
@@ -10,6 +11,17 @@ export interface ScheduleOptions {
 }
 
 export class ScheduleService {
+    private listeners: Set<(data: { id: string, task: ScheduleTask }) => void> = new Set();
+
+    constructor() {
+        window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => {
+            this.notifyListeners(data);
+        });
+    }
+    private notifyListeners(data: { id: string, task: ScheduleTask }) {
+        this.listeners.forEach(listener => listener(data));
+    }
+
     // 创建定时任务
     public async createSchedule(options: ScheduleOptions): Promise<boolean> {
         return await window.shared.ipcRenderer.invoke('create-schedule', options);
@@ -25,10 +37,18 @@ export class ScheduleService {
         return await window.shared.ipcRenderer.invoke('get-schedules');
     }
 
-    // 监听定时任务触发
     public onScheduleTriggered(callback: (data: { id: string, task: ScheduleTask }) => void) {
-        window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => callback(data));
+        this.listeners.add(callback);
+        
+        // 返回清理函数
+        return () => {
+            this.listeners.delete(callback);
+        };
     }
+    // // 监听定时任务触发
+    // public onScheduleTriggered(callback: (data: { id: string, task: ScheduleTask }) => void) {
+    //     window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => callback(data));
+    // }
 }
 
 export const scheduleService = new ScheduleService();

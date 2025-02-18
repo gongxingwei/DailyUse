@@ -41,15 +41,12 @@
   </div>
 </template>
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted, onUnmounted } from 'vue';
 import { notification } from '@/shared/utils/notification/notification';
 import { scheduleService } from '@/shared/utils/schedule/main';
 
-const everySecond = '* * * * * *';
-
 const everyTenSeconds = '*/10 * * * * *';
 
-const everyMinute = '* * * * *';
 
 interface NotificationHistoryItem {
   time: string;
@@ -89,11 +86,26 @@ const cancelTaskSchedule = async () => {
 };
 
 
-scheduleService.onScheduleTriggered(({ id, task }) => {
-  if (task.type === 'notification') {
-    // 处理通知任务
-    notification.show(task.payload);
-  }
+// scheduleService.onScheduleTriggered(({ id, task }) => {
+//   if (task.type === 'notification') {
+//     // 处理通知任务
+//     notification.show(task.payload);
+//   }
+// });
+let cleanup: (() => void) | null = null;
+onMounted(() => {
+    cleanup = scheduleService.onScheduleTriggered(({ task }) => {
+        if (task.type === 'notification') {
+            // 处理通知任务
+            notification.show(task.payload);
+        }
+    });
+});
+
+onUnmounted(() => {
+    if (cleanup) {
+        cleanup();
+    }
 });
 
 const showSimpleNotification = async () => {
