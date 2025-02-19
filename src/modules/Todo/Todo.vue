@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { useTodoStore } from './todoStore'
-import ToDoListCard from './components/ToDoListCard.vue'
-import AddToDoCard from './components/AddToDoCard.vue'
-import ShowToDoInfo from './components/ShowToDoInfo.vue'
-import EditToDoCard from './components/EditToDoCard.vue'
+import ToDoListCard from './components/TodoListCard.vue'
+import AddToDoCard from './components/AddTodoCard.vue'
+import ShowToDoInfo from './components/ShowTodoInfo.vue'
+import EditToDoCard from './components/EditTodoCard.vue'
 
 import type { Todo } from './todoStore'  // 从 store 中导入 Todo 类型
 

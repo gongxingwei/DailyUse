@@ -1,22 +1,6 @@
 import { defineStore } from 'pinia' 
 import { scheduleService } from '@/shared/utils/schedule/main';
-
-export type TimeMode = 'once' | 'daily' | 'interval';
-export type ScheduleUnit = 'minutes' | 'hours';
-
-export interface TimeConfig {
-    mode: TimeMode;
-    // 一次性提醒的具体时间
-    timestamp?: string;
-    // 每日提醒的时间
-    dailyTime?: string; // 格式 "HH:mm"
-    // 间隔提醒的设置
-    interval?: {
-        value: number;
-        unit: ScheduleUnit;
-    };
-}
-export type UrgencyLevel = 'normal' | 'critical' | 'low';
+import { TimeConfig, UrgencyLevel } from '@/shared/types/time';
 
 export interface Reminder {
     id: string;

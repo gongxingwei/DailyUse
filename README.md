@@ -57,6 +57,8 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 物理分割、逻辑组合
 
+由事件驱动，把所有的 todo reminder 类型统一
+
 ## 弹窗服务notification  
 
 ```
@@ -303,7 +305,74 @@ export const useThemeStore = defineStore('theme', {
     "on-sidebar-bg": "#fff",
     "on-toolbar-bg": "#fff"
 }
-
+    color-scheme: dark;
+    --v-theme-background: 18,18,18;
+    --v-theme-background-overlay-multiplier: 1;
+    --v-theme-surface: 33,33,33;
+    --v-theme-surface-overlay-multiplier: 1;
+    --v-theme-surface-bright: 204,191,214;
+    --v-theme-surface-bright-overlay-multiplier: 2;
+    --v-theme-surface-light: 66,66,66;
+    --v-theme-surface-light-overlay-multiplier: 1;
+    --v-theme-surface-variant: 255,255,255;
+    --v-theme-surface-variant-overlay-multiplier: 2;
+    --v-theme-on-surface-variant: 255,255,255;
+    --v-theme-primary: 33,150,243;
+    --v-theme-primary-overlay-multiplier: 2;
+    --v-theme-primary-darken-1: 39,124,193;
+    --v-theme-primary-darken-1-overlay-multiplier: 2;
+    --v-theme-secondary: 66,66,66;
+    --v-theme-secondary-overlay-multiplier: 1;
+    --v-theme-secondary-darken-1: 72,169,166;
+    --v-theme-secondary-darken-1-overlay-multiplier: 2;
+    --v-theme-error: 255,82,82;
+    --v-theme-error-overlay-multiplier: 2;
+    --v-theme-info: 33,150,243;
+    --v-theme-info-overlay-multiplier: 2;
+    --v-theme-success: 76,175,80;
+    --v-theme-success-overlay-multiplier: 2;
+    --v-theme-warning: 251,140,0;
+    --v-theme-warning-overlay-multiplier: 2;
+    --v-theme-accent: 255,64,129;
+    --v-theme-accent-overlay-multiplier: 2;
+    --v-theme-scrollbar-track: 204,191,214;
+    --v-theme-scrollbar-track-overlay-multiplier: 2;
+    --v-theme-scrollbar-thumb: 255,255,255;
+    --v-theme-scrollbar-thumb-overlay-multiplier: 2;
+    --v-theme-scrollbar-thumb-hover: 255,255,255;
+    --v-theme-scrollbar-thumb-hover-overlay-multiplier: 2;
+    --v-theme-on-background: 255,255,255;
+    --v-theme-on-surface: 255,255,255;
+    --v-theme-on-surface-bright: 0,0,0;
+    --v-theme-on-surface-light: 255,255,255;
+    --v-theme-on-primary: 255,255,255;
+    --v-theme-on-primary-darken-1: 255,255,255;
+    --v-theme-on-secondary: 255,255,255;
+    --v-theme-on-secondary-darken-1: 255,255,255;
+    --v-theme-on-error: 255,255,255;
+    --v-theme-on-info: 255,255,255;
+    --v-theme-on-success: 255,255,255;
+    --v-theme-on-warning: 255,255,255;
+    --v-theme-on-accent: 255,255,255;
+    --v-theme-on-scrollbar-track: 0,0,0;
+    --v-theme-on-scrollbar-thumb: 0,0,0;
+    --v-theme-on-scrollbar-thumb-hover: 0,0,0;
+    --v-border-color: 255, 255, 255;
+    --v-border-opacity: 0.12;
+    --v-high-emphasis-opacity: 1;
+    --v-medium-emphasis-opacity: 0.7;
+    --v-disabled-opacity: 0.5;
+    --v-idle-opacity: 0.1;
+    --v-hover-opacity: 0.04;
+    --v-focus-opacity: 0.12;
+    --v-selected-opacity: 0.08;
+    --v-activated-opacity: 0.12;
+    --v-pressed-opacity: 0.16;
+    --v-dragged-opacity: 0.08;
+    --v-theme-kbd: 33, 37, 41;
+    --v-theme-on-kbd: 255, 255, 255;
+    --v-theme-code: 52, 52, 52;
+    --v-theme-on-code: 204, 204, 204;
 // light
 {
     "background": "#FFFFFF",

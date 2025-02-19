@@ -1,11 +1,11 @@
-import { useReminderStore } from '@/modules/Reminder/reminderStore';
+import { useTodoStore } from '@/modules/Todo/todoStore';
 import { scheduleService } from '@/shared/utils/schedule/main';
 import { notification } from '@/shared/utils/notification/notification';
 import { onMounted, onUnmounted } from 'vue';
 import type { UrgencyLevel } from '@/shared/types/time';
 
 export function useReminderInit() {
-    const reminderStore = useReminderStore();
+    const todoStore = useTodoStore();
     let cleanup: (() => void) | null = null;
 
     const handleReminderNotification = async (reminder: { 
@@ -31,7 +31,7 @@ export function useReminderInit() {
     };
 
     const initializeReminders = async () => {
-        await reminderStore.initializeSchedules();
+        await todoStore.initializeTodoSchedules();
 
         cleanup = scheduleService.onScheduleTriggered(({ id, task }) => {
             if (task.type === 'REMINDER') {

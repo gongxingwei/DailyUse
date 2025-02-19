@@ -132,7 +132,7 @@
 import { ref, reactive } from 'vue';
 import { useReminderStore } from '../reminderStore';
 import { v4 as uuidv4 } from 'uuid';
-import type { UrgencyLevel, TimeMode, TimeConfig } from '../reminderStore';
+import type { UrgencyLevel, TimeMode } from '@/shared/types/time';
 
 const reminderStore = useReminderStore();
 const showDialog = ref(false);

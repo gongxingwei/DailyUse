@@ -34,8 +34,8 @@
 import { ref } from 'vue'
 import { useTodoStore } from '../todoStore';
 import type { Todo } from '../todoStore'
-import EditToDoCard from './EditToDoCard.vue';
-import ShowToDoInfo from './ShowToDoInfo.vue';
+import EditToDoCard from './EditTodoCard.vue';
+import ShowToDoInfo from './ShowTodoInfo.vue';
 
 
 interface Props {

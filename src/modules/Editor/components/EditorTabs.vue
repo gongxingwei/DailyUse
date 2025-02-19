@@ -83,17 +83,10 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   align-items: center;
   cursor: pointer;
   width: var(--editor-tab-width);
-  border-right: 1px solid var(--vscode-editorGroup-border);
-  background-color: var(--vscode-editor-background);
-}
-
-.tab.active {
-  background-color: var(--vscode-editor-background);
-  border-top: 2px solid var(--vscode-activityBarBadge-background);
 }
 
 .tab:hover {
-  background-color: var(--vscode-list-hoverBackground);
+  background-color: rgba(var(--v-theme-surface), 1);
 }
 
 .tab-title {
@@ -110,7 +103,8 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
 }
 
 .active {
-  border-top: 1px solid rgb(105, 105, 177);
+  border-top: 1px solid rgb(33, 150, 242);
+  background-color: rgb(var(--v-theme-surface));
 }
 
 </style>
