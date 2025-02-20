@@ -62,7 +62,7 @@
           </v-col>
 
           <v-col cols="12" md="6">
-            <v-select v-model="settingStore.autoSave" :label="t('settings.editor.autoSave.label')" :items="[
+            <v-select v-model="editorSettings.autoSave" :label="t('settings.editor.autoSave.label')" :items="[
               { title: t('settings.editor.autoSave.on'), value: true },
               { title: t('settings.editor.autoSave.off'), value: false }
             ]" item-title="title" item-value="value" hide-details class="mb-4" />

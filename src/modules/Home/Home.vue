@@ -5,7 +5,7 @@
     <v-row>
       <v-col v-for="repository in getRecentRepositories" 
              :key="repository?.title || ''" 
-             cols="12" md="4">
+             cols="12" md="3">
         <RepoInfoCard 
           v-if="repository"
           :repository="repository"

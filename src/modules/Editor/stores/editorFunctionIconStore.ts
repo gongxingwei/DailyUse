@@ -1,10 +1,24 @@
 import { defineStore } from "pinia";
 import { useEditorGroupStore } from "./editorGroupStore";
 
+interface EditorFunctionIconState {
+    editorFunctionIcons: EditorFunctionIcon[];
+    showMenu: boolean;
+    menuX: number;
+    menuY: number;
+  }
+
 interface EditorFunctionIcon {
     id: string;
     title: string;
     icon: string;
+    action: () => void;
+}
+
+interface MoreFunction {
+    id: string;
+    label: string;
+    title: string;
     action: () => void;
 }
 
@@ -23,13 +37,17 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
                 icon: 'mdi-view-split-vertical',
                 action: function () { useEditorFunctionIconStore().handleSplitEditor(); }
             },
-            {
-                id: 'more',
-                title: 'More Function',
-                icon: 'mdi-dots-horizontal',
-                action: function () { useEditorFunctionIconStore().handleMore(); }
+        ] as EditorFunctionIcon[],
+        moreFunctions: [
+            {   id: 'close-all-tabs',
+                label: 'Close All Tabs',
+                title: 'Close All Tabs',
+                action: function () { useEditorFunctionIconStore().closeAllEditors(); } 
             }
-        ] as EditorFunctionIcon[]
+        ] as MoreFunction[],
+        showMenu: false,
+        menuX: 0,
+        menuY: 0
     }),
 
     actions: {
@@ -58,8 +76,17 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
             editorGroupStore.addEditorGroup();
         },
 
-        handleMore() {
-            console.log('handleMore');
-        }
+
+        closeAllEditors() {
+            const editorGroupStore = useEditorGroupStore();
+            const currentGroup = editorGroupStore.editorGroups.find(g => g.id === editorGroupStore.activeGroupId);
+            if (currentGroup) {
+                currentGroup.tabs = [];
+                currentGroup.activeTabId = '';
+                editorGroupStore.removeEditorGroup(currentGroup.id);
+            }
+            this.showMenu = false;
+        },
+
     }
 });

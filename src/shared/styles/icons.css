@@ -7,7 +7,7 @@
     border: none;
     background: transparent;
     border-radius: 3px;
-    color: #c4c4c4;
+    color: rgb(var(--v-theme-button));
     cursor: pointer;
     padding: 0;
     margin: 0;
@@ -17,7 +17,7 @@
     &:hover {
         opacity: 1;
         background-color: rgba(90, 93, 94, 0.31);
-        color: #fff;
+        color: rgb(var(--v-theme-on-surface));;
     }
 
     &:active {

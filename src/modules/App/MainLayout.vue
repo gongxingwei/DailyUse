@@ -35,9 +35,9 @@ const toggleDrawer = () => {
       <!-- 标题栏 -->
       <div class="title-bar custom-border">
         <div class="title-bar-drag-area">
-          <v-btn icon size="small" class="toggle-btn" @click="toggleDrawer">
+          <button class="function-icon toggle-btn" @click="toggleDrawer">
             <v-icon>{{ isDrawerExpanded ? 'mdi-menu-open' : 'mdi-menu' }}</v-icon>
-          </v-btn>
+          </button>
         </div>
         <div class="window-controls">
           <v-btn icon size="small" @click="minimizeWindow">
@@ -46,7 +46,7 @@ const toggleDrawer = () => {
           <v-btn icon size="small" @click="maximizeWindow">
             <v-icon>{{ isMaximized ? 'mdi-window-restore' : 'mdi-window-maximize' }}</v-icon>
           </v-btn>
-          <v-btn icon size="small" color="error" @click="closeWindow">
+          <v-btn icon size="small" @click="closeWindow">
             <v-icon>mdi-close</v-icon>
           </v-btn>
         </div>

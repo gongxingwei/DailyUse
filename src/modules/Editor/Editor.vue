@@ -1,9 +1,9 @@
 <template>
-    <div class="vs-code-layout">
+    <div :class="isSidebarVisible ? 'editor-layout' : 'editor-layout-sidebar-hidden'">
         <ActivityBar />
         <Sidebar :current-repository="currentRepository?.path" />
-        <ResizeHandleSiderbar />
-        <div class="main-area" :class="{ 'sidebar-hidden': !activityBarStore.isSidebarVisible }">
+        <ResizeHandleSiderbar :class="{ 'sidebar-hidden': !isSidebarVisible }"  />
+        <div class="editor-groups" :class="{ 'sidebar-hidden': !isSidebarVisible }">
             <template v-for="(group, index) in editorGroupStore.editorGroups" :key="`group-${group.id}`">
                 <EditorGroup 
                     
@@ -38,25 +38,57 @@ import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import EditorGroup from './components/EditorGroup.vue'
 import ResizeHandleSiderbar from './components/ResizeHandleSiderbar.vue'
-
+import { useEditorLayoutStore } from './stores/editorLayoutStore'
+import { watch, onMounted, onUnmounted } from 'vue'
 
 const route = useRoute()
 const repositoryStore = useRepositoryStore()
 const activityBarStore = useActivityBarStore()
 const editorGroupStore = useEditorGroupStore()
+const editorLayoutStore = useEditorLayoutStore()
 
 const currentRepository = computed(() => {
     const title = decodeURIComponent(route.params.title as string)
     return repositoryStore.getRepositoryByTitle(title) || null
 })
+
+const isSidebarVisible = computed(() => activityBarStore.isSidebarVisible)
+
+const updateWindowWidth = () => {
+    editorLayoutStore.updateWindowWidth(window.innerWidth);
+}
+watch(
+  () => editorLayoutStore.sidebarWidth,
+  (newWidth) => {
+    document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`)
+  }
+)
+// 监听 editorGroupStore 中计算出的 编辑器总区域的大小 变化，并更新 每一个编辑器 的宽度
+watch(
+  () => editorLayoutStore.editorGroupsWidth,
+  (newWidth) => {
+    editorLayoutStore.distributeEditorGroupWidths(newWidth)
+  },
+  { immediate: true } 
+)
+
+onMounted(() => {
+  // 立即设置初始宽度
+  document.documentElement.style.setProperty(
+    '--sidebar-width', 
+    `${editorLayoutStore.effectiveSidebarWidth}px`
+  ),
+  window.addEventListener('resize', updateWindowWidth);
+})
+
+onUnmounted(() => {
+    window.removeEventListener('resize', updateWindowWidth);
+});
+
 </script>
 
 <style>
-:root {
-    --sidebar-width: 200px;
-}
-
-.vs-code-layout {
+.editor-layout {
     display: grid;
     grid-template-columns: 45px var(--sidebar-width) 5px 1fr;
     grid-template-rows: 1fr 30px;
@@ -64,7 +96,6 @@ const currentRepository = computed(() => {
     width: 100vw;
     overflow: hidden;
 }
-
 .activity-bar {
     grid-column: 1;
     /* 总是占据第一列 */
@@ -72,7 +103,6 @@ const currentRepository = computed(() => {
     /* 占据第一行 */
     overflow: hidden;
 }
-
 .sidebar {
     grid-column: 2;
     /* 默认占据第二列 */
@@ -81,31 +111,45 @@ const currentRepository = computed(() => {
     min-width: 0;
     min-height: 0;
     overflow: auto;
-    border: 1px solid #f0ecec;
-}
 
-.main-area {
+}
+.resize-handle-siderbar {
+    grid-column: 3;
+    grid-row: 1;
+    transition: grid-column 0.2s;
+}
+.editor-groups {
     grid-column: 4;
     grid-row: 1;
     display: flex;  /* 改用 flex 布局 */
     overflow: hidden;
-
+    min-width: 0;
 }
-
-.main-area.sidebar-hidden {
-    grid-column: 2 / -1;
-    /* 当侧边栏隐藏时扩展到第二列 */
-}
-
 .status-bar {
     grid-column: 1 / -1;
     grid-row: 2;
-    min-width: 0;
-    min-height: 0;
     overflow: hidden;
 }
-
-.vs-code-layout.resizing {
+.editor-layout.resizing {
     user-select: none;
+}
+/* sidebar 隐藏时的布局 */
+.editor-layout-sidebar-hidden {
+    display: grid;
+    grid-template-columns: 45px 5px 1fr;
+    grid-template-rows: 1fr 30px;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+}
+.resize-handle-siderbar.sidebar-hidden {
+    grid-column: 2;  /* Move to column 2 when sidebar is hidden */
+}
+
+
+
+.editor-groups.sidebar-hidden {
+    grid-column: 3;
+    /* 当侧边栏隐藏时扩展到第二列 */
 }
 </style>

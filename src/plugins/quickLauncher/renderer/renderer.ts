@@ -9,7 +9,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import { Plugin, PluginMetadata } from '@/plugins/core/types'
-
+import { createQuickLauncherI18n } from '../i18n'
 export class QuickLauncherRendererPlugin implements Plugin {
   private app: ReturnType<typeof createApp> | null = null;
 
@@ -50,10 +50,10 @@ export class QuickLauncherRendererPlugin implements Plugin {
     // Create pinia instance with persistence plugin
     const pinia = createPinia()
     pinia.use(piniaPluginPersistedstate)
-
+    const i18n = createQuickLauncherI18n()
     // Create the Vue app
     this.app = createApp(App)
-
+    this.app.use(i18n)
     // Use plugins
     this.app.use(pinia)
     this.app.use(vuetify)

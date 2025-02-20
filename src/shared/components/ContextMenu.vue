@@ -164,7 +164,7 @@ onUnmounted(() => {
 .context-menu {
   position: fixed;
   z-index: 9999;
-  background: #ffffff;
+  background: rgb(var(--v-theme-surface));
   border-radius: 4px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
   padding: 4px 0;
@@ -184,7 +184,7 @@ onUnmounted(() => {
   padding: 8px 16px;
   cursor: pointer;
   user-select: none;
-  color: #333;
+  color: rgb(var(--v-theme-text-primary-on-surface));
   font-size: 14px;
   transition: background-color 0.2s;
 }
@@ -200,7 +200,7 @@ onUnmounted(() => {
 
 .menu-divider {
   height: 1px;
-  background-color: #e8e8e8;
+  background-color: rgb(var(--v-theme-on-surface));
   margin: 4px 0;
 }
 

@@ -17,15 +17,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import MonacoEditor from 'monaco-editor-vue3'
 import MarkdownIt from 'markdown-it'
 import 'github-markdown-css'
 import { fileSystem } from '@/shared/utils/fileSystem'
 import { useThemeStore } from '@/modules/Theme/themeStroe'
 import { useSettingStore } from '@/modules/Setting/settingStore'
-
-
 
 const props = defineProps<{
   path: string
@@ -40,7 +38,9 @@ const emit = defineEmits<{
 const themeStore = useThemeStore()
 const settingStore = useSettingStore()
 const editorTheme = computed(() => `vs-${themeStore.currentThemeStyle}`)
+let autoSaveTimer: NodeJS.Timeout | null = null
 
+const autoSaveDelay = ref(1000) // 1 second delay
 // 初始化 markdown-it
 const md = new MarkdownIt({
   html: true,
@@ -53,8 +53,31 @@ const isPreviewMode = computed(() => props.isPreview)
 const content = ref('')
 let originalContent = '';
 
+const autoSaveEnabled = computed(() => settingStore.editor.autoSave)
+
 // 编辑器配置
-const editorOptions = computed(() => settingStore.getMonacoOptions())
+const editorOptions = computed(() => ({
+  ...settingStore.getMonacoOptions(),
+  maxEditorWidth: Number.MAX_SAFE_INTEGER,
+  automaticLayout: true,
+  links: true,
+  mouseWheelZoom: true,
+  // 添加链接检测配置
+  quickSuggestions: true,
+  wordBasedSuggestions: true,
+  // 配置链接选项
+  linkDetector: {
+    enabled: true,
+    preferredProtocols: ['http', 'https']
+  },
+  // 修改链接处理器
+  'editor.action.openLink': {
+    enabled: true,
+    callback: (url: string) => {
+      window.shared.ipcRenderer.invoke('open-external-url', url);
+    }
+  }
+}))
 // const editorOptions = {
 //   minimap: { enabled: true },
 //   wordWrap: 'on',
@@ -90,10 +113,35 @@ const checkDirtyState = () => {
   const isDirty = content.value !== originalContent
   emit('contentChanged', isDirty)
 }
+// 保存内容
+const saveContent = async () => {
+  if (!props.path) return
 
+  try {
+    await fileSystem.writeFile(props.path, content.value)
+    originalContent = content.value
+    emit('contentChanged', false)
+  } catch (error) {
+    console.error('保存文件失败:', error)
+    alert('保存失败')
+  }
+}
 // 监听内容变化
 watch(content, () => {
   checkDirtyState()
+
+  if (autoSaveEnabled.value) {
+    if (autoSaveTimer) {
+      clearTimeout(autoSaveTimer)
+    }
+    
+    autoSaveTimer = setTimeout(async () => {
+      if (content.value !== originalContent) {
+        await saveContent()
+        originalContent = content.value // Update original content after save
+      }
+    }, autoSaveDelay.value)
+  }
 })
 
 
@@ -114,17 +162,11 @@ onMounted(async () => {
   }
 })
 
-// 保存内容
-const saveContent = async () => {
-  if (!props.path) return
-
-  try {
-    await fileSystem.writeFile(props.path, content.value)
-  } catch (error) {
-    console.error('保存文件失败:', error)
-    alert('保存失败')
+onUnmounted(() => {
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
   }
-}
+})
 </script>
 
 <style scoped>
@@ -132,8 +174,9 @@ const saveContent = async () => {
   height: 100%;
   display: flex;
   flex-direction: column;
-  background-color: #1e1e1e;
+  background-color: #3b3a8d;
   overflow: hidden; /* 添加这行 */
+
 }
 
 .toolbar {
@@ -161,7 +204,7 @@ const saveContent = async () => {
 }
 
 .preview-area {
-  padding: 20px;
+
   background-color: var(--vscode-editor-background);
 
   /* 添加滚动条样式 */
@@ -170,7 +213,7 @@ const saveContent = async () => {
   }
 
   &::-webkit-scrollbar-track {
-    background: var(--vscode-scrollbarSlider-background);
+    background: rgb(var(--v-theme-surface));
     border-radius: 3px;
   }
 
@@ -192,12 +235,13 @@ const saveContent = async () => {
 :deep(.markdown-body) {
   box-sizing: border-box;
   min-width: 200px;
-  max-width: 980px;
-  margin: 0 auto;
+  /* max-width: 980px; */
+  margin: 0 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
   font-size: 16px;
   line-height: 1.5;
-  color: #d4d4d4;
+  /* 编辑器字体颜色 */
+  color: rgb(var(--v-theme-font));
   
 }
 
@@ -233,7 +277,7 @@ const saveContent = async () => {
 }
 
 :deep(.markdown-body a) {
-  color: #58a6ff;
+  color: #5b91ce;
 }
 
 :deep(.markdown-body blockquote) {

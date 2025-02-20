@@ -7,6 +7,7 @@ import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/m
 import { registerFileSystemHandlers } from './shared/ipc/filesystem';
 import { setupNotificationHandlers } from './modules/notification/notification';
 import { setupScheduleHandlers } from './modules/taskSchedule/main';
+import { shell } from 'electron';
 
 app.setName('DailyUse');
 
@@ -221,6 +222,14 @@ ipcMain.on('window-control', (_event, command) => {
       break
   }
 })
+
+ipcMain.handle('open-external-url', async (_event, url: string) => {
+  try {
+    await shell.openExternal(url);
+  } catch (error) {
+    console.error('Failed to open URL:', error);
+  }
+});
 
 // 设置开机自启动
 ipcMain.handle('get-auto-launch', () => {

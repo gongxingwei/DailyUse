@@ -4,7 +4,7 @@ import { notification } from '@/shared/utils/notification/notification';
 import { onMounted, onUnmounted } from 'vue';
 import type { UrgencyLevel } from '@/shared/types/time';
 
-export function useReminderInit() {
+export function useTodoReminderInit() {
     const todoStore = useTodoStore();
     let cleanup: (() => void) | null = null;
 

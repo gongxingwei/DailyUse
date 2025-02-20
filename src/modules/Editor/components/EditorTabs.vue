@@ -1,24 +1,25 @@
 <template>
   <div class="editor-header">
     <div class="editor-tabs">
-      <div v-for="tab in props.tabs" :key="tab.id"
-        :class="{ 'active': tab.id === props.activeTabId }" @click="handleTabClick(tab.id)"
-        class="tab">
+      <div v-for="tab in props.tabs" :key="tab.id" :class="{ 'active': tab.id === props.activeTabId }"
+        @click="handleTabClick(tab.id)" class="tab">
         <span class="tab-title">{{ tab.title }}</span>
         <button class="function-icon" @click.stop="handleTabClose(tab.id)">×</button>
       </div>
     </div>
     <div class="editor-actions function-group">
-      <button 
-        v-for="icon in editorFunctionIconStore.editorFunctionIcons" 
-        :key="icon.id"
-        class="function-icon"
-        :title="icon.title"
-        @click="icon.action"
-      >
+      <button v-for="icon in editorFunctionIconStore.editorFunctionIcons" :key="icon.id" class="function-icon"
+        :title="icon.title" @click="icon.action">
         <v-icon>{{ icon.icon }}</v-icon>
       </button>
-  </div>
+      <Menu :items="editorFunctionIconStore.moreFunctions" placement="bottom-end">
+        <template #trigger>
+          <button class="function-icon">
+            <v-icon>mdi-dots-horizontal</v-icon>
+          </button>
+        </template>
+      </Menu>
+    </div>
   </div>
 </template>
 
@@ -26,6 +27,7 @@
 import { watch } from 'vue'
 import { useEditorLayoutStore } from '../stores/editorLayoutStore';
 import { useEditorFunctionIconStore } from '../stores/editorFunctionIconStore';
+import Menu from '@/shared/components/Menu.vue';
 import type { EditorTab } from '../stores/editorGroupStore';
 
 const props = defineProps<{
@@ -106,5 +108,4 @@ watch(() => editorLayoutStore.editorTabWidth, (newWidth) => {
   border-top: 1px solid rgb(33, 150, 242);
   background-color: rgb(var(--v-theme-surface));
 }
-
 </style>

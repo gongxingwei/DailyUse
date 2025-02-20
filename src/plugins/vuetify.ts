@@ -46,7 +46,9 @@ const vuetify = createVuetify({
           'scrollbar-thumb': 'rgba(255, 255, 255, 0.2)',
           'scrollbar-thumb-hover': 'rgba(255, 255, 255, 0.3)',
           'surface-variant': 'rgba(255, 255, 255, 0.1)',
-          'on-surface-variant': 'rgba(255, 255, 255, 0.7)'
+          'on-surface-variant': 'rgba(255, 255, 255, 0.7)',
+          font: '#d4d4d4',
+          button: '#c4c4c4'
         }
       },
       blueGreen: {

@@ -18,19 +18,11 @@ export interface EditorGroup {
 }
 
 export const useEditorGroupStore = defineStore('editorGroup', {
-    state: () => { 
-        const layoutStore = useEditorLayoutStore()
+    state: () => {
+
         return {
-            editorGroups: [
-                { 
-                    id: 'group-1', 
-                    active: true, 
-                    width: layoutStore.editorGroupsWidth,
-                    tabs: [],
-                    activeTabId: null
-                }
-            ] as EditorGroup[],
-            activeGroupId: 'group-1' as string | null
+            editorGroups: [] as EditorGroup[],
+            activeGroupId: '' as string | null
         }
     },
 
@@ -46,6 +38,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             const targetGroupId = groupId || this.activeGroupId
             if (!targetGroupId) {
                 const newGroup = this.addEditorGroup()
+                if (!newGroup) return
                 this.openFile(path, newGroup.id)
                 return
             }
@@ -119,7 +112,6 @@ export const useEditorGroupStore = defineStore('editorGroup', {
                 group.activeTabId = nextTab?.id || null
             }
 
-            // 如果没有标签页了，关闭编辑器组
             if (group.tabs.length === 0) {
                 this.removeEditorGroup(groupId)
             }
@@ -135,7 +127,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             }
             return null
         },
-        
+
         // 设置活动标签页
         setActiveTab(groupId: string, tabId: string) {
             const group = this.editorGroups.find(g => g.id === groupId)
@@ -162,69 +154,59 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             }
 
             const currentGroup = this.editorGroups.find(g => g.id === this.activeGroupId)
-            const activeTab = currentGroup?.tabs.find(t => t.id === currentGroup.activeTabId)
+            if (!currentGroup) return
+
+            const currentWidth = currentGroup.width
+            const halfWidth = Math.floor(currentWidth / 2)
+
+            currentGroup.width = halfWidth
+            currentGroup.active = false
 
             const newGroup: EditorGroup = {
                 id: `group-${Date.now()}`,
                 active: true,
-                width: 300,
+                width: halfWidth,
                 tabs: [],
                 activeTabId: null
             }
 
-            // 如果当前组有活动的标签页，复制到新组
+            const activeTab = currentGroup.tabs.find(t => t.id === currentGroup.activeTabId)
             if (activeTab) {
                 const newTab = { ...activeTab }
                 newGroup.tabs = [newTab]
                 newGroup.activeTabId = newTab.id
             }
 
-            // 设置活动状态
-            if (this.activeGroupId) {
-                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
-                if (currentActive) {
-                    currentActive.active = false
-                }
-            }
-
-            this.editorGroups.push(newGroup)
+            const currentIndex = this.editorGroups.indexOf(currentGroup)
+            this.editorGroups.splice(currentIndex + 1, 0, newGroup)
             this.activeGroupId = newGroup.id
-            this.redistributeWidths()
+
             return newGroup
         },
-
-        setActiveGroup(groupId: string) {
-            if (this.activeGroupId !== groupId) {
-                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
-                if (currentActive) {
-                    currentActive.active = false
-                }
-                
-                const newActive = this.editorGroups.find(g => g.id === groupId)
-                if (newActive) {
-                    newActive.active = true
-                    this.activeGroupId = groupId
-                }
-            }
-        },
-
+        // 添加预览编辑器组
         addEditorGroupPreview() {
+            const currentGroup = this.editorGroups.find(g => g.id === this.activeGroupId)
+            if (!currentGroup) return
+
+            const currentWidth = currentGroup.width
+            const halfWidth = Math.floor(currentWidth / 2)
+
+            currentGroup.width = halfWidth
+            currentGroup.active = false
             const newGroup: EditorGroup = {
                 id: `group-${Date.now()}`,
                 active: true,
-                width: 300,
+                width: halfWidth,
                 tabs: [],
                 activeTabId: null
             }
-        
-            this.editorGroups.push(newGroup)
-            // Use existing setActiveGroup method instead of duplicate code
-            this.setActiveGroup(newGroup.id)
-            this.redistributeWidths()
+            const currentIndex = this.editorGroups.indexOf(currentGroup)
+            this.editorGroups.splice(currentIndex + 1, 0, newGroup)
+            this.activeGroupId = newGroup.id
+
             return newGroup
         },
-
-        // 移除编辑器组
+        // 删除编辑器组
         removeEditorGroup(groupId: string) {
             const index = this.editorGroups.findIndex(g => g.id === groupId)
             if (index === -1) return
@@ -233,8 +215,14 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             const removedGroupWidth = removedGroup.width
 
             this.editorGroups.splice(index, 1)
-
-            // 如果删除的是当前活动组，激活前一个组
+            // 将删除的编辑器的空间分配给左侧的编辑器，左侧没有则分配给右侧
+            if (this.editorGroups.length > 0) {
+                const targetGroup = this.editorGroups[index - 1] || this.editorGroups[index]
+                if (targetGroup) {
+                    targetGroup.width += removedGroupWidth
+                }
+            }
+            // 如果删除的编辑器是活动编辑器，则激活左侧的编辑器，左侧没有则激活右侧
             if (this.activeGroupId === groupId) {
                 const previousGroup = this.editorGroups[index - 1] || this.editorGroups[0]
                 if (previousGroup) {
@@ -244,16 +232,29 @@ export const useEditorGroupStore = defineStore('editorGroup', {
                     this.activeGroupId = null
                 }
             }
+        },
 
-            // 重新分配宽度
-            this.redistributeWidths(removedGroupWidth)
+        setActiveGroup(groupId: string) {
+            if (this.activeGroupId !== groupId) {
+                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
+                if (currentActive) {
+                    currentActive.active = false
+                }
+
+                const newActive = this.editorGroups.find(g => g.id === groupId)
+                if (newActive) {
+                    newActive.active = true
+                    this.activeGroupId = groupId
+                }
+            }
         },
 
         getGroupWidth(groupId: string) {
             const group = this.editorGroups.find(g => g.id === groupId)
             return group?.width || 300
         },
-        
+
+
         redistributeWidths(removedGroupWidth?: number) {
             const remainingGroups = this.editorGroups.length
             if (remainingGroups === 0) return

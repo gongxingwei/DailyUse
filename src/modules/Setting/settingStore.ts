@@ -7,6 +7,7 @@ export interface EditorSettings {
   lineNumbers: boolean
   minimap: boolean
   wordWrap: 'on' | 'off'
+  autoSave: boolean
   // themeMode: string
   // Monaco specific settings
   fontFamily: string
@@ -32,7 +33,7 @@ export interface EditorSettings {
 export interface AppSetting {
   themeMode: string
   language: 'en-US' | 'zh-CN'
-  autoSave: boolean
+  
   autoLaunch: boolean
   showHiddenFiles: boolean
   editor: EditorSettings
@@ -43,7 +44,7 @@ export const useSettingStore = defineStore('setting', {
     themeMode: 'system',
     language: 'zh-CN',
     autoLaunch: false,
-    autoSave: true,
+    
     showHiddenFiles: false,
     editor: {
       // Basic settings
@@ -51,8 +52,8 @@ export const useSettingStore = defineStore('setting', {
       lineNumbers: true,
       minimap: true,
       wordWrap: 'on',
+      autoSave: true,
       // themeMode: 'vs-dark',
-      
       // Monaco specific settings
       fontFamily: 'Consolas, "Courier New", monospace',
       tabSize: 2,

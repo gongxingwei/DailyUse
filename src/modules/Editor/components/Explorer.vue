@@ -3,29 +3,14 @@
     <!-- 顶部信息栏 -->
     <div class="top-bar">
       <span class="folder-name">{{ getFolderName }}</span>
-      <div class="actions">
-        <v-icon class="mr-2" @click="createFolderForRepo">mdi-folder-plus</v-icon>
-        <v-icon class="mr-2" @click="createFileForRepo">mdi-language-markdown</v-icon>
-        <v-icon @click="$emit('settings')">mdi-cog</v-icon>
+      <div class="function-group">
+        <v-icon class="function-icon" title="新建文件夹" @click="createFolderForRepo">mdi-folder-plus</v-icon>
+        <v-icon class="function-icon" title="新建笔记" @click="createFileForRepo">mdi-language-markdown</v-icon>
+        <v-icon class="function-icon" title="未实现" @click="$emit('settings')">mdi-cog</v-icon>
       </div>
     </div>
     <div class="divider"></div>
-    <!-- <v-list>
-      <v-list-item>
-        <v-row align="center" no-gutters>
-          <v-col class="text-truncate">
-            {{ getFolderName }}
-          </v-col>
-          <v-col cols="auto">
-            <v-icon class="mr-2" @click="createFolderForRepo">mdi-folder-plus</v-icon>
-            <v-icon class="mr-2" @click="createFileForRepo">mdi-language-markdown</v-icon>
-            <v-icon @click="$emit('settings')">mdi-cog</v-icon>
-          </v-col>
-        </v-row>
-      </v-list-item>
-    </v-list> -->
     <v-divider></v-divider>
-
     <!-- 扁平化的文件树 -->
     <div v-if="folderData" class="tree-content">
       <div v-for="item in flattenedItems" :key="item.node.key" class="tree-item"
@@ -331,7 +316,7 @@ function cancelEdit() {
 // 右键菜单
 function handleContextMenu(event: MouseEvent, item: TreeNode) {
   event.preventDefault()
-  menuPosition.value = { x: event.clientX, y: event.clientY - 48 }
+  menuPosition.value = { x: event.clientX, y: event.clientY }
   selectedNode.value = item
   showMenu.value = true
 }
@@ -447,13 +432,14 @@ const emit = defineEmits<{
   height: 100%;
   display: flex;
   flex-direction: column;
+  color: rgb(var(--v-theme-font));
 }
 
 .top-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 18px;
+  padding: 0 0 0 15px;
   /* background-color: var(--surface-color, #1e1e1e); */
   height: 30px;
 }
@@ -476,7 +462,7 @@ const emit = defineEmits<{
   border: none;
   padding: 4px;
   cursor: pointer;
-  color: var(--text-color, #ffffff);
+  color: var(--text-color, #d41e1e);
   border-radius: 4px;
   display: flex;
   align-items: center;

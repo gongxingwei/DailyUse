@@ -1,23 +1,13 @@
 <template>
   <div class="quick-launcher">
     <v-card class="quick-launcher-card" elevation="0">
-      <v-card-title class="d-flex align-center pa-4 draggable">
+      <v-card-title class="title d-flex align-center pa-4 draggable">
         <v-icon size="24" class="mr-2">mdi-rocket-launch</v-icon>
-        Quick Launcher
+        {{ t('quickLauncher.title') }}
         <v-spacer></v-spacer>
-        <v-text-field
-          v-model="searchQuery"
-          prepend-inner-icon="mdi-magnify"
-          label="Search..."
-          variant="outlined"
-          density="compact"
-          hide-details
-          class="ml-4"
-          style="max-width: 300px"
-          @keydown.esc.stop="closeWindow"
-          @keydown.enter="handleEnter"
-          autofocus
-        ></v-text-field>
+        <!-- <v-text-field v-model="searchQuery" prepend-inner-icon="mdi-magnify" :label="t('quickLauncher.search')"
+          variant="outlined" density="compact" hide-details class="ml-4" style="max-width: 300px" clearable
+          @keydown.enter="handleEnter" autofocus></v-text-field> -->
       </v-card-title>
 
       <v-divider></v-divider>
@@ -27,19 +17,13 @@
           <!-- Left side: Categories -->
           <v-col cols="2" class="border-r">
             <v-list density="compact" class="h-100" @contextmenu.stop.prevent="showCategoryListAreaContextMenu($event)">
-              <Draggable
-                v-model="store.categories"
-                group="categories"
-                item-key="id"
-                @end="handleDragEnd"
-              >
+              <Draggable v-model="store.categories" group="categories" item-key="id" @end="handleDragEnd">
                 <template #item="{ element: category }">
-                  <v-list-item
-                    :value="category.id"
-                    :title="category.name"
-                    @click="selectedCategory = category.id"
-                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category)"
-                  >
+                  <v-list-item :value="category.id" :title="category.name"
+                    :class="{ 'focused': focusedItem === category.id }" tabindex="0"
+                    @click="selectedCategory = category.id" @focus="focusedItem = category.id"
+                    @blur="focusedItem = null" @keydown="handleKeydown($event, category)"
+                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category)">
                     <template #title>
                       {{ category.name }}
                     </template>
@@ -52,31 +36,19 @@
           <v-divider vertical></v-divider>
           <!-- Right side: Shortcuts -->
           <v-col cols="10" class="shortcuts-container">
-            <v-container 
-              class="pa-4 h-100"
-              @dragenter.prevent
-              @dragover.prevent
-              @drop.prevent="handleDrop"
-              @contextmenu.stop.prevent="showShortcutAreaContextMenu($event)"
-            >
-              <Draggable 
-                v-model="currentCategoryItems" 
-                item-key="id"
-                class="shortcuts-grid"
-                @end="handleDragEnd"
-              >
+            <v-container class="pa-4 h-100" @dragenter.prevent @dragover.prevent @drop.prevent="handleDrop"
+              @contextmenu.stop.prevent="showShortcutAreaContextMenu($event)">
+              <Draggable v-model="currentCategoryItems" item-key="id" class="shortcuts-grid" @end="handleDragEnd">
                 <template #item="{ element }">
-                  <v-card
-                    class="shortcut-item ma-2"
-                    elevation="2"
-                    @click="launchItem(element)"
-                    @contextmenu.stop.prevent="showShortcutItemContextMenu($event, element)"
-                    draggable="true"
-                  >
-                    <v-card-text class="text-center">
-                      <img v-if="element.icon.startsWith('data:image')" :src="element.icon" class="mb-2" style="width: 32px; height: 32px;" />
-                      <v-icon v-else size="32" class="mb-2">{{ element.icon || 'mdi-application' }}</v-icon>
-                      <div class="text-caption">{{ element.name }}</div>
+                  <v-card class="shortcut-item ma-2" elevation="2" @click="launchItem(element)"
+                    @focus="focusedItem = element.id" @blur="focusedItem = null" tabindex="0"
+                    @contextmenu.stop.prevent="showShortcutItemContextMenu($event, element)" draggable="true">
+                    <v-card-text class="text-center shortcut-content">
+                      <img v-if="element.icon.startsWith('data:image')" :src="element.icon"
+                        class="shortcut-icon mb-2" />
+                      <v-icon v-else size="32" class="shortcut-icon mb-2">{{ element.icon || 'mdi-application'
+                      }}</v-icon>
+                      <div class="text-caption shortcut-name">{{ element.name }}</div>
                     </v-card-text>
                   </v-card>
                 </template>
@@ -84,7 +56,7 @@
 
               <div v-if="!currentCategoryItems.length" class="empty-state">
                 <v-icon size="48" color="grey-lighten-1">mdi-drag-variant</v-icon>
-                <div class="text-grey mt-2">Drag files here or click Add Shortcut</div>
+                <div class="text-grey mt-2">{{ t('quickLauncher.shortcut.emptyState') }}</div>
               </div>
             </v-container>
           </v-col>
@@ -93,58 +65,36 @@
     </v-card>
 
     <!-- Category Context Menu -->
-    <ContextMenu
-      v-model="showContextMenu"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      :items="contextMenuItems"
-      :target="selectedItem"
-    />
+    <ContextMenu v-model="showContextMenu" :x="contextMenuX" :y="contextMenuY" :items="contextMenuItems"
+      :target="selectedItem" />
 
     <!-- Rename Category Dialog -->
     <v-dialog v-model="showRenameDialog" max-width="400">
       <v-card>
         <v-card-title class="pa-4">
           <v-icon size="24" class="mr-2">mdi-pencil</v-icon>
-          Rename Category
+          {{ t('quickLauncher.dialog.rename.title') }}
         </v-card-title>
         <v-card-text class="pa-4">
-          <v-text-field
-            v-model="newCategoryName"
-            label="Category Name"
-            variant="outlined"
-            density="compact"
-            autofocus
-            @keyup.enter="confirmRenameCategory"
-          ></v-text-field>
+          <v-text-field v-model="newCategoryName" :label="t('quickLauncher.dialog.rename.label')" variant="outlined"
+            density="compact" autofocus @keyup.enter="confirmRenameCategory"></v-text-field>
         </v-card-text>
         <v-card-actions class="pa-4">
           <v-spacer></v-spacer>
-          <v-btn
-            variant="outlined"
-            @click="showRenameDialog = false"
-          >
-            Cancel
+          <v-btn variant="outlined" @click="showRenameDialog = false">
+            {{ t('quickLauncher.button.cancel') }}
           </v-btn>
-          <v-btn
-            color="primary"
-            class="ml-2"
-            @click="confirmRenameCategory"
-          >
-            Rename
+          <v-btn color="primary" class="ml-2" @click="confirmRenameCategory">
+            {{ t('quickLauncher.button.rename') }}
           </v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
 
     <!-- Edit Shortcut Dialog -->
-    <DialogForEdit
-      v-model="showEditShortcutDialog"
-      title="编辑快捷方式"
-      icon="mdi-pencil"
-      :data="shortcutForEdit"
-      @confirm="handleShortcutEdit"
-    />
+    <DialogForEdit v-model="showEditShortcutDialog" :title="t('quickLauncher.dialog.edit.title')" icon="mdi-pencil"
+      :data="shortcutForEdit" @confirm="handleShortcutEdit" />
+
   </div>
 </template>
 
@@ -157,9 +107,9 @@ import { v4 as uuidv4 } from 'uuid';
 import ContextMenu from '@/shared/components/ContextMenu.vue';
 import { getShortcutTargetPath, addTitle } from '../../utils';
 import DialogForEdit from '@/shared/components/DialogForEdit.vue';
-
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 const store = useQuickLauncherStore();
-const searchQuery = ref('');
 const selectedCategory = ref('');
 
 // Context menu
@@ -170,6 +120,7 @@ const contextMenuY = ref(0);
 const contextMenuCategory = ref<ShortcutCategory | null>(null);
 const contextMenuShortcut = ref<ShortcutItem | null>(null);
 const selectedItem = ref<any>(null);
+const focusedItem = ref<string | null>(null);
 
 const newShortcut = ref({
   name: '',
@@ -188,25 +139,25 @@ const shortcutForEdit = ref({
   description: ''
 });
 const categoryListAreaContextMenuItems = [
-  { value: 'newCategory', title: '新建分类', action: createCategory }
+  { value: 'newCategory', title: t('quickLauncher.category.new'), action: createCategory }
 ]
-  
+
 const categoryListItemContextMenuItems = [
-  { value: 'renameCategory', title: '重命名分类', action: renameCategory },
-  { value: 'deleteCategory', title: '删除分类', className: 'text-error', action: deleteCategory },
+  { value: 'renameCategory', title: t('quickLauncher.category.rename'), action: renameCategory },
+  { value: 'deleteCategory', title: t('quickLauncher.category.delete'), className: 'text-error', action: deleteCategory },
   { divider: true },
   ...categoryListAreaContextMenuItems
 ]
 
 const shortcutAreaContextMenuItems = [
-  { value: 'newShortcut', title: '新建快捷方式', action: addShortcut },
-  { value: 'newTitle', title: '新建标题', action: addTitle },
+  { value: 'newShortcut', title: t('quickLauncher.shortcut.new'), action: addShortcut },
+  { value: 'newTitle', title: t('quickLauncher.shortcut.newTitle'), action: addTitle },
   { divider: true },
 ]
 
 const shortcutItemContextMenuItems = [
-  { value: 'editShortcut', title: '编辑快捷方式', action: editShortcut },
-  { value: 'deleteShortcut', title: '删除快捷方式', className: 'text-error', action: deleteShortcut },
+  { value: 'editShortcut', title: t('quickLauncher.shortcut.edit'), action: editShortcut },
+  { value: 'deleteShortcut', title: t('quickLauncher.shortcut.delete'), className: 'text-error', action: deleteShortcut },
   { divider: true },
   ...shortcutAreaContextMenuItems
 ]
@@ -305,7 +256,7 @@ async function addShortcut() {
     const filePath = result.filePaths[0];
     // 从文件路径获取文件名
     const fileName = filePath.split('\\').pop()?.replace(/\.[^/.]+$/, "") || '';
-    
+
     // 创建新的快捷方式
     const shortcut: ShortcutItem = {
       id: uuidv4(),
@@ -367,7 +318,7 @@ onMounted(() => {
   if (store.categories.length === 0) {
     const defaultCategory = {
       id: uuidv4(),
-      name: 'General',
+      name: t('quickLauncher.category.defaultName'),
       icon: 'mdi-folder'
     };
     store.addCategory(defaultCategory);
@@ -397,22 +348,12 @@ const currentCategoryItems = computed({
   }
 });
 
-// Existing methods
-const filteredItems = computed(() => {
-  if (!searchQuery.value) return currentCategoryItems.value;
-  const query = searchQuery.value.toLowerCase();
-  return currentCategoryItems.value.filter(item => 
-    item.name.toLowerCase().includes(query) || 
-    item.description?.toLowerCase().includes(query)
-  );
-});
-
-async function handleEnter() {
-  const items = filteredItems.value;
-  if (items.length > 0) {
-    await launchItem(items[0]);
-  }
-}
+// async function handleEnter() {
+//   const items = filteredItems.value;
+//   if (items.length > 0) {
+//     await launchItem(items[0]);
+//   }
+// }
 
 function closeWindow() {
   window.close();
@@ -441,11 +382,11 @@ async function handleDrop(event: DragEvent) {
       return 'mdi-application';
     }
   };
-  
+
   if (files && files.length > 0) {
     console.log('[Drop] 开始处理文件, 数量:', files.length);
-    Array.from(files).forEach(async (file) => {      
-      const targetPath = await getShortcutTargetPath((file as any).path); 
+    Array.from(files).forEach(async (file) => {
+      const targetPath = await getShortcutTargetPath((file as any).path);
       const base64Icon = await shortcutIcon(targetPath);
 
       const shortcut: ShortcutItem = {
@@ -468,9 +409,53 @@ async function handleDrop(event: DragEvent) {
 }
 
 function handleDragEnd(_event: any) {
-  // The draggable component will automatically update the array
-  // We don't need to do anything here as the computed property will handle the update
+
 }
+
+function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutItem) {
+  switch (event.key) {
+    case 'F2':
+      event.preventDefault();
+      // Start rename
+      if ('items' in item) { // Category
+        selectedItem.value = item;
+        newCategoryName.value = item.name;
+        showRenameDialog.value = true;
+      } else { // Shortcut
+        editingShortcut.value = item;
+        shortcutForEdit.value = {
+          name: item.name,
+          description: item.description || ''
+        };
+        showEditShortcutDialog.value = true;
+      }
+      break;
+
+    case 'Delete':
+      event.preventDefault();
+      if ('items' in item) {
+        store.removeCategory(item.id);
+      } else {
+        store.removeShortcut(selectedCategory.value, item.id);
+      }
+      break;
+
+    case 'Enter':
+      event.preventDefault();
+      if (!('items' in item)) {
+        launchItem(item);
+      }
+      break;
+
+    // Arrow keys for navigation
+    case 'ArrowUp':
+    case 'ArrowDown':
+      event.preventDefault();
+
+      break;
+  }
+}
+
 </script>
 
 <style scoped>
@@ -485,6 +470,10 @@ function handleDragEnd(_event: any) {
   height: 100%;
   display: flex;
   flex-direction: column;
+}
+
+.title {
+  height: 45px;
 }
 
 .draggable {
@@ -506,12 +495,19 @@ function handleDragEnd(_event: any) {
 
 .shortcuts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 8px;
-  padding: 8px;
+  grid-template-columns: repeat(auto-fill, 90px);
+  /* Fixed width columns */
+  gap: 0;
+  padding: 0;
+  justify-content: center;
+  /* Center the grid items */
 }
 
 .shortcut-item {
+  width: 64x;
+  /* Fixed width */
+  height: 80px;
+  /* Fixed height */
   cursor: pointer;
   transition: all 0.3s;
 }
@@ -519,6 +515,30 @@ function handleDragEnd(_event: any) {
 .shortcut-item:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.shortcut-icon {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.shortcut-content {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px !important;
+  /* Override v-card-text padding */
+}
+
+.shortcut-name {
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
 }
 
 .empty-state {
@@ -533,5 +553,22 @@ function handleDragEnd(_event: any) {
 /* 右键菜单样式 */
 :deep(.text-error) {
   color: #ff4d4f !important;
+}
+
+.focused {
+  outline: 2px solid var(--v-primary-base) !important;
+  outline-offset: -2px;
+}
+
+.v-list-item,
+.shortcut-item {
+  outline: none;
+  user-select: none;
+}
+
+.v-list-item:focus-visible,
+.shortcut-item:focus-visible {
+  outline: 2px solid var(--v-primary-base);
+  outline-offset: -2px;
 }
 </style>

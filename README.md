@@ -125,10 +125,48 @@ src
 
 ```
 components
+  AddReminder.vue
+  ReminderCard.vue
 Reminder.vue
+  利用 定时服务 和 弹窗服务 实现的一个自定义提醒组件
 ```
 
+## 仓库
+
+```
+components
+  CreateRepo.vue
+  RepoInfoCard.vue
+  RepoSettings.vue
+Repository.vue
+repositoryStore.ts
+```
+
+指定文件夹作为仓库来管理资源  
+
+仓库用 路径 作为 id，
+
+## todo
+
+```
+components
+  AddTodoCard.vue
+  EditTodoCard.vue
+  ShowTodoInfo.vue
+  TodoCard.vue
+  TodoListCard.vue
+Todo.vue
+todoStore.ts
+  定义了 Todo 类型 和 TodoReminder 类型
+useTodoReminderInit.ts
+```
+
+
+
 ## goal
+
+goals 和 文档编辑 切断，但保留联系，可以选择将 文档 与 goal 相绑定  
+goal 属性
 
 ```
 components
@@ -266,7 +304,8 @@ export const useThemeStore = defineStore('theme', {
 
 ##### vuetify theme 的属性
 
-
+color: #c4c4c4;暗灰色
+font: '#d4d4d4'
 ```
 // dark
 {
@@ -422,8 +461,6 @@ export const useThemeStore = defineStore('theme', {
 
 vue-i18n@next
 
-
-
 ## 编辑器
 
 ### 布局
@@ -437,7 +474,7 @@ vue-i18n@next
 活动栏	左侧垂直图标栏（文件、搜索、Git、调试等入口），点击切换侧边栏内容
 侧边栏	动态内容区（资源管理器、搜索、插件管理等），可折叠
 编辑器区域	多标签页编辑器 + 主内容区
-面板区域	底部或右侧区域（终端、输出、问题面板等），支持拖拽调整高度/宽度
+<!-- 面板区域	底部或右侧区域（终端、输出、问题面板等），支持拖拽调整高度/宽度 -->
 状态栏	底部状态信息（Git 分支、编码格式、光标位置等）
 
 二、技术选型
@@ -459,7 +496,6 @@ src/
 │   ├── Sidebar.vue           # 侧边栏（动态内容）
 │   ├── EditorTabs.vue        # 多标签页
 │   ├── EditorArea.vue        # 编辑器主区域
-│   ├── PanelTabs.vue         # 面板标签页（终端/输出）
 │   ├── StatusBar.vue         # 底部状态栏
 │   └── ResizeHandle.vue      # 拖拽分割条
 ├── stores/
@@ -468,6 +504,37 @@ src/
     ├── themes/               # 主题变量
     └── layout.css            # 布局样式
 ```
+
+每次打开时窗口大小不确定，调整区域使用 get
+```ts
+interface EditorLayoutState {
+    activityBarWidth: number; //活动栏 固定
+    sidebarWidth: number; //侧边栏 调整
+    minSidebarWidth: number; //最小侧边栏 固定
+    resizeHandleWidth: number; // resize条 固定
+    minEditorWidth: number; //最小编辑器 固定
+    editorTabWidth: number; //编辑器标签宽度 固定
+
+    editorGroupsWidth: number; //编辑组区域 调整
+}
+```
+
+每次打开编辑器时，初始化每个区域（editor-group）的长度  
+然后监听窗口变化来修改每个区域的大小  
+
+#### resize
+
+```ts
+import { debounce } from 'lodash-es'
+
+// Debounced resize handler
+const handleResize = debounce(() => {
+    editorLayoutStore.updateTotalWidth(window.innerWidth)
+}, 200) // 200ms delay
+```
+
+web 自带的 API 用于监听窗口
+window.addEventListener('resize', handler)
 
 ### markdown 编辑器
 
@@ -494,17 +561,7 @@ monaco 编辑器核心
 
 方便 vite 配置 Monaco  
 
-## 仓库
-
-指定文件夹作为仓库来管理资源  
-
-仓库用 路径 作为 id，
-
-## 编辑器
-
-### 布局
-
-### 文件管理器
+### Other
 
 #### 如何将选中的仓库的路径传给文件管理器 
 
@@ -519,16 +576,9 @@ currentRepositoryPath: (state) => {
         }
 ```
 
-### markdown 解析
-
-### 
-
-## goals
-
-goals 和 文档编辑 切断，但保留联系，可以选择将 文档 与 goal 相绑定  
-goal 属性
-
 ## quicklaunch
+
+使用了插件系统的方式添加该功能  
 
 ### 拖动添加快捷方式
 
@@ -654,6 +704,11 @@ app.commandLine.appendSwitch('disable-software-rasterizer'); // 禁用软件光�
 ```
 
 # 知识
+
+## 语法
+
+indexOf 数组方法，查找当前元素在数组中的下标  
+splice(x, y, z) 下标，删除元素个数，添加的元素
 
 ## 监听器
 

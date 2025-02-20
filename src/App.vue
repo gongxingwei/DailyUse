@@ -8,10 +8,12 @@
 import { useThemeInit } from '@/modules/Theme/useThemeInit'
 import { initializeLanguage } from '@/i18n/index'
 import { useReminderInit } from '@/modules/Reminder/useReminderInit';
+import { useTodoReminderInit } from '@/modules/Todo/useTodoReminderInit';   
 // Initialize theme
 useThemeInit()
 initializeLanguage()
 useReminderInit()
+useTodoReminderInit()
 </script>
 
 <style scoped>

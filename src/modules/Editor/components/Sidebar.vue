@@ -1,5 +1,5 @@
 <template>
-  <div class="sidebar" v-show="store.isSidebarVisible" :style="{
+  <div class="sidebar custom-border" v-show="store.isSidebarVisible" :style="{
     'grid-column': store.isSidebarVisible ? '2' : 'auto',
     'display': store.isSidebarVisible ? 'block' : 'none'
   }">

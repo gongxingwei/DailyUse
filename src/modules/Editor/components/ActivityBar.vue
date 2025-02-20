@@ -2,6 +2,8 @@
   <div class="activity-bar">
     <button 
       v-for="item in store.activityBarItems" 
+      class="function-icon"
+      :class="{ 'active': store.activeActivityBarItemId === item.id }"
       :key="item.id"
       :title="item.title"
       @click="store.setActiveActivityBarItemId(item.id)"
@@ -24,12 +26,11 @@ const store = useActivityBarStore();
   align-items: center;
   justify-content: center;
   background: transparent;
-  border: none;
   cursor: pointer;
 }
 
 .activity-bar button.active {
-  border-left: 2px solid var(--primary-color);
-  background: rgba(255, 255, 255, 0.1);
+  border-left: 2px solid rgb(var(--v-theme-primary));
+  background: rgb(var(--v-theme-surface));
 }
 </style>

@@ -1,5 +1,5 @@
 <template>
-    <div class="editor-group" :style="{ width: `${groupWidth}px` } " :class="{ 'active': isActive }" @mousedown="handleGroupClick">
+<div class="editor-group" :style="{ width: `${groupWidth}px` }" :class="{ 'active': isActive }" @mousedown="handleGroupClick">
         <EditorTabs :tabs="editorTabs" :active-tab-id="activeTabId || ''" @close-tab="closeTab"
             @select-tab="selectTab" />
         <EditorArea v-if="activeTab" :path="activeTab.path" :is-preview="isPreview"/>
@@ -17,11 +17,13 @@ const props = defineProps<{
 }>()
 
 const editorGroupStore = useEditorGroupStore()
-const groupWidth = computed(() => editorGroupStore.getGroupWidth(props.groupId))
+
 
 const group = computed(() =>
     editorGroupStore.editorGroups.find(g => g.id === props.groupId)
 )
+const groupWidth = computed(() => group.value?.width ?? 300)
+
 const isActive = computed(() => editorGroupStore.activeGroupId === props.groupId)
 const handleGroupClick = () => {
     editorGroupStore.setActiveGroup(props.groupId)

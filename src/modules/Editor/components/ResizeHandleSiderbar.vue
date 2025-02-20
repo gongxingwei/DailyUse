@@ -1,5 +1,5 @@
 <template>
-  <div class="resize-handle" @mousedown="startResize" />
+  <div class="resize-handle-siderbar" @mousedown="startResize" />
 </template>
 
 <script setup lang="ts">
@@ -20,8 +20,7 @@ const startResize = (e: MouseEvent) => {
 const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.value) return
     const minWidth = store.minSidebarWidth;
-    const maxWidth = store.maxSidebarWidth;
-    const newWidth = Math.max(minWidth, Math.min(maxWidth, e.clientX - 45)) 
+    const newWidth = Math.max(minWidth, e.clientX - 45) 
     
     store.setSidebarWidth(newWidth);
     document.documentElement.style.setProperty('--sidebar-width', `${newWidth}px`);
@@ -34,47 +33,28 @@ const stopResize = () => {
     document.removeEventListener('mouseup', stopResize)
 }
 
-const handleWindowResize = () => {
-    store.updateTotalWidth(window.innerWidth)
-}
 
-onMounted(() => {
-    window.addEventListener('resize', handleWindowResize)
-})
 
 onUnmounted(() => {
     document.removeEventListener('mousemove', handleMouseMove)
     document.removeEventListener('mouseup', stopResize)
-    window.removeEventListener('resize', handleWindowResize)
 })
+
 
 </script>
 
 <style scoped>
 
-.resize-handle {
+.resize-handle-siderbar {
     grid-column: 3;
     grid-row: 1;
-    cursor: col-resize;
-    background-color: transparent;
-    position: relative;
     width: 5px;
-    z-index: 10;
+    cursor: col-resize;
 }
 
-.resize-handle:hover,
-.resize-handle:active,
-.resize-handle.resizing {
+.resize-handle-siderbar:hover,
+.resize-handle-siderbar:active,
+.resize-handle-siderbar.resizing {
     background-color: var(--vscode-scrollbarSlider-hoverBackground, rgba(100, 100, 100, 0.7));
-}
-
-.resize-handle::after {
-    content: '';
-    position: absolute;
-    left: 2px;
-    top: 0;
-    bottom: 0;
-    width: 1px;
-    background-color: var(--vscode-editorGroup-border, #444);
 }
 </style>

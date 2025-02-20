@@ -9014,6 +9014,13 @@ ipcMain.on("window-control", (_event, command) => {
       break;
   }
 });
+ipcMain.handle("open-external-url", async (_event, url) => {
+  try {
+    await shell.openExternal(url);
+  } catch (error) {
+    console.error("Failed to open URL:", error);
+  }
+});
 ipcMain.handle("get-auto-launch", () => {
   return app.getLoginItemSettings().openAtLogin;
 });
