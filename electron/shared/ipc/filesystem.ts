@@ -193,4 +193,9 @@ export function registerFileSystemHandlers() {
         const folderTreeData = await generateTree(folderPath);
         return { folderTreeData, folderPath };
     });
+
+    /**
+     * git 操作
+     */
+    
 }

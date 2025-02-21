@@ -156,3 +156,84 @@ h1 {
   padding: 1rem 1rem;
   border-bottom: 1px rgb(var(--v-theme-surface-light)) solid;
 }
+
+.title-function {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  /* justify-items: space-between; */
+  padding: 0;
+  margin: 0;
+}
+
+.title-function-right {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-end;
+}
+
+.function {
+  display: flex;
+  flex-direction: row;
+  padding-right: 0.5rem;
+}
+
+/* 通用的左侧文字，右侧（按钮，可能还有一些显示信息）的样式 */
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 12px;
+  height: 28px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  user-select: none;
+}
+
+.section-header-left {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.section-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-header-actions {
+  display: none;  /* Hidden by default, shown on hover */
+  gap: 4px;
+}
+
+.section-header:hover .section-header-actions {
+  display: flex;
+}
+
+.section-header-count {
+  opacity: 0.8;
+  min-width: 12px;
+  text-align: center;
+}
+
+.action-button {
+  padding: 2px;
+  width: 16px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  border-radius: 3px;
+  cursor: pointer;
+  color: var(--vscode-foreground);
+  opacity: 0.8;
+}
+
+.action-button:hover {
+  background-color: var(--vscode-toolbar-hoverBackground);
+}

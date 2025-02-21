@@ -8,6 +8,7 @@ import { registerFileSystemHandlers } from './shared/ipc/filesystem';
 import { setupNotificationHandlers } from './modules/notification/notification';
 import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
+import { registerGitHandlers } from './shared/ipc/git';
 
 app.setName('DailyUse');
 
@@ -165,6 +166,7 @@ app.on('activate', () => {
 app.whenReady().then(() => {
   createWindow();
   registerFileSystemHandlers();
+  registerGitHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

@@ -79,6 +79,7 @@ onMounted(() => {
     `${editorLayoutStore.effectiveSidebarWidth}px`
   ),
   window.addEventListener('resize', updateWindowWidth);
+  editorLayoutStore.distributeEditorGroupWidths(window.innerWidth);
 })
 
 onUnmounted(() => {

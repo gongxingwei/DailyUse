@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@types/uuid": "^10.0.0",
-    "git-essentials": "^1.6.9",
+    "chokidar": "^4.0.3",
     "github-markdown-css": "^5.8.1",
     "markdown-it": "^14.1.0",
     "monaco-editor": "^0.52.2",

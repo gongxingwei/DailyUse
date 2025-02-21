@@ -43,3 +43,29 @@ contextBridge.exposeInMainWorld('shared', {
   // You can expose other APTs you need here.
   // ...
 })
+contextBridge.exposeInMainWorld('git', {
+  initialize: (workingDirectory: string) => 
+    ipcRenderer.invoke('git:initialize', workingDirectory),
+  init: (workingDirectory: string) => 
+    ipcRenderer.invoke('git:init', workingDirectory),
+  getStatus: () => 
+    ipcRenderer.invoke('git:status'),
+  add: (files: string[]) => ipcRenderer.invoke('git:add', files),
+  stage: (files: string[]) => 
+    ipcRenderer.invoke('git:stage', files),
+  
+  unstage: (files: string[]) => 
+    ipcRenderer.invoke('git:unstage', files),
+  checkIsRepo: (workingDirectory: string) => 
+    ipcRenderer.invoke('git:checkIsRepo', workingDirectory),
+  commit: (message: string) => 
+    ipcRenderer.invoke('git:commit', message),
+  onStatusChanged: (callback: (status: any) => void) => {
+    ipcRenderer.on('git:status-changed', (_event, status) => callback(status))
+  },
+  stageAll: () => ipcRenderer.invoke('git:stageAll'),
+  unstageAll: () => ipcRenderer.invoke('git:unstageAll'),
+  discardAll: () => ipcRenderer.invoke('git:discardAll'),
+  getLog: () => ipcRenderer.invoke('git:getLog')
+  
+})

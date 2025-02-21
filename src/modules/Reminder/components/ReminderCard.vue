@@ -151,7 +151,8 @@
 import { computed, ref } from 'vue';
 import { useReminderStore } from '../reminderStore';
 import Confirm from '@/shared/components/Confirm.vue';
-import type { Reminder, UrgencyLevel, TimeMode, TimeConfig, ScheduleUnit } from '../reminderStore';
+import type { Reminder } from '../reminderStore';
+import type { UrgencyLevel, TimeMode, TimeConfig, ScheduleUnit } from '@/shared/types/time';
 
 interface Props {
     reminder: Reminder;

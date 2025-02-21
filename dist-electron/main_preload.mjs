@@ -40,3 +40,20 @@ electron.contextBridge.exposeInMainWorld("shared", {
   // You can expose other APTs you need here.
   // ...
 });
+electron.contextBridge.exposeInMainWorld("git", {
+  initialize: (workingDirectory) => electron.ipcRenderer.invoke("git:initialize", workingDirectory),
+  init: (workingDirectory) => electron.ipcRenderer.invoke("git:init", workingDirectory),
+  getStatus: () => electron.ipcRenderer.invoke("git:status"),
+  add: (files) => electron.ipcRenderer.invoke("git:add", files),
+  stage: (files) => electron.ipcRenderer.invoke("git:stage", files),
+  unstage: (files) => electron.ipcRenderer.invoke("git:unstage", files),
+  checkIsRepo: (workingDirectory) => electron.ipcRenderer.invoke("git:checkIsRepo", workingDirectory),
+  commit: (message) => electron.ipcRenderer.invoke("git:commit", message),
+  onStatusChanged: (callback) => {
+    electron.ipcRenderer.on("git:status-changed", (_event, status) => callback(status));
+  },
+  stageAll: () => electron.ipcRenderer.invoke("git:stageAll"),
+  unstageAll: () => electron.ipcRenderer.invoke("git:unstageAll"),
+  discardAll: () => electron.ipcRenderer.invoke("git:discardAll"),
+  getLog: () => electron.ipcRenderer.invoke("git:getLog")
+});
