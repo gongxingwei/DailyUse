@@ -9,23 +9,24 @@ import { setupNotificationHandlers } from './modules/notification/notification';
 import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
 import { registerGitHandlers } from './shared/ipc/git';
+import { protocol } from 'electron'
 
 app.setName('DailyUse');
 
 // 防止软件崩溃以及兼容
 // Add these WebGL specific switches
-app.commandLine.appendSwitch('disable-webgl');
-app.commandLine.appendSwitch('disable-webgl2');
-app.commandLine.appendSwitch('use-gl', 'swiftshader');  // Use software rendering
+// app.commandLine.appendSwitch('disable-webgl');
+// app.commandLine.appendSwitch('disable-webgl2');
+// app.commandLine.appendSwitch('use-gl', 'swiftshader');  // Use software rendering
 
-app.commandLine.appendSwitch('no-sandbox');
-app.commandLine.appendSwitch('disable-gpu');
-app.commandLine.appendSwitch('disable-software-rasterizer');
-app.commandLine.appendSwitch('disable-gpu-compositing');
-app.commandLine.appendSwitch('disable-gpu-rasterization');
-app.commandLine.appendSwitch('disable-gpu-sandbox');
-app.commandLine.appendSwitch('--no-sandbox');
-app.disableHardwareAcceleration();
+// app.commandLine.appendSwitch('no-sandbox');
+// app.commandLine.appendSwitch('disable-gpu');
+// app.commandLine.appendSwitch('disable-software-rasterizer');
+// app.commandLine.appendSwitch('disable-gpu-compositing');
+// app.commandLine.appendSwitch('disable-gpu-rasterization');
+// app.commandLine.appendSwitch('disable-gpu-sandbox');
+// app.commandLine.appendSwitch('--no-sandbox');
+// app.disableHardwareAcceleration();
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -64,17 +65,27 @@ function createWindow() {
       webSecurity: true,
       preload: path.join(MAIN_DIST, 'main_preload.mjs'),
       additionalArguments: ['--enable-features=SharedArrayBuffer'],
+      allowRunningInsecureContent: false,
     },
     width: 1400,
     height: 800,
   })
 
   // 设置 CSP
+  const cspDirectives = {
+    'default-src': ["'self'", "local:",],
+    'script-src': ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
+    'style-src': ["'self'", "'unsafe-inline'"],
+    'img-src': ["'self'", "data:", "blob:", "local:",],
+  };
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const cspValue = Object.entries(cspDirectives)
+    .map(([key, values]) => `${key} ${values.join(' ')}`)
+    .join('; ');
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        'Content-Security-Policy': ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+        'Content-Security-Policy': [cspValue],
       }
     });
   });
@@ -171,6 +182,14 @@ app.whenReady().then(() => {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();
   }
+  protocol.registerFileProtocol('local', (request, callback) => {
+    const url = request.url.replace('local://', '')
+    try {
+      return callback(decodeURIComponent(url))
+    } catch (error) {
+      console.error(error)
+    }
+  })
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

@@ -104,6 +104,11 @@ export default {
       },
       lineHeight: {
         label: '行高'
+      },
+      insertImage: {
+        label: '插入图片',
+        embed: '嵌入',
+        link: '链接'
       }
     },
     file: {

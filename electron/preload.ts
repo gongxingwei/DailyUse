@@ -1,7 +1,6 @@
 import { ipcRenderer, contextBridge } from 'electron';
 import path from 'node:path';
 
-
 // --------- Expose some API to the Renderer process ---------
 contextBridge.exposeInMainWorld('shared', {
   ipcRenderer: {
@@ -38,7 +37,8 @@ contextBridge.exposeInMainWorld('shared', {
     resolve(...args: Parameters<typeof path.resolve>) {
       return path.resolve(...args);
     }
-  }
+  },
+  
 
   // You can expose other APTs you need here.
   // ...

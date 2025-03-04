@@ -79,12 +79,11 @@ export const useRepositoryStore = defineStore("repository", {
             );
             return currentRepo?.path || '';
         },
-
+        // 更新仓库访问时间
         updateRepoLastVisitTime(title: string) {
             const repository = this.repositories.find(repo => repo.title === title);
             if (repository) {
                 repository.lastVisitTime = new Date().toISOString();
-                console.log('updateRepoLastVisitTime', repository.lastVisitTime);
             }
         }
     },

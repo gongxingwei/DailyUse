@@ -1,13 +1,14 @@
 var __defProp = Object.defineProperty;
 var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
 var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
-import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, screen, clipboard, nativeImage, Tray, Menu } from "electron";
+import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, screen, protocol, clipboard, nativeImage, Tray, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 import * as sysPath from "path";
 import sysPath__default, { resolve, join, relative, sep } from "path";
 import { exec, spawn } from "child_process";
 import fs, { readdir, realpath, lstat, stat, open } from "fs/promises";
+import { Buffer as Buffer$1 } from "buffer";
 import require$$0, { EventEmitter as EventEmitter$1 } from "events";
 import require$$1, { unwatchFile, watchFile, watch as watch$1, stat as stat$1 } from "fs";
 import require$$1$1 from "tty";
@@ -241,6 +242,14 @@ function registerFileSystemHandlers() {
       return { folderPath, files };
     }
   });
+  ipcMain.handle("file-or-folder-exists", async (_event, path2) => {
+    try {
+      await fs.access(path2);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  });
   ipcMain.handle("create-folder", async (_event, filePath) => {
     await fs.mkdir(filePath, { recursive: true });
   });
@@ -277,13 +286,21 @@ function registerFileSystemHandlers() {
       await shell.trashItem(path2);
     }
   });
-  ipcMain.handle("read-file", async (_event, filePath) => {
-    return await fs.readFile(filePath, "utf8");
-  });
-  ipcMain.handle("write-file", async (_event, filePath, content) => {
+  ipcMain.handle("read-file", async (_event, path2, encoding = "utf-8") => {
     try {
-      await fs.writeFile(filePath, content, "utf8");
-      return true;
+      return await fs.readFile(path2, encoding);
+    } catch (error) {
+      console.error("读取文件失败:", error);
+      throw error;
+    }
+  });
+  ipcMain.handle("write-file", async (_event, path2, data, encoding) => {
+    try {
+      const options = {
+        encoding: encoding ?? (typeof data === "string" ? "utf-8" : null),
+        flag: "w"
+      };
+      await fs.writeFile(path2, data, options);
     } catch (error) {
       console.error("写入文件失败:", error);
       throw error;
@@ -326,6 +343,9 @@ function registerFileSystemHandlers() {
   ipcMain.handle("refresh-folder", async (_event, folderPath) => {
     const folderTreeData = await generateTree(folderPath);
     return { folderTreeData, folderPath };
+  });
+  ipcMain.handle("arrayBuffer-to-buffer", async (_event, arrayBuffer) => {
+    return Buffer$1.from(arrayBuffer);
   });
 }
 const notificationWindows = /* @__PURE__ */ new Map();
@@ -16060,17 +16080,6 @@ function registerGitHandlers() {
   });
 }
 app.setName("DailyUse");
-app.commandLine.appendSwitch("disable-webgl");
-app.commandLine.appendSwitch("disable-webgl2");
-app.commandLine.appendSwitch("use-gl", "swiftshader");
-app.commandLine.appendSwitch("no-sandbox");
-app.commandLine.appendSwitch("disable-gpu");
-app.commandLine.appendSwitch("disable-software-rasterizer");
-app.commandLine.appendSwitch("disable-gpu-compositing");
-app.commandLine.appendSwitch("disable-gpu-rasterization");
-app.commandLine.appendSwitch("disable-gpu-sandbox");
-app.commandLine.appendSwitch("--no-sandbox");
-app.disableHardwareAcceleration();
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
 const VITE_DEV_SERVER_URL = process.env["VITE_DEV_SERVER_URL"];
@@ -16091,16 +16100,24 @@ function createWindow() {
       contextIsolation: true,
       webSecurity: true,
       preload: path.join(MAIN_DIST, "main_preload.mjs"),
-      additionalArguments: ["--enable-features=SharedArrayBuffer"]
+      additionalArguments: ["--enable-features=SharedArrayBuffer"],
+      allowRunningInsecureContent: false
     },
     width: 1400,
     height: 800
   });
+  const cspDirectives = {
+    "default-src": ["'self'", "local:"],
+    "script-src": ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
+    "style-src": ["'self'", "'unsafe-inline'"],
+    "img-src": ["'self'", "data:", "blob:", "local:"]
+  };
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+    const cspValue = Object.entries(cspDirectives).map(([key, values]) => `${key} ${values.join(" ")}`).join("; ");
     callback({
       responseHeaders: {
         ...details.responseHeaders,
-        "Content-Security-Policy": ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+        "Content-Security-Policy": [cspValue]
       }
     });
   });
@@ -16174,6 +16191,14 @@ app.whenReady().then(() => {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();
   }
+  protocol.registerFileProtocol("local", (request, callback) => {
+    const url = request.url.replace("local://", "");
+    try {
+      return callback(decodeURIComponent(url));
+    } catch (error) {
+      console.error(error);
+    }
+  });
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow();

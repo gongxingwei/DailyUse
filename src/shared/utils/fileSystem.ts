@@ -25,6 +25,13 @@ export const fileSystem = {
   },
 
   /**
+   * 检查文件或文件夹是否存在
+   */
+  exists(path: string) {
+    return window.shared.ipcRenderer.invoke('file-or-folder-exists', path);
+  },
+
+  /**
    * 创建文件夹
    */
   createFolder(path: string) {
@@ -62,8 +69,8 @@ export const fileSystem = {
   /**
    * 写入文件
    */
-  writeFile(path: string, content: string) {
-    return window.shared.ipcRenderer.invoke('write-file', path, content);
+  writeFile(path: string, data: string | Buffer, encoding?: BufferEncoding | null) {
+    return window.shared.ipcRenderer.invoke('write-file', path, data, encoding);
   },
 
   /**
@@ -78,5 +85,19 @@ export const fileSystem = {
    */
   refreshFolder(path: string) {
     return window.shared.ipcRenderer.invoke('refresh-folder', path);
+  },
+
+  /**
+   * 保存文件
+   */
+  saveFile(file: File) {
+    return window.shared.ipcRenderer.invoke('save-file', file);
+  },
+
+  /**
+   * buffer转ArrayBuffer
+   */
+  arrayBufferToBuffer(data: ArrayBuffer): Promise<Buffer>{
+    return window.shared.ipcRenderer.invoke('arrayBuffer-to-buffer', data);
   }
 }; 

@@ -38,6 +38,29 @@
         <span class="type">{{ item.type }}</span>
       </div>
     </div>
+    <div class="clipboard-test">
+      <h2>剪贴板测试</h2>
+      <div 
+        class="paste-area" 
+        contenteditable="true" 
+        @paste="handlePaste"
+        placeholder="在这里粘贴任何内容..."
+      ></div>
+      
+      <div class="debug-info">
+        <h3>剪贴板数据:</h3>
+        <div v-if="clipboardData.items.length > 0">
+          <div v-for="(item, index) in clipboardData.items" :key="index" class="debug-item">
+            <strong>类型:</strong> {{ item.type }}<br>
+            <strong>数据:</strong> 
+            <pre>{{ item.data }}</pre>
+          </div>
+        </div>
+        <div v-else>
+          等待粘贴...
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -161,6 +184,53 @@ const showMultipleNotifications = async () => {
   const id3 = await notification.showWarning('通知 3', '第三条警告消息');
   addToHistory('通知 3', `ID: ${id3}`);
 };
+
+// 剪切板
+interface ClipboardItem {
+  type: string;
+  data: string;
+}
+
+interface ClipboardData {
+  items: ClipboardItem[];
+}
+
+const clipboardData = ref<ClipboardData>({ items: [] });
+
+const handlePaste = async (e: ClipboardEvent) => {
+  e.preventDefault();
+  clipboardData.value.items = [];
+
+  if (!e.clipboardData) return;
+
+  // 遍历所有粘贴的数据
+  for (const item of e.clipboardData.items) {
+    const type = item.type;
+    let data = '';
+
+    if (type.startsWith('image/')) {
+      const blob = item.getAsFile();
+      if (blob) {
+        // 转换图片为 base64
+        data = await new Promise((resolve) => {
+          const reader = new FileReader();
+          reader.onload = (e) => resolve(e.target?.result as string);
+          reader.readAsDataURL(blob);
+        });
+      }
+    } else {
+      // 获取文本内容
+      data = await new Promise((resolve) => {
+        item.getAsString((s) => resolve(s));
+      });
+    }
+
+    clipboardData.value.items.push({ type, data });
+  }
+
+  // 同时也打印原始的 clipboardData 对象
+  console.log('Original clipboardData:', e.clipboardData);
+};
 </script>
 
 <style scoped>
@@ -229,5 +299,53 @@ button:hover {
 
 .dragover {
   border-color: #2196f3;
+}
+
+/* 剪切板 */
+.clipboard-test {
+  margin-top: 30px;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.paste-area {
+  min-height: 100px;
+  padding: 10px;
+  border: 2px dashed #ccc;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
+
+.paste-area:empty:before {
+  content: attr(placeholder);
+  color: #999;
+}
+
+.paste-area:focus {
+  outline: none;
+  border-color: #1890ff;
+}
+
+.debug-info {
+  background: #353636;
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.debug-item {
+  padding: 10px;
+  margin-bottom: 10px;
+  border: 1px solid #4d4a4a;
+  border-radius: 4px;
+}
+
+.debug-item pre {
+  margin: 5px 0;
+  padding: 10px;
+  background: #2b2929;
+  border-radius: 4px;
+  overflow-x: auto;
+  max-height: 200px;
 }
 </style>

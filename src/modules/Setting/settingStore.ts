@@ -24,6 +24,7 @@ export interface EditorSettings {
   smoothScrolling: boolean
   mouseWheelZoom: boolean
   lineHeight: number
+  insertImage: 'embed' | 'link'
   padding: {
     top: number
     bottom: number
@@ -69,6 +70,7 @@ export const useSettingStore = defineStore('setting', {
       smoothScrolling: true,
       mouseWheelZoom: true,
       lineHeight: 20,
+      insertImage: 'link',
       padding: {
         top: 4,
         bottom: 4

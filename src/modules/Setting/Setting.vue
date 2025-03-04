@@ -158,6 +158,13 @@
             <v-select v-model="editorSettings.lineHeight" :label="t('settings.editor.lineHeight.label')"
               :items="[16, 18, 20, 22, 24]" hide-details class="mb-4" />
           </v-col>
+          <!-- Markdown 图片插入设置 -->
+           <v-col cols="12" md="6">
+            <v-select v-model="editorSettings.insertImage" :label="t('settings.editor.insertImage.label')" :items="[
+              { title: t('settings.editor.insertImage.embed'), value: 'embed' },
+              { title: t('settings.editor.insertImage.link'), value: 'link' }
+            ]" item-title="title" item-value="value" hide-details class="mb-4" />
+          </v-col>
         </v-row>
       </v-card-text>
     </v-card>

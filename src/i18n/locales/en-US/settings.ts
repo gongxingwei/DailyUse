@@ -1,3 +1,5 @@
+import { link } from "node:fs";
+
 export default {
     title: 'Settings',
     general: {
@@ -104,7 +106,12 @@ export default {
       },
       lineHeight: {
         label: 'Line Height'
-      }
+      },
+      insertImage: {
+        label: 'Insert Image',
+        embed: 'Embed',
+        link: 'Link'
+      },
     },
     file: {
       title: 'Files',

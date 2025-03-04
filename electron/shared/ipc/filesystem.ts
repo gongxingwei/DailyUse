@@ -1,6 +1,7 @@
 import { ipcMain, shell, dialog } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
+import { Buffer } from 'buffer';
 
 export function registerFileSystemHandlers() {
     /**
@@ -22,18 +23,18 @@ export function registerFileSystemHandlers() {
      */
     ipcMain.handle('read-folder', async (_, folderPath) => {
         try {
-          const files = await fs.readdir(folderPath, { withFileTypes: true });
-          return files.map(file => ({
-            name: file.name,
-            path: path.join(folderPath, file.name),
-            isDirectory: file.isDirectory(),
-            key: path.join(folderPath, file.name),
-          }));
+            const files = await fs.readdir(folderPath, { withFileTypes: true });
+            return files.map(file => ({
+                name: file.name,
+                path: path.join(folderPath, file.name),
+                isDirectory: file.isDirectory(),
+                key: path.join(folderPath, file.name),
+            }));
         } catch (error) {
-          console.error('Error reading folder:', error);
-          throw error;
+            console.error('Error reading folder:', error);
+            throw error;
         }
-      });
+    });
 
     /**
      * 选择文件夹
@@ -63,6 +64,18 @@ export function registerFileSystemHandlers() {
         }
     });
 
+    /**
+     * 检查文件或文件夹是否存在
+     */
+    ipcMain.handle('file-or-folder-exists', async (_event, path: string) => {
+        try {
+            await fs.access(path);
+            return true;
+        } catch (error) {
+            return false;
+        }
+    });
+    
     /**
      * 创建文件夹
      */
@@ -128,19 +141,26 @@ export function registerFileSystemHandlers() {
     /**
      * 读取文件
      */
-    ipcMain.handle('read-file', async (_event, filePath) => {
-        return await fs.readFile(filePath, 'utf8');
+    ipcMain.handle('read-file', async (_event, path: string, encoding: BufferEncoding = 'utf-8') => {
+        try {
+            return await fs.readFile(path, encoding);
+        } catch (error) {
+            console.error('读取文件失败:', error);
+            throw error;
+        }
     });
 
 
     /**
      * 写入文件
      */
-    ipcMain.handle('write-file', async (_event, filePath: string, content: string) => {
+    ipcMain.handle('write-file', async (_event, path: string, data: string | Buffer, encoding?: BufferEncoding | null) => {
         try {
-            await fs.writeFile(filePath, content, 'utf8');
-
-            return true;
+            const options = {
+                encoding: encoding ?? (typeof data === 'string' ? 'utf-8' : null),
+                flag: 'w'
+            };
+            await fs.writeFile(path, data, options);
         } catch (error) {
             console.error('写入文件失败:', error);
             throw error;
@@ -195,7 +215,10 @@ export function registerFileSystemHandlers() {
     });
 
     /**
-     * git 操作
+     * arrayBuffer转Buffer
      */
-    
+    ipcMain.handle('arrayBuffer-to-buffer', async (_event, arrayBuffer: ArrayBuffer) => {
+        return Buffer.from(arrayBuffer);
+    });
+
 }

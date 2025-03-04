@@ -22,27 +22,59 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 挡住进步的不一定是懒惰或躺平，也可能是频繁的遗忘和被碎片化娱乐占据时间。  
 
 ## 功能
+Vue3的Provide/Inject机制
+《基于Electron+Vue3的一站式知识管理与效率提升工具的设计与实现》
+- 知识仓库
+  用于存储 markdown 文档  
+  存储资源等的容器  
+  可以创建 文档仓库、图片仓库  
+  仓库的添加、修改、删除、展示
+- 待办任务  
+  todo 的添加、修改、删除、展示  
+  桌面弹窗提醒  
+  任务留档  
+- Markdown 编辑器  
+  编辑功能  
+  支持分屏、预览、窗口大小拖拽调整  
+  实现可视化 git 功能  
+- 学习目标  
+  添加、修改、删除、展示目标  
+  可以关联相关的文档  
+  添加相应的 todo  
+- 学习内容推荐
+  关联目标  
+  自定义推荐关键字  
+  删除关联目标  
+- 提醒功能
+  添加提醒事项  
+  提醒事项管理  
+  弹窗提醒  
+- 快速启动器  
+  alt + space 唤醒快速启动窗口，通过拖拽或文件选择的方式添加快捷方式  
+  创建工具快捷方式  
+  工具分类  
+  工具删除  
+- 应用设置  
+  深色和浅色主题切换
+  中英文切换  
+  编辑器相关设置  
+  开机自启动  
+- 用户管理  
+  账户管理  
+  数据管理  
+- 知识分享平台  
+  分享仓库文档  
+  点赞  
+  收藏  
+  搜索知识  
 
-- 仓库
-  用于存储文档、资源等的容器  
-  可以创建 文档仓库、图片仓库
-- 文档编辑器  
-  - git
-- goal  
-  点击添加 goal  
-- todo  
-  把部分完成的 todo 保存起来，作为战绩  
-  多种类型  
-    task：time
-    day：tasks
-- 健康提醒
-- quicklaunch  
 - b站等的订阅消息转发  
+  在
 - 收藏页面  
 - RSS  
 - 动作脚本  
 
-- 主题切换
+
 
 ## 结构
 
@@ -538,28 +570,182 @@ window.addEventListener('resize', handler)
 
 ### markdown 编辑器
 
+#### 技术选择
+
 - markdown-it  
     Markdown 解析  
-- Monaco  
-    编辑器核心  
+- [Monaco](https://wf0.github.io/)  
+    "monaco-editor": "^0.52.2" -monaco 编辑器核心  
+    "monaco-editor-vue3": "^0.1.10" -组件化 monaco 编辑器，方便在 vue 中使用  
+    "vite-plugin-monaco-editor": "^1.1.0" -方便 vite 配置 Monaco  
 - DOMPurify  
     安全渲染，防止 XSS 攻击
 
-#### Monaco
+#### monaco-editor-vue3 配置
 
-https://wf0.github.io/
+// const editorOptions = {
+//   minimap: { enabled: true },
+//   wordWrap: 'on',
+//   lineNumbers: 'on',
+//   renderWhitespace: 'boundary',
+//   scrollBeyondLastLine: false,
+//   automaticLayout: true,
+//   fontSize: 14,
+//   padding: { top: 16 }
+// }
 
-##### "monaco-editor": "^0.52.2"  
+#### Monaco Editor 实例的获取和使用
 
-monaco 编辑器核心
+在组件中使用 @mounted 获取
 
-##### "monaco-editor-vue3": "^0.1.10",
+```ts
+// Monaco Editor 实例的常用方法和属性示例
+const handleEditorDidMount = (instance: any) => {
+  editor.value = instance;  // 保存编辑器实例
+  
+  // 常用方法示例
+  instance.getValue();              // 获取编辑器内容
+  instance.setValue('new content'); // 设置编辑器内容
+  instance.getPosition();          // 获取当前光标位置
+  instance.setPosition({           // 设置光标位置
+    lineNumber: 1,
+    column: 1
+  });
+  
+  // 事件监听
+  instance.onDidChangeModelContent(() => {
+    // 内容变化时触发
+  });
+  
+  instance.onDidChangeCursorPosition(() => {
+    // 光标位置变化时触发
+  });
+  
+  // 编辑操作
+  instance.executeEdits('source', [{
+    range: new monaco.Range(1, 1, 1, 1),
+    text: 'inserted text'
+  }]);
+  
+  // 获取选中内容
+  const selection = instance.getSelection();
+  const selectedText = instance.getModel()?.getValueInRange(selection);
+}
+```
 
-组件化 monaco 编辑器，方便在 vue 中使用  
+### 粘贴图片 功能
 
-##### "vite-plugin-monaco-editor": "^1.1.0",
+- 直接将图片转化为 base64 嵌入代码中  
+- 将图片保存到相应目录，通过链接显示  
 
-方便 vite 配置 Monaco  
+#### 1.编辑器监听 paste 事件，当 paste 为图片时进行相应处理  
+  `monacoEditor.value.onDidPaste` Monaco Editor 貌似有自带监听 paste 的方法  
+
+##### 监听粘贴事件的方法
+
+*使用 markRaw，告诉 Vue 不要将编辑器实例转换为响应式对象，否则执行 executeEdits 会卡住*
+
+```ts
+const handleEditorDidMount = (instance: any) => {
+  editor.value = markRaw(instance)
+  
+  // 方法1: 使用 onDidPaste
+  // Monaco Editor 的原生事件
+  // 在粘贴完成后触发
+  // 提供粘贴的文本内容
+  // onDidPaste 返回的 e 对象好像没有粘贴的数据
+  editor.value.onDidPaste((e: any) => {
+    console.log('Paste event:', e)
+    console.log('Pasted text:', e.text)
+  })
+
+  // 方法2: 使用 onKeyDown 监听粘贴快捷键
+  // 可以捕获粘贴快捷键
+  // 在粘贴发生前触发
+  // 可以阻止默认行为
+  editor.value.onKeyDown((e: any) => {
+    if ((e.ctrlKey || e.metaKey) && e.keyCode === 86) { // 86 是 'V' 键的keyCode
+      console.log('Paste shortcut detected')
+    }
+  })
+
+  // 方法3: 添加命令监听
+  // 添加自定义命令
+  // 可以绑定特定快捷键
+  // 更灵活的控制
+  editor.value.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyV, () => {
+    console.log('Paste command triggered')
+  })
+
+  // 方法4: 使用事件监听器
+  // DOM 原生事件
+  // 可以访问完整的剪贴板数据
+  // 可以处理多种格式（文本、HTML、图片等）
+  const editorDomElement = editor.value.getDomNode()
+  editorDomElement.addEventListener('paste', (e: ClipboardEvent) => {
+    e.preventDefault() // 阻止默认粘贴行为
+    
+    const clipboardData = e.clipboardData
+    if (!clipboardData) return
+
+    // 打印所有可用的格式
+    console.log('Available formats:', clipboardData.types)
+
+    // 获取文本内容
+    if (clipboardData.types.includes('text/plain')) {
+      const text = clipboardData.getData('text/plain')
+      console.log('Plain text:', text)
+    }
+
+    // 获取HTML内容
+    if (clipboardData.types.includes('text/html')) {
+      const html = clipboardData.getData('text/html')
+      console.log('HTML:', html)
+    }
+
+    // 处理图片
+    const items = clipboardData.items
+    for (const item of items) {
+      if (item.type.startsWith('image/')) {
+        const file = item.getAsFile()
+        if (file) {
+          console.log('Image:', {
+            type: file.type,
+            size: file.size,
+            lastModified: new Date(file.lastModified)
+          })
+        }
+      }
+    }
+  })
+}
+```
+
+##### 控制台打印对象的方式
+
+```ts
+const handleEditorDidMount = (instance: any) => {
+  editor.value = instance
+  
+  editor.value.onDidPaste(async (e: any) => {
+    // 方法1: 使用 console.dir
+    console.dir(e, { depth: null, colors: true })
+
+    // 方法2: 使用 console.log 配合对象展开
+    console.log('Paste event:', { ...e })
+
+    // 方法3: 使用 JSON.stringify 美化输出
+    console.log('Paste event:', JSON.stringify(e, null, 2))
+
+    // 方法4: 使用对象解构来查看特定属性
+    const { type, data, ...rest } = e
+    console.log('Event details:', { type, data, rest })
+
+    // 方法5: 使用 console.table 展示数组或对象数据
+    console.table(e)
+  })
+}
+```
 
 ### git 功能
 
@@ -907,6 +1093,159 @@ app.commandLine.appendSwitch('disable-software-rasterizer'); // 禁用软件光�
 ```
 
 # 知识
+
+## API
+
+### web API
+
+#### clipboard API
+
+##### 1.ClipboardEvent 接口
+
+```ts
+interface ClipboardEvent extends Event {
+  readonly clipboardData: DataTransfer | null;
+}
+```
+
+##### 2.DataTransfer 接口  
+
+```ts
+interface DataTransfer {
+  // 获取剪贴板中的数据
+  getData(format: string): string;
+  
+  // 设置数据到剪贴板
+  setData(format: string, data: string): void;
+  
+  // 可用的数据格式列表
+  readonly types: ReadonlyArray<string>;
+  
+  // 文件列表
+  readonly files: FileList;
+  
+  // 剪贴板项目列表
+  readonly items: DataTransferItemList;
+}
+```
+
+##### 3.常见用法示例
+
+基本文本操作
+```ts
+const handlePaste = (e: ClipboardEvent) => {
+  const clipboardData = e.clipboardData;
+  if (!clipboardData) return;
+
+  // 获取纯文本
+  const text = clipboardData.getData('text/plain');
+  
+  // 获取 HTML
+  const html = clipboardData.getData('text/html');
+  
+  // 获取 URL
+  const url = clipboardData.getData('text/uri-list');
+}
+```
+
+处理图片
+```ts
+const handleImagePaste = (e: ClipboardEvent) => {
+  const clipboardData = e.clipboardData;
+  if (!clipboardData) return;
+
+  for (const item of clipboardData.items) {
+    if (item.type.startsWith('image/')) {
+      const file = item.getAsFile();
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const imageDataUrl = e.target?.result as string;
+          console.log('Image data:', imageDataUrl);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+  }
+}
+```
+
+获取所有可用格式
+```ts
+const logClipboardFormats = (e: ClipboardEvent) => {
+  const clipboardData = e.clipboardData;
+  if (!clipboardData) return;
+
+  console.group('Clipboard Content Types');
+  clipboardData.types.forEach(type => {
+    console.log(`${type}:`, clipboardData.getData(type));
+  });
+  console.groupEnd();
+}
+```
+
+##### 4.现代 Clipboard API
+
+```ts
+// 异步 Clipboard API
+const modernClipboardOps = {
+  // 写入文本
+  writeText: async (text: string) => {
+    await navigator.clipboard.writeText(text);
+  },
+  
+  // 读取文本
+  readText: async () => {
+    return await navigator.clipboard.readText();
+  },
+  
+  // 读取所有内容（包括图片等）
+  read: async () => {
+    return await navigator.clipboard.read();
+  }
+};
+```
+
+##### 5.事件类型
+
+```ts
+// 剪贴板事件监听
+element.addEventListener('copy', (e: ClipboardEvent) => {
+  // 处理复制
+});
+
+element.addEventListener('cut', (e: ClipboardEvent) => {
+  // 处理剪切
+});
+
+element.addEventListener('paste', (e: ClipboardEvent) => {
+  // 处理粘贴
+});
+```
+
+##### 6.安全注意事项
+
+```ts
+const secureClipboardAccess = async () => {
+  try {
+    // 检查权限
+    const permission = await navigator.permissions.query({
+      name: 'clipboard-read' as PermissionName
+    });
+
+    if (permission.state === 'granted') {
+      // 可以访问剪贴板
+      const text = await navigator.clipboard.readText();
+      return text;
+    } else {
+      throw new Error('No clipboard permission');
+    }
+  } catch (error) {
+    console.error('Clipboard access error:', error);
+    return null;
+  }
+};
+```
 
 ## 语法
 

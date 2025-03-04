@@ -17,6 +17,7 @@
     "chokidar": "^4.0.3",
     "github-markdown-css": "^5.8.1",
     "markdown-it": "^14.1.0",
+    "markdown-it-image-lazy-loading": "^2.0.1",
     "monaco-editor": "^0.52.2",
     "monaco-editor-vue3": "^0.1.10",
     "node-schedule": "^2.1.1",
