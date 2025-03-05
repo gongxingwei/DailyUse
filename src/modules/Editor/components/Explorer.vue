@@ -4,9 +4,10 @@
     <div class="top-bar">
       <span class="folder-name">{{ getFolderName }}</span>
       <div class="function-group">
-        <v-icon class="function-icon" title="新建文件夹" @click="createFolderForRepo">mdi-folder-plus</v-icon>
-        <v-icon class="function-icon" title="新建笔记" @click="createFileForRepo">mdi-language-markdown</v-icon>
-        <v-icon class="function-icon" title="未实现" @click="$emit('settings')">mdi-cog</v-icon>
+        <v-icon class="function-icon" :title="t('editor.explorer.create_folder')"
+          @click="createFolderForRepo">mdi-folder-plus</v-icon>
+        <v-icon class="function-icon" :title="t('editor.explorer.create_note')"
+          @click="createFileForRepo">mdi-language-markdown</v-icon>
       </div>
     </div>
     <div class="divider"></div>
@@ -44,17 +45,32 @@
         <span class="menu-title">{{ item.title }}</span>
       </div>
     </div>
+
   </div>
+  <Confirm :model-value="isShowConfirm" :title="t('editor.explorer.delete_confirm_title')"
+    :message="t(deleteOperation?.type === 'folder' ? 'editor.explorer.delete_confirm_folder' : 'editor.explorer.delete_confirm_file')"
+    :cancel-text="t('common.2')" :confirm-text="t('common.3')" @cancel="cancelDelete" @confirm="handleDelete" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
+import Confirm from '@/shared/components/Confirm.vue'
 import { fileSystem } from '@/shared/utils/fileSystem'
-
+import { useSettingStore } from '@/modules/Setting/settingStore'
 import { useEditorGroupStore } from '@/modules/Editor/stores/editorGroupStore'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const editorGroupStore = useEditorGroupStore()
-
+const settingStore = useSettingStore()
+/*
+  * key：文件路径
+  * title：文件名称 eg：1.md
+  * fileType：文件类型 eg：md
+  * isLeaf：是否为叶节点
+  * children：如果为文件夹，则拥有子节点 
+ */
 interface TreeNode {
   key: string
   title: string
@@ -78,6 +94,11 @@ const showMenu = ref(false)
 const menuPosition = ref({ x: 0, y: 0 })
 const selectedNode = ref<TreeNode | null>(null)
 const activeNode = ref<TreeNode | null>(null)
+const isShowConfirm = ref(false)
+const deleteOperation = ref<{
+  type: 'file' | 'folder'
+  path: string
+} | null>(null)
 
 // 文件图标映射
 const fileIcons = {
@@ -92,6 +113,10 @@ const fileIcons = {
 }
 
 // 计算属性
+const isShowHiddenFiles = computed(() => {
+  return settingStore.showHiddenFiles
+})
+
 const getFolderName = computed(() => {
   if (!folderData.value?.folderPath || !window?.shared?.path) {
     return '';
@@ -119,6 +144,9 @@ const flattenedItems = computed(() => {
 
   function flatten(nodes: TreeNode[], level: number = 0, parentKey: string | null = null) {
     nodes.forEach(node => {
+      if (!isShowHiddenFiles.value && node.title.startsWith('.')) {
+        return
+      }
       items.push({ node, level, parentKey })
       if (node.children && openedNodes.value.includes(node.key)) {
         flatten(node.children, level + 1, node.key)
@@ -151,13 +179,17 @@ const createFolderForRepo = async () => {
 
 const createFileForRepo = async () => {
   if (!folderData.value?.folderPath) return
-  const newFilePath = window.shared.path.join(
-    folderData.value.folderPath,
-    'untitled.md'
-  )
-  await fileSystem.createFile(newFilePath, '')
-  await refreshFolder()
-  startEdit(newFilePath, 'untitled')
+  try {
+    const newFilePath = window.shared.path.join(
+      folderData.value.folderPath,
+      'untitled.md'
+    )
+    await fileSystem.createFile(newFilePath, '')
+    await refreshFolder()
+    startEdit(newFilePath, 'untitled')
+  } catch (error) {
+    console.error(t('editor.explorer.create_file_error'), error)
+  }
 }
 
 const createFolder = async () => {
@@ -209,29 +241,33 @@ const createFile = async () => {
   }
 }
 
-const deleteFolder = async () => {
+const confirmDelete = async (type: 'file' | 'folder') => {
   if (!selectedNode.value) return
-  try {
-    await fileSystem.delete(
-      selectedNode.value.key,
-      true
-    )
-    await refreshFolder()
-  } catch (error) {
-    console.error('Delete error:', error)
+  deleteOperation.value = {
+    type,
+    path: selectedNode.value.key
   }
+  isShowConfirm.value = true
 }
 
-const deleteFile = async () => {
-  if (!selectedNode.value) return
+const cancelDelete = () => {
+  isShowConfirm.value = false
+  deleteOperation.value = null
+}
+
+const handleDelete = async () => {
+  if (!deleteOperation.value) return
   try {
     await fileSystem.delete(
-      selectedNode.value.key,
-      false
+      deleteOperation.value.path,
+      deleteOperation.value.type === 'folder'
     )
     await refreshFolder()
   } catch (error) {
-    console.error('Delete error:', error)
+    console.error(t('editor.explorer.delete_error'), error)
+  } finally {
+    isShowConfirm.value = false
+    deleteOperation.value = null
   }
 }
 
@@ -284,9 +320,22 @@ function startEdit(key: string, initialValue: string = '') {
 }
 
 async function handleEditComplete(_event?: Event) {
-  if (editingNode.value && editValue.value.trim()) {
-    const oldPath = editingNode.value
-    const newName = editValue.value.trim()
+  if (!editingNode.value) {
+    return
+  }
+
+  const oldPath = editingNode.value
+  const oldName = window.shared.path.basename(oldPath)
+  const newName = editValue.value.trim()
+  const newNameWithExt = oldPath.endsWith('.md')
+    ? `${newName}.md`
+    : newName
+  // 如果名称没有变化，直接取消编辑
+  if (oldName === newNameWithExt) {
+    cancelEdit()
+    return
+  }
+  if (newName) {
     const newNameWithExt = oldPath.endsWith('.md')
       ? `${newName}.md`
       : newName
@@ -299,9 +348,10 @@ async function handleEditComplete(_event?: Event) {
         await refreshFolder()
       }
     } catch (error) {
-      console.error('Rename error:', error)
+      console.error(t('editor.explorer.rename_error'), error)
     }
   }
+
   cancelEdit()
 }
 
@@ -325,15 +375,45 @@ const menuItems = computed(() => {
   if (!selectedNode.value) return []
   return selectedNode.value.fileType === 'directory'
     ? [
-      { title: '创建文件夹', action: createFolder, icon: 'mdi-folder-plus', disabled: false },
-      { title: '创建笔记', action: createFile, icon: 'mdi-language-markdown', disabled: false },
-      { title: '重命名', action: renameFileOrFolder, icon: 'mdi-pencil', disabled: false },
-      { title: '删除', action: deleteFolder, icon: 'mdi-folder-remove', disabled: false },
+      {
+        title: t('editor.explorer.create_folder'),
+        action: createFolder,
+        icon: 'mdi-folder-plus',
+        disabled: false
+      },
+      {
+        title: t('editor.explorer.create_note'),
+        action: createFile,
+        icon: 'mdi-language-markdown',
+        disabled: false
+      },
+      {
+        title: t('editor.explorer.rename'),
+        action: renameFileOrFolder,
+        icon: 'mdi-pencil',
+        disabled: false
+      },
+      {
+        title: t('editor.explorer.delete'),
+        action: () => confirmDelete('folder'),
+        icon: 'mdi-folder-remove',
+        disabled: false
+      },
       // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
     ]
     : [
-      { title: '重命名', action: renameFileOrFolder, icon: 'mdi-pencil', disabled: false },
-      { title: '删除', action: deleteFile, icon: 'mdi-file-remove', disabled: false },
+      {
+        title: t('editor.explorer.rename'),
+        action: renameFileOrFolder,
+        icon: 'mdi-pencil',
+        disabled: false
+      },
+      {
+        title: t('editor.explorer.delete'),
+        action: () => confirmDelete('file'),
+        icon: 'mdi-file-remove',
+        disabled: false
+      },
       // { title: '复制', action: copyToClipboard, icon: 'mdi-content-copy', disabled: false },
     ]
 })

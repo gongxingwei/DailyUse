@@ -21,4 +21,6 @@ export default {
     20: 'goal',
     21: 'optional',
     22: 'associated',
+    23: 'folder',
+    24: 'file',
 }
