@@ -2,9 +2,7 @@ import { app, globalShortcut, ipcMain, BrowserWindow, dialog, shell } from 'elec
 import { ElectronPlugin, PluginMetadata } from '../../core/types';
 import { exec, ExecOptions } from 'child_process';
 import path from 'path';
-
-// 获取主进程目录
-const MAIN_DIST = process.env.MAIN_DIST ?? path.join(process.env.APP_ROOT ?? process.cwd(), 'dist-electron');
+import { VITE_DEV_SERVER_URL, MAIN_DIST, RENDERER_DIST } from '../../../../electron/main';
 
 export class QuickLauncherMainPlugin implements ElectronPlugin {
   metadata: PluginMetadata = {
@@ -66,11 +64,11 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
     });
 
     // Load the quick launcher URL
-    if (process.env.VITE_DEV_SERVER_URL) {
+    if (VITE_DEV_SERVER_URL) {
       this.quickLauncherWindow.loadURL(`${process.env.VITE_DEV_SERVER_URL}/src/plugins/quickLauncher/index.html`);
     } else {
       this.quickLauncherWindow.loadFile(
-        path.join(process.env.APP_ROOT || '', 'dist/src/plugins/quickLauncher/index.html')
+        path.join(RENDERER_DIST, 'src/plugins/quickLauncher/index.html')
       );
     }
 
