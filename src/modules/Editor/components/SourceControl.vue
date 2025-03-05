@@ -41,7 +41,7 @@
                 </div>
                 <div v-show="isStagedExpanded" class="section-content">
                     <div v-for="file in store.changes.staged" :key="file" class="change-item"
-                        @click="handleFileClick(file, 'staged')">
+                        >
                         <v-icon size="small" color="green">mdi-plus</v-icon>
                         <span class="file-name">{{ getFileName(file) }}</span>
                         <v-icon class="action-button" size="small" @click.stop="store.unstageFile(file)">
@@ -178,11 +178,6 @@ async function handleCommit() {
     if (!canCommit.value) return
     await store.commit(commitMessage.value)
     commitMessage.value = ''
-}
-
-function handleFileClick(file: string, type: 'staged' | 'unstaged') {
-    // TODO: Implement diff view
-    console.log(`Show diff for ${file}`)
 }
 
 function getFileIcon(file: string) {

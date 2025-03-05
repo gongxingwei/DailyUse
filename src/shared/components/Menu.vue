@@ -128,7 +128,6 @@
   
   function navigateItems(direction: number) {
     const items = props.items.filter(item => item.type !== 'separator')
-    const maxIndex = items.length - 1
     
     currentIndex.value = (currentIndex.value + direction + items.length) % items.length
     

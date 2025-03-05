@@ -235,7 +235,7 @@ const renderedContent = computed(() => {
   })
 
   // 重写图片渲染规则
-  const defaultRender = md.renderer.rules.image || function(tokens, idx, options, env, self) {
+  const defaultRender = md.renderer.rules.image || function(tokens, idx, options, _env, self) {
     return self.renderToken(tokens, idx, options)
   }
 

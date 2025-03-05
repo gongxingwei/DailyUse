@@ -1,5 +1,3 @@
-import { link } from "node:fs";
-
 export default {
     title: 'Settings',
     general: {

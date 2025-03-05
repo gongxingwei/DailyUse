@@ -1,13 +1,6 @@
 import { defineStore } from "pinia";
 import { useEditorGroupStore } from "./editorGroupStore";
 
-interface EditorFunctionIconState {
-    editorFunctionIcons: EditorFunctionIcon[];
-    showMenu: boolean;
-    menuX: number;
-    menuY: number;
-  }
-
 interface EditorFunctionIcon {
     id: string;
     title: string;

@@ -117,8 +117,9 @@ function createWindow() {
 
 function createTray(win: BrowserWindow) {
   // 使用已有的ico文件
-  const icon = nativeImage.createFromPath(join(__dirname, '../public/DailyUse-16.png'))
+  const icon = nativeImage.createFromPath(join(process.env.VITE_PUBLIC, 'DailyUse-16.png'))
   tray = new Tray(icon)
+
 
   // 设置托盘图标提示文字
   tray.setToolTip('DailyUse')

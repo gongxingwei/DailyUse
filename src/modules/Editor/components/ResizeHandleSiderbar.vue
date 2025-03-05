@@ -3,14 +3,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, onUnmounted } from 'vue';
 import { useEditorLayoutStore } from '../stores/editorLayoutStore';
 
 const store = useEditorLayoutStore();
 
 const isResizing = ref(false)
 
-const startResize = (e: MouseEvent) => {
+const startResize = (_e: MouseEvent) => {
     isResizing.value = true
     document.body.style.cursor = 'col-resize'
     document.addEventListener('mousemove', handleMouseMove)
