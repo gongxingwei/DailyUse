@@ -122,7 +122,7 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
       }
     });
 
-    ipcMain.handle('get-shortcut-target-path', async (_, shortcutPath) => {
+    ipcMain.handle('get-link-file-target-path', async (_, shortcutPath) => {
       try {
         const normalizedPath = path.win32.normalize(shortcutPath);
         const target = shell.readShortcutLink(normalizedPath);
@@ -133,6 +133,27 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
         return '';
       }
     });
+
+    ipcMain.handle('reveal-in-explorer', async (_, filePath) => {
+      try {
+        shell.showItemInFolder(filePath);
+        return true;
+      }
+      catch (error) {
+        console.error('Failed to reveal in explorer:', error);
+        return false;
+      }
+    });
+
+    ipcMain.handle('hide-window', async () => {
+      try {
+        this.quickLauncherWindow?.hide();
+        return true;
+      } catch (error) {
+        console.error('failed to hide window',error);
+        return false;
+      }
+    })
   }
 
   

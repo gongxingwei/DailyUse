@@ -70,7 +70,6 @@ function createWindow() {
     width: 1400,
     height: 800,
   })
-
   // 设置 CSP
   const cspDirectives = {
     'default-src': ["'self'", "local:",],

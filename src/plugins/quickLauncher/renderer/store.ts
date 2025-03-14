@@ -13,6 +13,10 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
       shortcutKey: 'Alt+Space',
       theme: 'system',
     },
+    state: {
+      selectedCategoryId: '',
+      selectedItemId: '',
+    }
   }),
   
   getters: {
@@ -47,7 +51,9 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
         })
         .filter((item): item is ShortcutItem => item !== null);
     },
-
+    getCategoryById: (state) => (id: string): ShortcutCategory | undefined => {
+      return state.categories.find(c => c.id === id);
+    },
     sortedCategories: (state) => {
       return [...state.categories].sort((a, b) => {
         // 首先按照 order 排序
@@ -153,6 +159,13 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
         }
       }
     },
+
+    setSelectedCategory(categoryId: string) {
+      this.state.selectedCategoryId = categoryId;
+    },
+    setSelectedItem(itemId: string) {
+      this.state.selectedItemId = itemId;
+    }
   },
 
   persist: [{
@@ -173,5 +186,7 @@ declare module 'pinia' {
     toggleFavorite: (itemId: string) => void;
     updateSettings: (updates: Partial<QuickLauncherState['settings']>) => void;
     moveShortcut: (itemId: string, fromCategoryId: string, toCategoryId: string) => void;
+    setSelectedCategory: (categoryId: string) => void;
+    setSelectedItem: (itemId: string) => void;
   }
 }

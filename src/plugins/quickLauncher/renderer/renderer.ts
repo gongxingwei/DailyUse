@@ -9,7 +9,7 @@ import '@mdi/font/css/materialdesignicons.css'
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
 import App from './App.vue'
 import { Plugin, PluginMetadata } from '@/plugins/core/types'
-import { createQuickLauncherI18n } from '../i18n'
+import { createQuickLauncherI18n } from './i18n'
 export class QuickLauncherRendererPlugin implements Plugin {
   private app: ReturnType<typeof createApp> | null = null;
 

@@ -15,6 +15,7 @@ const messages = {
         new: 'New Shortcut',
         edit: 'Edit Shortcut',
         delete: 'Delete Shortcut',
+        openShortcutLocation: 'Reveal in Explorer',
         newTitle: 'New Title',
         emptyState: 'Drag files here or click Add Shortcut'
       },
@@ -47,6 +48,7 @@ const messages = {
         new: '新建快捷方式',
         edit: '编辑快捷方式',
         delete: '删除快捷方式',
+        openShortcutLocation: '资源管理器中打开',
         newTitle: '新建标题',
         emptyState: '拖拽文件到此处或点击添加快捷方式'
       },

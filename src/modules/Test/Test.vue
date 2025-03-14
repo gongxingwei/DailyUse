@@ -61,6 +61,10 @@
         </div>
       </div>
     </div>
+    <div class="function-test">
+      <h2>功能测试</h2>
+      <pre>{{ showdata }}</pre>
+    </div>
   </div>
 </template>
 <script setup lang="ts">
@@ -231,6 +235,21 @@ const handlePaste = async (e: ClipboardEvent) => {
   // 同时也打印原始的 clipboardData 对象
   console.log('Original clipboardData:', e.clipboardData);
 };
+
+const showdata = ref({});
+const obj = {
+  a: 1,
+  b: 2,
+  c: {
+    d: 3,
+    e: 4
+  }
+};
+
+const { a, b } = obj;
+
+showdata.value = { a, b };
+
 </script>
 
 <style scoped>

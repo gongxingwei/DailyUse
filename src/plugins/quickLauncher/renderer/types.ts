@@ -1,9 +1,9 @@
 export interface ShortcutItem {
   id: string;
   name: string;
-  path?: string;  // 标题项不需要路径
+  path: string;  // 标题项不需要路径
   description?: string;
-  icon?: string;
+  icon: string;
   lastUsed?: Date;
   useCount?: number;
   category?: string;
@@ -29,6 +29,10 @@ export interface QuickLauncherState {
     showIcons: boolean;
     shortcutKey: string;
     theme: 'light' | 'dark' | 'system';
+  };
+  state: {
+    selectedCategoryId: string;
+    selectedItemId: string;
   };
 }
 
