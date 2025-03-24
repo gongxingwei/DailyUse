@@ -17,13 +17,30 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
    2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
 2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
 
-# 概述
+# 1
 
-挡住进步的不一定是懒惰或躺平，也可能是频繁的遗忘和被碎片化娱乐占据时间。  
+## 模块
+
+### 目标模块
+
+#### 建立目标  
+  基本信息、关键结果、动机&可行性
+  ![alt text](AAA_PictureDir_README/image.png)  
+  ![alt text](AAA_PictureDir_README/image-1.png)
+
+#### 目标分类
+
+创建文件夹
+![alt text](AAA_PictureDir_README/image-2.png)
+
+#### 专注周期
+
+![alt text](AAA_PictureDir_README/image-3.png)
+![alt text](AAA_PictureDir_README/image-4.png)
 
 ## 功能
-Vue3的Provide/Inject机制
-《基于Electron+Vue3的一站式知识管理与效率提升工具的设计与实现》
+
+
 - 知识仓库
   用于存储 markdown 文档  
   存储资源等的容器  
@@ -38,14 +55,7 @@ Vue3的Provide/Inject机制
   支持分屏、预览、窗口大小拖拽调整  
   实现可视化 git 功能  
 - 学习目标  
-  调用 AI 生成学习计划  
-  添加、修改、删除、展示目标  
-  可以关联相关的文档  
-  添加相应的 todo  
-- 学习内容推荐
-  关联目标  
-  自定义推荐关键字  
-  删除关联目标  
+  管理目标  
 - 提醒功能
   添加提醒事项  
   提醒事项管理  
@@ -60,20 +70,24 @@ Vue3的Provide/Inject机制
   中英文切换  
   编辑器相关设置  
   开机自启动  
+待实现
 - 用户管理  
   账户管理  
   数据管理  
-- 知识分享平台  
-  分享仓库文档  
-  点赞  
-  收藏  
-  搜索知识  
-
+- 学习内容推荐
+  关联目标  
+  自定义推荐关键字  
+  删除关联目标  
 - b站等的订阅消息转发  
   在
 - 收藏页面  
 - RSS  
 - 动作脚本  
+- 知识分享平台  
+  分享仓库文档  
+  点赞  
+  收藏  
+  搜索知识  
 
 
 
