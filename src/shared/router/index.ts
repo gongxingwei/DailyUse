@@ -24,9 +24,14 @@ const routes: RouteRecordRaw[] = [
                 component: Home
             },
             {
-                path: '/goal',
-                name: 'goal',
-                component: () => import('@/modules/Goal/Goal.vue')
+                path: '/goal-management',
+                name: 'goal-management',
+                component: () => import('@/modules/Goal/views/GoalManagement.vue')
+            },
+            {
+                path: 'goal/:id',
+                name: 'goal-info',
+                component: () => import('@/modules/Goal/views/GoalInfo.vue')
             },
             {
                 path: '/todolist',

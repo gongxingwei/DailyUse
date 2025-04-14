@@ -1,41 +1,21 @@
 <template>
-  <v-card class="mb-4">
-    <v-card-title class="d-flex justify-space-between align-center">
-      <span>{{ goal.name }}</span>
-      <div>
-        <v-btn icon size="small" color="#1E88E5" variant="tonal" @click="handleEdit">
-          <v-icon>mdi-pencil</v-icon>
-        </v-btn>
-        <v-btn icon size="small" color="#D32F2F" variant="tonal" @click="handleDelete">
-          <v-icon>mdi-delete</v-icon>
-        </v-btn>
-        <v-btn icon size="small" color="#388E3C" variant="tonal" @click="handleRelativeRepo">
-          <v-icon>mdi-fencing</v-icon>
-        </v-btn>
-        <v-btn icon size="small" color="#388E3C" variant="tonal" @click="handleRelativeTodo">
-          <v-icon>mdi-list-box</v-icon>
-        </v-btn>
-      </div>
-    </v-card-title>
-
-    <v-card-text>
-      <!-- 关联的 Todos -->
-      <div v-if="goal.relativeTodos?.length" class="mb-4">
-        <div class="text-subtitle-1 mb-2">{{ t('goal.relatedTodos') }}</div>
-        <TodoCard :todos="goal.relativeTodos" />
-      </div>
-
-      <!-- 关联的 Repositories -->
-      <div v-if="goal.relativeRepositories?.length">
-        <div class="text-subtitle-1 mb-2">{{ t('goal.relatedRepos') }}</div>
-        <div class="d-flex flex-wrap gap-3">
-          <RepoInfoCard v-for="repo in goal.relativeRepositories" :key="repo.title" :repository="repo" />
-        </div>
-      </div>
-
-      <div class="text-caption text-grey mt-2">
-        {{ t('goal.lastUpdated') }}: {{ formattedDate }}
-      </div>
+  <v-card class="mb-4 cursor-pointer" @click="">
+    <!-- 目标名称 -->
+    <v-card-text class="d-flex justify-flex-start align-center pb-2">
+      <v-icon :color="goal.color" size="24">mdi-radiobox-blank</v-icon>
+      <span class="text-h5">{{ goal.title }}</span>
+    </v-card-text>
+    <!-- 目标时间 -->
+    <v-card-text class="pt-0 pb-3">
+      <v-icon :color="goal.color" size="24">mdi-calendar-range</v-icon>
+      <span>{{ formateDate(goal.startTime) }} - {{ formateDate(goal.endTime) }}</span>
+    </v-card-text>
+    <!-- 目标完成进度条 -->
+    <v-card-text class="d-flex justify-flex-start align-center">
+      <v-progress-linear :model-value="progress" :color="goal.color" height="10" max="100"></v-progress-linear>
+      <span class="text-caption">
+        {{ goalStore.getGoalProgress(goal.id) }}%
+      </span>
     </v-card-text>
   </v-card>
 </template>
@@ -43,14 +23,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
-import type { Goal } from '../goalStore'
-import RepoInfoCard from '@/modules/Repository/components/RepoInfoCard.vue'
-import TodoCard from '@/modules/Todo/components/TodoCard.vue'
+import type { IGoal } from '@/modules/Goal/types/goal'
+import { useGoalStore } from '../stores/goalStore'
+
+const goalStore = useGoalStore()
 
 const { t } = useI18n()
 
 const props = defineProps<{
-  goal: Goal
+  goal: IGoal
 }>()
 
 const emit = defineEmits<{
@@ -75,9 +56,16 @@ const handleRelativeRepo = () => {
 const handleRelativeTodo = () => {
   emit('relative-todo')
 }
-
-const formattedDate = computed(() => {
-  return new Date(props.goal.updateTime).toLocaleString()
+const progress = computed(() => {
+  const value = goalStore.getGoalProgress(props.goal.id)
+  console.log('value', value)
+  return value;
 })
 
+const formateDate = (date: string) => {
+  const dateObj = new Date(date)
+  return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(
+    dateObj.getDate()
+  ).padStart(2, '0')}`
+}
 </script>

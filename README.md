@@ -38,6 +38,12 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 ![alt text](AAA_PictureDir_README/image-3.png)
 ![alt text](AAA_PictureDir_README/image-4.png)
 
+## 数据
+
+目标数据  
+任务数据  
+知识库数据  
+
 ## 功能
 
 
@@ -1044,7 +1050,7 @@ const ConfirmPlugin = {
 }
 app.use(ConfirmPlugin)
 
-使用时直接调用：
+// 使用时直接调用：
 <GlobalConfirm v-model:model-value="showConfirm" />
 ```
 
@@ -1076,7 +1082,7 @@ export function useConfirmDialog() {
   return { isOpen, open, handleConfirm, handleCancel }
 }
 
-使用方式：
+// 使用方式：
 <script setup>
 const { isOpen, open, handleConfirm, handleCancel } = useConfirmDialog()
 
@@ -1475,7 +1481,7 @@ IPC 规范化：通过预加载脚本安全通信。
 
 ```
 结构示例：
-Copy
+
 project/
 ├── app-shell/         # 基座应用（路由、全局状态）
 ├── app-dashboard/     # 子应用（独立仓库或模块）

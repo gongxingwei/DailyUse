@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
-import { useGoalStore } from '../goalStore'
+import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 import { useI18n } from 'vue-i18n'
 import type { Repository } from '@/modules/Repository/repositoryStore'
 

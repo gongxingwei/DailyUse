@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useTodoStore } from '@/modules/Todo/todoStore'
-import { useGoalStore } from '../goalStore'
+import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 import { useI18n } from 'vue-i18n'
 import type { Todo } from '@/modules/Todo/todoStore'
 

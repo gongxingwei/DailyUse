@@ -64,7 +64,7 @@ const toggleDrawer = () => {
             <v-list-item 
               prepend-icon="mdi-fencing" 
               :title="t('mainLayout.navigation.goal')" 
-              :to="'/goal'"
+              :to="'/goal-management'"
             ></v-list-item>
             <v-list-item 
               prepend-icon="mdi-list-box" 
