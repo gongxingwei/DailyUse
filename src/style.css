@@ -227,3 +227,48 @@ h1 {
 .action-button:hover {
   background-color: var(--vscode-toolbar-hoverBackground);
 }
+
+/* 下拉菜单 */
+.dropdown {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: #2d2d2d;
+  border-radius: 4px;
+  padding: 0.5rem 0;
+  min-width: 160px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  
+  /* Initial state */
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.2s ease;
+  
+  /* Ensure dropdown appears above other content */
+  z-index: 100;
+}
+
+.dropdown:hover .dropdown-menu {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  color: #fff;
+  transition: background-color 0.2s;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}

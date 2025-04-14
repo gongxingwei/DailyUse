@@ -4,7 +4,7 @@
     <div class="goal-header px-6 py-4">
       <div class="d-flex align-center justify-space-between">
         <h1 class="text-h5 font-weight-medium">{{ t('goal.title') }}</h1>
-        <v-btn color="primary" prepend-icon="mdi-plus" @click="">
+        <v-btn color="primary" prepend-icon="mdi-plus" @click="startCreateGoal">
           {{ t('goal.create') }}
         </v-btn>
       </div>
@@ -30,30 +30,25 @@
         </div>
       </div>
     </div>
-
-    <!-- <RelativeRepo v-model="showRelativeRepo" :goalId="editingGoalId || 0" />
-    <RelativeTodo v-model="showRelativeTodo" :goalId="editingGoalId || 0" />
-    <Confirm v-model:model-value="showConfirmDialog" :title="t('goal.deleteTitle')" :message="t('goal.deleteConfirm')"
-      :confirm-text="t('common.1')" :cancel-text="t('common.2')" @confirm="handleConfirm" @cancel="handleCancel" /> -->
+    <GoalDialog :visible="showGoalDialog" @save="saveGoal" @cancel="cancelGoalEdit"/>
   </v-container>
 </template>
 
 <script setup lang="ts">
 import { useI18n } from 'vue-i18n'
-import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 // 组件
 import GoalDir from '../components/GoalDir.vue'
 import GoalCard from '@/modules/Goal/components/GoalCard.vue'
+import GoalDialog from '../components/GoalDialog.vue'
 import Confirm from '@/shared/components/Confirm.vue'
 
 // composables
 import { useGoalManagement } from '@/modules/Goal/composables/useGoalManagement'
 import { useGoalDialog } from '../composables/useGoalDialog'
 const { t } = useI18n()
-const goalStore = useGoalStore()
 
 const { selectDir, goalsInCurDir } = useGoalManagement()
-
+const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDialog()
 </script>
 
 <style scoped>

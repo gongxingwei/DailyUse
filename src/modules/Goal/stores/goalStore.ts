@@ -125,14 +125,23 @@ export const useGoalStore = defineStore('goal', {
             this.initTempGoal();
         },
         // 保存临时目标的修改
-        saveTempGoalChanges() {
+        saveTempGoal() {
             if (!this.tempGoal || !this.tempGoal.id) return null;
             
             // 如果是新建目标，则添加到 goals 数组中
             if (this.tempGoal.id === 'tempGoal') {
-                return this.addGoal();
+                const newGoal: IGoal = {
+                    ...this.tempGoal,
+                    id: uuidv4(),
+                    meta: {
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString(),
+                    },
+                };
+                this.clearTempGoal();
+                this.goals.push(newGoal);
+                return newGoal;
             }
-
             // 如果是编辑目标，则更新 goals 数组中的目标
             const index = this.goals.findIndex(g => g.id === this.tempGoal.id);
             if (index === -1) return null;
@@ -144,17 +153,17 @@ export const useGoalStore = defineStore('goal', {
                     updatedAt: new Date().toISOString()
                 }
             };
-
+            this.clearTempGoal();
             this.goals.splice(index, 1, updatedGoal);
             return updatedGoal;
         },
-        // 获取临时目标
-        getTempGoal(): IGoal {
-            if (!this.tempGoal) {
-              this.initTempGoal();
-            }
-            return this.tempGoal!;
-        },
+        // // 获取临时目标
+        // getTempGoal(): IGoal {
+        //     if (!this.tempGoal) {
+        //       this.initTempGoal();
+        //     }
+        //     return this.tempGoal!;
+        // },
         // 关键结果相关方法
         // 生成临时关键结果
         initTempKeyResult() {
@@ -225,19 +234,6 @@ export const useGoalStore = defineStore('goal', {
             }
         },
         // 目标相关方法
-        addGoal() {
-            if (!this.tempGoal) return null;
-            const newGoal: IGoal = {
-                ...this.tempGoal,
-                id: uuidv4(),
-                meta: {
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                },
-            };
-            this.goals.push(newGoal);
-            return newGoal;
-        },
         updateGoal(goal: IGoal) {
             const index = this.goals.findIndex(g => g.id === goal.id);
             this.goals.splice(index, 1, goal);

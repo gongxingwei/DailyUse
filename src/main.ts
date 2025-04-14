@@ -31,6 +31,7 @@ app
   .use(pinia)
   .use(i18n)
 // 初始化插件系统
+
 const pluginManager = new PluginManager()
 // 注册快速启动器插件
 pluginManager.register(quickLauncherPlugin)
@@ -41,4 +42,5 @@ app.mount('#app')
     window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
       console.log(message)
     })
+    
   })

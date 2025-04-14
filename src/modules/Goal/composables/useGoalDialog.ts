@@ -3,97 +3,97 @@ import { useGoalStore } from '../stores/goalStore'
 
 export function useGoalDialog() {
   const showGoalDialog = ref(false)
-  const editGoalId = ref('temp')
-  const editMode = ref<'create' | 'edit'>('create')
+
   const goalStore = useGoalStore()
-
-  // 编辑目标
-  const editGoal = (goalId: string) => {
-    // 生成一个临时目标
-    try {
-      goalStore.initTempGoalByGoalId(goalId)
-    } catch (error) {
-      console.error('目标不存在，无法编辑')
-      return
-    }
-    editGoalId.value = goalId
-    editMode.value = 'edit'
-    showGoalDialog.value = true
-
-  }
   // 开始创建新的目标
   const startCreateGoal = () => {
-    editMode.value = 'create'
-    editGoalId.value = 'temp'
+    const tempGoal = goalStore.initTempGoal()
+    if (!tempGoal) {
+      console.error('目标创建失败')
+      return
+    }
     showGoalDialog.value = true
   }
   // 开始编辑目标
   const startEditGoal = (goalId: string) => {
-    editMode.value = 'edit'
-    editGoalId.value = goalId
+    const tempGoal = goalStore.initTempGoalByGoalId(goalId)
+    if (!tempGoal) {
+      console.error('目标编辑失败')
+      return
+    }
     showGoalDialog.value = true
-  }
-
-  const closeDialog = () => {
-    showGoalDialog.value = false
   }
   // 保存目标(创建或编辑)
   const saveGoal = () => {
-    const savedGoal = goalStore.saveTempGoalChanges()
+    const savedGoal = goalStore.saveTempGoal()
     if (savedGoal) {
-      // 清除临时目标
-      goalStore.clearTempGoal()
-      closeDialog()
+      closeGoalDialog();
     }
   }
+  // 取消目标编辑
+  const cancelGoalEdit = () => {
+    goalStore.clearTempGoal()
+    closeGoalDialog()
+  }
+  const closeGoalDialog = () => {
+    showGoalDialog.value = false
+  }
+
   // 关键结果相关
   const showKeyResultDialog = ref(false)
-  const editKeyResultId = ref('temp')
-  const editKeyResultMode = ref<'create' | 'edit'>('create')
-
   // 开始创建新的关键结果
   const startCreateKeyResult = () => {
-    editKeyResultMode.value = 'create'
-    editKeyResultId.value = 'temp'
+    const tempKeyResult = goalStore.initTempKeyResult()
+    if (!tempKeyResult) {
+      console.error('关键结果创建失败')
+      return
+    }
     showKeyResultDialog.value = true
   }
   // 开始编辑关键结果
-  const startEditKeyResult = (keyResultId: string) => {
+  const startEditKeyResult = (goalId:string, keyResultId: string) => {
     if (!keyResultId) {
       console.error('No key result ID provided');
       return;
     }
-    editKeyResultMode.value = 'edit';
-    editKeyResultId.value = keyResultId;
+    const tempKeyResult = goalStore.initTempKeyResultByKeyResultId(goalId, keyResultId);
+    if (!tempKeyResult) {
+      console.error('关键结果编辑失败')
+      return
+    }
     showKeyResultDialog.value = true;
   };
   // 取消关键结果编辑
   const cancelKeyResultEdit = () => {
-    showKeyResultDialog.value = false
-
+    goalStore.clearTempKeyResult();
+    closeKeyResultDialog();
   }
   // 保存关键结果(创建或编辑)
   const saveKeyResult = () => {
-    goalStore.saveTempKeyResultChanges()
+    const result = goalStore.saveTempKeyResultChanges()
+    if (result) {
+      showKeyResultDialog.value = false
+    } else {
+      console.error('关键结果保存失败')
+    }
+    closeKeyResultDialog();
   }
   // 删除关键结果
   const deleteKeyResult = (keyResultId: string) => {
     goalStore.deleteTempKeyResult(keyResultId)
   }
+  const closeKeyResultDialog = () => {
+    showKeyResultDialog.value = false
+  }
 
 
   return {
     showGoalDialog,
-    editGoalId,
-    editMode,
-    editGoal,
     startCreateGoal,
     startEditGoal,
-    closeDialog,
+    cancelGoalEdit,
     saveGoal,
     showKeyResultDialog,
-    editKeyResultId,
-    editKeyResultMode,
     startCreateKeyResult,
     startEditKeyResult,
     cancelKeyResultEdit,

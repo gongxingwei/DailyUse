@@ -29,9 +29,14 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/modules/Goal/views/GoalManagement.vue')
             },
             {
-                path: 'goal/:id',
+                path: 'goal/:goalId',
                 name: 'goal-info',
                 component: () => import('@/modules/Goal/views/GoalInfo.vue')
+            },
+            {
+                path: '/task-management',
+                name: 'task-management',
+                component: () => import('@/modules/Task/views/TaskManagement.vue')
             },
             {
                 path: '/todolist',

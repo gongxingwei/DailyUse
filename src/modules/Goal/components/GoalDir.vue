@@ -7,10 +7,6 @@
                     +
                 </button>
                 <div class="dropdown-menu">
-                    <div class="dropdown-item" @click="addGoal">
-                        <v-icon>mdi-target</v-icon>
-                        <span>创建目标</span>
-                    </div>
                     <div class="dropdown-item" @click="showGoalDirDialog = true">
                         <v-icon>mdi-folder-plus</v-icon>
                         <span>创建目标节点</span>
@@ -29,9 +25,7 @@
             </div>
         </main>
         <GoalDirDialog v-model="showGoalDirDialog"
-            @save="saveGoalDir" @cancel="closeGoalDirDialog" />>
-        <GoalDialog :visible="showGoalDialog" :goal-id="editGoal" :mode="editMode" @close="showGoalDialog = false"
-            @save="saveGoal" @update="updateGoal" />
+            @save="saveGoalDir" @cancel="closeGoalDirDialog" />
     </div>
 
 </template>
@@ -39,11 +33,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useGoalDirStore } from '../stores/goalDirStore';
-import { useGoalStore } from '../stores/goalStore';
 // 组件
-import GoalDialog from './GoalDialog.vue';
 import GoalDirDialog from './GoalDirDialog.vue';
-import type { IGoal } from '../types/goal';
 import { useGoalManagement } from '../composables/useGoalManagement';
 // composables
 import { useGoalDirDialog } from '../composables/useGoalDirDialog';
@@ -56,33 +47,11 @@ const emit = defineEmits<{
 }>();
 
 const goalDirStore = useGoalDirStore();
-const goalStore = useGoalStore();
-
-const showGoalDialog = ref(false);
-
-const editGoal = ref('temp');
-const editMode = ref<'create' | 'edit'>('create');
-
 // 得到所有的目标节点
 const goalDirs = computed(() => {
     return goalDirStore.getAllDirs;
 });
 
-const addGoal = () => {
-    editMode.value = 'create';
-    editGoal.value = 'temp';
-    showGoalDialog.value = true;
-}
-const saveGoal = () => {
-    const savedGoal = goalStore.addGoal();
-    if (savedGoal) {
-        showGoalDialog.value = false;
-    }
-}
-const updateGoal = (goal: IGoal) => {
-    goalStore.updateGoal(goal);
-    showGoalDialog.value = false;
-}
 // 选择点击的文件夹
 const selectDir = (dirId: string) => {
     selectedDirId.value = dirId;

@@ -1,19 +1,19 @@
 <template>
-    <div class="modal-overlay" v-if="visible">
+    <div class="modal-overlay" v-show="props.visible">
         <div class="modal-container">
             <div class="modal-header">
 
                 <button class="btn btn-secondary" @click="handleCancel">取消</button>
-                <h2>{{ mode === 'create' ? '添加关键结果' : '编辑关键结果' }}</h2>
+                <h2>{{ tempKeyResult.id === 'temp' ? '添加关键结果' : '编辑关键结果' }}</h2>
                 <button class="btn btn-primary" @click="handleSave" :disabled="!isValid">保存</button>
             </div>
 
             <div class="modal-content">
 
                 <!-- 关键结果名称 -->
-                <div class="icon-span form-part">
+                <div class="form-part d-flex flex-row align-center">
                     <div class="kr-name-icon">
-                        <Icon icon="mdi:goal" width="48" height="48" />
+                        <v-icon icon="mdi-flag" size="48" />
                     </div>
                     <div class="form-group kr-name-group">
                         <input type="text" id="kr-name" class="kr-name-input" v-model="tempKeyResult.name"
@@ -57,14 +57,14 @@
                             <option value="custom">自定义</option>
                         </select>
                     </div>
-
                 </div>
 
-                <div class="form-group">
+                <div class="form-group d-flex flex-row justify-space-between align-center">
                     <label for="kr-weight">权重 (0-10)</label>
+                    <span class="error-message" v-if="errors.weight">{{ errors.weight }}</span>
                     <input type="number" id="kr-weight" v-model.number="tempKeyResult.weight" min="0" max="10"
                         @blur="validateWeight" :class="{ 'invalid': errors.weight }">
-                    <span class="error-message" v-if="errors.weight">{{ errors.weight }}</span>
+                    
                 </div>
 
                 <!-- 备忘 -->
@@ -74,43 +74,21 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, watch } from 'vue';
+import { reactive, computed } from 'vue';
 import { useGoalStore } from '../stores/goalStore';
+import { storeToRefs } from 'pinia';
 
-const goalStore = useGoalStore();
+const { tempKeyResult } = storeToRefs(useGoalStore());
 
-const props = withDefaults(defineProps<{
+const props = defineProps<{
     visible: boolean;
     goalId: string;
-    keyResultId: string;  
-    mode: 'create' | 'edit';
-}>(), {
-    keyResultId: 'temp'  
-});
+}>();
 
 const emit = defineEmits<{
     (e: 'save'): void;
     (e: 'cancel'): void;
 }>();
-
-
-
-watch(
-    () => props.visible,
-    (newVal) => {
-        if (newVal) {
-            if (props.keyResultId === 'temp') {
-                goalStore.initTempKeyResult();
-            } else {
-                goalStore.initTempKeyResultByKeyResultId(props.goalId, props.keyResultId);
-            }
-        }
-    },
-    { immediate: true }
-)
-const tempKeyResult = computed(() => {
-    return goalStore.tempKeyResult;
-});
 
 // 表单合法性检验
 const errors = reactive({
@@ -173,7 +151,6 @@ const handleSave = () => {
     validateAll();
     if (isValid.value) {
         emit('save')
-        emit('cancel');
     }
 };
 
@@ -271,9 +248,12 @@ const handleCancel = () => {
 
     gap: 8px;
 }
-
 #kr-start {
     width: 5rem;
+
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
 }
 
 .kr-target-group {
@@ -284,9 +264,11 @@ const handleCancel = () => {
 
     gap: 8px;
 }
-
 #kr-target {
     width: 5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
 }
 
 .kr-calculation-group {
@@ -297,7 +279,22 @@ const handleCancel = () => {
 
     gap: 8px;
 }
-
+.kr-calculation-group select {
+    width: 5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+}
+.kr-calculation-group select option {
+    background-color: rgb(var(--v-theme-surface));
+    color: rgb(var(--v-theme-on-surface));
+}
+#kr-weight {
+    width: 5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    text-align: center;
+}
 .invalid {
     border-color: #ff4444 !important;
 }

@@ -47,14 +47,14 @@
     </div>
 
   </div>
-  <Confirm :model-value="isShowConfirm" :title="t('editor.explorer.delete_confirm_title')"
+  <ConfirmDialog :model-value="isShowConfirm" :title="t('editor.explorer.delete_confirm_title')"
     :message="t(deleteOperation?.type === 'folder' ? 'editor.explorer.delete_confirm_folder' : 'editor.explorer.delete_confirm_file')"
     :cancel-text="t('common.2')" :confirm-text="t('common.3')" @cancel="cancelDelete" @confirm="handleDelete" />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
-import Confirm from '@/shared/components/Confirm.vue'
+import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import { fileSystem } from '@/shared/utils/fileSystem'
 import { useSettingStore } from '@/modules/Setting/settingStore'
 import { useEditorGroupStore } from '@/modules/Editor/stores/editorGroupStore'

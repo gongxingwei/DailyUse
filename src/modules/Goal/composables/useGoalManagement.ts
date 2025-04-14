@@ -9,7 +9,9 @@ export function useGoalManagement() {
     // 目标文件夹相关
     const selectedDirId = ref<string>('all');
     const goalsInCurDir = computed(() => {
+        // localStorage.removeItem('goal');
         let goals = goalStore.getGoalsByDirId(selectedDirId.value);
+        console.log('goalsInCurDir', goals);
         return goals;
     })
     const selectDir = (dirId: string) => {
@@ -28,12 +30,7 @@ export function useGoalManagement() {
         showGoalDialog.value = true;
     };
 
-    const saveGoal = () => {
-        const savedGoal = goalStore.addGoal();
-        if (savedGoal) {
-            showGoalDialog.value = false;
-        }
-    };
+    
 
     const updateGoal = (goal: IGoal) => {
         goalStore.updateGoal(goal);
@@ -59,7 +56,6 @@ export function useGoalManagement() {
         // Methods
 
         addGoal,
-        saveGoal,
         updateGoal,
     };
 }

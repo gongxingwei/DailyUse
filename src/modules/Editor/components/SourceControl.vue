@@ -134,7 +134,7 @@
             <GitGraph />
         </div>
     </div>
-    <confirm v-model="showConfirm" title="Discard All Changes"
+    <ConfirmDialog v-model="showConfirm" title="Discard All Changes"
         message="Are you sure you want to discard all changes? This cannot be undone." cancelText="Cancel"
         confirmText="Discard" @confirm="store.discardAllChanges" />
 </template>
@@ -142,7 +142,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useSourceControlStore } from '../stores/sourceControlStore'
-import Confirm from '@/shared/components/Confirm.vue';
+import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import GitGraph from './GitGraph.vue'
 
 const props = defineProps<{

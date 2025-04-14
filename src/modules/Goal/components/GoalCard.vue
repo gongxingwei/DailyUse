@@ -1,5 +1,5 @@
 <template>
-  <v-card class="mb-4 cursor-pointer" @click="">
+  <v-card class="mb-4 cursor-pointer" @click="navigateToGoalInfo">
     <!-- 目标名称 -->
     <v-card-text class="d-flex justify-flex-start align-center pb-2">
       <v-icon :color="goal.color" size="24">mdi-radiobox-blank</v-icon>
@@ -13,7 +13,7 @@
     <!-- 目标完成进度条 -->
     <v-card-text class="d-flex justify-flex-start align-center">
       <v-progress-linear :model-value="progress" :color="goal.color" height="10" max="100"></v-progress-linear>
-      <span class="text-caption">
+      <span class="text-caption progess-text">
         {{ goalStore.getGoalProgress(goal.id) }}%
       </span>
     </v-card-text>
@@ -25,9 +25,9 @@ import { computed } from 'vue'
 import { useI18n } from 'vue-i18n'
 import type { IGoal } from '@/modules/Goal/types/goal'
 import { useGoalStore } from '../stores/goalStore'
-
+import { useRouter } from 'vue-router'
 const goalStore = useGoalStore()
-
+const router = useRouter()
 const { t } = useI18n()
 
 const props = defineProps<{
@@ -56,6 +56,13 @@ const handleRelativeRepo = () => {
 const handleRelativeTodo = () => {
   emit('relative-todo')
 }
+// 路由跳转
+const navigateToGoalInfo = () => {
+  router.push({
+    name: 'goal-info',  // Make sure this matches your route name
+    params: { goalId: props.goal.id }
+  });
+};
 const progress = computed(() => {
   const value = goalStore.getGoalProgress(props.goal.id)
   console.log('value', value)
@@ -69,3 +76,9 @@ const formateDate = (date: string) => {
   ).padStart(2, '0')}`
 }
 </script>
+<style scoped>
+.progess-text {
+  width: 5rem;
+  padding-left: 1rem;
+}
+</style>

@@ -1,20 +1,22 @@
 <!-- filepath: /D:/myPrograms/DailyUse-front/src/components/AddGoalModal.vue -->
 <template>
-  <div class="modal-overlay" v-if="visible">
+  <div class="modal-overlay" v-if="props.visible">
     <div class="modal-container">
-      <div class="modal-header">
+      <div class="modal-header d-flex justify-space-between">
+        <div>
+          <button class="" @click="handleCancel">取消</button>
+        </div>
         <h2>编辑目标</h2>
         <div class="btn-group">
-          <button class="" @click="handleCancle">取消</button>
           <button class="" @click="handleComplete">完成</button>
         </div>
       </div>
 
-      <!-- Tabs navigation -->
+      <!-- Tabs -->
       <div class="tabs">
         <button v-for="(tab, index) in tabs" :key="index" :class="['tab-btn', { active: activeTab === index }]"
           @click="activeTab = index">
-          <Icon :icon="tab.icon" width="20" height="20" />
+          <v-icon :icon="tab.icon" width="20" height="20" />
           <span>{{ tab.name }}</span>
         </button>
       </div>
@@ -24,7 +26,7 @@
         <!-- Basic Info Tab -->
         <div v-show="activeTab === 0" class="tab-pane">
           <div class="form-group">
-            <div class="flex">
+            <div class="d-flex flex-row">
               <label for="title">目标</label>
               <span class="error" v-if="validationErrors.title">{{ validationErrors.title }}</span>
             </div>
@@ -32,15 +34,14 @@
               <input type="text" id="title" placeholder="一段话来描述自己的目标" v-model="tempGoal.title" required
                 @blur="titleValidation">
               </input>
+              <!-- 颜色 -->
               <div class="goal-color-picker">
                 <input type="color" id="goalColor" v-model="tempGoal.color" class="color-input">
-                  <Icon icon="fluent:color-24-filled" width="40" height="40" :style="{ color: tempGoal.color || '#FF5733' }" />
+                <v-icon size="40" :color="tempGoal.color">mdi-palette</v-icon>
                 </input>
               </div>
             </div>
           </div>
-          <!-- 颜色 -->
-
 
           <div class="form-group">
             <label for="folder">目标文件夹</label>
@@ -55,12 +56,12 @@
           <div class="form-row">
             <div class="form-group">
               <label for="startTime">开始时间</label>
-              <input type="date" id="startTime" v-model="tempGoal.startTime">
+              <input type="date" id="startTime" :value="formatDateForInput(tempGoal.startTime)" @input="e => tempGoal.startTime = (e.target as HTMLInputElement).value">
             </div>
 
             <div class="form-group">
               <label for="endTime">结束时间</label>
-              <input type="date" id="endTime" v-model="tempGoal.endTime">
+              <input type="date" id="endTime" :value="formatDateForInput(tempGoal.endTime)" @input="e => tempGoal.endTime = (e.target as HTMLInputElement).value" >
             </div>
           </div>
 
@@ -74,20 +75,21 @@
         <div v-show="activeTab === 1" class="tab-pane">
           <div class="kr-list">
             <!-- Existing Key Results -->
-            <div v-for="kr in tempGoal.keyResults" :key="kr.id" class="kr-list-item" @click="startEditKeyResult(kr.id)">
+            <div v-for="kr in tempGoal.keyResults" :key="kr.id" class="kr-list-item"
+              @click="startEditKeyResult(tempGoal.id, kr.id)">
               <div class="kr-info">
-                <Icon icon="mdi:target" width="20" height="20" />
+                <v-icon size="20" :color="tempGoal.color">mdi-target</v-icon>
                 <span class="kr-name">{{ kr.name }}</span>
               </div>
               <button class="icon-btn" @click.stop="deleteKeyResult(kr.id)">
-                <Icon icon="material-symbols:delete-outline" width="20" height="20" />
+                <v-icon size="20" :color="tempGoal.color">mdi-delete</v-icon>
               </button>
             </div>
 
             <!-- Add New Key Result Button -->
             <div class="kr-list-item add-kr" @click="startCreateKeyResult">
               <div class="kr-info">
-                <Icon icon="material-symbols:add" width="20" height="20" />
+                <v-icon size="20" :color="tempGoal.color">mdi-add</v-icon>
                 <span class="kr-name placeholder">添加关键结果</span>
               </div>
             </div>
@@ -109,12 +111,12 @@
       </div>
     </div>
   </div>
-  <KeyResultDialog v-if="showKeyResultDialog" :visible="showKeyResultDialog" :mode="editKeyResultMode" :goal-id="props.goalId"
-    :key-result-id="editKeyResultId" @cancel="cancelKeyResultEdit" @save="saveKeyResult" />
+  <KeyResultDialog :visible="showKeyResultDialog" :goal-id="tempGoal.id" @cancel="cancelKeyResultEdit"
+    @save="saveKeyResult" />
 </template>
 
 <script setup lang="ts">
-import { ref, computed, reactive, watch } from 'vue';
+import { ref, computed, reactive } from 'vue';
 import { useGoalStore } from '../stores/goalStore';
 import { useGoalDirStore } from '../stores/goalDirStore';
 import type { IGoal } from '../types/goal';
@@ -122,23 +124,19 @@ import KeyResultDialog from './KeyResultDialog.vue';
 import { storeToRefs } from 'pinia';
 import { useGoalDialog } from '@/modules/Goal/composables/useGoalDialog';
 
-const { showKeyResultDialog, editKeyResultId, editKeyResultMode , startCreateKeyResult, startEditKeyResult, cancelKeyResultEdit ,saveKeyResult, deleteKeyResult } = useGoalDialog();
+const { showKeyResultDialog, startCreateKeyResult, startEditKeyResult, cancelKeyResultEdit, saveKeyResult, deleteKeyResult } = useGoalDialog();
 // 传入参数
 // visible: 是否显示
 // goal: 目标对象
-// editMode: 是否为编辑模式
 const props = defineProps<{
   visible: boolean;
-  mode: 'create' | 'edit';
-  goalId: string;
 }>();
 
 // 发送事件
 // 保存和关闭事件
 const emit = defineEmits<{
-  (e: 'close'): void;
+  (e: 'cancel'): void;
   (e: 'save'): void;
-  (e: 'update', goal: IGoal): void;
 }>();
 
 const goalStore = useGoalStore();
@@ -146,29 +144,21 @@ const goalDirStore = useGoalDirStore();
 
 const activeTab = ref(0);
 const tabs = [
-  { name: '基本信息', icon: 'mdi:information-outline' },
-  { name: '关键结果', icon: 'mdi:target' },
-  { name: '动机与可行性', icon: 'mdi:lightbulb-outline' }
+  { name: '基本信息', icon: 'mdi-information' },
+  { name: '关键结果', icon: 'mdi-target' },
+  { name: '动机与可行性', icon: 'mdi-lightbulb' }
 ];
 
 const { tempGoal } = storeToRefs(goalStore);
 
+const formatDateForInput = (dateString: string | Date | null): string => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toISOString().split('T')[0];
+};
 // 获取可以选的目标节点（即用户自己创建的文件夹）
 const goalDirs = computed(() => {
   return goalDirStore.getUserDirs;
-});
-
-watch(() => props.visible, (newVisible) => {
-  if (newVisible) {
-    if (props.mode === 'edit' && props.goalId) {
-      // 编辑模式: 复制目标对象的属性
-      tempGoal.value = goalStore.initTempGoalByGoalId(props.goalId);
-    } else {
-      // 创建模式: 重置表单数据
-      tempGoal.value = goalStore.initTempGoal();
-    }
-    activeTab.value = 0;
-  }
 });
 
 type ValidationState = {
@@ -219,16 +209,11 @@ function saveGoal() {
     return;
   }
   emit('save');
-  closeModal();
 }
 
-function closeModal() {
-  emit('close');
+const handleCancel = () => {
+  emit('cancel');
   activeTab.value = 0;
-}
-
-const handleCancle = () => {
-  closeModal();
 };
 const handleComplete = () => {
   saveGoal();
@@ -341,6 +326,7 @@ const handleComplete = () => {
 .form-row .form-group {
   flex: 1;
 }
+
 /* 目标标题 */
 .goal-title-input {
   width: 100%;

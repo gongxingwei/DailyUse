@@ -2,6 +2,7 @@ export default {
     navigation: {
       home: '首页',
       goal: '目标',
+      task: '任务',
       todolist: '待办事项',
       repository: '仓库',
       reminder: '提醒',
