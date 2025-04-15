@@ -18,9 +18,17 @@
       </div>
       <!-- 目标列表 -->
       <div class="goal-list">
+        <!-- 过滤器（全部、进行中、已结束 -->
+        <div class="status-tabs">
+                <button v-for="tab in statusTabs" :key="tab.value" class="tab-btn"
+                    :class="{ active: selectedStatus === tab.value }" @click="selectedStatus = tab.value">
+                    {{ tab.label }}
+                    <span class="count">{{ getGoalCountByStatus(tab.value) }}</span>
+                </button>
+            </div>
         <!-- 有则显示 -->
-        <div v-if="goalsInCurDir.length">
-          <GoalCard v-for="goal in goalsInCurDir" :key="goal.id" :goal="goal" />
+        <div v-if="(goalsInCurStatus ?? []).length">
+          <GoalCard v-for="goal in goalsInCurStatus" :key="goal.id" :goal="goal" />
         </div>
         <!-- 如果为空 -->
         <div class="empty-state" v-else>
@@ -40,14 +48,13 @@ import { useI18n } from 'vue-i18n'
 import GoalDir from '../components/GoalDir.vue'
 import GoalCard from '@/modules/Goal/components/GoalCard.vue'
 import GoalDialog from '../components/GoalDialog.vue'
-import Confirm from '@/shared/components/Confirm.vue'
 
 // composables
 import { useGoalManagement } from '@/modules/Goal/composables/useGoalManagement'
 import { useGoalDialog } from '../composables/useGoalDialog'
 const { t } = useI18n()
 
-const { selectDir, goalsInCurDir } = useGoalManagement()
+const { selectDir, statusTabs, selectedStatus, goalsInCurStatus, getGoalCountByStatus } = useGoalManagement()
 const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDialog()
 </script>
 
@@ -76,7 +83,26 @@ const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDia
 .goal-dir {
   width: 200px;
 }
-
+/* 分类标签 */
+.status-tabs {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1rem;
+}
+.tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  background-color: rgb(var(--v-theme-surface));
+  color: var(--v-primary);
+  cursor: pointer;
+}
+.tab-btn.active {
+  background-color: rgb(var(--v-theme-background));
+  color: rgb(var(--v-theme-primary));
+}
 /* 目标列表区域 */
 .goal-list {
   flex: 1;

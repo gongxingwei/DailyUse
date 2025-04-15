@@ -72,6 +72,11 @@ const toggleDrawer = () => {
               :to="'/task-management'"
             ></v-list-item>
             <v-list-item 
+              prepend-icon="mdi-credit-card-outline" 
+              :title="t('mainLayout.navigation.summary')" 
+              :to="'/summary'"
+            ></v-list-item>
+            <v-list-item 
               prepend-icon="mdi-list-box" 
               :title="t('mainLayout.navigation.todolist')" 
               :to="'/todolist'"

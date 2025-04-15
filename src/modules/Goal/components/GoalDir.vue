@@ -18,9 +18,10 @@
             <div v-for="item in goalDirs" :key="item.id"
                 class="goal-dir-items cursor-pointer d-flex align-center justify-start px-2 py-1rem"
                 :class="{ 'active': selectedDirId === item.id }" @click="selectDir(item.id)">
-                <div class="button-list">
+                <div class="d-flex flex-row w-100">
                     <v-icon>{{ item.icon }}</v-icon>
                     <span class="ml-1rem">{{ item.name }}</span>
+                    <span class="count">{{ getGoalsCountByDirId(item.id) }}</span>
                 </div>
             </div>
         </main>
@@ -31,15 +32,15 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed} from 'vue';
 import { useGoalDirStore } from '../stores/goalDirStore';
 // 组件
 import GoalDirDialog from './GoalDirDialog.vue';
 import { useGoalManagement } from '../composables/useGoalManagement';
 // composables
 import { useGoalDirDialog } from '../composables/useGoalDirDialog';
-const { showGoalDirDialog, startCreateGoalDir, startEditGoalDir, closeGoalDirDialog,saveGoalDir } = useGoalDirDialog();
-const { selectedDirId } = useGoalManagement();
+const { showGoalDirDialog, closeGoalDirDialog,saveGoalDir } = useGoalDirDialog();
+const { selectedDirId, getGoalsCountByDirId } = useGoalManagement();
 // const { t } = useI18n();
 const emit = defineEmits<{
     (e: 'selected-goal-dir-id', selectedDirId: string): void
@@ -146,5 +147,11 @@ const selectDir = (dirId: string) => {
 .goal-dir-items.active {
     background-color: rgba(255, 255, 255, 0.2);
     color: rgb(var(--v-theme-primary));
+}
+.count {
+    flex: 1;
+    text-align: end;
+    margin-right: 1rem;
+    
 }
 </style>

@@ -22,40 +22,16 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
 import type { IGoal } from '@/modules/Goal/types/goal'
 import { useGoalStore } from '../stores/goalStore'
 import { useRouter } from 'vue-router'
 const goalStore = useGoalStore()
 const router = useRouter()
-const { t } = useI18n()
 
 const props = defineProps<{
   goal: IGoal
 }>()
 
-const emit = defineEmits<{
-  (e: 'delete'): void
-  (e: 'edit'): void
-  (e: 'relative-repo'): void
-  (e: 'relative-todo'): void
-}>()
-
-const handleEdit = () => {
-  emit('edit')
-}
-
-const handleDelete = () => {
-  emit('delete')
-}
-
-const handleRelativeRepo = () => {
-  emit('relative-repo')
-}
-
-const handleRelativeTodo = () => {
-  emit('relative-todo')
-}
 // 路由跳转
 const navigateToGoalInfo = () => {
   router.push({
@@ -65,7 +41,6 @@ const navigateToGoalInfo = () => {
 };
 const progress = computed(() => {
   const value = goalStore.getGoalProgress(props.goal.id)
-  console.log('value', value)
   return value;
 })
 

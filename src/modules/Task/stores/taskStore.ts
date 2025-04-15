@@ -38,6 +38,11 @@ export const useTaskStore = defineStore('task', {
         getAllTaskInstances(): ITaskInstance[] {
             return this.taskInstances;
         },
+        // 获取今天的任务实例
+        getTodayTaskInstances(): ITaskInstance[] {
+            const today = new Date().toISOString().split('T')[0]; // 获取今天的日期字符串
+            return this.taskInstances.filter(task => task.date.split('T')[0] === today);
+        },
         getTaskStatsForGoal: (state) => (goalId: string) => {
             const goalStore = useGoalStore();
             const goal = goalStore.getGoalById(goalId);

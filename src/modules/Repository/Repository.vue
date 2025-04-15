@@ -14,7 +14,7 @@
   
       <div class="repo-list">
         <div v-for="repo in repositoryStore.repositories" :key="repo.title" class="repo-item">
-          <div class="d-flex align-center">
+          <div class="d-flex">
             <router-link 
               :to="`/repository/${encodeURIComponent(repo.title)}`"
               class="text-h6 text-primary text-decoration-none"

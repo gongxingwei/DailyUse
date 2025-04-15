@@ -48,7 +48,14 @@ const vuetify = createVuetify({
           'surface-variant': 'rgba(255, 255, 255, 0.1)',
           'on-surface-variant': 'rgba(255, 255, 255, 0.7)',
           font: '#d4d4d4',
-          button: '#c4c4c4'
+          button: '#c4c4c4',
+          // 颜色
+          'deep-blue': '#0d47a1', // 深蓝色
+          'blue': '#2196F3', // 蓝色
+          'light-blue': '#bbdefb', // 浅蓝色
+          'deep-red': '#b71c1c', // 深红色
+          'red': '#f44336', // 红色
+          'light-red': '#ef5350', // 浅红色
         }
       },
       blueGreen: {

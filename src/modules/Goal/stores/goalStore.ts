@@ -62,11 +62,18 @@ export const useGoalStore = defineStore('goal', {
             return this.goals;
         },
         getGoalsByDirId: (state) => (dirId: string) => {
-            if (dirId === 'all') return state.goals;
+            if (dirId === 'all') {
+                return state.goals.filter(g => g.dirId !== 'archive' && g.dirId !== 'trash');
+            }
             return state.goals.filter(g => g.dirId === dirId);
         },
         getGoalById: (state) => (id: string) => {
             return state.goals.find(g => g.id === id);
+        },
+        // 获取进行中的目标
+        getInProgressGoals: (state) => {
+            const now = new Date();
+            return state.goals.filter(g => new Date(g.startTime) <= now && new Date(g.endTime) >= now);
         },
         // 获取目标进度
         getGoalProgress: (state) => (goalId: string) => {
@@ -233,15 +240,6 @@ export const useGoalStore = defineStore('goal', {
                 // this.clearTempKeyResult();
             }
         },
-        // 目标相关方法
-        updateGoal(goal: IGoal) {
-            const index = this.goals.findIndex(g => g.id === goal.id);
-            this.goals.splice(index, 1, goal);
-        },
-        deleteGoal(id: string) {
-            const index = this.goals.findIndex(g => g.id === id);
-            this.goals.splice(index, 1);
-        },
 
         // 关键结果相关方法
         addKeyResult(goalId: string, keyResultCreate: IKeyResultCreate) {
@@ -317,6 +315,35 @@ export const useGoalStore = defineStore('goal', {
                 }
             }
         },
+        // 目标归档
+        archiveGoalById(goalId: string) {
+            const goal = this.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.dirId = 'archive';
+            }
+        },
+        // 目标取消归档
+        unarchiveGoalById(goalId: string) {
+            const goal = this.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.dirId = ''; 
+            }
+        },
+        // 目标删除（逻辑删除，将目标放入删除文件夹）
+        deleteGoalById(goalId: string) {
+            const goal = this.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.dirId = 'trash';
+            }
+        },
+        // 目标恢复（逻辑恢复，将目标放入当前目录）
+        restoreGoalById(goalId: string) {
+            const goal = this.goals.find(g => g.id === goalId);
+            if (goal) {
+                goal.dirId = ''; 
+            }
+        },
+
     },
     persist: true,
 });

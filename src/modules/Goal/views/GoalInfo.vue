@@ -7,7 +7,7 @@
                 </button>
             </div>
             <span class="text-h5">{{ goal?.title || '为检测到' }}</span>
-            <div class="d-flex flex-row">
+            <div class="d-flex flex-row ga-2">
                 <!-- 编辑按钮 -->
                 <button class="btn btn-secondary" @click="startEditGoal(goal?.id as string)">
                     <v-icon icon="mdi-pencil" size="24" />
@@ -21,9 +21,9 @@
                         <div class="dropdown-item" @click="startMidtermReview(goal?.id as string)">
                             <span>期中复盘</span>
                         </div>
-                        <div class="dropdown-item" @click="">
+                        <!-- <div class="dropdown-item" @click="">
                             <span>期末复盘</span>
-                        </div>
+                        </div> -->
                         <div class="dropdown-item" @click="viewGoalReviewRecord()">
                             <span>复盘记录</span>
                         </div>
@@ -35,13 +35,13 @@
                         <v-icon icon="mdi-dots-horizontal" size="24" />
                     </button>
                     <div class="dropdown-menu">
-                        <div class="dropdown-item" @click="archiveGoal">
+                        <div class="dropdown-item" @click="toggleArchiveGoal(goal?.id as string)">
                             <v-icon icon="mdi-archive" size="20" />
-                            <span>归档</span>
+                            <span>{{ isArchived ? '取消归档' : '归档' }}</span>
                         </div>
-                        <div class="dropdown-item" @click="showConfirmDialog = true">
+                        <div class="dropdown-item" @click="toggleDeleteGoal(goal?.id as string)">
                             <v-icon icon="mdi-delete" size="20" />
-                            <span>删除</span>
+                            <span>{{ isDeleted ? '取消删除' : '删除' }}</span>
                         </div>
                     </div>
                 </div>
@@ -49,6 +49,17 @@
             </div>
         </header>
         <main class="goal-info-show-main">
+            <!-- 目标完成卡片 -->
+            <div v-if="isGoalEnded" class="goal-completion-card">
+                <div class="completion-content">
+                    <v-icon icon="mdi-flag-checkered" size="24" color="success" />
+                    <span class="completion-title">目标已结束</span>
+                    <span class="completion-details">共历时 {{ totalDays }} 天，目标进度 {{ goalProgress }}%</span>
+                    <v-btn color="primary" variant="tonal" @click="startMidtermReview(goal?.id as string)">
+                        复盘目标
+                    </v-btn>
+                </div>
+            </div>
             <div class="goal-info-show-basic">
                 <div class="goal-info-show-basic-progress">
                     <svg class="progress-ring" width="130" height="130">
@@ -68,8 +79,13 @@
                 <div class="goal-info-show-basic-time">
                     <!-- 几天后结束 -->
                     <div class="time-remaining">
-                        <span class="number">{{ remainingDays }}</span>
-                        <span>天后结束</span>
+                        <template v-if="isGoalEnded">
+                            <span class="text-h5">已结束</span>
+                        </template>
+                        <template v-else>
+                            <span class="number">{{ remainingDays }}</span>
+                            <span>天后结束</span>
+                        </template>
                     </div>
 
                     <!-- 起止时间 -->
@@ -84,6 +100,16 @@
                         </div>
                         <span class="progress-text">{{ timeProgress }}%</span>
                     </div>
+                </div>
+            </div>
+            <!-- 动机&可行性显示 -->
+            <div class="motivation-card">
+                <div class="motivation-card-header">
+                    <v-icon :icon="isShowingMotive ? 'mdi-lighthouse' : 'mdi-lightbulb'" size="20" />
+                    <span>{{ isShowingMotive ? '目标动机' : '可行性分析' }}</span>
+                </div>
+                <div class="motivation-card-content">
+                    {{ isShowingMotive ? goal?.motive : goal?.feasibility }}
                 </div>
             </div>
             <!-- 关键结果 -->
@@ -111,21 +137,21 @@
             <!-- 备忘录 -->
             <div class="goal-infomation-show-memo"></div>
         </main>
-        <GoalDialog :visible="showGoalDialog" @cancel="cancelGoalEdit"
-            @save="saveGoal" />
-        <ConfirmDialog v-model="showConfirmDialog" title="删除目标" message="确定要删除该目标吗？此操作不可撤销。" confirm-text="确认"
-            cancel-text="取消" @confirm="handleDeleteGoal" @cancel="showConfirmDialog = false" />
+        <GoalDialog :visible="showGoalDialog" @cancel="cancelGoalEdit" @save="saveGoal" />
+        <ConfirmDialog v-model="showDeleteConfirmDialog" title="删除目标" message="确定要删除该目标吗？" confirm-text="确认"
+            cancel-text="取消" @confirm="handleDeleteGoal(goal?.id as string)" @cancel="cancelDeleteGoal" />
         <GoalReviewCard :visible="showGoalReviewRecored" @close="closeGoalReviewRecord" />
     </div>
 </template>
 <script setup lang="ts">
 import { computed, ref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRoute } from 'vue-router';
+// store
 import { useGoalStore } from '../stores/goalStore';
-
+// composables
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';
-
+import { useGoalManagement } from '../composables/useGoalManagement';
 
 // 组件
 import GoalDialog from '../components/GoalDialog.vue';
@@ -133,11 +159,10 @@ import GoalReviewCard from '../components/GoalReviewCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 
 const route = useRoute();
-const router = useRouter();
 const goalStore = useGoalStore();
 const { showGoalDialog, startEditGoal, saveGoal, cancelGoalEdit } = useGoalDialog();
-const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord ,startMidtermReview } = useGoalReview();
-
+const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
+const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
 const goal = computed(() => {
     const goalId = route.params.goalId as string;
     return goalStore.getGoalById(goalId);
@@ -148,6 +173,37 @@ const goalColor = computed(() => goal.value?.color || '#FF5733');
 const keyResults = computed(() => {
     const goalId = route.params.goalId as string;
     return goalStore.getAllKeyResultsByGoalId(goalId);
+});
+// 计算目标是否已经归档
+const isArchived = computed(() => goal.value?.dirId === 'archive');
+
+const toggleArchiveGoal = (goalId: string) => {
+    if (!isArchived.value) {
+        goalStore.archiveGoalById(goalId);
+    } else {
+        goalStore.unarchiveGoalById(goalId);
+    }
+};
+// 计算目标是否已删除
+const isDeleted = computed(() => goal.value?.dirId === 'trash');
+const toggleDeleteGoal = (goalId: string) => {
+    if (!isDeleted.value) {
+        goalStore.deleteGoalById(goalId);
+    } else {
+        goalStore.restoreGoalById(goalId);
+    }
+};
+// 计算目标是否已结束
+const isGoalEnded = computed(() => {
+    if (!goal.value) return false;
+    return new Date(goal.value.endTime) < new Date();
+});
+// 计算目标的总天数
+const totalDays = computed(() => {
+    if (!goal.value) return 0;
+    const start = new Date(goal.value.startTime);
+    const end = new Date(goal.value.endTime);
+    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24));
 });
 // 计算时间的进度
 const timeProgress = computed(() => {
@@ -192,6 +248,11 @@ const remainingDays = computed(() => {
     const timeDiff = endDate.getTime() - today.getTime();
     return Math.ceil(timeDiff / (1000 * 3600 * 24));
 });
+// 动机与可行性显示
+const isShowingMotive = ref(Math.random() > 0.5);
+// const toggleMotivationDisplay = () => {
+//     isShowingMotive.value = !isShowingMotive.value;
+// };
 
 function formatDate(dateString: any) {
     if (!dateString) return '';
@@ -203,31 +264,6 @@ function formatDate(dateString: any) {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
-// 删除目标  
-const showConfirmDialog = ref(false);
-const handleDeleteGoal = async () => {
-    try {
-        await goalStore.deleteGoal(goal.value?.id as string);
-        showConfirmDialog.value = false;
-        // Navigate back after successful deletion
-        router.back();
-    } catch (error) {
-        console.error('Failed to delete goal:', error);
-    }
-};
-
-// 归档目标
-const archiveGoal = async () => {
-    // try {
-    //     await goalStore.archiveGoal(goal.value?.id as string);
-    //     showConfirmDialog.value = false;
-    //     // Navigate back after successful archiving
-    //     router.back();
-    // } catch (error) {
-    //     console.error('Failed to archive goal:', error);
-    // }
-    console.log('归档目标');
-};
 
 </script>
 <style scoped lang="css">
@@ -244,6 +280,34 @@ const archiveGoal = async () => {
     gap: 20px;
 }
 
+/* 目标结束卡片 */
+.goal-completion-card {
+    width: 100%;
+    background: rgba(var(--v-theme-surface-variant), 0.1);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    border: 1px solid rgba(var(--v-theme-primary), 0.2);
+}
+
+.completion-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.completion-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--v-theme-success);
+}
+
+.completion-details {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+
 .goal-info-show-header {
     width: 100%;
     height: 60px;
@@ -252,16 +316,12 @@ const archiveGoal = async () => {
     justify-content: space-between;
     align-items: center;
 }
+
 .goal-info-show-main {
     width: 100%;
     height: 100%;
-    /* display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 20px;
-    overflow-y: auto;
-    padding-bottom: 20px; */
 }
+
 /* 基本信息 */
 .goal-info-show-basic {
 
@@ -374,7 +434,7 @@ const archiveGoal = async () => {
 }
 
 .progress-label {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     color: #ccc;
 }
 
@@ -421,7 +481,39 @@ const archiveGoal = async () => {
     color: #ccc;
     min-width: 45px;
 }
+/* 动机与可行性卡片 */
+.motivation-card {
+    width: 90%;
+    background: rgba(var(--v-theme-surface-variant), 0.1);
+    border-radius: 10px;
+    padding: 1.5rem;
+    margin-top: 1.5rem;
+    border-left: 4px solid var(--goal-color);
+    transition: all 0.3s ease;
+}
 
+.motivation-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.motivation-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+    color: var(--goal-color);
+    font-weight: 600;
+}
+
+.motivation-card-content {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+    font-size: 1.1rem;
+    font-weight: 300;
+    font-style: italic;
+    padding: 0.5rem 0;
+}
 /* 关键结果相关 */
 .goal-infomation-show-keyresult-header {
     display: flex;

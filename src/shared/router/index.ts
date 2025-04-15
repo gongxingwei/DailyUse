@@ -29,14 +29,24 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/modules/Goal/views/GoalManagement.vue')
             },
             {
-                path: 'goal/:goalId',
+                path: '/goal/:goalId',
                 name: 'goal-info',
                 component: () => import('@/modules/Goal/views/GoalInfo.vue')
+            },
+            {
+                path: '/goal-review/:goalId',
+                name: 'goal-review',
+                component: () => import('@/modules/Goal/views/GoalReview.vue')
             },
             {
                 path: '/task-management',
                 name: 'task-management',
                 component: () => import('@/modules/Task/views/TaskManagement.vue')
+            },
+            {
+                path: '/summary',
+                name: 'summary',
+                component: () => import('@/modules/Summary/views/Summary.vue')
             },
             {
                 path: '/todolist',

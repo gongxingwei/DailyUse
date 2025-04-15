@@ -33,9 +33,8 @@ export function useGoalReview() {
     /* 开始期中复盘 */
     const startMidtermReview = (goalId: string) => {
         router.push({
-            name: 'GoalReview',
+            name: 'goal-review',
             params: {
-                id: route.params.id,
                 goalId: goalId
             }
         });

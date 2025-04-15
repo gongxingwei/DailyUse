@@ -3,6 +3,7 @@ export default {
       home: 'Home',
       goal: 'Goal',
       task: 'Task',
+      summary: 'Summary',
       todolist: 'ToDoList',
       repository: 'Repository',
       reminder: 'Reminder',
