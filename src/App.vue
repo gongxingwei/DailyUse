@@ -9,11 +9,13 @@ import { useThemeInit } from '@/modules/Theme/useThemeInit'
 import { initializeLanguage } from '@/i18n/index'
 import { useReminderInit } from '@/modules/Reminder/useReminderInit';
 import { useTodoReminderInit } from '@/modules/Todo/useTodoReminderInit';   
+import { useTaskReminderInit } from './modules/Task/services/useTaskReminderInit';
 // Initialize theme
 useThemeInit()
 initializeLanguage()
 useReminderInit()
 useTodoReminderInit()
+useTaskReminderInit()
 </script>
 
 <style scoped>

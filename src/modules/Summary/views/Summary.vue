@@ -1,9 +1,10 @@
 <template>
   <div id="summary">
     <header>
-      <h3>摘要</h3>
-      <div class="summary-header-info">
-        <div class="summary-header-today-layout">
+      <h2>摘要</h2>
+      <div class="summary-header-content">
+        <div class="summary-header-info">
+          <div class="summary-header-today-layout">
           <div class="summary-header-today-icon-layout">
             <v-icon icon="mdi-list-box" size="20" style="color: #db6b6b" />
             <span>{{ tasks.length }}</span>
@@ -24,15 +25,20 @@
           </div>
           <span>今日添加记录</span>
         </div>
+        </div>
+        <div class="motivate-card">
+          <MotivateCard />
+        </div>
       </div>
     </header>
     <main>
+      <div>
+        <TaskInSummaryCard />
+      </div>
       <div class="goals-container">
         <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" />
       </div>
-      <div class="motivate-card">
-        <MotivateCard />
-      </div>
+
       <div class="gantt-chart">
         <GoalGanttChart />
       </div>
@@ -48,6 +54,7 @@ import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import GoalInfoShowCard from '@/modules/Goal/components/GoalInfoShowCard.vue';
 import MotivateCard from '@/modules/Goal/components/MotivateCard.vue';
 import GoalGanttChart from '@/modules/Goal/components/GoalGanttChart.vue';
+import TaskInSummaryCard from '@/modules/Task/components/TaskInSummaryCard.vue';
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
@@ -70,17 +77,23 @@ const tasks = computed(() => {
   width: 100%;
 }
 
+/* header最上方样式 */
+.summary-header-content {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
 .summary-header-info {
   display: flex;
   flex-direction: row;
   justify-content: flex-start;
   align-items: center;
   gap: 1rem;
-  padding: 0.5rem;
+  padding: 0 1.5rem;
   background-color: #2b2b2b;
   border-radius: 12px;
+  min-width: fit-content; /* Prevent shrinking below content size */
 }
-/* header最上方样式 */
 .summary-header-today-layout {
   display: flex;
   flex-direction: column;
@@ -101,6 +114,12 @@ const tasks = computed(() => {
   font-size: 1.5rem;
   gap: 0.25rem;
   color: #db6b6b;
+}
+.motivate-card { 
+  flex: 1;  
+  min-width: 0; 
+  margin: 0; 
+  overflow: auto;
 }
 /* 颜色变化 */
 .summary-header-today-task {
@@ -123,5 +142,8 @@ const tasks = computed(() => {
   font-size: 1.5rem;
   gap: 0.25rem;
   color: #db6b6b;
+}
+.motivate-card { 
+  margin-bottom: 1rem;
 }
 </style>

@@ -56,7 +56,7 @@ export default defineConfig({
     }
   },
   plugins: [
-    monacoEditorPlugin.default({}),
+    monacoEditorPlugin({}),
     vue(),
     electron({
       main: {

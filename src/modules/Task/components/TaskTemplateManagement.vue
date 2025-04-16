@@ -33,7 +33,7 @@
                 <div class="template-meta">
                     <div class="date-range">
                         <v-icon icon="mdi-calendar-range" width="16" height="16" />
-                        <span>{{ formatDate(template.startDate) }} - {{ formatDate(template.endDate) }}</span>
+                        <span>{{ template.repeatPattern.startDate }} - {{ template.repeatPattern.startDate }}</span>
                     </div>
                     <div class="repeat-pattern">
                         <v-icon icon="mdi-repeat" width="16" height="16" />
@@ -58,7 +58,8 @@ import { useTaskStore } from '../stores/taskStore';
 import type { ITaskTemplate } from '../types/task';
 import TaskTemplateDialog from './TaskTemplateDialog.vue';
 import { useTaskDialog } from '../composables/useTaskDialog';
-
+// utils
+import { getTemplateStatus } from '../utils/taskUtils';
 const { showEditTaskTemplateDialog, startCreateTaskTemplate, startEditTaskTemplate, handleSaveTaskTemplate, cancelEditTaskTemplate } = useTaskDialog();
 const taskStore = useTaskStore();
 const currentStatus = ref('active');
@@ -68,16 +69,6 @@ const statusFilters = [
     { label: '未开始', value: 'upcoming', icon: 'mdi-clock' },
     { label: '已结束', value: 'ended', icon: 'mdi-check-circle' }
 ];
-
-const getTemplateStatus = (template: ITaskTemplate) => {
-    const now = new Date();
-    const startDate = new Date(template.startDate);
-    const endDate = new Date(template.endDate);
-
-    if (now < startDate) return 'upcoming';
-    if (now > endDate) return 'ended';
-    return 'active';
-};
 
 const filteredTemplates = computed(() => {
     return taskStore.getAllTaskTemplates.filter(template =>

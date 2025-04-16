@@ -3,10 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 import type { ITaskInstance, ITaskTemplate } from "../types/task";
 import { generateTaskInstances } from '../utils/taskUtils';
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
-
+import { formatDate, formatDateTime } from "@/shared/utils/date";
 export const useTaskStore = defineStore('task', {
-
-
     state: () => ({
         taskInstances: [] as ITaskInstance[],
         taskTemplates: [] as ITaskTemplate[],
@@ -16,9 +14,14 @@ export const useTaskStore = defineStore('task', {
             repeatPattern: {
                 type: 'none',
                 days: [],
+                startDate: '2025-06-01',
             },
-            startDate: new Date().toISOString(),
-            endDate: new Date().toISOString(),
+            reminderPattern: {
+                isReminder: false,
+                timeBefore: '15'
+            },
+            startTime: '08:00',
+            endTime: '09:00',
             priority: 2,
             description: '',
             keyResultLinks: [],
@@ -46,7 +49,7 @@ export const useTaskStore = defineStore('task', {
         getTaskStatsForGoal: (state) => (goalId: string) => {
             const goalStore = useGoalStore();
             const goal = goalStore.getGoalById(goalId);
-            
+
             if (!goal) {
                 console.error('Goal not found');
                 return {
@@ -60,29 +63,29 @@ export const useTaskStore = defineStore('task', {
                     taskDetails: []
                 };
             }
-        
+
             // 获取目标相关的所有任务
             const tasks = state.taskInstances.filter(task => {
                 const taskDate = new Date(task.date);
                 const start = new Date(goal.startTime);
                 const end = new Date(goal.endTime);
                 const today = new Date();
-        
+
                 const isRelatedToGoal = task.keyResultLinks?.some(
                     link => link.goalId === goalId
                 );
-        
-                return isRelatedToGoal && 
-                       taskDate >= start && 
-                       taskDate <= end &&
-                       taskDate <= today; // 只统计到当前日期
+
+                return isRelatedToGoal &&
+                    taskDate >= start &&
+                    taskDate <= end &&
+                    taskDate <= today; // 只统计到当前日期
             });
-        
+
             // 按任务模板分组统计
             const tasksByTemplate = tasks.reduce((acc, task) => {
                 const templateId = task.templateId;
                 const template = state.taskTemplates.find(t => t.id === templateId);
-                
+
                 if (!acc[templateId]) {
                     acc[templateId] = {
                         templateId,
@@ -91,12 +94,12 @@ export const useTaskStore = defineStore('task', {
                         completed: 0
                     };
                 }
-                
+
                 acc[templateId].total++;
                 if (task.completed) {
                     acc[templateId].completed++;
                 }
-                
+
                 return acc;
             }, {} as Record<string, {
                 templateId: string;
@@ -104,7 +107,7 @@ export const useTaskStore = defineStore('task', {
                 total: number;
                 completed: number;
             }>);
-        
+
             // 计算总体统计
             const overallStats = {
                 total: tasks.length,
@@ -116,13 +119,13 @@ export const useTaskStore = defineStore('task', {
                     !t.completed && new Date(t.date) < new Date()
                 ).length
             };
-        
+
             return {
                 overall: overallStats,
                 taskDetails: Object.values(tasksByTemplate)
                     .map(stats => ({
                         ...stats,
-                        completionRate: stats.total ? 
+                        completionRate: stats.total ?
                             (stats.completed / stats.total) * 100 : 0
                     }))
                     .sort((a, b) => b.total - a.total) // 按任务总数降序排序
@@ -182,11 +185,17 @@ export const useTaskStore = defineStore('task', {
                 this.tempTaskTemplate = {
                     id: 'temp',
                     title: '',
-                    startDate: new Date().toISOString(),
-                    endDate: new Date().toISOString(),
+                    startTime: formatDateTime(new Date()),
+                    // endTime: '',
                     repeatPattern: {
                         type: 'none',
                         days: [],
+                        startDate: formatDate(new Date()),
+                        // endDate: formatDate(new Date()),
+                    },
+                    reminderPattern: {
+                        isReminder: false,
+                        timeBefore: '5'
                     },
                     priority: 2,
                     description: '',
@@ -201,11 +210,17 @@ export const useTaskStore = defineStore('task', {
                         id: taskTemplate.id,
                         title: taskTemplate.title,
                         description: taskTemplate.description || '',
-                        startDate: taskTemplate.startDate,
-                        endDate: taskTemplate.endDate,
+                        startTime: taskTemplate.startTime,
+                        endTime: taskTemplate.endTime,
                         repeatPattern: {
                             type: taskTemplate.repeatPattern.type,
                             days: [...(taskTemplate.repeatPattern.days || [])],
+                            startDate: taskTemplate.repeatPattern.startDate,
+                            endDate: taskTemplate.repeatPattern.endDate,// 怎么没有 null 报错
+                        },
+                        reminderPattern: taskTemplate.reminderPattern || {
+                            isReminder: false,
+                            timeBefore: '15'
                         },
                         priority: taskTemplate.priority,
                         keyResultLinks: taskTemplate.keyResultLinks ?
@@ -224,11 +239,17 @@ export const useTaskStore = defineStore('task', {
             this.tempTaskTemplate = {
                 id: '',
                 title: '',
-                startDate: new Date().toISOString(),
-                endDate: new Date().toISOString(),
+                startTime: formatDateTime(new Date()),
+                // endTime: formatDateTime(new Date()),
                 repeatPattern: {
                     type: 'none',
                     days: [],
+                    startDate: formatDate(new Date()),
+                    // endDate: formatDate(new Date()),
+                },
+                reminderPattern: {
+                    isReminder: false,
+                    timeBefore: '15'
                 },
                 priority: 2,
                 description: '',
@@ -245,6 +266,10 @@ export const useTaskStore = defineStore('task', {
                 // 生成任务实例
                 const instances = generateTaskInstances(this.tempTaskTemplate);
                 this.taskInstances.push(...instances);
+                // 如果开启了提醒，创建提醒任务
+                if (this.tempTaskTemplate.reminderPattern?.isReminder) {
+                    this.createTaskReminders(this.tempTaskTemplate, instances);
+                }
             } else {
                 const index = this.taskTemplates.findIndex(t => t.id === this.tempTaskTemplate.id);
                 if (index !== -1) {
@@ -252,11 +277,17 @@ export const useTaskStore = defineStore('task', {
                         id: this.tempTaskTemplate.id,
                         title: this.tempTaskTemplate.title,
                         description: this.tempTaskTemplate.description || '',
-                        startDate: this.tempTaskTemplate.startDate,
-                        endDate: this.tempTaskTemplate.endDate,
+                        startTime: this.tempTaskTemplate.startTime,
+                        endTime: this.tempTaskTemplate.endTime,
                         repeatPattern: {
                             type: this.tempTaskTemplate.repeatPattern.type,
                             days: [...(this.tempTaskTemplate.repeatPattern.days || [])],
+                            startDate: this.tempTaskTemplate.repeatPattern.startDate,
+                            endDate: this.tempTaskTemplate.repeatPattern.endDate,
+                        },
+                        reminderPattern: this.tempTaskTemplate.reminderPattern || {
+                            isReminder: false,
+                            timeBefore: '15'
                         },
                         priority: this.tempTaskTemplate.priority,
                         keyResultLinks: this.tempTaskTemplate.keyResultLinks ?
@@ -278,6 +309,33 @@ export const useTaskStore = defineStore('task', {
                 }
             }
             this.resetTempTaskTemplate();
+        },
+        // 创建任务提醒
+        async createTaskReminders(template: ITaskTemplate, instances: ITaskInstance[]) {
+            const { scheduleService } = await import('@/shared/utils/schedule/main');
+            
+            for (const instance of instances) {
+                const taskTime = new Date(instance.date);
+                if (template.startTime) {
+                    const [hours, minutes] = template.startTime.split(':');
+                    taskTime.setHours(parseInt(hours), parseInt(minutes));
+                }
+                
+                // 计算提醒时间
+                const reminderTime = new Date(taskTime);
+                const minutesBefore = parseInt(template.reminderPattern?.timeBefore ?? '0');
+                reminderTime.setMinutes(reminderTime.getMinutes() - minutesBefore);
+                
+                // 创建提醒任务
+                await scheduleService.createSchedule({
+                    id: `reminder-${instance.id}`,
+                    cron: `${reminderTime.getMinutes()} ${reminderTime.getHours()} ${reminderTime.getDate()} ${reminderTime.getMonth() + 1} *`,
+                    task: {
+                        type: 'taskReminder',
+                        payload: instance
+                    }
+                });
+            }
         },
         // 删除任务模板
         deleteTaskTemplate(taskId: string) {

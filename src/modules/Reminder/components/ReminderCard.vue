@@ -136,7 +136,7 @@
             </v-card-actions>
         </v-card>
     </v-dialog>
-    <Confirm
+    <ConfirmDialog
         v-model="showConfirmDialog"
         title="删除提醒"
         message="确定要删除这个提醒吗？"
@@ -150,7 +150,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import { useReminderStore } from '../reminderStore';
-import Confirm from '@/shared/components/Confirm.vue';
+import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import type { Reminder } from '../reminderStore';
 import type { UrgencyLevel, TimeMode, TimeConfig, ScheduleUnit } from '@/shared/types/time';
 

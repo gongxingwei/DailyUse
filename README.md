@@ -17,27 +17,6 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
    2. Find `TypeScript and JavaScript Language Features`, right click and select `Disable (Workspace)`
 2. Reload the VSCode window by running `Developer: Reload Window` from the command palette.
 
-# 1
-
-## 模块
-
-### 目标模块
-
-#### 建立目标  
-  基本信息、关键结果、动机&可行性
-  ![alt text](AAA_PictureDir_README/image.png)  
-  ![alt text](AAA_PictureDir_README/image-1.png)
-
-#### 目标分类
-
-创建文件夹
-![alt text](AAA_PictureDir_README/image-2.png)
-
-#### 专注周期
-
-![alt text](AAA_PictureDir_README/image-3.png)
-![alt text](AAA_PictureDir_README/image-4.png)
-
 ## 数据
 
 目标数据  
@@ -95,13 +74,6 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
   收藏  
   搜索知识  
 
-
-
-## 结构
-
-
-
-
 # 具体实现
 
 把 todo 、 文档编辑 作为组件，任由用户组合为 待办列表 或 goal 页面
@@ -112,32 +84,19 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 由事件驱动，把所有的 todo reminder 类型统一
 
-## 弹窗服务notification  
+## 任务
 
-```
-electron
-  modules
-    notification
-      ipc.ts
-      notification.ts
-        弹窗功能实现
-src
-  shared
-    utils
-      notification
-        notification.ts
-          前端弹窗功能接口
-```
+### 任务模板长什么样
 
-弹窗属性
-```ts
-id: string
-title: string
-body: string
-icon?: string
-urgency?: 'normal' | 'critical' | 'low'
-actions?: Array<{ text: string, type: 'confirm' | 'cancel' | 'action' }>
-```
+title  
+description？  
+repeat
+  不重复、重复（d、w、m）  
+    不重复，只需要任务时间（有无具体HH：mm）
+    重复，则需要  
+      开始日期，结束日期  
+      重复选择器（有无具体HH：mm）
+
 
 ## 定时服务taskSchedule  
 
@@ -176,24 +135,10 @@ src
 
 ## Reminder
 
-```
-components
-  AddReminder.vue
-  ReminderCard.vue
-Reminder.vue
-  利用 定时服务 和 弹窗服务 实现的一个自定义提醒组件
-```
+利用 定时服务 和 弹窗服务 实现的一个自定义提醒组件
+
 
 ## 仓库
-
-```
-components
-  CreateRepo.vue
-  RepoInfoCard.vue
-  RepoSettings.vue
-Repository.vue
-repositoryStore.ts
-```
 
 指定文件夹作为仓库来管理资源  
 
@@ -201,18 +146,7 @@ repositoryStore.ts
 
 ## todo
 
-```
-components
-  AddTodoCard.vue
-  EditTodoCard.vue
-  ShowTodoInfo.vue
-  TodoCard.vue
-  TodoListCard.vue
-Todo.vue
-todoStore.ts
-  定义了 Todo 类型 和 TodoReminder 类型
-useTodoReminderInit.ts
-```
+定义了 Todo 类型 和 TodoReminder 类
 
 
 

@@ -11,8 +11,9 @@ export interface ScheduleOptions {
 }
 
 export class ScheduleService {
+    // 定时任务ID和任务对象的映射
     private listeners: Set<(data: { id: string, task: ScheduleTask }) => void> = new Set();
-
+    
     constructor() {
         window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => {
             this.notifyListeners(data);
