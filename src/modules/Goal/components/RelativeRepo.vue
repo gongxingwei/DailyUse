@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
+import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
 import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 import { useI18n } from 'vue-i18n'
-import type { Repository } from '@/modules/Repository/repositoryStore'
+import type { Repository } from '@/modules/Repository/stores/repositoryStore'
 
 const props = defineProps<{
     modelValue: boolean,

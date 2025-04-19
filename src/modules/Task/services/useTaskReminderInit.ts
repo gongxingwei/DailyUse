@@ -2,7 +2,7 @@ import { onMounted, onUnmounted } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { scheduleService } from '@/shared/utils/schedule/main';
 import { notification } from '@/shared/utils/notification/notification';
-import { formatDateTime } from '@/shared/utils/date';
+import { formatDateTime } from '@/shared/utils/dateUtils';
 import type { ITaskInstance } from '../types/task';
 
 export function useTaskReminderInit() {

@@ -38,7 +38,9 @@
       <div class="goals-container">
         <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" />
       </div>
-
+      <div>
+        <RecentRepoCard />
+      </div>
       <div class="gantt-chart">
         <GoalGanttChart />
       </div>
@@ -55,6 +57,7 @@ import GoalInfoShowCard from '@/modules/Goal/components/GoalInfoShowCard.vue';
 import MotivateCard from '@/modules/Goal/components/MotivateCard.vue';
 import GoalGanttChart from '@/modules/Goal/components/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/components/TaskInSummaryCard.vue';
+import RecentRepoCard from '@/modules/Repository/components/RecentRepoCard.vue';
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
@@ -63,7 +66,6 @@ const goals = computed(() => {
 });
 const tasks = computed(() => {
   let tasks = taskStore.getTodayTaskInstances;
-  console.log(tasks);
   return tasks;
 });
 </script>

@@ -1,12 +1,11 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
+import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
 import { useAuthStore } from '@/modules/Account/stores/authStore';
 import MainLayout from '@/modules/App/MainLayout.vue'
-import Home from '@/modules/Home/Home.vue'
 import Editor from '@/modules/Editor/Editor.vue'
-import Repository from '@/modules/Repository/Repository.vue'
 import Setting from '@/modules/Setting/Setting.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
+import Summary from '@/modules/Summary/views/Summary.vue';
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
@@ -38,9 +37,9 @@ const routes: RouteRecordRaw[] = [
         component: MainLayout,
         children: [
             {
-                path: '',
-                name: 'home',
-                component: Home
+                path: '/summary',
+                name: 'summary',
+                component: Summary,
             },
             {
                 path: '/goal-management',
@@ -62,16 +61,7 @@ const routes: RouteRecordRaw[] = [
                 name: 'task-management',
                 component: () => import('@/modules/Task/views/TaskManagement.vue')
             },
-            {
-                path: '/summary',
-                name: 'summary',
-                component: () => import('@/modules/Summary/views/Summary.vue')
-            },
-            {
-                path: '/todolist',
-                name: 'todolist',
-                component: () => import('@/modules/Todo/Todo.vue')
-            },
+
             {
                 path: '/profile',
                 name: 'profile',
@@ -80,7 +70,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/repository',
                 name: 'repository',
-                component: Repository
+                component: () => import('@/modules/Repository/views/Repository.vue'),
             }, {
                 path: '/reminder',
                 name: 'reminder',
@@ -131,7 +121,7 @@ router.beforeEach((to, _from, next) => {
 
     // 已登录用户访问登录/注册页面时重定向到首页
     if (authStore.isAuthenticated && publicPages.includes(to.path)) {
-        return next('/')
+        return next('/summary')
     }
 
     // 检查是否访问仓库

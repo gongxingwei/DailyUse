@@ -11,7 +11,7 @@
 <script setup lang="ts">
 
 import { useActivityBarStore } from '@/modules/Editor/stores/activityBarStore';
-import { useRepositoryStore } from '@/modules/Repository/repositoryStore';
+import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
 
 const store = useActivityBarStore();
 const repositoryStore = useRepositoryStore();

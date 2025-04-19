@@ -51,7 +51,7 @@ import { computed } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '../../Goal/stores/goalStore';
 import type { ITaskInstance, KeyResultLink } from '../types/task';
-import { formatDateWithTemplate } from '@/shared/utils/date';
+import { formatDateWithTemplate } from '@/shared/utils/dateUtils';
 
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();

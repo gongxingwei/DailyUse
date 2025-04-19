@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 import CreateRepo from '@/modules/Repository/components/CreateRepo.vue'
-import { useRepositoryStore } from '@/modules/Repository/repositoryStore';
+import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
 
 const { t } = useI18n();
 const repositoryStore = useRepositoryStore();
@@ -57,9 +57,9 @@ const toggleDrawer = () => {
         <v-navigation-drawer location="left" class="navigation-drawer" v-model="isDrawerExpanded" temporary>
           <v-list>
             <v-list-item 
-              prepend-icon="mdi-home" 
-              :title="t('mainLayout.navigation.home')" 
-              :to="'/'"
+              prepend-icon="mdi-credit-card-outline" 
+              :title="t('mainLayout.navigation.summary')" 
+              :to="'/summary'"
             ></v-list-item>
             <v-list-item 
               prepend-icon="mdi-fencing" 
@@ -70,11 +70,6 @@ const toggleDrawer = () => {
               prepend-icon="mdi-list-box" 
               :title="t('mainLayout.navigation.task')" 
               :to="'/task-management'"
-            ></v-list-item>
-            <v-list-item 
-              prepend-icon="mdi-credit-card-outline" 
-              :title="t('mainLayout.navigation.summary')" 
-              :to="'/summary'"
             ></v-list-item>
             <v-list-item 
               prepend-icon="mdi-database" 

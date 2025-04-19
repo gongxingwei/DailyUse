@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import type { ITaskInstance, ITaskTemplate } from "../types/task";
 import { generateTaskInstances } from '../utils/taskUtils';
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
-import { formatDate, formatDateTime } from "@/shared/utils/date";
+import { formatDate, formatDateTime } from "@/shared/utils/dateUtils";
 export const useTaskStore = defineStore('task', {
     state: () => ({
         taskInstances: [] as ITaskInstance[],

@@ -55,8 +55,8 @@
   
   <script setup lang="ts">
   import { ref } from 'vue'
-  import { useRepositoryStore } from './repositoryStore'
-  import type { Repository } from './repositoryStore'
+  import { useRepositoryStore } from '../stores/repositoryStore'
+  import type { Repository } from '../stores/repositoryStore'
   import CreateRepo from './components/CreateRepo.vue'
   import RepoSettings from './components/RepoSettings.vue'
   
