@@ -16,6 +16,7 @@ import require$$1$2 from "util";
 import require$$0$1, { type } from "os";
 import { EventEmitter } from "node:events";
 import { Readable } from "stream";
+import crypto, { randomFillSync, randomUUID } from "crypto";
 class PluginManager {
   constructor() {
     __publicField(this, "plugins", /* @__PURE__ */ new Map());
@@ -16097,6 +16098,177 @@ function registerGitHandlers() {
     return await gitService.getLog();
   });
 }
+const byteToHex = [];
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 256).toString(16).slice(1));
+}
+function unsafeStringify(arr, offset2 = 0) {
+  return (byteToHex[arr[offset2 + 0]] + byteToHex[arr[offset2 + 1]] + byteToHex[arr[offset2 + 2]] + byteToHex[arr[offset2 + 3]] + "-" + byteToHex[arr[offset2 + 4]] + byteToHex[arr[offset2 + 5]] + "-" + byteToHex[arr[offset2 + 6]] + byteToHex[arr[offset2 + 7]] + "-" + byteToHex[arr[offset2 + 8]] + byteToHex[arr[offset2 + 9]] + "-" + byteToHex[arr[offset2 + 10]] + byteToHex[arr[offset2 + 11]] + byteToHex[arr[offset2 + 12]] + byteToHex[arr[offset2 + 13]] + byteToHex[arr[offset2 + 14]] + byteToHex[arr[offset2 + 15]]).toLowerCase();
+}
+const rnds8Pool = new Uint8Array(256);
+let poolPtr = rnds8Pool.length;
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+const native = { randomUUID };
+function v4(options, buf, offset2) {
+  var _a2;
+  if (native.randomUUID && !buf && !options) {
+    return native.randomUUID();
+  }
+  options = options || {};
+  const rnds = options.random ?? ((_a2 = options.rng) == null ? void 0 : _a2.call(options)) ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  return unsafeStringify(rnds);
+}
+const _LocalAccountStorageService = class _LocalAccountStorageService {
+  constructor() {
+    __publicField(this, "userDataPath");
+    __publicField(this, "usersFile");
+    this.userDataPath = sysPath__default.join(app.getPath("userData"), "accounts");
+    this.usersFile = sysPath__default.join(this.userDataPath, "users.json");
+    this.initStorage();
+  }
+  static getInstance() {
+    if (!_LocalAccountStorageService.instance) {
+      _LocalAccountStorageService.instance = new _LocalAccountStorageService();
+    }
+    return _LocalAccountStorageService.instance;
+  }
+  async initStorage() {
+    try {
+      await fs.mkdir(this.userDataPath, { recursive: true });
+      try {
+        await fs.access(this.usersFile);
+      } catch {
+        await fs.writeFile(this.usersFile, JSON.stringify({}));
+      }
+    } catch (error) {
+      console.error("Failed to initialize storage:", error);
+    }
+  }
+  async readUsers() {
+    try {
+      const data = await fs.readFile(this.usersFile, "utf-8");
+      return JSON.parse(data);
+    } catch {
+      return {};
+    }
+  }
+  async writeUsers(users) {
+    await fs.writeFile(this.usersFile, JSON.stringify(users, null, 2));
+  }
+  async createUserDirectory(userId) {
+    const userDir = sysPath__default.join(this.userDataPath, userId);
+    await fs.mkdir(userDir, { recursive: true });
+    await fs.writeFile(
+      sysPath__default.join(userDir, "config.json"),
+      JSON.stringify({ createdAt: (/* @__PURE__ */ new Date()).toISOString() })
+    );
+  }
+};
+__publicField(_LocalAccountStorageService, "instance");
+let LocalAccountStorageService = _LocalAccountStorageService;
+const localAccountStorageService = LocalAccountStorageService.getInstance();
+const _AuthService = class _AuthService {
+  constructor() {
+  }
+  static getInstance() {
+    if (!_AuthService.instance) {
+      _AuthService.instance = new _AuthService();
+    }
+    return _AuthService.instance;
+  }
+  hashPassword(password) {
+    return crypto.createHash("sha256").update(password).digest("hex");
+  }
+  async register(form) {
+    try {
+      const users = await localAccountStorageService.readUsers();
+      if (users[form.username]) {
+        throw new Error("用户名已存在");
+      }
+      const userId = v4();
+      const now2 = (/* @__PURE__ */ new Date()).toISOString();
+      const newUser = {
+        id: userId,
+        username: form.username,
+        email: form.email,
+        passwordHash: this.hashPassword(form.password),
+        createdAt: now2,
+        updatedAt: now2
+      };
+      users[form.username] = newUser;
+      await localAccountStorageService.writeUsers(users);
+      await localAccountStorageService.createUserDirectory(userId);
+      const { passwordHash, ...userWithoutPassword } = newUser;
+      return userWithoutPassword;
+    } catch (error) {
+      console.error("Registration failed:", error);
+      throw new Error(error instanceof Error ? error.message : "注册失败");
+    }
+  }
+  async login(credentials) {
+    const users = await localAccountStorageService.readUsers();
+    const user = users[credentials.username];
+    if (!user || user.passwordHash !== this.hashPassword(credentials.password)) {
+      throw new Error("用户名或密码错误");
+    }
+    const { passwordHash, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  }
+  async logout() {
+    return;
+  }
+  async checkAuth() {
+    return null;
+  }
+};
+__publicField(_AuthService, "instance");
+let AuthService = _AuthService;
+const authService = AuthService.getInstance();
+async function setupAuthHandlers() {
+  ipcMain.handle("auth:register", async (_event, form) => {
+    try {
+      const user = await authService.register(form);
+      return { success: true, user };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+    }
+  });
+  ipcMain.handle("auth:login", async (_event, credentials) => {
+    try {
+      const user = await authService.login(credentials);
+      return { success: true, user };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+    }
+  });
+  ipcMain.handle("auth:logout", async () => {
+    try {
+      await authService.logout();
+      return { success: true };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+    }
+  });
+  ipcMain.handle("auth:check", async () => {
+    try {
+      const user = await authService.checkAuth();
+      return { success: true, user };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+    }
+  });
+}
 app.setName("DailyUse");
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
 process.env.APP_ROOT = path.join(__dirname$1, "..");
@@ -16206,6 +16378,7 @@ app.whenReady().then(() => {
   createWindow();
   registerFileSystemHandlers();
   registerGitHandlers();
+  setupAuthHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

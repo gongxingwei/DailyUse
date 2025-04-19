@@ -8,6 +8,7 @@ export default {
       repository: '仓库',
       reminder: '提醒',
       test: '测试',
+      profile: '个人资料',
       settings: '设置'
     },
     repository: {

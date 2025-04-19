@@ -126,6 +126,11 @@ const toggleDrawer = () => {
             <v-divider></v-divider>
             <v-list>
               <v-list-item
+                prepend-icon="mdi-account"
+                :title="t('mainLayout.navigation.profile')"
+                :to="'/profile'"
+              ></v-list-item>
+              <v-list-item
                 prepend-icon="mdi-cog"
                 :title="t('mainLayout.navigation.settings')"
                 :to="'/setting'"

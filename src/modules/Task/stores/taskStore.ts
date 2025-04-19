@@ -313,19 +313,19 @@ export const useTaskStore = defineStore('task', {
         // 创建任务提醒
         async createTaskReminders(template: ITaskTemplate, instances: ITaskInstance[]) {
             const { scheduleService } = await import('@/shared/utils/schedule/main');
-            
+
             for (const instance of instances) {
                 const taskTime = new Date(instance.date);
                 if (template.startTime) {
                     const [hours, minutes] = template.startTime.split(':');
                     taskTime.setHours(parseInt(hours), parseInt(minutes));
                 }
-                
+
                 // 计算提醒时间
                 const reminderTime = new Date(taskTime);
                 const minutesBefore = parseInt(template.reminderPattern?.timeBefore ?? '0');
                 reminderTime.setMinutes(reminderTime.getMinutes() - minutesBefore);
-                
+
                 // 创建提醒任务
                 await scheduleService.createSchedule({
                     id: `reminder-${instance.id}`,
@@ -338,11 +338,28 @@ export const useTaskStore = defineStore('task', {
             }
         },
         // 删除任务模板
-        deleteTaskTemplate(taskId: string) {
+        async deleteTaskTemplate(taskId: string) {
             const index = this.taskTemplates.findIndex(t => t.id === taskId);
             if (index !== -1) {
+                // 获取所有相关的任务实例
+                const relatedInstances = this.taskInstances.filter(t => t.templateId === taskId);
+
+                // 取消所有相关的提醒任务
+                const { scheduleService } = await import('@/shared/utils/schedule/main');
+                for (const instance of relatedInstances) {
+                    await scheduleService.cancelSchedule(`reminder-${instance.id}`);
+                }
+
+                // 删除所有相关的任务实例
+                this.taskInstances = this.taskInstances.filter(t => t.templateId !== taskId);
+
+                // 删除任务模板
                 this.taskTemplates.splice(index, 1);
+
+                return true;
             }
+            console.error('Task template not found:', taskId);
+            return false;
         },
 
         // 任务实例相关

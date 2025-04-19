@@ -10,6 +10,7 @@ import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
 import { registerGitHandlers } from './shared/ipc/git';
 import { protocol } from 'electron'
+import { setupAuthHandlers } from './modules/Account/ipc';
 
 app.setName('DailyUse');
 
@@ -174,6 +175,7 @@ app.whenReady().then(() => {
   createWindow();
   registerFileSystemHandlers();
   registerGitHandlers();
+  setupAuthHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

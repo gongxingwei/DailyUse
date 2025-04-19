@@ -42,7 +42,6 @@ export default defineConfig({
       '~': path.resolve(__dirname, './'),
       '@': path.resolve(__dirname, './src'),
       'src': path.resolve(__dirname, './src'),
-      '@modules': path.resolve(__dirname, './src/modules'),
     }
   },
   base: './',
@@ -56,7 +55,9 @@ export default defineConfig({
     }
   },
   plugins: [
-    monacoEditorPlugin({}),
+    (monacoEditorPlugin as any).default({
+      languageWorkers:['editorWorkerService', 'json']
+    }),
     vue(),
     electron({
       main: {

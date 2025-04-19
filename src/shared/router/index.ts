@@ -1,5 +1,6 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import { useRepositoryStore } from '@/modules/Repository/repositoryStore'
+import { useAuthStore } from '@/modules/Account/stores/authStore';
 import MainLayout from '@/modules/App/MainLayout.vue'
 import Home from '@/modules/Home/Home.vue'
 import Editor from '@/modules/Editor/Editor.vue'
@@ -9,6 +10,24 @@ import NotificationWindow from '@/shared/utils/notification/NotificationWindow.v
 
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
+    {
+        path: '/login',
+        name: 'login',
+        component: () => import('@/modules/Account/views/LoginView.vue'),
+        meta: {
+            requiresAuth: false,
+            title: '登录'
+        }
+    },
+    {
+        path: '/register',
+        name: 'register',
+        component: () => import('@/modules/Account/views/RegisterView.vue'),
+        meta: {
+            requiresAuth: false,
+            title: '注册'
+        }
+    },
     {
         path: '/notification',
         name: 'notification',
@@ -56,13 +75,13 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/profile',
                 name: 'profile',
-                component: () => import('@/modules/Profile/Pro.vue')
+                component: () => import('@/modules/Account/views/Profile.vue')
             },
             {
-                path: '/repository',  
+                path: '/repository',
                 name: 'repository',
                 component: Repository
-            },{
+            }, {
                 path: '/reminder',
                 name: 'reminder',
                 component: () => import('@/modules/Reminder/Reminder.vue')
@@ -88,22 +107,40 @@ const routes: RouteRecordRaw[] = [
 
 // 创建路由实例
 const router = createRouter({
-  history: createWebHashHistory(),
-  routes
+    history: createWebHashHistory(),
+    routes
 })
 
 // 全局前置守卫（可选）
 router.beforeEach((to, _from, next) => {
-// 设置页面标题
-document.title = `${to.meta.title || '默认标题'}`
-  
-// 检查是否访问仓库
-if (to.name === 'repository-detail' && to.params.title) {
-  const store = useRepositoryStore()
-  store.addToRecent(decodeURIComponent(to.params.title as string))
-  store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
-}
-  next()
+    const authStore = useAuthStore()
+    // 设置页面标题
+    document.title = `${to.meta.title || '默认标题'}`
+
+    // 检查认证状态
+    const publicPages = ['/login', '/register']
+    const authRequired = !publicPages.includes(to.path)
+
+   if (authRequired && !authStore.isAuthenticated) {
+        // 存储原始目标路由
+        return next({
+            name: 'login',
+            query: { redirect: to.fullPath }
+        })
+    }
+
+    // 已登录用户访问登录/注册页面时重定向到首页
+    if (authStore.isAuthenticated && publicPages.includes(to.path)) {
+        return next('/')
+    }
+
+    // 检查是否访问仓库
+    if (to.name === 'repository-detail' && to.params.title) {
+        const store = useRepositoryStore()
+        store.addToRecent(decodeURIComponent(to.params.title as string))
+        store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
+    }
+    next()
 })
 
 export default router

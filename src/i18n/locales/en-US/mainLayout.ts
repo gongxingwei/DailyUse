@@ -8,6 +8,7 @@ export default {
       repository: 'Repository',
       reminder: 'Reminder',
       test: 'Test',
+      profile: 'Profile',
       settings: 'Settings'
     },
     repository: {

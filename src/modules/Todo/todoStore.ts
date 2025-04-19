@@ -47,6 +47,7 @@ export const useTodoStore = defineStore('todo', {
   getters: {
     // 按日期分组获取任务
     getTodosByDate: (state) => (targetDate: Date) => {
+      if (!state.todos) return [];
       const start = new Date(targetDate)
       start.setHours(0, 0, 0, 0)
       
@@ -54,6 +55,7 @@ export const useTodoStore = defineStore('todo', {
       end.setHours(23, 59, 59, 999)
 
       return state.todos.filter(todo => {
+        if (!todo.timeConfig) return false;
         if (todo.timeConfig.mode === 'once') {
           const todoDate = new Date(todo.timeConfig.timestamp!)
           return todoDate >= start && todoDate <= end
