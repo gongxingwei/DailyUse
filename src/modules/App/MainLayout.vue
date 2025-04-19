@@ -77,11 +77,6 @@ const toggleDrawer = () => {
               :to="'/summary'"
             ></v-list-item>
             <v-list-item 
-              prepend-icon="mdi-list-box" 
-              :title="t('mainLayout.navigation.todolist')" 
-              :to="'/todolist'"
-            ></v-list-item>
-            <v-list-item 
               prepend-icon="mdi-database" 
               :title="t('mainLayout.navigation.repository')" 
               :to="'/repository'"

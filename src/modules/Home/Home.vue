@@ -20,60 +20,15 @@
       </v-col>
     </v-row>
   </v-container>
-  <v-container>
-    <div class="text-h6 font-weight-light">Todo</div>
-    <v-row>
-      <!-- 今天的任务 -->
-      <v-col cols="12" md="6">
-        <v-card>
-            <ToDoListCard 
-              :todo-date="0"
-              :todos="todoStore.getTodosByDate(today)"
-              @show-info="showTodoInfo"
-              @edit="editTodo"
-              @complete="toggleComplete"
-              :showFullDate="false"
-            />
-        </v-card>
-      </v-col>
-
-      <!-- 明天的任务 -->
-      <v-col cols="12" md="6">
-        <v-card>
-            <ToDoListCard 
-              :todo-date="1"
-              :todos="todoStore.getTodosByDate(tomorrow)"
-              @show-info="showTodoInfo"
-              @edit="editTodo"
-              @complete="toggleComplete"
-              :showFullDate="false"
-            />
-        </v-card>
-      </v-col>
-    </v-row>
-
-    <!-- 弹窗组件 -->
-    <ShowToDoInfo v-model="showInfo" :todo="selectedTodo" />
-    <EditToDoCard v-model="showEditDialog" :todo="selectedTodo" />
-  </v-container>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useTodoStore } from '../Todo/todoStore'
 import { useRepositoryStore } from '../Repository/repositoryStore'
-import type { Todo } from '../Todo/todoStore'
-import ToDoListCard from '../Todo/components/TodoListCard.vue'
-import ShowToDoInfo from '../Todo/components/ShowTodoInfo.vue'
-import EditToDoCard from '../Todo/components/EditTodoCard.vue'
 import type { Repository } from '../Repository/repositoryStore'
 import RepoInfoCard from '../Repository/components/RepoInfoCard.vue'
 
-const todoStore = useTodoStore()
 const repositoryStore = useRepositoryStore()
-const showInfo = ref(false)
-const showEditDialog = ref(false)
-const selectedTodo = ref<Todo | null>(null)
 
 // 计算今天和明天的日期
 const today = new Date()
@@ -87,21 +42,6 @@ const getRecentRepositories = computed<Repository[]>(() => {
   console.log(repositories)
   return repositories.filter((repo): repo is Repository => repo !== undefined)
 })
-
-// 事件处理函数
-const showTodoInfo = (todo: Todo) => {
-  selectedTodo.value = todo
-  showInfo.value = true
-}
-
-const editTodo = (todo: Todo) => {
-  selectedTodo.value = todo
-  showEditDialog.value = true
-}
-
-const toggleComplete = (todo: Todo) => {
-  todoStore.toggleComplete(todo)
-}
 </script>
 
 <style scoped>
