@@ -1,116 +1,98 @@
 <!-- filepath: /D:/myPrograms/DailyUse-front/src/components/AddGoalModal.vue -->
 <template>
-  <div class="modal-overlay" v-if="props.visible">
-    <div class="modal-container">
-      <div class="modal-header d-flex justify-space-between">
-        <div>
-          <button class="" @click="handleCancel">取消</button>
-        </div>
-        <h2>编辑目标</h2>
-        <div class="btn-group">
-          <button class="" @click="handleComplete">完成</button>
-        </div>
-      </div>
+  <v-dialog v-model="props.visible" height="500" width="800">
+    <v-card>
+      <!-- Dialog Header -->
+      <v-card-title class="d-flex justify-space-between pa-4">
+        <v-btn variant="text" @click="handleCancel">取消</v-btn>
+        <span class="text-h5">编辑目标</span>
+        <v-btn color="primary" @click="handleComplete">完成</v-btn>
+      </v-card-title>
 
       <!-- Tabs -->
-      <div class="tabs">
-        <button v-for="(tab, index) in tabs" :key="index" :class="['tab-btn', { active: activeTab === index }]"
-          @click="activeTab = index">
-          <v-icon :icon="tab.icon" width="20" height="20" />
-          <span>{{ tab.name }}</span>
-        </button>
-      </div>
+      <v-tabs v-model="activeTab" grow>
+        <v-tab v-for="(tab, index) in tabs" :key="index" :value="index">
+          <v-icon :icon="tab.icon" class="mr-2" />
+          {{ tab.name }}
+        </v-tab>
+      </v-tabs>
 
-      <!-- Tab content -->
-      <div class="tab-content">
-        <!-- Basic Info Tab -->
-        <div v-show="activeTab === 0" class="tab-pane">
-          <div class="form-group">
-            <div class="d-flex flex-row">
-              <label for="title">目标</label>
-              <span class="error" v-if="validationErrors.title">{{ validationErrors.title }}</span>
-            </div>
-            <div class="goal-title-input">
-              <input type="text" id="title" placeholder="一段话来描述自己的目标" v-model="tempGoal.title" required
-                @blur="titleValidation">
-              </input>
-              <!-- 颜色 -->
-              <div class="goal-color-picker">
-                <input type="color" id="goalColor" v-model="tempGoal.color" class="color-input">
-                <v-icon size="40" :color="tempGoal.color">mdi-palette</v-icon>
-                </input>
-              </div>
-            </div>
-          </div>
+      <v-card-text>
+        <v-window v-model="activeTab">
+          <!-- Basic Info Tab -->
+          <v-window-item :value="0">
+            <v-form @submit.prevent>
+              <!-- Title and Color -->
+              <v-row>
+                <v-col cols="11">
+                  <v-text-field v-model="tempGoal.title" :error-messages="validationErrors.title" label="目标"
+                    placeholder="一段话来描述自己的目标" required />
+                </v-col>
+                <v-col cols="1">
+                  <v-color-picker v-model="tempGoal.color" hide-inputs hide-canvas mode="hex" />
+                </v-col>
+              </v-row>
 
-          <div class="form-group">
-            <label for="folder">目标文件夹</label>
-            <select id="folder" v-model="tempGoal.dirId">
-              <option value="">无</option>
-              <option v-for="dir in goalDirs" :key="dir.id" :value="dir.id">
-                {{ dir.name }}
-              </option>
-            </select>
-          </div>
+              <!-- Goal Directory -->
+              <v-select v-model="tempGoal.dirId" :items="goalDirs" item-title="name" item-value="id" label="目标文件夹" />
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="startTime">开始时间</label>
-              <input type="date" id="startTime" :value="formatDateForInput(tempGoal.startTime)" @input="e => tempGoal.startTime = (e.target as HTMLInputElement).value">
-            </div>
+              <!-- Date Range -->
+              <v-row>
+                <v-col cols="6">
+                  <v-text-field v-model="tempGoal.startTime" label="开始时间" type="date"
+                    :error-messages="validationErrors.startTime" :rules="startTimeRules" @input="validateDates"
+                    :min="minDate" />
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field v-model="tempGoal.endTime" label="结束时间" type="date"
+                    :error-messages="validationErrors.endTime" :rules="endTimeRules" @input="validateDates"
+                    :min="tempGoal.startTime" />
+                </v-col>
+              </v-row>
 
-            <div class="form-group">
-              <label for="endTime">结束时间</label>
-              <input type="date" id="endTime" :value="formatDateForInput(tempGoal.endTime)" @input="e => tempGoal.endTime = (e.target as HTMLInputElement).value" >
-            </div>
-          </div>
+              <!-- Notes -->
+              <v-textarea v-model="tempGoal.note" label="备注" rows="3" />
+            </v-form>
+          </v-window-item>
 
-          <div class="form-group">
-            <label for="note">备注</label>
-            <textarea id="note" v-model="tempGoal.note" rows="3"></textarea>
-          </div>
-        </div>
+          <!-- Key Results Tab -->
+          <v-window-item :value="1">
+            <v-list>
+              <!-- Existing Key Results -->
+              <v-list-item v-for="kr in tempGoal.keyResults" :key="kr.id"
+                @click="startEditKeyResult(tempGoal.id, kr.id)">
+                <template v-slot:prepend>
+                  <v-icon :color="tempGoal.color">mdi-target</v-icon>
+                </template>
+                <v-list-item-title>{{ kr.name }}</v-list-item-title>
+                <template v-slot:append>
+                  <v-btn icon="mdi-delete" variant="text" :color="tempGoal.color"
+                    @click.stop="deleteKeyResult(kr.id)" />
+                </template>
+              </v-list-item>
 
-        <!-- 关键结果 -->
-        <div v-show="activeTab === 1" class="tab-pane">
-          <div class="kr-list">
-            <!-- Existing Key Results -->
-            <div v-for="kr in tempGoal.keyResults" :key="kr.id" class="kr-list-item"
-              @click="startEditKeyResult(tempGoal.id, kr.id)">
-              <div class="kr-info">
-                <v-icon size="20" :color="tempGoal.color">mdi-target</v-icon>
-                <span class="kr-name">{{ kr.name }}</span>
-              </div>
-              <button class="icon-btn" @click.stop="deleteKeyResult(kr.id)">
-                <v-icon size="20" :color="tempGoal.color">mdi-delete</v-icon>
-              </button>
-            </div>
+              <!-- Add New Key Result Button -->
+              <v-list-item @click="startCreateKeyResult">
+                <template v-slot:prepend>
+                  <v-icon :color="tempGoal.color">mdi-plus</v-icon>
+                </template>
+                <v-list-item-title class="d-flex direction-column justify-flex-start">
+                  添加关键结果
+                </v-list-item-title>
+              </v-list-item>
+            </v-list>
+          </v-window-item>
 
-            <!-- Add New Key Result Button -->
-            <div class="kr-list-item add-kr" @click="startCreateKeyResult">
-              <div class="kr-info">
-                <v-icon size="20" :color="tempGoal.color">mdi-add</v-icon>
-                <span class="kr-name placeholder">添加关键结果</span>
-              </div>
-            </div>
-          </div>
-        </div>
+          <!-- Motivation & Feasibility Tab -->
+          <v-window-item :value="2">
+            <v-textarea v-model="tempGoal.motive" label="动机描述" rows="4" class="mb-4" />
+            <v-textarea v-model="tempGoal.feasibility" label="可行性分析" rows="4" />
+          </v-window-item>
+        </v-window>
+      </v-card-text>
+    </v-card>
+  </v-dialog>
 
-        <!-- Motivation & Feasibility Tab -->
-        <div v-show="activeTab === 2" class="tab-pane">
-          <div class="form-group">
-            <label for="motive">动机描述</label>
-            <textarea id="motive" v-model="tempGoal.motive" rows="4"></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="feasibility">可行性分析</label>
-            <textarea id="feasibility" v-model="tempGoal.feasibility" rows="4"></textarea>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
   <KeyResultDialog :visible="showKeyResultDialog" :goal-id="tempGoal.id" @cancel="cancelKeyResultEdit"
     @save="saveKeyResult" />
 </template>
@@ -151,11 +133,6 @@ const tabs = [
 
 const { tempGoal } = storeToRefs(goalStore);
 
-const formatDateForInput = (dateString: string | Date | null): string => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toISOString().split('T')[0];
-};
 // 获取可以选的目标节点（即用户自己创建的文件夹）
 const goalDirs = computed(() => {
   return goalDirStore.getUserDirs;
@@ -167,47 +144,69 @@ type ValidationState = {
 const validationErrors = reactive<ValidationState>({
   title: undefined,
   keyResults: undefined,
+  startTime: undefined,
+  endTime: undefined,
+});
+const minDate = computed(() => {
+  return new Date().toISOString().split('T')[0];
 });
 
-// 表单合法性验证
-const isValid = computed(() => {
-  return (
-    tempGoal.value.title.trim() !== '' &&
-    tempGoal.value.keyResults.length > 0 &&
-    tempGoal.value.keyResults.every(kr => kr.name.trim() !== '')
-  );
-});
-
-// 标题验证
-const titleValidation = () => {
-  if (tempGoal.value.title.trim() === '') {
-    validationErrors.title = '目标不能为空';
-  } else {
-    validationErrors.title = undefined;
+const startTimeRules = [
+  (v: string) => !!v || '开始时间不能为空',
+  (v: string) => {
+    const startDate = new Date(v);
+    return startDate >= new Date(minDate.value) || '开始时间不能早于今天';
   }
+];
+
+const endTimeRules = [
+  (v: string) => !!v || '结束时间不能为空',
+  (v: string) => {
+    if (!tempGoal.value.startTime) return true;
+    const endDate = new Date(v);
+    const startDate = new Date(tempGoal.value.startTime);
+    return endDate >= startDate || '结束时间不能早于开始时间';
+  }
+];
+
+const validateDates = () => {
+  if (!tempGoal.value.startTime) {
+    validationErrors.startTime = '请选择开始时间';
+    return false;
+  }
+  if (!tempGoal.value.endTime) {
+    validationErrors.endTime = '请选择结束时间';
+    return false;
+  }
+
+  const startDate = new Date(tempGoal.value.startTime);
+  const endDate = new Date(tempGoal.value.endTime);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (startDate < today) {
+    validationErrors.startTime = '开始时间不能早于今天';
+    return false;
+  }
+
+  if (endDate < startDate) {
+    validationErrors.endTime = '结束时间不能早于开始时间';
+    return false;
+  }
+
+  validationErrors.startTime = undefined;
+  validationErrors.endTime = undefined;
+  return true;
 };
-// // 关键结果名称验证
-// const krNameValidation = () => {
-//   tempGoal.value.keyResults.forEach((kr, index) => {
-//     if (kr.name.trim() === '') {
-//       validationErrors.keyResults = `关键结果 #${index + 1} 不能为空`;
-//     } else {
-//       validationErrors.keyResults = undefined;
-//     }
-//   });
-// }
 
-
-
-//  关键结果
-
-
+const isValid = computed(() => {
+  return !Object.values(validationErrors).some(error => error) &&
+    tempGoal.value.title.trim() !== '' &&
+    tempGoal.value.startTime &&
+    tempGoal.value.endTime &&
+    validateDates();
+});
 function saveGoal() {
-  if (!isValid.value) {
-    console.log('Form is invalid');
-    alert('请填写所有必填项');
-    return;
-  }
   emit('save');
 }
 
@@ -220,258 +219,4 @@ const handleComplete = () => {
 };
 </script>
 
-<style scoped>
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-}
-
-.modal-container {
-  background-color: rgb(41, 41, 41);
-  border-radius: 8px;
-  width: 90%;
-  max-width: 800px;
-  height: 700px;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-}
-
-.modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  flex-shrink: 0;
-}
-
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-}
-
-.tabs {
-  display: flex;
-  border-bottom: 1px solid #eee;
-
-}
-
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 20px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: 14px;
-  color: #666;
-  border-bottom: 3px solid transparent;
-}
-
-.tab-btn.active {
-  color: #4CAF50;
-  border-bottom-color: #4CAF50;
-
-}
-
-.tab-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.tab-pane {
-  min-height: 300px;
-}
-
-.form-group {
-  margin-bottom: 16px;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 8px;
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 14px;
-}
-
-.form-group textarea {
-  resize: vertical;
-}
-
-.form-row {
-  display: flex;
-  gap: 16px;
-}
-
-.form-row .form-group {
-  flex: 1;
-}
-
-/* 目标标题 */
-.goal-title-input {
-  width: 100%;
-
-  position: static;
-  display: flex;
-  align-items: center;
-  margin-bottom: 16px;
-}
-
-/* 颜色选择器样式 */
-.goal-color-picker {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  margin-left: 16px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-
-}
-
-.color-input {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.color-circle {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  transition: transform 0.2s ease;
-}
-
-.color-circle:hover {
-  transform: scale(1.1);
-}
-
-/* 关键结果 */
-.kr-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.kr-list-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 16px;
-  background-color: rgb(50, 50, 50);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.kr-list-item:hover {
-  background-color: rgb(60, 60, 60);
-}
-
-.kr-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.kr-name {
-  font-size: 16px;
-}
-
-.kr-name.placeholder {
-  color: #666;
-}
-
-.add-kr {
-  border: 2px dashed #666;
-  background-color: transparent;
-}
-
-.add-kr:hover {
-  border-color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
-}
-
-.icon-btn {
-  padding: 4px;
-  border: none;
-  background: none;
-  color: #666;
-  cursor: pointer;
-  border-radius: 4px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.icon-btn:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-  color: #ff4444;
-}
-
-.modal-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-top: 1px solid #eee;
-  background-color: #f9f9f9;
-}
-
-.navigation-buttons,
-.action-buttons {
-  display: flex;
-  gap: 8px;
-}
-
-.btn {
-  padding: 8px 16px;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
-}
-
-.btn-primary {
-  background-color: #2196F3;
-  color: white;
-}
-
-.btn-secondary {
-  background-color: #f5f5f5;
-  border: 1px solid #ddd;
-  color: #333;
-}
-
-.btn-success {
-  background-color: #4CAF50;
-  color: white;
-}
-
-.btn-success:disabled {
-  background-color: #a5d6a7;
-  cursor: not-allowed;
-}
-</style>
+<style scoped></style>

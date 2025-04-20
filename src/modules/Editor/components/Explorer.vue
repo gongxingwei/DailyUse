@@ -56,7 +56,7 @@
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue'
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue'
 import { fileSystem } from '@/shared/utils/fileSystem'
-import { useSettingStore } from '@/modules/Setting/settingStore'
+import { useSettingStore } from '@/modules/Setting/stores/settingStore'
 import { useEditorGroupStore } from '@/modules/Editor/stores/editorGroupStore'
 import { useI18n } from 'vue-i18n'
 

@@ -2,6 +2,8 @@ import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '../stores/authStore'
 import type { IUser } from '../types/auth'
+// services
+import { userDataService } from '../services/userDataService'
 
 export function useAccountManagement() {
   const router = useRouter()
@@ -44,7 +46,13 @@ export function useAccountManagement() {
   const exportUserData = async () => {
     try {
       exporting.value = true
-      console.log('导出用户数据功能尚未实现')
+      if (!user.value) {
+        throw new Error('用户未登录或信息不完整')
+      }
+      const result = userDataService.exportUserData(user.value.id)
+      if (result) {
+        console.log('导出成功:', result)
+      }
     } catch (error) {
       console.error('导出失败:', error)
     } finally {
@@ -56,7 +64,13 @@ export function useAccountManagement() {
   const importUserData = async () => {
     try {
       importing.value = true
-      console.log('导入用户数据功能尚未实现')
+      if (!user.value) {
+        throw new Error('用户未登录或信息不完整')
+      }
+      const result = await userDataService.importUserData(user.value.id)
+      if (result) {
+        console.log('导入成功:')
+      }
     } catch (error) {
       console.error('导入失败:', error)
     } finally {
@@ -77,7 +91,13 @@ export function useAccountManagement() {
   const clearUserData = async () => {
     try {
       clearing.value = true
-      console.log('清除用户数据功能尚未实现')
+      if (!user.value) {
+        throw new Error('用户未登录或信息不完整')
+      }
+      const result = await userDataService.clearUserData(user.value.id)
+      if (result) {
+        console.log('清除成功:', result)
+      }
     } catch (error) {
       console.error('清除失败:', error)
     } finally {
@@ -88,13 +108,14 @@ export function useAccountManagement() {
 
   // 切换账号
   const switchAccount = () => {
-    router.push({
-      path: '/login',
-      query: { 
-        redirect: '/profile',
-        switch: 'true'
-      }
-    })
+    console.log('切换账号,weishixian ')
+    // router.push({
+    //   path: '/login',
+    //   query: { 
+    //     redirect: '/profile',
+    //     switch: 'true'
+    //   }
+    // })
   }
 
   // 确认退出登录

@@ -10,6 +10,10 @@ import Summary from '@/modules/Summary/views/Summary.vue';
 // 定义路由配置
 const routes: RouteRecordRaw[] = [
     {
+        path: '/',
+        redirect: '/summary'
+    },
+    {
         path: '/login',
         name: 'login',
         component: () => import('@/modules/Account/views/LoginView.vue'),
@@ -127,7 +131,6 @@ router.beforeEach((to, _from, next) => {
     // 检查是否访问仓库
     if (to.name === 'repository-detail' && to.params.title) {
         const store = useRepositoryStore()
-        store.addToRecent(decodeURIComponent(to.params.title as string))
         store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
     }
     next()

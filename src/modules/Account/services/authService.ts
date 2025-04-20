@@ -1,5 +1,5 @@
 import { IUser, ILoginForm, IRegisterForm } from '../types/auth';
-
+import { userDataInitializationService } from './userDataInitializationService';
 /**
  * 认证服务类
  * 负责处理用户认证相关的操作，包括注册、登录、登出和认证状态检查
@@ -70,6 +70,8 @@ class AuthService {
             const response = await window.shared.ipcRenderer.invoke('auth:login', loginData);
 
             if (response.success) {
+                // 登录成功后，初始化用户数据
+                console.log('登录成功:', response.user);
                 return response.user;
             }
             throw new Error(response.message || '登录失败');
@@ -84,7 +86,14 @@ class AuthService {
      * 清除用户的登录状态
      */
     async logout(): Promise<void> {
-        await window.shared.ipcRenderer.invoke('auth:logout');
+        try {
+            await window.shared.ipcRenderer.invoke('auth:logout');
+            // 登出时清除所有用户数据
+            await userDataInitializationService.clearUserData();
+        } catch (error) {
+            console.error('登出失败:', error);
+            throw error;
+        }
     }
 
     /**

@@ -1,4 +1,5 @@
 import { defineStore } from "pinia";
+import { useUserStore } from "@/modules/Account/composables/useUserStore";
 
 export interface Repository {
     title: string;
@@ -9,12 +10,13 @@ export interface Repository {
     lastVisitTime?: string;
 }
 
-
+interface RepositoryState {
+    repositories: Repository[];
+}
 
 export const useRepositoryStore = defineStore("repository", {
     state: () => ({
         repositories: [] as Repository[],
-        recentRepositories: [] as Repository[],
     }),
 
     getters: {
@@ -25,6 +27,18 @@ export const useRepositoryStore = defineStore("repository", {
     },
 
     actions: {
+        async initialize() {
+            const { loadUserData } = useUserStore<RepositoryState>('repository');
+            const data = await loadUserData();
+            if (data) {
+                this.$patch(data);
+            }
+        },
+
+        async saveState() {
+            const { saveUserData } = useUserStore<RepositoryState>('repository');
+            await saveUserData(this.$state);
+        },
         addRepository(repository: Omit<Repository, "createTime" | "updateTime">) {
             const newRepository: Repository = {
                 ...repository,
@@ -35,28 +49,24 @@ export const useRepositoryStore = defineStore("repository", {
                 throw new Error("Repository already exists");
             }
             this.repositories.push(newRepository);
+            this.saveState();
         },
 
-        addToRecent(title: string) {
-            const repository = this.repositories.find(repo => repo.title === title)
-            if (!repository) return
-            // 更新访问时间
-            repository.lastVisitTime = new Date().toISOString()
-            // 从最近列表中移除该仓库（如果存在）
-            const index = this.recentRepositories.findIndex(repo => repo.title === title)
-            if (index !== -1) {
-                this.recentRepositories.splice(index, 1)
-            }
-            // 添加到最近列表开头
-            this.recentRepositories.unshift(repository)
-            // 保持最近列表不超过 5 个
-            if (this.recentRepositories.length > 5) {
-                this.recentRepositories.pop()
-            }
-        },
-
+        // 获取最近访问的仓库（最多5个）
         getRecentRepositories() {
-            return this.recentRepositories;
+            const repositories = this.repositories;
+            if (!repositories || repositories.length === 0) {
+                return [];
+            }
+            const recentRepo = repositories
+                .filter((repo: Repository) => repo.lastVisitTime)
+                .sort((a: Repository, b: Repository) => {
+                    const timeA: string = a.lastVisitTime || '';
+                    const timeB: string = b.lastVisitTime || '';
+                    return timeB.localeCompare(timeA);
+                })
+                .slice(0, 5);
+            return recentRepo;
         },
 
         removeRepository(title: string) {
@@ -71,6 +81,7 @@ export const useRepositoryStore = defineStore("repository", {
             if (index > -1) {
                 this.repositories[index] = repository;
             }
+            this.saveState();
         },
 
         currentRepositoryPath() {
@@ -85,9 +96,7 @@ export const useRepositoryStore = defineStore("repository", {
             if (repository) {
                 repository.lastVisitTime = new Date().toISOString();
             }
+            this.saveState();
         }
     },
-
-    persist: true
-
 })

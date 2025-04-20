@@ -57,8 +57,8 @@
   import { ref } from 'vue'
   import { useRepositoryStore } from '../stores/repositoryStore'
   import type { Repository } from '../stores/repositoryStore'
-  import CreateRepo from './components/CreateRepo.vue'
-  import RepoSettings from './components/RepoSettings.vue'
+  import CreateRepo from '../components/CreateRepo.vue'
+  import RepoSettings from '../components/RepoSettings.vue'
   
   const repositoryStore = useRepositoryStore()
   const showCreateDialog = ref(false)

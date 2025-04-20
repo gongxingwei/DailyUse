@@ -16130,19 +16130,33 @@ function v4(options, buf, offset2) {
   return unsafeStringify(rnds);
 }
 const _LocalAccountStorageService = class _LocalAccountStorageService {
+  /**
+   * 私有构造函数，确保单例模式
+   * 初始化存储路径并创建必要的目录结构
+   */
   constructor() {
+    // 用户数据目录路径
     __publicField(this, "userDataPath");
+    // 用户数据文件路径
     __publicField(this, "usersFile");
     this.userDataPath = sysPath__default.join(app.getPath("userData"), "accounts");
     this.usersFile = sysPath__default.join(this.userDataPath, "users.json");
     this.initStorage();
   }
+  /**
+   * 获取 LocalAccountStorageService 的单例实例
+   * @returns LocalAccountStorageService 实例
+   */
   static getInstance() {
     if (!_LocalAccountStorageService.instance) {
       _LocalAccountStorageService.instance = new _LocalAccountStorageService();
     }
     return _LocalAccountStorageService.instance;
   }
+  /**
+   * 初始化存储系统
+   * 创建必要的目录和文件结构
+   */
   async initStorage() {
     try {
       await fs.mkdir(this.userDataPath, { recursive: true });
@@ -16152,9 +16166,13 @@ const _LocalAccountStorageService = class _LocalAccountStorageService {
         await fs.writeFile(this.usersFile, JSON.stringify({}));
       }
     } catch (error) {
-      console.error("Failed to initialize storage:", error);
+      console.error("初始化存储失败:", error);
     }
   }
+  /**
+   * 读取所有用户数据
+   * @returns 包含所有用户信息的对象
+   */
   async readUsers() {
     try {
       const data = await fs.readFile(this.usersFile, "utf-8");
@@ -16163,9 +16181,17 @@ const _LocalAccountStorageService = class _LocalAccountStorageService {
       return {};
     }
   }
+  /**
+   * 写入用户数据
+   * @param users - 要写入的用户数据对象
+   */
   async writeUsers(users) {
     await fs.writeFile(this.usersFile, JSON.stringify(users, null, 2));
   }
+  /**
+   * 创建用户专属目录
+   * @param userId - 用户ID
+   */
   async createUserDirectory(userId) {
     const userDir = sysPath__default.join(this.userDataPath, userId);
     await fs.mkdir(userDir, { recursive: true });
@@ -16174,22 +16200,192 @@ const _LocalAccountStorageService = class _LocalAccountStorageService {
       JSON.stringify({ createdAt: (/* @__PURE__ */ new Date()).toISOString() })
     );
   }
+  /**
+   * 获取用户数据目录路径
+   * @param userId 用户ID
+   * @returns 用户数据目录的完整路径
+   */
+  getUserDataPath(userId) {
+    return sysPath__default.join(this.userDataPath, userId);
+  }
+  /**
+   * 读取用户特定的数据文件
+   * @param userId 用户ID
+   * @param storeName 存储名称（如 'goals', 'tasks' 等）
+   */
+  async readUserStore(userId, storeName) {
+    try {
+      const filePath = sysPath__default.join(this.getUserDataPath(userId), `${storeName}.json`);
+      const data = await fs.readFile(filePath, "utf-8");
+      return JSON.parse(data);
+    } catch (error) {
+      return null;
+    }
+  }
+  /**
+   * 写入用户特定的数据文件
+   * @param userId 用户ID
+   * @param storeName 存储名称
+   * @param data 要存储的数据
+   */
+  async writeUserStore(userId, storeName, data) {
+    const userDir = this.getUserDataPath(userId);
+    await fs.mkdir(userDir, { recursive: true });
+    const filePath = sysPath__default.join(userDir, `${storeName}.json`);
+    await fs.writeFile(filePath, JSON.stringify(data, null, 2));
+  }
+  /**
+   * 迁移用户数据
+   * @param fromUserId 源用户ID
+   * @param toUserId 目标用户ID
+   */
+  async migrateUserData(fromUserId, toUserId) {
+    const fromDir = this.getUserDataPath(fromUserId);
+    const toDir = this.getUserDataPath(toUserId);
+    try {
+      const files = await fs.readdir(fromDir);
+      await fs.mkdir(toDir, { recursive: true });
+      for (const file of files) {
+        const sourcePath = sysPath__default.join(fromDir, file);
+        const targetPath = sysPath__default.join(toDir, file);
+        await fs.copyFile(sourcePath, targetPath);
+      }
+    } catch (error) {
+      console.error("数据迁移失败:", error);
+      throw error;
+    }
+  }
+  /**
+  * 导出用户数据到指定目录
+  * @param userId 用户ID
+  * @param exportPath 导出目标文件夹路径
+  */
+  async exportUserData(userId, exportPath) {
+    const userDir = sysPath__default.join(this.userDataPath, userId);
+    const targetDir = sysPath__default.join(exportPath, `user_data_${userId}_${Date.now()}`);
+    try {
+      await fs.mkdir(targetDir, { recursive: true });
+      const copyFiles = async (sourcePath, targetPath) => {
+        const files = await fs.readdir(sourcePath);
+        for (const file of files) {
+          const sourceFilePath = sysPath__default.join(sourcePath, file);
+          const targetFilePath = sysPath__default.join(targetPath, file);
+          const stats = await fs.stat(sourceFilePath);
+          if (stats.isDirectory()) {
+            await fs.mkdir(targetFilePath, { recursive: true });
+            await copyFiles(sourceFilePath, targetFilePath);
+          } else {
+            await fs.copyFile(sourceFilePath, targetFilePath);
+          }
+        }
+      };
+      await copyFiles(userDir, targetDir);
+    } catch (error) {
+      console.error("导出用户数据失败:", error);
+      throw new Error("导出用户数据失败");
+    }
+  }
+  /**
+   * 导入用户数据
+   * @param userId 用户ID
+   * @param importPath 导入源文件夹路径
+   */
+  async importUserData(userId, importPath) {
+    const userDir = sysPath__default.join(this.userDataPath, userId);
+    try {
+      await fs.mkdir(userDir, { recursive: true });
+      const copyFiles = async (sourcePath, targetPath) => {
+        const files = await fs.readdir(sourcePath);
+        for (const file of files) {
+          const sourceFilePath = sysPath__default.join(sourcePath, file);
+          const targetFilePath = sysPath__default.join(targetPath, file);
+          const stats = await fs.stat(sourceFilePath);
+          if (stats.isDirectory()) {
+            await fs.mkdir(targetFilePath, { recursive: true });
+            await copyFiles(sourceFilePath, targetFilePath);
+          } else {
+            await fs.copyFile(sourceFilePath, targetFilePath);
+          }
+        }
+      };
+      await copyFiles(importPath, userDir);
+    } catch (error) {
+      console.error("导入用户数据失败:", error);
+      throw new Error("导入用户数据失败");
+    }
+  }
+  /**
+   * 清除用户数据
+   * @param userId 用户ID
+   */
+  async clearUserData(userId) {
+    const userDir = sysPath__default.join(this.userDataPath, userId);
+    try {
+      await fs.rm(userDir, { recursive: true, force: true });
+      await fs.mkdir(userDir);
+    } catch (error) {
+      console.error("清除用户数据失败:", error);
+      throw new Error("清除用户数据失败");
+    }
+  }
+  /**
+   * 获取用户数据大小（字节）
+   * @param userId 用户ID
+   */
+  async getUserDataSize(userId) {
+    const userDir = sysPath__default.join(this.userDataPath, userId);
+    let size = 0;
+    async function calculateSize(dirPath) {
+      const files = await fs.readdir(dirPath);
+      for (const file of files) {
+        const filePath = sysPath__default.join(dirPath, file);
+        const stats = await fs.stat(filePath);
+        if (stats.isDirectory()) {
+          await calculateSize(filePath);
+        } else {
+          size += stats.size;
+        }
+      }
+    }
+    await calculateSize(userDir);
+    return size;
+  }
 };
+// 单例实例
 __publicField(_LocalAccountStorageService, "instance");
 let LocalAccountStorageService = _LocalAccountStorageService;
 const localAccountStorageService = LocalAccountStorageService.getInstance();
 const _AuthService = class _AuthService {
+  /**
+   * 私有构造函数，确保单例模式
+   */
   constructor() {
   }
+  /**
+   * 获取 AuthService 的单例实例
+   * @returns AuthService 实例
+   */
   static getInstance() {
     if (!_AuthService.instance) {
       _AuthService.instance = new _AuthService();
     }
     return _AuthService.instance;
   }
+  /**
+   * 密码加密方法
+   * 使用 SHA-256 算法对密码进行单向加密
+   * @param password 原始密码
+   * @returns 加密后的密码哈希值
+   */
   hashPassword(password) {
     return crypto.createHash("sha256").update(password).digest("hex");
   }
+  /**
+   * 用户注册
+   * @param form 注册表单数据，包含用户名、密码和邮箱
+   * @returns 注册成功的用户信息（不包含密码）
+   * @throws 当用户名已存在或注册过程出错时抛出错误
+   */
   async register(form) {
     try {
       const users = await localAccountStorageService.readUsers();
@@ -16212,10 +16408,16 @@ const _AuthService = class _AuthService {
       const { passwordHash, ...userWithoutPassword } = newUser;
       return userWithoutPassword;
     } catch (error) {
-      console.error("Registration failed:", error);
+      console.error("注册失败:", error);
       throw new Error(error instanceof Error ? error.message : "注册失败");
     }
   }
+  /**
+   * 用户登录
+   * @param credentials 登录凭证，包含用户名和密码
+   * @returns 登录成功的用户信息（不包含密码）
+   * @throws 当用户名或密码错误时抛出错误
+   */
   async login(credentials) {
     const users = await localAccountStorageService.readUsers();
     const user = users[credentials.username];
@@ -16225,13 +16427,23 @@ const _AuthService = class _AuthService {
     const { passwordHash, ...userWithoutPassword } = user;
     return userWithoutPassword;
   }
+  /**
+   * 用户登出
+   * 目前为本地登出，无需特殊处理
+   */
   async logout() {
     return;
   }
+  /**
+   * 检查用户认证状态
+   * @returns 当前登录的用户信息，如果未登录则返回 null
+   * TODO: 实现持久化存储的认证状态检查
+   */
   async checkAuth() {
     return null;
   }
 };
+// 单例实例
 __publicField(_AuthService, "instance");
 let AuthService = _AuthService;
 const authService = AuthService.getInstance();
@@ -16266,6 +16478,121 @@ async function setupAuthHandlers() {
       return { success: true, user };
     } catch (error) {
       return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+    }
+  });
+}
+function setupUserStoreHandlers() {
+  ipcMain.handle("userStore:read", async (_, userId, storeName) => {
+    try {
+      return await localAccountStorageService.readUserStore(userId, storeName);
+    } catch (error) {
+      console.error(`读取用户存储失败 (${storeName}):`, error);
+      if (error instanceof Error) {
+        throw new Error(`读取用户数据失败: ${error.message}`);
+      }
+      throw new Error("读取用户数据失败: 未知错误");
+    }
+  });
+  ipcMain.handle("userStore-write", async (_, userId, storeName, data) => {
+    try {
+      await localAccountStorageService.writeUserStore(userId, storeName, data);
+    } catch (error) {
+      console.error(`写入用户存储失败 (${storeName}):`, error);
+      if (error instanceof Error) {
+        throw new Error(`读取用户数据失败: ${error.message}`);
+      }
+      throw new Error("读取用户数据失败: 未知错误");
+    }
+  });
+  ipcMain.handle("userStore:migrate", async (_, fromUserId, toUserId) => {
+    try {
+      await localAccountStorageService.migrateUserData(fromUserId, toUserId);
+    } catch (error) {
+      console.error("迁移用户数据失败:", error);
+      if (error instanceof Error) {
+        throw new Error(`读取用户数据失败: ${error.message}`);
+      }
+      throw new Error("读取用户数据失败: 未知错误");
+    }
+  });
+  ipcMain.handle("userStore:getPath", (_, userId) => {
+    try {
+      return localAccountStorageService.getUserDataPath(userId);
+    } catch (error) {
+      console.error("获取用户数据路径失败:", error);
+      if (error instanceof Error) {
+        throw new Error(`读取用户数据失败: ${error.message}`);
+      }
+      throw new Error("读取用户数据失败: 未知错误");
+    }
+  });
+  ipcMain.handle("userStore:createDirectory", async (_, userId) => {
+    try {
+      await localAccountStorageService.createUserDirectory(userId);
+    } catch (error) {
+      console.error("创建用户目录失败:", error);
+      if (error instanceof Error) {
+        throw new Error(`读取用户数据失败: ${error.message}`);
+      }
+      throw new Error("读取用户数据失败: 未知错误");
+    }
+  });
+  ipcMain.handle("userStore:export", async (_, userId) => {
+    try {
+      const { filePaths } = await dialog.showOpenDialog({
+        properties: ["openDirectory", "createDirectory"],
+        title: "选择导出目录",
+        buttonLabel: "导出到此处"
+      });
+      if (filePaths.length > 0) {
+        await localAccountStorageService.exportUserData(userId, filePaths[0]);
+        return { success: true, path: filePaths[0] };
+      }
+      return { success: false, reason: "cancelled" };
+    } catch (error) {
+      console.error("导出用户数据失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "未知错误"
+      };
+    }
+  });
+  ipcMain.handle("userStore:import", async (_, userId) => {
+    try {
+      const { filePaths } = await dialog.showOpenDialog({
+        properties: ["openDirectory"],
+        title: "选择导入目录",
+        buttonLabel: "从此处导入"
+      });
+      if (filePaths.length > 0) {
+        await localAccountStorageService.importUserData(userId, filePaths[0]);
+        return { success: true };
+      }
+      return { success: false, reason: "cancelled" };
+    } catch (error) {
+      console.error("导入用户数据失败:", error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : "未知错误"
+      };
+    }
+  });
+  ipcMain.handle("userData:clear", async (_event, userId) => {
+    try {
+      await localAccountStorageService.clearUserData(userId);
+      return { success: true };
+    } catch (error) {
+      console.error("清除用户数据失败:", error);
+      return { success: false, error: error instanceof Error ? error.message : "未知错误" };
+    }
+  });
+  ipcMain.handle("userData:getSize", async (_event, userId) => {
+    try {
+      const size = await localAccountStorageService.getUserDataSize(userId);
+      return { success: true, size };
+    } catch (error) {
+      console.error("获取用户数据大小失败:", error);
+      return { success: false, error: error instanceof Error ? error.message : "未知错误" };
     }
   });
 }
@@ -16379,6 +16706,7 @@ app.whenReady().then(() => {
   registerFileSystemHandlers();
   registerGitHandlers();
   setupAuthHandlers();
+  setupUserStoreHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

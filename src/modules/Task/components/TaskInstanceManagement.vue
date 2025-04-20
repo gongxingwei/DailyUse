@@ -101,7 +101,7 @@ const weekDays = computed(() => {
     const days = [];
     const current = new Date();
     const monday = new Date(current);
-    monday.setDate(current.getDate() - current.getDay() + 1);
+    monday.setDate(current.getDate() - (current.getDay() || 7) + 1);
 
     for (let i = 0; i < 7; i++) {
         const date = new Date(monday);

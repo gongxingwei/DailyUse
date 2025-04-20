@@ -10,8 +10,8 @@ import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
 import { registerGitHandlers } from './shared/ipc/git';
 import { protocol } from 'electron'
-import { setupAuthHandlers } from './modules/Account/ipc';
-
+import { setupAuthHandlers } from './modules/Account/ipcs/authIpc';
+import { setupUserStoreHandlers } from './modules/Account/ipcs/localAccountStorageIpc';
 app.setName('DailyUse');
 
 // 防止软件崩溃以及兼容
@@ -176,6 +176,7 @@ app.whenReady().then(() => {
   registerFileSystemHandlers();
   registerGitHandlers();
   setupAuthHandlers();
+  setupUserStoreHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

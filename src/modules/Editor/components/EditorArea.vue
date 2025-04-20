@@ -24,7 +24,7 @@ import MarkdownIt from 'markdown-it'
 import 'github-markdown-css'
 import { fileSystem } from '@/shared/utils/fileSystem'
 import { useThemeStore } from '@/modules/Theme/themeStroe'
-import { useSettingStore } from '@/modules/Setting/settingStore'
+import { useSettingStore } from '@/modules/Setting/stores/settingStore'
 import * as monaco from 'monaco-editor'
 
 const props = defineProps<{

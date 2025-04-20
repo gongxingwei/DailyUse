@@ -1,41 +1,17 @@
 import { defineStore } from "pinia";
 import type { IGoal, IKeyResult, IKeyResultCreate } from "../types/goal";
+import { useUserStore } from '@/modules/Account/composables/useUserStore';
 import { v4 as uuidv4 } from 'uuid';
+
+interface GoalState {
+    goals: IGoal[];
+    tempGoal: IGoal;
+    tempKeyResult: IKeyResult;
+}
 
 export const useGoalStore = defineStore('goal', {
     state: () => ({
-        goals: [
-            {
-                id: '1',
-                title: '用户增长',
-                color: '#FF5733',
-                dirId: '3',
-                startTime: '2024-03-15T09:00:00',
-                endTime: '2024-06-15T09:00:00',
-                motive: '用户增长是公司的核心目标，是公司发展的基石。',
-                feasibility: '公司已经具备了一定的用户增长能力，但仍需进一步提升。',
-                keyResults: [
-                    {
-                        id: '1',
-                        name: 'DAU',
-                        startValue: 1000,
-                        targetValue: 1500,
-                        weight: 8,
-                    },
-                    {
-                        id: '2',
-                        name: 'MAU',
-                        startValue: 2000,
-                        targetValue: 3000,
-                        weight: 7,
-                    },
-                ],
-                meta: {
-                    createdAt: '2024-03-15T09:00:00',
-                    updatedAt: '2024-03-15T09:00:00',
-                },
-            }
-        ] as IGoal[],
+        goals: [] as IGoal[],
         tempGoal: {
             id: 'tempGoal', // 临时目标 ID
             title: '',
@@ -93,6 +69,19 @@ export const useGoalStore = defineStore('goal', {
         },
     },
     actions: {
+        async initialize() {
+            const { loadUserData } = useUserStore<GoalState>('goal');
+            const data = await loadUserData();
+            console.log('加载goal 数据', data);
+            if (data) {
+                this.$patch(data);
+            }
+        },
+
+        async saveState() {
+            const { saveUserData } = useUserStore<GoalState>('goal');
+            await saveUserData(this.$state);
+        },
         // 临时目标相关方法（用于新建目标）
         initTempGoal() {
             this.tempGoal = {
@@ -147,6 +136,7 @@ export const useGoalStore = defineStore('goal', {
                 };
                 this.clearTempGoal();
                 this.goals.push(newGoal);
+                this.saveState();
                 return newGoal;
             }
             // 如果是编辑目标，则更新 goals 数组中的目标
@@ -162,6 +152,7 @@ export const useGoalStore = defineStore('goal', {
             };
             this.clearTempGoal();
             this.goals.splice(index, 1, updatedGoal);
+            this.saveState();
             return updatedGoal;
         },
         // // 获取临时目标
@@ -321,6 +312,7 @@ export const useGoalStore = defineStore('goal', {
             if (goal) {
                 goal.dirId = 'archive';
             }
+            this.saveState();
         },
         // 目标取消归档
         unarchiveGoalById(goalId: string) {
@@ -328,6 +320,7 @@ export const useGoalStore = defineStore('goal', {
             if (goal) {
                 goal.dirId = ''; 
             }
+            this.saveState();
         },
         // 目标删除（逻辑删除，将目标放入删除文件夹）
         deleteGoalById(goalId: string) {
@@ -335,6 +328,7 @@ export const useGoalStore = defineStore('goal', {
             if (goal) {
                 goal.dirId = 'trash';
             }
+            this.saveState();
         },
         // 目标恢复（逻辑恢复，将目标放入当前目录）
         restoreGoalById(goalId: string) {
@@ -342,8 +336,8 @@ export const useGoalStore = defineStore('goal', {
             if (goal) {
                 goal.dirId = ''; 
             }
+            this.saveState();
         },
 
     },
-    persist: true,
 });

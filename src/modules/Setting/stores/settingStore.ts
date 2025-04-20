@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { useThemeStore } from '@/modules/Theme/themeStroe'
 import { setLanguage } from '@/i18n'
+import { useUserStore } from '@/modules/Account/composables/useUserStore'
 
 export interface EditorSettings {
   fontSize: number
@@ -79,10 +80,33 @@ export const useSettingStore = defineStore('setting', {
   }),
 
   actions: {
+    // 初始化设置数据
+    async initialize() {
+      const { loadUserData } = useUserStore<AppSetting>('settings');
+      const data = await loadUserData();
+      if (data) {
+        this.$patch(data);
+        // 应用初始化的设置
+        this.setTheme(this.themeMode);
+        this.setLanguage(this.language);
+        await this.setAutoLaunch(this.autoLaunch);
+      }
+    },
+
+    // 保存设置状态
+    async saveState() {
+      const { saveUserData } = useUserStore<AppSetting>('settings');
+      try {
+        await saveUserData(this.$state);
+      } catch (error) {
+        console.error('保存设置失败:', error);
+      }
+    },
     setTheme(themeMode: string) {
       this.themeMode = themeMode
       const themeStore = useThemeStore()
       themeStore.setCurrentTheme(themeMode)
+      
     },
 
     async setAutoLaunch(autoLaunch: boolean) {

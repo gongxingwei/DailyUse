@@ -1,7 +1,8 @@
 import { ipcMain } from "electron";
 
 import { IRegisterForm, ILoginForm, IUser } from "@/modules/Account/types/auth";
-import { authService } from "./services/authService";
+import { authService } from "../services/authService";
+
 
 export async function setupAuthHandlers() {
 

@@ -4,6 +4,14 @@ import type { ITaskInstance, ITaskTemplate } from "../types/task";
 import { generateTaskInstances } from '../utils/taskUtils';
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
 import { formatDate, formatDateTime } from "@/shared/utils/dateUtils";
+import { useUserStore } from "@/modules/Account/composables/useUserStore";
+
+interface TaskState {
+    taskInstances: ITaskInstance[];
+    taskTemplates: ITaskTemplate[];
+    tempTaskTemplate: ITaskTemplate;
+}
+
 export const useTaskStore = defineStore('task', {
     state: () => ({
         taskInstances: [] as ITaskInstance[],
@@ -178,6 +186,18 @@ export const useTaskStore = defineStore('task', {
     },
 
     actions: {
+        async initialize() {
+            const { loadUserData } = useUserStore<TaskState>('task');
+            const data = await loadUserData();
+            if (data) {
+                this.$patch(data);
+            }
+        },
+
+        async saveState() {
+            const { saveUserData } = useUserStore<TaskState>('task');
+            await saveUserData(this.$state);
+        },
         // 任务模板 CRUD 操作
         // 初始化任务模板
         initTempTaskTemplate(taskTempalteId: string) {
@@ -309,6 +329,7 @@ export const useTaskStore = defineStore('task', {
                 }
             }
             this.resetTempTaskTemplate();
+            this.saveState();
         },
         // 创建任务提醒
         async createTaskReminders(template: ITaskTemplate, instances: ITaskInstance[]) {
@@ -355,15 +376,16 @@ export const useTaskStore = defineStore('task', {
 
                 // 删除任务模板
                 this.taskTemplates.splice(index, 1);
-
+                this.saveState();
                 return true;
             }
             console.error('Task template not found:', taskId);
             return false;
+
         },
 
         // 任务实例相关
-        // Task completion handling
+        // 完成任务标记
         async completeTask(taskId: string) {
             const goalStore = useGoalStore();
             const taskIndex = this.taskInstances.findIndex(t => t.id === taskId);
@@ -388,7 +410,7 @@ export const useTaskStore = defineStore('task', {
                         );
                     }
                 }
-
+                this.saveState();
                 return true;
             }
 

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { authService } from '../services/authService';
 import type { IUser, ILoginForm, IRegisterForm } from '../types/auth';
-
+import { userDataInitializationService } from '../services/userDataInitializationService';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         user: null as IUser | null,
@@ -35,8 +35,9 @@ export const useAuthStore = defineStore('auth', {
             this.loading = true;
             this.error = null;
             try {
-                const user = await authService.login(credentials);
+                const user = await authService.login(credentials); // 登录成功后，返回用户信息
                 this.user = user;
+                await userDataInitializationService.initializeUserData(); // 获取用户信息后，初始化用户数据
                 return true;
             } catch (error) {
                 this.error = error instanceof Error ? error.message : '登录失败';
