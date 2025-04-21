@@ -57,6 +57,5 @@
     "provider": "github",
     "releaseType": "release" // 配置发布选项
   },
-  "remoteBuild": true, // 启用远程构建
   "generateUpdatesFilesForAllChannels": true // 为所有渠道生成更新文件
 }
