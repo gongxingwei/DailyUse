@@ -1,30 +1,36 @@
 // @see - https://www.electron.build/configuration/configuration
 {
   "$schema": "https://raw.githubusercontent.com/electron-userland/electron-builder/master/packages/app-builder-lib/scheme.json",
-  "appId": "DailyUse",
+  "appId": "com.dailyuse.app", // 修改为更规范的应用ID格式
   "asar": true,
   "productName": "DailyUse",
   "directories": {
-    "output": "release/${version}"
+    "output": "dist", // 修改输出目录，与 GitHub Actions 保持一致
+    "buildResources": "build" // 添加资源目录配置
   },
   "files": [
     "dist",
-    "dist-electron"
+    "dist-electron",
+    "package.json" // 添加 package.json
   ],
   "mac": {
     "target": [
-      "dmg"
+      "dmg",
+      "zip"  // 添加 zip 格式支持自动更新
     ],
-    "artifactName": "${productName}-Mac-${version}-Installer.${ext}"
+    "artifactName": "${productName}-Mac-${version}-Installer.${ext}",
+    "category": "public.app-category.productivity" // 添加应用类别
   },
   "win": {
     "icon": "public/DailyUse-256.png",
     "target": [
       {
         "target": "nsis",
-        "arch": [
-          "x64"
-        ]
+        "arch": ["x64"]
+      },
+      {
+        "target": "zip", // 添加 zip 格式支持自动更新
+        "arch": ["x64"]
       }
     ],
     "artifactName": "${productName}-Windows-${version}-Setup.${ext}"
@@ -33,12 +39,24 @@
     "oneClick": false,
     "perMachine": false,
     "allowToChangeInstallationDirectory": true,
-    "deleteAppDataOnUninstall": false
+    "deleteAppDataOnUninstall": false,
+    "createDesktopShortcut": true, // 添加桌面快捷方式选项
+    "createStartMenuShortcut": true, // 添加开始菜单快捷方式选项
+    "shortcutName": "DailyUse" // 指定快捷方式名称
   },
   "linux": {
     "target": [
-      "AppImage"
+      "AppImage",
+      "deb",  // 添加 deb 格式
+      "rpm"   // 添加 rpm 格式
     ],
-    "artifactName": "${productName}-Linux-${version}.${ext}"
-  }
+    "artifactName": "${productName}-Linux-${version}.${ext}",
+    "category": "Utility" // 添加应用类别
+  },
+  "publish": {
+    "provider": "github",
+    "releaseType": "release" // 配置发布选项
+  },
+  "remoteBuild": true, // 启用远程构建
+  "generateUpdatesFilesForAllChannels": true // 为所有渠道生成更新文件
 }

@@ -53,22 +53,40 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}
-          path: |
-            dist/*.exe
-            dist/*.zip
-            dist/*.dmg
-            dist/*.AppImage
-            dist/*.deb
-            dist/*.rpm
+          path: dist
           compression-level: 9 # 添加压缩级别
 
+  # 专门用于创建 release 的 job
+  create-release:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 下载所有平台的构建产物
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      # 创建单个 Release
       - name: Create Release
-        if: matrix.os == 'windows-latest'  # 仅在一个平台触发发布
         uses: softprops/action-gh-release@v1
         with:
+          draft: false
+          prerelease: false
           files: |
-            dist/*.exe  # Windows 可执行文件
-            dist/*.zip  # Windows 压缩包
-          generate_release_notes: true # 自动生成发布说明
+            artifacts/**/*.exe
+            artifacts/**/*.dmg
+            artifacts/**/*.AppImage
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.zip
+            artifacts/**/latest*.yml
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
