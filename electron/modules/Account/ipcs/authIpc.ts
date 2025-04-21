@@ -1,6 +1,6 @@
 import { ipcMain } from "electron";
 
-import { IRegisterForm, ILoginForm, IUser } from "@/modules/Account/types/auth";
+import { IRegisterForm, ILoginForm } from "@/modules/Account/types/auth";
 import { authService } from "../services/authService";
 
 

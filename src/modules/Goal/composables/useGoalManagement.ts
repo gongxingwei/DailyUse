@@ -1,12 +1,9 @@
 import { ref, computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter } from 'vue-router';
 import { useGoalStore } from '../stores/goalStore';
-import { useGoalDirStore } from '../stores/goalDirStore';
-import type { IGoal } from '../types/goal';
 
 export function useGoalManagement() {
     const goalStore = useGoalStore();
-    const goalDirStore = useGoalDirStore();
     const router = useRouter();
     // 选择的目标文件夹下的目标
     const selectedDirId = ref<string>('all');

@@ -25,21 +25,23 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
 
 ## 功能
 
-
+- 用户管理  
+  账户管理  
+  数据管理 
 - 知识仓库
   用于存储 markdown 文档  
   存储资源等的容器  
   可以创建 文档仓库、图片仓库  
   仓库的添加、修改、删除、展示
 - 待办任务  
-  todo 的添加、修改、删除、展示  
+  任务的添加、修改、删除、展示  
   桌面弹窗提醒  
   任务留档  
 - Markdown 编辑器  
   编辑功能  
   支持分屏、预览、窗口大小拖拽调整  
   实现可视化 git 功能  
-- 学习目标  
+- OKR目标管理  
   管理目标  
 - 提醒功能
   添加提醒事项  
@@ -55,10 +57,8 @@ If the standalone TypeScript plugin doesn't feel fast enough to you, Volar has a
   中英文切换  
   编辑器相关设置  
   开机自启动  
+
 待实现
-- 用户管理  
-  账户管理  
-  数据管理  
 - 学习内容推荐
   关联目标  
   自定义推荐关键字  

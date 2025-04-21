@@ -1,17 +1,15 @@
 import { onMounted, onUnmounted } from 'vue';
-import { useTaskStore } from '../stores/taskStore';
 import { scheduleService } from '@/shared/utils/schedule/main';
 import { notification } from '@/shared/utils/notification/notification';
 import { formatDateTime } from '@/shared/utils/dateUtils';
 import type { ITaskInstance } from '../types/task';
 
 export function useTaskReminderInit() {
-    const taskStore = useTaskStore();
     let cleanupListener: (() => void) | null = null;
 
     onMounted(() => {
         // 只注册提醒监听器
-        cleanupListener = scheduleService.onScheduleTriggered(async ({ id, task }) => {
+        cleanupListener = scheduleService.onScheduleTriggered(async ({ task }) => {
             if (task.type === 'taskReminder') {
                 const taskInstance = task.payload as ITaskInstance;
                 await showTaskReminder(taskInstance);

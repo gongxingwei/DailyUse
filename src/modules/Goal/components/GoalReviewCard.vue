@@ -16,7 +16,7 @@
                              class="review-card-item">
                             <div class="review-card-item-info">
                                 <div class="review-time">
-                                    {{ formatDate(review.createdAt) }}
+                                    {{ formatDateWithTemplate(review.createdAt, 'YYYY/MM/DD HH:mm') }}
                                 </div>
                                 <div class="review-progress">
                                     进度：{{ review.goalProgress?.currentProgress }}%
@@ -41,7 +41,8 @@
 <script setup lang="ts">
 
 import { useGoalReview } from '../composables/useGoalReview';
-
+// utils
+import { formatDateWithTemplate } from '@/shared/utils/dateUtils';
 defineProps<{
     visible: boolean;
 }>();
@@ -52,17 +53,6 @@ const emit = defineEmits<{
     (e: 'delete', reviewId: string): void;
 }>();
 const { allReviews } = useGoalReview();
-
-// 格式化日期
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleString('zh-CN', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
 
 // 事件处理
 const handleClose = () => emit('close');

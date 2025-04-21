@@ -1,10 +1,28 @@
-import { ref } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useGoalStore } from '../stores/goalStore'
+import { useGoalDirStore } from '../stores/goalDirStore';
+import { storeToRefs } from 'pinia';
+
+import type { IGoal } from '../types/goal';
 
 export function useGoalDialog() {
+  const goalStore = useGoalStore()
+  const goalDirStore = useGoalDirStore()
+
+  const goalDirs = computed(() => {
+    return goalDirStore.getUserDirs;
+  });
+  const { tempGoal } = storeToRefs(goalStore);
+
   const showGoalDialog = ref(false)
 
-  const goalStore = useGoalStore()
+  const activeTab = ref(0);
+  const tabs = [
+    { name: '基本信息', icon: 'mdi-information' },
+    { name: '关键结果', icon: 'mdi-target' },
+    { name: '动机与可行性', icon: 'mdi-lightbulb' }
+  ];
+
   // 开始创建新的目标
   const startCreateGoal = () => {
     const tempGoal = goalStore.initTempGoal()
@@ -51,7 +69,7 @@ export function useGoalDialog() {
     showKeyResultDialog.value = true
   }
   // 开始编辑关键结果
-  const startEditKeyResult = (goalId:string, keyResultId: string) => {
+  const startEditKeyResult = (goalId: string, keyResultId: string) => {
     if (!keyResultId) {
       console.error('No key result ID provided');
       return;
@@ -86,8 +104,97 @@ export function useGoalDialog() {
     showKeyResultDialog.value = false
   }
 
+  // 目标编辑规则
+  type ValidationState = {
+    [K in keyof Partial<IGoal>]: string | undefined;
+  };
+  const validationErrors = reactive<ValidationState>({
+    title: undefined,
+    keyResults: undefined,
+    startTime: undefined,
+    endTime: undefined,
+  });
+  // 名称不能为空
+  const titleRules = [
+    (v: string) => !!v || '名称不能为空',
+    (v: string) => (v && v.length <= 50) || '名称不能超过50个字符',
+  ]
+  // 时间规则
+  const minDate = computed(() => {
+    return new Date().toISOString().split('T')[0];
+  });
+  const startTimeRules = [
+    (v: string) => !!v || '开始时间不能为空',
+    (v: string) => {
+      const startDate = new Date(v);
+      return startDate >= new Date(minDate.value) || '开始时间不能早于今天';
+    }
+  ];
 
+  const endTimeRules = [
+    (v: string) => !!v || '结束时间不能为空',
+    (v: string) => {
+      if (!tempGoal.value.startTime) return true;
+      const endDate = new Date(v);
+      const startDate = new Date(tempGoal.value.startTime);
+      return endDate >= startDate || '结束时间不能早于开始时间';
+    }
+  ];
+
+  const validateDates = () => {
+    if (!tempGoal.value.startTime) {
+      validationErrors.startTime = '请选择开始时间';
+      return false;
+    }
+    if (!tempGoal.value.endTime) {
+      validationErrors.endTime = '请选择结束时间';
+      return false;
+    }
+
+    const startDate = new Date(tempGoal.value.startTime);
+    const endDate = new Date(tempGoal.value.endTime);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (startDate < today) {
+      validationErrors.startTime = '开始时间不能早于今天';
+      return false;
+    }
+
+    if (endDate < startDate) {
+      validationErrors.endTime = '结束时间不能早于开始时间';
+      return false;
+    }
+
+    validationErrors.startTime = undefined;
+    validationErrors.endTime = undefined;
+    return true;
+  };
+  // 至少一个关键结果
+  const validateKeyResults = () => {
+    if (!tempGoal.value.keyResults || tempGoal.value.keyResults.length === 0) {
+      validationErrors.keyResults = '至少需要一个关键结果';
+      return false;
+    }
+    validationErrors.keyResults = undefined;
+    return true;
+  };
+  // 验证所有字段，用于保存按钮的启用状态
+  const isValid = computed(() => {
+    return !Object.values(validationErrors).some(error => error) &&
+      tempGoal.value.title.trim() !== '' &&
+      tempGoal.value.startTime &&
+      tempGoal.value.endTime &&
+      validateDates();
+      validateKeyResults();
+  });
   return {
+    tempGoal,
+    goalDirs,
+
+    activeTab,
+    tabs,
+
     showGoalDialog,
     startCreateGoal,
     startEditGoal,
@@ -100,5 +207,13 @@ export function useGoalDialog() {
     saveKeyResult,
     deleteKeyResult,
 
+    validationErrors,
+    titleRules,
+    minDate,
+    startTimeRules,
+    endTimeRules,
+    validateDates,
+    validateKeyResults,
+    isValid,
   }
 }

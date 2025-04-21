@@ -82,10 +82,6 @@ const getTemplateCountByStatus = (status: string) => {
     ).length;
 };
 
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString();
-};
-
 const getRepeatText = (pattern: any) => {
     switch (pattern.type) {
         case 'daily':

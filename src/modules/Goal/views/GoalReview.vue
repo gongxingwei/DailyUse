@@ -116,7 +116,7 @@ import { ref, computed, type ComputedRef, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGoalStore } from '../stores/goalStore';
 import { useGoalReviewStore } from '../stores/goalReviewStore';
-import { useTaskStore } from '../stores/taskStore';
+import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import { useGoalReview } from '../composables/useGoalReview';
 import type { IGoal } from '../types/goal';
 import { storeToRefs } from 'pinia';

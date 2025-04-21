@@ -15,12 +15,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { useAuthStore } from '../stores/authStore';
 import LoginForm from '../components/LoginForm.vue';
-import RegisterForm from '../components/RegisterForm.vue';
-import { useRouter } from 'vue-router';
-
-import { useI18n } from 'vue-i18n';
 
 </script>
 

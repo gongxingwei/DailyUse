@@ -35,7 +35,6 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
 import { useGoalDirStore } from '../stores/goalDirStore';
 import { storeToRefs } from 'pinia';
 const { tempDir } = storeToRefs(useGoalDirStore());

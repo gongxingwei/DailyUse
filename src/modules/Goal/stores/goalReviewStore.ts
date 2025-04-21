@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 import { useGoalStore } from './goalStore';
-import { useTaskStore } from './taskStore';
+import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import { v4 as uuidv4 } from 'uuid';
 
 // 目标进度接口

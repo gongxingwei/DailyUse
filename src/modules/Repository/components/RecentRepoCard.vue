@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRepositoryStore } from '../stores/repositoryStore'
 import type { Repository } from '../stores/repositoryStore'
 import RepoInfoCard from '../components/RepoInfoCard.vue'
