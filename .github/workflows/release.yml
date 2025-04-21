@@ -25,7 +25,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 8
+          version: 9.14.4
           run_install: false # 不要在这一步安装依赖
 
       - name: Get pnpm store directory
@@ -70,4 +70,3 @@ jobs:
           generate_release_notes: true # 自动生成发布说明
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
