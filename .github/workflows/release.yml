@@ -2,14 +2,17 @@ name: Release
 on:
   push:
     tags:
-      - 'v*'  # 匹配如 v1.0.0 的标签
+      - 'v[0-9]+.[0-9]+.[0-9]+'  # 匹配如 v1.0.0 的标签
 
 jobs:
   build-and-release:
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write # 添加写入权限
     strategy:
       matrix:
         os: [windows-latest, macos-latest, ubuntu-latest]
+      fail-fast: false  # 避免一个平台失败导致全部取消
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,21 +35,25 @@ jobs:
         run: pnpm run build
 
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: dist-${{ matrix.os }}
           path: |
+            dist/*.exe
             dist/*.zip
             dist/*.dmg
             dist/*.AppImage
+            dist/*.deb
+            dist/*.rpm
+          compression-level: 9 # 添加压缩级别
 
       - name: Create Release
-        if: matrix.os == 'ubuntu-latest'  # 仅在一个平台触发发布
+        if: matrix.os == 'windows-latest'  # 仅在一个平台触发发布
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            dist/*.zip
-            dist/*.dmg
-            dist/*.AppImage
+            dist/*.exe  # Windows 可执行文件
+            dist/*.zip  # Windows 压缩包
+          generate_release_notes: true # 自动生成发布说明
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
