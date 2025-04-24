@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import type { IGoalDir } from "../types/goal";
 import { v4 as uuidv4 } from 'uuid';
-
+import { useUserStore } from '@/modules/Account/composables/useUserStore';
 
 export const SYSTEM_DIR_TYPES = {
     ALL: 'all',
@@ -31,7 +31,7 @@ export const useGoalDirStore = defineStore('goalDir', {
     state: () => ({
         systemDirs: SYSTEM_DIRS,
         userDirs: [
-            { id: '3', name: '考研', icon: 'mdi-folder' },
+            { id: '3', name: '学习', icon: 'mdi-folder' },
         ] as IGoalDir[],
         tempDir: {
             id: 'temp',
@@ -57,6 +57,20 @@ export const useGoalDirStore = defineStore('goalDir', {
         },
     },
     actions: {
+        async  initialize() {
+            const { loadUserData } = useUserStore<Partial<{ userDirs: IGoalDir[] }>>('goalDir');
+            const data = await loadUserData();
+            if (data && data.userDirs) {
+                this.$patch({ userDirs: data.userDirs });
+            }
+        },
+        async saveState() {
+            const { saveUserData } = useUserStore<Partial<{ userDirs: IGoalDir[] }>>('goalDir');
+            await saveUserData({
+                userDirs: this.userDirs,
+            });
+        },
+            
         // 初始化临时目录（用于新建）
         initTempDir() {
             this.tempDir = {

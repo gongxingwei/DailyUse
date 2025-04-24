@@ -182,7 +182,14 @@ export const useTaskStore = defineStore('task', {
                     });
 
                 return Object.values(timeline);
-            }
+            },
+        getTaskTemplateForKeyResult: (state) => (goalId: string, keyResultId: string) => {
+            return state.taskTemplates.filter(template =>
+                template.keyResultLinks?.some(link =>
+                    link.goalId === goalId && link.keyResultId === keyResultId
+                )
+            );
+        }
     },
 
     actions: {

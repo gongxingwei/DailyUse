@@ -2,7 +2,8 @@
   "name": "daily-use",
   "private": true,
   "author": {
-    "name": "bakersean"
+    "name": "bakersean",
+    "email": "lulouhao@stu.sicau.edu.cn"
   },
   "description": "DailyUse",
   "version": "0.1.3",

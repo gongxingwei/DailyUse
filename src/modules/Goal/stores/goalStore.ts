@@ -1,10 +1,11 @@
 import { defineStore } from "pinia";
-import type { IGoal, IKeyResult, IKeyResultCreate } from "../types/goal";
+import type { IGoal, IKeyResult, IKeyResultCreate, IRecord, IRecordCreate } from "../types/goal";
 import { useUserStore } from '@/modules/Account/composables/useUserStore';
 import { v4 as uuidv4 } from 'uuid';
 
 interface GoalState {
     goals: IGoal[];
+    records: IRecord[];
     tempGoal: IGoal;
     tempKeyResult: IKeyResult;
 }
@@ -28,11 +29,13 @@ export const useGoalStore = defineStore('goal', {
             id: 'temp', // 临时关键结果 ID
             name: '',
             startValue: 0,
+            currentValue: 0,
             targetValue: 10,
             calculationMethod: 'sum',
             weight: 5,
         } as IKeyResult,
-    }),
+        records: [] as IRecord[],
+    }) as GoalState,
     getters: {
         getAllGoals(): IGoal[] {
             return this.goals;
@@ -56,7 +59,7 @@ export const useGoalStore = defineStore('goal', {
             const goal = state.goals.find(g => g.id === goalId);
             if (!goal || !goal.keyResults || goal.keyResults.length === 0) return 0;
             const totalWeight = goal.keyResults.reduce((acc, kr) => acc + kr.weight, 0);
-            const totalProgress = goal.keyResults.reduce((acc, kr) => 
+            const totalProgress = goal.keyResults.reduce((acc, kr) =>
                 acc + (kr.startValue / kr.targetValue) * kr.weight, 0);
             return Number(((totalProgress / totalWeight) * 100).toFixed(1));
         },
@@ -66,6 +69,17 @@ export const useGoalStore = defineStore('goal', {
             const keyResult = goal.keyResults.find(kr => kr.id === keyResultId);
             if (!keyResult) return null;
             return Number(((keyResult.startValue / keyResult.targetValue) * 100).toFixed(1));
+        },
+        // 记录相关
+        // 获取关键结果的所有记录
+        getRecordsByKeyResultId: (state) => (goalId: string, keyResultId: string) => {
+            const goal = state.goals.find(g => g.id === goalId);
+            if (!goal) return null;
+            const keyResult = goal.keyResults.find(kr => kr.id === keyResultId);
+            if (!keyResult) return null;
+            return state.records.filter(r =>
+                r.goalId === goalId && r.keyResultId === keyResultId
+            );
         },
     },
     actions: {
@@ -103,8 +117,8 @@ export const useGoalStore = defineStore('goal', {
             const goal = this.goals.find(g => g.id === goalId);
             this.tempGoal = {
                 ...goal,
-                id: goal?.id || 'tempGoal', 
-                keyResults: goal?.keyResults || [], 
+                id: goal?.id || 'tempGoal',
+                keyResults: goal?.keyResults || [],
                 title: goal?.title || '',
                 color: goal?.color || '#FF5733',
                 dirId: goal?.dirId || '',
@@ -123,7 +137,7 @@ export const useGoalStore = defineStore('goal', {
         // 保存临时目标的修改
         saveTempGoal() {
             if (!this.tempGoal || !this.tempGoal.id) return null;
-            
+
             // 如果是新建目标，则添加到 goals 数组中
             if (this.tempGoal.id === 'tempGoal') {
                 const newGoal: IGoal = {
@@ -169,6 +183,7 @@ export const useGoalStore = defineStore('goal', {
                 id: 'temp', // 临时关键结果 ID
                 name: '',
                 startValue: 0,
+                currentValue: 0,
                 targetValue: 10,
                 calculationMethod: 'sum',
                 weight: 5,
@@ -193,7 +208,7 @@ export const useGoalStore = defineStore('goal', {
         clearTempKeyResult() {
             this.initTempKeyResult();
         },
-        //  保存临时关键结果的修改(保活增加和修改)
+        //  保存临时关键结果的修改(增加和修改)
         saveTempKeyResultChanges() {
             if (!this.tempKeyResult) return null;
             // 如果是新建关键结果，则添加到临时目标中
@@ -201,6 +216,7 @@ export const useGoalStore = defineStore('goal', {
                 const keyResult: IKeyResult = {
                     ...this.tempKeyResult,
                     id: uuidv4(),
+                    currentValue: this.tempKeyResult.startValue, // 新建时 currentValue 等于 startValue
                 };
                 this.tempGoal.keyResults.push(keyResult);
                 this.clearTempKeyResult();
@@ -209,7 +225,7 @@ export const useGoalStore = defineStore('goal', {
             // 如果是编辑关键结果，则更新临时目标中的关键结果
             if (this.tempKeyResult.id !== 'temp') {
                 const index = this.tempGoal.keyResults.findIndex(kr => kr.id === this.tempKeyResult.id);
-                
+
                 if (index !== -1) {
                     const keyResult: IKeyResult = {
                         ...this.tempKeyResult,
@@ -231,25 +247,14 @@ export const useGoalStore = defineStore('goal', {
                 // this.clearTempKeyResult();
             }
         },
-
-        // 关键结果相关方法
-        addKeyResult(goalId: string, keyResultCreate: IKeyResultCreate) {
-            const goal = this.goals.find(g => g.id === goalId);
-            // 给 keyResultCreate 添加 id
-            const keyResult: IKeyResult = {
-                id: uuidv4(),
-                ...keyResultCreate,
-            };
-            if (goal) {
-                goal.keyResults.push(keyResult);
-            }
-        },
+        // 删除已有关键结果
         deleteKeyResult(goalId: string, keyResultId: string) {
             const goal = this.goals.find(g => g.id === goalId);
             if (goal) {
                 const index = goal.keyResults.findIndex(kr => kr.id === keyResultId);
                 goal.keyResults.splice(index, 1);
             }
+            this.saveState();
         },
         getKeyResultById(goalId: string, keyResultId: string) {
             // 在临时目标中查找关键结果
@@ -318,7 +323,7 @@ export const useGoalStore = defineStore('goal', {
         unarchiveGoalById(goalId: string) {
             const goal = this.goals.find(g => g.id === goalId);
             if (goal) {
-                goal.dirId = ''; 
+                goal.dirId = '';
             }
             this.saveState();
         },
@@ -334,10 +339,39 @@ export const useGoalStore = defineStore('goal', {
         restoreGoalById(goalId: string) {
             const goal = this.goals.find(g => g.id === goalId);
             if (goal) {
-                goal.dirId = ''; 
+                goal.dirId = '';
             }
             this.saveState();
         },
 
+        // 记录相关方法
+        // 添加记录
+        addRecord(record: IRecordCreate, goalId: string, keyResultId: string) {
+            if (!record || !keyResultId || !goalId) return {message: '参数错误'};
+            // 生成记录 ID
+            const recordId = uuidv4();
+            // 创建记录对象
+            const newRecord: IRecord = {
+                id: recordId,
+                goalId: goalId,
+                keyResultId: keyResultId,
+                value: record.value,
+                date: record.time,
+                note: record.note,
+            };
+            this.records.push(newRecord);
+            // 更新关键结果的起始值
+            const goal = this.goals.find(g => g.id === goalId);
+            if (goal) {
+                const keyResult = goal.keyResults.find(kr => kr.id === keyResultId);
+                if (keyResult) {
+                    keyResult.currentValue += record.value;
+                }
+            }
+            this.saveState();
+            return {message: '记录添加成功'};
+        },
+
+        
     },
 });

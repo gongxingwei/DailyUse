@@ -2,6 +2,7 @@ import { defineStore } from 'pinia';
 import { useGoalStore } from './goalStore';
 import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import { v4 as uuidv4 } from 'uuid';
+import { useUserStore } from '@/modules/Account/composables/useUserStore';
 
 // 目标进度接口
 interface GoalProgress {
@@ -117,6 +118,19 @@ export const useGoalReviewStore = defineStore('goalReview', {
     },
 
     actions: {
+        async initialize() {
+            const { loadUserData } = useUserStore<Partial<{ reviews: Review[] }>>('goalReview');
+            const data = await loadUserData();
+            if (data && data.reviews) {
+                this.$patch({ reviews: data.reviews });
+            }
+        },
+        async saveState() {
+            const { saveUserData } = useUserStore<Partial<{ reviews: Review[] }>>('goalReview');
+            await saveUserData({
+                reviews: this.reviews,
+            });
+        },
         addGoalReview(review: Review) {
             this.reviews.push(review);
         },
@@ -211,6 +225,4 @@ export const useGoalReviewStore = defineStore('goalReview', {
             this.tempReview = review || null;
         },
     },
-
-    persist: true,
 });

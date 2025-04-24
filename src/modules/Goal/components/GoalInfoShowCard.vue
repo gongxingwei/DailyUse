@@ -17,28 +17,43 @@
         </div>
         <!-- 关键结果 -->
         <div class="key-results-grid">
-            <div v-for="keyResult in goal.keyResults" :key="keyResult.id" class="kr-card"
+            <!-- <div v-for="keyResult in goal.keyResults" :key="keyResult.id" class="kr-card"
                 :style="{ '--progress': `${goalStore.getKeyResultProgress(goal.id, keyResult.id)}%` }">
 
                 <span class="kr-name">{{ keyResult.name }}</span>
                 <div class="kr-values">
                     {{ keyResult.startValue }} → {{ keyResult.targetValue }}
                     <button class="increment-btn"
-                        @click.stop="goalStore.updateKeyResultStartValue(goal?.id as string, keyResult.id, 1)">
+                        @click.stop="startAddRecord(keyResult.id)">
                         <v-icon icon="mdi-plus" size="20"/>
                     </button>
                 </div>
 
+            </div> -->
+            <div v-for="keyResult in goal.keyResults" :key="keyResult.id" class="kr-card"
+                :style="{ '--progress': `${goalStore.getKeyResultProgress(goal.id, keyResult.id)}%` }">
+                <KeyResultCard :keyResult="keyResult" :goalId="goal.id" />
             </div>
         </div>
+
+        <RecordDialog :visible="showRecordDialog"
+            @save="(record) => handleSaveRecord(record, goal?.id as string, selectedKeyResultId)"
+            @cancel="handleCancelAddRecord" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { IGoal } from '../types/goal';
+// stores
 import { useGoalStore } from '../stores/goalStore';
+// 组件
+import RecordDialog from './RecordDialog.vue';
+import KeyResultCard from './KeyResultCard.vue';
+// composables
+import { useRecordDialog } from '../composables/useRecordDialog';
 
+const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
 const props = defineProps<{
     goal: IGoal;
 }>();

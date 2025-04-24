@@ -113,7 +113,7 @@
                 </div>
             </div>
             <!-- 关键结果 -->
-            <div class="goal-info-show-keyresult">
+            <div class="goal-info-show-keyresult" >
                 <div class="goal-infomation-show-keyresult-header">
                     <v-icon icon="mdi-poll" size="16" />
                     <span>关键结果</span>
@@ -126,7 +126,7 @@
 
                             {{ keyResult.startValue }} → {{ keyResult.targetValue }}
                             <button class="increment-btn"
-                                @click.stop="goalStore.updateKeyResultStartValue(goal?.id as string, keyResult.id, 1)">
+                                @click.stop="startAddRecord(keyResult.id)">
                                 <v-icon icon="mdi-plus" size="20" />
                             </button>
                         </div>
@@ -141,6 +141,7 @@
         <ConfirmDialog v-model="showDeleteConfirmDialog" title="删除目标" message="确定要删除该目标吗？" confirm-text="确认"
             cancel-text="取消" @confirm="handleDeleteGoal(goal?.id as string)" @cancel="cancelDeleteGoal" />
         <GoalReviewCard :visible="showGoalReviewRecored" @close="closeGoalReviewRecord" />
+        <RecordDialog :visible="showRecordDialog" @save="(record) =>handleSaveRecord(record, goal?.id as string, selectedKeyResultId)" @cancel="handleCancelAddRecord" />
     </div>
 </template>
 <script setup lang="ts">
@@ -152,10 +153,11 @@ import { useGoalStore } from '../stores/goalStore';
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';
 import { useGoalManagement } from '../composables/useGoalManagement';
-
+import { useRecordDialog } from '../composables/useRecordDialog';
 // 组件
 import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
+import RecordDialog from '../components/RecordDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 
 const route = useRoute();
@@ -163,6 +165,7 @@ const goalStore = useGoalStore();
 const { showGoalDialog, startEditGoal, saveGoal, cancelGoalEdit } = useGoalDialog();
 const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
 const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
+const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
 const goal = computed(() => {
     const goalId = route.params.goalId as string;
     return goalStore.getGoalById(goalId);

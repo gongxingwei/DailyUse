@@ -26,6 +26,8 @@ export type IKeyResultCreate = {
     startValue: number;
     /** 目标值（需大于起始值） */
     targetValue: number;
+    /** 当前值 */
+    currentValue: number;
     /** 进度计算方式 */
     calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
     /** 权重（0-10) 整数 */
@@ -76,3 +78,23 @@ export type IGoalDir = {
     icon: string;
     parentId?: number; // For nested directories (optional)
 };
+
+export type IRecordCreate = {
+    /** 记录值 */
+    value: number;
+    /** 记录时间（如 '2024-03-15'） */
+    date: string;
+    /** 备注信息 */
+    note?: string;
+};
+/**
+ * 关键结果下的记录
+ */
+export type IRecord = {
+    id: string;
+    goalId: string;
+    keyResultId: string;
+    value: number;
+    date: string;
+    note?: string;
+}

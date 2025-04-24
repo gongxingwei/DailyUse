@@ -73,7 +73,7 @@
                   { title: '平均值', value: 'average' },
                   { title: '最大值', value: 'max' },
                   { title: '最小值', value: 'min' },
-                  { title: '自定义', value: 'custom' }
+                  // { title: '自定义', value: 'custom' }
                 ]"
                 item-title="title"
                 item-value="value"

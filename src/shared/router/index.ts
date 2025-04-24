@@ -56,6 +56,11 @@ const routes: RouteRecordRaw[] = [
                 component: () => import('@/modules/Goal/views/GoalInfo.vue')
             },
             {
+                path: '/goal/:goalId/:keyResultId',
+                name: 'key-result-info',
+                component: () => import('@/modules/Goal/views/KeyResultInfo.vue')
+            },
+            {
                 path: '/goal-review/:goalId',
                 name: 'goal-review',
                 component: () => import('@/modules/Goal/views/GoalReview.vue')
