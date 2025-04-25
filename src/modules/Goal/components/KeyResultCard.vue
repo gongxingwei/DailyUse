@@ -1,13 +1,13 @@
 <template>
     <v-container>
-        <v-card class="d-flex flex-column justify-space-between" @click=" navigateToKeyResultInfo" :style="cardStyle">
+        <v-card class="d-flex flex-column" @click.stop=" navigateToKeyResultInfo" :style="cardStyle">
             <!-- 进度背景层 -->
             <div 
                 class="progress-background"
                 :style="{
                     background: goal?.color || '#FF5733',
                     width: `${progress}%`,
-                    opacity: 0.1
+                    opacity: 0.1 
                 }"
             ></div>
             <v-card-title>
@@ -18,11 +18,11 @@
                 </v-row>
             </v-card-title>
 
-            <v-card-text>
-                <v-row>
+            <v-card-text class="d-flex flex-column pa-0">
+                <v-row class=" ma-0">
                     <v-col cols="12" class="d-flex flex-row justify-space-between align-end">
                         <div></div>
-                        <div class="pb-2">
+                        <div class="pb-2 no-wrap">
                             <span>{{ keyResult.currentValue }} -> {{ keyResult.targetValue }}</span>
                         </div>
                         <div>
@@ -88,4 +88,5 @@ const cardStyle = computed(() => ({
     transition: width 0.3s ease;
     pointer-events: none;
 }
+
 </style>

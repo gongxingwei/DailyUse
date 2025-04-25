@@ -1,5 +1,5 @@
 <template>
-    <div class="goal-card" :style="{ '--goal-color': goal.color || '#FF5733' }">
+    <div class="goal-card" :style="{ '--goal-color': goal.color || '#FF5733' }" @click="navigateToGoalInfo">
         <!-- Header: 标题、进度条 -->
         <div class="goal-card-header">
             <h3 class="goal-title">{{ goal.title }}</h3>
@@ -16,22 +16,8 @@
             <span class="progress-text">{{ goalProgress }}%</span>
         </div>
         <!-- 关键结果 -->
-        <div class="key-results-grid">
-            <!-- <div v-for="keyResult in goal.keyResults" :key="keyResult.id" class="kr-card"
-                :style="{ '--progress': `${goalStore.getKeyResultProgress(goal.id, keyResult.id)}%` }">
-
-                <span class="kr-name">{{ keyResult.name }}</span>
-                <div class="kr-values">
-                    {{ keyResult.startValue }} → {{ keyResult.targetValue }}
-                    <button class="increment-btn"
-                        @click.stop="startAddRecord(keyResult.id)">
-                        <v-icon icon="mdi-plus" size="20"/>
-                    </button>
-                </div>
-
-            </div> -->
-            <div v-for="keyResult in goal.keyResults" :key="keyResult.id" class="kr-card"
-                :style="{ '--progress': `${goalStore.getKeyResultProgress(goal.id, keyResult.id)}%` }">
+        <div class="key-results-container">
+            <div v-for="keyResult in goal.keyResults" :key="keyResult.id">
                 <KeyResultCard :keyResult="keyResult" :goalId="goal.id" />
             </div>
         </div>
@@ -45,6 +31,8 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { IGoal } from '../types/goal';
+// vue-router
+import { useRouter } from 'vue-router';
 // stores
 import { useGoalStore } from '../stores/goalStore';
 // 组件
@@ -58,8 +46,14 @@ const props = defineProps<{
     goal: IGoal;
 }>();
 
+const router = useRouter();
+const navigateToGoalInfo = () => {
+    router.push({ name: 'goal-info', params: { goalId: props.goal.id } });
+};
+
 const goalStore = useGoalStore();
 
+// 得到目标进度
 const goalProgress = computed(() => {
     return goalStore.getGoalProgress(props.goal.id) || 0;
 });
@@ -128,37 +122,30 @@ const todayProgress = computed(() => {
     display: block;
 }
 
-/* ky */
-.key-results-grid {
+/* kr 网格布局 */
+.key-results-container {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    gap: 1rem;
-    padding: 0;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 16px;
 }
 
-.kr-card {
-    position: relative;
-    border-radius: 12px;
-    padding: 1rem;
-    min-width: 100px;
-    min-height: 80px;
-    background: linear-gradient(to right,
-            var(--goal-color) var(--progress),
-            transparent var(--progress));
-    border: 1px solid var(--goal-color);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
+/* 响应式布局 */
+@media (max-width: 1200px) {
+    .key-results-container {
+        grid-template-columns: repeat(3, 1fr);
+    }
 }
 
-.increment-btn {
-    position: absolute;
+@media (max-width: 960px) {
+    .key-results-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
 
-    right: 10px;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    color: #ccc;
+@media (max-width: 600px) {
+    .key-results-container {
+        grid-template-columns: 1fr;
+    }
 }
 </style>

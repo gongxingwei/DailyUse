@@ -356,7 +356,7 @@ export const useGoalStore = defineStore('goal', {
                 goalId: goalId,
                 keyResultId: keyResultId,
                 value: record.value,
-                date: record.time,
+                date: record.date,
                 note: record.note,
             };
             this.records.push(newRecord);

@@ -113,26 +113,10 @@
                 </div>
             </div>
             <!-- 关键结果 -->
-            <div class="goal-info-show-keyresult" >
-                <div class="goal-infomation-show-keyresult-header">
-                    <v-icon icon="mdi-poll" size="16" />
-                    <span>关键结果</span>
+            <div class="key-results-container">
+                <div v-for="keyResult in keyResults" :key="keyResult.id">
+                    <KeyResultCard :keyResult="keyResult" :goalId="goal?.id as string" />
                 </div>
-                <div class="kr-grid">
-                    <div v-for="keyResult in keyResults" :key="keyResult.id" class="kr-card"
-                        :style="{ '--progress': `${getKrProgress(keyResult.id)}%` }">
-                        <span class="kr-title">{{ keyResult.name }}</span>
-                        <div class="kr-values">
-
-                            {{ keyResult.startValue }} → {{ keyResult.targetValue }}
-                            <button class="increment-btn"
-                                @click.stop="startAddRecord(keyResult.id)">
-                                <v-icon icon="mdi-plus" size="20" />
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
             </div>
             <!-- 备忘录 -->
             <div class="goal-infomation-show-memo"></div>
@@ -141,7 +125,9 @@
         <ConfirmDialog v-model="showDeleteConfirmDialog" title="删除目标" message="确定要删除该目标吗？" confirm-text="确认"
             cancel-text="取消" @confirm="handleDeleteGoal(goal?.id as string)" @cancel="cancelDeleteGoal" />
         <GoalReviewCard :visible="showGoalReviewRecored" @close="closeGoalReviewRecord" />
-        <RecordDialog :visible="showRecordDialog" @save="(record) =>handleSaveRecord(record, goal?.id as string, selectedKeyResultId)" @cancel="handleCancelAddRecord" />
+        <RecordDialog :visible="showRecordDialog"
+            @save="(record) => handleSaveRecord(record, goal?.id as string, selectedKeyResultId)"
+            @cancel="handleCancelAddRecord" />
     </div>
 </template>
 <script setup lang="ts">
@@ -159,6 +145,7 @@ import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
 import RecordDialog from '../components/RecordDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
+import KeyResultCard from '../components/KeyResultCard.vue';
 
 const route = useRoute();
 const goalStore = useGoalStore();
@@ -168,6 +155,7 @@ const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalM
 const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
 const goal = computed(() => {
     const goalId = route.params.goalId as string;
+    if (!goalId) return null;
     return goalStore.getGoalById(goalId);
 });
 // 得到 goal 中的 颜色
@@ -484,6 +472,7 @@ function formatDate(dateString: any) {
     color: #ccc;
     min-width: 45px;
 }
+
 /* 动机与可行性卡片 */
 .motivation-card {
     width: 90%;
@@ -517,60 +506,32 @@ function formatDate(dateString: any) {
     font-style: italic;
     padding: 0.5rem 0;
 }
-/* 关键结果相关 */
-.goal-infomation-show-keyresult-header {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    font-size: 1.2rem;
-    font-weight: 700;
-}
 
 /* kr样式 */
-.kr-grid {
+.key-results-container {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-    padding: 0;
+    gap: 16px;
+    margin-top: 16px;
+    padding-right: 140px;
 }
 
-.kr-card {
-    position: relative;
-    border-radius: 12px;
-    padding: 1rem;
-    min-height: 100px;
-    background: linear-gradient(to right,
-            var(--goal-color) var(--progress),
-            transparent var(--progress));
-    border: 1px solid var(--goal-color);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
+/* 响应式布局 */
+@media (max-width: 1200px) {
+    .key-results-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.kr-title {
-    font-weight: 500;
-    font-size: 1rem;
-    color: #fff;
+@media (max-width: 960px) {
+    .key-results-container {
+        grid-template-columns: repeat(2, 1fr);
+    }
 }
 
-.kr-values {
-    text-align: center;
-    font-size: 0.9rem;
-    color: #ccc;
-
-}
-
-.increment-btn {
-    position: absolute;
-
-    right: 10px;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    color: #ccc;
+@media (max-width: 600px) {
+    .key-results-container {
+        grid-template-columns: 1fr;
+    }
 }
 </style>

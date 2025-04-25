@@ -1,8 +1,22 @@
 <template>
     <v-container>
+        <!-- 返回按钮 -->
+        <v-row>
+            <v-col cols="12">
+                <v-btn
+                    color="primary"
+                    variant="text"
+                    prepend-icon="mdi-arrow-left"
+                    @click="router.back()"
+                >
+                    返回
+                </v-btn>
+            </v-col>
+        </v-row>
         <v-row>
             <KeyResultCard :keyResult="keyResult" :goalId="goalId" />
         </v-row>
+        <!-- 计算方式、起始值、权重 -->
         <v-row>
             <v-col cols="12">
                 <div class="d-flex gap-4">
@@ -26,9 +40,10 @@
                 </div>
             </v-col>
         </v-row>
+        <!-- 相关任务、记录 -->
         <v-row class="key-result-relative-info">
             <v-col cols="12">
-                <!-- 添加 v-tabs 组件 -->
+                <!-- v-tabs 组件 -->
                 <v-tabs v-model="activeTab">
                     <v-tab v-for="tab in tabs" :key="tab.value" :value="tab.value">
                         {{ tab.name }}
@@ -44,7 +59,7 @@
                                 暂无关联任务
                             </div>
                             <div v-else v-for="task in taskTemplates" :key="task.id">
-                                <TaskTemplateCard :taskTemplate="task" />
+                                <TaskTemplateCard :taskTemplate="task" :key-result-id="keyResult.id" />
                             </div>
                         </div>
                     </v-window-item>
@@ -65,7 +80,7 @@
 // vue
 import { computed, ref } from 'vue';
 // vue-router
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 // stores
 import { useGoalStore } from '../stores/goalStore';
 import { useTaskStore } from '@/modules/Task/stores/taskStore';
@@ -74,9 +89,10 @@ import KeyResultCard from '../components/KeyResultCard.vue';
 import RecordCard from '../components/RecordCard.vue';
 import TaskTemplateCard from '@/modules/Task/components/TaskTemplateCard.vue';
 
+const router = useRouter();
 const route = useRoute();
-const goalId = route.params.goalId as string;
-const keyResultId = route.params.keyResultId as string;
+const goalId = route.params.goalId as string; // 从路由参数中获取目标ID
+const keyResultId = route.params.keyResultId as string; // 从路由参数中获取关键结果ID
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
@@ -125,4 +141,5 @@ const records = computed(() => {
 .key-result-relative-info {
     background-color: rgb(var(--v-theme-surface));
 }
+
 </style>
