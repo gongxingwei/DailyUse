@@ -20,6 +20,16 @@
             label="仓库描述"
             rows="3"
           />
+
+          <!-- 关联目标 -->
+          <v-select
+            v-model="repoData.relativeGoalId"
+            :items="availableGoals"
+            item-title="title"
+            item-value="id"
+            label="关联目标"
+            clearable
+          />
         </v-form>
       </v-card-text>
       
@@ -34,9 +44,11 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRepositoryStore } from '../stores/repositoryStore'
-import { fileSystem } from '@/shared/utils/fileSystem';
 
+import { fileSystem } from '@/shared/utils/fileSystem';
+// stores
+import { useRepositoryStore } from '../stores/repositoryStore'
+import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 const props = defineProps<{
   modelValue: boolean
 }>()
@@ -46,6 +58,15 @@ const emit = defineEmits<{
 }>()
 
 const repoStore = useRepositoryStore()
+const goalStore = useGoalStore()
+
+// 计算属性，获取所有目标
+const availableGoals = computed(() => {
+  return goalStore.goals.map(goal => ({
+    id: goal.id,
+    title: goal.title,
+  }))
+})
 const form = ref()
 
 const dialogVisible = computed({
@@ -56,7 +77,8 @@ const dialogVisible = computed({
 const repoData = ref({
   title: '',
   path: '',
-  description: ''
+  description: '',
+  relativeGoalId: '',
 })
 
 const selectFolder = async () => {
@@ -90,7 +112,8 @@ const closeDialog = () => {
   repoData.value = {
     title: '',
     path: '',
-    description: ''
+    description: '',
+    relativeGoalId: '',
   }
 }
 </script> 

@@ -4,6 +4,7 @@ import FileExplorer from "@/modules/Editor/components/Explorer.vue";
 // import Search from "@/modules/Editor/components/Search.vue";
 
 import SourceControl from "../components/SourceControl.vue";
+import GoalPlugin from "../components/GoalPlugin.vue";
 
 interface ActivityBarItem {
     id: string;
@@ -19,6 +20,7 @@ export const useActivityBarStore = defineStore("activityBar", {
             { id: 'explorer', label: 'Explorer', title: 'Folders', icon: 'mdi-file-multiple', component: markRaw(FileExplorer) },
             // { id: 'search', label: 'Search', title: 'Search', icon: 'mdi-file-search', component: markRaw(Search) },
             { id: 'git', label: 'Git', title: 'Source Control', icon: 'mdi-source-branch', component: markRaw(SourceControl) },
+            { id: 'goal', label: 'Goal', title: 'Goal', icon: 'mdi-flag', component: markRaw(GoalPlugin) },
         ] as ActivityBarItem[],
         activeActivityBarItemId: 'explorer',
     }),

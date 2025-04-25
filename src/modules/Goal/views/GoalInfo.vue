@@ -113,10 +113,27 @@
                 </div>
             </div>
             <!-- 关键结果 -->
-            <div class="key-results-container">
-                <div v-for="keyResult in keyResults" :key="keyResult.id">
-                    <KeyResultCard :keyResult="keyResult" :goalId="goal?.id as string" />
-                </div>
+            <div class="content-tabs">
+                <v-tabs v-model="activeTab">
+                    <v-tab value="keyResults">关键结果</v-tab>
+                    <v-tab value="repositories">关联仓库</v-tab>
+                </v-tabs>
+
+                <v-window v-model="activeTab" class="mt-4">
+                    <v-window-item value="keyResults">
+                        <div class="key-results-container">
+                            <div v-for="keyResult in keyResults" :key="keyResult.id">
+                                <KeyResultCard :keyResult="keyResult" :goalId="goal?.id as string" />
+                            </div>
+                        </div>
+                    </v-window-item>
+                    <v-window-item value="repositories">
+                        <div class="repositories-container">
+                            <!-- Add your repositories content here -->
+                            <p>关联仓库内容</p>
+                        </div>
+                    </v-window-item>
+                </v-window>
             </div>
             <!-- 备忘录 -->
             <div class="goal-infomation-show-memo"></div>
@@ -125,9 +142,6 @@
         <ConfirmDialog v-model="showDeleteConfirmDialog" title="删除目标" message="确定要删除该目标吗？" confirm-text="确认"
             cancel-text="取消" @confirm="handleDeleteGoal(goal?.id as string)" @cancel="cancelDeleteGoal" />
         <GoalReviewCard :visible="showGoalReviewRecored" @close="closeGoalReviewRecord" />
-        <RecordDialog :visible="showRecordDialog"
-            @save="(record) => handleSaveRecord(record, goal?.id as string, selectedKeyResultId)"
-            @cancel="handleCancelAddRecord" />
     </div>
 </template>
 <script setup lang="ts">
@@ -139,11 +153,10 @@ import { useGoalStore } from '../stores/goalStore';
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';
 import { useGoalManagement } from '../composables/useGoalManagement';
-import { useRecordDialog } from '../composables/useRecordDialog';
+
 // 组件
 import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
-import RecordDialog from '../components/RecordDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import KeyResultCard from '../components/KeyResultCard.vue';
 
@@ -152,7 +165,7 @@ const goalStore = useGoalStore();
 const { showGoalDialog, startEditGoal, saveGoal, cancelGoalEdit } = useGoalDialog();
 const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
 const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
-const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
+
 const goal = computed(() => {
     const goalId = route.params.goalId as string;
     if (!goalId) return null;
@@ -222,12 +235,6 @@ const getCircleOffset = (progress: number) => {
     return circumference - (progress / 100) * circumference;
 };
 
-// 计算关键结果的进度
-const getKrProgress = (keyResultId: string) => {
-    const goalId = route.params.goalId as string;
-    return goalStore.getKeyResultProgress(goalId, keyResultId) || 0;
-};
-
 // 计算目标的剩余天数
 const remainingDays = computed(() => {
     const goalId = route.params.goalId as string;
@@ -256,6 +263,8 @@ function formatDate(dateString: any) {
     return `${year}-${month}-${day}`;
 }
 
+// 相关信息展示
+const activeTab = ref('keyResults');
 </script>
 <style scoped lang="css">
 #goal-info-show {
@@ -505,6 +514,20 @@ function formatDate(dateString: any) {
     font-weight: 300;
     font-style: italic;
     padding: 0.5rem 0;
+}
+
+/* 关联内容区域样式 */
+.content-tabs {
+    width: 90%;
+    margin-top: 1.5rem;
+}
+
+.repositories-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-top: 16px;
+    padding-right: 140px;
 }
 
 /* kr样式 */

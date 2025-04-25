@@ -23,6 +23,19 @@ export function useGoalDialog() {
     { name: '动机与可行性', icon: 'mdi-lightbulb' }
   ];
 
+  // 预定义颜色
+  const predefinedColors = [
+    '#FF5733', // 红色
+    '#FFC300', // 黄色
+    '#36D7B7', // 绿色
+    '#3498DB', // 蓝色
+    '#9B59B6', // 紫色
+    '#E74C3C', // 深红色
+    '#F1C40F', // 金色
+    '#2ECC71', // 翠绿
+    '#00CED1', // 青色
+    '#8E44AD'  // 深紫色
+  ];
   // 开始创建新的目标
   const startCreateGoal = () => {
     const tempGoal = goalStore.initTempGoal()
@@ -194,7 +207,8 @@ export function useGoalDialog() {
 
     activeTab,
     tabs,
-
+    predefinedColors,
+    
     showGoalDialog,
     startCreateGoal,
     startEditGoal,

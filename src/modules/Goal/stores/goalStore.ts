@@ -60,7 +60,7 @@ export const useGoalStore = defineStore('goal', {
             if (!goal || !goal.keyResults || goal.keyResults.length === 0) return 0;
             const totalWeight = goal.keyResults.reduce((acc, kr) => acc + kr.weight, 0);
             const totalProgress = goal.keyResults.reduce((acc, kr) =>
-                acc + (kr.startValue / kr.targetValue) * kr.weight, 0);
+                acc + (kr.currentValue / kr.targetValue) * kr.weight, 0);
             return Number(((totalProgress / totalWeight) * 100).toFixed(1));
         },
         getKeyResultProgress: (state) => (goalId: string, keyResultId: string) => {
@@ -68,9 +68,27 @@ export const useGoalStore = defineStore('goal', {
             if (!goal) return null;
             const keyResult = goal.keyResults.find(kr => kr.id === keyResultId);
             if (!keyResult) return null;
-            return Number(((keyResult.startValue / keyResult.targetValue) * 100).toFixed(1));
+            return Number(((keyResult.currentValue / keyResult.targetValue) * 100).toFixed(1));
         },
         // 记录相关
+        // 获取今日记录
+        getTodayRecords: (state) => {
+            const today = new Date().toISOString().split('T')[0];
+            return state.records.filter(r => {
+                if (!r.date) return false; // 过滤掉没有日期的记录
+                const recordDate = r.date.split(' ')[0];
+                return recordDate === today;
+            });
+        },
+        // 获取今日记录数量
+        getTodayRecordCount: (state) => {
+            const today = new Date().toISOString().split('T')[0];
+            return state.records.filter(r => {
+                if (!r.date) return false; // 过滤掉没有日期的记录
+                const recordDate = r.date.split(' ')[0];
+                return recordDate === today;
+            }).length;
+        },
         // 获取关键结果的所有记录
         getRecordsByKeyResultId: (state) => (goalId: string, keyResultId: string) => {
             const goal = state.goals.find(g => g.id === goalId);
@@ -80,6 +98,22 @@ export const useGoalStore = defineStore('goal', {
             return state.records.filter(r =>
                 r.goalId === goalId && r.keyResultId === keyResultId
             );
+        },
+        // 获取今日该目标的提升进度
+        getTodayGoalProgress: (state) => (goalId: string) => {
+            const today = new Date().toISOString().split('T')[0];
+            const goal = state.goals.find(g => g.id === goalId);
+            if (!goal) return null;
+            const totalWeight = goal.keyResults.reduce((acc, kr) => acc + kr.weight, 0);
+            const totalProgress = goal.keyResults.reduce((acc, kr) =>
+                acc + (kr.currentValue / kr.targetValue) * kr.weight, 0);
+            
+            const todayRecords = state.records.filter(r =>  {
+                if (!r.date) return false; // 过滤掉没有日期的记录
+                r.goalId === goalId && r.date.split(' ')[0] === today
+            });
+            const todayProgress = todayRecords.reduce((acc, r) => acc + r.value, 0);
+            return Number(((totalProgress + todayProgress) / totalWeight * 100).toFixed(1));
         },
     },
     actions: {
@@ -347,7 +381,7 @@ export const useGoalStore = defineStore('goal', {
         // 记录相关方法
         // 添加记录
         addRecord(record: IRecordCreate, goalId: string, keyResultId: string) {
-            if (!record || !keyResultId || !goalId) return {message: '参数错误'};
+            if (!record || !keyResultId || !goalId) return { message: '参数错误' };
             // 生成记录 ID
             const recordId = uuidv4();
             // 创建记录对象
@@ -369,9 +403,9 @@ export const useGoalStore = defineStore('goal', {
                 }
             }
             this.saveState();
-            return {message: '记录添加成功'};
+            return { message: '记录添加成功' };
         },
 
-        
+
     },
 });

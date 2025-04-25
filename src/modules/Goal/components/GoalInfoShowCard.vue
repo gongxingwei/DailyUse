@@ -22,9 +22,6 @@
             </div>
         </div>
 
-        <RecordDialog :visible="showRecordDialog"
-            @save="(record) => handleSaveRecord(record, goal?.id as string, selectedKeyResultId)"
-            @cancel="handleCancelAddRecord" />
     </div>
 </template>
 
@@ -36,12 +33,11 @@ import { useRouter } from 'vue-router';
 // stores
 import { useGoalStore } from '../stores/goalStore';
 // 组件
-import RecordDialog from './RecordDialog.vue';
+
 import KeyResultCard from './KeyResultCard.vue';
 // composables
-import { useRecordDialog } from '../composables/useRecordDialog';
 
-const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
+
 const props = defineProps<{
     goal: IGoal;
 }>();
@@ -59,8 +55,7 @@ const goalProgress = computed(() => {
 });
 
 const todayProgress = computed(() => {
-
-    return 5; // Example value
+    return goalStore.getTodayGoalProgress(props.goal.id) || 0;
 });
 </script>
 

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-import CreateRepo from '@/modules/Repository/components/CreateRepo.vue'
+import RepoDialog from '@/modules/Repository/components/RepoDialog.vue'
 import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
 
 const { t } = useI18n();
@@ -136,7 +136,7 @@ const toggleDrawer = () => {
       </div>
 
       <!-- 创建目标对话框 -->
-      <CreateRepo v-model="showCreateDialog" />
+      <RepoDialog v-model="showCreateDialog" />
     </div>
   </v-app>
 </template>

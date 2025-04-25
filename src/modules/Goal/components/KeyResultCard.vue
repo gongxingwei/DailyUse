@@ -7,7 +7,7 @@
                 :style="{
                     background: goal?.color || '#FF5733',
                     width: `${progress}%`,
-                    opacity: 0.1 
+                    opacity: 0.3, 
                 }"
             ></div>
             <v-card-title>
@@ -56,7 +56,7 @@ const navigateToKeyResultInfo = () => {
     router.push({ name: 'key-result-info', params: { goalId: props.goalId, keyResultId: props.keyResult.id } });
 };
 
-const { showRecordDialog, selectedKeyResultId, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
+const { showRecordDialog, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
 const props = defineProps<{
     keyResult: IKeyResult;
     goalId: string;

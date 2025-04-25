@@ -29,7 +29,21 @@
                     label="目标" placeholder="一段话来描述自己的目标" required />
                 </v-col>
                 <v-col cols="1">
-                  <v-color-picker v-model="tempGoal.color" hide-inputs hide-canvas mode="hex" />
+                  <v-menu>
+                    <template v-slot:activator="{ props }">
+                      <v-btn v-bind="props" :style="{ backgroundColor: tempGoal.color }" class="color-btn" icon>
+                        <v-icon color="white">mdi-palette</v-icon>
+                      </v-btn>
+                    </template>
+                    <v-card min-width="200">
+                      <v-card-text>
+                        <div class="color-grid">
+                          <v-btn v-for="color in predefinedColors" :key="color" :style="{ backgroundColor: color }"
+                            class="color-option" icon @click="tempGoal.color = color" />
+                        </div>
+                      </v-card-text>
+                    </v-card>
+                  </v-menu>
                 </v-col>
               </v-row>
 
@@ -107,7 +121,7 @@ import { useGoalDialog } from '@/modules/Goal/composables/useGoalDialog';
 const {
   tempGoal,
   goalDirs,
-  activeTab, tabs,
+  activeTab, tabs, predefinedColors,
   showKeyResultDialog, startCreateKeyResult, startEditKeyResult, cancelKeyResultEdit, saveKeyResult, deleteKeyResult,
   validationErrors, titleRules, minDate, startTimeRules, endTimeRules, validateDates, validateKeyResults, isValid
 } = useGoalDialog();
@@ -116,6 +130,8 @@ const {
 const props = defineProps<{
   visible: boolean;
 }>();
+
+
 
 // 发送事件
 // 保存和关闭事件
@@ -134,9 +150,34 @@ const handleCancel = () => {
 };
 const handleComplete = () => {
   if (!validateKeyResults()) {
-    activeTab.value = 1; 
+    activeTab.value = 1;
     return;
   }
   saveGoal();
 };
 </script>
+<style scoped>
+.color-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  padding: 8px;
+}
+
+.color-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+}
+
+.color-option {
+  width: 32px;
+  height: 32px;
+  border-radius: 4px;
+  transition: transform 0.2s;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+}
+</style>

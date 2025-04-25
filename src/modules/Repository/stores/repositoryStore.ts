@@ -1,16 +1,17 @@
 import { defineStore } from "pinia";
 import { useUserStore } from "@/modules/Account/composables/useUserStore";
 
-export interface Repository {
+export type Repository = {
     title: string;
     path: string;
     description?: string;
     createTime: string;
     updateTime: string;
     lastVisitTime?: string;
+    relativeGoalId?: string;
 }
 
-interface RepositoryState {
+type RepositoryState = {
     repositories: Repository[];
 }
 
@@ -34,11 +35,11 @@ export const useRepositoryStore = defineStore("repository", {
                 this.$patch(data);
             }
         },
-
         async saveState() {
             const { saveUserData } = useUserStore<RepositoryState>('repository');
             await saveUserData(this.$state);
         },
+        // 添加仓库
         addRepository(repository: Omit<Repository, "createTime" | "updateTime">) {
             const newRepository: Repository = {
                 ...repository,
@@ -46,7 +47,7 @@ export const useRepositoryStore = defineStore("repository", {
                 updateTime: new Date().toISOString()
             };
             if (this.repositories.some(repo => repo.title === repository.title)) {
-                throw new Error("Repository already exists");
+                throw new Error("Repository title already exists");
             }
             this.repositories.push(newRepository);
             this.saveState();

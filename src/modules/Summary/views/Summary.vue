@@ -21,7 +21,7 @@
         <div class="summary-header-today-layout">
           <div class="summary-header-today-icon-layout">
             <v-icon icon="mdi-record" size="20" style="color: #db6b6b" />
-            <span>1</span>
+            <span>{{ todayRecordCount }}</span>
           </div>
           <span>今日添加记录</span>
         </div>
@@ -67,6 +67,9 @@ const goals = computed(() => {
 const tasks = computed(() => {
   let tasks = taskStore.getTodayTaskInstances;
   return tasks;
+});
+const todayRecordCount = computed(() => {
+  return goalStore.getTodayRecordCount;
 });
 </script>
 <style scoped>
