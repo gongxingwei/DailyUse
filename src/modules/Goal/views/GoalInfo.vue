@@ -123,7 +123,7 @@
                     <v-window-item value="keyResults">
                         <div class="key-results-container">
                             <div v-for="keyResult in keyResults" :key="keyResult.id">
-                                <KeyResultCard :keyResult="keyResult" :goalId="goal?.id as string" />
+                                <KeyResultCard :keyResult="keyResult" :goalId="goalId" />
                             </div>
                         </div>
                     </v-window-item>
@@ -177,6 +177,8 @@ const goal = computed(() => {
     if (!goalId) return null;
     return goalStore.getGoalById(goalId);
 });
+// 计算目标的 ID
+const goalId = computed(() => route.params.goalId as string);
 // 得到 goal 中的 颜色
 const goalColor = computed(() => goal.value?.color || '#FF5733');
 // 得到 goal 中的 关键结果  

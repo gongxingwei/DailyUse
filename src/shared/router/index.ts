@@ -2,8 +2,6 @@ import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
 import { useAuthStore } from '@/modules/Account/stores/authStore';
 import MainLayout from '@/modules/App/MainLayout.vue'
-import Editor from '@/modules/Editor/Editor.vue'
-import Setting from '@/modules/Setting/Setting.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
 import Summary from '@/modules/Summary/views/Summary.vue';
 
@@ -93,7 +91,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/setting',
                 name: 'setting',
-                component: Setting
+                component: () => import('@/modules/Setting/Setting.vue')
             },
             {
                 path: '/test',
