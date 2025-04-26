@@ -83,6 +83,8 @@ const { days, months } = computed(() => {
                 name: currentDate.getMonth() + 1,
                 daysCount: 0
             });
+            console.log(months.get(monthKey));
+            console.log(Array.from(months.values()));
         }
         months.get(monthKey).daysCount++;
 
@@ -157,7 +159,7 @@ const getTodayPosition = () => {
     width: 100%;
     background: rgba(var(--v-theme-surface), 1);
     border-radius: 8px;
-    overflow-x: hidden;
+    overflow-x: auto;
 }
 
 .date-scale {
@@ -165,15 +167,17 @@ const getTodayPosition = () => {
     top: 0;
     background: rgba(var(--v-theme-surface), 0.95);
     z-index: 1;
+    min-width: fit-content; /* 添加最小宽度 */
 }
 
 .month-row {
     display: flex;
+    flex-shrink: 0;
     border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
 }
 
 .month-label {
-    padding: 4px;
+    /* padding: 4px; */
     font-weight: 500;
     text-align: center;
     color: rgba(var(--v-theme-on-surface), 0.7);

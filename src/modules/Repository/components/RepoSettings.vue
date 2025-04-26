@@ -18,6 +18,16 @@
             rows="3"
           />
           
+          <!-- 关联目标 -->
+          <v-select
+            v-model="repoData.relativeGoalId"
+            :items="availableGoals"
+            item-title="title"
+            item-value="id"
+            label="关联目标"
+            clearable
+          />
+
           <v-divider class="my-4"></v-divider>
           
           <v-expansion-panels>
@@ -60,6 +70,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useRepositoryStore } from '../stores/repositoryStore'
+import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 import type { Repository } from '../stores/repositoryStore'
 import { fileSystem } from '@/shared/utils/fileSystem'
 
@@ -74,6 +85,7 @@ const emit = defineEmits<{
 
 const router = useRouter()
 const repoStore = useRepositoryStore()
+const goalStore = useGoalStore()
 const form = ref()
 const deleteConfirm = ref('')
 
@@ -82,10 +94,19 @@ const dialogVisible = computed({
   set: (value) => emit('update:modelValue', value)
 })
 
+// 计算属性，获取所有目标
+const availableGoals = computed(() => {
+  return goalStore.goals.map(goal => ({
+    id: goal.id,
+    title: goal.title,
+  }))
+})
+
 const repoData = ref({
   title: '',
   path: '',
   description: '',
+  relativeGoalId: '',
   createTime: '',
   updateTime: ''
 } as Repository)
@@ -129,7 +150,7 @@ const saveSettings = async () => {
         }
       })
       closeDialog()
-      router.push(`/repo/${encodeURIComponent(repoData.value.title)}`)
+      router.push(`/repository`)
     } catch (error) {
       console.error('更新仓库失败:', error)
       alert('更新仓库失败，请检查文件夹权限或是否被占用')

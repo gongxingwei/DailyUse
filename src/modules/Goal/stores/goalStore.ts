@@ -104,23 +104,28 @@ export const useGoalStore = defineStore('goal', {
             const today = new Date().toISOString().split('T')[0];
             const goal = state.goals.find(g => g.id === goalId);
             if (!goal) return null;
-            const totalWeight = goal.keyResults.reduce((acc, kr) => acc + kr.weight, 0);
-            const totalProgress = goal.keyResults.reduce((acc, kr) =>
-                acc + (kr.currentValue / kr.targetValue) * kr.weight, 0);
-            
+            const totalWeight = goal.keyResults.reduce((acc, kr) => acc + kr.weight, 0); // 总权重（总分数）  
+            // 获取今日该目标的记录      
             const todayRecords = state.records.filter(r =>  {
                 if (!r.date) return false; // 过滤掉没有日期的记录
-                r.goalId === goalId && r.date.split(' ')[0] === today
+                return r.goalId === goalId && r.date.split(' ')[0] === today
             });
-            const todayProgress = todayRecords.reduce((acc, r) => acc + r.value, 0);
-            return Number(((totalProgress + todayProgress) / totalWeight * 100).toFixed(1));
+            console.log('今日记录', todayRecords);
+            // 今日进度（今日分数）
+            let todayProgress = 0;
+            for (const record of todayRecords) {
+                const keyResult = goal.keyResults.find(kr => kr.id === record.keyResultId);
+                if (keyResult) {
+                    todayProgress += (record.value / (keyResult.targetValue - keyResult.startValue)) * keyResult.weight;
+                }
+            }
+            return Number((todayProgress / totalWeight * 100).toFixed(1));
         },
     },
     actions: {
         async initialize() {
             const { loadUserData } = useUserStore<GoalState>('goal');
             const data = await loadUserData();
-            console.log('加载goal 数据', data);
             if (data) {
                 this.$patch(data);
             }

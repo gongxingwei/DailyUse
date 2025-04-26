@@ -24,6 +24,14 @@ export const useRepositoryStore = defineStore("repository", {
         getRepositoryByTitle: (state) => (title: string) => {
             return state.repositories.find(repo => repo.title === title);
         },
+        // 获取关联指定目标的仓库
+        getRelativeRepoByGoalId: (state) => (goalId: string) => {
+            let repos = state.repositories.filter(repo => repo.relativeGoalId === goalId);
+            if (!repos || repos.length === 0) {
+                return [];
+            }
+            return repos;
+        },
 
     },
 
@@ -75,6 +83,7 @@ export const useRepositoryStore = defineStore("repository", {
             if (index > -1) {
                 this.repositories.splice(index, 1);
             }
+            this.saveState();
         },
 
         updateRepository(repository: Repository) {
@@ -94,6 +103,10 @@ export const useRepositoryStore = defineStore("repository", {
         // 更新仓库访问时间
         updateRepoLastVisitTime(title: string) {
             const repository = this.repositories.find(repo => repo.title === title);
+            if (!repository) {// 防止问题：刷新可能会导致仓库数据还没加载就调用了这个方法，导致数据清空
+                // throw new Error("Repository not found");
+                return
+            }
             if (repository) {
                 repository.lastVisitTime = new Date().toISOString();
             }

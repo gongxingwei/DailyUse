@@ -88,7 +88,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/repository/:title',
                 name: 'repository-detail',
-                component: Editor
+                component: () => import('@/modules/Editor/Editor.vue')
             },
             {
                 path: '/setting',

@@ -129,8 +129,9 @@
                     </v-window-item>
                     <v-window-item value="repositories">
                         <div class="repositories-container">
-                            <!-- Add your repositories content here -->
-                            <p>关联仓库内容</p>
+                            <div v-for="repo in relativeRepos" :key="repo.title">
+                                <RepoInfoCard :repository="repo" />
+                            </div>
                         </div>
                     </v-window-item>
                 </v-window>
@@ -149,6 +150,7 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 // store
 import { useGoalStore } from '../stores/goalStore';
+import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';
@@ -159,12 +161,16 @@ import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import KeyResultCard from '../components/KeyResultCard.vue';
+import RepoInfoCard from '@/modules/Repository/components/RepoInfoCard.vue';
 
 const route = useRoute();
 const goalStore = useGoalStore();
+const repositoryStore = useRepositoryStore();
 const { showGoalDialog, startEditGoal, saveGoal, cancelGoalEdit } = useGoalDialog();
 const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
 const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
+
+
 
 const goal = computed(() => {
     const goalId = route.params.goalId as string;
@@ -265,6 +271,11 @@ function formatDate(dateString: any) {
 
 // 相关信息展示
 const activeTab = ref('keyResults');
+// 关联仓库
+const relativeRepos = computed(() => {
+    const repos = repositoryStore.getRelativeRepoByGoalId(goal.value?.id as string);
+    return repos;
+});
 </script>
 <style scoped lang="css">
 #goal-info-show {
