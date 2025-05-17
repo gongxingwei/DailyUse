@@ -4,27 +4,27 @@
       <h2>摘要</h2>
       <div class="summary-header-content">
         <div class="summary-header-info">
-          <div class="summary-header-today-layout">
-          <div class="summary-header-today-icon-layout">
-            <v-icon icon="mdi-list-box" size="20" style="color: #db6b6b" />
-            <span>{{ tasks.length }}</span>
+          <div style="color: rgb(var(--v-theme-warning));" class="summary-header-today-layout">
+            <div class="summary-header-today-icon-layout">
+              <v-icon icon="mdi-list-box" size="20"/>
+              <span >{{ tasks.length }}</span>
+            </div>
+            <span>今日任务</span>
           </div>
-          <span>今日任务</span>
-        </div>
-        <div class="summary-header-today-layout">
-          <div class="summary-header-today-icon-layout">
-            <v-icon icon="mdi-fencing" size="20" style="color: #db6b6b" />
-            <span>{{ goals.length }}</span>
+          <div style="color: rgb(var(--v-theme-info));" class="summary-header-today-layout">
+            <div class="summary-header-today-icon-layout">
+              <v-icon icon="mdi-fencing" size="20"/>
+              <span>{{ goals.length }}</span>
+            </div>
+            <span>进行中目标</span>
           </div>
-          <span>进行中目标</span>
-        </div>
-        <div class="summary-header-today-layout">
-          <div class="summary-header-today-icon-layout">
-            <v-icon icon="mdi-record" size="20" style="color: #db6b6b" />
-            <span>{{ todayRecordCount }}</span>
+          <div style="color: rgb(var(--v-theme-success));" class="summary-header-today-layout">
+            <div class="summary-header-today-icon-layout">
+              <v-icon icon="mdi-record" size="20"/>
+              <span>{{ todayRecordCount }}</span>
+            </div>
+            <span>今日添加记录</span>
           </div>
-          <span>今日添加记录</span>
-        </div>
         </div>
         <div class="motivate-card">
           <MotivateCard />
@@ -32,13 +32,13 @@
       </div>
     </header>
     <main>
-      <div>
+      <div class="task-container">
         <TaskInSummaryCard />
       </div>
       <div class="goals-container">
         <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" />
       </div>
-      <div>
+      <div class="repository-container">
         <RecentRepoCard />
       </div>
       <div class="gantt-chart">
@@ -88,6 +88,7 @@ const todayRecordCount = computed(() => {
   gap: 1rem;
   width: 100%;
 }
+
 .summary-header-info {
   display: flex;
   flex-direction: row;
@@ -95,10 +96,14 @@ const todayRecordCount = computed(() => {
   align-items: center;
   gap: 1rem;
   padding: 0 1.5rem;
-  background-color: #2b2b2b;
+  background-color: rgb(var(--v-theme-surface));
   border-radius: 12px;
-  min-width: fit-content; /* Prevent shrinking below content size */
+  min-width: fit-content;
+  border-radius: 50px;
+  box-shadow: 5px 5px 10px rgb(var(--v-theme-surface)),
+    -5px -5px 10px rgb(var(--v-theme-background));
 }
+
 .summary-header-today-layout {
   display: flex;
   flex-direction: column;
@@ -108,6 +113,7 @@ const todayRecordCount = computed(() => {
   font-size: 0.8rem;
 
 }
+
 .summary-header-today-icon-layout {
   display: flex;
   flex-direction: row;
@@ -118,37 +124,21 @@ const todayRecordCount = computed(() => {
   width: 100%;
   font-size: 1.5rem;
   gap: 0.25rem;
-  color: #db6b6b;
 }
-.motivate-card { 
-  flex: 1;  
-  min-width: 0; 
-  margin: 0; 
+
+.motivate-card {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
   overflow: auto;
 }
-/* 颜色变化 */
-.summary-header-today-task {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: auto;
-  width: auto;
-  font-size: 0.8rem;
 
+.task-container, .goals-container, .repository-container, .gantt-chart { 
+  box-shadow: 5px 5px 10px rgb(var(--v-theme-surface)),
+    -5px -5px 10px rgb(var(--v-theme-background));
 }
-.summary-header-today-task-icon {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  flex: 1;
 
-  width: 100%;
-  font-size: 1.5rem;
-  gap: 0.25rem;
-  color: #db6b6b;
-}
-.motivate-card { 
+.motivate-card{
   margin-bottom: 1rem;
 }
 </style>

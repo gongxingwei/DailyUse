@@ -189,6 +189,7 @@ const toggleDrawer = () => {
   -webkit-app-region: drag;
   user-select: none;
   flex-shrink: 0;
+  z-index: 9999;
 }
 
 .title-bar-drag-area {

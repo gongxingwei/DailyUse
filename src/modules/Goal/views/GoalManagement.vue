@@ -81,7 +81,9 @@ const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDia
 
 /* 目标文件夹区域 */
 .goal-dir {
+  padding: 0.5rem 1rem;
   width: 200px;
+  background-color: rgb(var(--v-theme-surface));
 }
 /* 分类标签 */
 .status-tabs {
@@ -110,6 +112,7 @@ const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDia
   flex-direction: column;
   padding: 0 16px;
   overflow-y: auto;
+  background-color: rgb(var(--v-theme-background));
 }
 
 .empty-state {

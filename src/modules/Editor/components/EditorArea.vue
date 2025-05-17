@@ -173,7 +173,7 @@ const fileToBase64 = (file: File) => {
 const insertMarkdownImage = (base64: string) => {
   const position = editor.value.getPosition()
   console.log('Current position:', position)
-
+  console.log('Base64:', base64)
   // 简单插入测试文本
   const insertRange = new Range(
     position.lineNumber,    // 起始行
@@ -194,38 +194,38 @@ const insertMarkdownImage = (base64: string) => {
   console.log('Insert completed')
 }
 // 处理图片粘贴
-const handleImagePaste = async (imageBlob: Blob) => {
-  if (!props.path) return
+// const handleImagePaste = async (imageBlob: Blob) => {
+//   if (!props.path) return
 
-  try {
-    const result = 1
-    // await window.markdown.handleImagePaste(props.path, {
-    //   images: {
-    //     saveToDirectory: true,
-    //     storageDirectory: 'images',
-    //     namingPattern: 'timestamp'
-    //   }
-    // })
+//   try {
+//     const result = 1
+//     // await window.markdown.handleImagePaste(props.path, {
+//     //   images: {
+//     //     saveToDirectory: true,
+//     //     storageDirectory: 'images',
+//     //     namingPattern: 'timestamp'
+//     //   }
+//     // })
 
-    if (result) {
-      // 获取当前光标位置
-      const position = editor.value.getPosition()
-      console.log(position) 
-      // 在光标位置插入 Markdown 图片链接
-      // editor.value.executeEdits('image-paste', [{
-      //   range: new monacoEditor.Range(
-      //     position.lineNumber,
-      //     position.column,
-      //     position.lineNumber,
-      //     position.column
-      //   ),
-      //   text: result.markdownLink
-      // }])
-    }
-  } catch (error) {
-    console.error('Failed to handle image paste:', error)
-  }
-}
+//     if (result) {
+//       // 获取当前光标位置
+//       const position = editor.value.getPosition()
+//       console.log(position) 
+//       // 在光标位置插入 Markdown 图片链接
+//       // editor.value.executeEdits('image-paste', [{
+//       //   range: new monacoEditor.Range(
+//       //     position.lineNumber,
+//       //     position.column,
+//       //     position.lineNumber,
+//       //     position.column
+//       //   ),
+//       //   text: result.markdownLink
+//       // }])
+//     }
+//   } catch (error) {
+//     console.error('Failed to handle image paste:', error)
+//   }
+// }
 // 计算属性
 const renderedContent = computed(() => {
   return md.render(content.value || '')

@@ -46,6 +46,7 @@ const tabs = [
 <style scoped>
 #task-management {
     padding: 0 150px;
+    
 }
 
 .task-header {
@@ -65,12 +66,10 @@ const tabs = [
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ccc;
+    background: rgba(var(--v-border-color), var(--v-border-opacity));
     cursor: pointer;
 }
 .tab-btn.active {
     background: var(--primary-color);
-    color: white;
 }
 </style>

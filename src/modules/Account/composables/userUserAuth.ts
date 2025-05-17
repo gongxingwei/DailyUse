@@ -109,14 +109,8 @@ export function useUserAuth() {
     try {
       const response = await sharedDataService.removeSavedAccountInfo(username);
       if (response.success) {
-        console.log("账号信息删除成功,就开始删除本地数据");
         // 删除本地数据
         authStore.removeSavedAccount(username);
-        console.log(
-          "本地数据删除成功",
-          savedAccounts.value,
-          rememberedAccounts
-        );
       } else {
         snackbar.message = "删除账号信息失败";
         snackbar.color = "error";

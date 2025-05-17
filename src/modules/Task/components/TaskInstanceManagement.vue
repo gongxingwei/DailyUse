@@ -202,7 +202,6 @@ watchEffect(() => {
 }
 
 .task-count {
-    color: #666;
     font-size: 1.1rem;
 }
 
@@ -211,7 +210,7 @@ watchEffect(() => {
     gap: 0.5rem;
     margin-bottom: 2rem;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(var(--v-theme-surface), 0.5);
     border-radius: 8px;
 }
 
@@ -227,17 +226,18 @@ watchEffect(() => {
 }
 
 .day-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(var(--v-theme-primary), 0.1);
 }
 
 .day-item.active {
-    background: var(--primary-color);
-    color: white;
+    background: var(--v-theme-primary);
+    color: rgb(var(--v-theme-secondary));
+    font-weight: 600;
 }
 
 .weekday {
     font-size: 1.1rem;
-    font-weight: 500;
+    font-weight: 700;
 }
 
 .date {
@@ -275,7 +275,7 @@ watchEffect(() => {
     display: flex;
     gap: 1rem;
     padding: 1rem;
-    background: rgba(255, 255, 255, 0.05);
+    background-color: rgba(var(--v-theme-surface), 1);
     border-radius: 8px;
 }
 

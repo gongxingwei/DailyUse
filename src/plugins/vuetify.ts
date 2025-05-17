@@ -18,6 +18,9 @@ const vuetify = createVuetify({
     themes: {
       light: {
         colors: {
+          background: '#FFFFFF', // 背景色
+          surface: '#dae2df', // 表色
+          'on-surface': '#000000', // 文字颜色
           primary: '#1867C0',      // 主要颜色
           secondary: '#5CBBF6',    // 次要颜色
           accent: '#4CAF50',       // 强调色

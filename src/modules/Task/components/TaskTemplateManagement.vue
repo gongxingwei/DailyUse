@@ -105,12 +105,14 @@ const deleteTemplate = async (template: ITaskTemplate) => {
 <style scoped>
 #task-template-management {
     padding: 1rem;
+    
 }
 
 .template-filters {
     display: flex;
     gap: 1rem;
     margin-bottom: 2rem;
+    
 }
 
 .filter-btn {
@@ -120,15 +122,13 @@ const deleteTemplate = async (template: ITaskTemplate) => {
     padding: 0.75rem 1.5rem;
     border: none;
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ccc;
     cursor: pointer;
     transition: all 0.2s ease;
+    background-color: rgba(var(--v-theme-surface), 1);
 }
 
 .filter-btn.active {
-    background: var(--primary-color);
-    color: white;
+    background: var(--v-theme-background);
 }
 
 .count {
@@ -145,10 +145,9 @@ const deleteTemplate = async (template: ITaskTemplate) => {
 }
 
 .template-card {
-    background: rgb(41, 41, 41);
     border-radius: 8px;
     padding: 1rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background-color: rgba(var(--v-theme-surface), 1);
 }
 
 .template-header {
@@ -156,12 +155,12 @@ const deleteTemplate = async (template: ITaskTemplate) => {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 1rem;
+    
 }
 
 .template-header h3 {
     margin: 0;
     font-size: 1.1rem;
-    color: white;
 }
 
 .template-actions {
@@ -174,7 +173,6 @@ const deleteTemplate = async (template: ITaskTemplate) => {
     border: none;
     border-radius: 4px;
     background: transparent;
-    color: #ccc;
     cursor: pointer;
 }
 
@@ -186,7 +184,6 @@ const deleteTemplate = async (template: ITaskTemplate) => {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    color: #999;
     font-size: 0.9rem;
 }
 
