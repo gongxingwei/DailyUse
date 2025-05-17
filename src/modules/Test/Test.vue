@@ -71,8 +71,20 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { notification } from '@/shared/utils/notification/notification';
 import { scheduleService } from '@/shared/utils/schedule/main';
-
+import { useAuthStore } from '../Account/stores/authStore';
+import { authService } from '../Account/services/authService';
 const everyTenSeconds = '*/10 * * * * *';
+
+const authStore = useAuthStore();
+const currentUser = ref(authStore.currentUser);
+
+if (!currentUser.value) {
+  console.error('当前用户不存在');
+} else {
+  console.log('当前用户:', currentUser.value);
+  const response = await authService.checkAuth(currentUser.value?.id);
+  console.log('检查当前用户的权限:', response);
+}
 
 
 interface NotificationHistoryItem {

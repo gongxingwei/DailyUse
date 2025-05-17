@@ -91,6 +91,11 @@
             </v-card>
         </v-dialog>
     </v-container>
+    <!-- 弹窗提醒 -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="top" variant="tonal"
+        elevation="4">
+        {{ snackbar.message }}
+    </v-snackbar>
 </template>
 
 <script setup lang="ts">
@@ -98,25 +103,26 @@ import { onMounted } from 'vue'
 import { useAccountManagement } from '../composables/useAccountManagement'
 
 const {
-  user,
-  loading,
-  exporting,
-  importing,
-  clearing,
-  switching,
-  loggingOut,
-  profileForm,
-  dialog,
-  initUserData,
-  exportUserData,
-  importUserData,
-  confirmClearData,
-  switchAccount,
-  confirmLogout
+    user,
+    loading,
+    exporting,
+    importing,
+    clearing,
+    switching,
+    loggingOut,
+    profileForm,
+    dialog,
+    snackbar,
+    initUserData,
+    exportUserData,
+    importUserData,
+    confirmClearData,
+    switchAccount,
+    confirmLogout
 } = useAccountManagement()
 
 onMounted(() => {
-  initUserData()
+    initUserData()
 })
 </script>
 

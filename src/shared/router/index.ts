@@ -12,24 +12,6 @@ const routes: RouteRecordRaw[] = [
         redirect: '/summary'
     },
     {
-        path: '/login',
-        name: 'login',
-        component: () => import('@/modules/Account/views/LoginView.vue'),
-        meta: {
-            requiresAuth: false,
-            title: '登录'
-        }
-    },
-    {
-        path: '/register',
-        name: 'register',
-        component: () => import('@/modules/Account/views/RegisterView.vue'),
-        meta: {
-            requiresAuth: false,
-            title: '注册'
-        }
-    },
-    {
         path: '/notification',
         name: 'notification',
         component: NotificationWindow
@@ -38,6 +20,15 @@ const routes: RouteRecordRaw[] = [
         path: '/',
         component: MainLayout,
         children: [
+            {
+                path: '/auth',
+                name: 'auth',
+                component: () => import('@/modules/Account/views/AuthView.vue'),
+                meta: {
+                    requiresAuth: false,
+                    title: '用户认证'
+                }
+            },
             {
                 path: '/summary',
                 name: 'summary',
@@ -115,13 +106,13 @@ router.beforeEach((to, _from, next) => {
     document.title = `${to.meta.title || '默认标题'}`
 
     // 检查认证状态
-    const publicPages = ['/login', '/register']
+    const publicPages = ['/auth']
     const authRequired = !publicPages.includes(to.path)
 
    if (authRequired && !authStore.isAuthenticated) {
         // 存储原始目标路由
         return next({
-            name: 'login',
+            name: 'auth',
             query: { redirect: to.fullPath }
         })
     }

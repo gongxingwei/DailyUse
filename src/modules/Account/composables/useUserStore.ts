@@ -1,7 +1,8 @@
-import { useAuthStore } from '@/modules/Account/stores/authStore';
+import { useAuthStore } from '../stores/authStore';
+import { userDataService } from '../services/userDataService';
 
 /**
- * 用户数据存储 composable
+ * 用户数据操作 composable
  * @param storeName 存储名称
  */
 export function useUserStore<T>(storeName: string) {
@@ -14,7 +15,7 @@ export function useUserStore<T>(storeName: string) {
         const userId = authStore.currentUser?.id;
         if (!userId) return null;
         
-        return await window.shared.ipcRenderer.invoke('userStore:read', userId, storeName);
+        return await userDataService.readUserData<T>(userId, storeName);
     };
 
     /**
@@ -23,10 +24,8 @@ export function useUserStore<T>(storeName: string) {
     const saveUserData = async (data: T): Promise<void> => {
         const userId = authStore.currentUser?.id;
         if (!userId) throw new Error('用户未登录');
-        // 确保数据是可序列化的
-        const serializableData = JSON.parse(JSON.stringify(data));
         
-        await window.shared.ipcRenderer.invoke('userStore-write', userId, storeName, serializableData);
+        await userDataService.saveUserData<T>(userId, storeName, data);
     };
 
     return {

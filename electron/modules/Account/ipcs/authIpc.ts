@@ -8,8 +8,8 @@ export async function setupAuthHandlers() {
 
     ipcMain.handle("auth:register", async (_event, form: IRegisterForm) => {
         try {
-            const user = await authService.register(form);
-            return { success: true, user };
+            const response = await authService.register(form);
+            return response;
         } catch (error) {
             return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
         }
@@ -17,26 +17,35 @@ export async function setupAuthHandlers() {
 
     ipcMain.handle("auth:login", async (_event, credentials: ILoginForm) => {
         try {
-            const user = await authService.login(credentials);
-            return { success: true, user };
+            const response = await authService.login(credentials);
+            return response;
         } catch (error) {
             return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
         }
     });
 
-    ipcMain.handle("auth:logout", async () => {
+    ipcMain.handle("auth:login-with-token", async (_event, userName: string, token: string) => {
         try {
-            await authService.logout();
-            return { success: true };
+            const response = await authService.loginWithToken(userName, token);
+            return response;
         } catch (error) {
             return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
         }
     });
 
-    ipcMain.handle("auth:check", async () => {
+    ipcMain.handle("auth:logout", async (_event, userId: string) => {
         try {
-            const user = await authService.checkAuth();
-            return { success: true, user };
+            const response = await authService.logout(userId);
+            return response;
+        } catch (error) {
+            return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
+        }
+    });
+
+    ipcMain.handle("auth:check", async (_event, userId: string) => {
+        try {
+            const response = await authService.checkAuth(userId);
+            return response;
         } catch (error) {
             return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
         }

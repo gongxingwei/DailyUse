@@ -20,7 +20,7 @@ export function setupUserStoreHandlers() {
     });
 
     // 写入用户特定存储数据
-    ipcMain.handle('userStore-write', async (_, userId: string, storeName: string, data: any) => {
+    ipcMain.handle('userStore:write', async (_, userId: string, storeName: string, data: any) => {
         try {
             await localAccountStorageService.writeUserStore(userId, storeName, data);
         } catch (error) {

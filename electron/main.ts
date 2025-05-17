@@ -12,6 +12,7 @@ import { registerGitHandlers } from './shared/ipc/git';
 import { protocol } from 'electron'
 import { setupAuthHandlers } from './modules/Account/ipcs/authIpc';
 import { setupUserStoreHandlers } from './modules/Account/ipcs/localAccountStorageIpc';
+import { setupSharedDataHandlers } from './modules/Account/ipcs/sharedDataIpc';
 app.setName('DailyUse');
 
 // 防止软件崩溃以及兼容
@@ -177,6 +178,7 @@ app.whenReady().then(() => {
   registerGitHandlers();
   setupAuthHandlers();
   setupUserStoreHandlers();
+  setupSharedDataHandlers();
   if (win) {
     setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();

@@ -1,7 +1,7 @@
 <template>
     <v-form @submit.prevent="handleSubmit" :loading="authStore.loading">
         <v-card class="pa-4">
-            <v-card-title class="text-center">注册账号</v-card-title>
+            <v-card-title class="text-center">在线账号注册</v-card-title>
             
             <v-card-text>
                 <v-alert

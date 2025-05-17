@@ -1,14 +1,7 @@
 <template>
     <v-form @submit.prevent="handleSubmit" :loading="authStore.loading">
         <v-card class="pa-4">
-            <v-alert
-                v-if="isNewlyRegistered"
-                type="success"
-                class="mb-4"
-            >
-                注册成功！请使用您的账号密码登录
-            </v-alert>
-            <v-card-title class="text-center">登录</v-card-title>
+            <v-card-title class="text-center">在线账号登录</v-card-title>
             
             <v-card-text>
                 <v-alert
@@ -42,8 +35,6 @@
             </v-card-text>
 
             <v-card-actions>
-                <v-btn to="/register">注册</v-btn>
-                <v-spacer />
                 <v-btn
                     color="primary"
                     type="submit"
@@ -57,14 +48,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue';
+import { reactive } from 'vue';
 import { useAuthStore } from '../stores/authStore';
-import { useRoute, useRouter } from 'vue-router';
+
 import type { ILoginForm } from '../types/auth';
 
 const authStore = useAuthStore();
-const router = useRouter();
-const route = useRoute();
+
 
 const form = reactive<ILoginForm>({
     username: '',
@@ -73,20 +63,8 @@ const form = reactive<ILoginForm>({
 });
 
 async function handleSubmit() {
-    if (await authStore.login(form)) {
-        router.push('/');
-    }
+
 }
 
-// 处理注册成功后的跳转
-// 如果URL中包含registered=true，则显示注册成功的提示
-const isNewlyRegistered = ref(false);
-onMounted(() => {
-    if (route.query.registered === 'true') {
-        isNewlyRegistered.value = true;
-        if (route.query.username) {
-            form.username = route.query.username as string;
-        }
-    }
-});
+
 </script>

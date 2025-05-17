@@ -10,7 +10,7 @@ export interface IUser {
 export interface ILoginForm {
     username: string;
     password: string;
-    remember?: boolean;
+    remember: boolean;
 }
 
 export interface IRegisterForm {
