@@ -42,7 +42,7 @@
 
 import { useAuthStore } from '../stores/authStore';
 // composables
-import { useUserAuth } from '../composables/userUserAuth';
+import { useUserAuth } from '../composables/useUserAuth';
 import { computed } from 'vue';
 
 const { savedAccounts, formRef, loginForm, snackbar, handleLcoalLogin, handleAccountSelect, handleRemoveSavedAccount } = useUserAuth();

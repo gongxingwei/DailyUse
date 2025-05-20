@@ -3,17 +3,21 @@ import { useRouter } from "vue-router";
 //stores
 import { useAuthStore } from "@/modules/Account/stores/authStore";
 // services
-import { authService } from "@/modules/Account/services/authService";
+import { localAuthService } from "@/modules/Account/services/localAuthService";
+import { remoteAuthService } from "../services/remoteAuthService";
 import { sharedDataService } from "../services/sharedDataService";
 // types
-import type { ILoginForm } from "../types/auth";
+import type { ILoginForm, IRegisterForm } from "../types/auth";
 import { storeToRefs } from "pinia";
 
 /**
  * 用户认证相关的组合式函数
- * 处理用户登录、快速登录、账号管理等功能
+ * @param emit 可选的事件发射函数
  */
-export function useUserAuth() {
+export function useUserAuth(emit?: {
+  (e: "register-success"): void;
+  (e: "remote-register-success"): void;
+}) {
   /** 保存的账号信息数据结构 */
   type SavedAccount = {
     username: string; // 用户名
@@ -23,7 +27,6 @@ export function useUserAuth() {
     lastLoginTime: string; // 最后登录时间
     token?: string; // 可选的登录token
   };
-
   // 基础配置和状态管理
   const router = useRouter();
   const authStore = useAuthStore();
@@ -36,7 +39,13 @@ export function useUserAuth() {
     password: "",
     remember: false,
   });
-
+  /** 注册表单数据 */
+  const registerForm = reactive<IRegisterForm>({
+    username: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
   /** 提示信息配置 */
   const snackbar = reactive({
     show: false, // 是否显示提示
@@ -64,7 +73,7 @@ export function useUserAuth() {
       }
 
       // 调用登录服务
-      const response = await authService.login(loginForm);
+      const response = await localAuthService.login(loginForm);
       snackbar.message = response.message;
       snackbar.color = response.success ? "success" : "error";
       snackbar.show = true;
@@ -80,12 +89,41 @@ export function useUserAuth() {
         );
         // 跳转到首页
         router.push("/");
-
       }
     } catch (error) {
       console.error("登录失败:", error);
     }
   }
+
+  async function handleLocalRegister() {
+    try {
+      const { valid } = await formRef.value.validate(); // v-form 的 validate 方法会返回一个对象，包含 valid 和 errors 属性
+      if (!valid) {
+        snackbar.message = "请填写所有必填项";
+        snackbar.color = "error";
+        snackbar.show = true;
+        return;
+      }
+
+      const response = await localAuthService.register(registerForm);
+
+      snackbar.message = response.message || "xxx";
+      snackbar.color = response.success ? "success" : "error";
+      snackbar.show = true;
+
+      if (response.success) {
+        formRef.value.reset(); // 重置表单
+        emit?.("register-success");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      snackbar.message =
+        error instanceof Error ? error.message : "系统错误，请稍后重试";
+      snackbar.color = "error";
+      snackbar.show = true;
+    }
+  }
+
   /**
    * 处理账号选择
    * 当用户从下拉列表选择账号时自动填充记住的密码
@@ -199,7 +237,7 @@ export function useUserAuth() {
         throw new Error("登录信息已失效，请使用密码登录");
       }
 
-      const response = await authService.loginWithToken(
+      const response = await localAuthService.loginWithToken(
         account.username,
         account.token
       );
@@ -234,10 +272,84 @@ export function useUserAuth() {
       loading.value = "";
     }
   };
+
+  /**
+   * 处理远程登录
+   * 验证表单、调用登录服务、保存账号信息并跳转
+   */
+  async function handleRemoteLogin() {
+    try {
+      // 表单验证
+      const { valid } = await formRef.value.validate();
+      if (!valid) {
+        snackbar.message = "请正确填写所有必填项";
+        snackbar.color = "error";
+        snackbar.show = true;
+        return;
+      }
+
+      // 调用登录服务
+      const response = await remoteAuthService.login(loginForm);
+      console.log("登录响应:", response);
+      snackbar.message = response.message;
+      snackbar.color = response.success ? "success" : "error";
+      snackbar.show = true;
+
+      if (response.success) {
+        // 登录成功，保存用户信息
+        authStore.setUser(response.data);
+        // 保存账号信息
+        updateSavedAccount(
+          loginForm.username,
+          loginForm.remember,
+          response.token
+        );
+        // 跳转到首页
+        router.push("/");
+      }
+    } catch (error) {
+      console.error("登录失败:", error);
+    }
+  }
+
+  /**
+   * 处理远程注册
+   * 验证表单、调用注册服务、保存账号信息并跳转
+   */
+  async function handleRemoteRegister() {
+    try {
+      const { valid } = await formRef.value.validate(); // v-form 的 validate 方法会返回一个对象，包含 valid 和 errors 属性
+      if (!valid) {
+        snackbar.message = "请填写所有必填项";
+        snackbar.color = "error";
+        snackbar.show = true;
+        return;
+      }
+
+      const response = await remoteAuthService.register(registerForm);
+
+      snackbar.message = response.message || "xxx";
+      snackbar.color = response.success ? "success" : "error";
+      snackbar.show = true;
+
+      if (response.success) {
+        formRef.value.reset(); // 重置表单
+        emit?.("remote-register-success");
+      }
+    } catch (error) {
+      console.error("Form submission error:", error);
+      snackbar.message =
+        error instanceof Error ? error.message : "系统错误，请稍后重试";
+      snackbar.color = "error";
+      snackbar.show = true;
+    }
+  }
+
   // 返回组合式API的公共接口
   return {
     // 表单相关
     loginForm, // 登录表单数据
+    registerForm, // 注册表单数据
     formRef, // 表单引用
     snackbar, // 提示信息
     loading, // 加载状态
@@ -250,7 +362,10 @@ export function useUserAuth() {
     handleAccountSelect, // 处理账号选择
     handleRemoveSavedAccount, // 处理账号删除
     handleLcoalLogin, // 处理本地登录
+    handleLocalRegister, // 处理本地注册
     handleLocalQuickLogin, // 处理快速登录
     updateSavedAccount, // 更新账号信息
+    handleRemoteLogin, // 处理远程登录
+    handleRemoteRegister, // 处理远程注册
   };
 }

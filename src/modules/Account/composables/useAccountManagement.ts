@@ -4,7 +4,7 @@ import { useAuthStore } from "../stores/authStore";
 import type { IUser } from "../types/auth";
 // services
 import { userDataService } from "../services/userDataService";
-import { authService } from "../services/authService";
+import { localAuthService } from "../services/localAuthService";
 
 export function useAccountManagement() {
   const router = useRouter();
@@ -141,7 +141,7 @@ export function useAccountManagement() {
         return;
       }
       // 调用登出服务
-      const response = await authService.logout(currentUser.value?.id);
+      const response = await localAuthService.logout(currentUser.value?.id);
       // 显示弹窗
       snackbar.message = response.message;
       snackbar.color = response.success ? "success" : "error";

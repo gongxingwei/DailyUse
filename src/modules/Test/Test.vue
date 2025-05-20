@@ -72,7 +72,7 @@ import { ref, onMounted, onUnmounted } from 'vue';
 import { notification } from '@/shared/utils/notification/notification';
 import { scheduleService } from '@/shared/utils/schedule/main';
 import { useAuthStore } from '../Account/stores/authStore';
-import { authService } from '../Account/services/authService';
+import { authService } from '../Account/services/localAuthService';
 const everyTenSeconds = '*/10 * * * * *';
 
 const authStore = useAuthStore();

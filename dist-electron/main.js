@@ -17131,7 +17131,8 @@ function createWindow() {
     "default-src": ["'self'", "local:"],
     "script-src": ["'self'", "'unsafe-eval'", "'unsafe-inline'"],
     "style-src": ["'self'", "'unsafe-inline'"],
-    "img-src": ["'self'", "data:", "blob:", "local:"]
+    "img-src": ["'self'", "data:", "blob:", "local:"],
+    "connect-src": ["'self'", "ws:", "wss:", "http:", "https:", "local:"]
   };
   win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
     const cspValue = Object.entries(cspDirectives).map(([key, values]) => `${key} ${values.join(" ")}`).join("; ");

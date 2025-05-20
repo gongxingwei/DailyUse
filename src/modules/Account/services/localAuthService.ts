@@ -190,4 +190,4 @@ class AuthService {
 }
 
 // 导出 AuthService 的单例实例
-export const authService = AuthService.getInstance();
+export const localAuthService = AuthService.getInstance();

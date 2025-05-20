@@ -52,7 +52,7 @@
 
 // services
 // composables
-import { useUserAuth } from '../composables/userUserAuth';
+import { useUserAuth } from '../composables/useUserAuth';
 
 const { rememberedAccounts, loading, snackbar, handleLocalQuickLogin, handleRemoveSavedAccount } = useUserAuth();
 </script>
