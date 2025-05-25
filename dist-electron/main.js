@@ -4,9 +4,9 @@ var __publicField = (obj, key, value) => __defNormalProp(obj, typeof key !== "sy
 import { BrowserWindow, ipcMain, dialog, app, shell, globalShortcut, screen, protocol, clipboard, nativeImage, Tray, Menu } from "electron";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { exec, spawn } from "child_process";
 import * as sysPath from "path";
 import sysPath__default, { resolve, join, relative, sep } from "path";
-import { exec, spawn } from "child_process";
 import fs, { readdir, realpath, lstat, stat, open } from "fs/promises";
 import { Buffer as Buffer$1 } from "buffer";
 import require$$0, { EventEmitter as EventEmitter$1 } from "events";
@@ -17,6 +17,10 @@ import require$$0$1, { type } from "os";
 import { EventEmitter } from "node:events";
 import { Readable } from "stream";
 import crypto, { randomFillSync, randomUUID } from "crypto";
+import fs$1 from "node:fs/promises";
+import "node:fs";
+import BetterSqlite3 from "better-sqlite3";
+import bcrypt from "bcrypt";
 class PluginManager {
   constructor() {
     __publicField(this, "plugins", /* @__PURE__ */ new Map());
@@ -48,7 +52,6 @@ class PluginManager {
         console.error(`[PluginManager] 插件 ${name} 初始化失败:`, error);
       }
     }
-    console.log("[PluginManager] 所有插件初始化完成");
   }
   async destroyAll() {
     for (const plugin of this.plugins.values()) {
@@ -386,7 +389,7 @@ function reorderNotifications() {
     index++;
   }
 }
-function setupNotificationHandlers(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
+function setupNotificationService(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
   ipcMain.handle("show-notification", async (_event, options) => {
     if (!mainWindow) {
       return;
@@ -16884,220 +16887,1815 @@ function setupUserStoreHandlers() {
     }
   });
 }
-const _SharedDataService = class _SharedDataService {
+const __filename = fileURLToPath(import.meta.url);
+const __dirname$2 = path.dirname(__filename);
+globalThis.__filename = __filename;
+globalThis.__dirname = __dirname$2;
+let db = null;
+let isInitializing = false;
+async function initializeDatabase() {
+  if (db !== null) return db;
+  if (isInitializing) {
+    while (isInitializing) {
+      await new Promise((resolve2) => setTimeout(resolve2, 50));
+    }
+    if (db !== null) return db;
+  }
+  isInitializing = true;
+  try {
+    const dbDir = path.join(app.getPath("userData"), "database");
+    try {
+      await fs$1.access(dbDir);
+    } catch {
+      await fs$1.mkdir(dbDir, { recursive: true });
+    }
+    const dbPath = path.join(dbDir, "dailyuse.db");
+    db = new BetterSqlite3(dbPath, {
+      verbose: process.env.NODE_ENV !== "production" ? console.log : void 0
+    });
+    db.pragma("journal_mode = WAL");
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS users (
+        username TEXT PRIMARY KEY,
+        password TEXT NOT NULL,
+        avatar TEXT,
+        email TEXT,
+        phone TEXT,
+        accountType TEXT DEFAULT 'local',
+        onlineId TEXT,
+        createdAt INTEGER NOT NULL
+      )
+    `);
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS login_sessions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        password TEXT, -- 加密存储，只有记住密码时才有值
+        accountType TEXT NOT NULL CHECK(accountType IN ('local', 'online')) DEFAULT 'local',
+        rememberMe BOOLEAN NOT NULL DEFAULT 0,
+        lastLoginTime INTEGER NOT NULL,
+        autoLogin BOOLEAN NOT NULL DEFAULT 0,
+        isActive BOOLEAN NOT NULL DEFAULT 0,
+        createdAt INTEGER NOT NULL,
+        updatedAt INTEGER NOT NULL,
+        UNIQUE(username, accountType) -- 同一用户名和账户类型组合唯一
+      )
+    `);
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_login_sessions_username ON login_sessions(username);
+      CREATE INDEX IF NOT EXISTS idx_login_sessions_active ON login_sessions(isActive);
+      CREATE INDEX IF NOT EXISTS idx_login_sessions_auto_login ON login_sessions(autoLogin);
+    `);
+    console.log("数据库初始化成功");
+    return db;
+  } catch (error) {
+    console.error("数据库初始化失败:", error);
+    throw error;
+  } finally {
+    isInitializing = false;
+  }
+}
+async function closeDatabase() {
+  if (db) {
+    try {
+      db.close();
+      db = null;
+      console.log("数据库连接已关闭");
+    } catch (error) {
+      console.error("关闭数据库失败:", error);
+    }
+  }
+}
+if (typeof process !== "undefined") {
+  process.on("exit", () => {
+    if (db) {
+      try {
+        db.close();
+      } catch (error) {
+        console.error("退出时关闭数据库失败:", error);
+      }
+    }
+  });
+  process.on("SIGINT", async () => {
+    await closeDatabase();
+    process.exit(0);
+  });
+  process.on("SIGTERM", async () => {
+    await closeDatabase();
+    process.exit(0);
+  });
+}
+class UserModel {
   /**
-   * 私有构造函数
-   * 初始化数据存储路径并确保存储目录和文件存在
+   * 私有构造函数，防止直接实例化
    */
   constructor() {
-    /** 共享数据目录路径 */
-    __publicField(this, "sharedDataPath");
-    /** 共享数据文件路径 */
-    __publicField(this, "sharedDataFile");
-    this.sharedDataPath = sysPath__default.join(app.getPath("userData"), "sharedData");
-    this.sharedDataFile = sysPath__default.join(this.sharedDataPath, "data.json");
-    this.initStorage();
+    __publicField(this, "db", null);
   }
   /**
-   * 获取 SharedDataService 的单例实例
-   * @returns SharedDataService 实例
+   * 静态方法创建实例
+   * @returns UserModel 实例
    */
-  static getInstance() {
-    if (!_SharedDataService.instance) {
-      _SharedDataService.instance = new _SharedDataService();
+  static async create() {
+    const instance = new UserModel();
+    instance.db = await initializeDatabase();
+    return instance;
+  }
+  /**
+   * 确保数据库连接存在
+   */
+  async ensureDatabase() {
+    if (!this.db) {
+      this.db = await initializeDatabase();
     }
-    return _SharedDataService.instance;
+    return this.db;
   }
   /**
-   * 初始化存储系统
-   * 创建必要的目录和文件结构
+   * 添加新用户
+   * @param userData 用户数据对象
+   * @returns 添加是否成功
    */
-  async initStorage() {
+  async addUser(userData) {
     try {
-      await fs.mkdir(this.sharedDataPath, { recursive: true });
-      try {
-        await fs.access(this.sharedDataFile);
-      } catch {
-        await fs.writeFile(this.sharedDataFile, JSON.stringify({}));
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+        INSERT INTO users (
+          username,
+          password,
+          avatar,
+          email,
+          phone,
+          accountType,
+          onlineId,
+          createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
+      const result = stmt.run(
+        userData.username,
+        userData.password,
+        userData.avatar || null,
+        userData.email || null,
+        userData.phone || null,
+        userData.accountType || "local",
+        userData.onlineId || null,
+        userData.createdAt
+      );
+      return result.changes > 0;
+    } catch (error) {
+      console.error("添加用户失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 删除用户
+   * @param username 用户名
+   * @returns 删除是否成功
+   */
+  async removeUser(username) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("DELETE FROM users WHERE username = ?");
+      const result = stmt.run(username);
+      return result.changes > 0;
+    } catch (error) {
+      console.error("删除用户失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 通过用户名查找用户
+   * @param username 用户名
+   * @returns 用户对象，未找到则返回null
+   */
+  async findUserByUsername(username) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("SELECT * FROM users WHERE username = ?");
+      const user = stmt.get(username);
+      return user || null;
+    } catch (error) {
+      console.error("查找用户失败:", error);
+      return null;
+    }
+  }
+  /**
+   * 获取所有用户
+   * @returns 用户对象数组
+   */
+  async getAllUsers() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("SELECT * FROM users");
+      return stmt.all();
+    } catch (error) {
+      console.error("failed to get all users:", error);
+      return [];
+    }
+  }
+  /**
+   * 按账户类型查询用户
+   * @param accountType 账户类型（例如：'local', 'online'）
+   * @returns 用户对象数组
+   */
+  async findUsersByAccountType(accountType) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("SELECT * FROM users WHERE accountType = ?");
+      return stmt.all(accountType);
+    } catch (error) {
+      console.error(`获取${accountType}类型用户列表失败:`, error);
+      return [];
+    }
+  }
+  /**
+   * 更新用户信息
+   * @param username 用户名（主键，不可更改）
+   * @param userData 需要更新的用户数据，可以是部分字段
+   * @returns 更新是否成功
+   */
+  async updateUser(username, userData) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const { username: _, ...updateData } = userData;
+      if (Object.keys(updateData).length === 0) {
+        return true;
+      }
+      const fields = Object.keys(updateData).map((key) => `${key} = ?`);
+      const sql = `UPDATE users SET ${fields.join(", ")} WHERE username = ?`;
+      const values = [...Object.values(updateData), username];
+      const stmt = db2.prepare(sql);
+      const result = stmt.run(...values);
+      return result.changes > 0;
+    } catch (error) {
+      console.error("更新用户信息失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 检查用户是否存在
+   * @param username 用户名
+   * @returns 用户是否存在
+   */
+  async userExists(username) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("SELECT 1 FROM users WHERE username = ?");
+      const result = stmt.get(username);
+      return result !== void 0;
+    } catch (error) {
+      console.error("检查用户存在失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 获取用户总数
+   * @returns 用户总数
+   */
+  async getUserCount() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("SELECT COUNT(*) as count FROM users");
+      const result = stmt.get();
+      return result.count;
+    } catch (error) {
+      console.error("获取用户数量失败:", error);
+      return 0;
+    }
+  }
+  /**
+   * 更新用户在线状态
+   * @param username 用户名
+   * @param onlineId 在线ID
+   * @returns 更新是否成功
+   */
+  async updateUserOnlineStatus(username, onlineId) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+        UPDATE users 
+        SET accountType = 'online', onlineId = ? 
+        WHERE username = ?
+      `);
+      const result = stmt.run(onlineId, username);
+      return result.changes > 0;
+    } catch (error) {
+      console.error("更新用户在线状态失败:", error);
+      return false;
+    }
+  }
+}
+const _UserService = class _UserService {
+  /**
+   * 私有构造函数，初始化用户数据模型
+   */
+  constructor(userModel) {
+    __publicField(this, "userModel");
+    this.userModel = userModel;
+  }
+  /**
+   * 获取UserService单例
+   * @returns UserService实例
+   */
+  static async getInstance() {
+    if (!_UserService.instance) {
+      const userModel = await UserModel.create();
+      _UserService.instance = new _UserService(userModel);
+    }
+    return _UserService.instance;
+  }
+  /**
+   * 用户注册
+   * @param data 注册数据
+   * @returns 响应结果
+   */
+  async register(data) {
+    try {
+      if (!data.username || !data.password) {
+        return {
+          success: false,
+          message: "用户名和密码不能为空"
+        };
+      }
+      if (data.password !== data.confirmPassword) {
+        return {
+          success: false,
+          message: "两次输入的密码不一致"
+        };
+      }
+      const existingUser = await this.userModel.findUserByUsername(data.username);
+      if (existingUser) {
+        return {
+          success: false,
+          message: "用户名已存在"
+        };
+      }
+      const hashedPassword = await this.hashPassword(data.password);
+      const userData = {
+        username: data.username,
+        password: hashedPassword,
+        email: data.email,
+        phone: data.phone,
+        accountType: "local",
+        createdAt: Date.now()
+      };
+      const success = await this.userModel.addUser(userData);
+      if (success) {
+        return {
+          success: true,
+          message: "注册成功",
+          data: {
+            username: userData.username,
+            avatar: userData.avatar,
+            email: userData.email,
+            phone: userData.phone,
+            accountType: userData.accountType,
+            createdAt: userData.createdAt
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: "注册失败，请重试"
+        };
       }
     } catch (error) {
-      console.error("初始化存储失败:", error);
-    }
-  }
-  /**
-   * 添加保存的账号信息
-   * @param key - 账号唯一标识符（通常是用户名）
-   * @param value - 要保存的账号信息
-   * @returns {Promise<TResponse>} 返回Promise
-   * ```typescript
-   * {
-   *   success: true,
-   *   message: "数据添加成功"
-   * }
-   * ```
-   * @throws 当添加失败时抛出错误
-   */
-  async addSavedAccountInfo(key, value) {
-    try {
-      const data = await fs.readFile(this.sharedDataFile, "utf-8");
-      const jsonData = JSON.parse(data);
-      jsonData[key] = value;
-      console.log("jsonData", jsonData);
-      await fs.writeFile(this.sharedDataFile, JSON.stringify(jsonData));
-      return {
-        success: true,
-        message: "数据添加成功"
-      };
-    } catch (error) {
-      console.error("添加数据失败:", error);
-      throw error;
-    }
-  }
-  /**
-   * 删除保存的账号信息
-   * @param key - 要删除的账号标识符
-   * @returns {Promise<TResponse>} 返回Promise
-   * ```typescript
-   * {
-   *   success: true,
-   *   message: "数据删除成功"
-   * }
-   * ```
-   * @throws 当删除失败时抛出错误
-   */
-  async removeSavedAccountInfo(key) {
-    try {
-      const data = await fs.readFile(this.sharedDataFile, "utf-8");
-      const jsonData = JSON.parse(data);
-      delete jsonData[key];
-      await fs.writeFile(this.sharedDataFile, JSON.stringify(jsonData));
-      return {
-        success: true,
-        message: "数据删除成功"
-      };
-    } catch (error) {
-      console.error("删除数据失败:", error);
-      throw error;
-    }
-  }
-  /**
-   * 获取所有保存的账号信息
-   * @returns {Promise<TResponse>} 返回Promise
-   * ```typescript
-   * // 成功时
-   * {
-   *   success: true,
-   *   message: "数据读取成功",
-   *   data: [
-   *     { username: string, password?: string, remember: boolean, ... }
-   *   ]
-   * }
-   * 
-   * // 失败时
-   * {
-   *   success: false,
-   *   message: "读取数据失败",
-   *   data: []
-   * }
-   * ```
-   */
-  async getAllSavedAccountInfo() {
-    try {
-      const data = await fs.readFile(this.sharedDataFile, "utf-8");
-      const jsonData = JSON.parse(data);
-      const accountsArray = Object.values(jsonData);
-      return {
-        success: true,
-        message: "数据读取成功",
-        data: accountsArray
-      };
-    } catch (error) {
-      console.error("读取数据失败:", error);
+      console.error("注册过程中发生错误:", error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "读取数据失败",
-        data: []
-        // 失败时返回空数组
+        message: "注册失败，服务器错误"
       };
     }
   }
   /**
-   * 更新保存的账号信息
-   * @param key - 要更新的账号标识符
-   * @param value - 新的账号信息
-   * @returns {Promise<TResponse>} 返回Promise
-   * ```typescript
-   * {
-   *   success: true,
-   *   message: "数据更新成功"
-   * }
-   * ```
-   * @throws 当更新失败时抛出错误
+   * 用户登录
+   * @param data 登录数据
+   * @returns 响应结果
    */
-  async updateSavedAccountInfo(key, value) {
+  async login(data) {
     try {
-      const data = await fs.readFile(this.sharedDataFile, "utf-8");
-      const jsonData = JSON.parse(data);
-      jsonData[key] = value;
-      await fs.writeFile(this.sharedDataFile, JSON.stringify(jsonData));
+      if (!data.username || !data.password) {
+        return {
+          success: false,
+          message: "用户名和密码不能为空"
+        };
+      }
+      const user = await this.userModel.findUserByUsername(data.username);
+      if (!user) {
+        return {
+          success: false,
+          message: "用户不存在"
+        };
+      }
+      const isPasswordValid = await this.verifyPassword(data.password, user.password);
+      if (!isPasswordValid) {
+        return {
+          success: false,
+          message: "密码错误"
+        };
+      }
       return {
         success: true,
-        message: "数据更新成功"
+        message: "登录成功",
+        data: {
+          username: user.username,
+          avatar: user.avatar,
+          email: user.email,
+          phone: user.phone,
+          accountType: user.accountType,
+          onlineId: user.onlineId,
+          createdAt: user.createdAt
+        }
       };
     } catch (error) {
-      console.error("更新数据失败:", error);
-      throw error;
+      console.error("登录过程中发生错误:", error);
+      return {
+        success: false,
+        message: "登录失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取用户信息
+   * @param username 用户名
+   * @returns 响应结果
+   */
+  async getUserInfo(username) {
+    try {
+      if (!username) {
+        return {
+          success: false,
+          message: "用户名不能为空"
+        };
+      }
+      const user = await this.userModel.findUserByUsername(username);
+      if (!user) {
+        return {
+          success: false,
+          message: "用户不存在"
+        };
+      }
+      return {
+        success: true,
+        message: "获取用户信息成功",
+        data: {
+          username: user.username,
+          avatar: user.avatar,
+          email: user.email,
+          phone: user.phone,
+          accountType: user.accountType,
+          onlineId: user.onlineId,
+          createdAt: user.createdAt
+        }
+      };
+    } catch (error) {
+      console.error("获取用户信息失败:", error);
+      return {
+        success: false,
+        message: "获取用户信息失败"
+      };
+    }
+  }
+  /**
+   * 更新用户信息
+   * @param username 用户名
+   * @param data 更新数据
+   * @returns 响应结果
+   */
+  async updateUserInfo(username, data) {
+    try {
+      if (!username) {
+        return {
+          success: false,
+          message: "用户名不能为空"
+        };
+      }
+      const existingUser = await this.userModel.findUserByUsername(username);
+      if (!existingUser) {
+        return {
+          success: false,
+          message: "用户不存在"
+        };
+      }
+      if (data.password) {
+        data.password = await this.hashPassword(data.password);
+      }
+      const success = await this.userModel.updateUser(username, data);
+      if (success) {
+        return {
+          success: true,
+          message: "更新成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "更新失败"
+        };
+      }
+    } catch (error) {
+      console.error("更新用户信息失败:", error);
+      return {
+        success: false,
+        message: "更新失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 删除用户账号
+   * @param username 用户名
+   * @returns 响应结果
+   */
+  async deleteUser(username) {
+    try {
+      if (!username) {
+        return {
+          success: false,
+          message: "用户名不能为空"
+        };
+      }
+      const existingUser = await this.userModel.findUserByUsername(username);
+      if (!existingUser) {
+        return {
+          success: false,
+          message: "用户不存在"
+        };
+      }
+      const success = await this.userModel.removeUser(username);
+      if (success) {
+        return {
+          success: true,
+          message: "账号删除成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "删除失败"
+        };
+      }
+    } catch (error) {
+      console.error("删除用户失败:", error);
+      return {
+        success: false,
+        message: "删除失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 升级为在线账号
+   * @param username 用户名
+   * @param onlineId 在线ID
+   * @returns 响应结果
+   */
+  async upgradeToOnlineAccount(username, onlineId) {
+    try {
+      if (!username || !onlineId) {
+        return {
+          success: false,
+          message: "参数不能为空"
+        };
+      }
+      const existingUser = await this.userModel.findUserByUsername(username);
+      if (!existingUser) {
+        return {
+          success: false,
+          message: "用户不存在"
+        };
+      }
+      const success = await this.userModel.updateUserOnlineStatus(username, onlineId);
+      if (success) {
+        return {
+          success: true,
+          message: "升级为在线账号成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "升级失败"
+        };
+      }
+    } catch (error) {
+      console.error("升级账号失败:", error);
+      return {
+        success: false,
+        message: "升级失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取所有用户列表
+   * @returns 响应结果
+   */
+  async getAllUsers() {
+    try {
+      const users = await this.userModel.getAllUsers();
+      const safeUsers = users.map((user) => ({
+        username: user.username,
+        avatar: user.avatar,
+        email: user.email,
+        phone: user.phone,
+        accountType: user.accountType,
+        onlineId: user.onlineId,
+        createdAt: user.createdAt
+      }));
+      return {
+        success: true,
+        message: "获取用户列表成功",
+        data: safeUsers
+      };
+    } catch (error) {
+      console.error("获取用户列表失败:", error);
+      return {
+        success: false,
+        message: "获取用户列表失败"
+      };
+    }
+  }
+  /**
+   * 密码哈希加密
+   * @param password 原始密码
+   * @returns 加密后的密码
+   */
+  async hashPassword(password) {
+    const saltRounds = 10;
+    return await bcrypt.hash(password, saltRounds);
+  }
+  /**
+   * 验证密码
+   * @param password 输入的原始密码
+   * @param hashedPassword 数据库中的加密密码
+   * @returns 密码是否匹配
+   */
+  async verifyPassword(password, hashedPassword) {
+    return await bcrypt.compare(password, hashedPassword);
+  }
+};
+__publicField(_UserService, "instance");
+let UserService = _UserService;
+const userService = UserService.getInstance();
+const userService$1 = /* @__PURE__ */ Object.freeze(/* @__PURE__ */ Object.defineProperty({
+  __proto__: null,
+  UserService,
+  userService
+}, Symbol.toStringTag, { value: "Module" }));
+async function setupUserHandlers() {
+  try {
+    const service = await userService;
+    ipcMain.handle("user:register", async (_event, form) => {
+      console.log("IPC: 用户注册请求", { username: form.username, email: form.email });
+      try {
+        const response = await service.register(form);
+        console.log("IPC: 注册结果", { success: response.success, username: form.username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 注册异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "注册失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:login", async (_event, credentials) => {
+      console.log("IPC: 用户登录请求", { username: credentials.username });
+      try {
+        const response = await service.login(credentials);
+        console.log("IPC: 登录结果", { success: response.success, username: credentials.username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 登录异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "登录失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:getUserInfo", async (_event, username) => {
+      console.log("IPC: 获取用户信息请求", { username });
+      try {
+        const response = await service.getUserInfo(username);
+        console.log("IPC: 获取用户信息结果", { success: response.success, username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 获取用户信息异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "获取用户信息失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:update", async (_event, username, newData) => {
+      console.log("IPC: 更新用户信息请求", { username, fields: Object.keys(newData) });
+      try {
+        const response = await service.updateUserInfo(username, newData);
+        console.log("IPC: 更新用户信息结果", { success: response.success, username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 更新用户信息异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "更新用户信息失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:deregistration", async (_event, username) => {
+      console.log("IPC: 删除用户账号请求", { username });
+      try {
+        const response = await service.deleteUser(username);
+        console.log("IPC: 删除用户账号结果", { success: response.success, username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 删除用户账号异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "删除账号失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:upgradeToOnline", async (_event, username, onlineId) => {
+      console.log("IPC: 升级为在线账号请求", { username, onlineId });
+      try {
+        const response = await service.upgradeToOnlineAccount(username, onlineId);
+        console.log("IPC: 升级为在线账号结果", { success: response.success, username });
+        return response;
+      } catch (error) {
+        console.error("IPC: 升级为在线账号异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "升级账号失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:getAllUsers", async (_event) => {
+      var _a2;
+      console.log("IPC: 获取所有用户列表请求");
+      try {
+        const response = await service.getAllUsers();
+        console.log("IPC: 获取用户列表结果", {
+          success: response.success,
+          userCount: ((_a2 = response.data) == null ? void 0 : _a2.length) || 0
+        });
+        return response;
+      } catch (error) {
+        console.error("IPC: 获取用户列表异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "获取用户列表失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:verifyPassword", async (_event, username, password) => {
+      console.log("IPC: 验证用户密码请求", { username });
+      try {
+        const response = await service.login({ username, password, remember: false });
+        if (response.success) {
+          return {
+            success: true,
+            message: "密码验证成功"
+          };
+        } else {
+          return {
+            success: false,
+            message: "密码验证失败"
+          };
+        }
+      } catch (error) {
+        console.error("IPC: 验证密码异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "密码验证失败，未知错误"
+        };
+      }
+    });
+    ipcMain.handle("user:changePassword", async (_event, username, oldPassword, newPassword) => {
+      console.log("IPC: 修改用户密码请求", { username });
+      try {
+        const verifyResult = await service.login({ username, password: oldPassword, remember: false });
+        if (!verifyResult.success) {
+          return {
+            success: false,
+            message: "当前密码验证失败"
+          };
+        }
+        const updateResult = await service.updateUserInfo(username, { password: newPassword });
+        if (updateResult.success) {
+          console.log("IPC: 修改密码成功", { username });
+          return {
+            success: true,
+            message: "密码修改成功"
+          };
+        } else {
+          return updateResult;
+        }
+      } catch (error) {
+        console.error("IPC: 修改密码异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "修改密码失败，未知错误"
+        };
+      }
+    });
+    console.log("用户 IPC 处理器设置完成");
+  } catch (error) {
+    console.error("设置用户 IPC 处理器失败:", error);
+    throw error;
+  }
+}
+class LoginSessionModel {
+  /**
+   * 私有构造函数，防止直接实例化
+   * 确保只能通过静态工厂方法创建实例，保证数据库连接的正确初始化
+   */
+  constructor() {
+    /** 数据库连接实例，初始化后不为空 */
+    __publicField(this, "db", null);
+  }
+  /**
+   * 静态工厂方法，创建并初始化 LoginSessionModel 实例
+   * @returns {Promise<LoginSessionModel>} 已初始化的 LoginSessionModel 实例
+   * @throws {Error} 当数据库初始化失败时抛出错误
+   */
+  static async create() {
+    const instance = new LoginSessionModel();
+    instance.db = await initializeDatabase();
+    return instance;
+  }
+  /**
+   * 确保数据库连接存在的私有方法
+   * 如果连接不存在则重新初始化，提供双重保障
+   * @returns {Promise<Database>} 数据库连接实例
+   * @private
+   */
+  async ensureDatabase() {
+    if (!this.db) {
+      this.db = await initializeDatabase();
+    }
+    return this.db;
+  }
+  /**
+   * 保存登录会话信息
+   * 使用 INSERT OR REPLACE 策略，如果相同用户名和账户类型的记录已存在则替换
+   * 在保存新会话前会将所有其他会话设为非活跃状态，确保只有一个活跃会话
+   * 
+   * @param {Omit<TLoginSessionData, "id" | "createdAt" | "updatedAt">} sessionData - 会话数据
+   * @param {string} sessionData.username - 用户名
+   * @param {string} [sessionData.password] - 加密后的密码（只在记住密码时保存）
+   * @param {'local' | 'online'} sessionData.accountType - 账户类型
+   * @param {boolean} sessionData.rememberMe - 是否记住密码
+   * @param {number} sessionData.lastLoginTime - 最后登录时间戳
+   * @param {boolean} sessionData.autoLogin - 是否自动登录
+   * @param {boolean} sessionData.isActive - 是否为活跃会话
+   * @returns {Promise<boolean>} 保存是否成功
+   */
+  async saveLoginSession(sessionData) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const now2 = Date.now();
+      db2.prepare("UPDATE login_sessions SET isActive = 0").run();
+      const stmt = db2.prepare(`
+          INSERT OR REPLACE INTO login_sessions (
+            username,
+            password,
+            accountType,
+            rememberMe,
+            lastLoginTime,
+            autoLogin,
+            isActive,
+            createdAt,
+            updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+      const result = stmt.run(
+        sessionData.username,
+        sessionData.password || null,
+        // 只有记住密码时才保存密码
+        sessionData.accountType,
+        sessionData.rememberMe ? 1 : 0,
+        // 将布尔值转换为数字存储
+        sessionData.lastLoginTime,
+        sessionData.autoLogin ? 1 : 0,
+        sessionData.isActive ? 1 : 0,
+        now2,
+        // 当前时间作为创建时间
+        now2
+        // 当前时间作为更新时间
+      );
+      return result.changes > 0;
+    } catch (error) {
+      console.error("保存登录会话失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 添加新的登录会话记录
+   * 使用 INSERT 策略，仅插入新记录，如果存在重复记录会失败
+   * 适用于确定要创建新记录的场景
+   * 
+   * @param {Omit<TLoginSessionData, "id" | "createdAt" | "updatedAt">} sessionData - 会话数据
+   * @returns {Promise<boolean>} 添加是否成功
+   */
+  async addLoginSession(sessionData) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const now2 = Date.now();
+      const stmt = db2.prepare(`
+          INSERT INTO login_sessions (
+            username,
+            password,
+            accountType,
+            rememberMe,
+            lastLoginTime,
+            autoLogin,
+            isActive,
+            createdAt,
+            updatedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `);
+      const result = stmt.run(
+        sessionData.username,
+        sessionData.password || null,
+        sessionData.accountType,
+        sessionData.rememberMe ? 1 : 0,
+        sessionData.lastLoginTime,
+        sessionData.autoLogin ? 1 : 0,
+        sessionData.isActive ? 1 : 0,
+        now2,
+        now2
+      );
+      return result.changes > 0;
+    } catch (error) {
+      console.error("添加登录会话失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 更新指定用户的会话信息
+   * 通过用户名和账户类型定位记录，更新传入的字段
+   * 自动过滤不可更新的字段（id, username, accountType, createdAt）
+   * 自动更新 updatedAt 字段为当前时间
+   * 
+   * @param {string} username - 用户名，用于定位记录
+   * @param {string} accountType - 账户类型，用于定位记录
+   * @param {Partial<TLoginSessionData>} updates - 要更新的字段集合
+   * @returns {Promise<boolean>} 更新是否成功，如果没有匹配的记录则返回 false
+   */
+  async updateSession(username, accountType, updates) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const fields = Object.keys(updates).filter(
+        (key) => !["id", "username", "accountType", "createdAt"].includes(key)
+      ).map((key) => `${key} = ?`);
+      if (fields.length === 0) return true;
+      fields.push("updatedAt = ?");
+      const sql = `UPDATE login_sessions SET ${fields.join(
+        ", "
+      )} WHERE username = ? AND accountType = ?`;
+      const values = [
+        ...Object.keys(updates).filter(
+          (key) => !["id", "username", "accountType", "createdAt"].includes(key)
+        ).map((key) => updates[key]),
+        Date.now(),
+        // updatedAt 的值
+        username,
+        // WHERE 条件：用户名
+        accountType
+        // WHERE 条件：账户类型
+      ];
+      const stmt = db2.prepare(sql);
+      const result = stmt.run(...values);
+      return result.changes > 0;
+    } catch (error) {
+      console.error("更新会话失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 删除指定的登录会话记录
+   * 通过用户名和账户类型的组合精确删除记录
+   * 
+   * @param {string} username - 用户名
+   * @param {string} accountType - 账户类型（'local' 或 'online'）
+   * @returns {Promise<boolean>} 删除是否成功，如果记录不存在则返回 false
+   */
+  async deleteSession(username, accountType) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(
+        "DELETE FROM login_sessions WHERE username = ? AND accountType = ?"
+      );
+      const result = stmt.run(username, accountType);
+      return result.changes > 0;
+    } catch (error) {
+      console.error("删除会话失败:", error);
+      return false;
+    }
+  }
+  /**
+   * 获取所有登录会话历史记录
+   * 按最后登录时间降序排列，最近的登录记录排在前面
+   * 
+   * @returns {Promise<TLoginSessionData[]>} 所有登录会话数据数组，失败时返回空数组
+   */
+  async getAllLoginSessions() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+          SELECT * FROM login_sessions 
+          ORDER BY lastLoginTime DESC
+        `);
+      return stmt.all();
+    } catch (error) {
+      console.error("获取登录历史失败:", error);
+      return [];
+    }
+  }
+  /**
+   * 获取所有记住密码的会话记录
+   * 返回 rememberMe 为 true 的所有会话，按最后登录时间降序排列
+   * 用于登录页面显示历史登录账号列表
+   * 
+   * @returns {Promise<TLoginSessionData[]>} 记住密码的会话数据数组，失败时返回空数组
+   */
+  async getRememberedSessions() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+          SELECT * FROM login_sessions 
+          WHERE rememberMe = 1 
+          ORDER BY lastLoginTime DESC
+        `);
+      return stmt.all();
+    } catch (error) {
+      console.error("获取记住的会话失败:", error);
+      return [];
+    }
+  }
+  /**
+   * 获取设置为自动登录的会话记录
+   * 返回最近一次设置为自动登录的会话，用于应用启动时的自动登录功能
+   * 
+   * @returns {Promise<TLoginSessionData | null>} 自动登录会话数据，不存在时返回 null
+   */
+  async getAutoLoginSession() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+          SELECT * FROM login_sessions 
+          WHERE autoLogin = 1 
+          ORDER BY lastLoginTime DESC 
+          LIMIT 1
+        `);
+      return stmt.get() || null;
+    } catch (error) {
+      console.error("获取自动登录会话失败:", error);
+      return null;
+    }
+  }
+  /**
+   * 获取当前活跃的会话记录
+   * 返回标记为活跃状态的会话，正常情况下应该只有一个活跃会话
+   * 用于获取当前登录用户的信息
+   * 
+   * @returns {Promise<TLoginSessionData | null>} 当前活跃会话数据，不存在时返回 null
+   */
+  async getActiveSession() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+          SELECT * FROM login_sessions 
+          WHERE isActive = 1 
+          LIMIT 1
+        `);
+      return stmt.get() || null;
+    } catch (error) {
+      console.error("获取活跃会话失败:", error);
+      return null;
+    }
+  }
+  /**
+   * 清除所有登录会话记录
+   * 删除数据库中的所有会话数据，用于重置或清理功能
+   * 注意：此操作不可逆，请谨慎使用
+   * 
+   * @returns {Promise<boolean>} 清除是否成功，即使没有记录也返回 true
+   */
+  async clearAllSessions() {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare("DELETE FROM login_sessions");
+      const result = stmt.run();
+      return result.changes >= 0;
+    } catch (error) {
+      console.error("清除所有会话失败:", error);
+      return false;
+    }
+  }
+}
+const _LoginSessionService = class _LoginSessionService {
+  // 256位密钥
+  /**
+   * 私有构造函数，初始化登录会话模型和加密配置
+   */
+  constructor(loginSessionModel) {
+    __publicField(this, "loginSessionModel");
+    // AES加密配置
+    __publicField(this, "algorithm", "aes-256-cbc");
+    __publicField(this, "secretKey");
+    __publicField(this, "keyLength", 32);
+    this.loginSessionModel = loginSessionModel;
+    this.secretKey = this.generateSecretKey();
+  }
+  /**
+   * 获取 LoginSessionService 单例
+   * @returns LoginSessionService 实例
+   */
+  static async getInstance() {
+    if (!_LoginSessionService.instance) {
+      const loginSessionModel = await LoginSessionModel.create();
+      _LoginSessionService.instance = new _LoginSessionService(loginSessionModel);
+    }
+    return _LoginSessionService.instance;
+  }
+  /**
+   * 创建登录会话
+   * 用户登录成功后调用此方法保存会话信息
+   *
+   * @param sessionData 会话数据
+   * @param sessionData.username 用户名
+   * @param sessionData.password 原始密码（如果记住密码）
+   * @param sessionData.accountType 账户类型
+   * @param sessionData.rememberMe 是否记住密码
+   * @param sessionData.autoLogin 是否自动登录
+   * @returns 操作结果
+   */
+  async createSession(sessionData) {
+    try {
+      if (!sessionData.username || !sessionData.accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      let encryptedPassword;
+      if (sessionData.rememberMe && sessionData.password) {
+        const { userService: userService2 } = await Promise.resolve().then(() => userService$1);
+        const service = await userService2;
+        const loginResult = await service.login({
+          username: sessionData.username,
+          password: sessionData.password,
+          remember: true
+        });
+        if (!loginResult.success) {
+          return {
+            success: false,
+            message: "密码验证失败，无法保存会话"
+          };
+        }
+        encryptedPassword = await this.encryptPassword(sessionData.password);
+      }
+      const loginSessionData = {
+        username: sessionData.username,
+        password: encryptedPassword,
+        accountType: sessionData.accountType,
+        rememberMe: sessionData.rememberMe ? 1 : 0,
+        lastLoginTime: Date.now(),
+        autoLogin: sessionData.autoLogin ? 1 : 0,
+        isActive: 1
+        // 使用数字而不是布尔值
+      };
+      const success = await this.loginSessionModel.saveLoginSession(
+        loginSessionData
+      );
+      if (success) {
+        return {
+          success: true,
+          message: "会话创建成功",
+          data: {
+            username: sessionData.username,
+            accountType: sessionData.accountType,
+            rememberMe: sessionData.rememberMe,
+            autoLogin: sessionData.autoLogin
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: "会话创建失败"
+        };
+      }
+    } catch (error) {
+      console.error("创建登录会话失败:", error);
+      return {
+        success: false,
+        message: "创建会话失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 快速登录
+   * 使用保存的加密密码进行快速登录
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @returns 登录结果
+   */
+  async quickLogin(username, accountType) {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      const sessions = await this.loginSessionModel.getRememberedSessions();
+      const targetSession = sessions.find(
+        (session) => session.username === username && session.accountType === accountType
+      );
+      if (!targetSession || !targetSession.password) {
+        return {
+          success: false,
+          message: "未找到保存的登录信息"
+        };
+      }
+      try {
+        const decryptedPassword = await this.decryptPassword(targetSession.password);
+        console.log("decryptedPassword", decryptedPassword);
+        const { userService: userService2 } = await Promise.resolve().then(() => userService$1);
+        const service = await userService2;
+        const loginResult = await service.login({
+          username,
+          password: decryptedPassword,
+          remember: true
+        });
+        if (loginResult.success) {
+          console.log("loginResult", loginResult);
+          await this.loginSessionModel.updateSession(username, accountType, {
+            lastLoginTime: Date.now(),
+            isActive: 1
+          });
+          return {
+            success: true,
+            message: "快速登录成功",
+            data: loginResult.data
+          };
+        } else {
+          await this.loginSessionModel.updateSession(username, accountType, {
+            password: void 0,
+            rememberMe: 0,
+            isActive: 0
+          });
+          return {
+            success: false,
+            message: "保存的密码已失效，请重新登录"
+          };
+        }
+      } catch (decryptError) {
+        console.error("解密密码失败:", decryptError);
+        await this.loginSessionModel.updateSession(username, accountType, {
+          password: void 0,
+          rememberMe: 0,
+          isActive: 0
+        });
+        return {
+          success: false,
+          message: "登录信息已损坏，请重新登录"
+        };
+      }
+    } catch (error) {
+      console.error("快速登录失败:", error);
+      return {
+        success: false,
+        message: "快速登录失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 更新会话信息
+   * 更新指定用户的会话数据
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @param updates 要更新的字段
+   * @returns 操作结果
+   */
+  async updateSession(username, accountType, updates) {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      const updateData = { ...updates };
+      if (typeof updateData.rememberMe === "boolean") {
+        updateData.rememberMe = updateData.rememberMe ? 1 : 0;
+      }
+      if (typeof updateData.autoLogin === "boolean") {
+        updateData.autoLogin = updateData.autoLogin ? 1 : 0;
+      }
+      if (typeof updateData.isActive === "boolean") {
+        updateData.isActive = updateData.isActive ? 1 : 0;
+      }
+      if (updates.password) {
+        updateData.password = await this.encryptPassword(updates.password);
+      }
+      updateData.lastLoginTime = Date.now();
+      const success = await this.loginSessionModel.updateSession(
+        username,
+        accountType,
+        updateData
+      );
+      if (success) {
+        return {
+          success: true,
+          message: "会话更新成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "会话不存在或更新失败"
+        };
+      }
+    } catch (error) {
+      console.error("更新会话失败:", error);
+      return {
+        success: false,
+        message: "更新会话失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取记住密码的用户列表
+   * 用于登录页面显示历史登录用户
+   *
+   * @returns 记住密码的用户列表
+   */
+  async getRememberedUsers() {
+    try {
+      const sessions = await this.loginSessionModel.getRememberedSessions();
+      const userList = sessions.map((session) => ({
+        username: session.username,
+        accountType: session.accountType,
+        lastLoginTime: session.lastLoginTime,
+        autoLogin: !!session.autoLogin
+      }));
+      return {
+        success: true,
+        message: "获取记住的用户列表成功",
+        data: userList
+      };
+    } catch (error) {
+      console.error("获取记住的用户失败:", error);
+      return {
+        success: false,
+        message: "获取用户列表失败"
+      };
+    }
+  }
+  /**
+   * 验证记住的密码
+   * 用于快速登录时验证保存的密码
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @param inputPassword 用户输入的密码
+   * @returns 验证结果
+   */
+  async validateRememberedPassword(username, accountType, inputPassword) {
+    try {
+      if (!username || !accountType || !inputPassword) {
+        return {
+          success: false,
+          message: "参数不能为空"
+        };
+      }
+      const sessions = await this.loginSessionModel.getRememberedSessions();
+      const targetSession = sessions.find(
+        (session) => session.username === username && session.accountType === accountType
+      );
+      if (!targetSession || !targetSession.password) {
+        return {
+          success: false,
+          message: "未找到保存的密码信息"
+        };
+      }
+      try {
+        const decryptedPassword = await this.decryptPassword(targetSession.password);
+        if (inputPassword === decryptedPassword) {
+          await this.loginSessionModel.updateSession(username, accountType, {
+            lastLoginTime: Date.now(),
+            isActive: 1
+          });
+          return {
+            success: true,
+            message: "密码验证成功"
+          };
+        } else {
+          return {
+            success: false,
+            message: "密码验证失败"
+          };
+        }
+      } catch (decryptError) {
+        console.error("解密密码失败:", decryptError);
+        return {
+          success: false,
+          message: "密码信息已损坏，请重新登录"
+        };
+      }
+    } catch (error) {
+      console.error("验证记住的密码失败:", error);
+      return {
+        success: false,
+        message: "密码验证失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取自动登录信息
+   * 应用启动时检查是否有用户设置了自动登录
+   *
+   * @returns 自动登录信息
+   */
+  async getAutoLoginInfo() {
+    try {
+      const session = await this.loginSessionModel.getAutoLoginSession();
+      if (session) {
+        return {
+          success: true,
+          message: "找到自动登录信息",
+          data: {
+            username: session.username,
+            accountType: session.accountType,
+            lastLoginTime: session.lastLoginTime,
+            hasPassword: !!session.password
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: "未设置自动登录"
+        };
+      }
+    } catch (error) {
+      console.error("获取自动登录信息失败:", error);
+      return {
+        success: false,
+        message: "获取自动登录信息失败"
+      };
+    }
+  }
+  /**
+   * 获取当前活跃会话
+   * 获取当前登录的用户信息
+   *
+   * @returns 当前活跃会话信息
+   */
+  async getCurrentSession() {
+    try {
+      const session = await this.loginSessionModel.getActiveSession();
+      if (session) {
+        return {
+          success: true,
+          message: "获取当前会话成功",
+          data: {
+            username: session.username,
+            accountType: session.accountType,
+            lastLoginTime: session.lastLoginTime,
+            autoLogin: !!session.autoLogin,
+            rememberMe: !!session.rememberMe
+          }
+        };
+      } else {
+        return {
+          success: false,
+          message: "当前无活跃会话"
+        };
+      }
+    } catch (error) {
+      console.error("获取当前会话失败:", error);
+      return {
+        success: false,
+        message: "获取当前会话失败"
+      };
+    }
+  }
+  /**
+   * 删除指定用户的会话
+   * 用于移除记住的用户信息
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @returns 操作结果
+   */
+  async removeSession(username, accountType) {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      const success = await this.loginSessionModel.deleteSession(
+        username,
+        accountType
+      );
+      if (success) {
+        return {
+          success: true,
+          message: "会话删除成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "会话不存在或删除失败"
+        };
+      }
+    } catch (error) {
+      console.error("删除会话失败:", error);
+      return {
+        success: false,
+        message: "删除会话失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 用户退出登录
+   * 将当前活跃会话设为非活跃状态
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @param keepRemembered 是否保留记住密码信息
+   * @returns 操作结果
+   */
+  async logout(username, accountType, keepRemembered = true) {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      if (keepRemembered) {
+        const success = await this.loginSessionModel.updateSession(
+          username,
+          accountType,
+          {
+            isActive: 0,
+            autoLogin: 0
+            // 退出时取消自动登录
+          }
+        );
+        if (success) {
+          return {
+            success: true,
+            message: "退出登录成功"
+          };
+        } else {
+          return {
+            success: false,
+            message: "退出登录失败"
+          };
+        }
+      } else {
+        return await this.removeSession(username, accountType);
+      }
+    } catch (error) {
+      console.error("退出登录失败:", error);
+      return {
+        success: false,
+        message: "退出登录失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 清除所有会话数据
+   * 清理所有保存的登录信息，用于重置功能
+   *
+   * @returns 操作结果
+   */
+  async clearAllSessions() {
+    try {
+      const success = await this.loginSessionModel.clearAllSessions();
+      if (success) {
+        return {
+          success: true,
+          message: "清除所有会话成功"
+        };
+      } else {
+        return {
+          success: false,
+          message: "清除会话失败"
+        };
+      }
+    } catch (error) {
+      console.error("清除所有会话失败:", error);
+      return {
+        success: false,
+        message: "清除会话失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取登录历史记录
+   * 获取所有登录会话的历史记录
+   *
+   * @returns 登录历史列表
+   */
+  async getLoginHistory() {
+    try {
+      const sessions = await this.loginSessionModel.getAllLoginSessions();
+      const history = sessions.map((session) => ({
+        username: session.username,
+        accountType: session.accountType,
+        lastLoginTime: session.lastLoginTime,
+        isActive: !!session.isActive,
+        rememberMe: !!session.rememberMe,
+        autoLogin: !!session.autoLogin
+      }));
+      return {
+        success: true,
+        message: "获取登录历史成功",
+        data: history
+      };
+    } catch (error) {
+      console.error("获取登录历史失败:", error);
+      return {
+        success: false,
+        message: "获取登录历史失败"
+      };
+    }
+  }
+  /**
+   * 生成应用程序密钥
+   * 基于应用程序特定信息生成密钥
+   *
+   * @returns 32字节密钥
+   * @private
+   */
+  generateSecretKey() {
+    const appSecret = "DailyUse-App-Secret-Key-2024";
+    return crypto.scryptSync(appSecret, "session-salt", this.keyLength).toString("hex");
+  }
+  /**
+   * AES密码加密
+   * 使用AES-256-CBC算法对密码进行可逆加密
+   *
+   * @param password 原始密码
+   * @returns 加密后的密码（包含IV）
+   * @private
+   */
+  async encryptPassword(password) {
+    try {
+      const iv = crypto.randomBytes(16);
+      const key = Buffer.from(this.secretKey, "hex");
+      const cipher = crypto.createCipher(this.algorithm, key);
+      cipher.setAutoPadding(true);
+      let encrypted = cipher.update(password, "utf8", "hex");
+      encrypted += cipher.final("hex");
+      const result = iv.toString("hex") + ":" + encrypted;
+      return result;
+    } catch (error) {
+      console.error("密码加密失败:", error);
+      throw new Error("密码加密失败");
+    }
+  }
+  /**
+   * AES密码解密
+   * 解密使用AES-256-CBC算法加密的密码
+   *
+   * @param encryptedData 加密的密码数据（包含IV）
+   * @returns 解密后的原始密码
+   * @private
+   */
+  async decryptPassword(encryptedData) {
+    try {
+      const parts = encryptedData.split(":");
+      if (parts.length !== 2) {
+        throw new Error("加密数据格式错误");
+      }
+      const iv = Buffer.from(parts[0], "hex");
+      const encrypted = parts[1];
+      const key = Buffer.from(this.secretKey, "hex");
+      const decipher = crypto.createDecipher(this.algorithm, key);
+      decipher.setAutoPadding(true);
+      let decrypted = decipher.update(encrypted, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+      return decrypted;
+    } catch (error) {
+      console.error("密码解密失败:", error);
+      throw new Error("密码解密失败");
     }
   }
 };
-__publicField(_SharedDataService, "instance");
-let SharedDataService = _SharedDataService;
-const sharedDataService = SharedDataService.getInstance();
-async function setupSharedDataHandlers() {
-  ipcMain.handle("sharedData:get-all-saved-account-info", async () => {
-    try {
-      const response = await sharedDataService.getAllSavedAccountInfo();
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "获取账号信息失败"
-      };
-    }
-  });
-  ipcMain.handle("sharedData:add-saved-account-info", async (_event, key, value) => {
-    try {
-      const response = await sharedDataService.addSavedAccountInfo(key, value);
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "添加账号信息失败"
-      };
-    }
-  });
-  ipcMain.handle("sharedData:remove-saved-account-info", async (_event, key) => {
-    try {
-      const response = await sharedDataService.removeSavedAccountInfo(key);
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "删除账号信息失败"
-      };
-    }
-  });
-  ipcMain.handle("sharedData:update-saved-account-info", async (_event, key, value) => {
-    try {
-      const response = await sharedDataService.updateSavedAccountInfo(key, value);
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: error instanceof Error ? error.message : "更新账号信息失败"
-      };
-    }
-  });
+__publicField(_LoginSessionService, "instance");
+let LoginSessionService = _LoginSessionService;
+const loginSessionService = LoginSessionService.getInstance();
+async function setupLoginSessionHandlers() {
+  try {
+    const sessionService = await loginSessionService;
+    ipcMain.handle(
+      "session:quickLogin",
+      async (_event, username, accountType) => {
+        try {
+          const result = await sessionService.quickLogin(username, accountType);
+          return result;
+        } catch (error) {
+          console.error("IPC: 快速登录异常", error);
+          return {
+            success: false,
+            message: error instanceof Error ? error.message : "快速登录失败，未知错误"
+          };
+        }
+      }
+    );
+    ipcMain.handle(
+      "session:create",
+      async (_event, sessionData) => {
+        console.log("IPC: 创建登录会话", {
+          username: sessionData.username,
+          accountType: sessionData.accountType
+        });
+        return await sessionService.createSession(sessionData);
+      }
+    );
+    ipcMain.handle(
+      "session:update",
+      async (_event, username, accountType, updates) => {
+        console.log("IPC: 更新会话信息", { username, accountType, updates });
+        return await sessionService.updateSession(
+          username,
+          accountType,
+          updates
+        );
+      }
+    );
+    ipcMain.handle(
+      "session:getRememberedUsers",
+      async (_event) => {
+        console.log("IPC: 获取记住密码的用户列表");
+        return await sessionService.getRememberedUsers();
+      }
+    );
+    ipcMain.handle(
+      "session:validatePassword",
+      async (_event, username, accountType, inputPassword) => {
+        console.log("IPC: 验证记住的密码", { username, accountType });
+        return await sessionService.validateRememberedPassword(
+          username,
+          accountType,
+          inputPassword
+        );
+      }
+    );
+    ipcMain.handle(
+      "session:getAutoLoginInfo",
+      async (_event) => {
+        console.log("IPC: 获取自动登录信息");
+        return await sessionService.getAutoLoginInfo();
+      }
+    );
+    ipcMain.handle(
+      "session:getCurrentSession",
+      async (_event) => {
+        console.log("IPC: 获取当前活跃会话");
+        return await sessionService.getCurrentSession();
+      }
+    );
+    ipcMain.handle(
+      "session:removeSession",
+      async (_event, username, accountType) => {
+        console.log("IPC: 删除用户会话", { username, accountType });
+        return await sessionService.removeSession(username, accountType);
+      }
+    );
+    ipcMain.handle(
+      "session:logout",
+      async (_event, username, accountType, keepRemembered = true) => {
+        console.log("IPC: 用户退出登录", {
+          username,
+          accountType,
+          keepRemembered
+        });
+        return await sessionService.logout(
+          username,
+          accountType,
+          keepRemembered
+        );
+      }
+    );
+    ipcMain.handle("session:clearAll", async (_event) => {
+      console.log("IPC: 清除所有会话数据");
+      return await sessionService.clearAllSessions();
+    });
+    ipcMain.handle(
+      "session:getLoginHistory",
+      async (_event) => {
+        console.log("IPC: 获取登录历史记录");
+        return await sessionService.getLoginHistory();
+      }
+    );
+    console.log("登录会话 IPC 处理器设置完成");
+  } catch (error) {
+    console.error("设置登录会话 IPC 处理器失败:", error);
+    throw error;
+  }
 }
 app.setName("DailyUse");
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
@@ -17164,7 +18762,7 @@ function createWindow() {
   });
 }
 function createTray(win2) {
-  const icon = nativeImage.createFromPath(join(process.env.VITE_PUBLIC, "DailyUse-16.png"));
+  const icon = nativeImage.createFromPath(path.join(process.env.VITE_PUBLIC, "DailyUse-16.png"));
   tray = new Tray(icon);
   tray.setToolTip("DailyUse");
   const contextMenu = Menu.buildFromTemplate([
@@ -17205,15 +18803,16 @@ app.on("activate", () => {
     createWindow();
   }
 });
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   registerFileSystemHandlers();
   registerGitHandlers();
   setupAuthHandlers();
   setupUserStoreHandlers();
-  setupSharedDataHandlers();
+  setupUserHandlers();
+  setupLoginSessionHandlers();
   if (win) {
-    setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+    setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();
   }
   protocol.registerFileProtocol("local", (request, callback) => {

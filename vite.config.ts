@@ -35,6 +35,13 @@ const preloadInputs = {
   )
 }
 
+// 原生模块列表
+const nativeModules = [
+  'better-sqlite3',
+  'bcrypt',
+  'electron'
+]
+
 // https://vitejs.dev/config/
 export default defineConfig({
   resolve: {
@@ -52,7 +59,9 @@ export default defineConfig({
       output: {
         inlineDynamicImports: false,
         manualChunks: undefined
-      }
+      },
+      // 在主构建中也排除原生模块
+      external: nativeModules
     }
   },
   plugins: [
@@ -63,6 +72,20 @@ export default defineConfig({
     electron({
       main: {
         entry: 'electron/main.ts',
+        vite: {
+          build: {
+            outDir: 'dist-electron',
+            rollupOptions: {
+              external: nativeModules,
+              output: {
+                format: 'es'
+              }
+            }
+          },
+          optimizeDeps: {
+            exclude: nativeModules
+          }
+        }
       },
       preload: {
         input: preloadInputs,
@@ -70,15 +93,20 @@ export default defineConfig({
           build: {
             outDir: 'dist-electron',
             rollupOptions: {
+              external: nativeModules,
               output: {
                 inlineDynamicImports: false,
                 manualChunks: undefined,
                 entryFileNames: '[name].mjs'
               }
             }
+          },
+          optimizeDeps: {
+            exclude: nativeModules
           }
         }
       },
+      
       renderer: process.env.NODE_ENV === 'test'
         ? undefined
         : {},

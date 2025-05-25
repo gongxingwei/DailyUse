@@ -1,18 +1,17 @@
 import { app, BrowserWindow, ipcMain, clipboard, Tray, Menu, nativeImage } from 'electron'
 import { fileURLToPath } from 'node:url'
 import path from 'node:path'
-import { join } from 'path';
 import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { registerFileSystemHandlers } from './shared/ipc/filesystem';
-import { setupNotificationHandlers } from './modules/notification/notification';
+import { setupNotificationService } from './modules/notification/notificationService';
 import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
 import { registerGitHandlers } from './shared/ipc/git';
 import { protocol } from 'electron'
-import { setupAuthHandlers } from './modules/Account/ipcs/authIpc';
 import { setupUserStoreHandlers } from './modules/Account/ipcs/localAccountStorageIpc';
-import { setupSharedDataHandlers } from './modules/Account/ipcs/sharedDataIpc';
+import { setupUserHandlers } from './modules/Account/ipcs/userIpc';
+import { setupLoginSessionHandlers } from './modules/Account/ipcs/loginSessionIpc';
 app.setName('DailyUse');
 
 // 防止软件崩溃以及兼容
@@ -120,7 +119,7 @@ function createWindow() {
 
 function createTray(win: BrowserWindow) {
   // 使用已有的ico文件
-  const icon = nativeImage.createFromPath(join(process.env.VITE_PUBLIC, 'DailyUse-16.png'))
+  const icon = nativeImage.createFromPath(path.join(process.env.VITE_PUBLIC, 'DailyUse-16.png'))
   tray = new Tray(icon)
 
 
@@ -173,15 +172,16 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   createWindow();
   registerFileSystemHandlers();
   registerGitHandlers();
-  setupAuthHandlers();
   setupUserStoreHandlers();
-  setupSharedDataHandlers();
+  setupUserHandlers();
+  setupLoginSessionHandlers();
+  
   if (win) {
-    setupNotificationHandlers(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+    setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
     setupScheduleHandlers();
   }
   protocol.registerFileProtocol('local', (request, callback) => {

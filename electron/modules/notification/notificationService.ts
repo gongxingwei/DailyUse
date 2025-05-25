@@ -24,7 +24,7 @@ function reorderNotifications() {
   }
 }
 
-export function setupNotificationHandlers(mainWindow: BrowserWindow, MAIN_DIST: string, RENDERER_DIST: string, VITE_DEV_SERVER_URL: string | undefined) {
+export function setupNotificationService(mainWindow: BrowserWindow, MAIN_DIST: string, RENDERER_DIST: string, VITE_DEV_SERVER_URL: string | undefined) {
   ipcMain.handle('show-notification', async (_event, options: {
     id: string
     title: string

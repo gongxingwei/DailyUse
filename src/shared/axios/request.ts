@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import type { TResponse } from '@/modules/Account/types/response';
+import type { TResponse } from '@/shared/types/response';
 // 创建自定义的 axios 实例类型
 interface CustomAxiosInstance extends Omit<AxiosInstance, 'get' | 'post' | 'put' | 'delete'> {
   get<T = TResponse>(url: string, config?: any): Promise<T>;

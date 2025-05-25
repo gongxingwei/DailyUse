@@ -1,7 +1,7 @@
 import { app } from "electron";
 import path from "path";
 import fs from "fs/promises";
-import { TResponse } from "@/modules/Account/types/response";
+import { TResponse } from "@/shared/types/response";
 /**
  * 本地账户存储服务
  * 负责处理用户数据的本地存储，包括用户信息的读写和用户目录的管理

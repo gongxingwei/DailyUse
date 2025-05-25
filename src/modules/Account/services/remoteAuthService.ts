@@ -1,9 +1,9 @@
-import { myaxios } from "@/shared/api/request";
-import { ILoginForm, IRegisterForm } from "../types/auth";
-import type { TResponse } from "../types/response";
+import { myaxios } from "@/shared/axios/request";
+import { TLoginData, TRegisterData } from "../types/user";
+import type { TResponse } from "../../../shared/types/response";
 class RemoteAuthService  {
 
-    static async register(form: IRegisterForm): Promise<TResponse> {
+    static async register(form: TRegisterData): Promise<TResponse> {
         try {
             const response = await myaxios.post<TResponse>('/api/register', form);
             return response as TResponse;
@@ -17,11 +17,12 @@ class RemoteAuthService  {
         }
     }
 
-    static async login(loginForm: ILoginForm): Promise<TResponse> {
+    static async login(loginForm: TLoginData): Promise<TResponse> {
         try {
             const response = await myaxios.post<TResponse>('/api/login', loginForm);
             if (response.success) {
                 localStorage.setItem('token', response.data.token);
+
             }
             return response as TResponse;
         } catch (error) {

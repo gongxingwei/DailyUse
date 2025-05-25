@@ -85,7 +85,6 @@ import LocalLogin from '../components/LocalLoginForm.vue';
 import LocalRegister from '../components/LocalRegisterForm.vue';
 import RemoteLogin from '../components/RemoteLoginForm.vue';
 import RemoteRegister from '../components/RemoteRegisterForm.vue';
-import { sharedDataService } from '../services/sharedDataService';
 // stores
 import { useAuthStore } from '../stores/authStore';
 // types
@@ -105,15 +104,6 @@ const toLocalLogin = () => {
   activeMode.value = 'local';
 };
 
-onMounted(async () => {
-  const response = await sharedDataService.getAllSavedAccountInfo();
-  console.log("获取已保存的账号信息:", response);
-  if (response.success && Array.isArray(response.data)) {
-    authStore.setSavedAccounts(response.data);
-  } else {
-    authStore.setSavedAccounts([]);
-  }
-});
 </script>
 
 <style scoped>

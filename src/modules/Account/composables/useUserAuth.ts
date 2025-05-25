@@ -1,14 +1,15 @@
-import { ref, computed, reactive } from "vue";
+import { ref, computed, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 //stores
 import { useAuthStore } from "@/modules/Account/stores/authStore";
 // services
-import { localAuthService } from "@/modules/Account/services/localAuthService";
+import { localUserService } from "@/modules/Account/services/localUserService";
 import { remoteAuthService } from "../services/remoteAuthService";
-import { sharedDataService } from "../services/sharedDataService";
+
+import { loginSessionService } from "../services/loginSessionService";
 // types
-import type { ILoginForm, IRegisterForm } from "../types/auth";
-import { storeToRefs } from "pinia";
+import type { TLoginData, TRegisterData } from "../types/user";
+import type { SessionUser } from "../services/loginSessionService";
 
 /**
  * 用户认证相关的组合式函数
@@ -18,15 +19,6 @@ export function useUserAuth(emit?: {
   (e: "register-success"): void;
   (e: "remote-register-success"): void;
 }) {
-  /** 保存的账号信息数据结构 */
-  type SavedAccount = {
-    username: string; // 用户名
-    password?: string; // 可选密码
-    avatar?: string; // 可选头像
-    remember: boolean; // 是否记住账号
-    lastLoginTime: string; // 最后登录时间
-    token?: string; // 可选的登录token
-  };
   // 基础配置和状态管理
   const router = useRouter();
   const authStore = useAuthStore();
@@ -34,13 +26,13 @@ export function useUserAuth(emit?: {
   const loading = ref(""); // 加载状态，存储正在加载的用户名
 
   /** 登录表单数据 */
-  const loginForm = reactive<ILoginForm>({
+  const loginForm = reactive<TLoginData>({
     username: "",
     password: "",
     remember: false,
   });
   /** 注册表单数据 */
-  const registerForm = reactive<IRegisterForm>({
+  const registerForm = reactive<TRegisterData>({
     username: "",
     email: "",
     password: "",
@@ -53,9 +45,28 @@ export function useUserAuth(emit?: {
     color: "error", // 提示颜色（error/success）
   });
 
-  // 状态管理相关
-  const { savedAccounts } = storeToRefs(authStore); // 所有保存的账号
-  const rememberedAccounts = computed(() => authStore.rememberedAccounts); // 已记住的账号列表
+  // 使用会话服务获取记住的用户列表
+  const rememberedUsers = ref<SessionUser[]>([]);
+  const isLoadingUsers = ref(false);
+
+  /**
+   * 获取记住密码的用户列表
+   */
+  const loadRememberedUsers = async () => {
+    try {
+      isLoadingUsers.value = true;
+      const result = await loginSessionService.getRememberedUsers();
+      if (result.success) {
+        rememberedUsers.value = result.data || [];
+      } else {
+        console.error("获取记住的用户失败:", result.message);
+      }
+    } catch (error) {
+      console.error("获取记住的用户失败:", error);
+    } finally {
+      isLoadingUsers.value = false;
+    }
+  };
 
   /**
    * 处理本地登录
@@ -73,7 +84,7 @@ export function useUserAuth(emit?: {
       }
 
       // 调用登录服务
-      const response = await localAuthService.login(loginForm);
+      const response = await localUserService.login(loginForm);
       snackbar.message = response.message;
       snackbar.color = response.success ? "success" : "error";
       snackbar.show = true;
@@ -81,13 +92,16 @@ export function useUserAuth(emit?: {
       if (response.success) {
         // 登录成功，保存用户信息
         authStore.setUser(response.data);
-        // 保存账号信息
-        updateSavedAccount(
-          loginForm.username,
-          loginForm.remember,
-          response.token
-        );
-        // 跳转到首页
+        // 创建或更新会话信息
+        await loginSessionService.createSession({
+          username: loginForm.username,
+          password: loginForm.remember ? loginForm.password : undefined,
+          accountType: "local",
+          rememberMe: loginForm.remember,
+          autoLogin: false, // 可以根据需要添加自动登录选项
+        });
+        // 重新加载记住的用户列表
+        await loadRememberedUsers();
         router.push("/");
       }
     } catch (error) {
@@ -105,7 +119,7 @@ export function useUserAuth(emit?: {
         return;
       }
 
-      const response = await localAuthService.register(registerForm);
+      const response = await localUserService.register(registerForm);
 
       snackbar.message = response.message || "xxx";
       snackbar.color = response.success ? "success" : "error";
@@ -113,6 +127,20 @@ export function useUserAuth(emit?: {
 
       if (response.success) {
         formRef.value.reset(); // 重置表单
+
+        // 注册成功后可以选择自动创建会话
+        if (registerForm.username && registerForm.password) {
+          await loginSessionService.createSession({
+            username: registerForm.username,
+            password: registerForm.password,
+            accountType: "local",
+            rememberMe: false, // 默认记住新注册的用户
+            autoLogin: false,
+          });
+
+          // 重新加载记住的用户列表
+          await loadRememberedUsers();
+        }
         emit?.("register-success");
       }
     } catch (error) {
@@ -129,13 +157,60 @@ export function useUserAuth(emit?: {
    * 当用户从下拉列表选择账号时自动填充记住的密码
    * @param username 选中的用户名
    */
-  const handleAccountSelect = (username: string) => {
-    const selectedAccount = savedAccounts.value.find(
-      (acc) => acc.username === username
+  const handleAccountSelect = async (username: string) => {
+    const selectedUser = rememberedUsers.value.find(
+      (user) => user.username === username
     );
-    if (selectedAccount && selectedAccount.remember) {
-      loginForm.password = selectedAccount.password || "";
+
+    if (selectedUser) {
+      loginForm.username = username;
       loginForm.remember = true;
+
+      // 检查是否有保存的密码，如果有则可以使用快速登录
+      const isRemembered = await loginSessionService.isPasswordRemembered(
+        username,
+        "local"
+      );
+
+      if (isRemembered) {
+        // 可以显示快速登录选项
+        snackbar.message = "检测到已保存的登录信息，可以使用快速登录";
+        snackbar.color = "success";
+        snackbar.show = true;
+      }
+    }
+  };
+
+  /**
+   * 处理快速登录 - 使用会话服务
+   * @param user 要登录的用户信息
+   */
+  const handleLocalQuickLogin = async (user: SessionUser) => {
+    try {
+      loading.value = user.username;
+
+      // 使用会话服务的快速登录
+      const sessionResult = await loginSessionService.quickLogin(
+        user.username,
+        user.accountType
+      );
+
+      if (sessionResult.success) {
+        // 登录成功，保存用户信息
+        authStore.setUser(sessionResult.data);
+        // 重新加载记住的用户列表
+        await loadRememberedUsers();
+        router.push("/");
+      } else {
+        snackbar.message = sessionResult.message || "快速登录失败";
+        snackbar.color = "error";
+        snackbar.show = true;
+      }
+    } catch (error) {
+      console.error("快速登录失败:", error);
+      snackbar.message = "快速登录失败，请重试";
+      snackbar.color = "error";
+      snackbar.show = true;
     }
   };
   /**
@@ -145,133 +220,115 @@ export function useUserAuth(emit?: {
    */
   const handleRemoveSavedAccount = async (username: string) => {
     try {
-      const response = await sharedDataService.removeSavedAccountInfo(username);
-      if (response.success) {
-        // 删除本地数据
-        authStore.removeSavedAccount(username);
+      const result = await loginSessionService.removeSession(username, "local");
+      if (result.success) {
+        // 重新加载记住的用户列表
+        await loadRememberedUsers();
+
+        snackbar.message = "删除账号信息成功";
+        snackbar.color = "success";
+        snackbar.show = true;
       } else {
-        snackbar.message = "删除账号信息失败";
-        snackbar.color = "error";
-      }
-    } catch (error) {
-      console.error("清除已选择的账号失败:", error);
-    }
-  };
-  /**
-   * 更新或添加账号信息
-   * 处理账号信息的保存、更新和排序
-   * @param username 用户名
-   * @param remember 是否记住账号
-   * @param token 可选的登录token
-   * @returns 后端响应结果
-   */
-  const updateSavedAccount = async (
-    username: string,
-    remember: boolean,
-    token?: string
-  ) => {
-    try {
-      const newAccountInfo: SavedAccount = {
-        username: username,
-        remember: remember,
-        lastLoginTime: new Date().toISOString(),
-        token: token,
-      };
-
-      // 检查账号是否已存在
-      const existingAccount = savedAccounts.value.find(
-        (acc) => acc.username === username
-      );
-
-      let response;
-      if (existingAccount) {
-        // 更新现有账号信息
-        response = await sharedDataService.updateSavedAccountInfo(
-          username,
-          newAccountInfo
-        );
-      } else {
-        // 添加新账号信息
-        response = await sharedDataService.addSavedAccountInfo(
-          username,
-          newAccountInfo
-        );
-      }
-
-      if (response.success) {
-        // 更新本地数据
-        if (existingAccount) {
-          const index = savedAccounts.value.findIndex(
-            (acc) => acc.username === username
-          );
-          savedAccounts.value[index] = newAccountInfo;
-        } else {
-          savedAccounts.value.push(newAccountInfo);
-        }
-        // 按最后登录时间排序
-        savedAccounts.value.sort(
-          (a, b) =>
-            new Date(b.lastLoginTime).getTime() -
-            new Date(a.lastLoginTime).getTime()
-        );
-      } else {
-        console.error("保存账号信息失败");
-      }
-
-      return response;
-    } catch (error) {
-      console.error("更新账号信息失败:", error);
-      throw error;
-    }
-  };
-  /**
-   * 处理快速登录
-   * 使用保存的token进行快速登录，失败时自动清除账号信息
-   * @param account 要登录的账号信息
-   */
-  const handleLocalQuickLogin = async (account: SavedAccount) => {
-    try {
-      loading.value = account.username;
-      // 使用 token 进行登录
-      if (!account.token) {
-        throw new Error("登录信息已失效，请使用密码登录");
-      }
-
-      const response = await localAuthService.loginWithToken(
-        account.username,
-        account.token
-      );
-
-      if (response.success) {
-        authStore.setUser(response.data);
-        // 更新账号信息
-        if (account.username !== response.data.username) {
-          throw new Error("请求的用户与返回的用户不匹配");
-        }
-        await updateSavedAccount(
-          account.username,
-          account.remember,
-          response.token // 用新的token更新保存的账号信息
-        );
-        // 跳转到首页
-        router.push("/");
-      } else {
-        snackbar.message = response.message || "登录失败";
+        snackbar.message = result.message || "删除账号信息失败";
         snackbar.color = "error";
         snackbar.show = true;
       }
     } catch (error) {
-      console.error("快速登录失败:", error);
-      snackbar.message =
-        error instanceof Error ? error.message : "快速登录失败";
+      console.error("删除账号失败:", error);
+      snackbar.message = "删除账号失败，请重试";
       snackbar.color = "error";
       snackbar.show = true;
-      // 清除失效的账号信息
-      await handleRemoveSavedAccount(account.username);
-    } finally {
-      loading.value = "";
     }
   };
+
+  /**
+   * 用户登出 - 使用会话服务
+   * @param keepRemembered 是否保留记住的信息
+   */
+  const handleLogout = async (keepRemembered: boolean = true) => {
+    try {
+      const currentUser = authStore.currentUser;
+      if (currentUser) {
+        // 使用会话服务登出
+        const result = await loginSessionService.logout(
+          currentUser.username,
+          "local",
+          keepRemembered
+        );
+
+        if (result.success) {
+          // 清除本地用户状态
+          authStore.logout();
+
+          // 如果不保留记住的信息，重新加载用户列表
+          if (!keepRemembered) {
+            await loadRememberedUsers();
+          }
+
+          router.push("/login");
+
+          snackbar.message = "退出登录成功";
+          snackbar.color = "success";
+          snackbar.show = true;
+        } else {
+          snackbar.message = result.message || "退出登录失败";
+          snackbar.color = "error";
+          snackbar.show = true;
+        }
+      }
+    } catch (error) {
+      console.error("退出登录失败:", error);
+      snackbar.message = "退出登录失败，请重试";
+      snackbar.color = "error";
+      snackbar.show = true;
+    }
+  };
+
+  /**
+   * 检查自动登录 - 应用启动时调用
+   */
+  const checkAutoLogin = async () => {
+    try {
+      const result = await loginSessionService.getAutoLoginInfo();
+      if (result.success && result.data) {
+        const autoLoginInfo = result.data;
+
+        // 尝试自动登录
+        if (autoLoginInfo.hasPassword) {
+          await handleLocalQuickLogin({
+            username: autoLoginInfo.username,
+            accountType: autoLoginInfo.accountType,
+            lastLoginTime: autoLoginInfo.lastLoginTime,
+            autoLogin: true,
+          });
+        }
+      }
+    } catch (error) {
+      console.error("检查自动登录失败:", error);
+    }
+  };
+
+  /**
+   * 清除所有会话数据
+   */
+  // const clearAllSessions = async () => {
+  //   try {
+  //     const result = await loginSessionService.clearAllSessions();
+  //     if (result.success) {
+  //       await loadRememberedUsers();
+
+  //       snackbar.message = "清除所有会话成功";
+  //       snackbar.color = "success";
+  //       snackbar.show = true;
+  //     } else {
+  //       snackbar.message = result.message || "清除会话失败";
+  //       snackbar.color = "error";
+  //       snackbar.show = true;
+  //     }
+  //   } catch (error) {
+  //     console.error("清除所有会话失败:", error);
+  //   }
+  // };
 
   /**
    * 处理远程登录
@@ -290,21 +347,25 @@ export function useUserAuth(emit?: {
 
       // 调用登录服务
       const response = await remoteAuthService.login(loginForm);
-      console.log("登录响应:", response);
       snackbar.message = response.message;
       snackbar.color = response.success ? "success" : "error";
       snackbar.show = true;
 
       if (response.success) {
+        console.log("登录成功", response);
         // 登录成功，保存用户信息
-        authStore.setUser(response.data);
-        // 保存账号信息
-        updateSavedAccount(
-          loginForm.username,
-          loginForm.remember,
-          response.token
-        );
-        // 跳转到首页
+        authStore.setUser(response.data.userWithoutPassword);
+
+        // 创建在线账号会话
+        await loginSessionService.createSession({
+          username: loginForm.username,
+          password: loginForm.remember ? loginForm.password : undefined,
+          accountType: "online",
+          rememberMe: loginForm.remember,
+          autoLogin: false,
+        });
+
+        await loadRememberedUsers();
         router.push("/");
       }
     } catch (error) {
@@ -344,7 +405,10 @@ export function useUserAuth(emit?: {
       snackbar.show = true;
     }
   }
-
+  // 初始化时加载记住的用户
+  onMounted(() => {
+    loadRememberedUsers();
+  });
   // 返回组合式API的公共接口
   return {
     // 表单相关
@@ -355,8 +419,8 @@ export function useUserAuth(emit?: {
     loading, // 加载状态
 
     // 数据相关
-    savedAccounts, // 所有保存的账号
-    rememberedAccounts, // 已记住的账号
+    rememberedUsers,
+    isLoadingUsers,
 
     // 方法相关
     handleAccountSelect, // 处理账号选择
@@ -364,8 +428,12 @@ export function useUserAuth(emit?: {
     handleLcoalLogin, // 处理本地登录
     handleLocalRegister, // 处理本地注册
     handleLocalQuickLogin, // 处理快速登录
-    updateSavedAccount, // 更新账号信息
     handleRemoteLogin, // 处理远程登录
     handleRemoteRegister, // 处理远程注册
+
+    handleLogout, // 处理登出
+    checkAutoLogin, // 检查自动登录
+    loadRememberedUsers, // 加载记住的用户列表
+    // clearAllSessions, // 清除所有会话数据
   };
 }

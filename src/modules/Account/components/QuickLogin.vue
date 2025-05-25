@@ -3,15 +3,15 @@
         <v-row justify="center" align="center" class="quick-login-container">
             <!-- 账号列表 -->
             <v-col cols="12">
-                <v-row v-if="rememberedAccounts.length > 0" justify="center" align="center" class="account-list">
-                    <v-col v-for="account in rememberedAccounts" :key="account.username" cols="auto"
+                <v-row v-if="rememberedUsers.length > 0" justify="center" align="center" class="account-list">
+                    <v-col v-for="account in rememberedUsers" :key="account.username" cols="auto"
                         class="text-center mx-4">
                         <v-hover v-slot="{ isHovering, props }">
                             <div v-bind="props" class="account-wrapper">
                                 <v-avatar :color="isHovering ? 'primary' : 'grey'" size="80" class="mb-2 cursor-pointer"
                                     @click="handleLocalQuickLogin(account)" :loading="loading === account.username">
-                                    <v-img v-if="account.avatar" :src="account.avatar" />
-                                    <span v-else class="text-h4">{{ account.username.charAt(0).toUpperCase() }}</span>
+                                    <!-- <v-img v-if="account.avatar" :src="account.avatar" /> -->
+                                    <span class="text-h4">{{ account.username.charAt(0).toUpperCase() }}</span>
                                 </v-avatar>
 
                                 <!-- 菜单按钮 -->
@@ -54,7 +54,7 @@
 // composables
 import { useUserAuth } from '../composables/useUserAuth';
 
-const { rememberedAccounts, loading, snackbar, handleLocalQuickLogin, handleRemoveSavedAccount } = useUserAuth();
+const { rememberedUsers, loading, snackbar, handleLocalQuickLogin, handleRemoveSavedAccount } = useUserAuth();
 </script>
 
 <style scoped>

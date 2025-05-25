@@ -40,7 +40,6 @@ export class PluginManager {
       }
     }
     
-    console.log('[PluginManager] 所有插件初始化完成');
   }
 
   async destroyAll(): Promise<void> {
