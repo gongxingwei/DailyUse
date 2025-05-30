@@ -51,7 +51,7 @@ export class PluginManager {
   }
 
   getPlugin(name: string): Plugin | undefined {
-    console.log(`[PluginManager] 获取插件: ${name}`);
+
     return this.plugins.get(name);
   }
 

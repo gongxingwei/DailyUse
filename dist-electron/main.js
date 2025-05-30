@@ -16,11 +16,11 @@ import require$$1$2 from "util";
 import require$$0$1, { type } from "os";
 import { EventEmitter } from "node:events";
 import { Readable } from "stream";
-import crypto, { randomFillSync, randomUUID } from "crypto";
 import fs$1 from "node:fs/promises";
 import "node:fs";
 import BetterSqlite3 from "better-sqlite3";
 import bcrypt from "bcrypt";
+import crypto, { randomFillSync, randomUUID } from "crypto";
 class PluginManager {
   constructor() {
     __publicField(this, "plugins", /* @__PURE__ */ new Map());
@@ -61,7 +61,6 @@ class PluginManager {
     this.initialized = false;
   }
   getPlugin(name) {
-    console.log(`[PluginManager] 获取插件: ${name}`);
     return this.plugins.get(name);
   }
   getAllPlugins() {
@@ -143,7 +142,6 @@ class QuickLauncherMainPlugin {
             console.error("[QuickLauncherMain] 启动应用失败:", error);
             reject(error);
           } else {
-            console.log("[QuickLauncherMain] 启动应用成功");
             resolve2(true);
           }
         });
@@ -16101,37 +16099,6 @@ function registerGitHandlers() {
     return await gitService.getLog();
   });
 }
-const byteToHex = [];
-for (let i = 0; i < 256; ++i) {
-  byteToHex.push((i + 256).toString(16).slice(1));
-}
-function unsafeStringify(arr, offset2 = 0) {
-  return (byteToHex[arr[offset2 + 0]] + byteToHex[arr[offset2 + 1]] + byteToHex[arr[offset2 + 2]] + byteToHex[arr[offset2 + 3]] + "-" + byteToHex[arr[offset2 + 4]] + byteToHex[arr[offset2 + 5]] + "-" + byteToHex[arr[offset2 + 6]] + byteToHex[arr[offset2 + 7]] + "-" + byteToHex[arr[offset2 + 8]] + byteToHex[arr[offset2 + 9]] + "-" + byteToHex[arr[offset2 + 10]] + byteToHex[arr[offset2 + 11]] + byteToHex[arr[offset2 + 12]] + byteToHex[arr[offset2 + 13]] + byteToHex[arr[offset2 + 14]] + byteToHex[arr[offset2 + 15]]).toLowerCase();
-}
-const rnds8Pool = new Uint8Array(256);
-let poolPtr = rnds8Pool.length;
-function rng() {
-  if (poolPtr > rnds8Pool.length - 16) {
-    randomFillSync(rnds8Pool);
-    poolPtr = 0;
-  }
-  return rnds8Pool.slice(poolPtr, poolPtr += 16);
-}
-const native = { randomUUID };
-function v4(options, buf, offset2) {
-  var _a2;
-  if (native.randomUUID && !buf && !options) {
-    return native.randomUUID();
-  }
-  options = options || {};
-  const rnds = options.random ?? ((_a2 = options.rng) == null ? void 0 : _a2.call(options)) ?? rng();
-  if (rnds.length < 16) {
-    throw new Error("Random bytes length must be >= 16");
-  }
-  rnds[6] = rnds[6] & 15 | 64;
-  rnds[8] = rnds[8] & 63 | 128;
-  return unsafeStringify(rnds);
-}
 const _LocalAccountStorageService = class _LocalAccountStorageService {
   /**
    * 私有构造函数，确保单例模式
@@ -16474,304 +16441,6 @@ const _LocalAccountStorageService = class _LocalAccountStorageService {
 __publicField(_LocalAccountStorageService, "instance");
 let LocalAccountStorageService = _LocalAccountStorageService;
 const localAccountStorageService = LocalAccountStorageService.getInstance();
-class ValidationError extends Error {
-  constructor(message) {
-    super(message);
-    this.name = "ValidationError";
-  }
-}
-const validateUsername = (username) => {
-  return !!username && username.length >= 3 && username.length <= 20;
-};
-const validatePassword = (password) => {
-  return !!password && password.length >= 8 && password.length <= 20;
-};
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return !!email && emailRegex.test(email);
-};
-const _AuthService = class _AuthService {
-  /**
-   * 私有构造函数，确保单例模式
-   */
-  constructor() {
-  }
-  /**
-   * 获取 AuthService 的单例实例
-   * @returns AuthService 实例
-   */
-  static getInstance() {
-    if (!_AuthService.instance) {
-      _AuthService.instance = new _AuthService();
-    }
-    return _AuthService.instance;
-  }
-  /**
-   * 密码加密方法
-   * 使用 SHA-256 算法对密码进行单向加密
-   * @param password 原始密码
-   * @returns 加密后的密码哈希值
-   */
-  hashPassword(password) {
-    return crypto.createHash("sha256").update(password).digest("hex");
-  }
-  /**
-   * 用户注册
-   * @param form 注册表单数据，包含用户名、密码和邮箱
-   * @returns 注册成功的用户信息（不包含密码）
-   * @throws 当用户名已存在或注册过程出错时抛出错误
-   */
-  async register(form) {
-    try {
-      if (!form.username) {
-        throw new ValidationError("用户名不能为空");
-      }
-      if (!form.password) {
-        throw new ValidationError("密码不能为空");
-      }
-      if (!form.email) {
-        throw new ValidationError("邮箱不能为空");
-      }
-      if (!validateUsername(form.username)) {
-        throw new ValidationError("用户名长度必须在3-20个字符之间");
-      }
-      if (!validatePassword(form.password)) {
-        throw new ValidationError("密码长度必须在8-20个字符之间");
-      }
-      if (!validateEmail(form.email)) {
-        throw new ValidationError("邮箱格式不正确");
-      }
-      const users = await localAccountStorageService.readUsers();
-      if (users[form.username]) {
-        throw new ValidationError("用户名已存在");
-      }
-      const userId = v4();
-      const now2 = (/* @__PURE__ */ new Date()).toISOString();
-      const newUser = {
-        id: userId,
-        username: form.username,
-        email: form.email,
-        passwordHash: this.hashPassword(form.password),
-        createdAt: now2,
-        updatedAt: now2
-      };
-      users[form.username] = newUser;
-      await localAccountStorageService.writeUsers(users);
-      await localAccountStorageService.createUserDirectory(userId);
-      const { passwordHash, ...userWithoutPassword } = newUser;
-      return {
-        success: true,
-        message: "服务端返回注册成功",
-        data: userWithoutPassword
-      };
-    } catch (error) {
-      console.error("注册失败:", error);
-      return {
-        success: false,
-        message: error instanceof ValidationError ? error.message : "注册失败"
-      };
-    }
-  }
-  /**
-   * 用户登录
-   * @param credentials 登录凭证，包含用户名和密码
-   * @returns 登录成功的用户信息（不包含密码）
-   * @throws 当用户名或密码错误时抛出错误
-   */
-  async login(credentials) {
-    try {
-      console.log(credentials, "credentials");
-      if (!credentials.username) {
-        throw new ValidationError("用户名不能为空");
-      }
-      if (!credentials.password) {
-        throw new ValidationError("密码不能为空");
-      }
-      const users = await localAccountStorageService.readUsers();
-      const user = users[credentials.username];
-      if (!user) {
-        throw new ValidationError("用户不存在");
-      }
-      const hashedPassword = this.hashPassword(credentials.password);
-      if (user.passwordHash !== hashedPassword) {
-        throw new ValidationError("密码错误");
-      }
-      const token = crypto.createHash("sha256").update(user.id + (/* @__PURE__ */ new Date()).getTime().toString()).digest("hex");
-      user.lastLoginAt = (/* @__PURE__ */ new Date()).toISOString();
-      users[credentials.username] = user;
-      await localAccountStorageService.writeUsers(users);
-      const response = await localAccountStorageService.saveAuthToken(
-        token,
-        user.id
-      );
-      if (!response.success) {
-        throw new ValidationError("保存登录状态失败");
-      }
-      const { passwordHash, ...userWithoutPassword } = user;
-      return {
-        success: true,
-        message: "登录成功",
-        data: userWithoutPassword,
-        token
-      };
-    } catch (error) {
-      console.error("后端显示登录失败:", error);
-      return {
-        success: false,
-        message: error instanceof ValidationError ? error.message : "登录失败"
-      };
-    }
-  }
-  /**
-   * 使用token和用户名进行快速登录
-   * @param username - 用户名
-   * @param token - 登录token
-   * @returns 登录结果，包含用户信息和新token
-   */
-  async loginWithToken(username, token) {
-    try {
-      const users = await localAccountStorageService.readUsers();
-      const user = users[username];
-      if (!user) {
-        throw new ValidationError("用户不存在");
-      }
-      const response = await localAccountStorageService.getAuthToken(user.id);
-      if (!response.success) {
-        throw new ValidationError("获取token失败");
-      }
-      console.log("savedAuth", response);
-      if (!response.data.token || response.data.token !== token) {
-        throw new ValidationError("登录信息已失效，请重新登录");
-      }
-      const newToken = crypto.createHash("sha256").update(user.id + (/* @__PURE__ */ new Date()).getTime().toString()).digest("hex");
-      user.lastLoginAt = (/* @__PURE__ */ new Date()).toISOString();
-      users[username] = user;
-      await localAccountStorageService.writeUsers(users);
-      await localAccountStorageService.saveAuthToken(newToken, user.id);
-      const { passwordHash, ...userWithoutPassword } = user;
-      return {
-        success: true,
-        message: "快速登录成功",
-        data: userWithoutPassword,
-        token: newToken
-      };
-    } catch (error) {
-      console.error("快速登录失败:", error);
-      return {
-        success: false,
-        message: error instanceof ValidationError ? error.message : "快速登录失败"
-      };
-    }
-  }
-  /**
-   * 清除用户认证状态
-   * 清除存储的token和用户信息
-   * @param userId - 用户ID
-   * @returns 清除成功的状态
-   */
-  async logout(userId) {
-    try {
-      await localAccountStorageService.clearAuthToken(userId);
-      return { success: true, message: "登出成功" };
-    } catch (error) {
-      console.error("登出失败:", error);
-      return {
-        success: false,
-        message: "登出失败"
-      };
-    }
-  }
-  /**
-   * 检查用户认证状态
-   * @returns 当前登录的用户信息，如果未登录则返回 null
-   * TODO: 实现持久化存储的认证状态检查
-   */
-  async checkAuth(userId) {
-    try {
-      const response = await localAccountStorageService.getAuthToken(userId);
-      if (!response.success) {
-        return {
-          success: false,
-          message: "获取token失败"
-        };
-      }
-      const { token, userId: storedUserId } = response.data;
-      if (!token || !storedUserId) {
-        return {
-          success: false,
-          message: "token已经过期或不存在"
-        };
-      }
-      const users = await localAccountStorageService.readUsers();
-      const user = Object.values(users).find((u) => u.id === userId);
-      if (!user) {
-        await localAccountStorageService.clearAuthToken(user.id);
-        return {
-          success: false,
-          message: "用户不存在"
-        };
-      }
-      const { passwordHash, ...userWithoutPassword } = user;
-      return {
-        success: true,
-        message: "认证检查成功",
-        data: userWithoutPassword
-      };
-    } catch (error) {
-      console.error("认证检查失败:", error);
-      return {
-        success: false,
-        message: "认证检查失败"
-      };
-    }
-  }
-};
-// 单例实例
-__publicField(_AuthService, "instance");
-let AuthService = _AuthService;
-const authService = AuthService.getInstance();
-async function setupAuthHandlers() {
-  ipcMain.handle("auth:register", async (_event, form) => {
-    try {
-      const response = await authService.register(form);
-      return response;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
-    }
-  });
-  ipcMain.handle("auth:login", async (_event, credentials) => {
-    try {
-      const response = await authService.login(credentials);
-      return response;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
-    }
-  });
-  ipcMain.handle("auth:login-with-token", async (_event, userName, token) => {
-    try {
-      const response = await authService.loginWithToken(userName, token);
-      return response;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
-    }
-  });
-  ipcMain.handle("auth:logout", async (_event, userId) => {
-    try {
-      const response = await authService.logout(userId);
-      return response;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
-    }
-  });
-  ipcMain.handle("auth:check", async (_event, userId) => {
-    try {
-      const response = await authService.checkAuth(userId);
-      return response;
-    } catch (error) {
-      return { success: false, message: error instanceof Error ? error.message : "An unknown error occurred" };
-    }
-  });
-}
 function setupUserStoreHandlers() {
   ipcMain.handle("userStore:read", async (_, userId, storeName) => {
     try {
@@ -16931,6 +16600,7 @@ async function initializeDatabase() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         password TEXT, -- 加密存储，只有记住密码时才有值
+        token TEXT, -- 存储会话令牌
         accountType TEXT NOT NULL CHECK(accountType IN ('local', 'online')) DEFAULT 'local',
         rememberMe BOOLEAN NOT NULL DEFAULT 0,
         lastLoginTime INTEGER NOT NULL,
@@ -16941,12 +16611,19 @@ async function initializeDatabase() {
         UNIQUE(username, accountType) -- 同一用户名和账户类型组合唯一
       )
     `);
+    try {
+      db.exec(`ALTER TABLE login_sessions ADD COLUMN token TEXT`);
+    } catch (error) {
+      if (error instanceof Error && error.message.includes("duplicate column name")) {
+      } else {
+        console.error("添加 token 字段失败:", error);
+      }
+    }
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_login_sessions_username ON login_sessions(username);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_active ON login_sessions(isActive);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_auto_login ON login_sessions(autoLogin);
     `);
-    console.log("数据库初始化成功");
     return db;
   } catch (error) {
     console.error("数据库初始化失败:", error);
@@ -16960,7 +16637,6 @@ async function closeDatabase() {
     try {
       db.close();
       db = null;
-      console.log("数据库连接已关闭");
     } catch (error) {
       console.error("关闭数据库失败:", error);
     }
@@ -17183,6 +16859,37 @@ class UserModel {
     }
   }
 }
+const byteToHex = [];
+for (let i = 0; i < 256; ++i) {
+  byteToHex.push((i + 256).toString(16).slice(1));
+}
+function unsafeStringify(arr, offset2 = 0) {
+  return (byteToHex[arr[offset2 + 0]] + byteToHex[arr[offset2 + 1]] + byteToHex[arr[offset2 + 2]] + byteToHex[arr[offset2 + 3]] + "-" + byteToHex[arr[offset2 + 4]] + byteToHex[arr[offset2 + 5]] + "-" + byteToHex[arr[offset2 + 6]] + byteToHex[arr[offset2 + 7]] + "-" + byteToHex[arr[offset2 + 8]] + byteToHex[arr[offset2 + 9]] + "-" + byteToHex[arr[offset2 + 10]] + byteToHex[arr[offset2 + 11]] + byteToHex[arr[offset2 + 12]] + byteToHex[arr[offset2 + 13]] + byteToHex[arr[offset2 + 14]] + byteToHex[arr[offset2 + 15]]).toLowerCase();
+}
+const rnds8Pool = new Uint8Array(256);
+let poolPtr = rnds8Pool.length;
+function rng() {
+  if (poolPtr > rnds8Pool.length - 16) {
+    randomFillSync(rnds8Pool);
+    poolPtr = 0;
+  }
+  return rnds8Pool.slice(poolPtr, poolPtr += 16);
+}
+const native = { randomUUID };
+function v4(options, buf, offset2) {
+  var _a2;
+  if (native.randomUUID && !buf && !options) {
+    return native.randomUUID();
+  }
+  options = options || {};
+  const rnds = options.random ?? ((_a2 = options.rng) == null ? void 0 : _a2.call(options)) ?? rng();
+  if (rnds.length < 16) {
+    throw new Error("Random bytes length must be >= 16");
+  }
+  rnds[6] = rnds[6] & 15 | 64;
+  rnds[8] = rnds[8] & 63 | 128;
+  return unsafeStringify(rnds);
+}
 const _UserService = class _UserService {
   /**
    * 私有构造函数，初始化用户数据模型
@@ -17230,6 +16937,8 @@ const _UserService = class _UserService {
       }
       const hashedPassword = await this.hashPassword(data.password);
       const userData = {
+        id: v4(),
+        // 使用UUID生成唯一ID
         username: data.username,
         password: hashedPassword,
         email: data.email,
@@ -17539,10 +17248,8 @@ async function setupUserHandlers() {
   try {
     const service = await userService;
     ipcMain.handle("user:register", async (_event, form) => {
-      console.log("IPC: 用户注册请求", { username: form.username, email: form.email });
       try {
         const response = await service.register(form);
-        console.log("IPC: 注册结果", { success: response.success, username: form.username });
         return response;
       } catch (error) {
         console.error("IPC: 注册异常", error);
@@ -17553,10 +17260,8 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:login", async (_event, credentials) => {
-      console.log("IPC: 用户登录请求", { username: credentials.username });
       try {
         const response = await service.login(credentials);
-        console.log("IPC: 登录结果", { success: response.success, username: credentials.username });
         return response;
       } catch (error) {
         console.error("IPC: 登录异常", error);
@@ -17567,10 +17272,8 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:getUserInfo", async (_event, username) => {
-      console.log("IPC: 获取用户信息请求", { username });
       try {
         const response = await service.getUserInfo(username);
-        console.log("IPC: 获取用户信息结果", { success: response.success, username });
         return response;
       } catch (error) {
         console.error("IPC: 获取用户信息异常", error);
@@ -17581,10 +17284,8 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:update", async (_event, username, newData) => {
-      console.log("IPC: 更新用户信息请求", { username, fields: Object.keys(newData) });
       try {
         const response = await service.updateUserInfo(username, newData);
-        console.log("IPC: 更新用户信息结果", { success: response.success, username });
         return response;
       } catch (error) {
         console.error("IPC: 更新用户信息异常", error);
@@ -17595,10 +17296,8 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:deregistration", async (_event, username) => {
-      console.log("IPC: 删除用户账号请求", { username });
       try {
         const response = await service.deleteUser(username);
-        console.log("IPC: 删除用户账号结果", { success: response.success, username });
         return response;
       } catch (error) {
         console.error("IPC: 删除用户账号异常", error);
@@ -17609,10 +17308,8 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:upgradeToOnline", async (_event, username, onlineId) => {
-      console.log("IPC: 升级为在线账号请求", { username, onlineId });
       try {
         const response = await service.upgradeToOnlineAccount(username, onlineId);
-        console.log("IPC: 升级为在线账号结果", { success: response.success, username });
         return response;
       } catch (error) {
         console.error("IPC: 升级为在线账号异常", error);
@@ -17624,7 +17321,6 @@ async function setupUserHandlers() {
     });
     ipcMain.handle("user:getAllUsers", async (_event) => {
       var _a2;
-      console.log("IPC: 获取所有用户列表请求");
       try {
         const response = await service.getAllUsers();
         console.log("IPC: 获取用户列表结果", {
@@ -17641,7 +17337,6 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:verifyPassword", async (_event, username, password) => {
-      console.log("IPC: 验证用户密码请求", { username });
       try {
         const response = await service.login({ username, password, remember: false });
         if (response.success) {
@@ -17664,7 +17359,6 @@ async function setupUserHandlers() {
       }
     });
     ipcMain.handle("user:changePassword", async (_event, username, oldPassword, newPassword) => {
-      console.log("IPC: 修改用户密码请求", { username });
       try {
         const verifyResult = await service.login({ username, password: oldPassword, remember: false });
         if (!verifyResult.success) {
@@ -17675,7 +17369,6 @@ async function setupUserHandlers() {
         }
         const updateResult = await service.updateUserInfo(username, { password: newPassword });
         if (updateResult.success) {
-          console.log("IPC: 修改密码成功", { username });
           return {
             success: true,
             message: "密码修改成功"
@@ -17691,7 +17384,6 @@ async function setupUserHandlers() {
         };
       }
     });
-    console.log("用户 IPC 处理器设置完成");
   } catch (error) {
     console.error("设置用户 IPC 处理器失败:", error);
     throw error;
@@ -17729,60 +17421,6 @@ class LoginSessionModel {
     return this.db;
   }
   /**
-   * 保存登录会话信息
-   * 使用 INSERT OR REPLACE 策略，如果相同用户名和账户类型的记录已存在则替换
-   * 在保存新会话前会将所有其他会话设为非活跃状态，确保只有一个活跃会话
-   * 
-   * @param {Omit<TLoginSessionData, "id" | "createdAt" | "updatedAt">} sessionData - 会话数据
-   * @param {string} sessionData.username - 用户名
-   * @param {string} [sessionData.password] - 加密后的密码（只在记住密码时保存）
-   * @param {'local' | 'online'} sessionData.accountType - 账户类型
-   * @param {boolean} sessionData.rememberMe - 是否记住密码
-   * @param {number} sessionData.lastLoginTime - 最后登录时间戳
-   * @param {boolean} sessionData.autoLogin - 是否自动登录
-   * @param {boolean} sessionData.isActive - 是否为活跃会话
-   * @returns {Promise<boolean>} 保存是否成功
-   */
-  async saveLoginSession(sessionData) {
-    try {
-      const db2 = await this.ensureDatabase();
-      const now2 = Date.now();
-      db2.prepare("UPDATE login_sessions SET isActive = 0").run();
-      const stmt = db2.prepare(`
-          INSERT OR REPLACE INTO login_sessions (
-            username,
-            password,
-            accountType,
-            rememberMe,
-            lastLoginTime,
-            autoLogin,
-            isActive,
-            createdAt,
-            updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-      const result = stmt.run(
-        sessionData.username,
-        sessionData.password || null,
-        // 只有记住密码时才保存密码
-        sessionData.accountType,
-        sessionData.rememberMe ? 1 : 0,
-        // 将布尔值转换为数字存储
-        sessionData.lastLoginTime,
-        sessionData.autoLogin ? 1 : 0,
-        sessionData.isActive ? 1 : 0,
-        now2,
-        // 当前时间作为创建时间
-        now2
-        // 当前时间作为更新时间
-      );
-      return result.changes > 0;
-    } catch (error) {
-      console.error("保存登录会话失败:", error);
-      return false;
-    }
-  }
-  /**
    * 添加新的登录会话记录
    * 使用 INSERT 策略，仅插入新记录，如果存在重复记录会失败
    * 适用于确定要创建新记录的场景
@@ -17797,21 +17435,23 @@ class LoginSessionModel {
       const stmt = db2.prepare(`
           INSERT INTO login_sessions (
             username,
-            password,
             accountType,
             rememberMe,
+            password,
+            token,
             lastLoginTime,
             autoLogin,
             isActive,
             createdAt,
             updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
       const result = stmt.run(
         sessionData.username,
-        sessionData.password || null,
         sessionData.accountType,
         sessionData.rememberMe ? 1 : 0,
+        sessionData.password || null,
+        sessionData.token || null,
         sessionData.lastLoginTime,
         sessionData.autoLogin ? 1 : 0,
         sessionData.isActive ? 1 : 0,
@@ -17822,6 +17462,28 @@ class LoginSessionModel {
     } catch (error) {
       console.error("添加登录会话失败:", error);
       return false;
+    }
+  }
+  /**
+   * 获取指定用户的登录会话信息
+   * 通过用户名和账户类型精确查询记录
+   * 
+   * @param {string} username - 用户名
+   * @param {string} accountType - 账户类型（'local' 或 'online'）
+   * @returns {Promise<TLoginSessionData | null>} 登录会话数据，如果不存在则返回 null
+   */
+  async getSession(username, accountType) {
+    try {
+      const db2 = await this.ensureDatabase();
+      const stmt = db2.prepare(`
+          SELECT * FROM login_sessions 
+          WHERE username = ? AND accountType = ?
+        `);
+      const session = stmt.get(username, accountType);
+      return session || null;
+    } catch (error) {
+      console.error("获取登录会话失败:", error);
+      return null;
     }
   }
   /**
@@ -18024,7 +17686,7 @@ const _LoginSessionService = class _LoginSessionService {
    * @param sessionData.autoLogin 是否自动登录
    * @returns 操作结果
    */
-  async createSession(sessionData) {
+  async addSession(sessionData) {
     try {
       if (!sessionData.username || !sessionData.accountType) {
         return {
@@ -18034,24 +17696,12 @@ const _LoginSessionService = class _LoginSessionService {
       }
       let encryptedPassword;
       if (sessionData.rememberMe && sessionData.password) {
-        const { userService: userService2 } = await Promise.resolve().then(() => userService$1);
-        const service = await userService2;
-        const loginResult = await service.login({
-          username: sessionData.username,
-          password: sessionData.password,
-          remember: true
-        });
-        if (!loginResult.success) {
-          return {
-            success: false,
-            message: "密码验证失败，无法保存会话"
-          };
-        }
         encryptedPassword = await this.encryptPassword(sessionData.password);
       }
       const loginSessionData = {
         username: sessionData.username,
         password: encryptedPassword,
+        token: sessionData.token,
         accountType: sessionData.accountType,
         rememberMe: sessionData.rememberMe ? 1 : 0,
         lastLoginTime: Date.now(),
@@ -18059,7 +17709,7 @@ const _LoginSessionService = class _LoginSessionService {
         isActive: 1
         // 使用数字而不是布尔值
       };
-      const success = await this.loginSessionModel.saveLoginSession(
+      const success = await this.loginSessionModel.addLoginSession(
         loginSessionData
       );
       if (success) {
@@ -18084,6 +17734,47 @@ const _LoginSessionService = class _LoginSessionService {
       return {
         success: false,
         message: "创建会话失败，服务器错误"
+      };
+    }
+  }
+  /**
+   * 获取登录会话
+   * 根据用户名和账户类型获取会话信息
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @returns 会话数据
+   */
+  async getSession(username, accountType) {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空"
+        };
+      }
+      const session = await this.loginSessionModel.getSession(
+        username,
+        accountType
+      );
+      if (session) {
+        const { password, ...sessionData } = session;
+        return {
+          success: true,
+          message: "获取会话成功",
+          data: sessionData
+        };
+      } else {
+        return {
+          success: false,
+          message: "未找到会话信息"
+        };
+      }
+    } catch (error) {
+      console.error("获取登录会话失败:", error);
+      return {
+        success: false,
+        message: "获取会话失败，服务器错误"
       };
     }
   }
@@ -18114,8 +17805,9 @@ const _LoginSessionService = class _LoginSessionService {
         };
       }
       try {
-        const decryptedPassword = await this.decryptPassword(targetSession.password);
-        console.log("decryptedPassword", decryptedPassword);
+        const decryptedPassword = await this.decryptPassword(
+          targetSession.password
+        );
         const { userService: userService2 } = await Promise.resolve().then(() => userService$1);
         const service = await userService2;
         const loginResult = await service.login({
@@ -18124,7 +17816,6 @@ const _LoginSessionService = class _LoginSessionService {
           remember: true
         });
         if (loginResult.success) {
-          console.log("loginResult", loginResult);
           await this.loginSessionModel.updateSession(username, accountType, {
             lastLoginTime: Date.now(),
             isActive: 1
@@ -18224,7 +17915,18 @@ const _LoginSessionService = class _LoginSessionService {
    * 获取记住密码的用户列表
    * 用于登录页面显示历史登录用户
    *
-   * @returns 记住密码的用户列表
+   * @returns 记住密码的用户列表（消除了敏感信息）
+   * ```typescript
+   * {
+   *   success: boolean;      // 操作是否成功
+   *   message: string;      // 信息（错误信息 || 成功信息）
+   *   data: Array<{
+   *     username: string;    // 用户名
+   *     accountType: string;  // 账户类型
+   *     lastLoginTime: number; // 最后登录时间
+   *     autoLogin: boolean;    // 是否启用自动登录
+   *  }>;
+   * ```
    */
   async getRememberedUsers() {
     try {
@@ -18276,7 +17978,9 @@ const _LoginSessionService = class _LoginSessionService {
         };
       }
       try {
-        const decryptedPassword = await this.decryptPassword(targetSession.password);
+        const decryptedPassword = await this.decryptPassword(
+          targetSession.password
+        );
         if (inputPassword === decryptedPassword) {
           await this.loginSessionModel.updateSession(username, accountType, {
             lastLoginTime: Date.now(),
@@ -18590,6 +18294,37 @@ const loginSessionService = LoginSessionService.getInstance();
 async function setupLoginSessionHandlers() {
   try {
     const sessionService = await loginSessionService;
+    ipcMain.handle("session:saveSession", async (_event, sessionData) => {
+      try {
+        const sessionService2 = await loginSessionService;
+        const existingResult = await sessionService2.getSession(sessionData.username, sessionData.accountType);
+        if (existingResult.success && existingResult.data) {
+          const updateResult = await sessionService2.updateSession(sessionData.username, sessionData.accountType, {
+            password: sessionData.password,
+            token: sessionData.token,
+            rememberMe: sessionData.rememberMe,
+            autoLogin: sessionData.autoLogin,
+            isActive: true
+          });
+          return {
+            ...updateResult,
+            message: updateResult.success ? "会话更新成功" : updateResult.message
+          };
+        } else {
+          const createResult = await sessionService2.addSession(sessionData);
+          return {
+            ...createResult,
+            message: createResult.success ? "会话创建成功" : createResult.message
+          };
+        }
+      } catch (error) {
+        console.error("IPC: 保存会话异常", error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "保存会话失败，未知错误"
+        };
+      }
+    });
     ipcMain.handle(
       "session:quickLogin",
       async (_event, username, accountType) => {
@@ -18612,13 +18347,18 @@ async function setupLoginSessionHandlers() {
           username: sessionData.username,
           accountType: sessionData.accountType
         });
-        return await sessionService.createSession(sessionData);
+        return await sessionService.addSession(sessionData);
+      }
+    );
+    ipcMain.handle(
+      "session:getSession",
+      async (_event, username, accountType) => {
+        return await sessionService.getSession(username, accountType);
       }
     );
     ipcMain.handle(
       "session:update",
       async (_event, username, accountType, updates) => {
-        console.log("IPC: 更新会话信息", { username, accountType, updates });
         return await sessionService.updateSession(
           username,
           accountType,
@@ -18629,14 +18369,12 @@ async function setupLoginSessionHandlers() {
     ipcMain.handle(
       "session:getRememberedUsers",
       async (_event) => {
-        console.log("IPC: 获取记住密码的用户列表");
         return await sessionService.getRememberedUsers();
       }
     );
     ipcMain.handle(
       "session:validatePassword",
       async (_event, username, accountType, inputPassword) => {
-        console.log("IPC: 验证记住的密码", { username, accountType });
         return await sessionService.validateRememberedPassword(
           username,
           accountType,
@@ -18647,21 +18385,18 @@ async function setupLoginSessionHandlers() {
     ipcMain.handle(
       "session:getAutoLoginInfo",
       async (_event) => {
-        console.log("IPC: 获取自动登录信息");
         return await sessionService.getAutoLoginInfo();
       }
     );
     ipcMain.handle(
       "session:getCurrentSession",
       async (_event) => {
-        console.log("IPC: 获取当前活跃会话");
         return await sessionService.getCurrentSession();
       }
     );
     ipcMain.handle(
       "session:removeSession",
       async (_event, username, accountType) => {
-        console.log("IPC: 删除用户会话", { username, accountType });
         return await sessionService.removeSession(username, accountType);
       }
     );
@@ -18681,17 +18416,14 @@ async function setupLoginSessionHandlers() {
       }
     );
     ipcMain.handle("session:clearAll", async (_event) => {
-      console.log("IPC: 清除所有会话数据");
       return await sessionService.clearAllSessions();
     });
     ipcMain.handle(
       "session:getLoginHistory",
       async (_event) => {
-        console.log("IPC: 获取登录历史记录");
         return await sessionService.getLoginHistory();
       }
     );
-    console.log("登录会话 IPC 处理器设置完成");
   } catch (error) {
     console.error("设置登录会话 IPC 处理器失败:", error);
     throw error;
@@ -18807,7 +18539,6 @@ app.whenReady().then(async () => {
   createWindow();
   registerFileSystemHandlers();
   registerGitHandlers();
-  setupAuthHandlers();
   setupUserStoreHandlers();
   setupUserHandlers();
   setupLoginSessionHandlers();

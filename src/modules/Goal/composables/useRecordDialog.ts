@@ -15,10 +15,10 @@ export function useRecordDialog() {
     const handleSaveRecord = (record: IRecordCreate, goalId: string, keyResultId: string) => {
         const result = goalStore.addRecord(record, goalId, keyResultId);
         if (result.message) {
-            console.log(result.message);
+
         }
         const allGoals = goalStore.getAllGoals;
-        console.log('所有目标:', allGoals);
+
         closeRecordDialog();
     };
 

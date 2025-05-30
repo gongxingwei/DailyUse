@@ -111,7 +111,7 @@ export class LocalDataService {
         } catch {
             // 目录不存在，递归创建目录及其父目录
             await fs.mkdir(dirPath, { recursive: true });
-            console.log(`创建目录: ${dirPath}`);
+
         }
     }
 
@@ -132,7 +132,7 @@ export class LocalDataService {
             // 文件不存在，创建包含空 JSON 对象的文件
             const filePath = path.join(this.currentUserLocalDataPath, `${fileName}.json`);
             await fs.writeFile(filePath, JSON.stringify({}));
-            console.log(`创建文件: ${fileName}.json`);
+
         }
     }
 
@@ -189,7 +189,7 @@ export class LocalDataService {
             
             // 将数据序列化为格式化的 JSON 字符串并写入文件
             await fs.writeFile(filePath, JSON.stringify(data, null, 2));
-            console.log(`用户 ${this.currentUsername} 的数据已保存到 ${fileName}.json`);
+
             return true;
         } catch (error) {
             console.error('保存用户数据失败:', error);
@@ -241,7 +241,7 @@ export class LocalDataService {
             // force: true 表示忽略不存在的文件/目录
             // recursive: true 表示递归删除子目录
             await fs.rm(this.currentUserLocalDataPath, { recursive: true, force: true });
-            console.log(`用户 ${this.currentUsername} 的数据文件已删除`);
+
             return true;
         } catch (error) {
             console.error('删除用户数据失败:', error);

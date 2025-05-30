@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia';
-import type { IUser } from '../types/auth';
+import type { TUser } from '../types/account';
 export const useAuthStore = defineStore('auth', {
     state: () => ({
-        user: null as IUser | null,
+        user: null as Omit<TUser, "password"> | null,
         loading: false,
         error: null as string | null,
         savedAccounts: [] as Array<any>,
@@ -23,10 +23,11 @@ export const useAuthStore = defineStore('auth', {
     },
 
     actions: {
-        setUser(user: IUser) {
+        setUser(user: Omit<TUser, "password">) {
             this.user = user;
         },
         logout() {
+            localStorage.removeItem('token');
             this.user = null;
             this.loading = false;
             this.error = null;

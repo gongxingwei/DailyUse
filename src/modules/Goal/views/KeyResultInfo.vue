@@ -133,7 +133,7 @@ const records = computed(() => {
     if (!records) {
         throw new Error('Records not found');
     }
-    console.log(records);
+
     return records;
 });
 </script>

@@ -1,5 +1,5 @@
-// 用户类型定义
 export type TUser = {
+  id: string;
   username: string;
   password: string;
   avatar?: string;
@@ -16,6 +16,8 @@ export type TLoginData = {
   remember: boolean;
 };
 
+// 用户类型定义
+
 export type TRegisterData = {
   username: string;
   password: string;
@@ -27,9 +29,10 @@ export type TRegisterData = {
 export type TLoginSessionData = {
   username: string;
   password?: string;
+  token?: string;
   accountType: string;
-  rememberMe:  0 | 1;
+  rememberMe: 0 | 1;
   lastLoginTime: number;
-  autoLogin:  0 | 1;
+  autoLogin: 0 | 1;
   isActive: 0 | 1;
 };

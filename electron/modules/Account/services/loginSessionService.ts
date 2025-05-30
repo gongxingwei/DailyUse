@@ -1,5 +1,5 @@
 import type { TResponse } from "@/shared/types/response";
-import type { TLoginSessionData } from "@/modules/Account/types/user";
+import type { TLoginSessionData } from "@/modules/Account/types/account";
 import { LoginSessionModel } from "../models/loginSessionModel";
 import crypto from "crypto";
 
@@ -11,9 +11,9 @@ import crypto from "crypto";
 export class LoginSessionService {
   private static instance: LoginSessionService;
   private loginSessionModel: LoginSessionModel;
-  
+
   // AES加密配置
-  private readonly algorithm = 'aes-256-cbc';
+  private readonly algorithm = "aes-256-cbc";
   private readonly secretKey: string;
   private readonly keyLength = 32; // 256位密钥
 
@@ -50,9 +50,10 @@ export class LoginSessionService {
    * @param sessionData.autoLogin 是否自动登录
    * @returns 操作结果
    */
-  public async createSession(sessionData: {
+  public async addSession(sessionData: {
     username: string;
     password?: string;
+    token?: string; // 可选，在线账户可能使用token
     accountType: "local" | "online";
     rememberMe: boolean;
     autoLogin: boolean;
@@ -68,28 +69,30 @@ export class LoginSessionService {
 
       // 如果需要记住密码，首先验证密码是否正确
       let encryptedPassword: string | undefined;
+      // if (sessionData.rememberMe && sessionData.password) {
+      //   // 验证密码是否正确
+      //   const { userService } = await import('./userService');
+      //   const service = await userService;
+
+      //   const loginResult = await service.login({
+      //     username: sessionData.username,
+      //     password: sessionData.password,
+      //     remember: true
+      //   });
+
+      //   if (!loginResult.success) {
+      //     return {
+      //       success: false,
+      //       message: "密码验证失败，无法保存会话",
+      //     };
+      //   }
+
+      //   // 密码正确，进行AES加密
+
+      // }
       if (sessionData.rememberMe && sessionData.password) {
-        // 验证密码是否正确
-        const { userService } = await import('./userService');
-        const service = await userService;
-        
-        const loginResult = await service.login({
-          username: sessionData.username,
-          password: sessionData.password,
-          remember: true
-        });
-        
-        if (!loginResult.success) {
-          return {
-            success: false,
-            message: "密码验证失败，无法保存会话",
-          };
-        }
-        
-        // 密码正确，进行AES加密
         encryptedPassword = await this.encryptPassword(sessionData.password);
       }
-
       // 构造会话数据，确保类型兼容SQLite
       const loginSessionData: Omit<
         TLoginSessionData,
@@ -97,6 +100,7 @@ export class LoginSessionService {
       > = {
         username: sessionData.username,
         password: encryptedPassword,
+        token: sessionData.token,
         accountType: sessionData.accountType,
         rememberMe: sessionData.rememberMe ? 1 : 0,
         lastLoginTime: Date.now(),
@@ -104,7 +108,7 @@ export class LoginSessionService {
         isActive: 1, // 使用数字而不是布尔值
       };
 
-      const success = await this.loginSessionModel.saveLoginSession(
+      const success = await this.loginSessionModel.addLoginSession(
         loginSessionData
       );
 
@@ -135,6 +139,54 @@ export class LoginSessionService {
   }
 
   /**
+   * 获取登录会话
+   * 根据用户名和账户类型获取会话信息
+   *
+   * @param username 用户名
+   * @param accountType 账户类型
+   * @returns 会话数据
+   */
+  public async getSession(
+    username: string,
+    accountType: string
+  ): Promise<TResponse> {
+    try {
+      if (!username || !accountType) {
+        return {
+          success: false,
+          message: "用户名和账户类型不能为空",
+        };
+      }
+
+      const session = await this.loginSessionModel.getSession(
+        username,
+        accountType
+      );
+
+      if (session) {
+        // 返回会话数据，隐藏敏感信息
+        const { password, ...sessionData } = session;
+        return {
+          success: true,
+          message: "获取会话成功",
+          data: sessionData,
+        };
+      } else {
+        return {
+          success: false,
+          message: "未找到会话信息",
+        };
+      }
+    } catch (error) {
+      console.error("获取登录会话失败:", error);
+      return {
+        success: false,
+        message: "获取会话失败，服务器错误",
+      };
+    }
+  }
+
+  /**
    * 快速登录
    * 使用保存的加密密码进行快速登录
    *
@@ -142,7 +194,10 @@ export class LoginSessionService {
    * @param accountType 账户类型
    * @returns 登录结果
    */
-  public async quickLogin(username: string, accountType: string): Promise<TResponse> {
+  public async quickLogin(
+    username: string,
+    accountType: string
+  ): Promise<TResponse> {
     try {
       if (!username || !accountType) {
         return {
@@ -154,7 +209,8 @@ export class LoginSessionService {
       // 获取记住的会话信息
       const sessions = await this.loginSessionModel.getRememberedSessions();
       const targetSession = sessions.find(
-        session => session.username === username && session.accountType === accountType
+        (session) =>
+          session.username === username && session.accountType === accountType
       );
 
       if (!targetSession || !targetSession.password) {
@@ -166,20 +222,22 @@ export class LoginSessionService {
 
       try {
         // 解密保存的密码
-        const decryptedPassword = await this.decryptPassword(targetSession.password);
-        console.log("decryptedPassword", decryptedPassword);
+        const decryptedPassword = await this.decryptPassword(
+          targetSession.password
+        );
+
         // 使用解密后的密码进行真正的登录验证
-        const { userService } = await import('./userService');
+        const { userService } = await import("./userService");
         const service = await userService;
-        
+
         const loginResult = await service.login({
           username,
           password: decryptedPassword,
-          remember: true
+          remember: true,
         });
 
         if (loginResult.success) {
-          console.log("loginResult", loginResult);
+
           // 登录成功，更新会话状态
           await this.loginSessionModel.updateSession(username, accountType, {
             lastLoginTime: Date.now(),
@@ -207,7 +265,7 @@ export class LoginSessionService {
       } catch (decryptError) {
         // 解密失败，可能数据损坏，清除保存的密码
         console.error("解密密码失败:", decryptError);
-        
+
         await this.loginSessionModel.updateSession(username, accountType, {
           password: undefined,
           rememberMe: 0,
@@ -245,6 +303,7 @@ export class LoginSessionService {
       autoLogin?: boolean;
       isActive?: boolean;
       password?: string;
+      token?: string; 
     }
   ): Promise<TResponse> {
     try {
@@ -305,7 +364,18 @@ export class LoginSessionService {
    * 获取记住密码的用户列表
    * 用于登录页面显示历史登录用户
    *
-   * @returns 记住密码的用户列表
+   * @returns 记住密码的用户列表（消除了敏感信息）
+   * ```typescript
+   * {
+   *   success: boolean;      // 操作是否成功
+   *   message: string;      // 信息（错误信息 || 成功信息）
+   *   data: Array<{
+   *     username: string;    // 用户名
+   *     accountType: string;  // 账户类型
+   *     lastLoginTime: number; // 最后登录时间
+   *     autoLogin: boolean;    // 是否启用自动登录
+   *  }>;
+   * ```
    */
   public async getRememberedUsers(): Promise<TResponse> {
     try {
@@ -370,8 +440,10 @@ export class LoginSessionService {
 
       try {
         // 解密保存的密码进行比较
-        const decryptedPassword = await this.decryptPassword(targetSession.password);
-        
+        const decryptedPassword = await this.decryptPassword(
+          targetSession.password
+        );
+
         if (inputPassword === decryptedPassword) {
           // 密码匹配，更新最后登录时间
           await this.loginSessionModel.updateSession(username, accountType, {
@@ -653,8 +725,10 @@ export class LoginSessionService {
    */
   private generateSecretKey(): string {
     // 实际部署时应该从配置文件或环境变量中获取
-    const appSecret = 'DailyUse-App-Secret-Key-2024';
-    return crypto.scryptSync(appSecret, 'session-salt', this.keyLength).toString('hex');
+    const appSecret = "DailyUse-App-Secret-Key-2024";
+    return crypto
+      .scryptSync(appSecret, "session-salt", this.keyLength)
+      .toString("hex");
   }
 
   /**
@@ -669,21 +743,21 @@ export class LoginSessionService {
     try {
       // 生成随机初始化向量
       const iv = crypto.randomBytes(16);
-      
+
       // 将密钥从hex转换为Buffer
-      const key = Buffer.from(this.secretKey, 'hex');
-      
+      const key = Buffer.from(this.secretKey, "hex");
+
       // 创建加密器
       const cipher = crypto.createCipher(this.algorithm, key);
       cipher.setAutoPadding(true);
-      
+
       // 加密密码
-      let encrypted = cipher.update(password, 'utf8', 'hex');
-      encrypted += cipher.final('hex');
-      
+      let encrypted = cipher.update(password, "utf8", "hex");
+      encrypted += cipher.final("hex");
+
       // 将IV和加密数据组合
-      const result = iv.toString('hex') + ':' + encrypted;
-      
+      const result = iv.toString("hex") + ":" + encrypted;
+
       return result;
     } catch (error) {
       console.error("密码加密失败:", error);
@@ -702,25 +776,25 @@ export class LoginSessionService {
   private async decryptPassword(encryptedData: string): Promise<string> {
     try {
       // 分离IV和加密数据
-      const parts = encryptedData.split(':');
+      const parts = encryptedData.split(":");
       if (parts.length !== 2) {
         throw new Error("加密数据格式错误");
       }
-      
-      const iv = Buffer.from(parts[0], 'hex');
+
+      const iv = Buffer.from(parts[0], "hex");
       const encrypted = parts[1];
-      
+
       // 将密钥从hex转换为Buffer
-      const key = Buffer.from(this.secretKey, 'hex');
-      
+      const key = Buffer.from(this.secretKey, "hex");
+
       // 创建解密器
       const decipher = crypto.createDecipher(this.algorithm, key);
       decipher.setAutoPadding(true);
-      
+
       // 解密密码
-      let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-      decrypted += decipher.final('utf8');
-      
+      let decrypted = decipher.update(encrypted, "hex", "utf8");
+      decrypted += decipher.final("utf8");
+
       return decrypted;
     } catch (error) {
       console.error("密码解密失败:", error);

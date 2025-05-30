@@ -6,7 +6,7 @@
 
 import type { Database } from "better-sqlite3";
 import { initializeDatabase } from "../../../config/database";
-import type { TLoginSessionData } from "@/modules/Account/types/user";
+import type { TLoginSessionData } from "@/modules/Account/types/account";
 
 export class LoginSessionModel {
   /** 数据库连接实例，初始化后不为空 */
@@ -43,66 +43,6 @@ export class LoginSessionModel {
   }
 
   /**
-   * 保存登录会话信息
-   * 使用 INSERT OR REPLACE 策略，如果相同用户名和账户类型的记录已存在则替换
-   * 在保存新会话前会将所有其他会话设为非活跃状态，确保只有一个活跃会话
-   * 
-   * @param {Omit<TLoginSessionData, "id" | "createdAt" | "updatedAt">} sessionData - 会话数据
-   * @param {string} sessionData.username - 用户名
-   * @param {string} [sessionData.password] - 加密后的密码（只在记住密码时保存）
-   * @param {'local' | 'online'} sessionData.accountType - 账户类型
-   * @param {boolean} sessionData.rememberMe - 是否记住密码
-   * @param {number} sessionData.lastLoginTime - 最后登录时间戳
-   * @param {boolean} sessionData.autoLogin - 是否自动登录
-   * @param {boolean} sessionData.isActive - 是否为活跃会话
-   * @returns {Promise<boolean>} 保存是否成功
-   */
-  async saveLoginSession(
-    sessionData: Omit<TLoginSessionData, "id" | "createdAt" | "updatedAt">
-  ): Promise<boolean> {
-    try {
-      const db = await this.ensureDatabase();
-      const now = Date.now();
-
-      // 将所有现有会话设为非活跃状态，确保只有一个活跃会话
-      db.prepare("UPDATE login_sessions SET isActive = 0").run();
-
-      // 使用 INSERT OR REPLACE 策略处理会话数据
-      // 如果相同 username 和 accountType 的记录存在则替换，否则插入新记录
-      const stmt = db.prepare(`
-          INSERT OR REPLACE INTO login_sessions (
-            username,
-            password,
-            accountType,
-            rememberMe,
-            lastLoginTime,
-            autoLogin,
-            isActive,
-            createdAt,
-            updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `);
-
-      const result = stmt.run(
-        sessionData.username,
-        sessionData.password || null, // 只有记住密码时才保存密码
-        sessionData.accountType,
-        sessionData.rememberMe ? 1 : 0, // 将布尔值转换为数字存储
-        sessionData.lastLoginTime,
-        sessionData.autoLogin ? 1 : 0,
-        sessionData.isActive ? 1 : 0,
-        now, // 当前时间作为创建时间
-        now  // 当前时间作为更新时间
-      );
-
-      return result.changes > 0;
-    } catch (error) {
-      console.error("保存登录会话失败:", error);
-      return false;
-    }
-  }
-
-  /**
    * 添加新的登录会话记录
    * 使用 INSERT 策略，仅插入新记录，如果存在重复记录会失败
    * 适用于确定要创建新记录的场景
@@ -121,22 +61,24 @@ export class LoginSessionModel {
       const stmt = db.prepare(`
           INSERT INTO login_sessions (
             username,
-            password,
             accountType,
             rememberMe,
+            password,
+            token,
             lastLoginTime,
             autoLogin,
             isActive,
             createdAt,
             updatedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
 
       const result = stmt.run(
         sessionData.username,
-        sessionData.password || null,
         sessionData.accountType,
         sessionData.rememberMe ? 1 : 0,
+        sessionData.password || null,
+        sessionData.token || null,
         sessionData.lastLoginTime,
         sessionData.autoLogin ? 1 : 0,
         sessionData.isActive ? 1 : 0,
@@ -148,6 +90,32 @@ export class LoginSessionModel {
     } catch (error) {
       console.error("添加登录会话失败:", error);
       return false;
+    }
+  }
+
+  /**
+   * 获取指定用户的登录会话信息
+   * 通过用户名和账户类型精确查询记录
+   * 
+   * @param {string} username - 用户名
+   * @param {string} accountType - 账户类型（'local' 或 'online'）
+   * @returns {Promise<TLoginSessionData | null>} 登录会话数据，如果不存在则返回 null
+   */
+  async getSession(
+    username: string,
+    accountType: string
+  ): Promise<TLoginSessionData | null> {
+    try {
+      const db = await this.ensureDatabase();
+      const stmt = db.prepare(`
+          SELECT * FROM login_sessions 
+          WHERE username = ? AND accountType = ?
+        `);
+      const session = stmt.get(username, accountType) as TLoginSessionData | undefined;
+      return session || null; // 如果没有找到记录，返回 null
+    } catch (error) {
+      console.error("获取登录会话失败:", error);
+      return null;
     }
   }
 

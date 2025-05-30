@@ -47,7 +47,7 @@ export function useGoalReview() {
     // 查看所有的复盘记录卡片
     const viewGoalReviewRecord = () => {
         showGoalReviewRecored.value = true;
-        console.log('查看复盘记录', allReviews);
+
     };
     // 关闭复盘记录卡片
     const closeGoalReviewRecord = () => {

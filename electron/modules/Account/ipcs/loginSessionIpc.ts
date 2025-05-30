@@ -16,6 +16,52 @@ export async function setupLoginSessionHandlers(): Promise<void> {
   try {
     // 确保服务实例已初始化
     const sessionService = await loginSessionService;
+    ipcMain.handle('session:saveSession', async (_event, sessionData: {
+      username: string;
+      password?: string;
+      token?: string;
+      accountType: 'local' | 'online';
+      rememberMe: boolean;
+      autoLogin: boolean;
+    }): Promise<TResponse> => {
+
+      try {
+        const sessionService = await loginSessionService;
+        
+        // 检查会话是否已存在
+        const existingResult = await sessionService.getSession(sessionData.username, sessionData.accountType);
+        
+        if (existingResult.success && existingResult.data) {
+          // 如果会话已存在，更新会话信息
+
+          const updateResult = await sessionService.updateSession(sessionData.username, sessionData.accountType, {
+            password: sessionData.password,
+            token: sessionData.token,
+            rememberMe: sessionData.rememberMe,
+            autoLogin: sessionData.autoLogin,
+            isActive: true,
+          });
+          
+          return {
+            ...updateResult,
+            message: updateResult.success ? '会话更新成功' : updateResult.message,
+          };
+        } else {
+          const createResult = await sessionService.addSession(sessionData);
+          
+          return {
+            ...createResult,
+            message: createResult.success ? '会话创建成功' : createResult.message,
+          };
+        }
+      } catch (error) {
+        console.error('IPC: 保存会话异常', error);
+        return {
+          success: false,
+          message: error instanceof Error ? error.message : "保存会话失败，未知错误",
+        };
+      }
+    });
     /**
      * 快速登录
      * 使用保存的加密密码进行快速登录
@@ -65,6 +111,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
         sessionData: {
           username: string;
           password?: string;
+          token?: string; // 在线账户可能使用 token
           accountType: "local" | "online";
           rememberMe: boolean;
           autoLogin: boolean;
@@ -74,9 +121,21 @@ export async function setupLoginSessionHandlers(): Promise<void> {
           username: sessionData.username,
           accountType: sessionData.accountType,
         });
-        return await sessionService.createSession(sessionData);
+        return await sessionService.addSession(sessionData);
       }
     );
+
+    ipcMain.handle(
+      "session:getSession", 
+      async (
+        _event,
+        username: string,
+        accountType: string
+      ): Promise<TResponse> => {
+
+        return await sessionService.getSession(username, accountType);
+      }
+    )
 
     /**
      * 更新会话信息
@@ -101,7 +160,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
           password?: string;
         }
       ): Promise<TResponse> => {
-        console.log("IPC: 更新会话信息", { username, accountType, updates });
+
         return await sessionService.updateSession(
           username,
           accountType,
@@ -120,7 +179,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
     ipcMain.handle(
       "session:getRememberedUsers",
       async (_event): Promise<TResponse> => {
-        console.log("IPC: 获取记住密码的用户列表");
+
         return await sessionService.getRememberedUsers();
       }
     );
@@ -140,7 +199,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
         accountType: string,
         inputPassword: string
       ): Promise<TResponse> => {
-        console.log("IPC: 验证记住的密码", { username, accountType });
+
         return await sessionService.validateRememberedPassword(
           username,
           accountType,
@@ -159,7 +218,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
     ipcMain.handle(
       "session:getAutoLoginInfo",
       async (_event): Promise<TResponse> => {
-        console.log("IPC: 获取自动登录信息");
+
         return await sessionService.getAutoLoginInfo();
       }
     );
@@ -174,7 +233,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
     ipcMain.handle(
       "session:getCurrentSession",
       async (_event): Promise<TResponse> => {
-        console.log("IPC: 获取当前活跃会话");
+
         return await sessionService.getCurrentSession();
       }
     );
@@ -193,7 +252,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
         username: string,
         accountType: string
       ): Promise<TResponse> => {
-        console.log("IPC: 删除用户会话", { username, accountType });
+
         return await sessionService.removeSession(username, accountType);
       }
     );
@@ -234,7 +293,7 @@ export async function setupLoginSessionHandlers(): Promise<void> {
      * ipcRenderer.invoke('session:clearAll')
      */
     ipcMain.handle("session:clearAll", async (_event): Promise<TResponse> => {
-      console.log("IPC: 清除所有会话数据");
+
       return await sessionService.clearAllSessions();
     });
 
@@ -248,12 +307,12 @@ export async function setupLoginSessionHandlers(): Promise<void> {
     ipcMain.handle(
       "session:getLoginHistory",
       async (_event): Promise<TResponse> => {
-        console.log("IPC: 获取登录历史记录");
+
         return await sessionService.getLoginHistory();
       }
     );
 
-    console.log("登录会话 IPC 处理器设置完成");
+
   } catch (error) {
     console.error("设置登录会话 IPC 处理器失败:", error);
     throw error;
@@ -279,7 +338,7 @@ export function removeLoginSessionHandlers(): void {
     ipcMain.removeHandler("session:clearAll");
     ipcMain.removeHandler("session:getLoginHistory");
 
-    console.log("登录会话 IPC 处理器已移除");
+
   } catch (error) {
     console.error("移除登录会话 IPC 处理器失败:", error);
   }
@@ -312,7 +371,7 @@ export class SessionEventEmitter {
         data,
         timestamp: Date.now(),
       });
-      console.log(`发送会话事件: ${eventType}`, data);
+
     } catch (error) {
       console.error("发送会话事件失败:", error);
     }
@@ -327,7 +386,7 @@ export class SessionEventEmitter {
   static notifyUserLogin(username: string, accountType: string): void {
     // 这里可以遍历所有窗口发送事件
     // 示例代码，需要根据实际窗口管理方式调整
-    console.log("通知用户登录事件", { username, accountType });
+
   }
 
   /**
@@ -337,7 +396,7 @@ export class SessionEventEmitter {
    * @param accountType 账户类型
    */
   static notifyUserLogout(username: string, accountType: string): void {
-    console.log("通知用户退出事件", { username, accountType });
+
   }
 }
 

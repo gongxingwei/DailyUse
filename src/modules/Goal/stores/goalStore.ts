@@ -110,7 +110,7 @@ export const useGoalStore = defineStore('goal', {
                 if (!r.date) return false; // 过滤掉没有日期的记录
                 return r.goalId === goalId && r.date.split(' ')[0] === today
             });
-            console.log('今日记录', todayRecords);
+
             // 今日进度（今日分数）
             let todayProgress = 0;
             for (const record of todayRecords) {
@@ -227,7 +227,7 @@ export const useGoalStore = defineStore('goal', {
                 calculationMethod: 'sum',
                 weight: 5,
             };
-            console.log('initTempKeyResult', defaultKeyResult);
+
             this.tempKeyResult = defaultKeyResult;
             return defaultKeyResult;
         },

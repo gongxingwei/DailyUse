@@ -1,6 +1,6 @@
 import type { Database } from "better-sqlite3";
 import { initializeDatabase } from "../../../config/database";
-import type { TUser } from "@/modules/Account/types/user";
+import type { TUser } from "@/modules/Account/types/account";
 
 /**
  * 用户数据模型类

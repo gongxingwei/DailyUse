@@ -1,17 +1,18 @@
 import { ref, reactive, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
-import type { IUser } from "../types/auth";
+import type { TUser } from "../types/account";
 // services
 import { userDataService } from "../services/userDataService";
-import { localUserService } from "../services/localUserService";
+// composables
+import { useUserAuth } from "./useUserAuth";
 
 export function useAccountManagement() {
   const router = useRouter();
   const authStore = useAuthStore();
-
+  const { handleLocalLogout, handleRemoteLogout } = useUserAuth();
   // 状态
-  const user = ref<IUser | null>(null);
+  const user = ref<Omit<TUser, "password"> | null>(null);
   const loading = ref(false);
   const exporting = ref(false);
   const importing = ref(false);
@@ -46,7 +47,7 @@ export function useAccountManagement() {
     user.value = authStore.currentUser;
     if (user.value) {
       profileForm.username = user.value.username;
-      profileForm.email = user.value.email;
+      profileForm.email = user.value.email || "";
     }
   };
 
@@ -57,9 +58,11 @@ export function useAccountManagement() {
       if (!user.value) {
         throw new Error("用户未登录或信息不完整");
       }
-      const result = userDataService.exportUserData(user.value.id);
+      const result = await userDataService.exportUserData(user.value.id);
       if (result) {
-        console.log("导出成功:", result);
+        snackbar.message = "用户数据导出成功";
+        snackbar.color = "success";
+        snackbar.show = true;
       }
     } catch (error) {
       console.error("导出失败:", error);
@@ -77,7 +80,7 @@ export function useAccountManagement() {
       }
       const result = await userDataService.importUserData(user.value.id);
       if (result) {
-        console.log("导入成功:");
+
       }
     } catch (error) {
       console.error("导入失败:", error);
@@ -104,7 +107,7 @@ export function useAccountManagement() {
       }
       const result = await userDataService.clearUserData(user.value.id);
       if (result) {
-        console.log("清除成功:", result);
+
       }
     } catch (error) {
       console.error("清除失败:", error);
@@ -140,19 +143,11 @@ export function useAccountManagement() {
         snackbar.show = true;
         return;
       }
-      // 调用登出服务
-      const response = await localUserService.logout(currentUser.value?.id);
-      // 显示弹窗
-      snackbar.message = response.message;
-      snackbar.color = response.success ? "success" : "error";
-      snackbar.show = true;
-
-      if (response.success) {
-        // 重定向到登录页面
-        authStore.logout();
-        router.push({ path: "/auth" });
+      if (localStorage.getItem("accountType") === "remote") {
+        handleRemoteLogout()
+      } else {
+        handleLocalLogout();
       }
-      loggingOut.value = true;
     } catch (error) {
       console.error("退出登录失败:", error);
     } finally {

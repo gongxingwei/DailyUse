@@ -162,7 +162,8 @@
 import { computed, ref } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useUserAuth } from '../composables/useUserAuth';
-
+// utils
+import { usernameRules, passwordRules } from '@/shared/utils/validations';
 // 组合式函数
 const { 
     formRef, 
@@ -179,28 +180,6 @@ const showConfirmPassword = ref(false);
 const autoRemember = ref(true);
 const agreeTerms = ref(false);
 const showTerms = ref(false);
-
-// 表单验证规则
-const usernameRules = [
-    (v: string) => !!v || '请输入用户名',
-    (v: string) => v.length >= 3 || '用户名至少3个字符',
-    (v: string) => v.length <= 20 || '用户名最多20个字符',
-    (v: string) => /^[a-zA-Z0-9_\u4e00-\u9fa5]+$/.test(v) || '用户名只能包含字母、数字、下划线和中文',
-];
-
-const emailRules = [
-    (v: string) => !!v || '请输入邮箱',
-    (v: string) => /.+@.+\..+/.test(v) || '请输入有效的邮箱地址'
-];
-
-const passwordRules = [
-    (v: string) => !!v || '请输入密码',
-    (v: string) => v.length >= 8 || '密码至少8个字符',
-    (v: string) => v.length <= 20 || '密码最多20个字符',
-    (v: string) => /[a-z]/.test(v) || '密码至少包含一个小写字母',
-    (v: string) => /[A-Z]/.test(v) || '密码至少包含一个大写字母',
-    (v: string) => /[0-9]/.test(v) || '密码至少包含一个数字',
-];
 
 const confirmPasswordRules = [
     (v: string) => !!v || '请确认密码',
@@ -242,17 +221,6 @@ const acceptTerms = () => {
     showTerms.value = false;
 };
 
-// 重写注册处理函数以包含新选项
-const handleEnhancedRegister = async () => {
-    // 调用原始注册函数
-    await handleLocalRegister();
-    
-    // 如果注册成功且选择了自动保存
-    if (autoRemember.value) {
-        // 这里可以添加额外的逻辑
-        console.log('用户选择了自动保存登录信息');
-    }
-};
 </script>
 
 <style scoped>

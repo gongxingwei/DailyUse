@@ -21,7 +21,7 @@ export class NotificationService {
     }
     // 监听通知动作
     window.shared.ipcRenderer.on('notification-action', (_event: any, id: string, action: any) => {
-      console.log('Notification action:', id, action);
+
     });
   }
 
@@ -34,7 +34,7 @@ export class NotificationService {
 
   private generateId(): string {
     const id = `notification-${Date.now()}-${this.notificationCount++}`;
-    console.log('生成通知 ID:', id);
+
     return id;
   }
 

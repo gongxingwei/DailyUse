@@ -171,7 +171,7 @@ watch(
     () => props.visible,
     (newVal) => {
         if (newVal) {
-            console.log('Dialog opened');
+
         }
     }
 );

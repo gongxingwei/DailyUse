@@ -216,7 +216,7 @@ export const useGoalReviewStore = defineStore('goalReview', {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-            console.log('Saving review:', review);
+
             this.reviews.push(review);
             this.tempReview = null; // 清空临时复盘记录
         },

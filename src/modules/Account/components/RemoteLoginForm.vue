@@ -4,21 +4,20 @@
             <v-card-title class="text-center">登录</v-card-title>
 
             <v-card-text>
-                <v-combobox v-model="loginForm.username" :items="savedUsernames" item-title="username" label="用户名"
-                    :rules="[v => !!v || '请输入用户名']" @update:model-value="handleAccountSelect" required>
+                <v-combobox v-model="loginForm.username" :items="rememberedUsernames" item-title="username" label="用户名"
+                    :rules="usernameRules" @update:model-value="handleAccountSelect" required>
                     <!-- 自定义下拉选项 -->
                     <template v-slot:item="{ item, props }">
                         <v-list-item v-bind="props" :title="item.raw">
                             <template v-slot:append>
-                                <v-icon color="error" size="small"
-                                    @click.stop="handleRemoveSavedAccount(item.raw)">
+                                <v-icon color="error" size="small" @click.stop="handleRemoveSavedAccount(item.raw)">
                                     mdi-close
                                 </v-icon>
                             </template>
                         </v-list-item>
                     </template>
                 </v-combobox>
-                <v-text-field v-model="loginForm.password" label="密码" type="password" :rules="[v => !!v || '请输入密码']"
+                <v-text-field v-model="loginForm.password" label="密码" type="password" :rules="passwordRules"
                     required />
                 <v-checkbox v-model="loginForm.remember" label="记住我" />
             </v-card-text>
@@ -39,13 +38,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { computed } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useUserAuth } from '../composables/useUserAuth';
-
-const { savedAccounts, formRef, loginForm, snackbar, handleRemoteLogin, handleAccountSelect, handleRemoveSavedAccount } = useUserAuth();
+// utils
+import { usernameRules, passwordRules } from '@/shared/utils/validations';
+const { rememberedUsers, formRef, loginForm, snackbar, handleRemoteLogin, handleAccountSelect, handleRemoveSavedAccount } = useUserAuth();
 const authStore = useAuthStore();
 
-const savedUsernames = ref<string[]>([]);
-
+const rememberedUsernames = computed(() =>
+    rememberedUsers.value.filter(user => user.accountType === 'online').map(user => user.username)
+);
 </script>

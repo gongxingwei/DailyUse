@@ -3,7 +3,7 @@ import type {
   TLoginData,
   TRegisterData,
   TUser,
-} from "@/modules/Account/types/user";
+} from "@/modules/Account/types/account";
 import type { TResponse } from "@/shared/types/response";
 import { userService } from "../services/userService";
 
@@ -35,10 +35,10 @@ export async function setupUserHandlers(): Promise<void> {
      * })
      */
     ipcMain.handle("user:register", async (_event, form: TRegisterData): Promise<TResponse> => {
-      console.log('IPC: 用户注册请求', { username: form.username, email: form.email });
+
       try {
         const response = await service.register(form);
-        console.log('IPC: 注册结果', { success: response.success, username: form.username });
+
         return response;
       } catch (error) {
         console.error('IPC: 注册异常', error);
@@ -61,10 +61,10 @@ export async function setupUserHandlers(): Promise<void> {
      * })
      */
     ipcMain.handle("user:login", async (_event, credentials: TLoginData): Promise<TResponse> => {
-      console.log('IPC: 用户登录请求', { username: credentials.username });
+
       try {
         const response = await service.login(credentials);
-        console.log('IPC: 登录结果', { success: response.success, username: credentials.username });
+
         return response;
       } catch (error) {
         console.error('IPC: 登录异常', error);
@@ -83,10 +83,10 @@ export async function setupUserHandlers(): Promise<void> {
      * ipcRenderer.invoke('user:getUserInfo', 'username')
      */
     ipcMain.handle("user:getUserInfo", async (_event, username: string): Promise<TResponse> => {
-      console.log('IPC: 获取用户信息请求', { username });
+
       try {
         const response = await service.getUserInfo(username);
-        console.log('IPC: 获取用户信息结果', { success: response.success, username });
+
         return response;
       } catch (error) {
         console.error('IPC: 获取用户信息异常', error);
@@ -112,10 +112,10 @@ export async function setupUserHandlers(): Promise<void> {
       username: string, 
       newData: Partial<TUser>
     ): Promise<TResponse> => {
-      console.log('IPC: 更新用户信息请求', { username, fields: Object.keys(newData) });
+
       try {
         const response = await service.updateUserInfo(username, newData);
-        console.log('IPC: 更新用户信息结果', { success: response.success, username });
+
         return response;
       } catch (error) {
         console.error('IPC: 更新用户信息异常', error);
@@ -134,10 +134,10 @@ export async function setupUserHandlers(): Promise<void> {
      * ipcRenderer.invoke('user:deregistration', 'username')
      */
     ipcMain.handle("user:deregistration", async (_event, username: string): Promise<TResponse> => {
-      console.log('IPC: 删除用户账号请求', { username });
+
       try {
         const response = await service.deleteUser(username);
-        console.log('IPC: 删除用户账号结果', { success: response.success, username });
+
         return response;
       } catch (error) {
         console.error('IPC: 删除用户账号异常', error);
@@ -160,10 +160,10 @@ export async function setupUserHandlers(): Promise<void> {
       username: string, 
       onlineId: string
     ): Promise<TResponse> => {
-      console.log('IPC: 升级为在线账号请求', { username, onlineId });
+
       try {
         const response = await service.upgradeToOnlineAccount(username, onlineId);
-        console.log('IPC: 升级为在线账号结果', { success: response.success, username });
+
         return response;
       } catch (error) {
         console.error('IPC: 升级为在线账号异常', error);
@@ -182,7 +182,7 @@ export async function setupUserHandlers(): Promise<void> {
      * ipcRenderer.invoke('user:getAllUsers')
      */
     ipcMain.handle("user:getAllUsers", async (_event): Promise<TResponse> => {
-      console.log('IPC: 获取所有用户列表请求');
+
       try {
         const response = await service.getAllUsers();
         console.log('IPC: 获取用户列表结果', { 
@@ -211,7 +211,7 @@ export async function setupUserHandlers(): Promise<void> {
       username: string, 
       password: string
     ): Promise<TResponse> => {
-      console.log('IPC: 验证用户密码请求', { username });
+
       try {
         // 使用登录方法来验证密码
         const response = await service.login({ username, password, remember: false });
@@ -249,7 +249,7 @@ export async function setupUserHandlers(): Promise<void> {
       oldPassword: string, 
       newPassword: string
     ): Promise<TResponse> => {
-      console.log('IPC: 修改用户密码请求', { username });
+
       try {
         // 首先验证旧密码
         const verifyResult = await service.login({ username, password: oldPassword, remember: false });
@@ -265,7 +265,7 @@ export async function setupUserHandlers(): Promise<void> {
         const updateResult = await service.updateUserInfo(username, { password: newPassword });
         
         if (updateResult.success) {
-          console.log('IPC: 修改密码成功', { username });
+
           return {
             success: true,
             message: "密码修改成功",
@@ -282,7 +282,7 @@ export async function setupUserHandlers(): Promise<void> {
       }
     });
 
-    console.log('用户 IPC 处理器设置完成');
+
   } catch (error) {
     console.error('设置用户 IPC 处理器失败:', error);
     throw error;
@@ -306,7 +306,7 @@ export function removeUserHandlers(): void {
     ipcMain.removeHandler('user:verifyPassword');
     ipcMain.removeHandler('user:changePassword');
 
-    console.log('用户 IPC 处理器已移除');
+
   } catch (error) {
     console.error('移除用户 IPC 处理器失败:', error);
   }
@@ -335,7 +335,7 @@ export class UserEventEmitter {
         data,
         timestamp: Date.now()
       });
-      console.log(`发送用户事件: ${_eventType}`, data);
+
     } catch (error) {
       console.error('发送用户事件失败:', error);
     }
@@ -348,7 +348,7 @@ export class UserEventEmitter {
    * @param updateType 更新类型
    */
   static notifyUserUpdate(username: string, updateType: string): void {
-    console.log('通知用户更新事件', { username, updateType });
+
   }
 }
 

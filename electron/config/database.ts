@@ -72,6 +72,7 @@ export async function initializeDatabase(): Promise<Database> {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
         password TEXT, -- 加密存储，只有记住密码时才有值
+        token TEXT, -- 存储会话令牌
         accountType TEXT NOT NULL CHECK(accountType IN ('local', 'online')) DEFAULT 'local',
         rememberMe BOOLEAN NOT NULL DEFAULT 0,
         lastLoginTime INTEGER NOT NULL,
@@ -82,7 +83,18 @@ export async function initializeDatabase(): Promise<Database> {
         UNIQUE(username, accountType) -- 同一用户名和账户类型组合唯一
       )
     `);
-    
+    // 添加新字段（如果不存在）
+    try {
+      db.exec(`ALTER TABLE login_sessions ADD COLUMN token TEXT`);
+
+    } catch (error) {
+      // 如果字段已存在，会抛出错误，这是正常的
+      if (error instanceof Error && error.message.includes('duplicate column name')) {
+
+      } else {
+        console.error('添加 token 字段失败:', error);
+      }
+    }
     // 创建索引提高查询性能
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_login_sessions_username ON login_sessions(username);
@@ -90,7 +102,7 @@ export async function initializeDatabase(): Promise<Database> {
       CREATE INDEX IF NOT EXISTS idx_login_sessions_auto_login ON login_sessions(autoLogin);
     `);
 
-    console.log('数据库初始化成功');
+
     return db;
   } catch (error) {
     console.error('数据库初始化失败:', error);
@@ -112,7 +124,7 @@ export function initializeDatabaseSync(): Database {
     }
     
     const dbPath = path.join(dbDir, 'dailyuse.db');
-    console.log('数据库路径:', dbPath);
+
     
     // 创建/打开数据库连接
     db = new BetterSqlite3(dbPath, { 
@@ -136,7 +148,7 @@ export function initializeDatabaseSync(): Database {
       )
     `);
     
-    console.log('数据库同步初始化成功');
+
     return db;
   } catch (error) {
     console.error('数据库同步初始化失败:', error);
@@ -158,7 +170,7 @@ export async function closeDatabase(): Promise<void> {
     try {
       db.close();
       db = null;
-      console.log('数据库连接已关闭');
+
     } catch (error) {
       console.error('关闭数据库失败:', error);
     }

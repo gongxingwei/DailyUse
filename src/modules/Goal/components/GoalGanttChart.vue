@@ -83,8 +83,6 @@ const { days, months } = computed(() => {
                 name: currentDate.getMonth() + 1,
                 daysCount: 0
             });
-            console.log(months.get(monthKey));
-            console.log(Array.from(months.values()));
         }
         months.get(monthKey).daysCount++;
 

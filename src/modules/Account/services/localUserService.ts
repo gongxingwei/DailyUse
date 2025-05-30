@@ -1,4 +1,4 @@
-import { TLoginData, TRegisterData } from "../types/user";
+import { TLoginData, TRegisterData } from "../types/account";
 import { userDataInitializationService } from "./userDataInitializationService";
 import type { TResponse } from "../../../shared/types/response";
 /**

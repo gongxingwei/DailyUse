@@ -52,7 +52,7 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
             if (!activeTab) return;
 
             if (!activeTab.path.toLowerCase().endsWith('.md')) {
-                console.log('Only markdown files can be previewed');
+
                 return;
             }
 

@@ -3,11 +3,11 @@ import type {
   TRegisterData,
   TLoginData,
   TUser,
-} from "@/modules/Account/types/user";
+} from "@/modules/Account/types/account";
 
 import { UserModel } from "../models/userModel";
 import bcrypt from "bcrypt";
-
+import { v4 as uuidv4 } from "uuid"; // 使用UUID生成唯一ID
 /**
  * 用户服务类
  * 处理与用户账户相关的业务逻辑
@@ -71,6 +71,7 @@ export class UserService {
 
       // 构造用户数据
       const userData: TUser = {
+        id: uuidv4(), // 使用UUID生成唯一ID
         username: data.username,
         password: hashedPassword,
         email: data.email,

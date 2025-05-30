@@ -72,7 +72,7 @@ export function useShortcutManagement() {
     const files = event.dataTransfer?.files;
   
     if (files && files.length > 0) {
-      console.log('[Drop] 开始处理文件, 数量:', files.length);
+
       console.log(files)
       for (const file of Array.from(files)) {
         try {
@@ -100,7 +100,7 @@ export function useShortcutManagement() {
         }
       }
     } else {
-      console.log('[Drop] 没有检测到文件');
+
     }
   }
   /*
@@ -108,8 +108,8 @@ export function useShortcutManagement() {
    */
   function deleteShortcut() {
     if (selectedCategoryId && selectedItemId) {
-      console.log('selectedCategoryId.value:', selectedCategoryId.value);
-      console.log('selectedItemId.value:', selectedItemId.value);
+
+
       store.removeShortcut(selectedCategoryId.value, selectedItemId.value);
     }
   }

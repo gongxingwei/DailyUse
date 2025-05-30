@@ -44,7 +44,7 @@
 
             <v-window v-model="localTab" class="mt-4">
               <v-window-item value="quick-login">
-                <quick-login />
+                <local-quick-login />
               </v-window-item>
               <v-window-item value="login">
                 <local-login />
@@ -58,11 +58,15 @@
           <!-- 远程账户面板 -->
           <v-window-item value="remote">
             <v-tabs v-model="remoteTab" color="secondary">
+              <v-tab value="quick-login">快速登录</v-tab>
               <v-tab value="login">登录</v-tab>
               <v-tab value="register">注册</v-tab>
             </v-tabs>
 
             <v-window v-model="remoteTab" class="mt-4">
+              <v-window-item value="quick-login">
+                <remote-quick-login />
+              </v-window-item>
               <v-window-item value="login">
                 <remote-login />
               </v-window-item>
@@ -80,9 +84,10 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import QuickLogin from '../components/QuickLogin.vue';
+import LocalQuickLogin from '../components/LocalQuickLogin.vue';
 import LocalLogin from '../components/LocalLoginForm.vue';
 import LocalRegister from '../components/LocalRegisterForm.vue';
+import RemoteQuickLogin from '../components/RemoteQuickLogin.vue';
 import RemoteLogin from '../components/RemoteLoginForm.vue';
 import RemoteRegister from '../components/RemoteRegisterForm.vue';
 // stores

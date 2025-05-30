@@ -93,7 +93,7 @@ export class QuickLauncherMainPlugin implements ElectronPlugin {
             console.error('[QuickLauncherMain] 启动应用失败:', error);
             reject(error);
           } else {
-            console.log('[QuickLauncherMain] 启动应用成功');
+
             resolve(true);
           }
         });

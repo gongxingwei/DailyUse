@@ -4,11 +4,11 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "@/modules/Account/stores/authStore";
 // services
 import { localUserService } from "@/modules/Account/services/localUserService";
+import { remoteUserService } from "../services/remoteUserService";
 import { remoteAuthService } from "../services/remoteAuthService";
-
 import { loginSessionService } from "../services/loginSessionService";
 // types
-import type { TLoginData, TRegisterData } from "../types/user";
+import type { TLoginData, TRegisterData } from "../types/account";
 import type { SessionUser } from "../services/loginSessionService";
 
 /**
@@ -185,14 +185,14 @@ export function useUserAuth(emit?: {
    * 处理快速登录 - 使用会话服务
    * @param user 要登录的用户信息
    */
-  const handleLocalQuickLogin = async (user: SessionUser) => {
+  const handleLocalQuickLogin = async (username: string) => {
     try {
-      loading.value = user.username;
+      loading.value = username;
 
       // 使用会话服务的快速登录
       const sessionResult = await loginSessionService.quickLogin(
-        user.username,
-        user.accountType
+        username,
+        "local"
       );
 
       if (sessionResult.success) {
@@ -245,7 +245,7 @@ export function useUserAuth(emit?: {
    * 用户登出 - 使用会话服务
    * @param keepRemembered 是否保留记住的信息
    */
-  const handleLogout = async (keepRemembered: boolean = true) => {
+  const handleLocalLogout = async (keepRemembered: boolean = true) => {
     try {
       const currentUser = authStore.currentUser;
       if (currentUser) {
@@ -295,12 +295,7 @@ export function useUserAuth(emit?: {
 
         // 尝试自动登录
         if (autoLoginInfo.hasPassword) {
-          await handleLocalQuickLogin({
-            username: autoLoginInfo.username,
-            accountType: autoLoginInfo.accountType,
-            lastLoginTime: autoLoginInfo.lastLoginTime,
-            autoLogin: true,
-          });
+
         }
       }
     } catch (error) {
@@ -352,19 +347,12 @@ export function useUserAuth(emit?: {
       snackbar.show = true;
 
       if (response.success) {
-        console.log("登录成功", response);
+
         // 登录成功，保存用户信息
+        if (!response.data) {
+          throw new Error("登录成功，但未返回用户数据");
+        }
         authStore.setUser(response.data.userWithoutPassword);
-
-        // 创建在线账号会话
-        await loginSessionService.createSession({
-          username: loginForm.username,
-          password: loginForm.remember ? loginForm.password : undefined,
-          accountType: "online",
-          rememberMe: loginForm.remember,
-          autoLogin: false,
-        });
-
         await loadRememberedUsers();
         router.push("/");
       }
@@ -387,7 +375,7 @@ export function useUserAuth(emit?: {
         return;
       }
 
-      const response = await remoteAuthService.register(registerForm);
+      const response = await remoteUserService.register(registerForm);
 
       snackbar.message = response.message || "xxx";
       snackbar.color = response.success ? "success" : "error";
@@ -404,6 +392,77 @@ export function useUserAuth(emit?: {
       snackbar.color = "error";
       snackbar.show = true;
     }
+  }
+
+  async function handleRemoteLogout() {
+    try {
+      const currentUser = authStore.currentUser;
+      if (currentUser) {
+        // 在会话记录中更新状态
+        await loginSessionService.logout(
+          currentUser.username,
+          "online",
+          false
+        );
+        // 使用远程服务登出
+        const result = await remoteAuthService.logout();
+
+        if (result.success) {
+          // 清除本地用户状态
+          authStore.logout();
+
+          // 重新加载记住的用户列表
+          await loadRememberedUsers();
+
+          router.push("/auth");
+
+          snackbar.message = "退出登录成功";
+          snackbar.color = "success";
+          snackbar.show = true;
+        } else {
+          snackbar.message = result.message || "退出登录失败";
+          snackbar.color = "error";
+          snackbar.show = true;
+        }
+      }
+    } catch (error) {
+      console.error("退出登录失败:", error);
+      snackbar.message = "退出登录失败，请重试";
+      snackbar.color = "error";
+      snackbar.show = true;
+    }
+  }
+
+  async function handleRemoteQuickLogin(username: string, accountType: 'online' | 'local' = 'online') {
+    const response = await remoteAuthService.quickLogin(username, accountType);
+    try {
+      if (response.success) {
+        snackbar.message = "快速登录成功";
+        snackbar.color = "success";
+        snackbar.show = true;
+        
+        // 登录成功，保存用户信息
+        if (!response.data) {
+          throw new Error("快速登录成功，但未返回用户数据");
+        }
+        const user = response.data.userWithoutPassword;
+
+        authStore.setUser(response.data.userWithoutPassword);
+        await loadRememberedUsers();
+        router.push("/");
+
+      } else {
+        snackbar.message = response.message || "快速登录失败";
+        snackbar.color = "error";
+        snackbar.show = true;
+      }
+    } catch (error) {
+      console.error("快速登录失败:", error);
+      snackbar.message = "快速登录失败，请重试";
+      snackbar.color = "error";
+      snackbar.show = true;
+    }
+    
   }
   // 初始化时加载记住的用户
   onMounted(() => {
@@ -430,8 +489,10 @@ export function useUserAuth(emit?: {
     handleLocalQuickLogin, // 处理快速登录
     handleRemoteLogin, // 处理远程登录
     handleRemoteRegister, // 处理远程注册
+    handleRemoteQuickLogin, // 处理远程快速登录
 
-    handleLogout, // 处理登出
+    handleLocalLogout, // 处理登出
+    handleRemoteLogout, // 处理远程登出
     checkAutoLogin, // 检查自动登录
     loadRememberedUsers, // 加载记住的用户列表
     // clearAllSessions, // 清除所有会话数据
