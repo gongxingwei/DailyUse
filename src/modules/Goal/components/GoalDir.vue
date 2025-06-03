@@ -1,6 +1,6 @@
 <template>
-    <div id="goal-dir" class="goal-dir">
-        <header class="header d-flex justify-space-between">
+    <div id="goal-dir" class="goal-dir w-100 h-100 d-flex flex-column px-2">
+        <header class="w-100 d-flex justify-space-between">
             <span class="text-h6">目标节点</span>
             <div class="dropdown">
                 <button class="dropdown-trigger">
@@ -61,17 +61,6 @@ const selectDir = (dirId: string) => {
 </script>
 
 <style scoped>
-.goal-dir {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.header {
-    width: 100%;
-}
-
 /* 下拉列表 */
 .dropdown {
     position: relative;

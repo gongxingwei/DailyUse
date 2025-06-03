@@ -1,5 +1,5 @@
 <template>
-  <v-container class="goal-container pa-0">
+  <v-container class="goal-management h-100 d-flex flex-column overflow-y-hidden pa-0">
     <!-- 头部、标题 -->
     <div class="goal-header px-6 py-4">
       <div class="d-flex align-center justify-space-between">
@@ -11,34 +11,39 @@
     </div>
 
     <!-- 主体 -->
-    <div class="goal-content px-6">
+    <div class="h-100 px-6 d-flex flex-row flex-grow-1 pt-4">
       <!-- 侧边栏（目标节点） -->
-      <div class="goal-dir">
-        <GoalDir @selected-goal-dir-id="selectDir"/>
+      <div class="goal-management_sidebar flex-shrink-0" style="width: 200px;">
+        <GoalDir @selected-goal-dir-id="selectDir" />
       </div>
       <!-- 目标列表 -->
-      <div class="goal-list">
+      <div class="goal-management_main d-flex flex-column flex-grow-1">
         <!-- 过滤器（全部、进行中、已结束 -->
-        <div class="status-tabs">
-                <button v-for="tab in statusTabs" :key="tab.value" class="tab-btn"
-                    :class="{ active: selectedStatus === tab.value }" @click="selectedStatus = tab.value">
-                    {{ tab.label }}
-                    <span class="count">{{ getGoalCountByStatus(tab.value) }}</span>
-                </button>
-            </div>
+        <div class="goal-management-tabs d-flex flex-row mb-4">
+          <v-btn v-for="tab in statusTabs" :key="tab.value" variant='flat' style="width: 150px;"
+            class="tab-btn flex-grow-1 d-flex align-center justify-center" :class="{ 'tab-selected': selectedStatus === tab.value }"
+            @click="selectedStatus = tab.value">
+            <span class="w-100 d-flex flex-row align-center justify-center">
+              {{ tab.label }}
+              <v-chip size="small" :color="selectedStatus === tab.value ? 'white' : 'primary'" class="ml-10">
+                {{ getGoalCountByStatus(tab.value) }}
+              </v-chip>
+            </span>
+          </v-btn>
+        </div>
         <!-- 有则显示 -->
-        <div v-if="(goalsInCurStatus ?? []).length">
+        <div v-if="(goalsInCurStatus ?? []).length" class="flex-grow-1">
           <GoalCard v-for="goal in goalsInCurStatus" :key="goal.id" :goal="goal" />
         </div>
         <!-- 如果为空 -->
-        <div class="empty-state" v-else>
+        <div class="empty-state d-flex flex-column align-center justify-center h-100" v-else style="min-height: 300px;">
           <v-icon size="64" color="grey-lighten-1">mdi-folder-multiple</v-icon>
           <div class="text-h6 mt-4">{{ t('goal.empty') }}</div>
           <div class="text-body-2 text-medium-emphasis mt-1">{{ t('goal.emptyTip') }}</div>
         </div>
       </div>
     </div>
-    <GoalDialog :visible="showGoalDialog" @save="saveGoal" @cancel="cancelGoalEdit"/>
+    <GoalDialog :visible="showGoalDialog" @save="saveGoal" @cancel="cancelGoalEdit" />
   </v-container>
 </template>
 
@@ -59,68 +64,40 @@ const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDia
 </script>
 
 <style scoped>
-.goal-container {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
 .goal-header {
-  flex-shrink: 0;
   border-bottom: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-.goal-content {
-  display: flex;
-  flex-direction: row;
-  flex: 1;
-  overflow-y: auto;
-  padding-top: 16px;
+/* 侧边栏（目标文件夹） */
+.goal-management_sidebar {
+  background-color: rgb(var(--v-theme-surface));
+
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
 }
 
-/* 目标文件夹区域 */
-.goal-dir {
-  padding: 0.5rem 1rem;
-  width: 200px;
+/* 主体（目标列表） */
+.goal-management_main {
   background-color: rgb(var(--v-theme-surface));
+  /* border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity)); */
 }
-/* 分类标签 */
-.status-tabs {
-  display: flex;
-  gap: 2rem;
-  margin-bottom: 1rem;
-}
-.tab-btn {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 0.5rem 1rem;
+
+/* 标签（过滤器） */
+/* .goal-management-tabs {
+  background-color: rgb(var(--v-theme-background));
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
   border-radius: 4px;
-  background-color: rgb(var(--v-theme-surface));
-  color: var(--v-primary);
-  cursor: pointer;
-}
-.tab-btn.active {
+} */
+
+.tab-btn {
   background-color: rgb(var(--v-theme-background));
-  color: rgb(var(--v-theme-primary));
-}
-/* 目标列表区域 */
-.goal-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  padding: 0 16px;
-  overflow-y: auto;
-  background-color: rgb(var(--v-theme-background));
+
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+  border-bottom: none;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  min-height: 300px;
+.tab-selected {
+  background-color: rgb(var(--v-theme-onsurface));
+  color: rgb(var(--v-theme-on-primary));
 }
+
 </style>

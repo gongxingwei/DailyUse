@@ -1,9 +1,9 @@
 <template>
-    <v-card class="pa-4" elevation="2">
-        <v-card-title class="text-center d-flex align-center justify-center">
+    <v-card class="pa-4 pt-0" elevation="2">
+        <!-- <v-card-title class="text-center d-flex align-center justify-center">
             <v-icon class="mr-2" color="primary">mdi-flash</v-icon>
             快速登录
-        </v-card-title>
+        </v-card-title> -->
 
         <v-card-text>
             <!-- 无可用账户时显示 -->

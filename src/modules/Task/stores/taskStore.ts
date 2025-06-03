@@ -4,13 +4,20 @@ import type { ITaskInstance, ITaskTemplate } from "../types/task";
 import { generateTaskInstances } from '../utils/taskUtils';
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
 import { formatDate, formatDateTime } from "@/shared/utils/dateUtils";
-import { useUserStore } from "@/modules/Account/composables/useUserStore";
+// composables
+import { useStoreSave } from '@/shared/composables/useStoreSave';
 
-interface TaskState {
-    taskInstances: ITaskInstance[];
-    taskTemplates: ITaskTemplate[];
-    tempTaskTemplate: ITaskTemplate;
-}
+let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;
+
+function getAutoSave() {
+    if (!autoSaveInstance) {
+      autoSaveInstance = useStoreSave({
+        onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
+        onError: (storeName, error) => console.error(`✗ ${storeName} 数据保存失败:`, error),
+      });
+    }
+    return autoSaveInstance;
+  }
 
 export const useTaskStore = defineStore('task', {
     state: () => ({
@@ -193,18 +200,7 @@ export const useTaskStore = defineStore('task', {
     },
 
     actions: {
-        async initialize() {
-            const { loadUserData } = useUserStore<TaskState>('task');
-            const data = await loadUserData();
-            if (data) {
-                this.$patch(data);
-            }
-        },
 
-        async saveState() {
-            const { saveUserData } = useUserStore<TaskState>('task');
-            await saveUserData(this.$state);
-        },
         // 任务模板 CRUD 操作
         // 初始化任务模板
         initTempTaskTemplate(taskTempalteId: string) {
@@ -336,7 +332,7 @@ export const useTaskStore = defineStore('task', {
                 }
             }
             this.resetTempTaskTemplate();
-            this.saveState();
+            this.saveAllTaskData();
         },
         // 创建任务提醒
         async createTaskReminders(template: ITaskTemplate, instances: ITaskInstance[]) {
@@ -383,7 +379,13 @@ export const useTaskStore = defineStore('task', {
 
                 // 删除任务模板
                 this.taskTemplates.splice(index, 1);
-                this.saveState();
+
+                // 自动保存
+                const saveResult = await this.saveAllTaskData();
+                if (!saveResult.templates || !saveResult.instances) {
+                    console.error('任务模板删除后保存失败');
+                }
+
                 return true;
             }
             console.error('Task template not found:', taskId);
@@ -417,13 +419,67 @@ export const useTaskStore = defineStore('task', {
                         );
                     }
                 }
-                this.saveState();
+                 // 自动保存
+                const saveResult = await this.saveTaskInstances();
+                if (!saveResult) {
+                    console.error('任务完成后保存失败');
+                }
+                
                 return true;
             }
 
             console.error('Task not found:', taskId);
             return false;
-        }
+        },
+
+         // 自动保存方法
+         async saveTaskTemplates(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.debounceSave('taskTemplates', this.taskTemplates);
+        },
+
+        async saveTaskInstances(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.debounceSave('taskInstances', this.taskInstances);
+        },
+
+        async saveTaskTemplatesImmediately(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.saveImmediately('taskTemplates', this.taskTemplates);
+        },
+
+        async saveTaskInstancesImmediately(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.saveImmediately('taskInstances', this.taskInstances);
+        },
+
+        async saveAllTaskData(): Promise<{ templates: boolean; instances: boolean }> {
+            const [templatesResult, instancesResult] = await Promise.all([
+                this.saveTaskTemplates(),
+                this.saveTaskInstances()
+            ]);
+            
+            return {
+                templates: templatesResult,
+                instances: instancesResult
+            };
+        },
+
+        // 检查保存状态
+        isSavingTaskTemplates(): boolean {
+            const autoSave = getAutoSave();
+            return autoSave.isSaving('taskTemplates');
+        },
+
+        isSavingTaskInstances(): boolean {
+            const autoSave = getAutoSave();
+            return autoSave.isSaving('taskInstances');
+        },
+
+        isSavingAnyTaskData(): boolean {
+            const autoSave = getAutoSave();
+            return autoSave.isSaving();
+        },
     },
 
     persist: true,

@@ -3,15 +3,10 @@ import { fileURLToPath } from 'node:url'
 import path from 'node:path'
 import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
-import { registerFileSystemHandlers } from './shared/ipc/filesystem';
-import { setupNotificationService } from './modules/notification/notificationService';
-import { setupScheduleHandlers } from './modules/taskSchedule/main';
 import { shell } from 'electron';
-import { registerGitHandlers } from './shared/ipc/git';
 import { protocol } from 'electron'
-import { setupUserStoreHandlers } from './modules/Account/ipcs/localAccountStorageIpc';
-import { setupUserHandlers } from './modules/Account/ipcs/userIpc';
-import { setupLoginSessionHandlers } from './modules/Account/ipcs/loginSessionIpc';
+import { initializeAllModules } from './shared/moduleGroups';
+
 app.setName('DailyUse');
 
 // 防止软件崩溃以及兼容
@@ -172,17 +167,11 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(async () => {
+app.whenReady().then(() => {
+  console.log(" ssssssssssssssssssssssssssssssssssssssssssssssssDailyUse 启动中...");
   createWindow();
-  registerFileSystemHandlers();
-  registerGitHandlers();
-  setupUserStoreHandlers();
-  setupUserHandlers();
-  setupLoginSessionHandlers();
-  
   if (win) {
-    setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
-    setupScheduleHandlers();
+    initializeAllModules(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
   }
   protocol.registerFileProtocol('local', (request, callback) => {
     const url = request.url.replace('local://', '')

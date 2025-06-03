@@ -22,7 +22,7 @@ export function useGoalManagement() {
     };
     // 根据标签筛选目标
     const statusTabs = [
-        { label: '全部', value: 'all' },
+        { label: '全部的', value: 'all' },
         { label: '进行中', value: 'in-progress' },
         // { label: '已完成', value: 'completed' },
         { label: '已过期', value: 'expired' }

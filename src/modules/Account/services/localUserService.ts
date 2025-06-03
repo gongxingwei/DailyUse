@@ -1,6 +1,6 @@
 import { TLoginData, TRegisterData } from "../types/account";
-import { userDataInitializationService } from "./userDataInitializationService";
 import type { TResponse } from "../../../shared/types/response";
+import { UserDataInitService } from "@/shared/services/userDataInitService";
 /**
  * 认证服务类
  * 负责处理用户认证相关的操作，包括注册、登录、登出和认证状态检查
@@ -84,7 +84,16 @@ class UserService {
         "user:login",
         loginData
       );
-
+      if (!response.success) {
+        throw new Error(response.message || "登录失败");
+      }
+      // 登录成功后，获取用户信息
+      try {
+        await UserDataInitService.initUserData(response.data.username);
+      } catch (error) {
+        console.error('用户数据初始化失败:', error);
+        // 数据初始化失败不影响登录，但要记录错误
+      }
       return response;
     } catch (error) {
       console.error("登录失败:", error);
@@ -199,7 +208,6 @@ class UserService {
       );
       if (response.success) {
         // 登出时清除所有用户数据
-        await userDataInitializationService.clearUserData();
         return response;
       } else {
         return response;

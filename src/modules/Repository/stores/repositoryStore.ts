@@ -1,5 +1,17 @@
 import { defineStore } from "pinia";
-import { useUserStore } from "@/modules/Account/composables/useUserStore";
+import { useStoreSave } from "@/shared/composables/useStoreSave";
+
+let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;
+
+function getAutoSave() {
+  if (!autoSaveInstance) {
+    autoSaveInstance = useStoreSave({
+      onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
+      onError: (storeName, error) => console.error(`✗ ${storeName} 数据保存失败:`, error),
+    });
+  }
+  return autoSaveInstance;
+}
 
 export type Repository = {
     title: string;
@@ -9,10 +21,6 @@ export type Repository = {
     updateTime: string;
     lastVisitTime?: string;
     relativeGoalId?: string;
-}
-
-type RepositoryState = {
-    repositories: Repository[];
 }
 
 export const useRepositoryStore = defineStore("repository", {
@@ -36,29 +44,25 @@ export const useRepositoryStore = defineStore("repository", {
     },
 
     actions: {
-        async initialize() {
-            const { loadUserData } = useUserStore<RepositoryState>('repository');
-            const data = await loadUserData();
-            if (data) {
-                this.$patch(data);
-            }
-        },
-        async saveState() {
-            const { saveUserData } = useUserStore<RepositoryState>('repository');
-            await saveUserData(this.$state);
-        },
-        // 添加仓库
-        addRepository(repository: Omit<Repository, "createTime" | "updateTime">) {
+
+        async addRepository(repository: Omit<Repository, "createTime" | "updateTime">) {
             const newRepository: Repository = {
                 ...repository,
                 createTime: new Date().toISOString(),
                 updateTime: new Date().toISOString()
             };
+            
             if (this.repositories.some(repo => repo.title === repository.title)) {
                 throw new Error("Repository title already exists");
             }
+            
             this.repositories.push(newRepository);
-            this.saveState();
+            
+            // 自动保存
+            const saveSuccess = await this.saveRepositories();
+            if (!saveSuccess) {
+                console.error('仓库添加后保存失败');
+            }
         },
 
         // 获取最近访问的仓库（最多5个）
@@ -78,20 +82,34 @@ export const useRepositoryStore = defineStore("repository", {
             return recentRepo;
         },
 
-        removeRepository(title: string) {
+        async removeRepository(title: string) {
             const index = this.repositories.findIndex(repo => repo.title === title);
             if (index > -1) {
                 this.repositories.splice(index, 1);
+                
+                // 自动保存
+                const saveSuccess = await this.saveRepositories();
+                if (!saveSuccess) {
+                    console.error('仓库删除后保存失败');
+                }
+                return true;
             }
-            this.saveState();
+            return false;
         },
 
-        updateRepository(repository: Repository) {
+        async updateRepository(repository: Repository) {
             const index = this.repositories.findIndex(repo => repo.title === repository.title);
             if (index > -1) {
                 this.repositories[index] = repository;
+                
+                // 自动保存
+                const saveSuccess = await this.saveRepositories();
+                if (!saveSuccess) {
+                    console.error('仓库更新后保存失败');
+                }
+                return true;
             }
-            this.saveState();
+            return false;
         },
 
         currentRepositoryPath() {
@@ -101,16 +119,36 @@ export const useRepositoryStore = defineStore("repository", {
             return currentRepo?.path || '';
         },
         // 更新仓库访问时间
-        updateRepoLastVisitTime(title: string) {
+        async updateRepoLastVisitTime(title: string) {
             const repository = this.repositories.find(repo => repo.title === title);
-            if (!repository) {// 防止问题：刷新可能会导致仓库数据还没加载就调用了这个方法，导致数据清空
-                // throw new Error("Repository not found");
-                return
+            if (!repository) {
+                // 防止问题：刷新可能会导致仓库数据还没加载就调用了这个方法，导致数据清空
+                return;
             }
-            if (repository) {
-                repository.lastVisitTime = new Date().toISOString();
+            
+            repository.lastVisitTime = new Date().toISOString();
+            
+            // 自动保存
+            const saveSuccess = await this.saveRepositories();
+            if (!saveSuccess) {
+                console.error('仓库访问时间更新后保存失败');
             }
-            this.saveState();
-        }
+        },
+
+        async saveRepositories(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.debounceSave('repositories', this.repositories);
+        },
+
+        async saveRepositoriesImmediately(): Promise<boolean> {
+            const autoSave = getAutoSave();
+            return autoSave.saveImmediately('repositories', this.repositories);
+        },
+
+        // 检查保存状态
+        isSavingRepositories(): boolean {
+            const autoSave = getAutoSave();
+            return autoSave.isSaving('repositories');
+        },
     },
 })

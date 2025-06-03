@@ -1,5 +1,5 @@
 import type { TResponse } from "@/shared/types/response";
-
+import { UserDataInitService } from "@/shared/services/userDataInitService";
 /**
  * 渲染进程本地会话服务类
  * 负责处理渲染进程中的登录会话相关操作
@@ -471,6 +471,21 @@ export class LoginSessionService {
         username,
         accountType
       );
+
+      if (!result.success) {
+        return {
+          success: false,
+          message: result.message || "快速登录失败，请重试",
+        };
+      }
+
+      // 初始化用户数据
+      try {
+        await UserDataInitService.initUserData(result.data.username);
+      } catch (error) {
+        console.error("用户数据初始化失败:", error);
+      }
+
       return result;
     } catch (error) {
       console.error("快速登录失败:", error);

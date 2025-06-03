@@ -2,12 +2,15 @@
 <template>
     <v-form ref="formRef" @submit.prevent="handleLcoalLogin" :loading="authStore.loading">
         <v-card class="pa-4">
-            <v-card-title class="text-center">登录</v-card-title>
+            <!-- <v-card-title class="text-center">登录</v-card-title> -->
 
             <v-card-text>
                 <!-- 用户名下拉选择框 -->
                 <v-combobox v-model="loginForm.username" :items="rememberedUsernames" :loading="isLoadingUsers"
-                    label="用户名" :rules=usernameRules @update:model-value="handleAccountSelect" clearable required>
+                    label="用户名" :rules=usernameRules @update:model-value="handleAccountSelect" 
+                    prepend-inner-icon="mdi-account"
+                    density="comfortable"
+                    clearable required>
 
                     <!-- 自定义下拉选项 -->
                     <template v-slot:item="{ item, props }">
@@ -41,12 +44,14 @@
                 </v-combobox>
 
                 <!-- 密码输入框 -->
-                <v-text-field v-model="loginForm.password" label="密码" :rules=passwordRules :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+                <v-text-field v-model="loginForm.password" label="密码" :rules=passwordRules
+                    prepend-inner-icon="mdi-lock" clearable :counter="20" density="comfortable"
+                    :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
                     @click:append-inner="showPassword = !showPassword" :type="showPassword ? 'text' : 'password'"
                     required />
 
                 <!-- 记住密码选项 -->
-                <v-checkbox v-model="loginForm.remember" label="记住密码" color="primary" density="compact" />
+                <v-checkbox v-model="loginForm.remember" label="记住密码" color="primary" density="comfortable" />
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4">

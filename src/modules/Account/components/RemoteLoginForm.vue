@@ -1,11 +1,13 @@
 <template>
     <v-form ref="formRef" @submit.prevent="handleRemoteLogin" :loading="authStore.loading">
         <v-card class="pa-4">
-            <v-card-title class="text-center">登录</v-card-title>
+            <!-- <v-card-title class="text-center">登录</v-card-title> -->
 
             <v-card-text>
                 <v-combobox v-model="loginForm.username" :items="rememberedUsernames" item-title="username" label="用户名"
-                    :rules="usernameRules" @update:model-value="handleAccountSelect" required>
+                    prepend-inner-icon="mdi-account" :loading="authStore.loading"    
+                    clearable :counter="20" 
+                :rules="usernameRules" @update:model-value="handleAccountSelect" required>
                     <!-- 自定义下拉选项 -->
                     <template v-slot:item="{ item, props }">
                         <v-list-item v-bind="props" :title="item.raw">
@@ -18,12 +20,13 @@
                     </template>
                 </v-combobox>
                 <v-text-field v-model="loginForm.password" label="密码" type="password" :rules="passwordRules"
+                    prepend-inner-icon="mdi-lock" clearable :counter="20"
                     required />
                 <v-checkbox v-model="loginForm.remember" label="记住我" />
             </v-card-text>
 
-            <v-card-actions>
-                <v-btn color="primary" type="submit" :loading="authStore.loading">
+            <v-card-actions class="px-4 pb-4">
+                <v-btn color="primary" type="submit" :loading="authStore.loading" block>
                     登录
                 </v-btn>
             </v-card-actions>

@@ -2,10 +2,10 @@
 <template>
     <v-form ref="formRef" @submit.prevent="handleLocalRegister" :loading="authStore.loading">
         <v-card class="pa-4">
-            <v-card-title class="text-center">
+            <!-- <v-card-title class="text-center">
                 <v-icon class="mr-2" color="primary">mdi-account-plus</v-icon>
                 注册账号
-            </v-card-title>
+            </v-card-title> -->
 
             <v-card-text>
                 <!-- 错误提示 -->
@@ -81,11 +81,11 @@
 
                 <!-- 注册选项 -->
                 <div class="mt-4">
-                    <v-checkbox 
+                    <!-- <v-checkbox 
                         v-model="autoRemember"
                         label="注册后自动保存登录信息"
                         color="primary"
-                        density="compact" />
+                        density="compact" /> -->
                     
                     <v-checkbox 
                         v-model="agreeTerms"

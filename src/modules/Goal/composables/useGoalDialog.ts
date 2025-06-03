@@ -1,4 +1,4 @@
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 import { useGoalStore } from '../stores/goalStore'
 import { useGoalDirStore } from '../stores/goalDirStore';
 import { storeToRefs } from 'pinia';
@@ -192,14 +192,20 @@ export function useGoalDialog() {
     validationErrors.keyResults = undefined;
     return true;
   };
+
+  watch(
+    () => tempGoal.value.keyResults,
+    () => {
+      // console.log('Key Results changed:', tempGoal.value.keyResults);
+      validateKeyResults();
+    },
+    {  deep: true }
+  )
   // 验证所有字段，用于保存按钮的启用状态
   const isValid = computed(() => {
     return !Object.values(validationErrors).some(error => error) &&
       tempGoal.value.title.trim() !== '' &&
-      tempGoal.value.startTime &&
-      tempGoal.value.endTime &&
-      validateDates();
-      validateKeyResults();
+      validateDates()
   });
   return {
     tempGoal,

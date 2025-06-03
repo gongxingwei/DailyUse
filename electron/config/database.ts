@@ -1,8 +1,8 @@
-import path from 'node:path';
-import fs from 'node:fs/promises';
-import fsSync from 'node:fs';
-import { app } from 'electron';
-import { fileURLToPath } from 'node:url';
+import path from "node:path";
+import fs from "node:fs/promises";
+import fsSync from "node:fs";
+import { app } from "electron";
+import { fileURLToPath } from "node:url";
 // 为 better-sqlite3 提供 __filename 和 __dirname
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -10,8 +10,8 @@ const __dirname = path.dirname(__filename);
 // 将这些添加到全局，以防 better-sqlite3 需要
 globalThis.__filename = __filename;
 globalThis.__dirname = __dirname;
-import BetterSqlite3 from 'better-sqlite3';
-import type { Database } from 'better-sqlite3';
+import BetterSqlite3 from "better-sqlite3";
+import type { Database } from "better-sqlite3";
 
 // 数据库单例
 let db: Database | null = null;
@@ -20,38 +20,38 @@ let isInitializing = false;
 // 异步初始化数据库
 export async function initializeDatabase(): Promise<Database> {
   if (db !== null) return db;
-  
+
   // 防止重复初始化
   if (isInitializing) {
     // 等待初始化完成
     while (isInitializing) {
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise((resolve) => setTimeout(resolve, 50));
     }
     if (db !== null) return db;
   }
-  
+
   isInitializing = true;
-  
+
   try {
     // 确保数据目录存在
-    const dbDir = path.join(app.getPath('userData'), 'database');
-    
+    const dbDir = path.join(app.getPath("userData"), "database");
+
     try {
       await fs.access(dbDir);
     } catch {
       await fs.mkdir(dbDir, { recursive: true });
     }
-    
-    const dbPath = path.join(dbDir, 'dailyuse.db');
-    
+
+    const dbPath = path.join(dbDir, "dailyuse.db");
+
     // 创建/打开数据库连接
-    db = new BetterSqlite3(dbPath, { 
-      verbose: process.env.NODE_ENV !== 'production' ? console.log : undefined 
+    db = new BetterSqlite3(dbPath, {
+      verbose: process.env.NODE_ENV !== "production" ? console.log : undefined,
     });
-    
+
     // 启用 WAL 模式提高性能
-    db.pragma('journal_mode = WAL');
-    
+    db.pragma("journal_mode = WAL");
+
     // 创建表结构 - 确保包含所有必要字段
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -65,7 +65,7 @@ export async function initializeDatabase(): Promise<Database> {
         createdAt INTEGER NOT NULL
       )
     `);
-    
+
     // 创建登录会话表
     db.exec(`
       CREATE TABLE IF NOT EXISTS login_sessions (
@@ -83,16 +83,31 @@ export async function initializeDatabase(): Promise<Database> {
         UNIQUE(username, accountType) -- 同一用户名和账户类型组合唯一
       )
     `);
+
+    // 创建用户数据存储表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS user_store_data (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        username TEXT NOT NULL,
+        store_name TEXT NOT NULL,
+        data TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        UNIQUE(username, store_name),
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+      )
+    `);
     // 添加新字段（如果不存在）
     try {
       db.exec(`ALTER TABLE login_sessions ADD COLUMN token TEXT`);
-
     } catch (error) {
       // 如果字段已存在，会抛出错误，这是正常的
-      if (error instanceof Error && error.message.includes('duplicate column name')) {
-
+      if (
+        error instanceof Error &&
+        error.message.includes("duplicate column name")
+      ) {
       } else {
-        console.error('添加 token 字段失败:', error);
+        console.error("添加 token 字段失败:", error);
       }
     }
     // 创建索引提高查询性能
@@ -101,11 +116,14 @@ export async function initializeDatabase(): Promise<Database> {
       CREATE INDEX IF NOT EXISTS idx_login_sessions_active ON login_sessions(isActive);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_auto_login ON login_sessions(autoLogin);
     `);
-
+    db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_user_store_username ON user_store_data(username);
+      CREATE INDEX IF NOT EXISTS idx_user_store_name ON user_store_data(store_name);
+    `);
 
     return db;
   } catch (error) {
-    console.error('数据库初始化失败:', error);
+    console.error("数据库初始化失败:", error);
     throw error;
   } finally {
     isInitializing = false;
@@ -115,25 +133,24 @@ export async function initializeDatabase(): Promise<Database> {
 // 同步版本的初始化（用于必须同步的场景）
 export function initializeDatabaseSync(): Database {
   if (db !== null) return db;
-  
+
   try {
     // 确保数据目录存在
-    const dbDir = path.join(app.getPath('userData'), 'database');
+    const dbDir = path.join(app.getPath("userData"), "database");
     if (!fsSync.existsSync(dbDir)) {
       fsSync.mkdirSync(dbDir, { recursive: true });
     }
-    
-    const dbPath = path.join(dbDir, 'dailyuse.db');
 
-    
+    const dbPath = path.join(dbDir, "dailyuse.db");
+
     // 创建/打开数据库连接
-    db = new BetterSqlite3(dbPath, { 
-      verbose: process.env.NODE_ENV !== 'production' ? console.log : undefined 
+    db = new BetterSqlite3(dbPath, {
+      verbose: process.env.NODE_ENV !== "production" ? console.log : undefined,
     });
-    
+
     // 启用 WAL 模式提高性能
-    db.pragma('journal_mode = WAL');
-    
+    db.pragma("journal_mode = WAL");
+
     // 创建表结构
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
@@ -147,11 +164,10 @@ export function initializeDatabaseSync(): Database {
         createdAt INTEGER NOT NULL
       )
     `);
-    
 
     return db;
   } catch (error) {
-    console.error('数据库同步初始化失败:', error);
+    console.error("数据库同步初始化失败:", error);
     throw error;
   }
 }
@@ -170,31 +186,30 @@ export async function closeDatabase(): Promise<void> {
     try {
       db.close();
       db = null;
-
     } catch (error) {
-      console.error('关闭数据库失败:', error);
+      console.error("关闭数据库失败:", error);
     }
   }
 }
 
 // 在应用退出时关闭数据库
-if (typeof process !== 'undefined') {
-  process.on('exit', () => {
+if (typeof process !== "undefined") {
+  process.on("exit", () => {
     if (db) {
       try {
         db.close();
       } catch (error) {
-        console.error('退出时关闭数据库失败:', error);
+        console.error("退出时关闭数据库失败:", error);
       }
     }
   });
-  
-  process.on('SIGINT', async () => {
+
+  process.on("SIGINT", async () => {
     await closeDatabase();
     process.exit(0);
   });
-  
-  process.on('SIGTERM', async () => {
+
+  process.on("SIGTERM", async () => {
     await closeDatabase();
     process.exit(0);
   });

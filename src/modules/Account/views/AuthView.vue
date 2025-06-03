@@ -29,17 +29,42 @@
     <div class="auth-view-container">
       <v-card class="mx-auto pa-4 auth-view-card">
         <v-tabs v-model="activeMode" align-tabs="center" color="primary">
-          <v-tab value="local">本地账户</v-tab>
-          <v-tab value="remote">远程账户</v-tab>
+          <v-tab value="local">
+            <template #prepend>
+              <v-icon>mdi-laptop</v-icon>
+            </template>
+            本地账户
+          </v-tab>
+          <v-tab value="remote">
+            <template #prepend>
+              <v-icon>mdi-cloud</v-icon>
+            </template>
+            远程账户
+          </v-tab>
         </v-tabs>
 
-        <v-window v-model="activeMode" class="mt-4">
+        <v-window v-model="activeMode">
           <!-- 本地账户面板 -->
           <v-window-item value="local">
             <v-tabs v-model="localTab" color="secondary">
-              <v-tab value="quick-login">快速登录</v-tab>
-              <v-tab value="login">账号密码登录</v-tab>
-              <v-tab value="register">注册</v-tab>
+              <v-tab value="quick-login">
+                <template #prepend>
+                  <v-icon>mdi-flash</v-icon>
+                </template>
+                快速登录
+              </v-tab>
+              <v-tab value="login">
+                <template #prepend>
+                  <v-icon>mdi-login</v-icon>
+                </template>
+                账号密码登录
+              </v-tab>
+              <v-tab value="register">
+                <template #prepend>
+                  <v-icon>mdi-account-plus</v-icon>
+                </template>
+                注册
+              </v-tab>
             </v-tabs>
 
             <v-window v-model="localTab" class="mt-4">
@@ -58,12 +83,27 @@
           <!-- 远程账户面板 -->
           <v-window-item value="remote">
             <v-tabs v-model="remoteTab" color="secondary">
-              <v-tab value="quick-login">快速登录</v-tab>
-              <v-tab value="login">登录</v-tab>
-              <v-tab value="register">注册</v-tab>
+              <v-tab value="quick-login">
+                <template #prepend>
+                  <v-icon>mdi-flash</v-icon>
+                </template>
+                快速登录
+              </v-tab>
+              <v-tab value="login">
+                <template #prepend>
+                  <v-icon>mdi-login</v-icon>
+                </template>
+                登录
+              </v-tab>
+              <v-tab value="register">
+                <template #prepend>
+                  <v-icon>mdi-account-plus</v-icon>
+                </template>
+                注册
+              </v-tab>
             </v-tabs>
 
-            <v-window v-model="remoteTab" class="mt-4">
+            <v-window v-model="remoteTab">
               <v-window-item value="quick-login">
                 <remote-quick-login />
               </v-window-item>
@@ -79,7 +119,6 @@
       </v-card>
     </div>
   </div>
-
 </template>
 
 <script setup lang="ts">

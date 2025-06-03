@@ -1,11 +1,11 @@
 <template>
-    <v-card class="pa-4" elevation="2">
-        <v-card-title class="text-center d-flex align-center justify-center">
+    <v-card class="pa-4 pt-0" elevation="2">
+        <!-- <v-card-title class="text-center d-flex align-center justify-center">
             <v-icon class="mr-2" color="primary">mdi-account-multiple</v-icon>
             本地快速登录
-        </v-card-title>
+        </v-card-title> -->
 
-        <v-card-text>
+        <v-card-text class="pt-0">
             <!-- 无可用账户时显示 -->
             <v-alert v-if="!loading && localUsers.length === 0" type="info" variant="tonal" class="mb-4">
                 <template v-slot:prepend>

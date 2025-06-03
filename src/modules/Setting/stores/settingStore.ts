@@ -1,7 +1,18 @@
-import { defineStore } from 'pinia'
-import { useThemeStore } from '@/modules/Theme/themeStroe'
-import { setLanguage } from '@/i18n'
-import { useUserStore } from '@/modules/Account/composables/useUserStore'
+import { defineStore } from 'pinia';
+import { useThemeStore } from '@/modules/Theme/themeStroe';
+import { useStoreSave } from '@/shared/composables/useStoreSave';
+import { setLanguage } from '@/i18n';
+let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;
+
+function getAutoSave() {
+  if (!autoSaveInstance) {
+    autoSaveInstance = useStoreSave({
+      onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
+      onError: (storeName, error) => console.error(`✗ ${storeName} 数据保存失败:`, error),
+    });
+  }
+  return autoSaveInstance;
+}
 
 export interface EditorSettings {
   fontSize: number
@@ -80,46 +91,52 @@ export const useSettingStore = defineStore('setting', {
   }),
 
   actions: {
-    // 初始化设置数据
-    async initialize() {
-      const { loadUserData } = useUserStore<AppSetting>('settings');
-      const data = await loadUserData();
-      if (data) {
-        this.$patch(data);
-        // 应用初始化的设置
-        this.setTheme(this.themeMode);
-        this.setLanguage(this.language);
-        await this.setAutoLaunch(this.autoLaunch);
-      }
-    },
-
-    // 保存设置状态
-    async saveState() {
-      const { saveUserData } = useUserStore<AppSetting>('settings');
-      try {
-        await saveUserData(this.$state);
-      } catch (error) {
-        console.error('保存设置失败:', error);
-      }
-    },
-    setTheme(themeMode: string) {
-      this.themeMode = themeMode
-      const themeStore = useThemeStore()
-      themeStore.setCurrentTheme(themeMode)
+    async setTheme(themeMode: string) {
+      this.themeMode = themeMode;
+      const themeStore = useThemeStore();
+      themeStore.setCurrentTheme(themeMode);
       
+      // 自动保存
+      const saveSuccess = await this.saveSettings();
+      if (!saveSuccess) {
+        console.error('主题设置保存失败');
+      }
     },
 
     async setAutoLaunch(autoLaunch: boolean) {
       try {
-        const result = await window.shared?.ipcRenderer.invoke('set-auto-launch', autoLaunch)
-        this.autoLaunch = result
+        const result = await window.shared?.ipcRenderer.invoke('set-auto-launch', autoLaunch);
+        this.autoLaunch = result;
+        
+        // 自动保存
+        const saveSuccess = await this.saveSettings();
+        if (!saveSuccess) {
+          console.error('自启动设置保存失败');
+        }
       } catch (error) {
-        console.error('设置开机自启动失败:', error)
+        console.error('设置开机自启动失败:', error);
       }
     },
 
-    updateEditorSettings(settings: Partial<EditorSettings>) {
-      this.editor = { ...this.editor, ...settings }
+    async updateEditorSettings(settings: Partial<EditorSettings>) {
+      this.editor = { ...this.editor, ...settings };
+      
+      // 自动保存
+      const saveSuccess = await this.saveSettings();
+      if (!saveSuccess) {
+        console.error('编辑器设置保存失败');
+      }
+    },
+
+    async setLanguage(locale: 'en-US' | 'zh-CN') {
+      this.language = locale;
+      setLanguage(locale);
+      
+      // 自动保存
+      const saveSuccess = await this.saveSettings();
+      if (!saveSuccess) {
+        console.error('语言设置保存失败');
+      }
     },
 
     getMonacoOptions() {
@@ -130,9 +147,21 @@ export const useSettingStore = defineStore('setting', {
       }
     },
 
-    setLanguage(locale: 'en-US' | 'zh-CN') {
-      this.language = locale
-      setLanguage(locale)
+    // 自动保存方法
+    async saveSettings(): Promise<boolean> {
+      const autoSave = getAutoSave();
+      return autoSave.debounceSave('settings', this.$state);
+    },
+
+    async saveSettingsImmediately(): Promise<boolean> {
+      const autoSave = getAutoSave();
+      return autoSave.saveImmediately('settings', this.$state);
+    },
+
+    // 检查保存状态
+    isSavingSettings(): boolean {
+      const autoSave = getAutoSave();
+      return autoSave.isSaving('settings');
     },
   },
 

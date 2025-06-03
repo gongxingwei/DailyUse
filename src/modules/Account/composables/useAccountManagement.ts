@@ -3,7 +3,8 @@ import { useRouter } from "vue-router";
 import { useAuthStore } from "../stores/authStore";
 import type { TUser } from "../types/account";
 // services
-import { userDataService } from "../services/userDataService";
+import { UserDataInitService } from "@/shared/services/userDataInitService";
+import { UserStoreService } from "@/shared/services/userStoreService";
 // composables
 import { useUserAuth } from "./useUserAuth";
 
@@ -58,7 +59,7 @@ export function useAccountManagement() {
       if (!user.value) {
         throw new Error("用户未登录或信息不完整");
       }
-      const result = await userDataService.exportUserData(user.value.id);
+      const result = await UserStoreService.export();
       if (result) {
         snackbar.message = "用户数据导出成功";
         snackbar.color = "success";
@@ -78,7 +79,7 @@ export function useAccountManagement() {
       if (!user.value) {
         throw new Error("用户未登录或信息不完整");
       }
-      const result = await userDataService.importUserData(user.value.id);
+      const result = await UserStoreService.import();
       if (result) {
 
       }
@@ -105,7 +106,7 @@ export function useAccountManagement() {
       if (!user.value) {
         throw new Error("用户未登录或信息不完整");
       }
-      const result = await userDataService.clearUserData(user.value.id);
+      const result = await UserStoreService.clear();
       if (result) {
 
       }
@@ -153,6 +154,7 @@ export function useAccountManagement() {
     } finally {
       loggingOut.value = false;
       dialog.show = false;
+      UserDataInitService.clearAllStoreData();
     }
   };
 
