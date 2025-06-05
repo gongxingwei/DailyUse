@@ -5,6 +5,7 @@ export type TUser = {
   avatar?: string;
   email?: string;
   phone?: string;
+  bio?: string;
   accountType?: string;
   onlineId?: string;
   createdAt: number;

@@ -1,19 +1,3 @@
-src/plugins/quickLauncher/
-├── renderer/
-│   ├── components/
-│   │   ├── QuickLauncherWindow.vue      # Main component (simplified)
-│   │   ├── CategoryList.vue             # Extract category list UI
-│   │   └── ShortcutGrid.vue             # Extract shortcut grid UI
-│   ├── composables/
-│   │   ├── useCategoryManagement.ts     # Category CRUD operations
-│   │   ├── useShortcutManagement.ts     # Shortcut CRUD operations
-│   │   ├── useContextMenu.ts            # Context menu logic
-│   │   └── useDialogManagement.ts       # Dialog handling
-│   └── utils/
-│       ├── fileHandlers.ts              # File operations (drop, select)
-│       ├── iconUtils.ts                 # Icon handling functions
-│       └── keyboardNavigation.ts        # Keyboard event handlers
-
 <template>
   <div class="quick-launcher">
     <v-card class="quick-launcher-card" elevation="0">
@@ -21,9 +5,6 @@ src/plugins/quickLauncher/
         <v-icon size="24" class="mr-2">mdi-rocket-launch</v-icon>
         {{ t('quickLauncher.title') }}
         <v-spacer></v-spacer>
-        <!-- <v-text-field v-model="searchQuery" prepend-inner-icon="mdi-magnify" :label="t('quickLauncher.search')"
-          variant="outlined" density="compact" hide-details class="ml-4" style="max-width: 300px" clearable
-          @keydown.enter="handleEnter" autofocus></v-text-field> -->
       </v-card-title>
 
       <v-divider></v-divider>
@@ -306,6 +287,7 @@ function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutIt
   /* Fixed height */
   cursor: pointer;
   transition: all 0.3s;
+  background-color: rgba(var(--v-theme-surface-bright), 0.19);
 }
 
 .shortcut-item:hover {

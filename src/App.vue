@@ -8,7 +8,7 @@
 import { onMounted } from 'vue'
 import { useThemeInit } from '@/modules/Theme/useThemeInit'
 import { initializeLanguage } from '@/i18n/index'
-import { useReminderInit } from '@/modules/Reminder/useReminderInit';   
+import { useReminderInit } from '@/modules/Reminder/composables/useReminderInit';   
 import { useTaskReminderInit } from './modules/Task/services/useTaskReminderInit';
 
 import { useAuthStore } from '@/modules/Account/stores/authStore';

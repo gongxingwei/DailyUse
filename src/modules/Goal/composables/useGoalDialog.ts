@@ -18,9 +18,9 @@ export function useGoalDialog() {
 
   const activeTab = ref(0);
   const tabs = [
-    { name: '基本信息', icon: 'mdi-information' },
-    { name: '关键结果', icon: 'mdi-target' },
-    { name: '动机与可行性', icon: 'mdi-lightbulb' }
+    { name: '基本信息', icon: 'mdi-information', color: 'info' },
+    { name: '关键结果', icon: 'mdi-target', color: 'warning' },
+    { name: '动机与可行性', icon: 'mdi-lightbulb', color: 'yellow' },
   ];
 
   // 预定义颜色
@@ -55,8 +55,8 @@ export function useGoalDialog() {
     showGoalDialog.value = true
   }
   // 保存目标(创建或编辑)
-  const saveGoal = () => {
-    const savedGoal = goalStore.saveTempGoal()
+  const saveGoal = async() => {
+    const savedGoal = await goalStore.saveTempGoal()
     if (savedGoal) {
       closeGoalDialog();
     }

@@ -1,53 +1,111 @@
 <template>
-  <div id="summary">
-    <header>
-      <h2>摘要</h2>
-      <div class="summary-header-content">
-        <div class="summary-header-info">
-          <div style="color: rgb(var(--v-theme-warning));" class="summary-header-today-layout">
-            <div class="summary-header-today-icon-layout">
-              <v-icon icon="mdi-list-box" size="20"/>
-              <span >{{ tasks.length }}</span>
-            </div>
-            <span>今日任务</span>
-          </div>
-          <div style="color: rgb(var(--v-theme-info));" class="summary-header-today-layout">
-            <div class="summary-header-today-icon-layout">
-              <v-icon icon="mdi-fencing" size="20"/>
-              <span>{{ goals.length }}</span>
-            </div>
-            <span>进行中目标</span>
-          </div>
-          <div style="color: rgb(var(--v-theme-success));" class="summary-header-today-layout">
-            <div class="summary-header-today-icon-layout">
-              <v-icon icon="mdi-record" size="20"/>
-              <span>{{ todayRecordCount }}</span>
-            </div>
-            <span>今日添加记录</span>
+  <div class="summary-page">
+    <!-- 页面头部 -->
+    <header class="summary-header">
+      <!-- 标题区域 -->
+      <div class="header-title">
+        <div class="d-flex align-center">
+          <v-avatar size="48" color="primary" variant="tonal" class="mr-4">
+            <v-icon size="24">mdi-view-dashboard</v-icon>
+          </v-avatar>
+          <div>
+            <h1 class="text-h4 font-weight-bold text-primary mb-1">摘要面板</h1>
+            <p class="text-subtitle-1 text-medium-emphasis mb-0">
+              {{ getCurrentDateString() }}
+            </p>
           </div>
         </div>
-        <div class="motivate-card">
+      </div>
+
+      <!-- 统计卡片和激励卡片 -->
+      <div class="summary-header-content">
+        <!-- 统计信息卡片 -->
+        <v-card class="stats-card" elevation="2">
+          <v-card-text class="pa-4">
+            <div class="stats-grid">
+              <!-- 今日任务 -->
+              <div class="stat-item">
+                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-warning), 0.1);">
+                  <v-icon icon="mdi-list-box" size="24" color="warning" />
+                </div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ tasks.length }}</div>
+                  <div class="stat-label">今日任务</div>
+                </div>
+              </div>
+
+              <!-- 进行中目标 -->
+              <div class="stat-item">
+                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-info), 0.1);">
+                  <v-icon icon="mdi-target" size="24" color="info" />
+                </div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ goals.length }}</div>
+                  <div class="stat-label">进行中目标</div>
+                </div>
+              </div>
+
+              <!-- 今日记录 -->
+              <div class="stat-item">
+                <div class="stat-icon-wrapper" style="background: rgba(var(--v-theme-success), 0.1);">
+                  <v-icon icon="mdi-chart-line" size="24" color="success" />
+                </div>
+                <div class="stat-info">
+                  <div class="stat-number">{{ todayRecordCount }}</div>
+                  <div class="stat-label">今日记录</div>
+                </div>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+
+        <!-- 激励卡片 -->
+        <div class="motivate-section">
           <MotivateCard />
         </div>
       </div>
     </header>
-    <main>
-      <div class="task-container">
-        <TaskInSummaryCard />
-      </div>
-      <div class="goals-container">
-        <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" />
-      </div>
-      <div class="repository-container">
-        <RecentRepoCard />
-      </div>
-      <div class="gantt-chart">
-        <GoalGanttChart />
-      </div>
-    </main>
 
+    <!-- 主要内容区域 -->
+    <main class="summary-main">
+      <!-- 今日任务区域 -->
+      <section class="content-section">
+        <div class="section-header">
+          <h2 class="section-title">任务</h2>
+          <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-plus">
+            添加任务
+          </v-btn>
+        </div>
+        <TaskInSummaryCard />
+      </section>
+
+      <!-- 目标概览区域 -->
+      <section class="content-section">
+        <div class="section-header">
+          <h2 class="section-title">目标概览</h2>
+          <v-btn color="primary" variant="text" size="small" append-icon="mdi-arrow-right">
+            查看全部
+          </v-btn>
+        </div>
+
+        <div class="goals-grid">
+          <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" class="goal-card-item" />
+        </div>
+      </section>
+
+      <!-- 项目仓库区域 -->
+      <section class="content-section">
+        <RecentRepoCard />
+      </section>
+
+      <!-- 时间线图表区域 -->
+      <section>
+        <GoalGanttChart />
+      </section>
+    </main>
   </div>
 </template>
+
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
@@ -61,84 +119,255 @@ import RecentRepoCard from '@/modules/Repository/components/RecentRepoCard.vue';
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
+
 const goals = computed(() => {
   return goalStore.getInProgressGoals;
 });
+
 const tasks = computed(() => {
   let tasks = taskStore.getTodayTaskInstances;
   return tasks;
 });
+
 const todayRecordCount = computed(() => {
   return goalStore.getTodayRecordCount;
 });
+
+const getCurrentDateString = () => {
+  const today = new Date();
+  return today.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long'
+  });
+};
 </script>
+
 <style scoped>
-#summary {
+.summary-page {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1rem 150px;
-  height: 100%;
+  gap: 2rem;
+  padding: 2rem;
   width: 100%;
+  background: linear-gradient(135deg,
+      rgba(var(--v-theme-primary), 0.02) 0%,
+      rgba(var(--v-theme-surface), 0.91) 100%);
 }
 
-/* header最上方样式 */
+/* 头部样式 */
+.summary-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  flex-shrink: 0;
+}
+
+.header-title {
+  background: linear-gradient(135deg,
+      rgba(var(--v-theme-primary), 0.05) 0%,
+      rgba(var(--v-theme-secondary), 0.05) 100%);
+  border-radius: 20px;
+  padding: 1.5rem 2rem;
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+}
+
 .summary-header-content {
-  display: flex;
-  gap: 1rem;
-  width: 100%;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1.5rem;
+  align-items: stretch;
 }
 
-.summary-header-info {
+/* 统计卡片样式 */
+.stats-card {
+  border-radius: 16px;
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+  background: rgb(var(--v-theme-surface));
+  min-width: fit-content;
+}
+
+.stats-grid {
   display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
+  gap: 2rem;
+  align-items: center;
+}
+
+.stat-item {
+  display: flex;
   align-items: center;
   gap: 1rem;
-  padding: 0 1.5rem;
-  background-color: rgb(var(--v-theme-surface));
-  border-radius: 12px;
-  min-width: fit-content;
-  border-radius: 50px;
-  box-shadow: 5px 5px 10px rgb(var(--v-theme-surface)),
-    -5px -5px 10px rgb(var(--v-theme-background));
+  padding: 0.5rem;
 }
 
-.summary-header-today-layout {
+.stat-icon-wrapper {
+  border-radius: 12px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-info {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  height: auto;
-  width: auto;
-  font-size: 0.8rem;
-
+  align-items: flex-start;
 }
 
-.summary-header-today-icon-layout {
-  display: flex;
-  flex-direction: row;
-  justify-content: flex-start;
-  align-items: center;
-  flex: 1;
-
-  width: 100%;
+.stat-number {
   font-size: 1.5rem;
-  gap: 0.25rem;
+  font-weight: 700;
+  line-height: 1;
+  color: rgb(var(--v-theme-on-surface));
 }
 
-.motivate-card {
+.stat-label {
+  font-size: 0.8rem;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  white-space: nowrap;
+}
+
+/* 激励卡片样式 */
+.motivate-section {
   flex: 1;
   min-width: 0;
+}
+
+/* 主要内容样式 */
+.summary-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.content-section {
+  background: rgb(var(--v-theme-surface));
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+  width: 100%;
+  overflow: visible;
+}
+
+.content-section:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.content-section.full-width {
+  grid-column: 1 / -1;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid rgba(var(--v-theme-primary), 0.1);
+}
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: rgb(var(--v-theme-on-surface));
   margin: 0;
-  overflow: auto;
 }
 
-.task-container, .goals-container, .repository-container, .gantt-chart { 
-  box-shadow: 5px 5px 10px rgb(var(--v-theme-surface)),
-    -5px -5px 10px rgb(var(--v-theme-background));
+.goals-grid{
+  display: grid;
+  grid-template-rows: repeat(auto-fill, minmax(300px, 1fr));
 }
 
-.motivate-card{
-  margin-bottom: 1rem;
+
+.goal-card-item {
+  flex: 0 0 400px;
+  /* 固定宽度 400px，不会收缩 */
+  transition: all 0.3s ease;
+  overflow: visible;
+}
+
+.goal-card-item:hover {
+  transform: scale(1.02);
+}
+
+/* 响应式设计 */
+@media (max-width: 1400px) {
+  .summary-page {
+    padding: 1.5rem;
+  }
+
+  .goal-card-item {
+    flex: 0 0 350px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .summary-header-content {
+    grid-template-columns: 1fr;
+  }
+
+  .stats-grid {
+    justify-content: space-around;
+  }
+
+  .goal-card-item {
+    flex: 0 0 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .summary-page {
+    padding: 1rem;
+    gap: 1.5rem;
+  }
+
+  .header-title {
+    padding: 1rem 1.5rem;
+  }
+
+  .stats-grid {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .stat-item {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .content-section {
+    padding: 1rem;
+  }
+
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .goal-card-item {
+    flex: 0 0 280px;
+  }
+}
+
+@media (max-width: 600px) {
+  .summary-header-content {
+    gap: 1rem;
+  }
+
+  .section-header {
+    margin-bottom: 1rem;
+  }
+
+  .goal-card-item {
+    flex: 0 0 260px;
+  }
 }
 </style>

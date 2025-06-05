@@ -18,14 +18,11 @@
                 <span style="font-weight: 500;">{{ goal.title }}</span>
                 <span style="font-weight: 300;">{{ goal.startTime }} 到 {{ goal.endTime }}</span>
             </div>
-
             <div></div>
-
-
         </header>
+
         <!-- 目标基本相关信息 -->
         <section class="goal-analysis">
-
             <div class="goal-review-card-container">
                 <!-- 目标信息卡片 -->
                 <div class="goal-review-card goal-info">
@@ -70,42 +67,76 @@
                     </div>
                 </div>
             </div>
-
         </section>
+
         <!-- Self Diagnosis -->
         <section class="self-diagnosis">
-            <h2>自我诊断</h2>
-            <div class="diagnosis-grid">
-                <div class="diagnosis-card">
-                    <h3>主要成就</h3>
-                    <textarea v-model="currentReview.selfDiagnosis.achievements" placeholder="列出这段时间的主要成就..."
-                        rows="4"></textarea>
-                </div>
-                <div class="diagnosis-card">
-                    <h3>遇到的挑战</h3>
-                    <textarea v-model="currentReview.selfDiagnosis.challenges" placeholder="记录遇到的主要挑战..."
-                        rows="4"></textarea>
-                </div>
-                <div class="diagnosis-card">
-                    <h3>经验总结</h3>
-                    <textarea v-model="currentReview.selfDiagnosis.learnings" placeholder="总结经验教训..."
-                        rows="4"></textarea>
-                </div>
-                <div class="diagnosis-card">
-                    <h3>下一步计划</h3>
-                    <textarea v-model="currentReview.selfDiagnosis.nextSteps" placeholder="制定下一步计划..."
-                        rows="4"></textarea>
+            <div class="diagnosis-container">
+                <h2 class="diagnosis-title">自我诊断</h2>
+                <div class="diagnosis-grid">
+                    <div class="diagnosis-card">
+                        <div class="diagnosis-card-header">
+                            <v-icon class="diagnosis-icon" color="success">mdi-trophy</v-icon>
+                            <h3>主要成就</h3>
+                        </div>
+                        <div class="diagnosis-card-content">
+                            <textarea 
+                                v-model="currentReview.selfDiagnosis.achievements" 
+                                placeholder="列出这段时间的主要成就..."
+                                class="diagnosis-textarea"
+                            ></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="diagnosis-card">
+                        <div class="diagnosis-card-header">
+                            <v-icon class="diagnosis-icon" color="warning">mdi-alert-circle</v-icon>
+                            <h3>遇到的挑战</h3>
+                        </div>
+                        <div class="diagnosis-card-content">
+                            <textarea 
+                                v-model="currentReview.selfDiagnosis.challenges" 
+                                placeholder="记录遇到的主要挑战..."
+                                class="diagnosis-textarea"
+                            ></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="diagnosis-card">
+                        <div class="diagnosis-card-header">
+                            <v-icon class="diagnosis-icon" color="info">mdi-lightbulb</v-icon>
+                            <h3>经验总结</h3>
+                        </div>
+                        <div class="diagnosis-card-content">
+                            <textarea 
+                                v-model="currentReview.selfDiagnosis.learnings" 
+                                placeholder="总结经验教训..."
+                                class="diagnosis-textarea"
+                            ></textarea>
+                        </div>
+                    </div>
+                    
+                    <div class="diagnosis-card">
+                        <div class="diagnosis-card-header">
+                            <v-icon class="diagnosis-icon" color="primary">mdi-arrow-right-circle</v-icon>
+                            <h3>下一步计划</h3>
+                        </div>
+                        <div class="diagnosis-card-content">
+                            <textarea 
+                                v-model="currentReview.selfDiagnosis.nextSteps" 
+                                placeholder="制定下一步计划..."
+                                class="diagnosis-textarea"
+                            ></textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
+
         <!-- 按钮 -->
         <section class="goal-review-actions">
             <div class="goal-review-button-group">
-
                 <button class="inline-button bg-blue" @click="saveReview()">完成复盘</button>
-
-                <!-- <button class="inline-button" @click="goalReviewStore.submitReview(currentReview)">删除</button> -->
-
             </div>
         </section>
     </div>
@@ -334,71 +365,169 @@ onMounted(() => {
     }
 }
 
-/* Update the diagnosis-card textarea styles */
-.diagnosis-card textarea {
-    width: 100%;
-    height: 150px;
-    padding: 1rem;
-    background: var(--v-theme-surface);
-    border: 1px solid rgba(var(--v-theme-on-surface), 0.12);
-    border-radius: 8px;
-    resize: none;
-    font-size: 1rem;
-    line-height: 1.6;
-    color: rgb(var(--v-theme-on-surface));
-    transition: all 0.2s ease;
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+/* 自我诊断样式 */
+.self-diagnosis {
+    background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.95), rgba(var(--v-theme-background), 0.98));
+    border-radius: 16px;
+    margin: 2rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
-.diagnosis-card textarea:hover {
-    border-color: rgba(var(--v-theme-primary), 0.5);
+.diagnosis-container {
+    padding: 2.5rem;
+}
+
+.diagnosis-title {
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 700;
+    color: rgb(var(--v-theme-on-surface));
+    margin-bottom: 2rem;
+    position: relative;
+}
+
+.diagnosis-title::after {
+    content: '';
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, rgb(var(--v-theme-primary)), rgb(var(--v-theme-secondary)));
+    border-radius: 2px;
+}
+
+.diagnosis-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.diagnosis-card {
+    background: rgb(var(--v-theme-surface));
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(var(--v-theme-outline), 0.12);
+    overflow: hidden;
+}
+
+.diagnosis-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+    border-color: rgba(var(--v-theme-primary), 0.3);
+}
+
+.diagnosis-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05), rgba(var(--v-theme-secondary), 0.05));
+    border-bottom: 1px solid rgba(var(--v-theme-outline), 0.08);
+}
+
+.diagnosis-icon {
+    font-size: 1.5rem;
+}
+
+.diagnosis-card-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: rgb(var(--v-theme-on-surface));
+}
+
+.diagnosis-card-content {
+    padding: 1.5rem;
+}
+
+.diagnosis-textarea {
+    width: 100%;
+    height: 140px;
+    padding: 1rem;
+    background: rgba(var(--v-theme-surface), 0.8);
+    border: 2px solid rgba(var(--v-theme-outline), 0.15);
+    border-radius: 8px;
+    resize: none;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: rgb(var(--v-theme-on-surface));
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+.diagnosis-textarea:hover {
+    border-color: rgba(var(--v-theme-primary), 0.4);
     background: rgba(var(--v-theme-surface), 0.95);
 }
 
-.diagnosis-card textarea:focus {
+.diagnosis-textarea:focus {
     outline: none;
     border-color: rgb(var(--v-theme-primary));
     box-shadow: 0 0 0 3px rgba(var(--v-theme-primary), 0.1);
     background: rgb(var(--v-theme-surface));
 }
 
-.diagnosis-card textarea::placeholder {
-    color: rgba(var(--v-theme-on-surface), 0.38);
-    font-size: 0.95rem;
+.diagnosis-textarea::placeholder {
+    color: rgba(var(--v-theme-on-surface), 0.5);
+    font-size: 0.9rem;
 }
 
-/* Optional: Add a scrollbar styling */
-.diagnosis-card textarea::-webkit-scrollbar {
-    width: 8px;
+/* 滚动条样式 */
+.diagnosis-textarea::-webkit-scrollbar {
+    width: 6px;
 }
 
-.diagnosis-card textarea::-webkit-scrollbar-track {
-    background: rgba(var(--v-theme-on-surface), 0.05);
-    border-radius: 4px;
+.diagnosis-textarea::-webkit-scrollbar-track {
+    background: rgba(var(--v-theme-outline), 0.05);
+    border-radius: 3px;
 }
 
-.diagnosis-card textarea::-webkit-scrollbar-thumb {
-    background: rgba(var(--v-theme-primary), 0.2);
-    border-radius: 4px;
+.diagnosis-textarea::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-primary), 0.3);
+    border-radius: 3px;
     transition: background 0.2s ease;
 }
 
-.diagnosis-card textarea::-webkit-scrollbar-thumb:hover {
-    background: rgba(var(--v-theme-primary), 0.4);
+.diagnosis-textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--v-theme-primary), 0.5);
 }
 
 /* 响应式布局 */
+@media (max-width: 1024px) {
+    .diagnosis-container {
+        padding: 2rem;
+    }
+    
+    .diagnosis-grid {
+        gap: 1.25rem;
+    }
+}
+
 @media (max-width: 768px) {
+    .diagnosis-container {
+        padding: 1.5rem;
+    }
+    
     .diagnosis-grid {
         grid-template-columns: 1fr;
+        gap: 1rem;
     }
-
-    .diagnosis-card {
-        padding: 1rem;
+    
+    .diagnosis-card-content {
+        padding: 1.25rem;
     }
-
-    .diagnosis-card textarea {
-        min-height: 100px;
+    
+    .diagnosis-textarea {
+        height: 120px;
+    }
+    
+    .diagnosis-title {
+        font-size: 1.75rem;
     }
 }
 

@@ -2773,6 +2773,19 @@ function registerFileSystemHandlers() {
   ipcMain.handle("open-file-explorer", async () => {
     shell.openPath(sysPath__default.join(__dirname, "..", "..", "..", "src"));
   });
+  ipcMain.handle("open-file-in-explorer", async (_event, filePath) => {
+    try {
+      const fileExists = await fs$1.access(filePath).then(() => true).catch(() => false);
+      if (fileExists) {
+        shell.showItemInFolder(filePath);
+      } else {
+        throw new Error(`File does not exist: ${filePath}`);
+      }
+    } catch (error) {
+      console.error("Error opening file in explorer:", error);
+      throw error;
+    }
+  });
   ipcMain.handle("read-folder", async (_, folderPath) => {
     try {
       const files = await fs$1.readdir(folderPath, { withFileTypes: true });

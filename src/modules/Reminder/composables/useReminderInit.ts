@@ -1,4 +1,4 @@
-import { useReminderStore } from '@/modules/Reminder/reminderStore';
+import { useReminderStore } from '@/modules/Reminder/stores/reminderStore';
 import { scheduleService } from '@/shared/utils/schedule/main';
 import { notification } from '@/shared/utils/notification/notification';
 import { onMounted, onUnmounted } from 'vue';

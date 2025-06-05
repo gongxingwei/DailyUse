@@ -72,7 +72,7 @@ const routes: RouteRecordRaw[] = [
             }, {
                 path: '/reminder',
                 name: 'reminder',
-                component: () => import('@/modules/Reminder/Reminder.vue')
+                component: () => import('@/modules/Reminder/views/Reminder.vue')
             },
             {
                 path: '/repository/:title',
@@ -82,7 +82,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/setting',
                 name: 'setting',
-                component: () => import('@/modules/Setting/Setting.vue')
+                component: () => import('@/modules/Setting/views/Setting.vue')
             },
             {
                 path: '/test',

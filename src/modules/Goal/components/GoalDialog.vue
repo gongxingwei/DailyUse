@@ -1,24 +1,28 @@
 <!-- filepath: /D:/myPrograms/DailyUse-front/src/components/AddGoalModal.vue -->
 <template>
-  <v-dialog v-model="props.visible" height="500" width="800">
-    <v-card>
+  <v-dialog v-model="props.visible" height="550" width="800" class="goal-dialog" persistent>
+    <v-card :style="{ backgroundColor: 'rgb(var(--v-theme-surface))' }" class="px-3 pb-2">
       <!-- 对话框头部 -->
-      <v-card-title class="d-flex justify-space-between pa-4">
-        <v-btn variant="text" @click="handleCancel">取消</v-btn>
+      <v-card-title class="d-flex justify-space-between pa-4 flex-shrink-0">
+        <v-btn variant="elevated" color="red-darken-3" @click="handleCancel">取消</v-btn>
         <span class="text-h5">编辑目标</span>
         <v-btn color="primary" @click="handleComplete" :disabled="!isValid">完成</v-btn>
       </v-card-title>
 
       <!-- Tabs -->
-      <v-tabs v-model="activeTab" grow>
-        <v-tab v-for="(tab, index) in tabs" :key="index" :value="index">
-          <v-icon :icon="tab.icon" class="mr-2" />
+      <v-tabs v-model="activeTab" class="d-flex justify-center align-center flex-shrink-0 mb-2 pa-2"
+        :style="{ backgroundColor: 'rgb(var(--v-theme-surface))' }">
+
+        <v-tab v-for="(tab, index) in tabs" :key="index" :value="index"
+          class="flex-grow-1"
+          :style="activeTab === index ? { backgroundColor: 'rgba(var(--v-theme-surface-light), 0.3)' } : {}">
+          <v-icon :icon="tab.icon" :color="tab.color" class="mr-2" />
           {{ tab.name }}
         </v-tab>
       </v-tabs>
 
-      <v-card-text>
-        <v-window v-model="activeTab">
+      <v-card-text :style="{ backgroundColor: 'rgba(var(--v-theme-surface-light), 0.3)' }" class="pa-4 flex-grow-1">
+        <v-window v-model="activeTab" class="h-100">
           <!-- 基本信息 -->
           <v-window-item :value="0">
             <v-form @submit.prevent>
@@ -31,7 +35,7 @@
                 <v-col cols="1">
                   <v-menu>
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" :style="{ backgroundColor: tempGoal.color }" class="color-btn" icon>
+                      <v-btn v-bind="props" :style="{ backgroundColor: tempGoal.color }" class="color-btn mt-2" icon>
                         <v-icon color="white">mdi-palette</v-icon>
                       </v-btn>
                     </template>
@@ -102,8 +106,47 @@
 
           <!-- Motivation & Feasibility Tab -->
           <v-window-item :value="2">
-            <v-textarea v-model="tempGoal.motive" label="动机描述" rows="4" class="mb-4" />
-            <v-textarea v-model="tempGoal.feasibility" label="可行性分析" rows="4" />
+            <div class="motivation-section">
+              <v-row>
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="h-100">
+                    <v-card-title class="pb-2">
+                      <v-icon color="primary" class="mr-2">mdi-lighthouse</v-icon>
+                      目标动机
+                    </v-card-title>
+                    <v-card-text>
+                      <v-textarea
+                        v-model="tempGoal.motive"
+                        placeholder="为什么要实现这个目标？它对你意味着什么？"
+                        variant="outlined"
+                        rows="6"
+                        density="comfortable"
+                        hide-details
+                      />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+                
+                <v-col cols="12" md="6">
+                  <v-card variant="outlined" class="h-100">
+                    <v-card-title class="pb-2">
+                      <v-icon color="success" class="mr-2">mdi-lightbulb</v-icon>
+                      可行性分析
+                    </v-card-title>
+                    <v-card-text>
+                      <v-textarea
+                        v-model="tempGoal.feasibility"
+                        placeholder="分析实现这个目标的可行性、所需资源和可能的挑战"
+                        variant="outlined"
+                        rows="6"
+                        density="comfortable"
+                        hide-details
+                      />
+                    </v-card-text>
+                  </v-card>
+                </v-col>
+              </v-row>
+            </div>
           </v-window-item>
         </v-window>
       </v-card-text>
@@ -115,6 +158,7 @@
 </template>
 
 <script setup lang="ts">
+import { he } from 'vuetify/locale';
 import KeyResultDialog from './KeyResultDialog.vue';
 import { useGoalDialog } from '@/modules/Goal/composables/useGoalDialog';
 
@@ -179,5 +223,14 @@ const handleComplete = () => {
 
 .color-option:hover {
   transform: scale(1.1);
+}
+
+.motivation-section .v-card {
+  border-radius: 16px;
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+}
+
+.motivation-section .v-textarea {
+  border-radius: 12px;
 }
 </style>

@@ -12,6 +12,26 @@ export function registerFileSystemHandlers() {
     })
 
     /**
+     * 在资源管理器中打开文件
+     */
+    ipcMain.handle('open-file-in-explorer', async (_event, filePath: string) => {
+        try {
+            const fileExists = await fs.access(filePath)
+                .then(() => true)
+                .catch(() => false);
+
+            if (fileExists) {
+                shell.showItemInFolder(filePath);
+            } else {
+                throw new Error(`File does not exist: ${filePath}`);
+            }
+        } catch (error) {
+            console.error('Error opening file in explorer:', error);
+            throw error;
+        }
+    });
+
+    /**
      * 打开文件
      */
 

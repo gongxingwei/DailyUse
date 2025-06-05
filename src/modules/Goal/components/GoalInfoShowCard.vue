@@ -1,146 +1,297 @@
 <template>
-    <div class="goal-card" :style="{ '--goal-color': goal.color || '#FF5733' }" @click="navigateToGoalInfo">
-        <!-- Header: 标题、进度条 -->
-        <div class="goal-card-header">
-            <h3 class="goal-title">{{ goal.title }}</h3>
-            <div class="today-progress" v-if="todayProgress > 0">
-                <v-icon icon="mdi-trending-up" />
-                <span>+{{ todayProgress }}%</span>
-            </div>
+  <v-card 
+    class="goal-info-card"
+    :style="{ '--goal-color': goal.color || '#FF5733' }"
+    elevation="2"
+    @click="navigateToGoalInfo"
+  >
+    <!-- 卡片头部 -->
+    <v-card-title class="goal-card-header pa-4 pb-2">
+      <div class="d-flex align-center justify-space-between">
+        <div class="goal-title-section">
+          <h3 class="goal-title text-h6 font-weight-bold mb-1">{{ goal.title }}</h3>
+          <v-chip
+            :color="goal.color || 'primary'"
+            variant="tonal"
+            size="x-small"
+            prepend-icon="mdi-target"
+            class="goal-status-chip"
+          >
+            进行中
+          </v-chip>
         </div>
+        
+        <!-- 今日进度提示 -->
+        <div v-if="todayProgress > 0" class="today-progress-badge">
+          <v-chip
+            color="success"
+            variant="elevated"
+            size="x-small"
+            prepend-icon="mdi-trending-up"
+            class="today-progress-chip"
+          >
+            +{{ todayProgress }}%
+          </v-chip>
+        </div>
+      </div>
+    </v-card-title>
 
-        <div class="progress-bar">
-            <div class="progress-track">
-                <div class="progress-fill" :style="{ width: `${goalProgress}%` }"></div>
-            </div>
-            <span class="progress-text">{{ goalProgress }}%</span>
+    <!-- 进度展示区域 -->
+    <v-card-text class="pa-4 pt-1">
+      <!-- 主进度条 -->
+      <div class="progress-section mb-3">
+        <div class="d-flex align-center justify-space-between mb-1">
+          <span class="text-caption text-medium-emphasis">完成度</span>
+          <span class="text-subtitle-2 font-weight-bold" :style="{ color: goal.color }">
+            {{ goalProgress }}%
+          </span>
         </div>
-        <!-- 关键结果 -->
-        <div class="key-results-container">
-            <div v-for="keyResult in goal.keyResults" :key="keyResult.id">
-                <KeyResultCard :keyResult="keyResult" :goalId="goal.id" />
-            </div>
-        </div>
+        
+        <v-progress-linear
+          :model-value="goalProgress"
+          :color="goal.color || 'primary'"
+          height="8"
+          rounded
+          class="goal-progress-bar"
+        >
+          <template v-slot:default="{ value }">
+            <div class="progress-glow" :style="{ width: `${value}%` }"></div>
+          </template>
+        </v-progress-linear>
+      </div>
 
-    </div>
+      <!-- 关键结果水平滚动区域 -->
+      <div class="key-results-section">
+        <div class="d-flex align-center mb-2">
+          <v-icon :color="goal.color" size="16" class="mr-1">mdi-target</v-icon>
+          <span class="text-subtitle-2 font-weight-medium">关键结果</span>
+          <v-spacer />
+          <v-chip
+            color="surface-variant"
+            variant="outlined"
+            size="x-small"
+            class="results-count"
+          >
+            {{ goal.keyResults?.length || 0 }}
+          </v-chip>
+        </div>
+        
+        <!-- 水平滚动的关键结果容器 -->
+        <div class="key-results-scroll-container">
+          <div class="key-results-horizontal">
+            <KeyResultCard 
+              v-for="keyResult in goal.keyResults" 
+              :key="keyResult.id"
+              :keyResult="keyResult" 
+              :goalId="goal.id"
+              class="key-result-item"
+            />
+          </div>
+        </div>
+      </div>
+    </v-card-text>
+  </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { IGoal } from '../types/goal';
-// vue-router
 import { useRouter } from 'vue-router';
-// stores
+import type { IGoal } from '../types/goal';
 import { useGoalStore } from '../stores/goalStore';
-// 组件
-
 import KeyResultCard from './KeyResultCard.vue';
-// composables
-
 
 const props = defineProps<{
-    goal: IGoal;
+  goal: IGoal;
 }>();
 
 const router = useRouter();
-const navigateToGoalInfo = () => {
-    router.push({ name: 'goal-info', params: { goalId: props.goal.id } });
-};
-
 const goalStore = useGoalStore();
 
-// 得到目标进度
 const goalProgress = computed(() => {
-    return goalStore.getGoalProgress(props.goal.id) || 0;
+  return goalStore.getGoalProgress(props.goal.id) || 0;
 });
 
 const todayProgress = computed(() => {
-    return goalStore.getTodayGoalProgress(props.goal.id) || 0;
+  return goalStore.getTodayGoalProgress(props.goal.id) || 0;
 });
+
+const navigateToGoalInfo = () => {
+  router.push({ name: 'goal-info', params: { goalId: props.goal.id } });
+};
 </script>
 
 <style scoped>
-.goal-card {
-    background-color: rgb(41, 41, 41);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+.goal-info-card {
+  border-radius: 16px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgb(var(--v-theme-surface));
+  border: 1px solid rgba(var(--v-theme-outline), 0.12);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.goal-info-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--goal-color), transparent);
+  opacity: 0.8;
+}
+
+.goal-info-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+  border-color: var(--goal-color);
 }
 
 .goal-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+  background: linear-gradient(135deg, rgba(var(--goal-color), 0.04) 0%, rgba(var(--goal-color), 0.01) 100%);
+  flex-shrink: 0;
 }
 
 .goal-title {
-    margin: 0;
-    font-size: 1.2rem;
-    color: white;
+  color: rgb(var(--v-theme-on-surface));
+  margin: 0;
+  line-height: 1.2;
+  font-size: 1.1rem;
 }
 
-.today-progress {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    color: #4CAF50;
-    font-weight: 500;
+.goal-status-chip {
+  border-radius: 8px;
 }
 
-.progress-bar {
-    margin-bottom: 20px;
-    display: flex;
-    align-items: center;
+.today-progress-badge {
+  animation: pulse 2s infinite;
 }
 
-.progress-track {
-    height: 8px;
-    background-color: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-    flex: 1;
+.today-progress-chip {
+  box-shadow: 0 2px 8px rgba(var(--v-theme-success), 0.25);
 }
 
-.progress-fill {
-    height: 100%;
-    background-color: var(--goal-color);
-    border-radius: 4px;
-    transition: width 0.3s ease;
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
 }
 
-.progress-text {
-    font-size: 0.9rem;
-    color: #ccc;
-    margin-top: 4px;
-    display: block;
+.progress-section {
+  position: relative;
 }
 
-/* kr 网格布局 */
-.key-results-container {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-top: 16px;
+.goal-progress-bar {
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+}
+
+.progress-glow {
+  height: 100%;
+  background: linear-gradient(90deg, var(--goal-color), var(--goal-color)88);
+  box-shadow: 0 0 6px rgba(var(--goal-color), 0.4);
+  border-radius: inherit;
+}
+
+.key-results-section {
+  background: rgba(var(--v-theme-surface-variant), 0.15);
+  border-radius: 12px;
+  padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* 水平滚动容器 */
+.key-results-scroll-container {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.key-results-horizontal {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(240px, 1fr));
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 100%;
+}
+
+/* 自定义滚动条样式 */
+.key-results-horizontal::-webkit-scrollbar {
+  height: 4px;
+}
+
+.key-results-horizontal::-webkit-scrollbar-track {
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 2px;
+}
+
+.key-results-horizontal::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-outline), 0.4);
+  border-radius: 2px;
+  transition: background 0.2s ease;
+}
+
+.key-results-horizontal::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-outline), 0.6);
+}
+
+.key-result-item {
+  flex: 0 0 200px; /* 固定最小宽度为 200px，不会收缩 */
+  transition: all 0.2s ease;
+  height: 100%;
+}
+
+.key-result-item:hover {
+  transform: scale(1.02);
+}
+
+.results-count {
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 /* 响应式布局 */
-@media (max-width: 1200px) {
-    .key-results-container {
-        grid-template-columns: repeat(3, 1fr);
-    }
-}
-
-@media (max-width: 960px) {
-    .key-results-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
+@media (max-width: 768px) {
+  .goal-info-card {
+    height: 180px;
+  }
+  
+  .goal-card-header {
+    padding: 12px !important;
+  }
+  
+  .goal-info-card .v-card-text {
+    padding: 12px !important;
+  }
+  
+  .key-result-item {
+    flex: 0 0 180px; /* 移动端稍微减小宽度 */
+  }
 }
 
 @media (max-width: 600px) {
-    .key-results-container {
-        grid-template-columns: 1fr;
-    }
+  .goal-card-header .d-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .today-progress-badge {
+    align-self: flex-end;
+  }
+  
+  .goal-info-card {
+    height: 160px;
+  }
+  
+  .key-result-item {
+    flex: 0 0 160px; /* 小屏幕进一步减小 */
+  }
 }
 </style>

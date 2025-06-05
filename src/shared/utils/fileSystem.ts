@@ -8,6 +8,13 @@ export const fileSystem = {
   },
 
   /**
+   * 在资源管理器中打开文件
+   */
+  openFileInExplorer(filePath: string) {
+    return window.shared.ipcRenderer.invoke('open-file-in-explorer', filePath);
+  },
+  
+  /**
    * 读取文件夹内容
    */
   readFolder(path: string) {

@@ -1,114 +1,221 @@
 <template>
-    <div class="gantt-chart">
-        <!-- Date Scale -->
-        <div class="date-scale">
-            <div class="month-row">
-                <div v-for="month in months" :key="month.name" 
-                     :style="{ width: `${month.daysCount * dayWidth}px` }"
-                     class="month-label">
-                    {{ month.name }}月
-                </div>
+    <v-card class="gantt-chart-card" elevation="2">
+      <!-- 头部 -->
+      <v-card-title class="gantt-header pa-4">
+        <div class="d-flex align-center justify-space-between w-100">
+          <div class="d-flex align-center">
+            <v-icon color="primary" size="24" class="mr-3">mdi-chart-gantt</v-icon>
+            <div>
+              <h3 class="text-h6 font-weight-bold mb-0">目标时间线</h3>
+              <span class="text-caption text-medium-emphasis">
+                {{ sortedGoals.length }} 个进行中的目标
+              </span>
             </div>
-            <div class="days-row">
-                <div v-for="day in days" :key="day.date" 
-                     :class="{ 'today': day.isToday }"
-                     class="day-label"
-                     :style="{ width: `${dayWidth}px` }">
-                    {{ day.date }}
-                </div>
+          </div>
+          
+          <!-- 图例 -->
+          <div class="d-flex align-center gap-4">
+            <div class="d-flex align-center">
+              <div class="legend-dot bg-primary"></div>
+              <span class="text-caption ml-1">已完成</span>
             </div>
+            <div class="d-flex align-center">
+              <div class="legend-dot bg-surface-variant"></div>
+              <span class="text-caption ml-1">未完成</span>
+            </div>
+          </div>
         </div>
-
-        <!-- Goals Timeline -->
-        <div class="goals-container">
-            <div v-for="goal in sortedGoals" :key="goal.id" class="gantt-row">
-                <div class="goal-info">
-                    <span class="goal-title">{{ goal.title }}</span>
+      </v-card-title>
+  
+      <v-divider />
+  
+      <!-- 甘特图内容 -->
+      <v-card-text class="gantt-content pa-0">
+        <div class="gantt-chart">
+          <!-- 表头区域 -->
+          <div class="gantt-header-row">
+            <!-- 目标信息列头 -->
+            <div class="goal-info-header">
+              <span class="text-body-2 font-weight-medium text-medium-emphasis">目标</span>
+            </div>
+            
+            <!-- 时间刻度 -->
+            <div class="date-scale">
+              <div class="month-row">
+                <div
+                  v-for="month in months"
+                  :key="month.name"
+                  :style="{ width: `${month.daysCount * dayWidth}px` }"
+                  class="month-label"
+                >
+                  {{ month.name }}月
                 </div>
+              </div>
+              <div class="days-row">
+                <div
+                  v-for="day in days"
+                  :key="day.date"
+                  :class="{ 'today': day.isToday, 'weekend': isWeekend(day.fullDate) }"
+                  class="day-label"
+                  :style="{ width: `${dayWidth}px` }"
+                >
+                  {{ day.date }}
+                </div>
+              </div>
+            </div>
+          </div>
+  
+          <!-- 目标时间线 -->
+          <div class="goals-container">
+            <div
+              v-for="(goal, index) in sortedGoals"
+              :key="goal.id"
+              class="gantt-row"
+              :style="{ '--goal-index': index }"
+            >
+              <!-- 目标信息固定列 -->
+              <div class="goal-info">
+                <div class="goal-info-card">
+                  <div class="d-flex align-center">
+                    <v-avatar
+                      :color="goal.color"
+                      size="24"
+                      variant="flat"
+                      class="mr-2"
+                    >
+                      <v-icon color="white" size="12">mdi-target</v-icon>
+                    </v-avatar>
+                    <div class="goal-text">
+                      <span class="goal-title">{{ goal.title }}</span>
+                      <div class="goal-progress">
+                        {{ goalStore.getGoalProgress(goal.id) }}%
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- 时间轴区域 -->
+              <div class="timeline-container">
                 <div class="timeline" :style="{ width: `${days.length * dayWidth}px` }">
-                    <div class="progress-bar-bg" 
-                        :style="getGoalBarStyle(goal, false)">
-                    </div>
-                    <div class="progress-bar-fill" 
-                        :style="getGoalBarStyle(goal, true)">
-                    </div>
+                  <!-- 背景条 -->
+                  <div
+                    class="progress-bar-bg"
+                    :style="getGoalBarStyle(goal, false)"
+                  ></div>
+                  <!-- 进度条 -->
+                  <div
+                    class="progress-bar-fill"
+                    :style="getGoalBarStyle(goal, true)"
+                  ></div>
+                  <!-- 目标标签 -->
+                  <div
+                    class="goal-label"
+                    :style="{ left: `${getGoalLabelPosition(goal)}px` }"
+                  >
+                    <v-chip
+                      :color="goal.color"
+                      size="x-small"
+                      variant="elevated"
+                      class="goal-chip"
+                    >
+                      {{ goalStore.getGoalProgress(goal.id) }}%
+                    </v-chip>
+                  </div>
                 </div>
+              </div>
             </div>
-        </div>
-
-        <!-- Today Indicator -->
-        <div class="today-indicator" 
-             :style="{ left: `${getTodayPosition()}px` }">
+          </div>
+  
+          <!-- 今日指示器 -->
+          <div class="today-indicator" :style="{ left: `${getTodayIndicatorPosition()}px` }">
             <div class="indicator-line"></div>
-            <span class="indicator-label">今日</span>
+            <v-chip
+              color="error"
+              size="x-small"
+              variant="elevated"
+              class="indicator-label"
+            >
+              <v-icon start size="10">mdi-calendar-today</v-icon>
+              今日
+            </v-chip>
+          </div>
         </div>
-    </div>
-</template>
-
-<script setup lang="ts">
-import { computed } from 'vue';
-import { useGoalStore } from '../stores/goalStore';
-import type { IGoal } from '../types/goal';
-
-const goalStore = useGoalStore();
-const dayWidth = 32; // 每个日期的宽度
-
-// 生成日期范围
-const dateRange = computed(() => {
+      </v-card-text>
+    </v-card>
+  </template>
+  
+  <script setup lang="ts">
+  import { computed } from 'vue';
+  import { useGoalStore } from '../stores/goalStore';
+  import type { IGoal } from '../types/goal';
+  
+  const goalStore = useGoalStore();
+  const dayWidth = 32; // 每个日期的宽度
+  const goalInfoWidth = 200; // 目标信息列的固定宽度
+  
+  // 生成日期范围
+  const dateRange = computed(() => {
     const today = new Date();
     const start = new Date(today);
     start.setDate(today.getDate() - 10); // 前10天
     const end = new Date(today);
-    end.setDate(today.getDate() + 40);   // 后30天
+    end.setDate(today.getDate() + 40); // 后40天
     return { start, end };
-});
-
-// 计算日期和月份数据
-const { days, months } = computed(() => {
+  });
+  
+  // 计算日期和月份数据
+  const { days, months } = computed(() => {
     const { start, end } = dateRange.value;
     const days = [];
     const months = new Map();
     
     let currentDate = new Date(start);
     while (currentDate <= end) {
-        days.push({
-            date: currentDate.getDate(),
-            isToday: currentDate.toDateString() === new Date().toDateString(),
-            fullDate: new Date(currentDate)
+      days.push({
+        date: currentDate.getDate(),
+        isToday: currentDate.toDateString() === new Date().toDateString(),
+        fullDate: new Date(currentDate)
+      });
+  
+      const monthKey = currentDate.getMonth();
+      if (!months.has(monthKey)) {
+        months.set(monthKey, {
+          name: currentDate.getMonth() + 1,
+          daysCount: 0
         });
-
-        const monthKey = currentDate.getMonth();
-        if (!months.has(monthKey)) {
-            months.set(monthKey, {
-                name: currentDate.getMonth() + 1,
-                daysCount: 0
-            });
-        }
-        months.get(monthKey).daysCount++;
-
-        currentDate.setDate(currentDate.getDate() + 1);
+      }
+      months.get(monthKey).daysCount++;
+  
+      currentDate.setDate(currentDate.getDate() + 1);
     }
-
+  
     return {
-        days,
-        months: Array.from(months.values())
+      days,
+      months: Array.from(months.values())
     };
-}).value;
-
-// 获取目标列表（排除已归档和已删除的）
-const sortedGoals = computed(() => {
+  }).value;
+  
+  // 获取目标列表（排除已归档和已删除的）
+  const sortedGoals = computed(() => {
     const today = new Date();
     return [...goalStore.getAllGoals]
-        .filter(goal => {
-            if (goal.dirId === 'delete' || goal.dirId === 'archive') return false;
-            const endDate = new Date(goal.endTime);
-            return endDate >= today;
-        })
-        .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-});
-
-// 计算目标条样式
-const getGoalBarStyle = (goal: IGoal, isFill: boolean) => {
+      .filter(goal => {
+        if (goal.dirId === 'delete' || goal.dirId === 'archive') return false;
+        const endDate = new Date(goal.endTime);
+        return endDate >= today;
+      })
+      .sort((a, b) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
+  });
+  
+  // 判断是否为周末
+  const isWeekend = (date: Date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6;
+  };
+  
+  // 计算目标条样式
+  const getGoalBarStyle = (goal: IGoal, isFill: boolean) => {
     const startDate = new Date(goal.startTime);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(goal.endTime);
@@ -117,151 +224,292 @@ const getGoalBarStyle = (goal: IGoal, isFill: boolean) => {
     rangeStart.setHours(0, 0, 0, 0);
     
     const startOffset = Math.max(0, 
-        (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)
+      (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)
     );
     const duration = Math.ceil(
-        (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
+      (endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)
     ) + 1;
     
     const width = isFill ? 
-        (duration * dayWidth * (goalStore.getGoalProgress(goal.id) / 100)) : 
-        (duration * dayWidth);
-
-    // Convert hex color to rgba
-    const hexToRgba = (hex: string, alpha: number) => {
-        const r = parseInt(hex.slice(1, 3), 16);
-        const g = parseInt(hex.slice(3, 5), 16);
-        const b = parseInt(hex.slice(5, 7), 16);
-        return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-    };
-
+      (duration * dayWidth * (goalStore.getGoalProgress(goal.id) / 100)) : 
+      (duration * dayWidth);
+  
     return {
-        left: `${startOffset * dayWidth}px`,
-        width: `${width}px`,
-        backgroundColor: isFill ? 
-            hexToRgba(goal.color, 0.8) : 
-            hexToRgba(goal.color, 0.2)
+      left: `${startOffset * dayWidth}px`,
+      width: `${width}px`,
+      backgroundColor: isFill ? goal.color : `${goal.color}33`,
+      borderRadius: '6px',
+      boxShadow: isFill ? `0 2px 8px ${goal.color}44` : 'none'
     };
-};
-
-// 计算今日指示器位置
-const getTodayPosition = () => {
-    return (10 * dayWidth); // 因为从前10天开始，所以今天在第10个位置
-};
-</script>
-
-<style scoped>
-.gantt-chart {
-    position: relative;
-    margin: 1rem 0;
-    width: 100%;
-    background: rgba(var(--v-theme-surface), 1);
-    border-radius: 8px;
+  };
+  
+  // 计算目标标签位置
+  const getGoalLabelPosition = (goal: IGoal) => {
+    const startDate = new Date(goal.startTime);
+    const rangeStart = new Date(dateRange.value.start);
+    const startOffset = Math.max(0, 
+      (startDate.getTime() - rangeStart.getTime()) / (24 * 60 * 60 * 1000)
+    );
+    return (startOffset * dayWidth) + 8;
+  };
+  
+  // 计算今日指示器位置 - 修正偏移
+  const getTodayIndicatorPosition = () => {
+    return goalInfoWidth + (10 * dayWidth) + 16; // 加上目标信息列的宽度
+  };
+  </script>
+  
+  <style scoped>
+  .gantt-chart-card {
+    border-radius: 16px;
+    background: rgb(var(--v-theme-surface));
+    border: 1px solid rgba(var(--v-theme-outline), 0.12);
+    overflow: hidden;
+  }
+  
+  .gantt-header {
+    background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.05) 0%, rgba(var(--v-theme-primary), 0.02) 100%);
+  }
+  
+  .legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+  }
+  
+  .gantt-content {
     overflow-x: auto;
-}
-
-.date-scale {
+    max-height: 600px;
+  }
+  
+  .gantt-chart {
+    position: relative;
+    min-width: fit-content;
+    padding: 16px;
+  }
+  
+  /* 表头布局 */
+  .gantt-header-row {
+    display: flex;
     position: sticky;
     top: 0;
     background: rgba(var(--v-theme-surface), 0.95);
-    z-index: 1;
-    min-width: fit-content; /* 添加最小宽度 */
-}
-
-.month-row {
+    backdrop-filter: blur(8px);
+    z-index: 2;
+    margin-bottom: 16px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .goal-info-header {
+    width: 200px;
+    min-width: 200px;
+    padding: 12px 16px;
     display: flex;
-    flex-shrink: 0;
-    border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.1);
-}
-
-.month-label {
-    /* padding: 4px; */
-    font-weight: 500;
+    align-items: center;
+    background: rgba(var(--v-theme-primary), 0.05);
+    border-radius: 8px 0 0 8px;
+  }
+  
+  .date-scale {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .month-row {
+    display: flex;
+    border-bottom: 2px solid rgba(var(--v-theme-primary), 0.2);
+    padding: 8px 0;
+  }
+  
+  .month-label {
+    font-weight: 600;
     text-align: center;
-    color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.days-row {
+    color: rgb(var(--v-theme-primary));
+    font-size: 0.9rem;
+  }
+  
+  .days-row {
     display: flex;
-    padding-top: 4px;
-}
-
-.day-label {
-    text-align: start;
-    font-size: 0.85rem;
+    padding: 8px 0;
+  }
+  
+  .day-label {
+    text-align: center;
+    font-size: 0.75rem;
     color: rgba(var(--v-theme-on-surface), 0.6);
     min-width: 32px;
-}
-
-.day-label.today {
-    color: var(--v-theme-error);
+    padding: 4px 0;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+  }
+  
+  .day-label.today {
+    color: rgb(var(--v-theme-error));
     font-weight: bold;
-}
-
-.goals-container {
-    margin-top: 1rem;
+    background: rgba(var(--v-theme-error), 0.1);
+  }
+  
+  .day-label.weekend {
+    color: rgba(var(--v-theme-warning), 0.8);
+    background: rgba(var(--v-theme-warning), 0.05);
+  }
+  
+  .goals-container {
     position: relative;
-}
-
-.gantt-row {
+    background: rgba(var(--v-theme-surface-variant), 0.05);
+    border-radius: 12px;
+    padding: 16px;
+  }
+  
+  .gantt-row {
     display: flex;
-    margin-bottom: 1rem;
+    margin-bottom: 16px;
     align-items: center;
-}
-
-.goal-info {
-    min-width: 150px;
-    padding-right: 1rem;
-    position: absolute;
-    left: 0;
-}
-
-.goal-title {
-    font-size: 0.9rem;
+    animation: slideInLeft 0.5s ease calc(var(--goal-index) * 0.1s) both;
+  }
+  
+  .goal-info {
+    width: 200px;
+    min-width: 200px;
+    padding-right: 16px;
+    flex-shrink: 0;
+  }
+  
+  .goal-info-card {
+    background: rgb(var(--v-theme-surface));
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(var(--v-theme-outline), 0.12);
+  }
+  
+  .goal-title {
+    font-size: 0.85rem;
+    font-weight: 500;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.timeline {
+    max-width: 120px;
+    display: block;
+  }
+  
+  .goal-progress {
+    font-size: 0.7rem;
+    color: rgba(var(--v-theme-on-surface), 0.6);
+    font-weight: 600;
+  }
+  
+  .timeline-container {
+    flex: 1;
+    min-width: 0;
+    overflow: visible;
+  }
+  
+  .timeline {
     position: relative;
-    height: 24px;
-    background: transparent;
-}
-
-.progress-bar-bg, .progress-bar-fill {
+    height: 32px;
+  }
+  
+  .progress-bar-bg,
+  .progress-bar-fill {
     position: absolute;
     height: 100%;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-}
-
-.today-indicator {
+    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .progress-bar-bg {
+    opacity: 0.3;
+  }
+  
+  .progress-bar-fill {
+    z-index: 1;
+  }
+  
+  .goal-label {
     position: absolute;
-    top: 0;
+    top: -8px;
+    z-index: 2;
+  }
+  
+  .goal-chip {
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  
+  .today-indicator {
+    position: absolute;
+    top: 80px; /* 调整到表头下方 */
     bottom: 0;
     width: 2px;
-    z-index: 2;
-}
-
-.indicator-line {
+    z-index: 3;
+    pointer-events: none;
+  }
+  
+  .indicator-line {
     position: absolute;
     top: 0;
     bottom: 0;
     width: 100%;
-    background-color: var(--v-theme-error);
-}
-
-.indicator-label {
+    background: linear-gradient(to bottom, 
+      rgba(var(--v-theme-error), 0.8), 
+      rgba(var(--v-theme-error), 0.4));
+  }
+  
+  .indicator-label {
     position: absolute;
-    top: -20px;
+    top: -32px;
     left: 50%;
     transform: translateX(-50%);
-    background-color: var(--v-theme-error);
-    color: white;
-    padding: 2px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
+    font-weight: 600;
     white-space: nowrap;
-}
-</style>
+  }
+  
+  /* 滚动条美化 */
+  .gantt-content::-webkit-scrollbar {
+    height: 8px;
+  }
+  
+  .gantt-content::-webkit-scrollbar-track {
+    background: rgba(var(--v-theme-surface-variant), 0.1);
+    border-radius: 4px;
+  }
+  
+  .gantt-content::-webkit-scrollbar-thumb {
+    background: rgba(var(--v-theme-primary), 0.3);
+    border-radius: 4px;
+  }
+  
+  .gantt-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(var(--v-theme-primary), 0.5);
+  }
+  
+  /* 动画 */
+  @keyframes slideInLeft {
+    from {
+      opacity: 0;
+      transform: translateX(-30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  /* 响应式设计 */
+  @media (max-width: 768px) {
+    .goal-info,
+    .goal-info-header {
+      width: 150px;
+      min-width: 150px;
+    }
+    
+    .goal-title {
+      max-width: 100px;
+    }
+    
+    .gantt-chart {
+      padding: 8px;
+    }
+  }
+  </style>

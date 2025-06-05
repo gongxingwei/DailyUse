@@ -432,6 +432,52 @@ export const useTaskStore = defineStore('task', {
             return false;
         },
 
+        // 撤销任务完成
+    async undoCompleteTask(taskId: string) {
+        const goalStore = useGoalStore();
+        const taskIndex = this.taskInstances.findIndex(t => t.id === taskId);
+
+        if (taskIndex !== -1) {
+            const task = this.taskInstances[taskIndex];
+
+            // 检查任务是否已完成
+            if (!task.completed) {
+                console.warn('Task is not completed, cannot undo:', taskId);
+                return false;
+            }
+
+            // Update task completion status
+            this.taskInstances[taskIndex] = {
+                ...task,
+                completed: false,
+                completedAt: undefined // 清除完成时间
+            };
+
+            // 回退关联的关键结果值
+            if (task.keyResultLinks?.length) {
+                for (const link of task.keyResultLinks) {
+                    // 使用负值来减去之前增加的值
+                    goalStore.updateKeyResultStartValue(
+                        link.goalId,
+                        link.keyResultId,
+                        -link.incrementValue
+                    );
+                }
+            }
+
+            // 自动保存
+            const saveResult = await this.saveTaskInstances();
+            if (!saveResult) {
+                console.error('撤销任务完成后保存失败');
+            }
+            
+            return true;
+        }
+
+        console.error('Task not found:', taskId);
+        return false;
+    },
+
          // 自动保存方法
          async saveTaskTemplates(): Promise<boolean> {
             const autoSave = getAutoSave();

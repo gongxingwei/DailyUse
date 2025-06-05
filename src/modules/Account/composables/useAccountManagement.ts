@@ -25,6 +25,9 @@ export function useAccountManagement() {
   const profileForm = reactive({
     username: "",
     email: "",
+    phone: "",
+    avatar: "",
+    bio: "",
   });
 
   // 弹窗配置
