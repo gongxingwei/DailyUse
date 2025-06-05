@@ -91,7 +91,7 @@
 import { ref, computed } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useUserAuth } from '../composables/useUserAuth';
-import { usernameRules, passwordRules, emailRules } from '@/shared/utils/validations';
+import { usernameRules, passwordRules, emailRules } from '@/shared/utils/validationUtils';
 const { formRef, registerForm, snackbar, handleRemoteRegister } = useUserAuth();
 const authStore = useAuthStore();
 

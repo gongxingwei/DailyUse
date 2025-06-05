@@ -336,7 +336,7 @@ export const useTaskStore = defineStore('task', {
         },
         // 创建任务提醒
         async createTaskReminders(template: ITaskTemplate, instances: ITaskInstance[]) {
-            const { scheduleService } = await import('@/shared/utils/schedule/main');
+            const { scheduleService } = await import('@/shared/services/scheduleService');
 
             for (const instance of instances) {
                 const taskTime = new Date(instance.date);
@@ -369,7 +369,7 @@ export const useTaskStore = defineStore('task', {
                 const relatedInstances = this.taskInstances.filter(t => t.templateId === taskId);
 
                 // 取消所有相关的提醒任务
-                const { scheduleService } = await import('@/shared/utils/schedule/main');
+                const { scheduleService } = await import('@/shared/services/scheduleService');
                 for (const instance of relatedInstances) {
                     await scheduleService.cancelSchedule(`reminder-${instance.id}`);
                 }

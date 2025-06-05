@@ -45,7 +45,7 @@ import { computed } from 'vue';
 import { useAuthStore } from '../stores/authStore';
 import { useUserAuth } from '../composables/useUserAuth';
 // utils
-import { usernameRules, passwordRules } from '@/shared/utils/validations';
+import { usernameRules, passwordRules } from '@/shared/utils/validationUtils';
 const { rememberedUsers, formRef, loginForm, snackbar, handleRemoteLogin, handleAccountSelect, handleRemoveSavedAccount } = useUserAuth();
 const authStore = useAuthStore();
 

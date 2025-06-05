@@ -126,7 +126,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { fileSystem } from '@/shared/utils/fileSystem';
+import { fileSystem } from '@/shared/utils/fileUtils';
 import { useRepositoryStore } from '../stores/repositoryStore'
 import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 

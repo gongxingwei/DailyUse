@@ -173,7 +173,7 @@ import type { Repository } from '../stores/repositoryStore'
 import RepoDialog from '../components/RepoDialog.vue'
 import RepoSettings from '../components/RepoSettings.vue'
 // utils
-import { fileSystem } from '@/shared/utils/fileSystem'
+import { fileSystem } from '@/shared/utils/fileUtils'
 const repositoryStore = useRepositoryStore()
 const goalStore = useGoalStore()
 const showCreateDialog = ref(false)

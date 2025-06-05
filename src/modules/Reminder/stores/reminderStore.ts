@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { scheduleService } from "@/shared/utils/schedule/main";
+import { scheduleService } from "@/modules/schedule/services/scheduleService";
 import { TimeConfig, UrgencyLevel } from "@/shared/types/time";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;

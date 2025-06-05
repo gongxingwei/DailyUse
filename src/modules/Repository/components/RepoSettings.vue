@@ -168,7 +168,7 @@ import { useRouter } from 'vue-router'
 import { useRepositoryStore } from '../stores/repositoryStore'
 import { useGoalStore } from '@/modules/Goal/stores/goalStore'
 import type { Repository } from '../stores/repositoryStore'
-import { fileSystem } from '@/shared/utils/fileSystem'
+import { fileSystem } from '@/shared/utils/fileUtils'
 
 const props = defineProps<{
   modelValue: boolean
