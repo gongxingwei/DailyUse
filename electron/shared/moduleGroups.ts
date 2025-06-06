@@ -3,7 +3,8 @@ import { setupLoginSessionHandlers } from '../modules/Account/ipcs/loginSessionI
 import { StoreIpc } from '../modules/Account/ipcs/storeIpc';
 import { registerFileSystemHandlers } from './ipc/filesystem';
 import { registerGitHandlers } from './ipc/git';
-import { setupScheduleHandlers } from '../modules/taskSchedule/main';
+import { setupScheduleHandlers } from '../modules/schedule/main';
+import { setupNotificationHandler } from '../modules/notification/ipcs/notification.ipc';
 import { setupNotificationService } from '../modules/notification/notificationService';
 import type { BrowserWindow } from 'electron';
 
@@ -33,13 +34,14 @@ export function setupSharedModules(): void {
  * 窗口相关模块
  */
 export function setupWindowModules(
-  win: BrowserWindow,
-  MAIN_DIST: string,
-  RENDERER_DIST: string,
-  VITE_DEV_SERVER_URL?: string
+  // win: BrowserWindow,
+  // MAIN_DIST: string,
+  // RENDERER_DIST: string,
+  // VITE_DEV_SERVER_URL?: string
 ): void {
   console.log('Setting up Window modules...');
-  setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+  // setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+  setupNotificationHandler();
   setupScheduleHandlers();
   console.log('✓ Window modules ready');
 }
@@ -55,12 +57,7 @@ export function initializeBasicModules(): void {
 /**
  * 初始化所有模块
  */
-export function initializeAllModules(
-  win: BrowserWindow,
-  MAIN_DIST: string,
-  RENDERER_DIST: string,
-  VITE_DEV_SERVER_URL?: string
-): void {
+export function initializeAllModules(): void {
   initializeBasicModules();
-  setupWindowModules(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+  setupWindowModules();
 }

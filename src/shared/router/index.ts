@@ -106,7 +106,7 @@ router.beforeEach((to, _from, next) => {
     document.title = `${to.meta.title || '默认标题'}`
 
     // 检查认证状态
-    const publicPages = ['/auth']
+    const publicPages = ['/auth','/notification']
     const authRequired = !publicPages.includes(to.path)
 
    if (authRequired && !authStore.isAuthenticated) {

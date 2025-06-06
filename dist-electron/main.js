@@ -18561,42 +18561,64 @@ function setupScheduleHandlers() {
     return Array.from(scheduleJobs.keys());
   });
 }
-const notificationWindows = /* @__PURE__ */ new Map();
-const NOTIFICATION_WIDTH = 620;
-const NOTIFICATION_HEIGHT = 920;
-const NOTIFICATION_MARGIN = 10;
-function getNotificationPosition() {
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width: screenWidth } = primaryDisplay.workAreaSize;
-  const x = screenWidth - NOTIFICATION_WIDTH - NOTIFICATION_MARGIN;
-  const y = NOTIFICATION_MARGIN + notificationWindows.size * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
-  return { x, y };
-}
-function reorderNotifications() {
-  let index = 0;
-  for (const [, window2] of notificationWindows) {
-    const y = NOTIFICATION_MARGIN + index * (NOTIFICATION_HEIGHT + NOTIFICATION_MARGIN);
-    window2.setPosition(window2.getPosition()[0], y);
-    index++;
+const _NotificationWindowManager = class _NotificationWindowManager {
+  constructor() {
+    __publicField(this, "windows", /* @__PURE__ */ new Map());
   }
-}
-function setupNotificationService(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
-  ipcMain.handle("show-notification", async (_event, options) => {
-    if (!mainWindow) {
-      return;
+  /**
+   * 创建通知窗口
+   */
+  createWindow(options) {
+    this.closeWindow(options.id);
+    const position = this.calculatePosition();
+    const window2 = this.buildWindow(position);
+    this.setupWindowEvents(window2, options.id);
+    this.windows.set(options.id, window2);
+    console.log("NotificationWindowManager - Window created:", options.id);
+    return window2;
+  }
+  /**
+   * 关闭指定窗口
+   */
+  closeWindow(id) {
+    const window2 = this.windows.get(id);
+    if (window2 && !window2.isDestroyed()) {
+      window2.close();
+      return true;
     }
-    if (notificationWindows.has(options.id)) {
-      const existingWindow = notificationWindows.get(options.id);
-      existingWindow == null ? void 0 : existingWindow.close();
-      notificationWindows.delete(options.id);
-      reorderNotifications();
-    }
-    const { x, y } = getNotificationPosition();
-    const notificationWindow = new BrowserWindow({
-      width: NOTIFICATION_WIDTH,
-      height: NOTIFICATION_HEIGHT,
-      x,
-      y,
+    return false;
+  }
+  /**
+   * 获取窗口
+   */
+  getWindow(id) {
+    return this.windows.get(id);
+  }
+  /**
+   * 获取所有窗口
+   */
+  getAllWindows() {
+    return new Map(this.windows);
+  }
+  /**
+   * 计算窗口位置
+   */
+  calculatePosition() {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width: screenWidth } = primaryDisplay.workAreaSize;
+    const x = screenWidth - _NotificationWindowManager.WINDOW_CONFIG.WIDTH - _NotificationWindowManager.WINDOW_CONFIG.MARGIN;
+    const y = _NotificationWindowManager.WINDOW_CONFIG.MARGIN + this.windows.size * (_NotificationWindowManager.WINDOW_CONFIG.HEIGHT + _NotificationWindowManager.WINDOW_CONFIG.MARGIN);
+    return { x, y };
+  }
+  /**
+   * 构建窗口
+   */
+  buildWindow(position) {
+    return new BrowserWindow({
+      width: _NotificationWindowManager.WINDOW_CONFIG.WIDTH,
+      height: _NotificationWindowManager.WINDOW_CONFIG.HEIGHT,
+      x: position.x,
+      y: position.y,
       frame: false,
       transparent: true,
       resizable: false,
@@ -18605,25 +18627,49 @@ function setupNotificationService(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_D
       show: false,
       backgroundColor: "#00000000",
       webPreferences: {
-        preload: path.join(MAIN_DIST2, "main_preload.mjs"),
+        preload: path.join(MAIN_DIST, "main_preload.mjs"),
         contextIsolation: true,
         nodeIntegration: true,
         webSecurity: false
       }
     });
-    notificationWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
+  }
+  /**
+   * 设置窗口事件
+   */
+  setupWindowEvents(window2, id) {
+    window2.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       callback({
         responseHeaders: {
           ...details.responseHeaders,
-          "Content-Security-Policy": ["default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"]
+          "Content-Security-Policy": [
+            "default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline';"
+          ]
         }
       });
     });
-    notificationWindows.set(options.id, notificationWindow);
-    notificationWindow.on("closed", () => {
-      notificationWindows.delete(options.id);
-      reorderNotifications();
+    window2.on("closed", () => {
+      this.windows.delete(id);
+      this.reorderWindows();
     });
+  }
+  /**
+   * 重新排列窗口位置
+   */
+  reorderWindows() {
+    let index = 0;
+    for (const [, window2] of this.windows) {
+      if (!window2.isDestroyed()) {
+        const y = _NotificationWindowManager.WINDOW_CONFIG.MARGIN + index * (_NotificationWindowManager.WINDOW_CONFIG.HEIGHT + _NotificationWindowManager.WINDOW_CONFIG.MARGIN);
+        window2.setPosition(window2.getPosition()[0], y);
+        index++;
+      }
+    }
+  }
+  /**
+   * 构建通知URL
+   */
+  buildNotificationUrl(options) {
     const queryParams = new URLSearchParams({
       id: options.id,
       title: options.title,
@@ -18636,28 +18682,93 @@ function setupNotificationService(mainWindow, MAIN_DIST2, RENDERER_DIST2, VITE_D
     if (options.actions) {
       queryParams.append("actions", encodeURIComponent(JSON.stringify(options.actions)));
     }
-    const notificationUrl = VITE_DEV_SERVER_URL2 ? `${VITE_DEV_SERVER_URL2}#/notification?${queryParams.toString()}` : `file://${RENDERER_DIST2}/index.html#/notification?${queryParams.toString()}`;
-    await notificationWindow.loadURL(notificationUrl);
-    notificationWindow.show();
-    return options.id;
+    return VITE_DEV_SERVER_URL ? `${VITE_DEV_SERVER_URL}#/notification?${queryParams.toString()}` : `file://${RENDERER_DIST}/index.html#/notification?${queryParams.toString()}`;
+  }
+};
+__publicField(_NotificationWindowManager, "WINDOW_CONFIG", {
+  WIDTH: 620,
+  HEIGHT: 920,
+  MARGIN: 10
+});
+let NotificationWindowManager = _NotificationWindowManager;
+class NotificationService {
+  constructor() {
+    __publicField(this, "windowManagementService", new NotificationWindowManager());
+  }
+  async showNotification(options) {
+    try {
+      console.log("NotificationService - showNotification:", options);
+      const window2 = this.windowManagementService.createWindow(options);
+      const url = this.windowManagementService.buildNotificationUrl(options);
+      await window2.loadURL(url);
+      window2.show();
+      return {
+        success: true,
+        message: "Notification displayed successfully"
+      };
+    } catch (error) {
+      console.error("NotificationService - showNotification Error:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  closeNotification(id) {
+    try {
+      const response = this.windowManagementService.closeWindow(id);
+      if (!response) {
+        throw new Error(
+          `Notification with ID ${id} not found or already closed`
+        );
+      }
+      return {
+        success: true,
+        message: "Notification closed successfully"
+      };
+    } catch (error) {
+      console.error("NotificationService - closeNotification Error:", error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : "Unknown error"
+      };
+    }
+  }
+  handleNotificationAction(id, action) {
+    const window2 = this.windowManagementService.getWindow(id);
+    if (window2) {
+      if (action.type === "cancel" || action.type === "confirm") {
+        window2.close();
+      }
+      window2.webContents.send("notification-action", { id, action });
+    } else {
+      console.warn(`Notification with ID ${id} not found.`);
+    }
+  }
+}
+const notificationService = new NotificationService();
+function setupNotificationHandler() {
+  ipcMain.handle("show-notification", async (_event, options) => {
+    try {
+      console.log("IPC - show-notification:", options);
+      return await notificationService.showNotification(options);
+    } catch (error) {
+      console.error("IPC Error - show-notification:", error);
+      throw error;
+    }
   });
   ipcMain.on("close-notification", (_event, id) => {
-    const window2 = notificationWindows.get(id);
-    if (window2 && !window2.isDestroyed()) {
-      window2.close();
+    try {
+      return notificationService.closeNotification(id);
+    } catch (error) {
+      console.error("IPC Error - close-notification:", error);
     }
   });
   ipcMain.on("notification-action", (_event, id, action) => {
-    const window2 = notificationWindows.get(id);
-    if (window2 && !window2.isDestroyed()) {
-      const serializedAction = {
-        text: action.text,
-        type: action.type
-      };
-      if (action.type === "confirm" || action.type === "cancel") {
-        window2.close();
-      }
-      mainWindow.webContents.send("notification-action-received", id, serializedAction);
+    try {
+      return notificationService.handleNotificationAction(id, action);
+    } catch (error) {
+      console.error("IPC Error - notification-action:", error);
     }
   });
 }
@@ -18674,9 +18785,9 @@ function setupSharedModules() {
   registerGitHandlers();
   console.log("✓ Shared modules ready");
 }
-function setupWindowModules(win2, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
+function setupWindowModules() {
   console.log("Setting up Window modules...");
-  setupNotificationService(win2, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2);
+  setupNotificationHandler();
   setupScheduleHandlers();
   console.log("✓ Window modules ready");
 }
@@ -18684,9 +18795,9 @@ function initializeBasicModules() {
   setupSharedModules();
   setupAccountModules();
 }
-function initializeAllModules(win2, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2) {
+function initializeAllModules() {
   initializeBasicModules();
-  setupWindowModules(win2, MAIN_DIST2, RENDERER_DIST2, VITE_DEV_SERVER_URL2);
+  setupWindowModules();
 }
 app.setName("DailyUse");
 const __dirname$1 = path.dirname(fileURLToPath(import.meta.url));
@@ -18798,7 +18909,7 @@ app.whenReady().then(() => {
   console.log(" ssssssssssssssssssssssssssssssssssssssssssssssssDailyUse 启动中...");
   createWindow();
   if (win) {
-    initializeAllModules(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+    initializeAllModules();
   }
   protocol.registerFileProtocol("local", (request, callback) => {
     const url = request.url.replace("local://", "");

@@ -1,6 +1,7 @@
 import { useReminderStore } from '@/modules/Reminder/stores/reminderStore';
 import { scheduleService } from '@/modules/schedule/services/scheduleService';
 import { notification } from '@/shared/utils/notification/notification';
+import { notificationService } from '@/modules/notification/services/notificationService';
 import { onMounted, onUnmounted } from 'vue';
 import type { UrgencyLevel } from '@/shared/types/time';
 
