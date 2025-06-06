@@ -339,26 +339,41 @@ export const useTaskStore = defineStore('task', {
             const { scheduleService } = await import('@/shared/services/scheduleService');
 
             for (const instance of instances) {
-                const taskTime = new Date(instance.date);
-                if (template.startTime) {
-                    const [hours, minutes] = template.startTime.split(':');
-                    taskTime.setHours(parseInt(hours), parseInt(minutes));
-                }
-
-                // 计算提醒时间
-                const reminderTime = new Date(taskTime);
-                const minutesBefore = parseInt(template.reminderPattern?.timeBefore ?? '0');
-                reminderTime.setMinutes(reminderTime.getMinutes() - minutesBefore);
-
-                // 创建提醒任务
-                await scheduleService.createSchedule({
-                    id: `reminder-${instance.id}`,
-                    cron: `${reminderTime.getMinutes()} ${reminderTime.getHours()} ${reminderTime.getDate()} ${reminderTime.getMonth() + 1} *`,
-                    task: {
-                        type: 'taskReminder',
-                        payload: instance
+                try {
+                    const taskTime = new Date(instance.date);
+                    if (template.startTime) {
+                        const [hours, minutes] = template.startTime.split(':');
+                        taskTime.setHours(parseInt(hours), parseInt(minutes));
                     }
-                });
+
+                    // 计算提醒时间
+                    const reminderTime = new Date(taskTime);
+                    const minutesBefore = parseInt(template.reminderPattern?.timeBefore ?? '0');
+                    reminderTime.setMinutes(reminderTime.getMinutes() - minutesBefore);
+
+                    // 检查提醒时间是否已经过去
+                    if (reminderTime <= new Date()) {
+                        console.debug(`跳过过期的任务提醒: ${template.title} - ${instance.date}`);
+                        continue;
+                    }
+
+                    // 创建提醒任务
+                    await scheduleService.createSchedule({
+                        id: `taskreminder-${instance.id}`,
+                        cron: `${reminderTime.getMinutes()} ${reminderTime.getHours()} ${reminderTime.getDate()} ${reminderTime.getMonth() + 1} *`,
+                        task: {
+                            type: 'taskReminder',
+                            payload: {
+                                title: `任务提醒: ${template.title}`,
+                                body: `任务 "${template.title}" 将在 ${formatDateTime(taskTime)} 开始。`,
+                            }
+                        }
+                    });
+                    
+                    console.debug(`创建任务提醒: ${template.title} - ${formatDateTime(reminderTime)}`);
+                } catch (error) {
+                    console.error(`创建任务提醒失败 (${template.title}):`, error);
+                }
             }
         },
         // 删除任务模板
@@ -525,6 +540,52 @@ export const useTaskStore = defineStore('task', {
         isSavingAnyTaskData(): boolean {
             const autoSave = getAutoSave();
             return autoSave.isSaving();
+        },
+
+        /**
+         * 重新初始化所有任务提醒
+         * 用于用户数据加载完成后重新设置提醒
+         */
+        async initializeSchedules() {
+            const { scheduleService } = await import('@/shared/services/scheduleService');
+            
+            console.log('开始重新初始化任务提醒...');
+            
+            // 1. 取消所有现有的任务提醒
+            const existingTaskInstances = this.taskInstances;
+            for (const instance of existingTaskInstances) {
+                try {
+                    await scheduleService.cancelSchedule(`taskreminder-${instance.id}`);
+                } catch (error) {
+                    // 忽略取消失败的错误，可能任务本来就不存在
+                    console.debug(`取消任务提醒失败 (可能不存在): taskreminder-${instance.id}`);
+                }
+            }
+
+            // 2. 重新创建所有需要提醒的任务
+            const templatesWithReminders = this.taskTemplates.filter(
+                template => template.reminderPattern?.isReminder
+            );
+
+            for (const template of templatesWithReminders) {
+                const relatedInstances = this.taskInstances.filter(
+                    instance => instance.templateId === template.id
+                );
+                
+                if (relatedInstances.length > 0) {
+                    await this.createTaskReminders(template, relatedInstances);
+                }
+            }
+
+            console.log(`任务提醒重新初始化完成，处理了 ${templatesWithReminders.length} 个模板`);
+        },
+
+        /**
+         * 设置 Store 数据（用于数据加载）
+         */
+        setTaskData(templates: ITaskTemplate[], instances: ITaskInstance[]) {
+            this.taskTemplates = templates;
+            this.taskInstances = instances;
         },
     },
 

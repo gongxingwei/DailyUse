@@ -1,15 +1,15 @@
-export interface ScheduleTask {
+export type ScheduleTask = {
     type: string;
     payload: any;
 }
 
-export interface ScheduleOptions {
+export type ScheduleOptions = {
     id: string;
     cron: string;
     task: ScheduleTask;
 }
 
-export interface ScheduleEventData {
+export type ScheduleEventData = {
     id: string;
     task: ScheduleTask;
 }
