@@ -1,8 +1,8 @@
 // src/shared/services/appInitService.ts
-import { useThemeInit } from '@/modules/Theme/useThemeInit';
-import { initializeLanguage } from '@/i18n/index';
-import { useReminderInit } from '@/modules/Reminder/composables/useReminderInit';
-import { useTaskReminderInit } from '@/modules/Task/composables/useTaskReminderInit';
+// import { useThemeInit } from '@/modules/Theme/useThemeInit';
+// import { initializeLanguage } from '@/i18n/index';
+import { ReminderInitService } from '@/modules/Reminder/services/reminderInitService';
+import { TaskReminderInitService } from '@/modules/Task/services/taskReminderInitService';
 import { UserDataInitService } from '@/shared/services/userDataInitService';
 
 export interface InitializationOptions {
@@ -56,17 +56,17 @@ export class AppInitService {
   private static async initBasicServices(options: InitializationOptions): Promise<void> {
     console.log('初始化基础服务...');
 
-    // 主题初始化
-    if (!options.skipTheme) {
-      useThemeInit();
-      console.log('✓ 主题初始化完成');
-    }
+    // // 主题初始化
+    // if (!options.skipTheme) {
+    //   useThemeInit();
+    //   console.log('✓ 主题初始化完成');
+    // }
 
-    // 语言初始化
-    if (!options.skipLanguage) {
-      await initializeLanguage();
-      console.log('✓ 语言初始化完成');
-    }
+    // // 语言初始化
+    // if (!options.skipLanguage) {
+    //   await initializeLanguage();
+    //   console.log('✓ 语言初始化完成');
+    // }
   }
 
   /**
@@ -90,19 +90,10 @@ export class AppInitService {
   private static async initFunctionalServices(options: InitializationOptions): Promise<void> {
     console.log('初始化功能服务...');
 
-    const autoInit = options.autoInit !== false;
-
-    // 初始化提醒系统
-    const { initializeReminders } = useReminderInit(autoInit);
-    const { initializeTaskReminders } = useTaskReminderInit(autoInit);
-
-    // 如果不是自动初始化，手动调用
-    if (!autoInit) {
-      await Promise.all([
-        initializeReminders(),
-        initializeTaskReminders()
-      ]);
-    }
+    await Promise.all([
+      ReminderInitService.initialize(),
+      TaskReminderInitService.initialize()
+    ]);
 
     console.log('✓ 功能服务初始化完成');
   }
@@ -131,14 +122,7 @@ export class AppInitService {
       // 重新加载用户数据
       await UserDataInitService.initUserData();
 
-      // 重新初始化提醒系统
-      const { initializeReminders } = useReminderInit(false);
-      const { initializeTaskReminders } = useTaskReminderInit(false);
-
-      await Promise.all([
-        initializeReminders(),
-        initializeTaskReminders()
-      ]);
+     
 
       console.log('用户数据重新初始化完成');
     } catch (error) {
@@ -159,6 +143,9 @@ export class AppInitService {
    */
   static cleanup(): void {
     console.log('清理应用资源...');
+
+    ReminderInitService.destroy();
+    TaskReminderInitService.destroy();
 
     this.cleanupFunctions.forEach(cleanup => {
       try {

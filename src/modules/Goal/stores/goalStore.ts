@@ -45,7 +45,7 @@ export const useGoalStore = defineStore("goal", {
         weight: 5,
       } as IKeyResult,
       records: [] as IRecord[],
-        _autoSave: null as ReturnType<typeof useStoreSave> | null,
+      _autoSave: null as ReturnType<typeof useStoreSave> | null,
     } as GoalState),
   getters: {
     getAllGoals(): IGoal[] {
@@ -155,51 +155,52 @@ export const useGoalStore = defineStore("goal", {
   actions: {
     // 初始化自动保存（在需要时调用）
     _initAutoSave() {
-        if (!this._autoSave) {
-          this._autoSave = useStoreSave({
-            onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
-            onError: (storeName, error) => console.error(`✗ ${storeName} 数据保存失败:`, error),
-          });
-        }
-        return this._autoSave;
-      },
-  
-      // 自动保存方法
-      async saveGoals() {
-        const autoSave = this._initAutoSave();
-        return autoSave.debounceSave('goals', this.goals);
-      },
-  
-      async saveRecords() {
-        const autoSave = this._initAutoSave();
-        return autoSave.debounceSave('records', this.records);
-      },
-  
-      async saveGoalsImmediately() {
-        const autoSave = this._initAutoSave();
-        return autoSave.saveImmediately('goals', this.goals);
-      },
-  
-      async saveRecordsImmediately() {
-        const autoSave = this._initAutoSave();
-        return autoSave.saveImmediately('records', this.records);
-      },
-  
-      // 检查保存状态
-      isSavingGoals() {
-        const autoSave = this._initAutoSave();
-        return autoSave.isSaving('goals');
-      },
-  
-      isSavingRecords() {
-        const autoSave = this._initAutoSave();
-        return autoSave.isSaving('records');
-      },
-  
-      isSavingAny() {
-        const autoSave = this._initAutoSave();
-        return autoSave.isSaving();
-      },
+      if (!this._autoSave) {
+        this._autoSave = useStoreSave({
+          onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
+          onError: (storeName, error) =>
+            console.error(`✗ ${storeName} 数据保存失败:`, error),
+        });
+      }
+      return this._autoSave;
+    },
+
+    // 自动保存方法
+    async saveGoals() {
+      const autoSave = this._initAutoSave();
+      return autoSave.debounceSave("goals", this.goals);
+    },
+
+    async saveRecords() {
+      const autoSave = this._initAutoSave();
+      return autoSave.debounceSave("records", this.records);
+    },
+
+    async saveGoalsImmediately() {
+      const autoSave = this._initAutoSave();
+      return autoSave.saveImmediately("goals", this.goals);
+    },
+
+    async saveRecordsImmediately() {
+      const autoSave = this._initAutoSave();
+      return autoSave.saveImmediately("records", this.records);
+    },
+
+    // 检查保存状态
+    isSavingGoals() {
+      const autoSave = this._initAutoSave();
+      return autoSave.isSaving("goals");
+    },
+
+    isSavingRecords() {
+      const autoSave = this._initAutoSave();
+      return autoSave.isSaving("records");
+    },
+
+    isSavingAny() {
+      const autoSave = this._initAutoSave();
+      return autoSave.isSaving();
+    },
 
     // 临时目标相关方法（用于新建目标）
     initTempGoal() {
@@ -287,10 +288,10 @@ export const useGoalStore = defineStore("goal", {
       this.goals.splice(index, 1, updatedGoal);
 
       const success = await this.saveGoals();
-        if (!success) {
-          console.error("目标保存失败，请稍后再试");
-          return null;
-        }
+      if (!success) {
+        console.error("目标保存失败，请稍后再试");
+        return null;
+      }
 
       return updatedGoal;
     },
@@ -499,7 +500,7 @@ export const useGoalStore = defineStore("goal", {
       };
       this.records.push(newRecord);
 
-      // 更新关键结果的起始值
+      // 更新关键结果的当前值
       const goal = this.goals.find((g) => g.id === goalId);
       if (goal) {
         const keyResult = goal.keyResults.find((kr) => kr.id === keyResultId);

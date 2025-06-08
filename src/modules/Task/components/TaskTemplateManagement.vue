@@ -4,29 +4,13 @@
         <div class="template-controls">
             <!-- 状态筛选器 -->
             <div class="template-filters">
-                <v-btn-toggle
-                    v-model="currentStatus"
-                    mandatory
-                    variant="outlined"
-                    divided
-                    class="filter-group"
-                >
-                    <v-btn
-                        v-for="status in statusFilters"
-                        :key="status.value"
-                        :value="status.value"
-                        class="filter-button"
-                        size="large"
-                    >
+                <v-btn-toggle v-model="currentStatus" mandatory variant="outlined" divided class="filter-group">
+                    <v-btn v-for="status in statusFilters" :key="status.value" :value="status.value"
+                        class="filter-button" size="large">
                         <v-icon :icon="status.icon" start />
                         {{ status.label }}
-                        <v-chip
-                            size="small"
-                            :color="status.value === 'active' ? 'success' : 
-                                   status.value === 'upcoming' ? 'warning' : 'info'"
-                            variant="elevated"
-                            class="ml-2"
-                        >
+                        <v-chip size="small" :color="status.value === 'active' ? 'success' :
+                            status.value === 'upcoming' ? 'warning' : 'info'" variant="elevated" class="ml-2">
                             {{ getTemplateCountByStatus(status.value) }}
                         </v-chip>
                     </v-btn>
@@ -34,14 +18,8 @@
             </div>
 
             <!-- 创建按钮 -->
-            <v-btn
-                color="primary"
-                variant="elevated"
-                size="large"
-                prepend-icon="mdi-plus"
-                @click="startCreateTaskTemplate"
-                class="create-button"
-            >
+            <v-btn color="primary" variant="elevated" size="large" prepend-icon="mdi-plus"
+                @click="startCreateTaskTemplate" class="create-button">
                 创建新模板
             </v-btn>
         </div>
@@ -49,19 +27,11 @@
         <!-- 模板列表 -->
         <div class="template-grid">
             <!-- 空状态 -->
-            <v-card
-                v-if="filteredTemplates.length === 0"
-                class="empty-state-card"
-                elevation="2"
-            >
+            <v-card v-if="filteredTemplates.length === 0" class="empty-state-card" elevation="2">
                 <v-card-text class="text-center pa-8">
-                    <v-icon
-                        :color="currentStatus === 'active' ? 'primary' : 
-                               currentStatus === 'upcoming' ? 'warning' : 'info'"
-                        size="64"
-                        class="mb-4"
-                    >
-                        {{ statusFilters.find(s => s.value === currentStatus)?.icon }}
+                    <v-icon :color="currentStatus === 'active' ? 'primary' :
+                        currentStatus === 'upcoming' ? 'warning' : 'info'" size="64" class="mb-4">
+                        {{statusFilters.find(s => s.value === currentStatus)?.icon}}
                     </v-icon>
                     <h3 class="text-h5 mb-2">
                         {{ getEmptyStateText() }}
@@ -69,63 +39,35 @@
                     <p class="text-body-1 text-medium-emphasis">
                         {{ getEmptyStateDescription() }}
                     </p>
-                    <v-btn
-                        v-if="currentStatus === 'active'"
-                        color="primary"
-                        variant="tonal"
-                        prepend-icon="mdi-plus"
-                        @click="startCreateTaskTemplate"
-                        class="mt-4"
-                    >
+                    <v-btn v-if="currentStatus === 'active'" color="primary" variant="tonal" prepend-icon="mdi-plus"
+                        @click="startCreateTaskTemplate" class="mt-4">
                         创建第一个模板
                     </v-btn>
                 </v-card-text>
             </v-card>
 
             <!-- 模板卡片 -->
-            <v-card
-                v-for="template in filteredTemplates"
-                :key="template.id"
-                class="template-card"
-                elevation="2"
-                hover
-            >
+            <v-card v-for="template in filteredTemplates" :key="template.id" class="template-card" elevation="2" hover>
                 <!-- 卡片头部 -->
                 <v-card-title class="template-header">
                     <div class="header-content">
                         <h3 class="template-title">{{ template.title }}</h3>
-                        <v-chip
-                            :color="getStatusColor(template)"
-                            variant="tonal"
-                            size="small"
-                            class="status-chip"
-                        >
+                        <v-chip :color="getStatusColor(template)" variant="tonal" size="small" class="status-chip">
                             <v-icon start size="small">
                                 {{ getStatusIcon(template) }}
                             </v-icon>
                             {{ getStatusText(template) }}
                         </v-chip>
                     </div>
-                    
+
                     <!-- 操作按钮 -->
                     <div class="template-actions">
-                        <v-btn
-                            icon
-                            variant="text"
-                            size="small"
-                            @click="startEditTaskTemplate(template.id)"
-                            class="action-btn"
-                        >
+                        <v-btn icon variant="text" size="small" @click="startEditTaskTemplate(template.id)"
+                            class="action-btn">
                             <v-icon>mdi-pencil</v-icon>
                         </v-btn>
-                        <v-btn
-                            icon
-                            variant="text"
-                            size="small"
-                            color="error"
-                            @click="deleteTemplate(template)"
-                            class="action-btn"
-                        >
+                        <v-btn icon variant="text" size="small" color="error" @click="deleteTemplate(template)"
+                            class="action-btn">
                             <v-icon>mdi-delete</v-icon>
                         </v-btn>
                     </div>
@@ -156,7 +98,7 @@
                                 mdi-repeat
                             </v-icon>
                             <span class="meta-text">
-                                {{ getRepeatText(template.repeatPattern) }}
+                                {{ getRepeatText(template.timeConfig) }}
                             </span>
                         </div>
 
@@ -173,23 +115,12 @@
 
                     <!-- 关键结果标签 -->
                     <div v-if="template.keyResultLinks?.length" class="key-results mt-3">
-                        <v-chip
-                            v-for="link in template.keyResultLinks.slice(0, 2)"
-                            :key="link.keyResultId"
-                            size="small"
-                            color="primary"
-                            variant="outlined"
-                            class="mr-1 mb-1"
-                        >
+                        <v-chip v-for="link in template.keyResultLinks.slice(0, 2)" :key="link.keyResultId" size="small"
+                            color="primary" variant="outlined" class="mr-1 mb-1">
                             <v-icon start size="small">mdi-target</v-icon>
                             {{ getKeyResultName(link) }}
                         </v-chip>
-                        <v-chip
-                            v-if="template.keyResultLinks.length > 2"
-                            size="small"
-                            variant="text"
-                            class="mb-1"
-                        >
+                        <v-chip v-if="template.keyResultLinks.length > 2" size="small" variant="text" class="mb-1">
                             +{{ template.keyResultLinks.length - 2 }}
                         </v-chip>
                     </div>
@@ -219,12 +150,24 @@
             </v-card>
         </v-dialog>
 
-        <!-- 任务模板对话框 -->
-        <TaskTemplateDialog
-            :visible="showEditTaskTemplateDialog"
-            @cancel="cancelEditTaskTemplate"
-            @save="handleSaveTaskTemplate"
-        />
+        <!-- 模板选择对话框 -->
+        <TemplateSelectionDialog :visible="showTemplateSelectionDialog" @cancel="cancelTemplateSelection"
+            @select="handleTemplateTypeSelected" />
+
+        <!-- 任务模板编辑对话框 -->
+        <TaskTemplateDialog :visible="showEditTaskTemplateDialog" :template="currentTemplate" :is-edit-mode="isEditMode"
+            @cancel="cancelEditTaskTemplate" @save="handleSaveTaskTemplate" />
+
+        <!-- 消息提示框 -->
+        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right"
+            variant="elevated" :multi-line="snackbar.message.length > 50">
+            <div class="d-flex align-center">
+                <span class="flex-1-1">{{ snackbar.message }}</span>
+                <v-btn icon variant="text" size="small" color="white" @click="closeSnackbar">
+                    <v-icon>mdi-close</v-icon>
+                </v-btn>
+            </div>
+        </v-snackbar>
     </div>
 </template>
 
@@ -232,24 +175,37 @@
 import { ref, computed } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
-import type { ITaskTemplate } from '../types/task';
+import type { TaskTemplate } from '..//types/task';
 import TaskTemplateDialog from './TaskTemplateDialog.vue';
+import TemplateSelectionDialog from './TemplateSelectionDialog.vue';
 import { useTaskDialog } from '../composables/useTaskDialog';
-import { getTemplateStatus } from '../utils/taskUtils';
+import { getTemplateStatus } from '../utils/taskInstanceUtils';
+import { getTaskDisplayDate } from '../utils/taskInstanceUtils';
+// services
+import { taskTemplateService } from '../services/taskTemplateService';
 
-const { 
-    showEditTaskTemplateDialog, 
-    startCreateTaskTemplate, 
-    startEditTaskTemplate, 
-    handleSaveTaskTemplate, 
-    cancelEditTaskTemplate 
+const {
+    snackbar,
+    showSnackbar,
+    closeSnackbar,
+
+    showEditTaskTemplateDialog,
+    showTemplateSelectionDialog,
+    currentTemplate,
+    isEditMode,
+    startCreateTaskTemplate,
+    handleTemplateTypeSelected,
+    cancelTemplateSelection,
+    startEditTaskTemplate,
+    handleSaveTaskTemplate,
+    cancelEditTaskTemplate
 } = useTaskDialog();
 
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
 const currentStatus = ref('active');
 const showDeleteDialog = ref(false);
-const selectedTemplate = ref<ITaskTemplate | null>(null);
+const selectedTemplate = ref<TaskTemplate | null>(null);
 
 const statusFilters = [
     { label: '进行中', value: 'active', icon: 'mdi-play-circle' },
@@ -269,20 +225,28 @@ const getTemplateCountByStatus = (status: string) => {
     ).length;
 };
 
-const getRepeatText = (pattern: any) => {
-    switch (pattern.type) {
+const getRepeatText = (timeConfig: any) => {
+    const { recurrence } = timeConfig;
+
+    switch (recurrence.type) {
         case 'daily':
-            return '每天';
+            return recurrence.interval > 1 ? `每${recurrence.interval}天` : '每天';
         case 'weekly':
-            return `每周${pattern.days.map((d: number) => '日一二三四五六'[d]).join('、')}`;
+            if (recurrence.config?.weekdays?.length) {
+                const weekdayNames = recurrence.config.weekdays.map((d: number) => '日一二三四五六'[d]);
+                return `每周${weekdayNames.join('、')}`;
+            }
+            return recurrence.interval > 1 ? `每${recurrence.interval}周` : '每周';
         case 'monthly':
-            return `每月${pattern.days.join('、')}日`;
+            return recurrence.interval > 1 ? `每${recurrence.interval}月` : '每月';
+        case 'yearly':
+            return recurrence.interval > 1 ? `每${recurrence.interval}年` : '每年';
         default:
             return '不重复';
     }
 };
 
-const getStatusColor = (template: ITaskTemplate) => {
+const getStatusColor = (template: TaskTemplate) => {
     const status = getTemplateStatus(template);
     switch (status) {
         case 'active': return 'success';
@@ -292,21 +256,32 @@ const getStatusColor = (template: ITaskTemplate) => {
     }
 };
 
-const getStatusIcon = (template: ITaskTemplate) => {
+const getStatusIcon = (template: TaskTemplate) => {
     const status = getTemplateStatus(template);
     return statusFilters.find(s => s.value === status)?.icon || 'mdi-circle';
 };
 
-const getStatusText = (template: ITaskTemplate) => {
+const getStatusText = (template: TaskTemplate) => {
     const status = getTemplateStatus(template);
     return statusFilters.find(s => s.value === status)?.label || '';
 };
 
-const formatDateRange = (template: ITaskTemplate) => {
-    const start = new Date(template.repeatPattern.startDate).toLocaleDateString('zh-CN');
-    const end = template.repeatPattern.endDate 
-        ? new Date(template.repeatPattern.endDate).toLocaleDateString('zh-CN')
-        : '持续进行';
+// ✅ 修改日期范围格式化 - 使用新的时间数据结构
+const formatDateRange = (template: TaskTemplate) => {
+    const startTime = template.timeConfig.baseTime.start;
+    const start = getTaskDisplayDate({ scheduledTime: startTime } as any);
+
+    let end = '持续进行';
+    if (template.timeConfig.recurrence.endCondition.type === 'date' &&
+        template.timeConfig.recurrence.endCondition.endDate) {
+        end = getTaskDisplayDate({
+            scheduledTime: template.timeConfig.recurrence.endCondition.endDate
+        } as any);
+    } else if (template.timeConfig.recurrence.endCondition.type === 'count' &&
+        template.timeConfig.recurrence.endCondition.count) {
+        end = `${template.timeConfig.recurrence.endCondition.count}次后结束`;
+    }
+
     return `${start} - ${end}`;
 };
 
@@ -334,20 +309,19 @@ const getEmptyStateDescription = () => {
     }
 };
 
-const deleteTemplate = (template: ITaskTemplate) => {
+const deleteTemplate = (template: TaskTemplate) => {
     selectedTemplate.value = template;
     showDeleteDialog.value = true;
 };
 
 const confirmDelete = async () => {
     if (selectedTemplate.value) {
-        await taskStore.deleteTaskTemplate(selectedTemplate.value.id);
+        await taskTemplateService.deleteTaskTemplate(selectedTemplate.value.id);
         showDeleteDialog.value = false;
         selectedTemplate.value = null;
     }
 };
 </script>
-
 <style scoped>
 #task-template-management {
     padding: 1.5rem;
@@ -500,25 +474,25 @@ const confirmDelete = async () => {
     #task-template-management {
         padding: 1rem;
     }
-    
+
     .template-controls {
         flex-direction: column;
         align-items: stretch;
     }
-    
+
     .template-grid {
         grid-template-columns: 1fr;
         gap: 1rem;
     }
-    
+
     .template-header {
         padding: 1rem;
     }
-    
+
     .template-content {
         padding: 1rem;
     }
-    
+
     .template-footer {
         padding: 0.75rem 1rem;
     }
@@ -529,12 +503,12 @@ const confirmDelete = async () => {
         align-items: center;
         text-align: center;
     }
-    
+
     .template-actions {
         justify-content: center;
         margin-top: 0.5rem;
     }
-    
+
     .meta-item {
         justify-content: center;
     }

@@ -14,12 +14,17 @@
                     <div class="task-meta">
                         <div class="due-date">
                             <v-icon icon="mdi-calendar" />
-                            <span>任务日期: {{ formatDate(task.date) }}</span>
+                            <span>任务日期: {{ getTaskDisplayDate(task) }}</span>
                         </div>
                         
                         <div class="task-status">
-                            <v-icon :icon="task.completed ? 'mdi-check-circle' : 'mdi-clock-outline'" />
-                            <span>{{ task.completed ? '已完成' : '进行中' }}</span>
+                            <v-icon :icon="task.status === 'completed' ? 'mdi-check-circle' : 'mdi-clock-outline'" />
+                            <span>{{ getStatusText(task.status) }}</span>
+                        </div>
+                        
+                        <div class="task-time">
+                            <v-icon icon="mdi-clock" />
+                            <span>时间: {{ getTaskDisplayTime(task) }}</span>
                         </div>
                     </div>
 
@@ -34,11 +39,20 @@
 
                     <!-- Complete Button -->
                     <button 
-                        v-if="!task.completed"
+                        v-if="task.status !== 'completed'"
                         class="btn btn-primary complete-btn"
                         @click="handleComplete"
                     >
                         完成任务
+                    </button>
+                    
+                    <!-- Undo Complete Button -->
+                    <button 
+                        v-else
+                        class="btn btn-secondary undo-btn"
+                        @click="handleUndoComplete"
+                    >
+                        取消完成
                     </button>
                 </div>
             </div>
@@ -50,6 +64,7 @@
 import type { ITaskInstance } from '../types/task';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { getTaskDisplayTime, getTaskDisplayDate } from '../utils/taskInstanceUtils';
 
 const props = defineProps<{
     visible: boolean;
@@ -64,8 +79,16 @@ const emit = defineEmits<{
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
 
-const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString();
+// ✅ 状态文本映射
+const getStatusText = (status: string) => {
+    const statusMap = {
+        'pending': '待处理',
+        'inProgress': '进行中',
+        'completed': '已完成',
+        'cancelled': '已取消',
+        'overdue': '已过期'
+    };
+    return statusMap[status as keyof typeof statusMap] || '未知状态';
 };
 
 const getKeyResultName = (link: any) => {
@@ -76,6 +99,11 @@ const getKeyResultName = (link: any) => {
 
 const handleComplete = async () => {
     await taskStore.completeTask(props.task.id);
+    emit('complete');
+};
+
+const handleUndoComplete = async () => {
+    await taskStore.undoCompleteTask(props.task.id);
     emit('complete');
 };
 

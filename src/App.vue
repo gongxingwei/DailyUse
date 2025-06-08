@@ -15,6 +15,9 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
 import { AppInitService } from '@/shared/services/appInitService';
+import { useThemeInit } from './modules/Theme/useThemeInit';
+
+useThemeInit();
 
 const isLoading = ref(true);
 

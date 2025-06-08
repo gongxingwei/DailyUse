@@ -4,11 +4,10 @@
             <v-row class="d-flex justify-space-between align-center">
                 <v-col cols="8">
                     <div class="d-flex align-center gap-4">
-                        
                         <!-- 任务名称 -->
                         <div>
                             <div class="text-h6">{{ taskTemplate.title }}</div>
-                            <span>{{ taskTemplate.repeatPattern.startDate }} - {{ taskTemplate.repeatPattern.startDate }}</span>
+                            <span>{{ formatDateRange(taskTemplate) }}</span>
                         </div>
                     </div>
                 </v-col>
@@ -26,23 +25,39 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { ITaskTemplate } from '../types/task';
+import { TaskTemplate } from '../types/task';
+import { getTaskDisplayDate } from '../utils/taskInstanceUtils';
 
 const props = defineProps<{
-    taskTemplate: ITaskTemplate;
+    taskTemplate: TaskTemplate;
     keyResultId: string;
 }>();
 
 const keyResultValue = computed(() => {
-    const relativeKeyResult = props.taskTemplate.keyResultLinks?.find((kr) => kr.keyResultId === props.keyResultId);
+    const relativeKeyResult = props.taskTemplate.keyResultLinks?.find(
+        (kr) => kr.keyResultId === props.keyResultId
+    );
     if (!relativeKeyResult) {
         return 0;
     }
-    const value = relativeKeyResult.incrementValue;
-    return value;
+    return relativeKeyResult.incrementValue;
 });
 
-
+// ✅ 格式化日期范围 - 使用新的时间数据结构
+const formatDateRange = (template: TaskTemplate) => {
+    const startTime = template.timeConfig.baseTime.start;
+    const start = getTaskDisplayDate({ scheduledTime: startTime } as any);
+    
+    let end = '持续进行';
+    if (template.timeConfig.recurrence.endCondition.type === 'date' && 
+        template.timeConfig.recurrence.endCondition.endDate) {
+        end = getTaskDisplayDate({ 
+            scheduledTime: template.timeConfig.recurrence.endCondition.endDate 
+        } as any);
+    }
+    
+    return `${start} - ${end}`;
+};
 </script>
 
 <style scoped>

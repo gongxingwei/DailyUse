@@ -166,10 +166,7 @@
 
                                         <v-list-item-subtitle class="task-meta">
                                             <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                                            {{ formatTime(task.date) }}
-                                            <!-- <span v-if="task.estimatedDuration" class="duration-info">
-                                                · 预计 {{ task.estimatedDuration }}分钟
-                                            </span> -->
+                                            {{ getTaskDisplayTime(task) }}
                                         </v-list-item-subtitle>
 
                                         <!-- 关键结果链接 -->
@@ -187,8 +184,6 @@
                                             </v-chip>
                                         </div>
                                     </div>
-
-                                    
                                 </v-list-item>
                             </v-list>
                         </div>
@@ -231,7 +226,7 @@
 
                                         <v-list-item-subtitle class="task-meta">
                                             <v-icon size="small" class="mr-1">mdi-check</v-icon>
-                                            完成于 {{ formatTime(task.completedAt || task.date) }}
+                                            完成于 {{ formatTime(task.completedAt?.isoString || task.scheduledTime.isoString) }}
                                         </v-list-item-subtitle>
                                     </div>
 
@@ -261,6 +256,8 @@ import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
 import type { ITaskInstance } from '../types/task';
+import { getTaskDisplayTime, getTaskDisplayDate } from '../utils/taskInstanceUtils';
+import { TimeUtils } from '../utils/timeUtils';
 
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
@@ -286,19 +283,28 @@ const weekDays = computed(() => {
     return days;
 });
 
-// 任务过滤
-const dayTasks = computed(() =>
-    taskStore.getAllTaskInstances.filter(task =>
-        task.date.startsWith(selectedDate.value)
-    )
-);
+// ✅ 修改任务过滤逻辑 - 使用新的时间数据结构
+const dayTasks = computed(() => {
+    const selectedDateTime = TimeUtils.fromISOString(new Date(selectedDate.value).toISOString());
+    const nextDay = TimeUtils.fromISOString(new Date(new Date(selectedDate.value).getTime() + 24 * 60 * 60 * 1000).toISOString());
+    
+    return taskStore.getAllTaskInstances.filter(task => {
+        if (!task.scheduledTime || typeof task.scheduledTime.timestamp !== 'number') {
+            return false;
+        }
+        
+        return task.scheduledTime.timestamp >= selectedDateTime.timestamp &&
+               task.scheduledTime.timestamp < nextDay.timestamp;
+    });
+});
 
+// ✅ 修改完成状态过滤
 const completedTasks = computed(() =>
-    dayTasks.value.filter(task => task.completed)
+    dayTasks.value.filter(task => task.status === 'completed')
 );
 
 const incompleteTasks = computed(() =>
-    dayTasks.value.filter(task => !task.completed)
+    dayTasks.value.filter(task => task.status === 'pending' || task.status === 'inProgress')
 );
 
 const completedCount = computed(() => completedTasks.value.length);
@@ -334,14 +340,14 @@ const getCompletionTime = computed(() => {
     return '3小时20分钟';
 });
 
-// Utility functions
+// ✅ 修改工具函数使用新的时间数据结构
 const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     return `${date.getDate()}`;
 };
 
-const formatTime = (dateStr: string) => {
-    return new Date(dateStr).toLocaleTimeString('zh-CN', {
+const formatTime = (isoString: string) => {
+    return new Date(isoString).toLocaleTimeString('zh-CN', {
         hour: '2-digit',
         minute: '2-digit'
     });
@@ -353,10 +359,19 @@ const getKeyResultName = (link: any) => {
     return kr?.name || '';
 };
 
+// ✅ 修改任务计数逻辑
 const getTaskCountForDate = (date: string) => {
-    return taskStore.getAllTaskInstances.filter(task =>
-        task.date.startsWith(date)
-    ).length;
+    const selectedDateTime = TimeUtils.fromISOString(new Date(date).toISOString());
+    const nextDay = TimeUtils.fromISOString(new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000).toISOString());
+    
+    return taskStore.getAllTaskInstances.filter(task => {
+        if (!task.scheduledTime || typeof task.scheduledTime.timestamp !== 'number') {
+            return false;
+        }
+        
+        return task.scheduledTime.timestamp >= selectedDateTime.timestamp &&
+               task.scheduledTime.timestamp < nextDay.timestamp;
+    }).length;
 };
 
 const isSelectedDay = (date: string) => date === selectedDate.value;
@@ -385,8 +400,6 @@ const completeTask = async (task: ITaskInstance) => {
 const undoComplete = async (task: ITaskInstance) => {
     await taskStore.undoCompleteTask(task.id);
 };
-
-
 
 const showCelebration = ref(false);
 

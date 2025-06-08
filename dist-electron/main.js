@@ -18697,7 +18697,6 @@ class NotificationService {
   }
   async showNotification(options) {
     try {
-      console.log("NotificationService - showNotification:", options);
       const window2 = this.windowManagementService.createWindow(options);
       const url = this.windowManagementService.buildNotificationUrl(options);
       await window2.loadURL(url);
@@ -18750,7 +18749,6 @@ const notificationService = new NotificationService();
 function setupNotificationHandler() {
   ipcMain.handle("show-notification", async (_event, options) => {
     try {
-      console.log("IPC - show-notification:", options);
       return await notificationService.showNotification(options);
     } catch (error) {
       console.error("IPC Error - show-notification:", error);
