@@ -1,4 +1,5 @@
 // src/modules/Task/services/taskReminderService.ts
+import { TResponse } from '@/shared/types/response';
 import type { ITaskInstance, TaskTemplate } from '../types/task';
 import type { DateTime } from '../types/timeStructure';
 import { TimeUtils } from '../utils/timeUtils';
@@ -106,19 +107,39 @@ export class TaskReminderService {
   }
 
   /**
-   * 取消任务的所有提醒
+   * 取消传入任务实例的所有提醒
    */
-  async cancelTaskReminders(taskId: string): Promise<void> {
-    const reminderTimes = this.activeReminders.get(taskId);
-    
-    if (reminderTimes) {
-      for (const reminderTime of reminderTimes) {
-        const reminderId = `task-reminder-${taskId}-${reminderTime.timestamp}`;
-        await scheduleService.cancelSchedule(reminderId);
+  async cancelTaskInstanceReminders(taskInstanceId: string): Promise<TResponse<void>> {
+    try {
+      const reminderTimes = this.activeReminders.get(taskInstanceId);
+      if (!reminderTimes) {
+        return {
+          success: true,
+          message: `任务实例 ${taskInstanceId} 没有活跃的提醒`,
+          data: undefined
+        };
+      } else {
+        for (const reminderTime of reminderTimes) {
+          const reminderId = `task-reminder-${taskInstanceId}-${reminderTime.timestamp}`;
+          await scheduleService.cancelSchedule(reminderId);
+        }
+        
+        this.activeReminders.delete(taskInstanceId);
+        return {
+          success: true,
+          message: `成功取消任务实例 ${taskInstanceId} 的所有提醒`,
+          data: undefined
+        }
       }
-      
-      this.activeReminders.delete(taskId);
+    } catch (error) {
+      console.error(`取消任务实例 ${taskInstanceId} 的提醒失败:`, error);
+      return {
+        success: false,
+        message: `取消任务实例 ${taskInstanceId} 的提醒失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        data: undefined
+      };
     }
+    
   }
 
   /**
@@ -130,7 +151,7 @@ export class TaskReminderService {
   ): Promise<void> {
     // 清除所有现有提醒
     for (const [taskId] of this.activeReminders) {
-      await this.cancelTaskReminders(taskId);
+      await this.cancelTaskInstanceReminders(taskId);
     }
 
     // 重新创建提醒

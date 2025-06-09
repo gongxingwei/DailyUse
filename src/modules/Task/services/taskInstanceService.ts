@@ -3,6 +3,7 @@ import type { TaskTemplate, ITaskInstance } from '../types/task';
 import type { DateTime } from '../types/timeStructure';
 import { TimeUtils } from '../utils/timeUtils';
 import { useTaskStore } from '../stores/taskStore';
+import { taskReminderService } from './taskReminderService';
 
 export class TaskInstanceService {
   private taskStore = useTaskStore();
@@ -89,6 +90,89 @@ export class TaskInstanceService {
     }
 
     return instances;
+  }
+
+  /**
+   * 删除单个任务实例及其提醒
+   */
+  async deleteTaskInstance(taskId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    try {
+      const taskStore = useTaskStore();
+      const instance = taskStore.getTaskInstanceById(taskId);
+
+      if (!instance) {
+        return {
+          success: false,
+          message: '任务实例不存在'
+        };
+      }
+
+      // 1. 取消提醒
+      await taskReminderService.cancelTaskInstanceReminders(taskId);
+
+      // 2. 删除实例
+      const deleteSuccess = taskStore.deleteTaskInstanceById(taskId);
+
+      if (deleteSuccess) {
+        return {
+          success: true,
+          message: '任务实例删除成功'
+        };
+      } else {
+        return {
+          success: false,
+          message: '任务实例删除失败'
+        };
+      }
+
+    } catch (error) {
+      console.error('删除任务实例失败:', error);
+      return {
+        success: false,
+        message: `删除任务实例失败: ${error instanceof Error ? error.message : '未知错误'}`
+      };
+    }
+  }
+
+  /**
+   * 批量删除任务实例
+   */
+  async batchDeleteTaskInstances(taskIds: string[]): Promise<{
+    successCount: number;
+    failedCount: number;
+    cancelledReminders: number;
+  }> {
+    let successCount = 0;
+    let failedCount = 0;
+    let cancelledReminders = 0;
+
+    for (const taskId of taskIds) {
+      try {
+        // 取消提醒
+        await taskReminderService.cancelTaskInstanceReminders(taskId);
+        cancelledReminders++;
+
+        // 删除实例
+        const success = this.taskStore.deleteTaskInstanceById(taskId);
+        if (success) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (error) {
+        console.error(`删除任务实例 ${taskId} 失败:`, error);
+        failedCount++;
+      }
+    }
+
+    return {
+      successCount,
+      failedCount,
+      cancelledReminders
+    };
   }
 
   /**

@@ -204,7 +204,6 @@ export const useTaskStore = defineStore('task', {
   actions: {
     addTaskTemplate(template: TaskTemplate) {
       this.taskTemplates.push(template);
-      this.saveTaskTemplates();
     },
 
     // 删除任务模板
@@ -233,7 +232,43 @@ export const useTaskStore = defineStore('task', {
       }
     },
     
+    // 添加任务实例
+    addTaskInstance(instance: ITaskInstance) {
+      this.taskInstances.push(instance);
+      this.saveTaskInstances();
+    },
 
+    // 添加大量任务实例
+    addTaskInstances(instances: ITaskInstance[]) {
+      this.taskInstances.push(...instances);
+      this.saveTaskInstances();
+    },
+
+    // 删除任务实例
+    deleteTaskInstanceById(taskId: string): boolean {
+      const index = this.taskInstances.findIndex(t => t.id === taskId);
+      if (index !== -1) {
+        this.taskInstances.splice(index, 1);
+        this.saveTaskInstances();
+        return true;
+      }
+      console.error('Task instance not found:', taskId);
+      return false;
+    },
+    // 获取任务实例
+    getTaskInstanceById(taskId: string): ITaskInstance | undefined {
+      return this.taskInstances.find(t => t.id === taskId);
+    },
+    // 更新任务实例
+    updateTaskInstance(instance: ITaskInstance) {
+      const index = this.taskInstances.findIndex(t => t.id === instance.id);
+      if (index !== -1) {
+        this.taskInstances[index] = instance;
+        this.saveTaskInstances();
+      } else {
+        console.error('Task instance not found:', instance.id);
+      }
+    },
 
     // 完成任务
     async completeTask(taskId: string) {

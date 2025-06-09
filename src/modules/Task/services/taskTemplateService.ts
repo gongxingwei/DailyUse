@@ -4,6 +4,7 @@ import type { TaskTemplate } from "../types/task";
 import type { TResponse } from "@/shared/types/response";
 import { v4 as uuidv4, validate } from "uuid";
 import { TimeUtils } from "../utils/timeUtils"
+import { taskInstanceService } from "./taskInstanceService";
 export class TaskTemplateService {
   private taskStore = useTaskStore();
   private reminderService = TaskReminderService.getInstance();
@@ -21,6 +22,8 @@ export class TaskTemplateService {
 
       // 添加到存储
       this.taskStore.addTaskTemplate(tempTemplate);
+      await this.taskStore.saveTaskTemplates();
+
       return { success: true, message: "成功添加任务模板", data: undefined };
     } catch (error) {
       return {
@@ -33,25 +36,6 @@ export class TaskTemplateService {
     }
   }
 
-  async deleteTaskTemplate(tempTemplateId: string): Promise<TResponse<void>> {
-    try {
-      this.taskStore.deleteTaskTemplateById(tempTemplateId);
-      return {
-        success: true,
-        message: '删除任务模板成功',
-        data: undefined
-      }
-    } catch (error) {
-      console.error('deleteTaskTemplate failed', error)
-      return {
-        success: false,
-        message: `删除任务模板失败： ${
-          error instanceof Error ? error.message : '未知错误'
-        }`
-      }
-    }
-  }
-
   async updateTaskTemplate(template: TaskTemplate): Promise<TResponse<void>> {
     try {
       const validation = this.validateTaskTemplateForUpdate(template);
@@ -60,16 +44,6 @@ export class TaskTemplateService {
           success: false,
           data: undefined,
           message: `更新任务模板失败: ${validation.errors.join(", ")}`,
-        };
-      }
-
-      // 检查模板是否存在
-      const existingTemplate = this.taskStore.getTaskTemplateById(template.id);
-      if (!existingTemplate) {
-        return {
-          success: false,
-          data: undefined,
-          message: "任务模板不存在",
         };
       }
 

@@ -198,7 +198,8 @@ const {
     cancelTemplateSelection,
     startEditTaskTemplate,
     handleSaveTaskTemplate,
-    cancelEditTaskTemplate
+    cancelEditTaskTemplate,
+    handleDeleteTaskTemplate
 } = useTaskDialog();
 
 const taskStore = useTaskStore();
@@ -266,7 +267,6 @@ const getStatusText = (template: TaskTemplate) => {
     return statusFilters.find(s => s.value === status)?.label || '';
 };
 
-// ✅ 修改日期范围格式化 - 使用新的时间数据结构
 const formatDateRange = (template: TaskTemplate) => {
     const startTime = template.timeConfig.baseTime.start;
     const start = getTaskDisplayDate({ scheduledTime: startTime } as any);
@@ -316,7 +316,8 @@ const deleteTemplate = (template: TaskTemplate) => {
 
 const confirmDelete = async () => {
     if (selectedTemplate.value) {
-        await taskTemplateService.deleteTaskTemplate(selectedTemplate.value.id);
+
+        await handleDeleteTaskTemplate(selectedTemplate.value.id);
         showDeleteDialog.value = false;
         selectedTemplate.value = null;
     }

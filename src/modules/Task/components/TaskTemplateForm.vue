@@ -152,8 +152,25 @@
                                 <v-card-text class="py-2">
                                     <v-row align="center">
                                         <v-col cols="12" md="3">
-                                            <v-select v-model="alert.timing.type" label="提醒类型"
-                                                :items="reminderTimingTypes" variant="outlined" density="compact" />
+                                            <v-select v-model="alert.type" label="通知方式" :items="reminderTypes"
+                                                variant="outlined" density="compact" item-title="title"
+                                                item-value="value" :item-props="getReminderItemProps">
+                                                <!-- 自定义选项显示 -->
+                                                <template #item="{ props, item }">
+                                                    <v-list-item v-bind="props" :disabled="item.raw.disabled"
+                                                        :class="{ 'text-grey-400': item.raw.disabled }">
+                                                        <template #title>
+                                                            <div class="d-flex align-center">
+                                                                <span>{{ item.raw.title }}</span>
+                                                                <v-chip v-if="item.raw.disabled" size="x-small"
+                                                                    color="warning" variant="outlined" class="ml-2">
+                                                                    未实现
+                                                                </v-chip>
+                                                            </div>
+                                                        </template>
+                                                    </v-list-item>
+                                                </template>
+                                            </v-select>
                                         </v-col>
                                         <v-col cols="12" md="3" v-if="alert.timing.type === 'relative'">
                                             <v-text-field v-model.number="alert.timing.minutesBefore" label="提前分钟"
@@ -315,10 +332,17 @@ const reminderTimingTypes = [
 ];
 
 const reminderTypes = [
-    { title: '通知', value: 'notification' },
-    { title: '邮件', value: 'email' },
-    { title: '声音', value: 'sound' }
+    { title: '通知', value: 'notification', disabled: false },
+    { title: '邮件', value: 'email', disabled: true },
+    { title: '声音', value: 'sound', disabled: true },
+    { title: '短信', value: 'sms', disabled: true }
 ];
+const getReminderItemProps = (item: any) => {
+    return {
+        disabled: item.disabled,
+        title: item.disabled ? `${item.title} (暂未实现)` : item.title
+    };
+};
 
 const difficultyOptions = [
     { title: '非常简单', value: 1 },
@@ -549,5 +573,20 @@ defineExpose({
     border-radius: 8px;
     padding: 1rem;
     margin-bottom: 0.5rem;
+}
+
+/* 禁用选项的样式 */
+:deep(.v-list-item--disabled) {
+    opacity: 0.6;
+}
+
+:deep(.v-list-item--disabled .v-list-item__content) {
+    color: rgba(var(--v-theme-on-surface), 0.38) !important;
+}
+
+/* 未实现标签的样式 */
+.v-chip.v-chip--size-x-small {
+    height: 18px;
+    font-size: 10px;
 }
 </style>

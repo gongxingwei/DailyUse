@@ -5,6 +5,7 @@ import type { TaskTemplate } from "../types/task";
 import { useTaskStore } from "../stores/taskStore";
 import { taskInstanceService } from "../services/taskInstanceService";
 import { taskReminderService } from "../services/taskReminderService";
+import { taskDomainService } from "../services/taskDomainService";
 import { TimeUtils } from "../utils/timeUtils";
 
 interface SnackbarConfig {
@@ -188,6 +189,56 @@ export function useTaskDialog() {
     isEditMode.value = false;
   };
 
+  // 删除任务模板
+  const handleDeleteTaskTemplate = async (templateId: string) => {
+    try {
+      const result = await taskDomainService.deleteTask(templateId);
+      
+      if (result.success) {
+        showSnackbar(result.message, 'success', 5000);
+      } else {
+        showSnackbar(result.message, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`删除任务模板失败: ${errorMessage}`, 'error', 6000);
+      return {
+        success: false,
+        message: errorMessage,
+        data: undefined
+      };
+    }
+  };
+
+  // 删除任务实例
+  const handleDeleteTaskInstance = async (taskId: string) => {
+    try {
+      const result = await taskDomainService.deleteTaskInstance(taskId);
+      
+      if (result.success && result.data) {
+        showSnackbar(
+          `成功删除任务实例 "${result.data.taskTitle}"`,
+          'success',
+          4000
+        );
+      } else {
+        showSnackbar(result.message, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`删除任务实例失败: ${errorMessage}`, 'error', 6000);
+      return {
+        success: false,
+        message: errorMessage,
+        data: undefined
+      };
+    }
+  };
+
   return {
     // Snackbar配置
     snackbar,
@@ -206,5 +257,7 @@ export function useTaskDialog() {
     startEditTaskTemplate,
     handleSaveTaskTemplate,
     cancelEditTaskTemplate,
+    handleDeleteTaskTemplate,
+    handleDeleteTaskInstance,
   };
 }
