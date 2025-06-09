@@ -157,7 +157,7 @@ export function useTaskDialog() {
       );
       
       for (const instance of existingInstances) {
-        await taskReminderService.cancelTaskReminders(instance.id);
+        await taskReminderService.cancelTaskInstanceReminders(instance.id);
       }
       
       // 重新生成未来的实例
