@@ -29,7 +29,7 @@ export class FileUtils {
   /**
    * 选择文件夹
    */
-  static selectFolder(): Promise<string> {
+  static selectFolder(): Promise<TResponse<{folderPath: string, files: Array<string>}>> {
     return window.shared.ipcRenderer.invoke('select-folder');
   }
 
@@ -57,7 +57,7 @@ export class FileUtils {
   /**
    * 重命名文件或文件夹
    */
-  static rename(oldPath: string, newPath: string): Promise<void> {
+  static rename(oldPath: string, newPath: string): Promise<boolean> {
     return window.shared.ipcRenderer.invoke('rename-file-or-folder', oldPath, newPath);
   }
 
@@ -92,7 +92,7 @@ export class FileUtils {
   /**
    * 刷新文件夹
    */
-  static refreshFolder(path: string): Promise<void> {
+  static refreshFolder(path: string): Promise<TResponse<{folderTreeData: any[], folderPath: string}>> {
     return window.shared.ipcRenderer.invoke('refresh-folder', path);
   }
 

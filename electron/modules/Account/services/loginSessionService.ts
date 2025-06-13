@@ -748,8 +748,8 @@ export class LoginSessionService {
       const key = Buffer.from(this.secretKey, "hex");
 
       // 创建加密器
-      const cipher = crypto.createCipher(this.algorithm, key);
-      cipher.setAutoPadding(true);
+      const cipher = crypto.createCipheriv(this.algorithm, key, iv);
+      // cipher.setAutoPadding(true);
 
       // 加密密码
       let encrypted = cipher.update(password, "utf8", "hex");
@@ -788,8 +788,8 @@ export class LoginSessionService {
       const key = Buffer.from(this.secretKey, "hex");
 
       // 创建解密器
-      const decipher = crypto.createDecipher(this.algorithm, key);
-      decipher.setAutoPadding(true);
+      const decipher = crypto.createDecipheriv(this.algorithm, key, iv);
+      // decipher.setAutoPadding(true);
 
       // 解密密码
       let decrypted = decipher.update(encrypted, "hex", "utf8");

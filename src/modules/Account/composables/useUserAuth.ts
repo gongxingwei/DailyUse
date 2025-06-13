@@ -1,4 +1,4 @@
-import { ref, computed, reactive, onMounted } from "vue";
+import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 //stores
 import { useAuthStore } from "@/modules/Account/stores/authStore";
@@ -58,6 +58,7 @@ export function useUserAuth(emit?: {
       const result = await loginSessionService.getRememberedUsers();
       if (result.success) {
         rememberedUsers.value = result.data || [];
+        console.log("获取记住的用户成功:", rememberedUsers.value);
       } else {
         console.error("获取记住的用户失败:", result.message);
       }
@@ -445,7 +446,6 @@ export function useUserAuth(emit?: {
         if (!response.data) {
           throw new Error("快速登录成功，但未返回用户数据");
         }
-        const user = response.data.userWithoutPassword;
 
         authStore.setUser(response.data.userWithoutPassword);
         await loadRememberedUsers();

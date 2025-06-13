@@ -17,7 +17,6 @@ export function useRecordDialog() {
         if (result.message) {
 
         }
-        const allGoals = goalStore.getAllGoals;
 
         closeRecordDialog();
     };

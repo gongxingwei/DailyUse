@@ -368,9 +368,10 @@ function handleClickOutside(event: MouseEvent) {
 // 刷新文件夹
 async function refreshFolder() {
   if (folderData.value?.folderPath) {
-    const result = await fileSystem.refreshFolder(folderData.value.folderPath)
-    if (result) {
-      folderData.value = result
+    const response = await fileSystem.refreshFolder(folderData.value.folderPath)
+    if (response.success && response.data) {
+
+      folderData.value = response.data as FolderData
     }
   }
 }
@@ -404,10 +405,7 @@ const props = defineProps<{
 watch(() => props.rootPath, async (newPath) => {
   if (newPath) {
     try {
-      const result = await fileSystem.refreshFolder(newPath)
-      if (result) {
-        folderData.value = result
-      }
+      await fileSystem.refreshFolder(newPath)
     } catch (error) {
       console.error('加载文件夹失败:', error)
     }
@@ -418,10 +416,7 @@ watch(() => props.rootPath, async (newPath) => {
 watch(() => folderData.value?.folderPath, async (newPath) => {
   if (newPath && newPath !== props.rootPath) {
     try {
-      const result = await fileSystem.refreshFolder(newPath)
-      if (result) {
-        folderData.value = result
-      }
+      await fileSystem.refreshFolder(newPath)
     } catch (error) {
       console.error('刷新文件夹失败:', error)
     }

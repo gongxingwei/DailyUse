@@ -341,15 +341,7 @@ export class UserEventEmitter {
     }
   }
 
-  /**
-   * 通知所有窗口用户信息已更新
-   * 
-   * @param username 用户名
-   * @param updateType 更新类型
-   */
-  static notifyUserUpdate(username: string, updateType: string): void {
 
-  }
 }
 
 // 导出类型定义，供渲染进程使用

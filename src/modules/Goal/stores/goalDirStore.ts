@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { IGoalDir } from "../types/goal";
+import type { GoalDir } from "../types/goal";
 import { v4 as uuidv4 } from "uuid";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 
@@ -22,7 +22,7 @@ export const SYSTEM_DIR_TYPES = {
   ARCHIVE: "archive",
 };
 
-const SYSTEM_DIRS: IGoalDir[] = [
+const SYSTEM_DIRS: GoalDir[] = [
   {
     id: SYSTEM_DIR_TYPES.ALL,
     name: "全部目标",
@@ -43,15 +43,15 @@ const SYSTEM_DIRS: IGoalDir[] = [
 export const useGoalDirStore = defineStore("goalDir", {
   state: () => ({
     systemDirs: SYSTEM_DIRS,
-    userDirs: [{ id: "3", name: "学习", icon: "mdi-folder" }] as IGoalDir[],
+    userDirs: [{ id: "3", name: "学习", icon: "mdi-folder" }] as GoalDir[],
     tempDir: {
       id: "temp",
       name: "临时目录",
       icon: "mdi-folder",
-    } as IGoalDir,
+    } as GoalDir,
   }),
   getters: {
-    getAllDirs(): IGoalDir[] {
+    getAllDirs(): GoalDir[] {
       return [
         this.systemDirs.find((dir) => dir.id === SYSTEM_DIR_TYPES.ALL)!,
         ...this.userDirs,
@@ -68,7 +68,7 @@ export const useGoalDirStore = defineStore("goalDir", {
         state.systemDirs.find((g) => g.id === id)
       );
     },
-    getUserDirs(state): IGoalDir[] {
+    getUserDirs(state): GoalDir[] {
       return state.userDirs;
     },
   },

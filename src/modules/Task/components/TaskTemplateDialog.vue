@@ -43,7 +43,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import type { TaskTemplate } from '../types/task';
-import TaskTemplateForm from './TaskTemplateForm.vue';
+import TaskTemplateForm from './TaskTemplateForm/TaskTemplateForm.vue';
 
 interface Props {
   visible: boolean;

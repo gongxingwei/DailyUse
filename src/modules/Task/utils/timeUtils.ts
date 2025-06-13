@@ -110,6 +110,140 @@ export class TimeUtils {
   }
 
   /**
+   * 更新日期但保持时间不变
+   */
+  static updateDateKeepTime(existingDateTime: DateTime, dateInput: string | DateInfo): DateTime {
+    let newDate: DateInfo;
+    
+    if (typeof dateInput === 'string') {
+      // 解析 YYYY-MM-DD 格式的字符串
+      const [year, month, day] = dateInput.split('-').map(Number);
+      newDate = { year, month, day };
+    } else {
+      newDate = dateInput;
+    }
+    
+    return {
+      ...existingDateTime,
+      date: newDate,
+      timestamp: new Date(
+        newDate.year,
+        newDate.month - 1,
+        newDate.day,
+        existingDateTime.time?.hour || 0,
+        existingDateTime.time?.minute || 0
+      ).getTime(),
+      isoString: new Date(
+        newDate.year,
+        newDate.month - 1,
+        newDate.day,
+        existingDateTime.time?.hour || 0,
+        existingDateTime.time?.minute || 0
+      ).toISOString()
+    };
+  }
+
+  /**
+   * 更新时间但保持日期不变
+   */
+  static updateTimeKeepDate(existingDateTime: DateTime, timeInput: string | TimePoint): DateTime {
+    let newTime: TimePoint;
+    
+    if (typeof timeInput === 'string') {
+      // 解析 HH:mm 格式的字符串
+      const [hour, minute] = timeInput.split(':').map(Number);
+      newTime = { hour, minute };
+    } else {
+      newTime = timeInput;
+    }
+    
+    return {
+      ...existingDateTime,
+      time: newTime,
+      timestamp: new Date(
+        existingDateTime.date.year,
+        existingDateTime.date.month - 1,
+        existingDateTime.date.day,
+        newTime.hour,
+        newTime.minute
+      ).getTime(),
+      isoString: new Date(
+        existingDateTime.date.year,
+        existingDateTime.date.month - 1,
+        existingDateTime.date.day,
+        newTime.hour,
+        newTime.minute
+      ).toISOString()
+    };
+  }
+
+  /**
+   * 更新日期（用于结束时间等场景）
+   */
+  static updateDate(existingDateTime: DateTime, dateInput: string | DateInfo): DateTime {
+    let newDate: DateInfo;
+    
+    if (typeof dateInput === 'string') {
+      const [year, month, day] = dateInput.split('-').map(Number);
+      newDate = { year, month, day };
+    } else {
+      newDate = dateInput;
+    }
+    
+    return {
+      ...existingDateTime,
+      date: newDate,
+      timestamp: new Date(
+        newDate.year,
+        newDate.month - 1,
+        newDate.day,
+        existingDateTime.time?.hour || 0,
+        existingDateTime.time?.minute || 0
+      ).getTime(),
+      isoString: new Date(
+        newDate.year,
+        newDate.month - 1,
+        newDate.day,
+        existingDateTime.time?.hour || 0,
+        existingDateTime.time?.minute || 0
+      ).toISOString()
+    };
+  }
+
+  /**
+   * 更新时间（用于结束时间等场景）
+   */
+  static updateTime(existingDateTime: DateTime, timeInput: string | TimePoint): DateTime {
+    let newTime: TimePoint;
+    
+    if (typeof timeInput === 'string') {
+      const [hour, minute] = timeInput.split(':').map(Number);
+      newTime = { hour, minute };
+    } else {
+      newTime = timeInput;
+    }
+    
+    return {
+      ...existingDateTime,
+      time: newTime,
+      timestamp: new Date(
+        existingDateTime.date.year,
+        existingDateTime.date.month - 1,
+        existingDateTime.date.day,
+        newTime.hour,
+        newTime.minute
+      ).getTime(),
+      isoString: new Date(
+        existingDateTime.date.year,
+        existingDateTime.date.month - 1,
+        existingDateTime.date.day,
+        newTime.hour,
+        newTime.minute
+      ).toISOString()
+    };
+  }
+
+  /**
    * 比较两个DateTime
    */
   static compare(dt1: DateTime, dt2: DateTime): number {
@@ -196,6 +330,18 @@ export class TimeUtils {
     return this.fromTimestamp(newTimestamp);
   }
   
+  static formatDateToInput(dateTime: DateTime): string {
+    if (!dateTime?.date) return '';
+    const { year, month, day } = dateTime.date;
+    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+  }
+
+  static formatTimeToInput(dateTime: DateTime): string {
+    if (!dateTime?.time) return '';
+    const { hour, minute } = dateTime.time;
+    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+  }
+
   /**
    * 根据重复规则计算下一次时间
    */
@@ -279,7 +425,7 @@ export class TimeUtils {
     baseDate: Date, 
     fromDate: Date, 
     interval: number, 
-    config?: any
+    _config?: any
   ): DateTime {
     const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
     nextDate.setMonth(nextDate.getMonth() + interval);

@@ -31,16 +31,10 @@ export class ScheduleUtils {
     }
 
     /**
-     * 获取下次执行时间
+     * 获取下次执行时间(未实现)
      */
     static getNextRunTime(cron: string): Date | null {
-        // 这里可以集成 cron-parser 库来实现
-        // 暂时返回简单实现
-        try {
-            const now = new Date();
-            return new Date(now.getTime() + 60000); // 1分钟后（示例）
-        } catch {
-            return null;
-        }
+        console.log('获取下次执行时间:', cron);
+        return null;
     }
 }

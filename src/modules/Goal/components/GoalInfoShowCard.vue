@@ -96,12 +96,12 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import type { IGoal } from '../types/goal';
+import type { Goal } from '../types/goal';
 import { useGoalStore } from '../stores/goalStore';
 import KeyResultCard from './KeyResultCard.vue';
 
 const props = defineProps<{
-  goal: IGoal;
+  goal: Goal;
 }>();
 
 const router = useRouter();

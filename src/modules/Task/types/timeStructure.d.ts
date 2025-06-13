@@ -48,6 +48,15 @@ export type DateTime = {
   isoString: string;
 };
 
+export type SnoozeConfig = {
+  /** 是否启用稍后提醒 */
+  enabled: boolean;
+  /** 稍后提醒间隔 (分钟) */
+  interval: number;
+  /** 最大重复次数 */
+  maxCount: number;
+};
+
 /**
  * 重复规则 - 更灵活的重复模式
  */
@@ -67,6 +76,7 @@ export type RecurrenceRule = {
   };
   /** 重复的具体配置 */
   config?: {
+    /** 周重复：星期几 (0=周日, 1=周一, ...,
     /** 周重复：星期几 (0=周日, 1=周一, ..., 6=周六) */
     weekdays?: number[];
     /** 月重复：每月的第几天 */
@@ -80,6 +90,16 @@ export type RecurrenceRule = {
     months?: number[];
   };
 };
+
+/**
+ * 提醒项类型 - 从 ReminderRule 中提取单个提醒项的类型
+ */
+export type ReminderAlert = ReminderRule['alerts'][number];
+
+/**
+ * 提醒时机配置类型 - 从 ReminderAlert 中提取时机配置的类型
+ */
+export type ReminderTiming = ReminderAlert['timing'];
 
 /**
  * 提醒规则 - 更灵活的提醒设置
@@ -108,14 +128,7 @@ export type ReminderRule = {
     triggered?: boolean;
   }>;
   /** 提醒重复设置 */
-  snooze: {
-    /** 是否允许稍后提醒 */
-    enabled: boolean;
-    /** 稍后提醒间隔 (分钟) */
-    interval: number;
-    /** 最大重复次数 */
-    maxCount: number;
-  };
+  snooze: SnoozeConfig;
 };
 
 /**

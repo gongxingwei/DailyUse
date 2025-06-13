@@ -182,11 +182,10 @@ import { useTaskDialog } from '../composables/useTaskDialog';
 import { getTemplateStatus } from '../utils/taskInstanceUtils';
 import { getTaskDisplayDate } from '../utils/taskInstanceUtils';
 // services
-import { taskTemplateService } from '../services/taskTemplateService';
+
 
 const {
     snackbar,
-    showSnackbar,
     closeSnackbar,
 
     showEditTaskTemplateDialog,

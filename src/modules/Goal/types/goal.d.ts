@@ -1,7 +1,7 @@
 /**
  * 目标基础信息
  */
-export type IGoalBasicInfo = {
+export type GoalBasicInfo = {
     /** 标题 */
     title: string;
     /** 目标颜色 */
@@ -19,7 +19,7 @@ export type IGoalBasicInfo = {
 /**
  * 关键结果量化指标
  */
-export type IKeyResultCreate = {
+export type KeyResultCreate = {
     /** 目标名称（如 '用户增长'） */
     name: string;
     /** 起始值 */
@@ -34,7 +34,7 @@ export type IKeyResultCreate = {
     weight: number;
 };
 
-export type IKeyResult = IKeyResultCreate & {
+export type KeyResult = KeyResultCreate & {
     /** 关键结果 ID（UUID） */
     id: string;
 };
@@ -42,7 +42,7 @@ export type IKeyResult = IKeyResultCreate & {
 /**
  * 动机与可行性分析
  */
-export type IGoalAnalysis = {
+export type GoalAnalysis = {
     /** 动机描述 */
     motive: string;
     /** 可行性分析 */
@@ -52,9 +52,9 @@ export type IGoalAnalysis = {
 /**
  * 完整目标实体
  */
-export type IGoalCreate = IGoalBasicInfo & IGoalAnalysis & {
+export type GoalCreate = GoalBasicInfo & GoalAnalysis & {
     /** 关键结果集 */
-    keyResults: IKeyResult[];
+    keyResults: KeyResult[];
     /** 系统元数据（扩展预留） */
     meta?: {
         /** 创建时间（自动生成） */
@@ -64,7 +64,7 @@ export type IGoalCreate = IGoalBasicInfo & IGoalAnalysis & {
     };
 };
 
-export type IGoal = IGoalCreate & {
+export type Goal = GoalCreate & {
     /** 目标 ID（UUID） */
     id: string;
 };
@@ -72,7 +72,7 @@ export type IGoal = IGoalCreate & {
 /**
  * 目标目录
  */
-export type IGoalDir = {
+export type GoalDir = {
     id: string;
     name: string;
     icon: string;

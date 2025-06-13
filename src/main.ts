@@ -9,6 +9,7 @@ import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
 import '@/shared/styles/icons.css'
 import { i18n } from './i18n'
+import { GoalEventHandlers } from './modules/Goal/services/goalEventHandlers'
 // import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
 // // 配置 Monaco Editor 的 worker
@@ -42,5 +43,5 @@ app.mount('#app')
     window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
       console.log(message)
     })
-    
+    GoalEventHandlers.initialize()
   })

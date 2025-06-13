@@ -3,7 +3,7 @@ import { useGoalStore } from '../stores/goalStore'
 import { useGoalDirStore } from '../stores/goalDirStore';
 import { storeToRefs } from 'pinia';
 
-import type { IGoal } from '../types/goal';
+import type { Goal } from '../types/goal';
 
 export function useGoalDialog() {
   const goalStore = useGoalStore()
@@ -119,7 +119,7 @@ export function useGoalDialog() {
 
   // 目标编辑规则
   type ValidationState = {
-    [K in keyof Partial<IGoal>]: string | undefined;
+    [K in keyof Partial<Goal>]: string | undefined;
   };
   const validationErrors = reactive<ValidationState>({
     title: undefined,

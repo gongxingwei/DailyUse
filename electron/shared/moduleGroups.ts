@@ -5,9 +5,6 @@ import { registerFileSystemHandlers } from './ipc/filesystem';
 import { registerGitHandlers } from './ipc/git';
 import { setupScheduleHandlers } from '../modules/schedule/main';
 import { setupNotificationHandler } from '../modules/notification/ipcs/notification.ipc';
-import { setupNotificationService } from '../modules/notification/notificationService';
-import type { BrowserWindow } from 'electron';
-
 
 /**
  * 账户相关模块
@@ -33,14 +30,8 @@ export function setupSharedModules(): void {
 /**
  * 窗口相关模块
  */
-export function setupWindowModules(
-  // win: BrowserWindow,
-  // MAIN_DIST: string,
-  // RENDERER_DIST: string,
-  // VITE_DEV_SERVER_URL?: string
-): void {
+export function setupWindowModules(): void {
   console.log('Setting up Window modules...');
-  // setupNotificationService(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
   setupNotificationHandler();
   setupScheduleHandlers();
   console.log('✓ Window modules ready');

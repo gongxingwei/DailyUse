@@ -124,7 +124,7 @@
   <script lang="ts" setup>
   import { useRouter } from 'vue-router';
   import { computed } from 'vue';
-  import type { IKeyResult } from '../types/goal';
+  import type { KeyResult } from '../types/goal';
   import RecordDialog from './RecordDialog.vue';
   import { useRecordDialog } from '../composables/useRecordDialog';
   import { useGoalStore } from '../stores/goalStore';
@@ -134,7 +134,7 @@
   const { showRecordDialog, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
   
   const props = defineProps<{
-    keyResult: IKeyResult;
+    keyResult: KeyResult;
     goalId: string;
   }>();
   

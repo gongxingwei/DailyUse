@@ -164,10 +164,13 @@ const repoData = ref({
 
 const selectFolder = async () => {
   try {
-    const result = await fileSystem.selectFolder();
-    if (result) {
-      repoData.value.path = result.folderPath
-      repoData.value.title = window.shared.path.basename(result.folderPath)
+    const response = await fileSystem.selectFolder();
+    if (response.success) {
+      if (!response.data) {
+        throw new Error('未选择文件夹')
+      }
+      repoData.value.path = response.data.folderPath
+      repoData.value.title = window.shared.path.basename(response.data.folderPath)
     }
   } catch (error) {
     console.error('选择文件夹失败:', error)

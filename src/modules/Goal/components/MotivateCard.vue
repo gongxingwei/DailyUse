@@ -76,12 +76,12 @@
   <script setup lang="ts">
   import { ref, onMounted } from 'vue';
   import { useGoalStore } from '../stores/goalStore';
-  import type { IGoal } from '../types/goal';
+  import type { Goal } from '../types/goal';
   
   const goalStore = useGoalStore();
   const isShowingMotive = ref(true);
   const currentContent = ref('');
-  const currentGoal = ref<IGoal | null>(null);
+  const currentGoal = ref<Goal | null>(null);
   const isRefreshing = ref(false);
   
   const getRandomContent = async () => {

@@ -122,7 +122,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import LocalQuickLogin from '../components/LocalQuickLogin.vue';
 import LocalLogin from '../components/LocalLoginForm.vue';
 import LocalRegister from '../components/LocalRegisterForm.vue';
@@ -130,10 +130,9 @@ import RemoteQuickLogin from '../components/RemoteQuickLogin.vue';
 import RemoteLogin from '../components/RemoteLoginForm.vue';
 import RemoteRegister from '../components/RemoteRegisterForm.vue';
 // stores
-import { useAuthStore } from '../stores/authStore';
+
 // types
 
-const authStore = useAuthStore();
 // 顶层模式切换：本地/远程
 const activeMode = ref('local');
 

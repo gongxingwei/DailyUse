@@ -168,10 +168,10 @@ app.on('activate', () => {
 })
 
 app.whenReady().then(() => {
-  console.log(" ssssssssssssssssssssssssssssssssssssssssssssssssDailyUse 启动中...");
+  
   createWindow();
   if (win) {
-    initializeAllModules(win, MAIN_DIST, RENDERER_DIST, VITE_DEV_SERVER_URL);
+    initializeAllModules();
   }
   protocol.registerFileProtocol('local', (request, callback) => {
     const url = request.url.replace('local://', '')

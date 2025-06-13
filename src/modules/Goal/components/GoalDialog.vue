@@ -158,7 +158,6 @@
 </template>
 
 <script setup lang="ts">
-import { he } from 'vuetify/locale';
 import KeyResultDialog from './KeyResultDialog.vue';
 import { useGoalDialog } from '@/modules/Goal/composables/useGoalDialog';
 

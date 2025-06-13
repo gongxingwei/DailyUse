@@ -6,7 +6,7 @@ import { useGoalReviewStore } from "@/modules/Goal/stores/goalReviewStore";
 import { useReminderStore } from "@/modules/Reminder/stores/reminderStore";
 import { useRepositoryStore } from "@/modules/Repository/stores/repositoryStore";
 import { useSettingStore } from "@/modules/Setting/stores/settingStore";
-import type { IGoal, IRecord, IGoalDir } from "@/modules/Goal/types/goal";
+import type { Goal, IRecord, GoalDir } from "@/modules/Goal/types/goal";
 import type { ITaskInstance, TaskTemplate } from "@/modules/Task/types/task";
 import type { Review } from "@/modules/Goal/stores/goalReviewStore";
 import type { Reminder } from "@/modules/Reminder/stores/reminderStore";
@@ -58,7 +58,7 @@ export class UserDataInitService {
       const goalStore = useGoalStore();
 
       const [goalsResponse, recordsResponse] = await Promise.all([
-        UserStoreService.readWithUsername<IGoal[]>(username, "goals"),
+        UserStoreService.readWithUsername<Goal[]>(username, "goals"),
         UserStoreService.readWithUsername<IRecord[]>(username, "records"),
       ]);
 
@@ -121,7 +121,7 @@ export class UserDataInitService {
     try {
       const goalDirStore = useGoalDirStore();
 
-      const dirsResponse = await UserStoreService.readWithUsername<IGoalDir[]>(username, "goalDirs");
+      const dirsResponse = await UserStoreService.readWithUsername<GoalDir[]>(username, "goalDirs");
 
       goalDirStore.$patch({
         userDirs: dirsResponse.success && dirsResponse.data ? dirsResponse.data : [],
@@ -255,7 +255,6 @@ export class UserDataInitService {
 
       taskStore.taskTemplates = [];
       taskStore.taskInstances = [];
-      taskStore.resetTempTaskTemplate();
 
       goalDirStore.userDirs = [];
       goalDirStore.initTempDir();

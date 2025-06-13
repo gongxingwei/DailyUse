@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { Buffer } from 'buffer';
 
+
 export function registerFileSystemHandlers() {
     /**
      * 打开文件资源管理器
@@ -64,7 +65,11 @@ export function registerFileSystemHandlers() {
             properties: ['openDirectory']
         });
         if (result.canceled) {
-            return null;
+            return {
+                success: false,
+                message: 'Folder selected canceled',
+                data: null
+            };
         } else {
             const folderPath = result.filePaths[0];
             const files = await fs.readdir(folderPath).then((fileNames) =>
@@ -80,7 +85,12 @@ export function registerFileSystemHandlers() {
                     })
                 )
             );
-            return { folderPath, files };
+            return {
+                success: true,
+                message: 'Folder selected successfully',
+                data: { folderPath, files }
+            }
+
         }
     });
 
@@ -231,7 +241,14 @@ export function registerFileSystemHandlers() {
      */
     ipcMain.handle('refresh-folder', async (_event, folderPath: string) => {
         const folderTreeData = await generateTree(folderPath);
-        return { folderTreeData, folderPath };
+        return {
+            success: true,
+            message: 'Folder refreshed successfully',
+            data: {
+                folderTreeData,
+                folderPath,
+            }
+        }
     });
 
     /**

@@ -1,4 +1,3 @@
-<!-- filepath: /d:/myPrograms/DailyUse/src/modules/Task/components/TaskTemplateForm.vue -->
 <template>
     <v-form ref="formRef" v-model="isValid" class="task-template-form">
         <!-- 基础信息 -->
@@ -172,13 +171,18 @@
                                                 </template>
                                             </v-select>
                                         </v-col>
+                                        <v-col cols="12" md="3">
+                                            <v-select v-model="alert.timing.type" label="提醒时机"
+                                                :items="reminderTimingTypes" variant="outlined" density="compact"
+                                                item-title="title" item-value="value" />
+                                        </v-col>
                                         <v-col cols="12" md="3" v-if="alert.timing.type === 'relative'">
                                             <v-text-field v-model.number="alert.timing.minutesBefore" label="提前分钟"
-                                                type="number" variant="outlined" density="compact" min="1"
-                                                max="10080" />
+                                                type="number" variant="outlined" density="compact" min="1" max="10080"
+                                                :rules="minutesBeforeRules" />
                                         </v-col>
-                                        <v-col cols="12" md="3">
-                                            <v-select v-model="alert.type" label="通知方式" :items="reminderTypes"
+                                        <v-col cols="12" md="3" v-else-if="alert.timing.type === 'absolute'">
+                                            <v-text-field v-model="alert.timing.absoluteTime" label="绝对时间" type="time"
                                                 variant="outlined" density="compact" />
                                         </v-col>
                                         <v-col cols="12" md="2">
@@ -308,6 +312,8 @@ const endTimeInput = ref('');
 const endConditionDateInput = ref('');
 const selectedWeekdays = ref<number[]>([]);
 
+
+
 // 表单选项
 const priorityOptions = [
     { title: '低优先级', value: 4 },
@@ -362,40 +368,34 @@ const descriptionRules = [
     (v: string) => !v || v.length <= 1000 || '任务描述不能超过1000个字符'
 ];
 
+const minutesBeforeRules = [
+    (v: number) => !!v || '提前分钟数是必填的',
+    (v: number) => v > 0 || '提前分钟数必须大于0',
+    (v: number) => v <= 10080 || '提前分钟数不能超过7天(10080分钟)'
+];
+
+
 // 初始化表单数据
 const initializeFormData = () => {
     if (localTemplate.value?.timeConfig?.baseTime?.start) {
         const startTime = localTemplate.value.timeConfig.baseTime.start;
-        startDateInput.value = formatDateToInput(startTime);
-        startTimeInput.value = formatTimeToInput(startTime);
+        startDateInput.value = TimeUtils.formatDateToInput(startTime);
+        startTimeInput.value = TimeUtils.formatTimeToInput(startTime);
     }
 
     if (localTemplate.value?.timeConfig?.baseTime?.end) {
         const endTime = localTemplate.value.timeConfig.baseTime.end;
-        endDateInput.value = formatDateToInput(endTime);
-        endTimeInput.value = formatTimeToInput(endTime);
+        endDateInput.value = TimeUtils.formatDateToInput(endTime);
+        endTimeInput.value = TimeUtils.formatTimeToInput(endTime);
     }
 
     if (localTemplate.value?.timeConfig?.recurrence?.endCondition?.endDate) {
-        endConditionDateInput.value = formatDateToInput(localTemplate.value.timeConfig.recurrence.endCondition.endDate);
+        endConditionDateInput.value = TimeUtils.formatDateToInput(localTemplate.value.timeConfig.recurrence.endCondition.endDate);
     }
 
     if (localTemplate.value?.timeConfig?.recurrence?.config?.weekdays) {
         selectedWeekdays.value = [...localTemplate.value.timeConfig.recurrence.config.weekdays];
     }
-};
-
-// 日期时间格式化函数
-const formatDateToInput = (dateTime: any): string => {
-    if (!dateTime?.date) return '';
-    const { year, month, day } = dateTime.date;
-    return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
-};
-
-const formatTimeToInput = (dateTime: any): string => {
-    if (!dateTime?.time) return '00:00';
-    const { hour, minute } = dateTime.time;
-    return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
 };
 
 // 更新时间函数
@@ -521,7 +521,9 @@ const addReminder = () => {
         id: uuidv4(),
         timing: {
             type: 'relative' as const,
-            minutesBefore: 15
+            minutesBefore: 15,
+            // 如果是绝对时间，添加默认值
+            absoluteTime: undefined
         },
         type: 'notification' as const,
         message: ''
@@ -530,8 +532,69 @@ const addReminder = () => {
 };
 
 const removeReminder = (index: number) => {
-    localTemplate.value.timeConfig.reminder.alerts.splice(index, 1);
+    if (localTemplate.value.timeConfig.reminder.alerts.length > index) {
+        localTemplate.value.timeConfig.reminder.alerts.splice(index, 1);
+    }
 };
+
+// 添加提醒数据验证函数
+const validateReminderData = () => {
+    if (!localTemplate.value.timeConfig.reminder.enabled) {
+        return true;
+    }
+
+    for (const alert of localTemplate.value.timeConfig.reminder.alerts) {
+        // 验证提醒类型
+        if (!alert.type) {
+            console.error('提醒类型不能为空');
+            return false;
+        }
+
+        // 验证时间配置
+        if (!alert.timing || !alert.timing.type) {
+            console.error('提醒时机类型不能为空');
+            return false;
+        }
+
+        if (alert.timing.type === 'relative') {
+            if (!alert.timing.minutesBefore || alert.timing.minutesBefore <= 0) {
+                console.error('相对时间提醒必须设置有效的提前分钟数');
+                return false;
+            }
+        } else if (alert.timing.type === 'absolute') {
+            if (!alert.timing.absoluteTime) {
+                console.error('绝对时间提醒必须设置具体时间');
+                return false;
+            }
+        }
+    }
+
+    return true;
+};
+
+const watchReminderTimingType = () => {
+    watch(() => localTemplate.value.timeConfig.reminder.alerts, (alerts) => {
+        alerts.forEach(alert => {
+            if (alert.timing.type === 'relative') {
+                // 清理绝对时间数据
+                alert.timing.absoluteTime = undefined;
+                // 确保有默认的提前分钟数
+                if (!alert.timing.minutesBefore) {
+                    alert.timing.minutesBefore = 15;
+                }
+            } else if (alert.timing.type === 'absolute') {
+                // 清理相对时间数据
+                alert.timing.minutesBefore = undefined;
+                // 确保有默认的绝对时间
+                if (!alert.timing.absoluteTime) {
+                    alert.timing.absoluteTime = TimeUtils.now();
+                }
+            }
+        });
+    }, { deep: true });
+};
+
+watchReminderTimingType();
 
 // 监听模板变化，初始化表单数据
 watch(() => props.modelValue, () => {
@@ -540,8 +603,12 @@ watch(() => props.modelValue, () => {
 
 // 暴露验证方法
 defineExpose({
-    validate: () => formRef.value?.validate(),
-    isValid
+    validate: async () => {
+        const formValid = await formRef.value?.validate();
+        const reminderValid = validateReminderData();
+        return formValid && reminderValid;
+    },
+    isValid: computed(() => isValid.value && validateReminderData())
 });
 </script>
 

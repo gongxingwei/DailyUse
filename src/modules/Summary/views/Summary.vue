@@ -72,9 +72,6 @@
       <section class="content-section">
         <div class="section-header">
           <h2 class="section-title">任务</h2>
-          <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-plus">
-            添加任务
-          </v-btn>
         </div>
         <TaskInSummaryCard />
       </section>

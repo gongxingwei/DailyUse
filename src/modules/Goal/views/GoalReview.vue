@@ -149,7 +149,7 @@ import { useGoalStore } from '../stores/goalStore';
 import { useGoalReviewStore } from '../stores/goalReviewStore';
 import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import { useGoalReview } from '../composables/useGoalReview';
-import type { IGoal } from '../types/goal';
+import type { Goal } from '../types/goal';
 import { storeToRefs } from 'pinia';
 
 const loading = ref(true);
@@ -171,7 +171,7 @@ const goal = computed(() => {
         throw new Error('Goal not found');
     }
     return foundGoal;
-}) as ComputedRef<IGoal>;
+}) as ComputedRef<Goal>;
 // 任务完成情况
 const taskStatus = computed(() => {
     return taskStore.getTaskStatsForGoal(goalId);

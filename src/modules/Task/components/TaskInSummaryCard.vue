@@ -83,7 +83,7 @@
           </template>
 
           <template v-slot:actions>
-            <v-btn color="primary" variant="outlined" prepend-icon="mdi-plus" size="small">
+            <v-btn color="primary" variant="outlined" prepend-icon="mdi-plus" size="small" @click="navigateToTaskManagement">
               添加新任务
             </v-btn>
           </template>
@@ -99,9 +99,14 @@ import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '../../Goal/stores/goalStore';
 import type { ITaskInstance, KeyResultLink } from '../types/task';
 import { getTaskDisplayTime } from '../utils/taskInstanceUtils';
-
+import { useRouter } from 'vue-router';
+const router = useRouter();
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
+
+const navigateToTaskManagement = () => {
+  router.push('/task-management');
+};
 
 // ✅ 获取今日任务列表 - 使用新的状态字段
 const todayTasks = computed(() => {

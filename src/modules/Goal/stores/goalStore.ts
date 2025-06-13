@@ -1,26 +1,27 @@
 import { defineStore } from "pinia";
 import type {
-  IGoal,
-  IKeyResult,
-  IKeyResultCreate,
+  Goal,
+  KeyResult,
+  KeyResultCreate,
   IRecord,
   IRecordCreate,
 } from "../types/goal";
 import { v4 as uuidv4 } from "uuid";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 
+
 interface GoalState {
-  goals: IGoal[];
+  goals: Goal[];
   records: IRecord[];
-  tempGoal: IGoal;
-  tempKeyResult: IKeyResult;
+  tempGoal: Goal;
+  tempKeyResult: KeyResult;
   _autoSave: any;
 }
 
 export const useGoalStore = defineStore("goal", {
   state: () =>
     ({
-      goals: [] as IGoal[],
+      goals: [] as Goal[],
       tempGoal: {
         id: "tempGoal", // 临时目标 ID
         title: "",
@@ -34,7 +35,7 @@ export const useGoalStore = defineStore("goal", {
         keyResults: [],
         motive: "",
         feasibility: "",
-      } as IGoal,
+      } as Goal,
       tempKeyResult: {
         id: "temp", // 临时关键结果 ID
         name: "",
@@ -43,12 +44,12 @@ export const useGoalStore = defineStore("goal", {
         targetValue: 10,
         calculationMethod: "sum",
         weight: 5,
-      } as IKeyResult,
+      } as KeyResult,
       records: [] as IRecord[],
       _autoSave: null as ReturnType<typeof useStoreSave> | null,
     } as GoalState),
   getters: {
-    getAllGoals(): IGoal[] {
+    getAllGoals(): Goal[] {
       return this.goals;
     },
     getGoalsByDirId: (state) => (dirId: string) => {
@@ -252,7 +253,7 @@ export const useGoalStore = defineStore("goal", {
 
       // 如果是新建目标，则添加到 goals 数组中
       if (this.tempGoal.id === "tempGoal") {
-        const newGoal: IGoal = {
+        const newGoal: Goal = {
           ...this.tempGoal,
           id: uuidv4(),
           meta: {
@@ -296,7 +297,7 @@ export const useGoalStore = defineStore("goal", {
       return updatedGoal;
     },
     // // 获取临时目标
-    // getTempGoal(): IGoal {
+    // getTempGoal(): Goal {
     //     if (!this.tempGoal) {
     //       this.initTempGoal();
     //     }
@@ -305,7 +306,7 @@ export const useGoalStore = defineStore("goal", {
     // 关键结果相关方法
     // 生成临时关键结果
     initTempKeyResult() {
-      const defaultKeyResult: IKeyResult = {
+      const defaultKeyResult: KeyResult = {
         id: "temp", // 临时关键结果 ID
         name: "",
         startValue: 0,
@@ -339,7 +340,7 @@ export const useGoalStore = defineStore("goal", {
       if (!this.tempKeyResult) return null;
       // 如果是新建关键结果，则添加到临时目标中
       if (this.tempKeyResult.id === "temp") {
-        const keyResult: IKeyResult = {
+        const keyResult: KeyResult = {
           ...this.tempKeyResult,
           id: uuidv4(),
           currentValue: this.tempKeyResult.startValue, // 新建时 currentValue 等于 startValue
@@ -355,7 +356,7 @@ export const useGoalStore = defineStore("goal", {
         );
 
         if (index !== -1) {
-          const keyResult: IKeyResult = {
+          const keyResult: KeyResult = {
             ...this.tempKeyResult,
             id: this.tempKeyResult.id,
           };
@@ -411,7 +412,7 @@ export const useGoalStore = defineStore("goal", {
     updateKeyResult(
       goalId: string,
       keyResultId: string,
-      keyResultCreate: IKeyResultCreate
+      keyResultCreate: KeyResultCreate
     ) {
       if (goalId === "tempGoal") {
         // 如果在新建目标，则更新临时目标的关键结果
@@ -441,7 +442,7 @@ export const useGoalStore = defineStore("goal", {
       }
     },
     // 修改关键结果 startValue 值
-    updateKeyResultStartValue(
+    async updateKeyResultCurrentValue(
       goalId: string,
       keyResultId: string,
       startValue: number

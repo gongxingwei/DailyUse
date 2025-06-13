@@ -53,7 +53,7 @@ export class AppInitService {
   /**
    * 基础服务初始化（主题、语言等）
    */
-  private static async initBasicServices(options: InitializationOptions): Promise<void> {
+  private static async initBasicServices(_options: InitializationOptions): Promise<void> {
     console.log('初始化基础服务...');
 
     // // 主题初始化
@@ -72,7 +72,7 @@ export class AppInitService {
   /**
    * 数据服务初始化（用户数据等）
    */
-  private static async initDataServices(options: InitializationOptions): Promise<void> {
+  private static async initDataServices(_options: InitializationOptions): Promise<void> {
     console.log('初始化数据服务...');
 
     try {
@@ -87,7 +87,7 @@ export class AppInitService {
   /**
    * 功能服务初始化（提醒系统等）
    */
-  private static async initFunctionalServices(options: InitializationOptions): Promise<void> {
+  private static async initFunctionalServices(_options: InitializationOptions): Promise<void> {
     console.log('初始化功能服务...');
 
     await Promise.all([

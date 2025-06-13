@@ -256,7 +256,7 @@ import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
 import type { ITaskInstance } from '../types/task';
-import { getTaskDisplayTime, getTaskDisplayDate } from '../utils/taskInstanceUtils';
+import { getTaskDisplayTime } from '../utils/taskInstanceUtils';
 import { TimeUtils } from '../utils/timeUtils';
 
 const taskStore = useTaskStore();

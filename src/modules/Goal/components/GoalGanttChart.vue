@@ -148,7 +148,7 @@
   <script setup lang="ts">
   import { computed } from 'vue';
   import { useGoalStore } from '../stores/goalStore';
-  import type { IGoal } from '../types/goal';
+  import type { Goal } from '../types/goal';
   
   const goalStore = useGoalStore();
   const dayWidth = 32; // 每个日期的宽度
@@ -215,7 +215,7 @@
   };
   
   // 计算目标条样式
-  const getGoalBarStyle = (goal: IGoal, isFill: boolean) => {
+  const getGoalBarStyle = (goal: Goal, isFill: boolean) => {
     const startDate = new Date(goal.startTime);
     startDate.setHours(0, 0, 0, 0);
     const endDate = new Date(goal.endTime);
@@ -244,7 +244,7 @@
   };
   
   // 计算目标标签位置
-  const getGoalLabelPosition = (goal: IGoal) => {
+  const getGoalLabelPosition = (goal: Goal) => {
     const startDate = new Date(goal.startTime);
     const rangeStart = new Date(dateRange.value.start);
     const startOffset = Math.max(0, 

@@ -57,6 +57,7 @@ export class LoginSessionService {
         "session:create",
         sessionData
       );
+      console.log("创建登录会话结果:", result);
       return result;
     } catch (error) {
       console.error("创建登录会话失败:", error);

@@ -76,7 +76,7 @@ export class LocalDataService {
         this.currentUsername = username;
         
         // 重新设置用户数据目录路径（注意：这里应该是目录而不是 .json 文件）
-        this.currentUserLocalDataPath = path.join(this.userLocalDataPath, `${username}`);
+        this.currentUserLocalDataPath = path.join(this.userLocalDataPath, `${this.currentUsername}`);
         
         // 重新初始化存储结构
         await this.initStorage();
