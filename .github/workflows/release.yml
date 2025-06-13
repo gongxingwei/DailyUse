@@ -11,7 +11,7 @@ jobs:
       contents: write # 添加写入权限
     strategy:
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
+        os: [windows-latest]
       fail-fast: false  # 避免一个平台失败导致全部取消
     steps:
       - name: Checkout
