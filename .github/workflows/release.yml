@@ -80,12 +80,13 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/**/*.exe
+            artifacts/**/*Setup.exe
+            artifacts/**/*Setup.zip
+            artifacts/**/*.blockmap
             artifacts/**/*.dmg
             artifacts/**/*.AppImage
             artifacts/**/*.deb
             artifacts/**/*.rpm
-            artifacts/**/*.zip
             artifacts/**/latest*.yml
           generate_release_notes: true
         env:

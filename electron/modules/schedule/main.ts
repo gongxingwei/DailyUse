@@ -1,8 +1,13 @@
-import { ipcMain } from "electron";
+import { ipcMain, BrowserWindow } from "electron";
 import nodeSchedule from "node-schedule";
 
 // 存储所有的定时任务
 const scheduleJobs = new Map<string, nodeSchedule.Job>();
+
+function getValidWindow(): BrowserWindow | null {
+    const windows = BrowserWindow.getAllWindows();
+    return windows.find(win => !win.isDestroyed()) || null;
+}
 
 export function setupScheduleHandlers() {
     // 创建定时任务
@@ -24,10 +29,17 @@ export function setupScheduleHandlers() {
             // 创建新的定时任务
             const job = nodeSchedule.scheduleJob(options.cron, () => {
                 // 任务执行时通知渲染进程
-                _event.sender.send('schedule-triggered', {
-                    id: options.id,
-                    task: options.task
-                });
+                const win = getValidWindow();
+                if (win) {
+                    try {
+                        win.webContents.send('schedule-triggered', {
+                            id: options.id,
+                            task: options.task
+                        });
+                    } catch (error) {
+                        console.error('Failed to send schedule-triggered event:', error);
+                    }
+                }
             });
 
             scheduleJobs.set(options.id, job);
@@ -67,11 +79,17 @@ export function setupScheduleHandlers() {
 
             // 创建新的定时任务
             const job = nodeSchedule.scheduleJob(options.cron, () => {
-                // 任务执行时通知渲染进程
-                _event.sender.send('schedule-triggered', {
-                    id: options.id,
-                    task: options.task
-                });
+                const win = getValidWindow();
+                if (win) {
+                    try {
+                        win.webContents.send('schedule-triggered', {
+                            id: options.id,
+                            task: options.task
+                        });
+                    } catch (error) {
+                        console.error('Failed to send schedule-triggered event:', error);
+                    }
+                }
             });
 
             scheduleJobs.set(options.id, job);
