@@ -1,4 +1,3 @@
-// src/modules/Task/services/taskReminderInitService.ts
 import { useTaskStore } from '@/modules/Task/stores/taskStore';
 import { scheduleService } from '@/modules/schedule/services/scheduleService';
 import { notificationService } from '@/modules/notification/services/notificationService';
@@ -24,7 +23,7 @@ export class TaskReminderInitService {
       console.log(`开始初始化任务提醒... 模板数量: ${taskStore.taskTemplates.length}, 实例数量: ${taskStore.taskInstances.length}`);
       
       await taskStore.initializeSchedules();
-
+      // 创建观察者
       this.cleanup = scheduleService.onScheduleTriggered(({ task }) => {
         if (task.type === 'taskReminder') {
           this.handleTaskReminderNotification(task.payload);

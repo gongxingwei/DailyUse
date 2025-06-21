@@ -4,7 +4,7 @@ import { taskTemplateService } from "../services/taskTemplateService";
 import type { TaskTemplate } from "../types/task";
 import { useTaskStore } from "../stores/taskStore";
 import { taskInstanceService } from "../services/taskInstanceService";
-import { taskReminderService } from "../services/taskReminderService";
+import { taskReminderService } from "../domain/services/taskReminderService";
 import { taskDomainService } from "../services/taskDomainService";
 import { TimeUtils } from "../utils/timeUtils";
 

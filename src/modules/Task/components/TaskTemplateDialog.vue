@@ -7,10 +7,6 @@
           {{ isEditMode ? 'mdi-pencil' : 'mdi-plus' }}
         </v-icon>
         {{ isEditMode ? '编辑任务模板' : '创建任务模板' }}
-        <v-spacer />
-        <v-btn icon variant="text" @click="$emit('cancel')">
-          <v-icon>mdi-close</v-icon>
-        </v-btn>
       </v-card-title>
 
       <v-card-text class="dialog-content">

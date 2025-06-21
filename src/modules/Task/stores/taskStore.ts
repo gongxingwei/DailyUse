@@ -1,7 +1,7 @@
 // src/modules/Task/stores/taskStore.ts
 import { defineStore } from "pinia";
 import type { TaskTemplate, ITaskInstance } from "../types/task";
-import { TaskReminderService } from "../services/taskReminderService";
+import { TaskReminderService } from "../domain/services/taskReminderService";
 import { TimeUtils } from "../utils/timeUtils";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";

@@ -5,10 +5,7 @@
             <v-card-title class="dialog-header">
                 <v-icon color="primary" class="mr-2">mdi-view-grid-plus</v-icon>
                 选择任务模板类型
-                <v-spacer />
-                <v-btn icon variant="text" @click="$emit('cancel')">
-                    <v-icon>mdi-close</v-icon>
-                </v-btn>
+
             </v-card-title>
 
             <v-card-text class="template-grid">

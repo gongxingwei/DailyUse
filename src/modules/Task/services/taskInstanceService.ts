@@ -3,7 +3,7 @@ import type { TaskTemplate, ITaskInstance } from '../types/task';
 import type { DateTime } from '../types/timeStructure';
 import { TimeUtils } from '../utils/timeUtils';
 import { useTaskStore } from '../stores/taskStore';
-import { taskReminderService } from './taskReminderService';
+import { taskReminderService } from '../domain/services/taskReminderService';
 
 export class TaskInstanceService {
   private taskStore = useTaskStore();

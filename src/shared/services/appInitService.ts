@@ -2,7 +2,7 @@
 // import { useThemeInit } from '@/modules/Theme/useThemeInit';
 // import { initializeLanguage } from '@/i18n/index';
 import { ReminderInitService } from '@/modules/Reminder/services/reminderInitService';
-import { TaskReminderInitService } from '@/modules/Task/services/taskReminderInitService';
+import { TaskReminderInitService } from '@/modules/Task/domain/services/taskReminderInitService';
 import { UserDataInitService } from '@/shared/services/userDataInitService';
 
 export interface InitializationOptions {

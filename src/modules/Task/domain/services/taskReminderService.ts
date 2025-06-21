@@ -1,8 +1,8 @@
 // src/modules/Task/services/taskReminderService.ts
 import { TResponse } from '@/shared/types/response';
-import type { ITaskInstance, TaskTemplate } from '../types/task';
-import type { DateTime } from '../types/timeStructure';
-import { TimeUtils } from '../utils/timeUtils';
+import type { ITaskInstance, TaskTemplate } from '../../types/task';
+import type { DateTime } from '../../types/timeStructure';
+import { TimeUtils } from '../../utils/timeUtils';
 import { scheduleService } from '@/modules/schedule/services/scheduleService';
 
 export class TaskReminderService {
@@ -21,6 +21,7 @@ export class TaskReminderService {
    */
   async createTaskReminders(task: ITaskInstance, template: TaskTemplate): Promise<void> {
     const { timeConfig } = template;
+
     const reminderTimes = TimeUtils.calculateReminderTimes(
       task.scheduledTime,
       timeConfig.reminder
@@ -157,7 +158,19 @@ export class TaskReminderService {
     // 重新创建提醒
     for (const instance of instances) {
       const template = templates.find(t => t.id === instance.templateId);
-      if (template && template.timeConfig.reminder.enabled) {
+
+      // 检查模板是否存在以及时间配置是否有效
+      if (!template) {
+        console.warn(`未找到任务模板 ${instance.templateId}，跳过提醒创建`);
+        continue;
+      }
+      if(!template.timeConfig || !template.timeConfig.reminder) {
+        console.warn(`任务模板 ${template.id} 没有有效的时间配置，跳过提醒创建`);
+        continue;
+      }
+
+
+      if (template && template.timeConfig.reminder.enabled) { // 确保提醒已启用
         await this.createTaskReminders(instance, template);
       }
     }

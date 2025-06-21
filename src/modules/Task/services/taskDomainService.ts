@@ -1,5 +1,5 @@
 import { useTaskStore } from "../stores/taskStore";
-import { TaskReminderService } from "./taskReminderService";
+import { TaskReminderService } from "../domain/services/taskReminderService";
 import type { TaskTemplate, ITaskInstance } from "../types/task";
 import type { TResponse } from "@/shared/types/response";
 import { taskTemplateService } from "./taskTemplateService";
