@@ -1,4 +1,4 @@
-import { useTaskStore } from '@/modules/Task/stores/taskStore';
+import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 import { scheduleService } from '@/modules/schedule/services/scheduleService';
 import { notificationService } from '@/modules/notification/services/notificationService';
 

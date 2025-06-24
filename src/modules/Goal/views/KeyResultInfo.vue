@@ -102,11 +102,11 @@ import { computed, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // stores
 import { useGoalStore } from '../stores/goalStore';
-import { useTaskStore } from '@/modules/Task/stores/taskStore';
+import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
 import KeyResultCard from '../components/KeyResultCard.vue';
 import RecordCard from '../components/RecordCard.vue';
-import TaskTemplateCard from '@/modules/Task/components/TaskTemplateCard.vue';
+import TaskTemplateCard from '@/modules/Task/presentation/components/TaskTemplateCard.vue';
 
 const router = useRouter();
 const route = useRoute();

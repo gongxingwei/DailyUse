@@ -1,13 +1,19 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { DateTime } from "@/modules/Task/types/timeStructure";
-import type { TaskTimeConfig } from "@/modules/Task/types/timeStructure";
-import type { KeyResultLink } from "@/modules/Task/types/task";
-import { TimeUtils } from "../../utils/timeUtils";
+import type { 
+  TaskTimeConfig, 
+  TaskReminderConfig,
+  KeyResultLink,
+  ITaskTemplate,
+  CreateTaskTemplateOptions
+} from "@/modules/Task/domain/types/task";
+import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 
-export class TaskTemplate extends AggregateRoot {
+export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _title: string;
   private _description?: string;
   private _timeConfig: TaskTimeConfig;
+  private _reminderConfig: TaskReminderConfig;
   private _schedulingPolicy: {
     allowReschedule: boolean;
     maxDelayDays: number;
@@ -38,30 +44,14 @@ export class TaskTemplate extends AggregateRoot {
     lastInstanceDate?: DateTime;
   };
   private _keyResultLinks?: KeyResultLink[];
-
   private _version: number;
 
   constructor(
     id: string,
     title: string,
     timeConfig: TaskTimeConfig,
-    options?: {
-      description?: string;
-      category?: string;
-      priority?: 1 | 2 | 3 | 4 | 5;
-      difficulty?: 1 | 2 | 3 | 4 | 5;
-      tags?: string[];
-      estimatedDuration?: number;
-      location?: string;
-      schedulingPolicy?: Partial<{
-        allowReschedule: boolean;
-        maxDelayDays: number;
-        skipWeekends: boolean;
-        skipHolidays: boolean;
-        workingHoursOnly: boolean;
-      }>;
-      keyResultLinks?: KeyResultLink[];
-    }
+    reminderConfig: TaskReminderConfig,
+    options?: CreateTaskTemplateOptions
   ) {
     super(id);
     const now = TimeUtils.now();
@@ -69,6 +59,7 @@ export class TaskTemplate extends AggregateRoot {
     this._title = title;
     this._description = options?.description;
     this._timeConfig = timeConfig;
+    this._reminderConfig = reminderConfig;
 
     this._schedulingPolicy = {
       allowReschedule: true,
@@ -117,6 +108,10 @@ export class TaskTemplate extends AggregateRoot {
     return this._timeConfig;
   }
 
+  get reminderConfig(): TaskReminderConfig {
+    return this._reminderConfig;
+  }
+
   get schedulingPolicy() {
     return this._schedulingPolicy;
   }
@@ -154,6 +149,11 @@ export class TaskTemplate extends AggregateRoot {
 
   updateTimeConfig(timeConfig: TaskTimeConfig): void {
     this._timeConfig = timeConfig;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateReminderConfig(reminderConfig: TaskReminderConfig): void {
+    this._reminderConfig = reminderConfig;
     this._lifecycle.updatedAt = TimeUtils.now();
   }
 
@@ -251,5 +251,105 @@ export class TaskTemplate extends AggregateRoot {
 
   isArchived(): boolean {
     return this._lifecycle.status === "archived";
+  }
+
+  /**
+   * 从完整数据创建 TaskTemplate 实例（用于反序列化）
+   * 保留所有原始状态信息
+   */
+  static fromCompleteData(data: any): TaskTemplate {
+    // 创建基础实例
+    const instance = new TaskTemplate(
+      data.id || data._id,
+      data.title || data._title,
+      data.timeConfig || data._timeConfig,
+      data.reminderConfig || data._reminderConfig,
+      {
+        description: data.description || data._description,
+        keyResultLinks: data.keyResultLinks || data._keyResultLinks,
+        category: data.metadata?.category || data._metadata?.category,
+        tags: data.metadata?.tags || data._metadata?.tags,
+        priority: data.metadata?.priority || data._metadata?.priority,
+        difficulty: data.metadata?.difficulty || data._metadata?.difficulty,
+        estimatedDuration: data.metadata?.estimatedDuration || data._metadata?.estimatedDuration,
+        location: data.metadata?.location || data._metadata?.location,
+        schedulingPolicy: data.schedulingPolicy || data._schedulingPolicy,
+      }
+    );
+
+    // 恢复完整的生命周期状态
+    if (data.lifecycle || data._lifecycle) {
+      const lifecycle = data.lifecycle || data._lifecycle;
+      instance._lifecycle = {
+        status: lifecycle.status || "draft",
+        createdAt: lifecycle.createdAt ? TimeUtils.fromISOString(lifecycle.createdAt) : instance._lifecycle.createdAt,
+        updatedAt: lifecycle.updatedAt ? TimeUtils.fromISOString(lifecycle.updatedAt) : instance._lifecycle.updatedAt,
+        activatedAt: lifecycle.activatedAt ? TimeUtils.fromISOString(lifecycle.activatedAt) : undefined,
+        pausedAt: lifecycle.pausedAt ? TimeUtils.fromISOString(lifecycle.pausedAt) : undefined,
+      };
+    }
+
+    // 恢复分析数据
+    if (data.analytics || data._analytics) {
+      const analytics = data.analytics || data._analytics;
+      instance._analytics = {
+        totalInstances: analytics.totalInstances || 0,
+        completedInstances: analytics.completedInstances || 0,
+        averageCompletionTime: analytics.averageCompletionTime,
+        successRate: analytics.successRate || 0,
+        lastInstanceDate: analytics.lastInstanceDate ? TimeUtils.fromISOString(analytics.lastInstanceDate) : undefined,
+      };
+    }
+
+    // 恢复版本号
+    if (data.version !== undefined || data._version !== undefined) {
+      instance._version = data.version || data._version || 1;
+    }
+
+    // 恢复完整的元数据（如果有额外信息）
+    if (data.metadata || data._metadata) {
+      const metadata = data.metadata || data._metadata;
+      instance._metadata = {
+        ...instance._metadata,
+        ...metadata,
+      };
+    }
+
+    // 恢复调度策略
+    if (data.schedulingPolicy || data._schedulingPolicy) {
+      const policy = data.schedulingPolicy || data._schedulingPolicy;
+      instance._schedulingPolicy = {
+        ...instance._schedulingPolicy,
+        ...policy,
+      };
+    }
+
+    return instance;
+  }
+
+  /**
+   * 克隆实例（用于创建副本）
+   */
+  clone(): TaskTemplate {
+    return TaskTemplate.fromCompleteData(this.toJSON());
+  }
+
+  /**
+   * 导出完整数据（用于序列化）
+   */
+  toJSON(): any {
+    return {
+      id: this.id,
+      title: this._title,
+      description: this._description,
+      timeConfig: this._timeConfig,
+      reminderConfig: this._reminderConfig,
+      schedulingPolicy: this._schedulingPolicy,
+      metadata: this._metadata,
+      lifecycle: this._lifecycle,
+      analytics: this._analytics,
+      keyResultLinks: this._keyResultLinks,
+      version: this._version,
+    };
   }
 }

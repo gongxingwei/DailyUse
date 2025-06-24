@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { useGoalStore } from "./goalStore";
-import { useTaskStore } from "@/modules/Task/stores/taskStore";
+import { useTaskStore } from "@/modules/Task/presentation/stores/taskStore";
 import { v4 as uuidv4 } from "uuid";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;

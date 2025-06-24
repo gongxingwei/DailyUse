@@ -1,13 +1,12 @@
 import { UserStoreService } from "./userStoreService";
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
-import { useTaskStore } from "@/modules/Task/stores/taskStore";
+import { useTaskStore } from "@/modules/Task/presentation/stores/taskStore";
 import { useGoalDirStore } from "@/modules/Goal/stores/goalDirStore";
 import { useGoalReviewStore } from "@/modules/Goal/stores/goalReviewStore";
 import { useReminderStore } from "@/modules/Reminder/stores/reminderStore";
 import { useRepositoryStore } from "@/modules/Repository/stores/repositoryStore";
 import { useSettingStore } from "@/modules/Setting/stores/settingStore";
 import type { Goal, IRecord, GoalDir } from "@/modules/Goal/types/goal";
-import type { ITaskInstance, TaskTemplate } from "@/modules/Task/types/task";
 import type { Review } from "@/modules/Goal/stores/goalReviewStore";
 import type { Reminder } from "@/modules/Reminder/stores/reminderStore";
 import type { Repository } from "@/modules/Repository/stores/repositoryStore";
@@ -91,7 +90,7 @@ export class UserDataInitService {
 
       const [templatesResponse, instancesResponse] = await Promise.all([
         UserStoreService.readWithUsername<TaskTemplate[]>(username, "taskTemplates"),
-        UserStoreService.readWithUsername<ITaskInstance[]>(username, "taskInstances"),
+        UserStoreService.readWithUsername<TaskInstance[]>(username, "taskInstances"),
       ]);
 
       taskStore.$patch({

@@ -57,7 +57,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/task-management',
                 name: 'task-management',
-                component: () => import('@/modules/Task/views/TaskManagement.vue')
+                component: () => import('@/modules/Task/presentation/views/TaskManagementView.vue')
             },
 
             {
