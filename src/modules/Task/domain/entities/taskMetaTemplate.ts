@@ -1,20 +1,52 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { DateTime } from "@/modules/Task/types/timeStructure";
-import type { ITaskTemplate, CreateTaskTemplateOptions, TaskTimeConfig, TaskReminderConfig } from "@/modules/Task/domain/types/task";
+
 import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
+
 
 export class TaskMetaTemplate extends AggregateRoot {
   private _name: string;
   private _description?: string;
   private _category: string;
-  private _defaultTimeConfig: Partial<TaskTimeConfig>;
-  private _defaultReminderConfig: Partial<TaskReminderConfig>;
-  private _defaultMetadata: Partial<CreateTaskTemplateOptions>;
+  private _defaultTimeConfig: TaskTemplate['timeConfig'];
+  private _defaultReminderConfig: TaskTemplate['reminderConfig'];
+  private _defaultMetadata: TaskTemplate['metadata'];
   private _lifecycle: {
     createdAt: DateTime;
     updatedAt: DateTime;
     status: "active" | "archived";
   };
+
+  private DefaultTimeConfig: TaskTemplate['timeConfig'] = {
+    type: 'timed',
+    baseTime: {
+      start: TimeUtils.now(),
+      end: TimeUtils.addMinutes(TimeUtils.now(), 60), // 默认持续时间为60分钟
+      duration: 60 // 默认持续时间为60分钟
+    },
+    recurrence: {
+      type: 'none',
+    },
+    timezone: 'UTC',
+    dstHandling: 'ignore'
+  };
+
+  private DefaultReminderConfig: TaskTemplate['reminderConfig'] = {
+    enabled: false,
+    alerts: [],
+    snooze: {
+      enabled: false,
+      interval: 5, // 默认5分钟
+      maxCount: 1 // 默认最多一次
+    }
+  };
+
+  private DefaultMetadata: TaskTemplate['metadata'] = {
+    category: 'general',
+    tags: [],
+    priority: 3, // 默认中等优先级
+    estimatedDuration: 60 // 默认估计持续时间为60分钟
+  };
+
 
   constructor(
     id: string,
@@ -22,9 +54,9 @@ export class TaskMetaTemplate extends AggregateRoot {
     category: string,
     options?: {
       description?: string;
-      defaultTimeConfig?: Partial<TaskTimeConfig>;
-      defaultReminderConfig?: Partial<TaskReminderConfig>;
-      defaultMetadata?: Partial<CreateTaskTemplateOptions>;
+      defaultTimeConfig?: TaskTemplate['timeConfig'];
+      defaultReminderConfig?: TaskTemplate['reminderConfig'];
+      defaultMetadata?: TaskTemplate['metadata'];
     }
   ) {
     super(id);
@@ -33,9 +65,9 @@ export class TaskMetaTemplate extends AggregateRoot {
     this._name = name;
     this._description = options?.description;
     this._category = category;
-    this._defaultTimeConfig = options?.defaultTimeConfig || {};
-    this._defaultReminderConfig = options?.defaultReminderConfig || {};
-    this._defaultMetadata = options?.defaultMetadata || {};
+    this._defaultTimeConfig = options?.defaultTimeConfig || this.DefaultTimeConfig;
+    this._defaultReminderConfig = options?.defaultReminderConfig || this.DefaultReminderConfig;
+    this._defaultMetadata = options?.defaultMetadata || this.DefaultMetadata;
     
     this._lifecycle = {
       createdAt: now,
@@ -48,20 +80,11 @@ export class TaskMetaTemplate extends AggregateRoot {
   get name(): string { return this._name; }
   get description(): string | undefined { return this._description; }
   get category(): string { return this._category; }
-  get defaultTimeConfig(): Partial<TaskTimeConfig> { return this._defaultTimeConfig; }
-  get defaultReminderConfig(): Partial<TaskReminderConfig> { return this._defaultReminderConfig; }
-  get defaultMetadata(): Partial<CreateTaskTemplateOptions> { return this._defaultMetadata; }
+  get defaultTimeConfig(): TaskTemplate['timeConfig'] { return this._defaultTimeConfig; }
+  get defaultReminderConfig(): TaskTemplate['reminderConfig'] { return this._defaultReminderConfig; }
+  get defaultMetadata(): TaskTemplate['metadata'] { return this._defaultMetadata; }
   get lifecycle() { return this._lifecycle; }
 
-  // 生成任务模板
-  generateTemplate(customOptions?: Partial<CreateTaskTemplateOptions>): CreateTaskTemplateOptions {
-    return {
-      ...this._defaultMetadata,
-      ...customOptions,
-      category: customOptions?.category || this._category,
-      // 合并默认配置和自定义配置
-    };
-  }
    /**
    * 从完整数据创建 TaskTemplateMeta 实例（用于反序列化）
    * 保留所有原始状态信息
@@ -71,9 +94,9 @@ export class TaskMetaTemplate extends AggregateRoot {
     name: string;
     description?: string;
     category: string;
-    defaultTimeConfig?: Partial<TaskTimeConfig>;
-    defaultReminderConfig?: Partial<TaskReminderConfig>;
-    defaultMetadata?: Partial<CreateTaskTemplateOptions>;
+    defaultTimeConfig?: TaskTemplate['timeConfig'];
+    defaultReminderConfig?: TaskTemplate['reminderConfig'];
+    defaultMetadata?: TaskTemplate['metadata'];
     lifecycle: {
       createdAt: DateTime;
       updatedAt: DateTime;

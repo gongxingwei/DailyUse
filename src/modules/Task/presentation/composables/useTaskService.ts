@@ -1,8 +1,6 @@
 import { ref } from "vue";
-import { TaskMetaTemplateFactory } from "@/modules/Task/domain/utils/taskMetaTemplateFactory";
 import { TaskApplicationService } from "../../application/services/taskApplicationService";
 import { useTaskStore } from "../stores/taskStore";
-
 const taskApplicationService = new TaskApplicationService();
 
 interface SnackbarConfig {
@@ -11,11 +9,11 @@ interface SnackbarConfig {
   color: 'success' | 'error' | 'warning' | 'info';
   timeout: number;
 }
+
 export function useTaskDialog() {
   const taskStore = useTaskStore();
   const showEditTaskTemplateDialog = ref(false);
   const showTemplateSelectionDialog = ref(false);
-  const currentTemplate = ref<TaskTemplate | null>(null);
   const isEditMode = ref(false);
 
   const snackbar = ref<SnackbarConfig>({
@@ -46,47 +44,27 @@ export function useTaskDialog() {
   const startCreateTaskTemplate = () => {
     showTemplateSelectionDialog.value = true;
   };
-  const handleTemplateTypeSelected = async (templateType: string) => {
+  const handleTemplateTypeSelected = async (metaTemplateId: string) => {
     showTemplateSelectionDialog.value = false;
 
-    // 根据模板类型创建预配置的模板，使用 TaskMetaTemplateFactory
-    let metaTemplate;
-    switch (templateType) {
-      case 'habit':
-        metaTemplate = TaskMetaTemplateFactory.createHabit();
-        break;
-      case 'event':
-        metaTemplate = TaskMetaTemplateFactory.createEvent();
-        break;
-      case 'deadline':
-        metaTemplate = TaskMetaTemplateFactory.createDeadline();
-        break;
-      case 'meeting':
-        metaTemplate = TaskMetaTemplateFactory.createMeeting();
-        break;
-      default:
-        metaTemplate = TaskMetaTemplateFactory.createEmpty();
+    try {
+      // 直接使用传入的 metaTemplateId 创建 TaskTemplate
+      const template = await taskApplicationService.createTaskTemplateFromMeta(
+        metaTemplateId
+      );
+      
+      taskStore.updateTaskTemplateBeingEdited(template);
+      isEditMode.value = false;
+
+      // 显示编辑对话框
+      showEditTaskTemplateDialog.value = true;
+    } catch (error) {
+      console.error('创建任务模板失败:', error);
+      showSnackbar(
+        `创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
+        'error'
+      );
     }
-
-    // 从 MetaTemplate 创建 TaskTemplate 实例
-    const template = await taskApplicationService.createTaskTemplateFromMeta(
-      metaTemplate.id,
-      {
-        title: metaTemplate.name,
-        timeConfig: metaTemplate.defaultTimeConfig,
-        reminderConfig: metaTemplate.defaultReminderConfig,
-        description: metaTemplate.description,
-        category: metaTemplate.defaultMetadata.category,
-        tags: metaTemplate.defaultMetadata.tags,
-        priority: metaTemplate.defaultMetadata.priority,
-        estimatedDuration: metaTemplate.defaultMetadata.estimatedDuration,
-      }
-    );
-    taskStore.updateTaskTemplateBeingEdited(template);
-    isEditMode.value = false;
-
-    // 显示编辑对话框
-    showEditTaskTemplateDialog.value = true;
   };
 
   // 取消模板选择
@@ -106,7 +84,7 @@ export function useTaskDialog() {
     const template = originTemplate.clone();
 
     if (template) {
-      currentTemplate.value = template;
+      taskStore.updateTaskTemplateBeingEdited(template);
       isEditMode.value = true;
       showEditTaskTemplateDialog.value = true;
     } else {
@@ -133,7 +111,6 @@ export function useTaskDialog() {
 
       if (response.success && response.data) {
         showEditTaskTemplateDialog.value = false;
-        currentTemplate.value = null;
         isEditMode.value = false;
         showSnackbar(
           `任务模板 "${response.data.title}" 保存成功`,
@@ -160,14 +137,14 @@ export function useTaskDialog() {
   // 取消编辑
   const cancelEditTaskTemplate = () => {
     showEditTaskTemplateDialog.value = false;
-    currentTemplate.value = null;
+    taskStore.updateTaskTemplateBeingEdited(null);
     isEditMode.value = false;
   };
 
   // 删除任务模板
-  const handleDeleteTaskTemplate = async (templateId: string) => {
+  const handleDeleteTaskTemplate = async (template: TaskTemplate) => {
     try {
-      const result = await taskApplicationService.deleteTaskTemplate(templateId);
+      const result = await taskApplicationService.deleteTaskTemplate(template);
       
       if (result.success) {
         showSnackbar(result.message, 'success', 5000);
@@ -214,6 +191,94 @@ export function useTaskDialog() {
     }
   };
 
+  const handlePauseTaskTemplate = async (templateId: string) => {
+    try {
+      const result = await taskApplicationService.pauseTemplate(templateId);
+      
+      if (result) {
+        showSnackbar(`任务模板已暂停`, 'success', 4000);
+      } else {
+        showSnackbar(`暂停任务模板失败`, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`暂停任务模板失败: ${errorMessage}`, 'error', 6000);
+      return false;
+    }
+  }
+
+  const handleResumeTaskTemplate = async (templateId: string) => {
+    try {
+      const result = await taskApplicationService.resumeTemplate(templateId);
+      
+      if (result) {
+        showSnackbar(`任务模板已恢复`, 'success', 4000);
+      } else {
+        showSnackbar(`恢复任务模板失败`, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`恢复任务模板失败: ${errorMessage}`, 'error', 6000);
+      return false;
+    }
+  }
+
+  const handleCompleteTaskInstance = async (taskId: string) => {
+    try {
+      const result = await taskApplicationService.completeTask(taskId);
+      
+      if (result.success && result.data) {
+        showSnackbar(
+          `任务实例 "${result.data}" 已完成`,
+          'success',
+          4000
+        );
+      } else {
+        showSnackbar(result.message, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`完成任务实例失败: ${errorMessage}`, 'error', 6000);
+      return {
+        success: false,
+        message: errorMessage,
+        data: undefined
+      };
+    }
+  }
+
+  const handleUndoCompleteTaskInstance = async (taskId: string) => {
+    try {
+      const result = await taskApplicationService.undoCompleteTask(taskId);
+      
+      if (result.success && result.data) {
+        showSnackbar(
+          `任务实例 "${result.data}" 已撤销完成`,
+          'success',
+          4000
+        );
+      } else {
+        showSnackbar(result.message, 'error', 6000);
+      }
+      
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showSnackbar(`撤销完成任务实例失败: ${errorMessage}`, 'error', 6000);
+      return {
+        success: false,
+        message: errorMessage,
+        data: undefined
+      };
+    }
+  } 
+
   return {
     // Snackbar配置
     snackbar,
@@ -222,7 +287,6 @@ export function useTaskDialog() {
     // 状态
     showEditTaskTemplateDialog,
     showTemplateSelectionDialog,
-    currentTemplate,
     isEditMode,
 
     // 方法
@@ -234,5 +298,7 @@ export function useTaskDialog() {
     cancelEditTaskTemplate,
     handleDeleteTaskTemplate,
     handleDeleteTaskInstance,
+    handlePauseTaskTemplate,
+    handleResumeTaskTemplate
   };
 }

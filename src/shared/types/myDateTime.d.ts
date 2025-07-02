@@ -48,48 +48,4 @@ export type DateTime = {
   isoString: string;
 };
 
-export type SnoozeConfig = {
-  /** 是否启用稍后提醒 */
-  enabled: boolean;
-  /** 稍后提醒间隔 (分钟) */
-  interval: number;
-  /** 最大重复次数 */
-  maxCount: number;
-};
-
-/**
- * 重复规则 - 更灵活的重复模式
- */
-export type RecurrenceRule = {
-  /** 重复类型 */
-  type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
-  /** 重复间隔 (例如：每2天、每3周) */
-  interval?: number;
-  /** 结束条件 */
-  endCondition: {
-    /** 结束类型 */
-    type: "never" | "date" | "count";
-    /** 结束日期 (当 type 为 'date') */
-    endDate?: DateTime;
-    /** 重复次数 (当 type 为 'count') */
-    count?: number;
-  };
-  /** 重复的具体配置 */
-  config?: {
-    /** 周重复：星期几 (0=周日, 1=周一, ...,
-    /** 周重复：星期几 (0=周日, 1=周一, ..., 6=周六) */
-    weekdays?: number[];
-    /** 月重复：每月的第几天 */
-    monthDays?: number[];
-    /** 月重复：每月的第几个星期几 (如第二个周一) */
-    monthWeekdays?: Array<{
-      week: number; // 第几周 (1-5, -1表示最后一周)
-      weekday: number; // 星期几 (0-6)
-    }>;
-    /** 年重复：月份 */
-    months?: number[];
-  };
-};
-
-
 

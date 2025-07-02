@@ -30,17 +30,16 @@
       <v-row>
         <v-col cols="12" md="6">
           <v-select 
-            v-model="localData.timeConfig.recurrence.type" 
+            v-model="recurrenceType" 
             label="重复类型"
             :items="recurrenceTypes" 
             variant="outlined" 
-            @update:model-value="handleRecurrenceChange"
           />
         </v-col>
         
-        <v-col cols="12" md="6" v-if="localData.timeConfig.recurrence.type !== 'none'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.type !== 'none'">
           <v-text-field 
-            v-model.number="localData.timeConfig.recurrence.interval" 
+            v-model.number="recurrenceInterval" 
             label="间隔"
             type="number" 
             variant="outlined" 
@@ -50,7 +49,7 @@
         </v-col>
 
         <!-- 每周重复的星期选择 -->
-        <v-col cols="12" v-if="localData.timeConfig.recurrence.type === 'weekly'">
+        <v-col cols="12" v-if="props.modelValue.timeConfig.recurrence.type === 'weekly'">
           <WeekdaySelector 
             v-model="selectedWeekdays"
             @update:model-value="updateWeekdays"
@@ -58,11 +57,10 @@
         </v-col>
 
         <!-- 结束条件 -->
-        <v-col cols="12" v-if="localData.timeConfig.recurrence.type !== 'none'">
+        <v-col cols="12" v-if="props.modelValue.timeConfig.recurrence.type !== 'none' && props.modelValue.timeConfig.recurrence.endCondition">
           <v-radio-group 
-            v-model="localData.timeConfig.recurrence.endCondition.type" 
+            v-model="recurrenceEndConditionType" 
             label="结束条件"
-            @update:model-value="handleEndConditionChange"
           >
             <v-radio label="永不结束" value="never" />
             <v-radio label="指定日期结束" value="date" />
@@ -70,19 +68,18 @@
           </v-radio-group>
         </v-col>
         
-        <v-col cols="12" md="6" v-if="localData.timeConfig.recurrence.endCondition.type === 'date'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'date'">
           <v-text-field 
             v-model="endConditionDateInput" 
             label="结束日期" 
             type="date" 
             variant="outlined"
-            @update:model-value="updateEndConditionDate" 
           />
         </v-col>
         
-        <v-col cols="12" md="6" v-if="localData.timeConfig.recurrence.endCondition.type === 'count'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'count'">
           <v-text-field 
-            v-model.number="localData.timeConfig.recurrence.endCondition.count"
+            v-model.number="recurrenceEndConditionCount"
             label="重复次数" 
             type="number" 
             variant="outlined" 
@@ -100,7 +97,6 @@ import { computed, ref, watch } from 'vue';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import WeekdaySelector from '../widgets/WeekdaySelector.vue';
 import { useRecurrenceValidation } from '@/modules/Task/presentation/composables/useRecurrenceValidation';
-import { formatDate } from '@/shared/utils/dateUtils';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -113,14 +109,85 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const localData = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
+const updateTemplate = (updater: (template: TaskTemplate) => void) => {
+  const updatedTemplate = props.modelValue.clone();
+  updater(updatedTemplate);
+  emit('update:modelValue', updatedTemplate);
+};
+
+const recurrenceType = computed({
+  get: () => props.modelValue.timeConfig.recurrence.type,
+  set: (value) => {
+    updateTemplate((template) => {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        recurrence: {
+          ...template.timeConfig.recurrence,
+          type: value as any,
+          interval: 1,
+          endCondition: {
+            type: 'never'
+          }
+        }
+      });
+    });
+  }
 });
 
 
+const recurrenceInterval = computed({
+  get: () => props.modelValue.timeConfig.recurrence.interval,
+  set: (value: number) => {
+    updateTemplate((template) => {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        recurrence: {
+          ...template.timeConfig.recurrence,
+          interval: value
+        }
+      });
+    });
+  }
+});
+
+const recurrenceEndConditionType = computed({
+  get: () => props.modelValue.timeConfig.recurrence.endCondition?.type,
+  set: (value: string | null) => {
+    handleEndConditionChange(value);
+  }
+});
+
+const recurrenceEndConditionCount = computed({
+  get: () => props.modelValue.timeConfig.recurrence.endCondition?.count || 1,
+  set: (value: number) => {
+    updateTemplate((template) => {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        recurrence: {
+          ...template.timeConfig.recurrence,
+          endCondition: {
+            type: template.timeConfig.recurrence.endCondition?.type || 'count',
+            endDate: template.timeConfig.recurrence.endCondition?.endDate,
+            count: value
+          }
+        }
+      });
+    });
+  }
+});
+
+const endConditionDateInput = computed({
+  get: () => {
+    const endDate = props.modelValue.timeConfig.recurrence.endCondition?.endDate;
+    return endDate ? TimeUtils.formatDateToInput(endDate) : '';
+  },
+  set: (value: string) => {
+    updateEndConditionDate(value);
+  }
+});
+
 const recurrenceRule = computed(() => {
-  return localData.value.timeConfig.recurrence;
+  return props.modelValue.timeConfig.recurrence;
 });
 
 const {
@@ -130,8 +197,6 @@ const {
   getRecurrenceDescription
 } = useRecurrenceValidation(recurrenceRule);
 
-// 表单输入字段
-const endConditionDateInput = ref('');
 const selectedWeekdays = ref<number[]>([]);
 
 // 表单选项
@@ -143,59 +208,39 @@ const recurrenceTypes = [
   { title: '每年', value: 'yearly' }
 ];
 
-// 处理重复类型变化
-const handleRecurrenceChange = (type: string | null) => {
-  if (!type) {
-    const updatedTemplate = localData.value.clone();
-    updatedTemplate.updateTimeConfig({
-      ...updatedTemplate.timeConfig,
-      recurrence: {
-        ...updatedTemplate.timeConfig.recurrence,
-        endCondition: {
-          type: 'never'
-        }
-      }
-    });
-    emit('update:modelValue', updatedTemplate);
-  }
-};
 
 // 处理结束条件变化
 const handleEndConditionChange = (type: string | null) => {
-  console.log(endConditionDateInput, 'endConditionDateInput reset to empty');
-  console.log("localData.value.timeConfig.recurrence.endCondition", localData.value.timeConfig.recurrence.endCondition);
-  if (!type) {
-    console.warn('endCondition type is null, setting default to "never"');
-    const updatedTemplate = localData.value.clone();
-    updatedTemplate.updateTimeConfig({
-      ...updatedTemplate.timeConfig,
-      recurrence: {
-        ...updatedTemplate.timeConfig.recurrence,
-        endCondition: {
-          type: 'never'
+  updateTemplate((template) => {
+    if (!type) {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        recurrence: {
+          ...template.timeConfig.recurrence,
+          endCondition: {
+            type: 'never'
+          }
         }
-      }
-    });    emit('update:modelValue', updatedTemplate);
-  } else {
-    const updatedTemplate = localData.value.clone();
-    updatedTemplate.updateTimeConfig({
-      ...updatedTemplate.timeConfig,
-      recurrence: {
-        ...updatedTemplate.timeConfig.recurrence,
-        endCondition: {
-          type: type as any,
-          ...(type === 'count' && { count: 1 }),
-          ...(type === 'date' && { endDate: TimeUtils.toDateTime(endConditionDateInput.value) }) 
+      });
+    } else {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        recurrence: {
+          ...template.timeConfig.recurrence,
+          endCondition: {
+            type: type as "never" | "date" | "count",
+            ...(type === 'count' && { count: 1 }),
+            ...(type === 'date' && { endDate: TimeUtils.now() })
+          }
         }
-      }
-    });
-    emit('update:modelValue', updatedTemplate);
-  }
+      });
+    }
+  });
 };
 
 // 更新星期几选择
 const updateWeekdays = (weekdays: number[]) => {
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   if (!updatedTemplate.timeConfig.recurrence.config) {
     updatedTemplate.timeConfig.recurrence.config = {};
   }
@@ -208,13 +253,14 @@ const updateWeekdays = (weekdays: number[]) => {
 const updateEndConditionDate = (date: string) => {
   if (!date) return;
     const endDate = TimeUtils.toDateTime(date);
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
     recurrence: {
       ...updatedTemplate.timeConfig.recurrence,
       endCondition: {
-        ...updatedTemplate.timeConfig.recurrence.endCondition,
+        type: updatedTemplate.timeConfig.recurrence.endCondition?.type || 'date',
+        count: updatedTemplate.timeConfig.recurrence.endCondition?.count || undefined,
         endDate: endDate
       }
     }
@@ -222,36 +268,14 @@ const updateEndConditionDate = (date: string) => {
   emit('update:modelValue', updatedTemplate);
 };
 
-// 初始化表单数据
-const initializeFormData = () => {
-  if (localData.value?.timeConfig?.recurrence?.endCondition?.endDate) {
-    endConditionDateInput.value = TimeUtils.formatDateToInput(
-      localData.value.timeConfig.recurrence.endCondition.endDate
-    );
-  } else {
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    endConditionDateInput.value = formatDate(nextWeek);
-  }
-  
-  if (localData.value?.timeConfig?.recurrence?.config?.weekdays) {
-    selectedWeekdays.value = [...localData.value.timeConfig.recurrence.config.weekdays];
-  }
-};
-
-
 watch(isValid, (newValue) => {
   emit('update:validation', newValue);
 }, { immediate: true });
 
-watch(localData, () => {
+watch(props.modelValue, () => {
   validateRecurrence();
 }, { deep: true });
 
-// 监听模板变化，初始化表单数据
-watch(() => props.modelValue, () => {
-  initializeFormData();
-}, { immediate: true });
 </script>
 
 <style scoped>

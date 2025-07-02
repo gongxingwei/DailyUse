@@ -1,5 +1,5 @@
 import { ref, computed, watch, readonly, type Ref } from 'vue';
-import type { RecurrenceRule } from '@/modules/Task/types/timeStructure';
+import type { RecurrenceRule } from '@/modules/Task/domain/types/task';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 
 /**

@@ -19,4 +19,10 @@ export abstract class AggregateRoot extends Entity {
   clearDomainEvents(): void {
     this._domainEvents = [];
   }
+
+  getUncommittedDomainEvents(): DomainEvent[] {
+    const events = [...this._domainEvents];
+    this.clearDomainEvents();
+    return events;
+  }
 }

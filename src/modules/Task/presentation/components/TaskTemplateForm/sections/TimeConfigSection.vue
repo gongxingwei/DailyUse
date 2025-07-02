@@ -31,7 +31,7 @@
       <!-- 任务类型选择 -->
       <v-row>
         <v-col cols="12">
-          <v-radio-group v-model="localData.timeConfig.type" label="任务类型" inline>
+          <v-radio-group v-model="timeConfigType" label="任务类型" inline>
             <v-radio label="全天任务" value="allDay" />
             <v-radio label="指定时间" value="timed" />
             <v-radio label="时间段" value="timeRange" />
@@ -50,7 +50,7 @@
           />
         </v-col>
         
-        <v-col cols="12" md="6" v-if="localData.timeConfig.type !== 'allDay'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type !== 'allDay'">
           <v-text-field 
             v-model="startTimeInput" 
             label="开始时间" 
@@ -62,7 +62,7 @@
         </v-col>
 
         <!-- 结束时间（仅时间段类型） -->
-        <v-col cols="12" md="6" v-if="localData.timeConfig.type === 'timeRange'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
           <v-text-field 
             v-model="endDateInput" 
             label="结束日期" 
@@ -72,7 +72,7 @@
           />
         </v-col>
         
-        <v-col cols="12" md="6" v-if="localData.timeConfig.type === 'timeRange'">
+        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
           <v-text-field 
             v-model="endTimeInput" 
             label="结束时间" 
@@ -102,10 +102,25 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const localData = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-});
+const updateTemplate = (updater: (template: TaskTemplate) => void) => {
+  const updatedTemplate = props.modelValue.clone();
+  updater(updatedTemplate);
+  emit('update:modelValue', updatedTemplate);
+};
+
+const timeConfigType = computed({
+  get: () => props.modelValue.timeConfig.type,
+  set: (newType: "allDay" | "timed" | "timeRange") => {
+    console.log('Setting timeConfigType to:', newType);
+    updateTemplate((template) => {
+      template.updateTimeConfig({
+        ...template.timeConfig,
+        type: newType
+      });
+    });
+  }
+})
+
 
 // 使用时间配置验证
 const {
@@ -126,10 +141,10 @@ const endTimeInput = ref('');
 const updateStartDate = (date: string) => {
   if (!date) return;
   
-  const currentStart = localData.value.timeConfig.baseTime.start;
+  const currentStart = props.modelValue.timeConfig.baseTime.start;
   const newStart = TimeUtils.updateDateKeepTime(currentStart, date);
   
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
     baseTime: {
@@ -143,10 +158,10 @@ const updateStartDate = (date: string) => {
 const updateStartTime = (time: string) => {
   if (!time) return;
   
-  const currentStart = localData.value.timeConfig.baseTime.start;
+  const currentStart = props.modelValue.timeConfig.baseTime.start;
   const newStart = TimeUtils.updateTimeKeepDate(currentStart, time);
   
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
     baseTime: {
@@ -158,12 +173,12 @@ const updateStartTime = (time: string) => {
 };const updateEndDate = (date: string) => {
   if (!date) return;
   
-  const currentEnd = localData.value.timeConfig.baseTime.end;
+  const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
   
   const newEnd = TimeUtils.updateDateKeepTime(currentEnd, date);
   
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
     baseTime: {
@@ -177,12 +192,12 @@ const updateStartTime = (time: string) => {
 const updateEndTime = (time: string) => {
   if (!time) return;
   
-  const currentEnd = localData.value.timeConfig.baseTime.end;
+  const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
   
   const newEnd = TimeUtils.updateTimeKeepDate(currentEnd, time);
   
-  const updatedTemplate = localData.value.clone();
+  const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
     baseTime: {
@@ -193,22 +208,22 @@ const updateEndTime = (time: string) => {
   emit('update:modelValue', updatedTemplate);
 };// 初始化表单数据
 const initializeFormData = () => {
-  if (localData.value?.timeConfig?.baseTime?.start) {
-    const startTime = localData.value.timeConfig.baseTime.start;
+  if (props.modelValue?.timeConfig?.baseTime?.start) {
+    const startTime = props.modelValue.timeConfig.baseTime.start;
     startDateInput.value = TimeUtils.formatDateToInput(startTime);
     startTimeInput.value = TimeUtils.formatTimeToInput(startTime);
   }
 
-  if (localData.value?.timeConfig?.baseTime?.end) {
-    const endTime = localData.value.timeConfig.baseTime.end;
+  if (props.modelValue?.timeConfig?.baseTime?.end) {
+    const endTime = props.modelValue.timeConfig.baseTime.end;
     endDateInput.value = TimeUtils.formatDateToInput(endTime);
     endTimeInput.value = TimeUtils.formatTimeToInput(endTime);
   }
 };
 
 // 监听时间配置变化，触发验证
-watch(() => localData.value.timeConfig, () => {
-  const isValid = validateTimeConfig(localData.value.timeConfig);
+watch(() => props.modelValue.timeConfig, () => {
+  const isValid = validateTimeConfig(props.modelValue.timeConfig);
   emit('update:validation', isValid);
 }, { deep: true, immediate: true });
 

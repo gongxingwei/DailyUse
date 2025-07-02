@@ -2,11 +2,16 @@ import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
 import type { TaskTimeConfig, TaskReminderConfig } from '../types/task';
 
 /**
- * 任务元模板领域服务 - 处理TaskMetaTemplate实体的业务逻辑
+ * 任务元模板领域服务
+ * 处理TaskMetaTemplate实体的业务逻辑
  */
 export class TaskMetaTemplateService {
   /**
    * 合并元模板配置
+   * @param {TaskMetaTemplate} metaTemplate - 元模板
+   * @param {Partial<TaskTimeConfig>} customTimeConfig - 自定义时间配置（可选）
+   * @param {Partial<TaskReminderConfig>} customReminderConfig - 自定义提醒配置（可选）
+   * @returns {object} 合并后的配置对象
    */
   mergeWithCustomConfig(
     metaTemplate: TaskMetaTemplate,
@@ -35,27 +40,34 @@ export class TaskMetaTemplateService {
     };
   }
 
-  /**
-   * 检查元模板是否可以删除
-   */
-  canDelete(metaTemplate: TaskMetaTemplate, activeTemplateCount: number): { canDelete: boolean; reason?: string } {
-    if (activeTemplateCount > 0) {
-      return {
-        canDelete: false,
-        reason: `仍有 ${activeTemplateCount} 个活跃的任务模板基于此元模板`
-      };
-    }
+  // /**
+  //  * 检查元模板是否可以删除
+  //  * @param {TaskMetaTemplate} metaTemplate - 元模板
+  //  * @param {number} activeTaskTemplateCount - 活跃的任务模板数量
+  //  * @returns {object} 删除检查结果，包含是否可删除和原因
+  //  */
+  // canDelete(metaTemplate: TaskMetaTemplate, activeTaskTemplateCount: number): { canDelete: boolean; reason?: string } {
+  //   if (activeTaskTemplateCount > 0) {
+  //     return {
+  //       canDelete: false,
+  //       reason: `仍有 ${activeTaskTemplateCount} 个活跃的任务模板基于此元模板`
+  //     };
+  //   }
 
-    return { canDelete: true };
-  }
+  //   return { canDelete: true };
+  // }
 
   /**
    * 获取元模板使用统计
+   * @param {TaskMetaTemplate} metaTemplate - 元模板
+   * @param {number} taskTemplateCount - 任务模板数量
+   * @param {number} taskInstanceCount - 任务实例数量
+   * @returns {object} 使用统计信息
    */
-  getUsageStats(metaTemplate: TaskMetaTemplate, templateCount: number, instanceCount: number) {
+  getUsageStats(metaTemplate: TaskMetaTemplate, taskTemplateCount: number, taskInstanceCount: number) {
     return {
-      templatesCreated: templateCount,
-      instancesGenerated: instanceCount,
+      templatesCreated: taskTemplateCount,
+      instancesGenerated: taskInstanceCount,
       lastUsed: metaTemplate.lifecycle.updatedAt || metaTemplate.lifecycle.createdAt,
       category: metaTemplate.category
     };
@@ -63,6 +75,8 @@ export class TaskMetaTemplateService {
 
   /**
    * 验证元模板配置
+   * @param {TaskMetaTemplate} metaTemplate - 元模板
+   * @returns {object} 验证结果，包含是否有效和错误信息
    */
   validateConfiguration(metaTemplate: TaskMetaTemplate): { valid: boolean; errors: string[] } {
     const errors: string[] = [];

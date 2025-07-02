@@ -1,7 +1,10 @@
-
-import type { TimePoint, DateTime, DateInfo, TaskTimeConfig, ReminderRule, RecurrenceRule } from '../../modules/Task/types/timeStructure';
+import type { TimePoint, DateTime, DateInfo } from '@/shared/types/myDateTime';
 
 export class TimeUtils {
+  // ===============================
+  // 核心创建方法
+  // ===============================
+
   /**
    * 创建时间点
    */
@@ -28,15 +31,23 @@ export class TimeUtils {
     };
   }
 
+  // ===============================
+  // 类型检查和转换
+  // ===============================
+
   /**
-   * 检查是否为 DateTime 对象
+   * 检查是否为有效的 DateTime 对象
    */
   static isDateTime(obj: any): obj is DateTime {
     return obj && 
            typeof obj === 'object' && 
-           obj.timestamp && 
-           obj.isoString && 
-           obj.date;
+           typeof obj.timestamp === 'number' &&
+           typeof obj.isoString === 'string' &&
+           obj.date && 
+           typeof obj.date === 'object' &&
+           typeof obj.date.year === 'number' &&
+           typeof obj.date.month === 'number' &&
+           typeof obj.date.day === 'number';
   }
 
   /**
@@ -44,6 +55,11 @@ export class TimeUtils {
    */
   static fromISOString(isoString: string): DateTime {
     const jsDate = new Date(isoString);
+    
+    if (isNaN(jsDate.getTime())) {
+      throw new Error(`Invalid ISO string: ${isoString}`);
+    }
+    
     return {
       date: {
         year: jsDate.getFullYear(),
@@ -55,7 +71,32 @@ export class TimeUtils {
         minute: jsDate.getMinutes()
       },
       timestamp: jsDate.getTime(),
-      isoString
+      isoString: isoString // 使用原始字符串，避免重新生成
+    };
+  }
+
+  /**
+   * 从时间戳创建DateTime
+   */
+  static fromTimestamp(timestamp: number): DateTime {
+    const jsDate = new Date(timestamp);
+    
+    if (isNaN(jsDate.getTime())) {
+      throw new Error(`Invalid timestamp: ${timestamp}`);
+    }
+    
+    return {
+      date: {
+        year: jsDate.getFullYear(),
+        month: jsDate.getMonth() + 1,
+        day: jsDate.getDate()
+      },
+      time: {
+        hour: jsDate.getHours(),
+        minute: jsDate.getMinutes()
+      },
+      timestamp: timestamp,
+      isoString: jsDate.toISOString()
     };
   }
 
@@ -67,29 +108,9 @@ export class TimeUtils {
   }
 
   /**
-   * 从时间戳创建DateTime
-   */
-  static fromTimestamp(timestamp: number): DateTime {
-    const jsDate = new Date(timestamp);
-    return {
-      date: {
-        year: jsDate.getFullYear(),
-        month: jsDate.getMonth() + 1,
-        day: jsDate.getDate()
-      },
-      time: {
-        hour: jsDate.getHours(),
-        minute: jsDate.getMinutes()
-      },
-      timestamp,
-      isoString: jsDate.toISOString()
-    };
-  }
-
-   /**
    * 从各种格式创建 DateTime
    */
-   static toDateTime(input: Date | string | number | DateTime): DateTime {
+  static toDateTime(input: Date | string | number | DateTime): DateTime {
     if (this.isDateTime(input)) {
       return input as DateTime;
     }
@@ -108,6 +129,82 @@ export class TimeUtils {
     
     throw new Error('Invalid input type for DateTime conversion');
   }
+
+  /**
+   * 安全地从任意输入创建 DateTime
+   */
+  static safeToDateTime(input: any): DateTime | null {
+    if (!input) return null;
+    
+    try {
+      // 如果是字符串，直接解析
+      if (typeof input === 'string') {
+        return this.fromISOString(input);
+      }
+      
+      // 如果是数字（时间戳）
+      if (typeof input === 'number') {
+        return this.fromTimestamp(input);
+      }
+      
+      // 如果是 Date 对象
+      if (input instanceof Date) {
+        return this.fromTimestamp(input.getTime());
+      }
+      
+      // 如果是对象，需要仔细检查
+      if (typeof input === 'object') {
+        // 检查是否是有效的 DateTime 结构并且没有循环引用
+        if (this.isDateTime(input)) {
+          // 重新从基础数据创建，避免潜在的循环引用
+          return this.fromTimestamp(input.timestamp);
+        }
+        
+        // 处理可能的循环引用情况
+        if (typeof input.timestamp === 'number') {
+          return this.fromTimestamp(input.timestamp);
+        }
+        
+        // 尝试提取嵌套的有效数据（处理循环引用）
+        let current = input;
+        let depth = 0;
+        const maxDepth = 10;
+        
+        while (current && depth < maxDepth) {
+          if (typeof current.timestamp === 'number') {
+            return this.fromTimestamp(current.timestamp);
+          }
+          
+          if (typeof current.isoString === 'string') {
+            return this.fromISOString(current.isoString);
+          }
+          
+          if (current.isoString && typeof current.isoString === 'object') {
+            current = current.isoString;
+            depth++;
+          } else {
+            break;
+          }
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to convert to DateTime:', input, error);
+    }
+    
+    return null;
+  }
+
+  /**
+   * 确保返回有效的 DateTime 对象
+   */
+  static ensureDateTime(input: any): DateTime {
+    const result = this.safeToDateTime(input);
+    return result || this.now();
+  }
+
+  // ===============================
+  // 时间操作方法
+  // ===============================
 
   /**
    * 更新日期但保持时间不变
@@ -181,67 +278,65 @@ export class TimeUtils {
    * 更新日期（用于结束时间等场景）
    */
   static updateDate(existingDateTime: DateTime, dateInput: string | DateInfo): DateTime {
-    let newDate: DateInfo;
-    
-    if (typeof dateInput === 'string') {
-      const [year, month, day] = dateInput.split('-').map(Number);
-      newDate = { year, month, day };
-    } else {
-      newDate = dateInput;
-    }
-    
-    return {
-      ...existingDateTime,
-      date: newDate,
-      timestamp: new Date(
-        newDate.year,
-        newDate.month - 1,
-        newDate.day,
-        existingDateTime.time?.hour || 0,
-        existingDateTime.time?.minute || 0
-      ).getTime(),
-      isoString: new Date(
-        newDate.year,
-        newDate.month - 1,
-        newDate.day,
-        existingDateTime.time?.hour || 0,
-        existingDateTime.time?.minute || 0
-      ).toISOString()
-    };
+    return this.updateDateKeepTime(existingDateTime, dateInput);
   }
 
   /**
    * 更新时间（用于结束时间等场景）
    */
   static updateTime(existingDateTime: DateTime, timeInput: string | TimePoint): DateTime {
-    let newTime: TimePoint;
-    
-    if (typeof timeInput === 'string') {
-      const [hour, minute] = timeInput.split(':').map(Number);
-      newTime = { hour, minute };
-    } else {
-      newTime = timeInput;
-    }
-    
+    return this.updateTimeKeepDate(existingDateTime, timeInput);
+  }
+
+  /**
+   * 获取一天的开始时间
+   */
+  static startOfDay(dateTime: DateTime): DateTime {
+    const { year, month, day } = dateTime.date;
+    const jsDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+
     return {
-      ...existingDateTime,
-      time: newTime,
-      timestamp: new Date(
-        existingDateTime.date.year,
-        existingDateTime.date.month - 1,
-        existingDateTime.date.day,
-        newTime.hour,
-        newTime.minute
-      ).getTime(),
-      isoString: new Date(
-        existingDateTime.date.year,
-        existingDateTime.date.month - 1,
-        existingDateTime.date.day,
-        newTime.hour,
-        newTime.minute
-      ).toISOString()
+      date: { year, month, day },
+      time: { hour: 0, minute: 0 },
+      timestamp: jsDate.getTime(),
+      isoString: jsDate.toISOString()
     };
   }
+
+  /**
+   * 获取一天的结束时间
+   */
+  static endOfDay(dateTime: DateTime): DateTime {
+    const { year, month, day } = dateTime.date;
+    const jsDate = new Date(year, month - 1, day, 23, 59, 59, 999);
+
+    return {
+      date: { year, month, day },
+      time: { hour: 23, minute: 59 },
+      timestamp: jsDate.getTime(),
+      isoString: jsDate.toISOString()
+    };
+  }
+
+  /**
+   * 添加分钟
+   */
+  static addMinutes(dateTime: DateTime, minutes: number): DateTime {
+    const newTimestamp = dateTime.timestamp + (minutes * 60 * 1000);
+    return this.fromTimestamp(newTimestamp);
+  }
+
+  /**
+   * 添加天数
+   */
+  static addDays(dateTime: DateTime, days: number): DateTime {
+    const newTimestamp = dateTime.timestamp + (days * 24 * 60 * 60 * 1000);
+    return this.fromTimestamp(newTimestamp);
+  }
+
+  // ===============================
+  // 比较方法
+  // ===============================
 
   /**
    * 比较两个DateTime
@@ -279,63 +374,22 @@ export class TimeUtils {
     return target.timestamp >= start.timestamp && target.timestamp <= end.timestamp;
   }
 
-  /**
-   * 计算下一个重复时间
-   */
-  static getNextOccurrence(config: TaskTimeConfig, from?: DateTime): DateTime | null {
-    const fromTime = from || this.now();
-    const { recurrence, baseTime } = config;
-
-    if (recurrence.type === 'none') {
-      return baseTime.start.timestamp > fromTime.timestamp ? baseTime.start : null;
-    }
-
-    // 根据重复规则计算下一次时间
-    return this.calculateNextByRule(baseTime.start, recurrence, fromTime);
-  }
+  // ===============================
+  // 格式化方法
+  // ===============================
 
   /**
-   * 计算所有提醒时间
+   * 格式化为表单输入的日期格式 (YYYY-MM-DD)
    */
-  static calculateReminderTimes(taskTime: DateTime, reminderRule: ReminderRule): DateTime[] {
-    if (!reminderRule.enabled) return [];
-
-    return reminderRule.alerts
-      .filter(alert => !alert.triggered)
-      .map(alert => {
-        if (alert.timing.type === 'absolute' && alert.timing.absoluteTime) {
-          return alert.timing.absoluteTime;
-        } else if (alert.timing.type === 'relative' && alert.timing.minutesBefore) {
-          return this.addMinutes(taskTime, -alert.timing.minutesBefore);
-        } else {
-          throw new Error('Invalid reminder timing configuration');
-        }
-      })
-      .filter(reminderTime => reminderTime.timestamp > Date.now())
-      .sort((a, b) => a.timestamp - b.timestamp);
-  }
-
-  
-
-  /**
-   * 添加一段时间（以分钟为单位）
-   */
-  static addMinutes(dateTime: DateTime, minutes: number): DateTime {
-    const newTimestamp = dateTime.timestamp + (minutes * 60 * 1000);
-    return this.fromTimestamp(newTimestamp);
-  }
-
-  static addDays(dateTime: DateTime, days: number): DateTime {
-    const newTimestamp = dateTime.timestamp + (days * 24 * 60 * 60 * 1000);
-    return this.fromTimestamp(newTimestamp);
-  }
-  
   static formatDateToInput(dateTime: DateTime): string {
     if (!dateTime?.date) return '';
     const { year, month, day } = dateTime.date;
     return `${year}-${month.toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
   }
 
+  /**
+   * 格式化为表单输入的时间格式 (HH:mm)
+   */
   static formatTimeToInput(dateTime: DateTime): string {
     if (!dateTime?.time) return '';
     const { hour, minute } = dateTime.time;
@@ -343,99 +397,65 @@ export class TimeUtils {
   }
 
   /**
-   * 根据重复规则计算下一次时间
+   * 格式化显示日期（通用版本）
    */
-  private static calculateNextByRule(
-    baseTime: DateTime, 
-    rule: RecurrenceRule, 
-    fromTime: DateTime
-  ): DateTime | null {
-    const { type, interval = 1, endCondition, config } = rule;
-    
-    // 检查是否已达到结束条件
-    if (endCondition.type === 'date' && endCondition.endDate && 
-        fromTime.timestamp > endCondition.endDate.timestamp) {
-      return null;
+  static formatDisplayDate(dateTime: DateTime): string {
+    if (!dateTime?.date) return "";
+
+    const { year, month, day } = dateTime.date;
+    const now = this.now();
+    const today = now.date;
+
+    // 判断是否是今天、明天、昨天
+    if (year === today.year && month === today.month && day === today.day) {
+      return "今天";
     }
 
-    let nextTime: DateTime;
-    const baseDate = new Date(baseTime.timestamp);
-    const fromDate = new Date(fromTime.timestamp);
-
-    switch (type) {
-      case 'daily':
-        nextTime = this.getNextDaily(baseDate, fromDate, interval);
-        break;
-      case 'weekly':
-        nextTime = this.getNextWeekly(baseDate, fromDate, interval, config?.weekdays);
-        break;
-      case 'monthly':
-        nextTime = this.getNextMonthly(baseDate, fromDate, interval, config);
-        break;
-      default:
-        return null;
+    const tomorrow = this.addDays(now, 1);
+    if (
+      year === tomorrow.date.year &&
+      month === tomorrow.date.month &&
+      day === tomorrow.date.day
+    ) {
+      return "明天";
     }
 
-    return nextTime;
+    const yesterday = this.addDays(now, -1);
+    if (
+      year === yesterday.date.year &&
+      month === yesterday.date.month &&
+      day === yesterday.date.day
+    ) {
+      return "昨天";
+    }
+
+    // 判断是否是今年
+    if (year === today.year) {
+      return `${month}月${day}日`;
+    }
+
+    return `${year}年${month}月${day}日`;
   }
 
-  private static getNextDaily(baseDate: Date, fromDate: Date, interval: number): DateTime {
-    const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
-    if (nextDate.getTime() === fromDate.getTime()) {
-      nextDate.setDate(nextDate.getDate() + interval);
-    }
-    return this.fromTimestamp(nextDate.getTime());
+  /**
+   * 格式化显示时间（通用版本）
+   */
+  static formatDisplayTime(dateTime: DateTime): string {
+    if (!dateTime?.time) return "";
+
+    const { hour, minute } = dateTime.time;
+    return `${hour.toString().padStart(2, "0")}:${minute
+      .toString()
+      .padStart(2, "0")}`;
   }
 
-  private static getNextWeekly(
-    baseDate: Date, 
-    fromDate: Date, 
-    interval: number, 
-    weekdays?: number[]
-  ): DateTime {
-    if (!weekdays || weekdays.length === 0) {
-      const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
-      nextDate.setDate(nextDate.getDate() + (7 * interval));
-      return this.fromTimestamp(nextDate.getTime());
+  /**
+   * 计算两个时间之间的分钟数
+   */
+  static getMinutesBetween(start: DateTime, end: DateTime): number {
+    if (!this.isDateTime(start) || !this.isDateTime(end)) {
+      throw new Error("Invalid DateTime objects provided");
     }
-
-    // 找到下一个匹配的星期几
-    const currentWeekday = fromDate.getDay();
-    const sortedWeekdays = [...weekdays].sort((a, b) => a - b);
-    
-    for (const weekday of sortedWeekdays) {
-      if (weekday > currentWeekday) {
-        const daysToAdd = weekday - currentWeekday;
-        const nextDate = new Date(fromDate.getTime());
-        nextDate.setDate(nextDate.getDate() + daysToAdd);
-        nextDate.setHours(baseDate.getHours(), baseDate.getMinutes(), 0, 0);
-        return this.fromTimestamp(nextDate.getTime());
-      }
-    }
-
-    // 如果没有找到本周的，找下周的第一个
-    const daysToAdd = (7 * interval) + sortedWeekdays[0] - currentWeekday;
-    const nextDate = new Date(fromDate.getTime());
-    nextDate.setDate(nextDate.getDate() + daysToAdd);
-    nextDate.setHours(baseDate.getHours(), baseDate.getMinutes(), 0, 0);
-    return this.fromTimestamp(nextDate.getTime());
+    return Math.floor((end.timestamp - start.timestamp) / (60 * 1000));
   }
-
-  private static getNextMonthly(
-    baseDate: Date, 
-    fromDate: Date, 
-    interval: number, 
-    _config?: any
-  ): DateTime {
-    const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
-    nextDate.setMonth(nextDate.getMonth() + interval);
-    
-    // 处理月末日期 (如31号在2月不存在)
-    if (nextDate.getDate() !== baseDate.getDate()) {
-      nextDate.setDate(0); // 设置为上个月的最后一天
-    }
-    
-    return this.fromTimestamp(nextDate.getTime());
-  }
-
 }

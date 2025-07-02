@@ -1,4 +1,3 @@
-// composables/useReminderValidation.ts - 纯前端UI验证
 import { ref, computed } from 'vue';
 
 export function useReminderValidation() {

@@ -1,5 +1,8 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { DateTime } from "@/modules/Task/types/timeStructure";
+import { DateTime } from '@/shared/types/myDateTime';
+
+import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '@/shared/domain/domainEvent';
+
 import type {
   KeyResultLink,
   ITaskInstance,
@@ -366,6 +369,23 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     this._lifecycle.completedAt = now;
     this._lifecycle.updatedAt = now;
 
+    if (this._keyResultLinks?.length) {
+      const event: TaskCompletedEvent = {
+        eventType: "TaskCompleted",
+        aggregateId: this._id,
+        occurredOn: new Date(),
+        payload: {
+          taskId: this._id,
+          keyResultLinks: this._keyResultLinks,
+          completedAt: new Date(),
+        },
+      };
+      this.addDomainEvent(event);
+      console.log(`发布事件: ${event.eventType}`);
+    }
+    
+    
+
     // Calculate actual duration if start time exists
     if (this._actualStartTime) {
       this._metadata.actualDuration = Math.round(
@@ -597,24 +617,34 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     }
 
     const now = TimeUtils.now();
-    this._status = "pending";
+    this._status = "inProgress";
     this._completedAt = undefined;
     this._actualEndTime = undefined;
-    
-    // 重置实际持续时间
     this._metadata.actualDuration = undefined;
-    
-    // 清除完成时间
     this._lifecycle.completedAt = undefined;
     this._lifecycle.updatedAt = now;
-
     this._lifecycle.events.push({
       type: "task_undo",
       timestamp: now,
       details: {
-        previousStatus: "completed"
+        previousStatus: "completed",
+        newStatus: "inProgress",
       },
     });
+
+    if (this._keyResultLinks?.length) {
+      const event: TaskUndoCompletedEvent = {
+        eventType: "TaskUndoCompleted",
+        aggregateId: this._id,
+        occurredOn: new Date(),
+        payload: {
+          taskId: this._id,
+          keyResultLinks: this._keyResultLinks,
+          undoAt: new Date(),
+        }
+      }
+      this.addDomainEvent(event);
+    }
   }
 
   // ✅ 添加重置为特定状态的方法
@@ -730,24 +760,24 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     // 恢复时间信息
     if (data.completedAt || data._completedAt) {
-      instance._completedAt = TimeUtils.fromISOString(data.completedAt || data._completedAt);
+      instance._completedAt = TimeUtils.ensureDateTime(data.completedAt || data._completedAt);
     }
     if (data.actualStartTime || data._actualStartTime) {
-      instance._actualStartTime = TimeUtils.fromISOString(data.actualStartTime || data._actualStartTime);
+      instance._actualStartTime = TimeUtils.ensureDateTime(data.actualStartTime || data._actualStartTime);
     }
     if (data.actualEndTime || data._actualEndTime) {
-      instance._actualEndTime = TimeUtils.fromISOString(data.actualEndTime || data._actualEndTime);
+      instance._actualEndTime = TimeUtils.ensureDateTime(data.actualEndTime || data._actualEndTime);
     }
 
     // 恢复完整的生命周期状态
     if (data.lifecycle || data._lifecycle) {
       const lifecycle = data.lifecycle || data._lifecycle;
       instance._lifecycle = {
-        createdAt: lifecycle.createdAt ? TimeUtils.fromISOString(lifecycle.createdAt) : instance._lifecycle.createdAt,
-        updatedAt: lifecycle.updatedAt ? TimeUtils.fromISOString(lifecycle.updatedAt) : instance._lifecycle.updatedAt,
-        startedAt: lifecycle.startedAt ? TimeUtils.fromISOString(lifecycle.startedAt) : undefined,
-        completedAt: lifecycle.completedAt ? TimeUtils.fromISOString(lifecycle.completedAt) : undefined,
-        cancelledAt: lifecycle.cancelledAt ? TimeUtils.fromISOString(lifecycle.cancelledAt) : undefined,
+        createdAt: lifecycle.createdAt || instance._lifecycle.createdAt,
+        updatedAt: lifecycle.updatedAt || instance._lifecycle.updatedAt,
+        startedAt: lifecycle.startedAt || undefined,
+        completedAt: lifecycle.completedAt || undefined,
+        cancelledAt: lifecycle.cancelledAt || undefined,
         events: lifecycle.events || [],
       };
     }
@@ -770,13 +800,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
           id: alert.id,
           alertConfig: alert.alertConfig,
           status: alert.status || "pending",
-          scheduledTime: alert.scheduledTime ? TimeUtils.fromISOString(alert.scheduledTime) : TimeUtils.now(),
-          triggeredAt: alert.triggeredAt ? TimeUtils.fromISOString(alert.triggeredAt) : undefined,
-          dismissedAt: alert.dismissedAt ? TimeUtils.fromISOString(alert.dismissedAt) : undefined,
+          scheduledTime: alert.scheduledTime ? TimeUtils.ensureDateTime(alert.scheduledTime) : TimeUtils.now(),
+          triggeredAt: alert.triggeredAt ? TimeUtils.ensureDateTime(alert.triggeredAt) : undefined,
+          dismissedAt: alert.dismissedAt ? TimeUtils.ensureDateTime(alert.dismissedAt) : undefined,
           snoozeHistory: alert.snoozeHistory || [],
         })) || [],
         globalSnoozeCount: reminderStatus.globalSnoozeCount || 0,
-        lastTriggeredAt: reminderStatus.lastTriggeredAt ? TimeUtils.fromISOString(reminderStatus.lastTriggeredAt) : undefined,
+        lastTriggeredAt: reminderStatus.lastTriggeredAt ? TimeUtils.ensureDateTime(reminderStatus.lastTriggeredAt) : undefined,
       };
     }
 
@@ -790,8 +820,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       const timeConfig = data.timeConfig || data._timeConfig;
       instance._timeConfig = {
         type: timeConfig.type || "timed",
-        scheduledTime: timeConfig.scheduledTime ? TimeUtils.fromISOString(timeConfig.scheduledTime) : instance._timeConfig.scheduledTime,
-        endTime: timeConfig.endTime ? TimeUtils.fromISOString(timeConfig.endTime) : undefined,
+        scheduledTime: timeConfig.scheduledTime ? TimeUtils.ensureDateTime(timeConfig.scheduledTime) : instance._timeConfig.scheduledTime,
+        endTime: timeConfig.endTime ? TimeUtils.ensureDateTime(timeConfig.endTime) : undefined,
         estimatedDuration: timeConfig.estimatedDuration,
         timezone: timeConfig.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         allowReschedule: timeConfig.allowReschedule ?? true,

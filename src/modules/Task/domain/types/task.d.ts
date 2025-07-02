@@ -1,7 +1,8 @@
-import type { DateTime, RecurrenceRule, TimePoint, TimeRange } from "@/shared/types/myDateTime";
+import type { DateTime, TimePoint, TimeRange } from "@/shared/types/myDateTime";
 
 /**
  * 关键结果关联
+ * 定义任务与目标关键结果的关联关系
  */
 export type KeyResultLink = {
   /** 目标ID */
@@ -13,7 +14,8 @@ export type KeyResultLink = {
 };
 
 /**
- * 提醒配置 - 从TaskTimeConfig中独立出来
+ * 任务提醒配置
+ * 定义任务的提醒规则和设置
  */
 export type TaskReminderConfig = {
   /** 是否启用提醒 */
@@ -48,19 +50,20 @@ export type TaskReminderConfig = {
 };
 
 /**
- * 提醒项类型 - 从 ReminderRule 中提取单个提醒项的类型
+ * 提醒项类型
+ * 从TaskReminderConfig中提取单个提醒项的类型
  */
 export type ReminderAlert = TaskReminderConfig['alerts'][number];
 
 /**
- * 提醒时机配置类型 - 从 ReminderAlert 中提取时机配置的类型
+ * 提醒时机配置类型
+ * 从ReminderAlert中提取时机配置的类型
  */
-export type ReminderTiming = TaskReminderConfig['timing'];
-
-
+export type ReminderTiming = ReminderAlert['timing'];
 
 /**
- * 简化的任务时间配置 - 移除reminder
+ * 任务时间配置
+ * 定义任务的时间规则和重复模式
  */
 export type TaskTimeConfig = {
   /** 任务类型 */
@@ -82,9 +85,9 @@ export type TaskTimeConfig = {
   dstHandling?: "auto" | "ignore";
 };
 
-
 /**
  * 任务模板接口
+ * 定义可重复使用的任务模板结构
  */
 export interface ITaskTemplate {
   /** 任务模板ID */
@@ -138,6 +141,7 @@ export interface ITaskTemplate {
 
 /**
  * 任务实例中的提醒状态
+ * 记录任务实例的提醒执行状态
  */
 export type TaskInstanceReminderStatus = {
   /** 是否启用提醒 */
@@ -171,6 +175,7 @@ export type TaskInstanceReminderStatus = {
 
 /**
  * 任务实例生命周期事件
+ * 记录任务实例的重要事件和状态变更
  */
 export type TaskInstanceLifecycleEvent = {
   type: "reminder_scheduled" | "reminder_triggered" | "reminder_dismissed" | "reminder_snoozed" | "reminder_cancelled" | "task_started" | "task_completed" | "task_undo" | "task_cancelled" | "task_rescheduled" | "task_overdue" | "task_title_updated";
@@ -180,7 +185,8 @@ export type TaskInstanceLifecycleEvent = {
 };
 
 /**
- * 任务实例时间配置 - 简化版，专注于具体执行
+ * 任务实例时间配置
+ * 专注于具体执行的简化时间配置
  */
 export type TaskInstanceTimeConfig = {
   /** 任务类型 */
@@ -200,7 +206,8 @@ export type TaskInstanceTimeConfig = {
 };
 
 /**
- * 任务实例接口 - 更新版本
+ * 任务实例接口
+ * 定义具体执行的任务实例结构
  */
 export interface ITaskInstance {
   /** 任务实例ID */
@@ -211,10 +218,8 @@ export interface ITaskInstance {
   title: string;
   /** 任务描述 */
   description?: string;
-  
-  /** 时间配置 - 新增 */
+  /** 时间配置 */
   timeConfig: TaskInstanceTimeConfig;
-  
   /** 实际开始时间 */
   actualStartTime?: DateTime;
   /** 实际结束时间 */
@@ -227,9 +232,9 @@ export interface ITaskInstance {
   status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
   /** 完成时间 */
   completedAt?: DateTime;
-  /** 增强的提醒状态 */
+  /** 提醒状态 */
   reminderStatus: TaskInstanceReminderStatus;
-  /** 增强的生命周期 */
+  /** 生命周期 */
   lifecycle: {
     createdAt: DateTime;
     updatedAt: DateTime;
@@ -254,6 +259,7 @@ export interface ITaskInstance {
 
 /**
  * 创建任务模板的选项
+ * 定义创建任务模板时的可选配置
  */
 export interface CreateTaskTemplateOptions {
   description?: string;
@@ -268,7 +274,8 @@ export interface CreateTaskTemplateOptions {
 }
 
 /**
- * 创建任务实例的选项 - 更新版本
+ * 创建任务实例的选项
+ * 定义创建任务实例时的可选配置
  */
 export interface CreateTaskInstanceOptions {
   description?: string;
@@ -279,6 +286,49 @@ export interface CreateTaskInstanceOptions {
   location?: string;
   difficulty?: 1 | 2 | 3 | 4 | 5;
   reminderAlerts?: TaskReminderConfig['alerts'];
-  /** 时间配置选项 - 新增 */
+  /** 时间配置选项 */
   timeConfig?: Partial<TaskInstanceTimeConfig>;
 }
+
+export type SnoozeConfig = {
+  /** 是否启用稍后提醒 */
+  enabled: boolean;
+  /** 稍后提醒间隔 (分钟) */
+  interval: number;
+  /** 最大重复次数 */
+  maxCount: number;
+};
+
+/**
+ * 重复规则 - 更灵活的重复模式
+ */
+export type RecurrenceRule = {
+  /** 重复类型 */
+  type: "none" | "daily" | "weekly" | "monthly" | "yearly" | "custom";
+  /** 重复间隔 (例如：每2天、每3周) */
+  interval?: number;
+  /** 结束条件 */
+  endCondition?: {
+    /** 结束类型 */
+    type: "never" | "date" | "count";
+    /** 结束日期 (当 type 为 'date') */
+    endDate?: DateTime;
+    /** 重复次数 (当 type 为 'count') */
+    count?: number;
+  };
+  /** 重复的具体配置 */
+  config?: {
+    /** 周重复：星期几 (0=周日, 1=周一, ...,
+    /** 周重复：星期几 (0=周日, 1=周一, ..., 6=周六) */
+    weekdays?: number[];
+    /** 月重复：每月的第几天 */
+    monthDays?: number[];
+    /** 月重复：每月的第几个星期几 (如第二个周一) */
+    monthWeekdays?: Array<{
+      week: number; // 第几周 (1-5, -1表示最后一周)
+      weekday: number; // 星期几 (0-6)
+    }>;
+    /** 年重复：月份 */
+    months?: number[];
+  };
+};

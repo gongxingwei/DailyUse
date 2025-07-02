@@ -1,4 +1,3 @@
-// src/modules/Task/presentation/composables/useTaskInstanceManagement.ts
 import { ref, computed } from 'vue';
 import { TaskApplicationService } from '@/modules/Task/application/services/taskApplicationService';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
@@ -6,7 +5,7 @@ import { TaskInstance } from '../../domain/entities/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
 export function useTaskInstanceManagement() {
     const taskStore = useTaskStore();
-  const taskInstanceService = new TaskApplicationService();
+  const taskApplicationService = new TaskApplicationService();
   
   const selectedDate = ref(new Date().toISOString().split('T')[0]);
   const currentWeekStart = ref(new Date());
@@ -42,7 +41,7 @@ export function useTaskInstanceManagement() {
   const completeTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskInstanceService.completeTask(task.id);
+      const result = await taskApplicationService.completeTask(task.id);
       
       if (result.success) {
 
@@ -61,7 +60,7 @@ export function useTaskInstanceManagement() {
   const undoCompleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskInstanceService.undoCompleteTask(task.id);
+      const result = await taskApplicationService.undoCompleteTask(task.id);
       
       if (result) {
         await refreshTasks(); // 刷新任务列表

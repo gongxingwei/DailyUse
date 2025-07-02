@@ -1,6 +1,7 @@
  // src/modules/Task/utils/taskTemplateFactory.ts
 import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
 import { v4 as uuidv4 } from 'uuid';
+import { TaskTimeUtils } from './taskTimeUtils';
 
 export class TaskMetaTemplateFactory {
   /**
@@ -15,11 +16,16 @@ export class TaskMetaTemplateFactory {
         description: '从零开始创建自定义任务模板',
         defaultTimeConfig: {
           type: 'timed',
+          baseTime: {
+            start: TaskTimeUtils.now(),
+            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 60), // 默认持续时间为60分钟
+            duration: 60 // 默认持续时间为60分钟
+          },
           recurrence: {
             type: 'none',
-            interval: 1,
-            endCondition: { type: 'never' }
-          }
+          },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          dstHandling: 'ignore'
         },
         defaultReminderConfig: {
           enabled: false,
@@ -51,7 +57,11 @@ export class TaskMetaTemplateFactory {
       {
         description: '建立日常习惯，追踪进度',
         defaultTimeConfig: {
-          type: 'timed',
+          type: 'timeRange',
+          baseTime: {
+            start: TaskTimeUtils.now(),
+            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 30), // 默认持续时间为30分钟
+          },
           recurrence: {
             type: 'daily',
             interval: 1,
@@ -59,7 +69,9 @@ export class TaskMetaTemplateFactory {
               type: 'count',
               count: 21
             }
-          }
+          },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          dstHandling: 'ignore'
         },
         defaultReminderConfig: {
           enabled: true,
@@ -100,11 +112,14 @@ export class TaskMetaTemplateFactory {
         description: '重要事件和约会提醒',
         defaultTimeConfig: {
           type: 'timed',
+          baseTime: {
+            start: TaskTimeUtils.now(),
+          },
           recurrence: {
             type: 'none',
-            interval: 1,
-            endCondition: { type: 'never' }
-          }
+          },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          dstHandling: 'ignore'
         },
         defaultReminderConfig: {
           enabled: true,
@@ -156,11 +171,15 @@ export class TaskMetaTemplateFactory {
         description: '有明确截止日期的任务',
         defaultTimeConfig: {
           type: 'timeRange',
+          baseTime: {
+            start: TaskTimeUtils.now(),
+            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 120) // 默认持续时间为2小时
+          },
           recurrence: {
             type: 'none',
-            interval: 1,
-            endCondition: { type: 'never' }
-          }
+          },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          dstHandling: 'ignore'
         },
         defaultReminderConfig: {
           enabled: true,
@@ -216,7 +235,13 @@ export class TaskMetaTemplateFactory {
             type: 'weekly',
             interval: 1,
             endCondition: { type: 'never' }
-          }
+          },
+          baseTime: {
+            start: TaskTimeUtils.now(),
+            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 60) // 默认持续时间为60分钟
+          },
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          dstHandling: 'ignore'
         },
         defaultReminderConfig: {
           enabled: true,

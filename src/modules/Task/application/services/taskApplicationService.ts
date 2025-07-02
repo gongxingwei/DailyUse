@@ -7,23 +7,20 @@ import { TaskTemplate } from "../../domain/entities/taskTemplate";
 import { TaskInstance } from "../../domain/entities/taskInstance";
 import { TaskMetaTemplate } from "../../domain/entities/taskMetaTemplate";
 import { EventBus } from "@/shared/events/eventBus";
-import type {
-  TaskCompletedEvent,
-  TaskUndoCompletedEvent,
-} from "@/shared/events/domainEvent";
+import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '@/shared/domain/domainEvent';
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import { useGoalStore } from "@/modules/Goal/stores/goalStore";
-import type {
-  CreateTaskTemplateOptions,
-  TaskTimeConfig,
-  TaskReminderConfig,
-} from "../../domain/types/task";
 import { TaskTemplateValidator } from "@/modules/Task/validation/TaskTemplateValidator";
+/**
+ * 任务应用服务层
+ * 负责任务相关的业务操作协调，包括任务模板、任务实例、元模板的管理
+ */
 export class TaskApplicationService {
   private taskDomainService: TaskDomainService;
   private taskTemplateRepo: ITaskTemplateRepository;
   private taskInstanceRepo: ITaskInstanceRepository;
   private taskMetaTemplateRepo: ITaskMetaTemplateRepository;
+  
 
   constructor() {
     const container = TaskContainer.getInstance();
@@ -31,183 +28,229 @@ export class TaskApplicationService {
     this.taskInstanceRepo = container.getTaskInstanceRepository();
     this.taskMetaTemplateRepo = container.getTaskMetaTemplateRepository();
     this.taskDomainService = new TaskDomainService();
+
   }
 
-  // ✅ MetaTemplate 相关方法
+  // === MetaTemplate 相关方法 ===
+
+  /**
+   * 获取所有元模板
+   * @returns {Promise<TaskMetaTemplate[]>} 元模板数组
+   */
   async getAllMetaTemplates(): Promise<TaskMetaTemplate[]> {
     const response = await this.taskMetaTemplateRepo.findAll();
     return response.success ? response.data || [] : [];
   }
 
+  /**
+   * 根据ID获取元模板
+   * @param {string} id - 元模板ID
+   * @returns {Promise<TaskMetaTemplate | null>} 元模板实体或null
+   */
   async getMetaTemplate(id: string): Promise<TaskMetaTemplate | null> {
     const response = await this.taskMetaTemplateRepo.findById(id);
     return response.success ? response.data || null : null;
   }
 
-  async getMetaTemplatesByCategory(
-    category: string
-  ): Promise<TaskMetaTemplate[]> {
+  /**
+   * 根据分类获取元模板
+   * @param {string} category - 分类名称
+   * @returns {Promise<TaskMetaTemplate[]>} 元模板数组
+   */
+  async getMetaTemplatesByCategory(category: string): Promise<TaskMetaTemplate[]> {
     const response = await this.taskMetaTemplateRepo.findByCategory(category);
     return response.success ? response.data || [] : [];
   }
 
-  async saveMetaTemplate(
-    metaTemplate: TaskMetaTemplate
-  ): Promise<TResponse<TaskMetaTemplate>> {
+  /**
+   * 保存元模板
+   * @param {TaskMetaTemplate} metaTemplate - 元模板实体
+   * @returns {Promise<TResponse<TaskMetaTemplate>>} 保存响应
+   */
+  async saveMetaTemplate(metaTemplate: TaskMetaTemplate): Promise<TResponse<TaskMetaTemplate>> {
     return await this.taskMetaTemplateRepo.save(metaTemplate);
   }
 
+  /**
+   * 删除元模板
+   * @param {string} id - 元模板ID
+   * @returns {Promise<TResponse<boolean>>} 删除响应
+   */
   async deleteMetaTemplate(id: string): Promise<TResponse<boolean>> {
     return await this.taskMetaTemplateRepo.delete(id);
   }
 
   // === 任务模板相关操作 ===
 
-  async getTaskTemplate(templateId: string): Promise<TaskTemplate | null> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 根据ID获取任务模板
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<TaskTemplate | null>} 任务模板实体或null
+   */
+  async getTaskTemplate(taskTemplateId: string): Promise<TaskTemplate | null> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     return response.success ? response.data || null : null;
   }
 
+  /**
+   * 获取所有任务模板
+   * @returns {Promise<TaskTemplate[]>} 任务模板数组
+   */
   async getAllTaskTemplates(): Promise<TaskTemplate[]> {
     const response = await this.taskTemplateRepo.findAll();
     return response.success ? response.data || [] : [];
   }
 
-  async getTaskTemplateForKeyResult(
-    goalId: string,
-    keyResultId: string
-  ): Promise<TaskTemplate[]> {
-    const response = await this.taskTemplateRepo.findByKeyResult(
-      goalId,
-      keyResultId
-    );
+  /**
+   * 根据关键结果获取任务模板
+   * @param {string} goalId - 目标ID
+   * @param {string} keyResultId - 关键结果ID
+   * @returns {Promise<TaskTemplate[]>} 相关任务模板数组
+   */
+  async getTaskTemplateForKeyResult(goalId: string, keyResultId: string): Promise<TaskTemplate[]> {
+    const response = await this.taskTemplateRepo.findByKeyResult(goalId, keyResultId);
     return response.success ? response.data || [] : [];
   }
 
   // === 任务实例相关操作 ===
-  async createTaskInstance(
-    instance: TaskInstance
-  ): Promise<TResponse<TaskInstance>> {
-    return await this.taskInstanceRepo.save(instance);
-  }
 
-  async addTaskInstances(
-    instances: TaskInstance[]
-  ): Promise<TResponse<TaskInstance[]>> {
-    return await this.taskInstanceRepo.saveAll(instances);
-  }
-
-  async getTaskInstance(taskId: string): Promise<TaskInstance | null> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 根据ID获取任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<TaskInstance | null>} 任务实例或null
+   */
+  async getTaskInstance(taskInstanceId: string): Promise<TaskInstance | null> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     return response.success ? response.data || null : null;
   }
 
+  /**
+   * 获取所有任务实例
+   * @returns {Promise<TaskInstance[]>} 任务实例数组
+   */
   async getAllTaskInstances(): Promise<TaskInstance[]> {
     const response = await this.taskInstanceRepo.findAll();
     return response.success ? response.data || [] : [];
   }
 
+  /**
+   * 获取今日任务实例
+   * @returns {Promise<TaskInstance[]>} 今日任务实例数组
+   */
   async getTodayTasks(): Promise<TaskInstance[]> {
     const response = await this.taskInstanceRepo.findTodayTasks();
     return response.success ? response.data || [] : [];
   }
 
-  async updateTaskInstance(
-    instance: TaskInstance
-  ): Promise<TResponse<TaskInstance>> {
-    return await this.taskInstanceRepo.update(instance);
+  /**
+   * 更新任务实例
+   * @param {TaskInstance} taskInstance - 任务实例
+   * @returns {Promise<TResponse<TaskInstance>>} 更新响应
+   */
+  async updateTaskInstance(taskInstance: TaskInstance): Promise<TResponse<TaskInstance>> {
+    return await this.taskInstanceRepo.update(taskInstance);
   }
 
   // === 业务操作 ===
 
   /**
-   * 使用模板创建的 template 对象（使用领域服务协调）
+   * 从元模板创建任务模板
+   * @param {string} metaTemplateId - 元模板ID
+   * @returns {Promise<TaskTemplate>} 创建的任务模板
+   * @throws {Error} 당元模板不存在时抛出错误
    */
-  async createTaskTemplateFromMeta(
-    metaTemplateId: string,
-    customOptions: {
-      title: string;
-      timeConfig?: Partial<TaskTimeConfig>;
-      reminderConfig?: Partial<TaskReminderConfig>;
-    } & Partial<CreateTaskTemplateOptions>
-  ): Promise<TaskTemplate> {
+  async createTaskTemplateFromMeta(metaTemplateId: string): Promise<TaskTemplate> {
     const response = await this.taskMetaTemplateRepo.findById(metaTemplateId);
     if (!response.success || !response.data) {
       throw new Error(`MetaTemplate with id ${metaTemplateId} not found`);
     }
-
-    // ✅ 使用领域服务协调元模板和模板服务
-    return this.taskDomainService.createTemplateFromMetaTemplate(
-      response.data,
-      customOptions
-    );
+    return this.taskDomainService.createTemplateFromMetaTemplate(response.data);
   }
 
-  async createTaskTemplate(
-    template: TaskTemplate
-  ): Promise<TResponse<TaskTemplate>> {
-    // ✅ 验证模板
-    const validation = TaskTemplateValidator.validate(template);
+  /**
+   * 创建任务模板
+   * @param {TaskTemplate} taskTemplate - 任务模板实体
+   * @returns {Promise<TResponse<TaskTemplate>>} 创建响应
+   */
+  async createTaskTemplate(taskTemplate: TaskTemplate): Promise<TResponse<TaskTemplate>> {
+    const validation = TaskTemplateValidator.validate(taskTemplate);
     if (!validation.isValid) {
       return { success: false, message: validation.errors.join(", ") };
     }
-
-    // ✅ 使用领域服务保存模板
-    return await this.taskTemplateRepo.save(template);
+    return await this.taskTemplateRepo.save(taskTemplate);
   }
 
-  async saveTaskTemplate(
-    template: TaskTemplate
-  ): Promise<TResponse<TaskTemplate>> {
-    const createOrUpdateResponse = await this.taskTemplateRepo.findById(
-      template.id
-    );
+  /**
+   * 保存任务模板（创建或更新）
+   * @param {TaskTemplate} taskTemplate - 任务模板实体
+   * @returns {Promise<TResponse<TaskTemplate>>} 保存响应
+   */
+  async saveTaskTemplate(taskTemplate: TaskTemplate): Promise<TResponse<TaskTemplate>> {
+    const createOrUpdateResponse = await this.taskTemplateRepo.findById(taskTemplate.id);
     if (createOrUpdateResponse.success && createOrUpdateResponse.data) {
-      // 如果模板已存在，使用 update 方法更新
       const response = await this.taskDomainService.updateTaskTemplate(
-        template,
+        taskTemplate,
         this.taskTemplateRepo,
         this.taskInstanceRepo
       );
-
       return response;
     } else {
-      // 如果模板不存在，使用 create 方法创建
-      return await this.taskDomainService.createTaskTemplate(
-        template,
+      const response = await this.taskDomainService.createTaskTemplate(
+        taskTemplate,
         this.taskTemplateRepo,
         this.taskInstanceRepo
       );
+      console.log('创建的任务模板:', response.data);
+      return response;
     }
   }
 
-  async deleteTaskTemplate(templateId: string): Promise<TResponse<boolean>> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 删除任务模板
+   * @param {TaskTemplate} taskTemplate - 任务模板实体
+   * @returns {Promise<TResponse<void>>} 删除响应
+   */
+  async deleteTaskTemplate(taskTemplate: TaskTemplate): Promise<TResponse<void>> {
+    const response = await this.taskTemplateRepo.findById(taskTemplate.id);
     if (!response.success || !response.data) {
       return {
         success: false,
-        message: `Template with id ${templateId} not found`,
+        message: `Template with id ${taskTemplate.id} not found`,
       };
     }
-    // ✅ 使用领域服务删除模板
-    return await this.taskTemplateRepo.delete(templateId);
+    const deleteTaskTemplateResponse = await this.taskDomainService.deleteTaskTemplate(
+      taskTemplate,
+      this.taskTemplateRepo,
+      this.taskInstanceRepo,
+      true
+    );
+    return deleteTaskTemplateResponse;
   }
 
-  async updateTaskTemplate(
-    template: TaskTemplate
-  ): Promise<TResponse<TaskTemplate>> {
-    // ✅ 验证模板
-    const validation = TaskTemplateValidator.validate(template);
+  /**
+   * 更新任务模板
+   * @param {TaskTemplate} taskTemplate - 任务模板实体
+   * @returns {Promise<TResponse<TaskTemplate>>} 更新响应
+   */
+  async updateTaskTemplate(taskTemplate: TaskTemplate): Promise<TResponse<TaskTemplate>> {
+    const validation = TaskTemplateValidator.validate(taskTemplate);
     if (!validation.isValid) {
       return { success: false, message: validation.errors.join(", ") };
     }
-    // ✅ 使用领域服务更新模板
-    return await this.taskTemplateRepo.update(template);
+    const updateResponse = await this.taskDomainService.updateTaskTemplate(
+      taskTemplate,
+      this.taskTemplateRepo,
+      this.taskInstanceRepo
+    );
+    return updateResponse;
   }
 
-  async getTaskTemplateWithStatus(
-    taskTemplateId: string
-  ): Promise<TResponse<TaskTemplate>> {
+  /**
+   * 获取任务模板及其状态
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<TResponse<TaskTemplate>>} 模板及状态响应
+   */
+  async getTaskTemplateWithStatus(taskTemplateId: string): Promise<TResponse<TaskTemplate>> {
     const response = await this.taskDomainService.getTaskTemplate(
       taskTemplateId,
       this.taskTemplateRepo
@@ -215,118 +258,103 @@ export class TaskApplicationService {
     return response;
   }
 
-  async deleteTaskInstance(taskId: string): Promise<TResponse<TaskInstance['id']>> {
-    return await this.taskDomainService.deleteTaskInstance(
-      taskId,
-      this.taskInstanceRepo
-    );
+  /**
+   * 删除任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<TResponse<TaskInstance["id"]>>} 删除响应
+   */
+  async deleteTaskInstance(taskInstanceId: string): Promise<TResponse<TaskInstance["id"]>> {
+    return await this.taskDomainService.deleteTaskInstance(taskInstanceId, this.taskInstanceRepo);
   }
 
-  // ✅ 修复后的完成任务方法
-  async completeTask(taskId: string): Promise<TResponse<void>> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 完成任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<TResponse<void>>} 完成响应
+   */
+  async completeTask(taskInstanceId: string): Promise<TResponse<void>> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
-      return { success: false, message: "Task not found" };
+      console.error("Task instance not found:", taskInstanceId);
+      return { success: false, message: "Task instance not found" };
     }
 
     const taskInstance = response.data;
 
     try {
-      // ✅ 直接调用 TaskInstance 的 complete() 方法
       taskInstance.complete();
-
-      // 保存更新后的实例
       const updateResponse = await this.taskInstanceRepo.update(taskInstance);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return { success: false, message: updateResponse.message };
       }
-
-      // 发布领域事件
-      if (taskInstance.keyResultLinks?.length) {
-        const now = TimeUtils.now();
-        const event: TaskCompletedEvent = {
-          eventType: "TaskCompleted",
-          aggregateId: taskId,
-          occurredOn: new Date(now.timestamp),
-          data: {
-            taskId,
-            keyResultLinks: taskInstance.keyResultLinks,
-            completedAt: new Date(now.timestamp),
-          },
-        };
-        await EventBus.getInstance().publish(event);
+      const domainEvents = taskInstance.getUncommittedDomainEvents();
+      for (const event of domainEvents) {
+        await EventBus.getInstance().publish(event as TaskCompletedEvent);
+        console.log(`发布事件: ${event.eventType}`);
       }
-
-      console.log(`✓ 任务 ${taskId} 完成成功`);
-      return {success:true, message: "Task completed successfully"};
+      console.log(`✓ 任务实例 ${taskInstanceId} 完成成功`);
+      return { success: true, message: "Task instance completed successfully" };
     } catch (error) {
-      console.error(`✗ 完成任务 ${taskId} 失败:`, error);
-      return { success: false, message: `Failed to complete task ${taskId}: ${error instanceof Error ? error.message : 'weizhi'}` };
+      console.error(`✗ 完成任务实例 ${taskInstanceId} 失败:`, error);
+      return {
+        success: false,
+        message: `Failed to complete task instance ${taskInstanceId}: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`,
+      };
     }
   }
 
-  // ✅ 修复后的撤销完成方法
-  async undoCompleteTask(taskId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 撤销完成任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<TResponse<void>>} 是否撤销成功
+   */
+  async undoCompleteTask(taskInstanceId: string): Promise<TResponse<void>> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
-      return false;
+      throw new Error("Task instance not found");
     }
 
     const taskInstance = response.data;
 
     if (!taskInstance.isCompleted()) {
-      console.warn("任务未完成，无法撤销");
-      return false;
+      console.warn("任务实例未完成，无法撤销");
+      throw new Error("Task instance is not completed, cannot undo completion");
     }
 
     try {
-      // ✅ 直接调用 TaskInstance 的 undoComplete() 方法
       taskInstance.undoComplete();
-
-      // 保存更新后的实例
       const updateResponse = await this.taskInstanceRepo.update(taskInstance);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
-        return false;
+        throw new Error(`Failed to update task instance ${taskInstanceId}: ${updateResponse.message}`);
       }
-
-      // 发布领域事件
-      if (taskInstance.keyResultLinks?.length) {
-        const event: TaskUndoCompletedEvent = {
-          eventType: "TaskUndoCompleted",
-          aggregateId: taskId,
-          occurredOn: new Date(),
-          data: {
-            taskId,
-            keyResultLinks: taskInstance.keyResultLinks,
-            undoAt: new Date(),
-          },
-        };
-        await EventBus.getInstance().publish(event);
+      const domainEvents = taskInstance.getUncommittedDomainEvents();
+      for (const event of domainEvents) {
+        await EventBus.getInstance().publish(event as TaskUndoCompletedEvent);
       }
-
-      console.log(`✓ 任务 ${taskId} 撤销完成成功`);
-      return true;
+      return { success: true, message: "Task instance undone successfully" };
     } catch (error) {
-      console.error(`✗ 撤销任务 ${taskId} 完成失败:`, error);
-      return false;
+      console.error(`✗ 撤销任务实例 ${taskInstanceId} 完成失败:`, error);
+      return {
+        success: false,
+        message: `Failed to undo task instance ${taskInstanceId} completion: ${
+          error instanceof Error ? error.message : "未知错误"
+        }`,
+      };
     }
   }
 
-  // ✅ 添加更多业务操作方法
-  async startTask(taskId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 开始任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<boolean>} 是否开始成功
+   */
+  async startTask(taskInstanceId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -334,24 +362,26 @@ export class TaskApplicationService {
       response.data.start();
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 开始成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 开始成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 开始任务 ${taskId} 失败:`, error);
+      console.error(`✗ 开始任务实例 ${taskInstanceId} 失败:`, error);
       return false;
     }
   }
 
-  async cancelTask(taskId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 取消任务实例
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<boolean>} 是否取消成功
+   */
+  async cancelTask(taskInstanceId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -359,28 +389,28 @@ export class TaskApplicationService {
       response.data.cancel();
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 取消成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 取消成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 取消任务 ${taskId} 失败:`, error);
+      console.error(`✗ 取消任务实例 ${taskInstanceId} 失败:`, error);
       return false;
     }
   }
 
-  async rescheduleTask(
-    taskId: string,
-    newScheduledTime: any,
-    newEndTime?: any
-  ): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 重新安排任务实例时间
+   * @param {string} taskInstanceId - 任务实例ID
+   * @param {any} newScheduledTime - 新的计划时间
+   * @param {any} newEndTime - 新的结束时间（可选）
+   * @returns {Promise<boolean>} 是否重新安排成功
+   */
+  async rescheduleTask(taskInstanceId: string, newScheduledTime: any, newEndTime?: any): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -388,25 +418,29 @@ export class TaskApplicationService {
       response.data.reschedule(newScheduledTime, newEndTime);
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 重新安排时间成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 重新安排时间成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 重新安排任务 ${taskId} 时间失败:`, error);
+      console.error(`✗ 重新安排任务实例 ${taskInstanceId} 时间失败:`, error);
       return false;
     }
   }
 
-  // ✅ 提醒相关操作
-  async triggerTaskReminder(taskId: string, alertId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  // === 提醒相关操作 ===
+
+  /**
+   * 触发任务实例提醒
+   * @param {string} taskInstanceId - 任务实例ID
+   * @param {string} alertId - 提醒ID
+   * @returns {Promise<boolean>} 是否触发成功
+   */
+  async triggerTaskReminder(taskInstanceId: string, alertId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -414,29 +448,29 @@ export class TaskApplicationService {
       response.data.triggerReminder(alertId);
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 的提醒 ${alertId} 触发成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 的提醒 ${alertId} 触发成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 触发任务 ${taskId} 的提醒失败:`, error);
+      console.error(`✗ 触发任务实例 ${taskInstanceId} 的提醒失败:`, error);
       return false;
     }
   }
 
-  async snoozeTaskReminder(
-    taskId: string,
-    alertId: string,
-    snoozeUntil: any,
-    reason?: string
-  ): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 推迟任务实例提醒
+   * @param {string} taskInstanceId - 任务实例ID
+   * @param {string} alertId - 提醒ID
+   * @param {any} snoozeUntil - 推迟到的时间
+   * @param {string} reason - 推迟原因（可选）
+   * @returns {Promise<boolean>} 是否推迟成功
+   */
+  async snoozeTaskReminder(taskInstanceId: string, alertId: string, snoozeUntil: any, reason?: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -444,24 +478,27 @@ export class TaskApplicationService {
       response.data.snoozeReminder(alertId, snoozeUntil, reason);
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 的提醒 ${alertId} 推迟成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 的提醒 ${alertId} 推迟成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 推迟任务 ${taskId} 的提醒失败:`, error);
+      console.error(`✗ 推迟任务实例 ${taskInstanceId} 的提醒失败:`, error);
       return false;
     }
   }
 
-  async dismissTaskReminder(taskId: string, alertId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 忽略任务实例提醒
+   * @param {string} taskInstanceId - 任务实例ID
+   * @param {string} alertId - 提醒ID
+   * @returns {Promise<boolean>} 是否忽略成功
+   */
+  async dismissTaskReminder(taskInstanceId: string, alertId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -469,24 +506,26 @@ export class TaskApplicationService {
       response.data.dismissReminder(alertId);
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 的提醒 ${alertId} 忽略成功`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 的提醒 ${alertId} 忽略成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 忽略任务 ${taskId} 的提醒失败:`, error);
+      console.error(`✗ 忽略任务实例 ${taskInstanceId} 的提醒失败:`, error);
       return false;
     }
   }
 
-  async disableTaskReminders(taskId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 禁用任务实例所有提醒
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<boolean>} 是否禁用成功
+   */
+  async disableTaskReminders(taskInstanceId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -494,24 +533,26 @@ export class TaskApplicationService {
       response.data.disableReminders();
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 的提醒已禁用`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 的提醒已禁用`);
       return true;
     } catch (error) {
-      console.error(`✗ 禁用任务 ${taskId} 的提醒失败:`, error);
+      console.error(`✗ 禁用任务实例 ${taskInstanceId} 的提醒失败:`, error);
       return false;
     }
   }
 
-  async enableTaskReminders(taskId: string): Promise<boolean> {
-    const response = await this.taskInstanceRepo.findById(taskId);
+  /**
+   * 启用任务实例提醒
+   * @param {string} taskInstanceId - 任务实例ID
+   * @returns {Promise<boolean>} 是否启用成功
+   */
+  async enableTaskReminders(taskInstanceId: string): Promise<boolean> {
+    const response = await this.taskInstanceRepo.findById(taskInstanceId);
     if (!response.success || !response.data) {
-      console.error("Task not found:", taskId);
+      console.error("Task instance not found:", taskInstanceId);
       return false;
     }
 
@@ -519,25 +560,28 @@ export class TaskApplicationService {
       response.data.enableReminders();
       const updateResponse = await this.taskInstanceRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update task ${taskId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task instance ${taskInstanceId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 任务 ${taskId} 的提醒已启用`);
+      console.log(`✓ 任务实例 ${taskInstanceId} 的提醒已启用`);
       return true;
     } catch (error) {
-      console.error(`✗ 启用任务 ${taskId} 的提醒失败:`, error);
+      console.error(`✗ 启用任务实例 ${taskInstanceId} 的提醒失败:`, error);
       return false;
     }
   }
 
-  // ✅ 模板操作
-  async activateTemplate(templateId: string): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  // === 任务模板操作 ===
+
+  /**
+   * 激活任务模板
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<boolean>} 是否激活成功
+   */
+  async activateTemplate(taskTemplateId: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -545,49 +589,75 @@ export class TaskApplicationService {
       response.data.activate();
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 激活成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 激活成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 激活模板 ${templateId} 失败:`, error);
+      console.error(`✗ 激活任务模板 ${taskTemplateId} 失败:`, error);
       return false;
     }
   }
 
-  async pauseTemplate(templateId: string): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 暂停任务模板
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<boolean>} 是否暂停成功
+   */
+  async pauseTemplate(taskTemplateId: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
     try {
-      response.data.pause();
-      const updateResponse = await this.taskTemplateRepo.update(response.data);
-      if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
-        return false;
-      }
-      console.log(`✓ 模板 ${templateId} 暂停成功`);
-      return true;
+      const pauseResponse = await this.taskDomainService.pauseTaskTemplate(
+        response.data,
+        this.taskTemplateRepo,
+        this.taskInstanceRepo
+      );
+      return pauseResponse.success;
     } catch (error) {
-      console.error(`✗ 暂停模板 ${templateId} 失败:`, error);
+      console.error(`✗ 暂停任务模板 ${taskTemplateId} 失败:`, error);
       return false;
     }
   }
 
-  async archiveTemplate(templateId: string): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 恢复任务模板
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<boolean>} 是否恢复成功
+   */
+  async resumeTemplate(taskTemplateId: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
+      return false;
+    }
+    try {
+      const resumeResponse = await this.taskDomainService.resumeTaskTemplate(
+        response.data,
+        this.taskTemplateRepo,
+        this.taskInstanceRepo
+      );
+      return resumeResponse.success;
+    } catch (error) {
+      console.error(`✗ 恢复任务模板 ${taskTemplateId} 失败:`, error);
+      return false;
+    }
+  }
+
+  /**
+   * 归档任务模板
+   * @param {string} taskTemplateId - 任务模板ID
+   * @returns {Promise<boolean>} 是否归档成功
+   */
+  async archiveTemplate(taskTemplateId: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
+    if (!response.success || !response.data) {
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -595,27 +665,27 @@ export class TaskApplicationService {
       response.data.archive();
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 归档成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 归档成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 归档模板 ${templateId} 失败:`, error);
+      console.error(`✗ 归档任务模板 ${taskTemplateId} 失败:`, error);
       return false;
     }
   }
 
-  async updateTemplateTitle(
-    templateId: string,
-    title: string
-  ): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 更新任务模板标题
+   * @param {string} taskTemplateId - 任务模板ID
+   * @param {string} title - 新标题
+   * @returns {Promise<boolean>} 是否更新成功
+   */
+  async updateTemplateTitle(taskTemplateId: string, title: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -623,27 +693,27 @@ export class TaskApplicationService {
       response.data.updateTitle(title);
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 标题更新成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 标题更新成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 更新模板 ${templateId} 标题失败:`, error);
+      console.error(`✗ 更新任务模板 ${taskTemplateId} 标题失败:`, error);
       return false;
     }
   }
 
-  async updateTemplateDescription(
-    templateId: string,
-    description?: string
-  ): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 更新任务模板描述
+   * @param {string} taskTemplateId - 任务模板ID
+   * @param {string} description - 新描述（可选）
+   * @returns {Promise<boolean>} 是否更新成功
+   */
+  async updateTemplateDescription(taskTemplateId: string, description?: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -651,27 +721,27 @@ export class TaskApplicationService {
       response.data.updateDescription(description);
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 描述更新成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 描述更新成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 更新模板 ${templateId} 描述失败:`, error);
+      console.error(`✗ 更新任务模板 ${taskTemplateId} 描述失败:`, error);
       return false;
     }
   }
 
-  async setTemplatePriority(
-    templateId: string,
-    priority?: 1 | 2 | 3 | 4 | 5
-  ): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 设置任务模板优先级
+   * @param {string} taskTemplateId - 任务模板ID
+   * @param {1 | 2 | 3 | 4 | 5} priority - 优先级（可选）
+   * @returns {Promise<boolean>} 是否设置成功
+   */
+  async setTemplatePriority(taskTemplateId: string, priority?: 1 | 2 | 3 | 4 | 5): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -679,24 +749,27 @@ export class TaskApplicationService {
       response.data.setPriority(priority);
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 优先级设置成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 优先级설정成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 设置模板 ${templateId} 优先级失败:`, error);
+      console.error(`✗ 设置任务模板 ${taskTemplateId} 优先级失败:`, error);
       return false;
     }
   }
 
-  async addTemplateTag(templateId: string, tag: string): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 添加任务模板标签
+   * @param {string} taskTemplateId - 任务模板ID
+   * @param {string} tag - 标签
+   * @returns {Promise<boolean>} 是否添加成功
+   */
+  async addTemplateTag(taskTemplateId: string, tag: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -704,24 +777,27 @@ export class TaskApplicationService {
       response.data.addTag(tag);
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 添加标签成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 添加标签成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 模板 ${templateId} 添加标签失败:`, error);
+      console.error(`✗ 任务模板 ${taskTemplateId} 添加标签失败:`, error);
       return false;
     }
   }
 
-  async removeTemplateTag(templateId: string, tag: string): Promise<boolean> {
-    const response = await this.taskTemplateRepo.findById(templateId);
+  /**
+   * 移除任务模板标签
+   * @param {string} taskTemplateId - 任务模板ID
+   * @param {string} tag - 标签
+   * @returns {Promise<boolean>} 是否移除成功
+   */
+  async removeTemplateTag(taskTemplateId: string, tag: string): Promise<boolean> {
+    const response = await this.taskTemplateRepo.findById(taskTemplateId);
     if (!response.success || !response.data) {
-      console.error("Template not found:", templateId);
+      console.error("Task template not found:", taskTemplateId);
       return false;
     }
 
@@ -729,21 +805,24 @@ export class TaskApplicationService {
       response.data.removeTag(tag);
       const updateResponse = await this.taskTemplateRepo.update(response.data);
       if (!updateResponse.success) {
-        console.error(
-          `Failed to update template ${templateId}:`,
-          updateResponse.message
-        );
+        console.error(`Failed to update task template ${taskTemplateId}:`, updateResponse.message);
         return false;
       }
-      console.log(`✓ 模板 ${templateId} 移除标签成功`);
+      console.log(`✓ 任务模板 ${taskTemplateId} 移除标签成功`);
       return true;
     } catch (error) {
-      console.error(`✗ 模板 ${templateId} 移除标签失败:`, error);
+      console.error(`✗ 任务模板 ${taskTemplateId} 移除标签失败:`, error);
       return false;
     }
   }
 
   // === 统计分析 ===
+
+  /**
+   * 获取目标相关的任务统计信息
+   * @param {string} goalId - 目标ID
+   * @returns {Promise<any>} 任务统计数据
+   */
   async getTaskStatsForGoal(goalId: string): Promise<any> {
     const goalStore = useGoalStore();
     const goal = goalStore.getGoalById(goalId);
@@ -769,18 +848,11 @@ export class TaskApplicationService {
     const allTasksResponse = await this.taskInstanceRepo.findAll();
     const allTemplatesResponse = await this.taskTemplateRepo.findAll();
 
-    const allTasks = allTasksResponse.success
-      ? allTasksResponse.data || []
-      : [];
-    const allTemplates = allTemplatesResponse.success
-      ? allTemplatesResponse.data || []
-      : [];
+    const allTasks = allTasksResponse.success ? allTasksResponse.data || [] : [];
+    const allTemplates = allTemplatesResponse.success ? allTemplatesResponse.data || [] : [];
 
     const tasks = allTasks.filter((task) => {
-      const isRelatedToGoal = task.keyResultLinks?.some(
-        (link) => link.goalId === goalId
-      );
-
+      const isRelatedToGoal = task.keyResultLinks?.some((link) => link.goalId === goalId);
       return (
         isRelatedToGoal &&
         task.scheduledTime.timestamp >= startTime.timestamp &&
@@ -789,7 +861,6 @@ export class TaskApplicationService {
       );
     });
 
-    // 按任务模板分组统计
     const tasksByTemplate = tasks.reduce(
       (acc, task) => {
         const templateId = task.templateId;
@@ -811,18 +882,9 @@ export class TaskApplicationService {
 
         return acc;
       },
-      {} as Record<
-        string,
-        {
-          templateId: string;
-          title: string;
-          total: number;
-          completed: number;
-        }
-      >
+      {} as Record<string, { templateId: string; title: string; total: number; completed: number; }>
     );
 
-    // 计算总体统计
     const overallStats = {
       total: tasks.length,
       completed: tasks.filter((t) => t.isCompleted()).length,
@@ -840,32 +902,25 @@ export class TaskApplicationService {
       taskDetails: Object.values(tasksByTemplate)
         .map((stats) => ({
           ...stats,
-          completionRate: stats.total
-            ? (stats.completed / stats.total) * 100
-            : 0,
+          completionRate: stats.total ? (stats.completed / stats.total) * 100 : 0,
         }))
         .sort((a, b) => b.total - a.total),
     };
   }
 
-  async getTaskCompletionTimeline(
-    goalId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<any[]> {
-    const timeline: Record<
-      string,
-      {
-        total: number;
-        completed: number;
-        date: string;
-      }
-    > = {};
+  /**
+   * 获取任务完成时间线
+   * @param {string} goalId - 目标ID
+   * @param {string} startDate - 开始日期
+   * @param {string} endDate - 结束日期
+   * @returns {Promise<any[]>} 任务完成时间线数据
+   */
+  async getTaskCompletionTimeline(goalId: string, startDate: string, endDate: string): Promise<any[]> {
+    const timeline: Record<string, { total: number; completed: number; date: string; }> = {};
 
     const start = TimeUtils.fromISOString(new Date(startDate).toISOString());
     const end = TimeUtils.fromISOString(new Date(endDate).toISOString());
 
-    // 创建日期条目
     let currentDate = start;
     while (currentDate.timestamp <= end.timestamp) {
       const dateStr = `${currentDate.date.year}-${currentDate.date.month
@@ -877,23 +932,17 @@ export class TaskApplicationService {
         date: dateStr,
       };
 
-      // 移动到下一天
       const nextDay = new Date(currentDate.timestamp);
       nextDay.setDate(nextDay.getDate() + 1);
       currentDate = TimeUtils.fromTimestamp(nextDay.getTime());
     }
 
-    // 填充任务数据
     const allTasksResponse = await this.taskInstanceRepo.findAll();
-    const allTasks = allTasksResponse.success
-      ? allTasksResponse.data || []
-      : [];
+    const allTasks = allTasksResponse.success ? allTasksResponse.data || [] : [];
 
     allTasks
       .filter((task) => {
-        const isRelatedToGoal = task.keyResultLinks?.some(
-          (link) => link.goalId === goalId
-        );
+        const isRelatedToGoal = task.keyResultLinks?.some((link) => link.goalId === goalId);
         return (
           isRelatedToGoal &&
           task.scheduledTime.timestamp >= start.timestamp &&
@@ -901,13 +950,9 @@ export class TaskApplicationService {
         );
       })
       .forEach((task) => {
-        const dateStr = `${
-          task.scheduledTime.date.year
-        }-${task.scheduledTime.date.month
+        const dateStr = `${task.scheduledTime.date.year}-${task.scheduledTime.date.month
           .toString()
-          .padStart(2, "0")}-${task.scheduledTime.date.day
-          .toString()
-          .padStart(2, "0")}`;
+          .padStart(2, "0")}-${task.scheduledTime.date.day.toString().padStart(2, "0")}`;
         if (timeline[dateStr]) {
           timeline[dateStr].total++;
           if (task.isCompleted()) {

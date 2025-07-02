@@ -1,5 +1,5 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { DateTime } from "@/modules/Task/types/timeStructure";
+import { DateTime } from '@/shared/types/myDateTime';
 import type { 
   TaskTimeConfig, 
   TaskReminderConfig,
@@ -282,10 +282,10 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       const lifecycle = data.lifecycle || data._lifecycle;
       instance._lifecycle = {
         status: lifecycle.status || "draft",
-        createdAt: lifecycle.createdAt ? TimeUtils.fromISOString(lifecycle.createdAt) : instance._lifecycle.createdAt,
-        updatedAt: lifecycle.updatedAt ? TimeUtils.fromISOString(lifecycle.updatedAt) : instance._lifecycle.updatedAt,
-        activatedAt: lifecycle.activatedAt ? TimeUtils.fromISOString(lifecycle.activatedAt) : undefined,
-        pausedAt: lifecycle.pausedAt ? TimeUtils.fromISOString(lifecycle.pausedAt) : undefined,
+        createdAt: lifecycle.createdAt || instance._lifecycle.createdAt,
+        updatedAt: lifecycle.updatedAt || instance._lifecycle.updatedAt,
+        activatedAt: lifecycle.activatedAt || undefined,
+        pausedAt: lifecycle.pausedAt || undefined,
       };
     }
 
@@ -297,7 +297,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         completedInstances: analytics.completedInstances || 0,
         averageCompletionTime: analytics.averageCompletionTime,
         successRate: analytics.successRate || 0,
-        lastInstanceDate: analytics.lastInstanceDate ? TimeUtils.fromISOString(analytics.lastInstanceDate) : undefined,
+        lastInstanceDate: analytics.lastInstanceDate || undefined,
       };
     }
 
@@ -327,6 +327,10 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     return instance;
   }
 
+
+  isTaskTemplate(): this is TaskTemplate {
+    return this instanceof TaskTemplate;
+  }
   /**
    * 克隆实例（用于创建副本）
    */

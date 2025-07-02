@@ -2,16 +2,23 @@ import { v4 as uuidv4 } from 'uuid';
 import { TaskInstance } from '../entities/taskInstance';
 import { TaskTemplate } from '../entities/taskTemplate';
 import type { DateTime } from '@/shared/types/myDateTime';
-import type { CreateTaskInstanceOptions, TaskReminderConfig, TaskInstanceReminderStatus } from '../types/task';
+import type { CreateTaskInstanceOptions } from '../types/task';
 import { TaskTimeUtils } from '@/modules/Task/domain/utils/taskTimeUtils';
 
-
+/**
+ * 任务实例服务
+ * 负责任务实例的创建、生成、验证等操作
+ */
 export class TaskInstanceService {
   /**
-   * 从模板创建单个任务实例
+   * 从任务模板创建单个任务实例
+   * @param {TaskTemplate} taskTemplate - 任务模板
+   * @param {DateTime} scheduledTime - 计划时间（可选）
+   * @param {object} customOptions - 自定义选项（可选）
+   * @returns {TaskInstance} 创建的任务实例
    */
   createInstanceFromTemplate(
-    template: TaskTemplate,
+    taskTemplate: TaskTemplate,
     scheduledTime?: DateTime,
     customOptions?: Partial<CreateTaskInstanceOptions> & {
       title?: string;
@@ -22,72 +29,41 @@ export class TaskInstanceService {
   ): TaskInstance {
     const instanceId = uuidv4();
     
-    // 使用提供的时间或模板的基础时间
-    const instanceScheduledTime = scheduledTime || template.timeConfig.baseTime.start;
-    const instanceEndTime = customOptions?.endTime || template.timeConfig.baseTime.end;
-    
-    const instanceReminderConfig = this.convertTemplateRemindersToInstanceReminders(
-      template.reminderConfig,
-      instanceScheduledTime
-    );
+    const instanceScheduledTime = scheduledTime || taskTemplate.timeConfig.baseTime.start;
+    const instanceEndTime = customOptions?.endTime || taskTemplate.timeConfig.baseTime.end;
 
     return TaskInstance.fromTemplate(
       instanceId,
       {
-        id: template.id,
-        title: customOptions?.title || template.title,
-        description: customOptions?.description || template.description,
-        timeConfig: template.timeConfig,
-        metadata: template.metadata,
-        keyResultLinks: template.keyResultLinks,
-        reminderConfig: template.reminderConfig,
-        schedulingPolicy: template.schedulingPolicy
+        id: taskTemplate.id,
+        title: customOptions?.title || taskTemplate.title,
+        description: customOptions?.description || taskTemplate.description,
+        timeConfig: taskTemplate.timeConfig,
+        metadata: taskTemplate.metadata,
+        keyResultLinks: taskTemplate.keyResultLinks,
+        reminderConfig: taskTemplate.reminderConfig,
+        schedulingPolicy: taskTemplate.schedulingPolicy
       },
       instanceScheduledTime,
       instanceEndTime
     );
   }
 
-  private convertTemplateRemindersToInstanceReminders(
-    templateReminderConfig: TaskReminderConfig,
-    scheduledTime: DateTime
-  ): TaskInstanceReminderStatus {
-    // 如果模板没有启用提醒，返回禁用状态
-    if (!templateReminderConfig.enabled || !templateReminderConfig.alerts.length) {
-      return {
-        enabled: false,
-        alerts: [],
-        globalSnoozeCount: 0
-      };
-    }
-
-    const alerts = templateReminderConfig.alerts.map(alert => ({
-      id: alert.id,
-      alertConfig: alert, // 保持原始配置
-      status: 'pending' as const,
-      scheduledTime: scheduledTime, // 临时使用任务时间，后续在调度时重新计算
-      snoozeHistory: []
-    }));
-
-    return {
-      enabled: true,
-      alerts,
-      globalSnoozeCount: 0
-    };
-  }
   /**
-   * 根据模板的重复配置生成多个实例
+   * 根据任务模板的重复配置生成多个任务实例
+   * @param {TaskTemplate} taskTemplate - 任务模板
+   * @param {number} maxInstances - 最大生成实例数量
+   * @returns {TaskInstance[]} 生成的任务实例数组
    */
   generateInstancesFromTemplate(
-    template: TaskTemplate,
+    taskTemplate: TaskTemplate,
     maxInstances: number = 100
   ): TaskInstance[] {
     const instances: TaskInstance[] = [];
-    const { timeConfig } = template;
+    const { timeConfig } = taskTemplate;
     
-    // 如果不是重复任务，只创建一个实例
     if (timeConfig.recurrence.type === 'none') {
-      return [this.createInstanceFromTemplate(template)];
+      return [this.createInstanceFromTemplate(taskTemplate)];
     }
 
     let currentTime = timeConfig.baseTime.start;
@@ -100,48 +76,49 @@ export class TaskInstanceService {
       if (!nextTime) break;
       if (this.shouldStopGeneration(timeConfig, nextTime, count)) break;
       
-      // 只生成未来的实例
       if (nextTime.timestamp >= now.timestamp) {
         const endTime = timeConfig.baseTime.end ? 
           TaskTimeUtils.addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end)) :
           undefined;
           
-        instances.push(this.createInstanceFromTemplate(template, nextTime, { endTime }));
+        instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
       }
 
       currentTime = nextTime;
       count++;
 
-      // 防止无限循环
       if (count > 1000) {
         console.warn('任务实例生成达到最大限制');
         break;
       }
     }
-
+    console.log(`生成了 ${instances.length} 个任务实例`);
+    console.log('生成实例时的taskTemplate', taskTemplate)
     return instances;
   }
 
   /**
    * 生成指定时间范围内的任务实例
+   * @param {TaskTemplate} taskTemplate - 任务模板
+   * @param {DateTime} startDate - 开始日期
+   * @param {DateTime} endDate - 结束日期
+   * @returns {TaskInstance[]} 生成的任务实例数组
    */
   generateInstancesInRange(
-    template: TaskTemplate, 
+    taskTemplate: TaskTemplate, 
     startDate: DateTime, 
     endDate: DateTime
   ): TaskInstance[] {
     const instances: TaskInstance[] = [];
-    const { timeConfig } = template;
+    const { timeConfig } = taskTemplate;
 
-    // 非重复任务
     if (timeConfig.recurrence.type === 'none') {
       if (TaskTimeUtils.isInRange(timeConfig.baseTime.start, startDate, endDate)) {
-        instances.push(this.createInstanceFromTemplate(template));
+        instances.push(this.createInstanceFromTemplate(taskTemplate));
       }
       return instances;
     }
 
-    // 重复任务
     let currentTime = timeConfig.baseTime.start;
     if (currentTime.timestamp < startDate.timestamp) {
       currentTime = startDate;
@@ -160,7 +137,7 @@ export class TaskInstanceService {
         TaskTimeUtils.addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end)) :
         undefined;
 
-      instances.push(this.createInstanceFromTemplate(template, nextTime, { endTime }));
+      instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
       currentTime = nextTime;
       count++;
     }
@@ -169,15 +146,18 @@ export class TaskInstanceService {
   }
 
   /**
-   * 验证实例状态转换
+   * 验证任务实例状态转换是否允许
+   * @param {TaskInstance} taskInstance - 任务实例
+   * @param {string} newStatus - 新状态
+   * @returns {boolean} 是否允许状态转换
    */
-  canChangeStatus(instance: TaskInstance, newStatus: string): boolean {
-    const currentStatus = instance.status;
+  canChangeStatus(taskInstance: TaskInstance, newStatus: string): boolean {
+    const currentStatus = taskInstance.status;
     
     const allowedTransitions: Record<"pending" | "inProgress" | "completed" | "cancelled" | "overdue", string[]> = {
       'pending': ['inProgress', 'cancelled'],
       'inProgress': ['completed', 'cancelled', 'pending'],
-      'completed': ['pending'], // 允许撤销完成
+      'completed': ['pending'],
       'cancelled': ['pending'],
       'overdue': ['pending', 'inProgress', 'cancelled']
     };
@@ -186,40 +166,45 @@ export class TaskInstanceService {
   }
 
   /**
-   * 检查时间冲突
+   * 检查任务实例之间的时间冲突
+   * @param {TaskInstance[]} taskInstances - 现有任务实例数组
+   * @param {TaskInstance} newTaskInstance - 新任务实例
+   * @returns {TaskInstance[]} 冲突的任务实例数组
    */
   checkTimeConflicts(
-    instances: TaskInstance[],
-    newInstance: TaskInstance
+    taskInstances: TaskInstance[],
+    newTaskInstance: TaskInstance
   ): TaskInstance[] {
-    return instances.filter(instance => {
-      if (instance.id === newInstance.id) return false;
-      if (instance.status === 'completed' || instance.status === 'cancelled') return false;
+    return taskInstances.filter(taskInstance => {
+      if (taskInstance.id === newTaskInstance.id) return false;
+      if (taskInstance.status === 'completed' || taskInstance.status === 'cancelled') return false;
 
-      return this.hasTimeOverlap(instance, newInstance);
+      return this.hasTimeOverlap(taskInstance, newTaskInstance);
     });
   }
 
   /**
-   * 验证任务实例
+   * 验证任务实例的有效性
+   * @param {TaskInstance} taskInstance - 任务实例
+   * @returns {object} 验证结果，包含是否有效和错误信息
    */
-  validateInstance(instance: TaskInstance): { valid: boolean; errors: string[] } {
+  validateInstance(taskInstance: TaskInstance): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
-    if (!instance.title.trim()) {
+    if (!taskInstance.title.trim()) {
       errors.push('任务标题不能为空');
     }
 
-    if (instance.timeConfig.type === 'timeRange' && !instance.timeConfig.endTime) {
+    if (taskInstance.timeConfig.type === 'timeRange' && !taskInstance.timeConfig.endTime) {
       errors.push('时间段类型的任务必须设置结束时间');
     }
 
-    if (instance.timeConfig.endTime && 
-        instance.timeConfig.endTime.timestamp <= instance.timeConfig.scheduledTime.timestamp) {
+    if (taskInstance.timeConfig.endTime && 
+        taskInstance.timeConfig.endTime.timestamp <= taskInstance.timeConfig.scheduledTime.timestamp) {
       errors.push('结束时间必须晚于开始时间');
     }
 
-    if (instance.priority < 1 || instance.priority > 4) {
+    if (taskInstance.priority < 1 || taskInstance.priority > 4) {
       errors.push('优先级必须在1-4之间');
     }
 
@@ -231,29 +216,37 @@ export class TaskInstanceService {
 
   /**
    * 重新调度任务实例
+   * @param {TaskInstance} taskInstance - 任务实例
+   * @param {DateTime} newScheduledTime - 新的计划时间
+   * @param {DateTime} newEndTime - 新的结束时间（可选）
+   * @throws {Error} 重新调度失败时抛出错误
    */
   rescheduleInstance(
-    instance: TaskInstance,
+    taskInstance: TaskInstance,
     newScheduledTime: DateTime,
     newEndTime?: DateTime
   ): void {
     try {
-      instance.reschedule(newScheduledTime, newEndTime);
+      taskInstance.reschedule(newScheduledTime, newEndTime);
     } catch (error) {
       throw new Error(`重新调度失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   }
 
-  // ... 其他私有方法保持不变
+  /**
+   * 判断是否应该停止生成任务实例
+   * @param {any} timeConfig - 时间配置
+   * @param {DateTime} nextTime - 下一个时间点
+   * @param {number} count - 当前生成数量
+   * @returns {boolean} 是否应该停止生成
+   */
   private shouldStopGeneration(timeConfig: any, nextTime: DateTime, count: number): boolean {
-    // 按结束日期停止
     if (timeConfig.recurrence.endCondition.type === 'date' && 
         timeConfig.recurrence.endCondition.endDate &&
         nextTime.timestamp > timeConfig.recurrence.endCondition.endDate.timestamp) {
       return true;
     }
 
-    // 按次数停止
     if (timeConfig.recurrence.endCondition.type === 'count' &&
         timeConfig.recurrence.endCondition.count &&
         count >= timeConfig.recurrence.endCondition.count) {
@@ -263,12 +256,18 @@ export class TaskInstanceService {
     return false;
   }
 
-  private hasTimeOverlap(instance1: TaskInstance, instance2: TaskInstance): boolean {
-    const start1 = instance1.timeConfig.scheduledTime.timestamp;
-    const end1 = instance1.timeConfig.endTime?.timestamp || start1 + (instance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
+  /**
+   * 检查两个任务实例是否有时间重叠
+   * @param {TaskInstance} taskInstance1 - 任务实例1
+   * @param {TaskInstance} taskInstance2 - 任务实例2
+   * @returns {boolean} 是否有时间重叠
+   */
+  private hasTimeOverlap(taskInstance1: TaskInstance, taskInstance2: TaskInstance): boolean {
+    const start1 = taskInstance1.timeConfig.scheduledTime.timestamp;
+    const end1 = taskInstance1.timeConfig.endTime?.timestamp || start1 + (taskInstance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
     
-    const start2 = instance2.timeConfig.scheduledTime.timestamp;
-    const end2 = instance2.timeConfig.endTime?.timestamp || start2 + (instance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
+    const start2 = taskInstance2.timeConfig.scheduledTime.timestamp;
+    const end2 = taskInstance2.timeConfig.endTime?.timestamp || start2 + (taskInstance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
 
     return start1 < end2 && start2 < end1;
   }

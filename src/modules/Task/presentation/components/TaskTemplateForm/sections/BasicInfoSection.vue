@@ -30,25 +30,33 @@ interface Props {
 
 interface Emits {
   (e: 'update:modelValue', value: TaskTemplate): void;
-  (e: 'update:modelValue:title', value: string): void;
-  (e: 'update:modelValue:description', value: string): void;
   (e: 'update:validation', isValid: boolean): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
+const updateTemplate = (updater: (template: TaskTemplate) => void) => {
+  const updatedTemplate = props.modelValue.clone();
+  updater(updatedTemplate);
+  emit('update:modelValue', updatedTemplate);
+};
+
 const title = computed({
   get: () => props.modelValue.title,
   set: (value: string) => {
-    emit('update:modelValue:title', value);
+    updateTemplate((template) => {
+      template.updateTitle(value);
+    });
   }
 });
 
 const description = computed({
   get: () => props.modelValue.description,
   set: (value: string) => {
-    emit('update:modelValue:description', value);
+    updateTemplate((template) => {
+      template.updateDescription(value);
+    });
   }
 });
 

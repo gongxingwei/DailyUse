@@ -37,6 +37,7 @@ const initializeApp = async () => {
 
 onMounted(() => {
   initializeApp();
+  
 });
 
 onUnmounted(() => {
