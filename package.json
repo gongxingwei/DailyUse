@@ -6,7 +6,7 @@
     "email": "lulouhao@stu.sicau.edu.cn"
   },
   "description": "DailyUse",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "type": "module",
   "scripts": {
     "dev": "vite",
