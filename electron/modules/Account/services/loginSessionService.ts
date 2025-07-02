@@ -2,7 +2,7 @@ import type { TResponse } from "@/shared/types/response";
 import type { TLoginSessionData } from "@/modules/Account/types/account";
 import { LoginSessionModel } from "../models/loginSessionModel";
 import crypto from "crypto";
-
+import { userService } from './userService'
 /**
  * 本地会话服务类
  * 负责处理登录会话相关的业务逻辑，包括会话保存、更新、查询和管理
@@ -227,9 +227,7 @@ export class LoginSessionService {
         );
 
         // 使用解密后的密码进行真正的登录验证
-        const { userService } = await import("./userService");
         const service = await userService;
-
         const loginResult = await service.login({
           username,
           password: decryptedPassword,

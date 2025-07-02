@@ -75,16 +75,6 @@ import KeyResultLinksSection from './sections/KeyResultLinksSection.vue';
 import { useTaskTemplateForm } from '../../composables/useTaskTemplateForm';
 import { useTaskStore } from '../../stores/taskStore';
 
-interface Props {
-  isEditMode?: boolean;
-}
-
-const props = defineProps<Props>();
-const emit = defineEmits<{
-  'update:modelValue': [value: TaskTemplate];
-  'close': [];
-}>();
-
 const taskStore = useTaskStore();
 
 // 修改计算属性，返回 null 而不是抛出错误
@@ -111,7 +101,7 @@ const {
   updateReminderValidation,
   updateSchedulingValidation,
   updateMetadataValidation
-} = useTaskTemplateForm(props, emit);
+} = useTaskTemplateForm();
 
 // 暴露验证方法和状态
 defineExpose({

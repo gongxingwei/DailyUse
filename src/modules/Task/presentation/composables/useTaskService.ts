@@ -10,7 +10,7 @@ interface SnackbarConfig {
   timeout: number;
 }
 
-export function useTaskDialog() {
+export function useTaskService() {
   const taskStore = useTaskStore();
   const showEditTaskTemplateDialog = ref(false);
   const showTemplateSelectionDialog = ref(false);
@@ -299,6 +299,8 @@ export function useTaskDialog() {
     handleDeleteTaskTemplate,
     handleDeleteTaskInstance,
     handlePauseTaskTemplate,
-    handleResumeTaskTemplate
+    handleResumeTaskTemplate,
+    handleCompleteTaskInstance,
+    handleUndoCompleteTaskInstance
   };
 }

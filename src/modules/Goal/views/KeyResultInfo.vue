@@ -55,7 +55,7 @@
                             </div>
                             <div v-else class="pa-4">
                                 <div v-for="task in taskTemplates" :key="task.id" class="mb-4">
-                                    <TaskTemplateCard :taskTemplate="task" :key-result-id="keyResult.id" />
+                                    {{ task.name }}
                                 </div>
                             </div>
                         </div>
@@ -97,7 +97,7 @@
 </style>
 <script setup lang="ts">
 // vue
-import { computed, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 // vue-router
 import { useRoute, useRouter } from 'vue-router';
 // stores
@@ -106,7 +106,6 @@ import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
 import KeyResultCard from '../components/KeyResultCard.vue';
 import RecordCard from '../components/RecordCard.vue';
-import TaskTemplateCard from '@/modules/Task/presentation/components/TaskTemplateCard.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -115,6 +114,8 @@ const keyResultId = route.params.keyResultId as string; // 从路由参数中获
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
+
+const taskTemplates = ref<any>([]);
 // 目标的颜色
 const goalColor = computed(() => {
     const goal = goalStore.getGoalById(goalId);
@@ -137,14 +138,11 @@ const tabs = [
     { name: '关联任务', value: 0 },
     { name: '记录', value: 1 },
 ];
-// 关联的任务模板
-const taskTemplates = computed(() => {
-    const taskTemplates = taskStore.getTaskTemplateForKeyResult(goalId, keyResultId);
-    if (!taskTemplates) {
-        throw new Error('Tasks not found');
-    }
-    return taskTemplates;
-});
+
+onMounted(async() => {
+    taskTemplates.value = await taskStore.getTaskTemplateForKeyResult(goalId, keyResultId);
+
+})
 
 // 计算所有记录
 const records = computed(() => {

@@ -1,5 +1,5 @@
 <template>
-    <div class="modal-overlay" v-if="visible">
+    <div class="modal-overlay" v-if="props.visible">
         <div class="modal-container">
             <div class="modal-header">
                 <h2>任务详情</h2>

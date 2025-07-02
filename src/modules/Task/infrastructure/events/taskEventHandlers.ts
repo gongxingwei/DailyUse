@@ -21,7 +21,7 @@ export class TaskEventHandlers {
 
   }
 
-  private static async updateTaskStatistics(event: TaskCompletedEvent): Promise<void> {
+  private static async updateTaskStatistics(_event: TaskCompletedEvent): Promise<void> {
     // Task模块内部的统计更新逻辑
     try {
       // 更新完成率、效率等统计数据
@@ -30,7 +30,7 @@ export class TaskEventHandlers {
     }
   }
 
-  private static async checkAutoTaskCreation(event: TaskCompletedEvent): Promise<void> {
+  private static async checkAutoTaskCreation(_event: TaskCompletedEvent): Promise<void> {
     // 检查是否需要基于完成的任务自动创建新任务
   }
 }

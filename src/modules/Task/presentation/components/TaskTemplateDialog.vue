@@ -1,6 +1,6 @@
 <!-- filepath: /d:/myPrograms/DailyUse/src/modules/Task/components/TaskTemplateDialog.vue -->
 <template>
-  <v-dialog :model-value="visible" max-width="900" persistent scrollable>
+  <v-dialog :model-value="props.visible" max-width="900" persistent scrollable>
     <v-card class="task-template-dialog">
       <v-card-title class="dialog-header">
         <v-icon color="primary" class="mr-2">
@@ -18,8 +18,8 @@
         <v-btn variant="text" @click="$emit('cancel')">
           取消
         </v-btn>
-        <v-btn color="primary" variant="elevated" @click="handleSave">
-          {{ isEditMode ? '更新' : '创建' }}
+        <v-btn color="primary" variant="elevated" @click="handleSave" :disabled="!canSave">
+          {{ props.isEditMode ? '更新' : '创建' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -27,7 +27,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 import TaskTemplateForm from './TaskTemplateForm/TaskTemplateForm.vue';
 
 
@@ -54,6 +54,12 @@ const handleSave = async () => {
  
     emit('save');
 };
+
+const canSave = computed(() => {
+  console.log('Checking form validity...',formRef.value?.isValid);
+  return formRef.value?.isValid ?? false;
+})
+
 </script>
 
 <style scoped>

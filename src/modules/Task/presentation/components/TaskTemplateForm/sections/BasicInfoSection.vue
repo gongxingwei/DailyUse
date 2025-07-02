@@ -6,13 +6,24 @@
       基础信息
     </v-card-title>
     <v-card-text>
+      <!-- 显示验证错误 -->
+      <v-alert 
+        v-if="validationErrors.length > 0" 
+        type="error" 
+        variant="tonal" 
+        class="mb-4"
+      >
+        <ul class="mb-0">
+          <li v-for="error in validationErrors" :key="error">{{ error }}</li>
+        </ul>
+      </v-alert>
       <v-row> <v-col cols="12">
-          <v-text-field v-model="title" label="任务标题" placeholder="请输入任务标题" :rules="titleRules" variant="outlined"
+          <v-text-field v-model="title" label="任务标题" placeholder="请输入任务标题" variant="outlined"
             required counter="100" />
         </v-col>
 
         <v-col cols="12">
-          <v-textarea v-model="description" label="任务描述" placeholder="请输入任务描述（可选）" :rules="descriptionRules"
+          <v-textarea v-model="description" label="任务描述" placeholder="请输入任务描述（可选）"
             variant="outlined" rows="3" counter="1000" no-resize />
         </v-col>
 
@@ -22,7 +33,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
+import { useBasicInfoValidation } from '../../../composables/useBasicInfoValidation';
 
 interface Props {
   modelValue: TaskTemplate;
@@ -35,6 +47,8 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+
+const { validate, validationErrors, isValid } = useBasicInfoValidation();
 
 const updateTemplate = (updater: (template: TaskTemplate) => void) => {
   const updatedTemplate = props.modelValue.clone();
@@ -60,16 +74,15 @@ const description = computed({
   }
 });
 
+watch(
+  [title, description],
+  () => {
+    validate(title.value, description.value || '');
+    emit('update:validation', isValid.value);
+  },
+  { immediate: true }
+);
 
-// 验证规则
-const titleRules = [
-  (v: string) => !!v || '任务标题是必填的',
-  (v: string) => (v && v.length <= 100) || '任务标题不能超过100个字符'
-];
-
-const descriptionRules = [
-  (v: string) => !v || v.length <= 1000 || '任务描述不能超过1000个字符'
-];
 </script>
 
 <style scoped>

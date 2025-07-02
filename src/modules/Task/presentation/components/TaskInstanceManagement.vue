@@ -152,7 +152,7 @@
                                             icon
                                             variant="text"
                                             color="success"
-                                            @click="completeTask(task)"
+                                            @click="handleCompleteTaskInstance(task.id)"
                                             class="complete-btn"
                                         >
                                             <v-icon>mdi-circle-outline</v-icon>
@@ -235,7 +235,7 @@
                                             icon
                                             variant="text"
                                             size="small"
-                                            @click="undoCompleteTask(task)"
+                                            @click="handleUndoCompleteTaskInstance(task.id)"
                                             class="undo-btn"
                                         >
                                             <v-icon>mdi-undo</v-icon>
@@ -257,8 +257,9 @@ import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { useTaskInstanceManagement } from '../composables/useTaskInstanceManagement';
-
-const { selectedDate, currentWeekStart, loading, dayTasks, completedTasks, incompleteTasks,  selectDay, previousWeek, nextWeek, completeTask, undoCompleteTask } = useTaskInstanceManagement();
+import { useTaskService } from '../composables/useTaskService';
+const { selectedDate, currentWeekStart, dayTasks, completedTasks, incompleteTasks,  selectDay, previousWeek, nextWeek } = useTaskInstanceManagement();
+const { handleCompleteTaskInstance, handleUndoCompleteTaskInstance } = useTaskService();
 
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();

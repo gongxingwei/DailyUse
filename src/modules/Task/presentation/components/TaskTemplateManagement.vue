@@ -109,7 +109,7 @@ import { useTaskStore } from '../stores/taskStore';
 import TaskTemplateCard from './TaskTemplateCard.vue';
 import TaskTemplateDialog from './TaskTemplateDialog.vue';
 import TemplateSelectionDialog from './TemplateSelectionDialog.vue';
-import { useTaskDialog } from '../composables/useTaskService';
+import { useTaskService } from '../composables/useTaskService';
 
 const {
     snackbar,
@@ -126,7 +126,7 @@ const {
     handleDeleteTaskTemplate,
     handlePauseTaskTemplate,
     handleResumeTaskTemplate
-} = useTaskDialog();
+} = useTaskService();
 
 const taskStore = useTaskStore();
 const currentStatus = ref('active');
@@ -214,7 +214,7 @@ const pauseTemplate = (template: TaskTemplate) => {
         .then(() => {
             console.log('模板已暂停:', template.title);
         })
-        .catch(error => {
+        .catch((error: Error) => {
             console.error('暂停模板失败:', error);
         });
 }
@@ -225,7 +225,7 @@ const resumeTemplate = (template: TaskTemplate) => {
         .then(() => {
             console.log('模板已恢复:', template.title);
         })
-        .catch(error => {
+        .catch((error: Error) => {
             console.error('恢复模板失败:', error);
         });
 

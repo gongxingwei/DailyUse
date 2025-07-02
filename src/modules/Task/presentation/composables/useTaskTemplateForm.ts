@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
 
-export function useTaskTemplateForm(props: any, emit: any) {
+export function useTaskTemplateForm() {
   // 表单验证状态
   const formValidations = ref({
     basic: true,
@@ -10,9 +10,6 @@ export function useTaskTemplateForm(props: any, emit: any) {
     scheduling: true,
     metadata: true,
   });
-
-  // 本地模板副本 - 使用更好的响应式处理
-  const localTemplate = ref<TaskTemplate>(props.modelValue);
 
   // 整体表单验证状态
   const isFormValid = computed(() =>
@@ -50,7 +47,6 @@ export function useTaskTemplateForm(props: any, emit: any) {
     return isFormValid.value;
   };
   return {
-    localTemplate,
     formValidations,
     isFormValid,
     validateForm,

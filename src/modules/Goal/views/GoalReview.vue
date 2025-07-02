@@ -60,7 +60,7 @@
                     </div>
                     <!-- 具体任务执行情况 -->
                     <div class="card-content">
-                        <div v-for="task in taskStatus.taskDetails" :key="task.templateId" class="card-content-item">
+                        <div v-for="task in taskStatus.taskDetails as any[]" :key="task.templateId" class="card-content-item">
                             <span class="item-name">{{ task.title }}</span>
                             <span class="item-value">{{ task.completed }}/{{ task.total }}</span>
                         </div>
@@ -173,15 +173,21 @@ const goal = computed(() => {
     return foundGoal;
 }) as ComputedRef<Goal>;
 // 任务完成情况
-const taskStatus = computed(() => {
-    return taskStore.getTaskStatsForGoal(goalId);
+const taskStatus = ref({
+    overall: { incomplete: 0, total: 0 },
+    taskDetails: []
 });
-onMounted(() => {
+
+onMounted(async () => {
     if (!goalStore.getGoalById(goalId)) {
         router.push('/404');
         return;
     }
     goalReviewStore.initTempReview(goalId);
+    
+    // 获取任务状态
+    taskStatus.value = await taskStore.getTaskStatsForGoal(goalId);
+    
     loading.value = false;
 });
 </script>

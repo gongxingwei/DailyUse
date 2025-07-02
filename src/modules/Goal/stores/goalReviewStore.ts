@@ -145,7 +145,7 @@ export const useGoalReviewStore = defineStore("goalReview", {
     },
 
     // 创建新的复盘记录
-    initTempReview(goalId: string): Review {
+    async initTempReview(goalId: string): Promise<Review> {
       const goalStore = useGoalStore();
       const taskStore = useTaskStore();
       const goal = goalStore.getGoalById(goalId);
@@ -169,7 +169,7 @@ export const useGoalReviewStore = defineStore("goalReview", {
       );
 
       // 获取任务完成情况
-      const taskStats = taskStore.getTaskStatsForGoal(goalId);
+      const taskStats = await taskStore.getTaskStatsForGoal(goalId);
 
       const newReview: Review = {
         id: "temp",
@@ -198,6 +198,7 @@ export const useGoalReviewStore = defineStore("goalReview", {
       this.tempReview = newReview;
       return newReview;
     },
+    
     // 获取已有的复盘记录
     getExistingReview(reviewId: string): Review | null {
       const review = this.reviews.find((r) => r.id === reviewId);
