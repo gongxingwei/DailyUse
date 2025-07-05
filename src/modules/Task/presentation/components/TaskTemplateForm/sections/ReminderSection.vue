@@ -65,7 +65,7 @@ import { computed, watch } from 'vue';
 import ReminderAlertsList from '../widgets/ReminderAlertsList.vue';
 import ReminderSnoozeSettings from '../widgets/ReminderSnoozeSettings.vue';
 import { useReminderValidation } from '../../../composables/useReminderValidation';
-
+import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
 interface Props {
   modelValue: TaskTemplate;
 }

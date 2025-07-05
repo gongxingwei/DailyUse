@@ -108,7 +108,7 @@ export class TaskDomainService {
       };
     }
 
-    const impact = this.handleTemplateUpdateImpact(taskTemplate, oldTemplate.data);
+    const impact = await this.handleTemplateUpdateImpact(taskTemplate, oldTemplate.data, taskInstanceRepository);
     if (impact.affectedCount > 0) {
       let failedCount = 0;
       for (const taskInstance of impact.updatedInstances) {
@@ -166,7 +166,7 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     force: boolean = false
   ): Promise<TResponse<void>> {
-    const dependencies = this.validateTemplateDependencies(taskTemplate);
+    const dependencies = await this.validateTemplateDependencies(taskTemplate, taskInstanceRepository);
     if (!dependencies.canDelete && !force) {
       return {
         success: false,
@@ -320,18 +320,20 @@ export class TaskDomainService {
   /**
    * 批量生成任务实例并验证业务规则
    * @param {TaskTemplate} taskTemplate - 任务模板
+   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
    * @param {object} options - 生成选项
-   * @returns {TaskInstance[]} 生成的任务实例数组
+   * @returns {Promise<TaskInstance[]>} 生成的任务实例数组
    * @throws {Error} 当模板状态不符合要求时抛出错误
    */
-  generateInstancesWithBusinessRules(
+  async generateInstancesWithBusinessRules(
     taskTemplate: TaskTemplate,
+    taskInstanceRepository: ITaskInstanceRepository,
     options: {
       maxInstances?: number;
       dateRange?: { start: DateTime; end: DateTime };
       skipConflicts?: boolean;
     } = {}
-  ): TaskInstance[] {
+  ): Promise<TaskInstance[]> {
     if (!taskTemplate.isActive()) {
       throw new Error("只能从激活状态的模板生成实例");
     }
@@ -348,7 +350,7 @@ export class TaskDomainService {
         );
 
     if (options.skipConflicts) {
-      return this.filterConflictingInstances(instances);
+      return await this.filterConflictingInstances(instances, taskInstanceRepository);
     }
 
     return instances;
@@ -357,17 +359,28 @@ export class TaskDomainService {
   /**
    * 检查任务模板的依赖关系
    * @param {TaskTemplate} taskTemplate - 任务模板
-   * @returns {object} 依赖关系检查结果
+   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
+   * @returns {Promise<object>} 依赖关系检查结果
    */
-  validateTemplateDependencies(taskTemplate: TaskTemplate): {
+  async validateTemplateDependencies(
+    taskTemplate: TaskTemplate,
+    taskInstanceRepository: ITaskInstanceRepository
+  ): Promise<{
     canDelete: boolean;
     activeInstances: number;
     warnings: string[];
-  } {
-    const taskStore = useTaskStore();
-    const activeInstances = taskStore.taskInstances.filter(
+  }> {
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
+      return {
+        canDelete: true,
+        activeInstances: 0,
+        warnings: [],
+      };
+    }
+
+    const activeInstances = relatedInstancesResponse.data.filter(
       (instance) =>
-        instance.templateId === taskTemplate.id &&
         ["pending", "inProgress"].includes(instance.status)
     );
 
@@ -385,31 +398,34 @@ export class TaskDomainService {
    * 执行任务模板状态变更业务流程
    * @param {TaskTemplate} taskTemplate - 任务模板
    * @param {string} newStatus - 新状态
-   * @returns {object} 状态变更结果
+   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
+   * @returns {Promise<object>} 状态变更结果
    * @throws {Error} 当状态转换不被允许时抛出错误
    */
-  changeTemplateStatus(
+  async changeTemplateStatus(
     taskTemplate: TaskTemplate,
-    newStatus: string
-  ): {
+    newStatus: string,
+    taskInstanceRepository: ITaskInstanceRepository
+  ): Promise<{
     success: boolean;
     affectedInstances: TaskInstance[];
     warnings: string[];
-  } {
+  }> {
     if (!taskTemplateService.canChangeStatus(taskTemplate, newStatus)) {
       throw new Error(
         `无法从 ${taskTemplate.lifecycle.status} 状态转换到 ${newStatus} 状态`
       );
     }
 
-    const taskStore = useTaskStore();
-    const relatedInstances = taskStore.taskInstances
-      .filter(
-        (instance) =>
-          instance.templateId === taskTemplate.id &&
-          ["pending", "inProgress"].includes(instance.status)
-      )
-      .map(ensureTaskInstance);
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
+      throw new Error(`获取相关任务实例失败: ${relatedInstancesResponse.message}`);
+    }
+
+    const relatedInstances = relatedInstancesResponse.data.filter(
+      (instance: TaskInstance) =>
+        ["pending", "inProgress"].includes(instance.status)
+    );
 
     const warnings: string[] = [];
 
@@ -493,24 +509,30 @@ export class TaskDomainService {
    * 处理任务模板更新对任务实例的影响
    * @param {TaskTemplate} updatedTemplate - 更新后的任务模板
    * @param {TaskTemplate | null} oldTemplate - 更新前的任务模板
-   * @returns {object} 影响分析结果
+   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
+   * @returns {Promise<object>} 影响分析结果
    */
-  handleTemplateUpdateImpact(
+  async handleTemplateUpdateImpact(
     updatedTemplate: TaskTemplate,
-    oldTemplate: TaskTemplate | null
-  ): {
+    oldTemplate: TaskTemplate | null,
+    taskInstanceRepository: ITaskInstanceRepository
+  ): Promise<{
     affectedCount: number;
     updatedInstances: TaskInstance[];
     warnings: string[];
-  } {
-    const taskStore = useTaskStore();
-    const relatedInstances = taskStore.taskInstances
-      .filter(
-        (instance) =>
-          instance.templateId === updatedTemplate.id &&
-          instance.status !== "completed"
-      )
-      .map(ensureTaskInstance);
+  }> {
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(updatedTemplate.id);
+    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
+      return {
+        affectedCount: 0,
+        updatedInstances: [],
+        warnings: [],
+      };
+    }
+
+    const relatedInstances = relatedInstancesResponse.data.filter(
+      (instance: TaskInstance) => instance.status !== "completed"
+    );
 
     const updatedInstances: TaskInstance[] = [];
     const warnings: string[] = [];
@@ -537,7 +559,7 @@ export class TaskDomainService {
         );
       }
 
-      relatedInstances.forEach((taskInstance) => {
+      relatedInstances.forEach((taskInstance: TaskInstance) => {
         if (titleChanged && taskInstance.status === "pending") {
           taskInstance.updateTitle(updatedTemplate.title);
           updatedInstances.push(taskInstance);
@@ -689,16 +711,22 @@ export class TaskDomainService {
   /**
    * 过滤冲突的任务实例
    * @param {TaskInstance[]} taskInstances - 任务实例数组
-   * @returns {TaskInstance[]} 过滤后的任务实例数组
+   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
+   * @returns {Promise<TaskInstance[]>} 过滤后的任务实例数组
    */
-  private filterConflictingInstances(taskInstances: TaskInstance[]): TaskInstance[] {
-    const taskStore = useTaskStore();
-    const existingInstances = taskStore.taskInstances
-      .filter(
-        (instance) =>
-          instance.status !== "completed" && instance.status !== "cancelled"
-      )
-      .map(ensureTaskInstance);
+  private async filterConflictingInstances(
+    taskInstances: TaskInstance[],
+    taskInstanceRepository: ITaskInstanceRepository
+  ): Promise<TaskInstance[]> {
+    const allInstancesResponse = await taskInstanceRepository.findAll();
+    if (!allInstancesResponse.success || !allInstancesResponse.data) {
+      return taskInstances;
+    }
+
+    const existingInstances = allInstancesResponse.data.filter(
+      (instance: TaskInstance) =>
+        instance.status !== "completed" && instance.status !== "cancelled"
+    );
 
     return taskInstances.filter((newTaskInstance) => {
       const conflicts = taskInstanceService.checkTimeConflicts(

@@ -110,7 +110,7 @@ import TaskTemplateCard from './TaskTemplateCard.vue';
 import TaskTemplateDialog from './TaskTemplateDialog.vue';
 import TemplateSelectionDialog from './TemplateSelectionDialog.vue';
 import { useTaskService } from '../composables/useTaskService';
-
+import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
 const {
     snackbar,
     closeSnackbar,

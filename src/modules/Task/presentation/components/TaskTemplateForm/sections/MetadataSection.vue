@@ -84,7 +84,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-
+import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
 interface Props {
   modelValue: TaskTemplate;
 }

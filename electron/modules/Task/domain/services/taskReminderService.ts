@@ -1,6 +1,7 @@
+import { TaskInstance } from "../entities/taskInstance";
 import { TResponse } from "../../../../../src/shared/types/response";
 import { TimeUtils } from "../../../../../src/shared/utils/myDateTimeUtils";
-import { scheduleService } from "../../../../../src/modules/schedule/services/scheduleService";
+import { scheduleService } from "../../../schedule/services/scheduleService";
 import { TaskTimeUtils } from "../utils/taskTimeUtils";
 import type { TaskReminderConfig } from "../types/task";
 
@@ -116,11 +117,9 @@ export class TaskReminderService {
         return null;
       }
 
-      const cronExpression = this.createCronExpression(reminderTime);
-
       await scheduleService.createSchedule({
         id: reminderId,
-        cron: cronExpression,
+        dateTime: reminderTime,
         task: {
           type: "taskReminder",
           payload: {
@@ -177,25 +176,6 @@ export class TaskReminderService {
     } else {
       return taskScheduledTime;
     }
-  }
-
-  /**
-   * 创建精确的cron表达式
-   * 
-   * 将DateTime转换为cron表达式用于调度系统。
-   * 
-   * @param dateTime - 需要转换的日期时间
-   * @returns cron表达式字符串
-   * @throws 如果时间信息不完整
-   */
-  private createCronExpression(dateTime: DateTime): string {
-    const { time, date } = dateTime;
-
-    if (!time) {
-      throw new Error("提醒时间必须包含具体时间");
-    }
-
-    return `${time.minute} ${time.hour} ${date.day} ${date.month} *`;
   }
 
   /**

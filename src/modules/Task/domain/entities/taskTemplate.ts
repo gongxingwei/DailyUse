@@ -145,6 +145,59 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     return this._version;
   }
 
+
+  // Methods
+  updateTitle(title: string): void {
+    this._title = title;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateDescription(description?: string): void {
+    this._description = description;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateTimeConfig(timeConfig: TaskTimeConfig): void {
+    this._timeConfig = timeConfig;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateReminderConfig(reminderConfig: TaskReminderConfig): void {
+    this._reminderConfig = reminderConfig;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateSchedulingPolicy(policy: Partial<typeof this._schedulingPolicy>): void {
+    this._schedulingPolicy = { ...this._schedulingPolicy, ...policy };
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateMetadata(metadata: Partial<typeof this._metadata>): void {
+    this._metadata = { ...this._metadata, ...metadata };
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  setPriority(priority?: 1 | 2 | 3 | 4 | 5): void {
+    this._metadata.priority = priority;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  addKeyResultLink(link: KeyResultLink): void {
+    if (!this._keyResultLinks) {
+      this._keyResultLinks = [];
+    }
+    this._keyResultLinks.push(link);
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  removeKeyResultLink(goalId: string, keyResultId: string): void {
+    if (this._keyResultLinks) {
+      this._keyResultLinks = this._keyResultLinks.filter(
+        (link) => !(link.goalId === goalId && link.keyResultId === keyResultId)
+      );
+      this._lifecycle.updatedAt = TimeUtils.now();
+    }
+  }
   // ===== UI 校验和操作预览方法 =====
   // 注意：这些方法仅用于 UI 层面的校验和预览，
   // 实际的业务操作应通过应用层服务调用 IPC 交给主进程处理

@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import { useGoalStore } from '@/modules/Goal/stores/goalStore';
-
+import { TaskInstance } from '@/modules/Task/domain/entities/taskInstance';
 const props = defineProps<{
     visible: boolean;
     task: TaskInstance;
