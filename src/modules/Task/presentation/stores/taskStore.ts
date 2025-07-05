@@ -2,8 +2,6 @@ import { defineStore } from "pinia";
 import { TaskTemplate } from "../../domain/entities/taskTemplate";
 import { TaskInstance } from "../../domain/entities/taskInstance";
 import { TaskMetaTemplate } from "../../domain/entities/taskMetaTemplate";
-import { TaskApplicationService } from "@/modules/Task/application/services/taskApplicationService";
-import { TaskReminderService } from "@/modules/Task/domain/services/taskReminderService";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import { TaskMetaTemplateFactory } from "@/modules/Task/domain/utils/taskMetaTemplateFactory";
@@ -51,7 +49,6 @@ export const useTaskStore = defineStore("task", {
     taskInstances: [] as TaskInstance[],
     taskTemplates: [] as TaskTemplate[],
     metaTemplates: [] as TaskMetaTemplate[],
-    applicationService: new TaskApplicationService(),
     taskTemplateBeingEdited: null as TaskTemplate | null,
   }),
 
@@ -120,9 +117,9 @@ export const useTaskStore = defineStore("task", {
         });
     },
 
-    getAllMetaTemplates(): TaskMetaTemplate[] {
+    getAllMetaTemplates: (state): TaskMetaTemplate[] => {
       // 确保返回的都是完整的 TaskMetaTemplate 实例
-      return this.metaTemplates.map((t) => ensureTaskMetaTemplate(t));
+      return state.metaTemplates.map((t) => ensureTaskMetaTemplate(t));
     },
 
     getMetaTemplateById: (state) => (id: string): TaskMetaTemplate | undefined => {
@@ -480,41 +477,42 @@ export const useTaskStore = defineStore("task", {
       }
     },
 
-    // === 确保数据完整性的方法 ===
-    ensureDataIntegrity() {
-      this.taskTemplates = this.taskTemplates.map((t) => ensureTaskTemplate(t));
-      this.taskInstances = this.taskInstances.map((i) => ensureTaskInstance(i));
+    /**
+     * 删除元模板（别名方法）
+     */
+    removeMetaTemplateById(id: string): Promise<TResponse<void>> {
+      return this.deleteMetaTemplateById(id);
     },
 
-    // === 业务查询委托给应用服务 ===
-    async getTaskStatsForGoal(goalId: string) {
-      return await this.applicationService.getTaskStatsForGoal(goalId);
+    // === 批量数据同步方法 ===
+    /**
+     * 批量设置任务模板（从主进程同步数据时使用）
+     */
+    setTaskTemplates(templates: any[]): void {
+      this.taskTemplates = templates.map(template => ensureTaskTemplate(template));
     },
 
-    async getTaskCompletionTimeline(
-      goalId: string,
-      startDate: string,
-      endDate: string
-    ) {
-      return await this.applicationService.getTaskCompletionTimeline(
-        goalId,
-        startDate,
-        endDate
-      );
+    /**
+     * 批量设置任务实例（从主进程同步数据时使用）
+     */
+    setTaskInstances(instances: any[]): void {
+      this.taskInstances = instances.map(instance => ensureTaskInstance(instance));
     },
 
-    async getTaskTemplateForKeyResult(goalId: string, keyResultId: string) {
-      return await this.applicationService.getTaskTemplateForKeyResult(
-        goalId,
-        keyResultId
-      );
+    /**
+     * 批量设置元模板（从主进程同步数据时使用）
+     */
+    setMetaTemplates(metaTemplates: any[]): void {
+      this.metaTemplates = metaTemplates.map(meta => ensureTaskMetaTemplate(meta));
     },
 
-    // === 保留的系统操作 ===
-    async initializeSchedules() {
-      const reminderService = TaskReminderService.getInstance();
-      const ensuredTaskInstances = this.taskInstances.map((i) => ensureTaskInstance(i));
-      await reminderService.reinitializeAllReminders(ensuredTaskInstances);
+    /**
+     * 批量同步所有数据（从主进程同步时使用）
+     */
+    syncAllData(templates: any[], instances: any[], metaTemplates: any[]): void {
+      this.setTaskTemplates(templates);
+      this.setTaskInstances(instances);
+      this.setMetaTemplates(metaTemplates);
     },
 
     setTaskData(templates: TaskTemplate[], instances: TaskInstance[]) {

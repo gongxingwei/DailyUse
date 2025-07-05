@@ -257,39 +257,6 @@ export interface ITaskInstance {
   version: number;
 }
 
-/**
- * 创建任务模板的选项
- * 定义创建任务模板时的可选配置
- */
-export interface CreateTaskTemplateOptions {
-  description?: string;
-  category?: string;
-  priority?: 1 | 2 | 3 | 4 | 5;
-  difficulty?: 1 | 2 | 3 | 4 | 5;
-  tags?: string[];
-  estimatedDuration?: number;
-  location?: string;
-  schedulingPolicy?: Partial<ITaskTemplate['schedulingPolicy']>;
-  keyResultLinks?: KeyResultLink[];
-}
-
-/**
- * 创建任务实例的选项
- * 定义创建任务实例时的可选配置
- */
-export interface CreateTaskInstanceOptions {
-  description?: string;
-  keyResultLinks?: KeyResultLink[];
-  category?: string;
-  tags?: string[];
-  estimatedDuration?: number;
-  location?: string;
-  difficulty?: 1 | 2 | 3 | 4 | 5;
-  reminderAlerts?: TaskReminderConfig['alerts'];
-  /** 时间配置选项 */
-  timeConfig?: Partial<TaskInstanceTimeConfig>;
-}
-
 export type SnoozeConfig = {
   /** 是否启用稍后提醒 */
   enabled: boolean;
@@ -332,3 +299,93 @@ export type RecurrenceRule = {
     months?: number[];
   };
 };
+
+/**
+ * 基础响应类型
+ */
+export interface TaskResponse<T = any> {
+  success: boolean;
+  data?: T;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * 任务查询参数
+ */
+export interface TaskQueryParams {
+  goalId?: string;
+  keyResultId?: string;
+  category?: string;
+  tags?: string[];
+  status?: string[];
+  dateRange?: {
+    start: DateTime;
+    end: DateTime;
+  };
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * 任务统计信息
+ */
+export interface TaskStats {
+  overall: {
+    total: number;
+    completed: number;
+    incomplete: number;
+    completionRate: number;
+    missedTasks: number;
+  };
+  taskDetails: Array<{
+    templateId: string;
+    title: string;
+    total: number;
+    completed: number;
+    completionRate: number;
+  }>;
+}
+
+/**
+ * 任务时间线
+ */
+export interface TaskTimeline {
+  date: string;
+  total: number;
+  completed: number;
+}
+
+/**
+ * 任务元模板接口
+ * 定义可重复使用的任务元模板结构
+ */
+export interface ITaskMetaTemplate {
+  /** 元模板ID */
+  id: string;
+  /** 元模板名称 */
+  name: string;
+  /** 元模板描述 */
+  description?: string;
+  /** 元模板分类 */
+  category: string;
+  /** 默认时间配置 */
+  defaultTimeConfig: TaskTimeConfig;
+  /** 默认提醒配置 */
+  defaultReminderConfig: TaskReminderConfig;
+  /** 默认元数据 */
+  defaultMetadata: {
+    category: string;
+    tags: string[];
+    estimatedDuration?: number;
+    priority?: 1 | 2 | 3 | 4 | 5;
+    difficulty?: 1 | 2 | 3 | 4 | 5;
+    location?: string;
+  };
+  /** 生命周期 */
+  lifecycle: {
+    createdAt: DateTime;
+    updatedAt: DateTime;
+    status: "active" | "archived";
+  };
+}

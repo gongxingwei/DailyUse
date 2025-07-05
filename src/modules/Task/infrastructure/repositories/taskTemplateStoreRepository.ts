@@ -19,6 +19,15 @@ export class TaskTemplateStoreRepository implements ITaskTemplateRepository {
   private store = useTaskStore();
 
   /**
+   * 设置当前用户（Store 模式下可能不需要实际操作，但需要接口兼容）
+   */
+  setCurrentUser(username: string): void {
+    // Store 模式下，用户隔离通过 store 的逻辑处理
+    // 这里可以扩展为通知 store 当前用户变更
+    console.log(`TaskTemplateStoreRepository: 设置当前用户为 ${username}`);
+  }
+
+  /**
    * 保存TaskTemplate到存储系统
    * 
    * @param template - 要保存的TaskTemplate实例

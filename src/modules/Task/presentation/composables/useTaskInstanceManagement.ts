@@ -1,11 +1,18 @@
 import { ref, computed } from 'vue';
-import { TaskApplicationService } from '@/modules/Task/application/services/taskApplicationService';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { TaskInstance } from '../../domain/entities/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
+import { taskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
+import { useNotification } from './useNotification';
+
+/**
+ * 任务实例管理 Composable
+ * 提供任务实例的 CRUD 操作和状态管理
+ * 所有业务操作通过 taskDomainApplicationService 进行 IPC 调用
+ */
 export function useTaskInstanceManagement() {
-    const taskStore = useTaskStore();
-  const taskApplicationService = new TaskApplicationService();
+  const taskStore = useTaskStore();
+  const { showSuccess, showError, showInfo } = useNotification();
   
   const selectedDate = ref(new Date().toISOString().split('T')[0]);
   const currentWeekStart = ref(new Date());
@@ -34,24 +41,24 @@ export function useTaskInstanceManagement() {
   );
 
   const incompleteTasks = computed(() =>
-    dayTasks.value.filter(task => task.status === 'pending' || task.status === 'inProgress'&& task instanceof TaskInstance)
+    dayTasks.value.filter(task => (task.status === 'pending' || task.status === 'inProgress') && task instanceof TaskInstance)
   );
 
-  // 业务操作方法
+  // 单个任务操作方法
   const completeTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskApplicationService.completeTask(task.id);
+      const result = await taskDomainApplicationService.completeTaskInstance(task.id);
       
       if (result.success) {
-
-        await refreshTasks(); // 刷新任务列表
+        showSuccess(`任务 "${task.title}" 已完成`);
+        await refreshTasks();
       } else {
-        console.error('完成任务失败:', result.message || '未知错误');
+        showError(result.message || '完成任务失败');
       }
     } catch (error) {
-
       console.error('完成任务错误:', error);
+      showError(`完成任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       loading.value = false;
     }
@@ -60,23 +67,148 @@ export function useTaskInstanceManagement() {
   const undoCompleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskApplicationService.undoCompleteTask(task.id);
+      const result = await taskDomainApplicationService.undoCompleteTaskInstance(task.id);
       
-      if (result) {
-        await refreshTasks(); // 刷新任务列表
+      if (result.success) {
+        showSuccess(`任务 "${task.title}" 撤销完成成功`);
+        await refreshTasks();
       } else {
-        console.error('撤销完成任务失败');
+        showError(result.message || '撤销完成任务失败');
       }
     } catch (error) {
       console.error('撤销完成错误:', error);
+      showError(`撤销完成失败: ${error instanceof Error ? error.message : '未知错误'}`);
     } finally {
       loading.value = false;
     }
   };
 
+  const deleteTask = async (task: TaskInstance) => {
+    loading.value = true;
+    try {
+      const result = await taskDomainApplicationService.deleteTaskInstance(task.id);
+      
+      if (result.success) {
+        showSuccess(`任务 "${task.title}" 已删除`);
+        await refreshTasks();
+      } else {
+        showError(result.message || '删除任务失败');
+      }
+    } catch (error) {
+      console.error('删除任务错误:', error);
+      showError(`删除任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const startTask = async (task: TaskInstance) => {
+    loading.value = true;
+    try {
+      const result = await taskDomainApplicationService.startTaskInstance(task.id);
+      
+      if (result.success) {
+        showSuccess(`任务 "${task.title}" 已开始`);
+        await refreshTasks();
+      } else {
+        showError(result.message || '开始任务失败');
+      }
+    } catch (error) {
+      console.error('开始任务错误:', error);
+      showError(`开始任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const cancelTask = async (task: TaskInstance) => {
+    loading.value = true;
+    try {
+      const result = await taskDomainApplicationService.cancelTaskInstance(task.id);
+      
+      if (result.success) {
+        showSuccess(`任务 "${task.title}" 已取消`);
+        await refreshTasks();
+      } else {
+        showError(result.message || '取消任务失败');
+      }
+    } catch (error) {
+      console.error('取消任务错误:', error);
+      showError(`取消任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 批量操作
+  const batchCompleteTask = async (tasks: TaskInstance[]) => {
+    if (tasks.length === 0) return;
+    
+    loading.value = true;
+    try {
+      const results = await Promise.allSettled(
+        tasks.map(task => taskDomainApplicationService.completeTaskInstance(task.id))
+      );
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failCount = results.length - successCount;
+      
+      if (failCount === 0) {
+        showSuccess(`成功完成 ${successCount} 个任务`);
+      } else {
+        showInfo(`完成 ${successCount} 个任务，失败 ${failCount} 个`);
+      }
+      
+      await refreshTasks();
+    } catch (error) {
+      console.error('批量完成任务错误:', error);
+      showError(`批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  const batchDeleteTask = async (tasks: TaskInstance[]) => {
+    if (tasks.length === 0) return;
+    
+    loading.value = true;
+    try {
+      const results = await Promise.allSettled(
+        tasks.map(task => taskDomainApplicationService.deleteTaskInstance(task.id))
+      );
+      
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const failCount = results.length - successCount;
+      
+      if (failCount === 0) {
+        showSuccess(`成功删除 ${successCount} 个任务`);
+      } else {
+        showInfo(`删除 ${successCount} 个任务，失败 ${failCount} 个`);
+      }
+      
+      await refreshTasks();
+    } catch (error) {
+      console.error('批量删除任务错误:', error);
+      showError(`批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
+  };
+
+  // 数据刷新方法
   const refreshTasks = async () => {
     loading.value = true;
-    console.log('刷新任务列表...');
+    try {
+      // 通过应用服务获取最新的任务实例数据
+      const latestInstances = await taskDomainApplicationService.getAllTaskInstances();
+      // 同步到 store 中
+      taskStore.setTaskInstances(latestInstances);
+    } catch (error) {
+      console.error('刷新任务失败:', error);
+      showError(`刷新任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+      loading.value = false;
+    }
   };
 
   // 日期导航方法
@@ -108,9 +240,18 @@ export function useTaskInstanceManagement() {
     completedTasks,
     incompleteTasks,
     
-    // 方法
+    // 单个任务操作
     completeTask,
     undoCompleteTask,
+    deleteTask,
+    startTask,
+    cancelTask,
+    
+    // 批量操作
+    batchCompleteTask,
+    batchDeleteTask,
+    
+    // 工具方法
     refreshTasks,
     selectDay,
     previousWeek,

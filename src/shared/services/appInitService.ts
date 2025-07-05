@@ -2,8 +2,8 @@
 // import { useThemeInit } from '@/modules/Theme/useThemeInit';
 // import { initializeLanguage } from '@/i18n/index';
 import { ReminderInitService } from '@/modules/Reminder/services/reminderInitService';
-import { TaskReminderInitService } from '@/modules/Task/domain/services/taskReminderInitService';
 import { UserDataInitService } from '@/shared/services/userDataInitService';
+import { taskDomainApplicationService } from '@/modules/Task/application/services/taskDomainApplicationService';
 
 export interface InitializationOptions {
   autoInit?: boolean;
@@ -92,7 +92,7 @@ export class AppInitService {
 
     await Promise.all([
       ReminderInitService.initialize(),
-      TaskReminderInitService.initialize()
+      taskDomainApplicationService.initializeTaskReminders()
     ]);
 
     console.log('✓ 功能服务初始化完成');
@@ -145,7 +145,7 @@ export class AppInitService {
     console.log('清理应用资源...');
 
     ReminderInitService.destroy();
-    TaskReminderInitService.destroy();
+    // 任务提醒通过主进程管理，无需在渲染进程清理
 
     this.cleanupFunctions.forEach(cleanup => {
       try {

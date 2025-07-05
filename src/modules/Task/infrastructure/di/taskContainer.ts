@@ -1,20 +1,18 @@
-import type { ITaskTemplateRepository } from '../../domain/repositories/iTaskTemplateRepository';
-import type { ITaskInstanceRepository } from '../../domain/repositories/iTaskInstanceRepository';
-import type { ITaskMetaTemplateRepository } from '../../domain/repositories/iTaskMetaTemplateRepository';
-import { TaskTemplateStoreRepository } from '../repositories/taskTemplateStoreRepository';
-import { TaskInstanceStoreRepository } from '../repositories/taskInstanceStoreRepository';
-import { TaskMetaTemplateStoreRepository } from '../repositories/taskMetaTemplateStoreRepository';
+import { useTaskStore } from '../../presentation/stores/taskStore';
+
+/**
+ * Task 模块依赖注入容器 (渲染进程简化版)
+ * 
+ * 新架构设计：
+ * - Application Service 直接调用 IPC，不再需要仓库抽象
+ * - Store 仅做状态管理，由 Application Service 同步
+ * - 容器只负责提供 Store 实例
+ */
 export class TaskContainer {
   private static instance: TaskContainer;
-  private taskTemplateRepository: ITaskTemplateRepository;
-  private taskInstanceRepository: ITaskInstanceRepository;
-  private taskMetaTemplateRepository: ITaskMetaTemplateRepository; // 如果需要，可以添加元模板仓库
+  private taskStore = useTaskStore();
 
-  private constructor() {
-    this.taskTemplateRepository = new TaskTemplateStoreRepository();
-    this.taskInstanceRepository = new TaskInstanceStoreRepository();
-    this.taskMetaTemplateRepository = new TaskMetaTemplateStoreRepository(); // 初始化元模板仓库
-  }
+  private constructor() {}
 
   static getInstance(): TaskContainer {
     if (!TaskContainer.instance) {
@@ -23,28 +21,18 @@ export class TaskContainer {
     return TaskContainer.instance;
   }
 
-  getTaskTemplateRepository(): ITaskTemplateRepository {
-    return this.taskTemplateRepository;
+  /**
+   * 获取 Task Store 实例
+   * Store 仅用于状态管理，不处理持久化
+   */
+  getTaskStore() {
+    return this.taskStore;
   }
 
-  getTaskInstanceRepository(): ITaskInstanceRepository {
-    return this.taskInstanceRepository;
-  }
-
-  getTaskMetaTemplateRepository(): ITaskMetaTemplateRepository {
-    return this.taskMetaTemplateRepository;
-  }
-
-  // 用于测试时替换实现
-  setTaskTemplateRepository(repository: ITaskTemplateRepository): void {
-    this.taskTemplateRepository = repository;
-  }
-
-  setTaskInstanceRepository(repository: ITaskInstanceRepository): void {
-    this.taskInstanceRepository = repository;
-  }
-
-  setTaskMetaTemplateRepository(repository: ITaskMetaTemplateRepository): void {
-    this.taskMetaTemplateRepository = repository;
+  /**
+   * 重置容器（主要用于测试）
+   */
+  static reset(): void {
+    TaskContainer.instance = undefined as any;
   }
 }

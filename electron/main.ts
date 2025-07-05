@@ -5,7 +5,7 @@ import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { shell } from 'electron';
 import { protocol } from 'electron'
-import { initializeAllModules } from './shared/moduleGroups';
+import { initializeAllModules, cleanupAllModules } from './shared/moduleManager';
 
 app.setName('DailyUse');
 
@@ -167,11 +167,11 @@ app.on('activate', () => {
   }
 })
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
   
   createWindow();
   if (win) {
-    initializeAllModules();
+    await initializeAllModules();
   }
   protocol.registerFileProtocol('local', (request, callback) => {
     const url = request.url.replace('local://', '')
@@ -258,6 +258,15 @@ ipcMain.handle('set-auto-launch', (_event, enable: boolean) => {
   return app.getLoginItemSettings().openAtLogin;
 });
 
-app.on('before-quit', () => {
+// 模块状态查询 IPC
+ipcMain.handle('get-module-status', () => {
+  const { getModuleStatus } = require('./shared/moduleManager');
+  return getModuleStatus();
+});
+
+app.on('before-quit', async () => {
   app.isQuitting = true;
+  console.log('🛑 Application is quitting, cleaning up modules...');
+  await cleanupAllModules();
+  console.log('✅ Module cleanup completed');
 })

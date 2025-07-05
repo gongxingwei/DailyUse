@@ -55,6 +55,7 @@ export async function initializeDatabase(): Promise<Database> {
     // 创建表结构 - 确保包含所有必要字段
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
+        uid TEXT NOT NULL,
         username TEXT PRIMARY KEY,
         password TEXT NOT NULL,
         avatar TEXT,
@@ -97,6 +98,70 @@ export async function initializeDatabase(): Promise<Database> {
         FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
       )
     `);
+
+    // 创建 Task 相关表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_templates (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        time_config TEXT NOT NULL,
+        reminder_config TEXT NOT NULL,
+        scheduling_policy TEXT NOT NULL,
+        metadata TEXT NOT NULL,
+        lifecycle TEXT NOT NULL,
+        analytics TEXT NOT NULL,
+        key_result_links TEXT,
+        version INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_instances (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        template_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        time_config TEXT NOT NULL,
+        actual_start_time INTEGER,
+        actual_end_time INTEGER,
+        key_result_links TEXT,
+        priority INTEGER CHECK(priority BETWEEN 1 AND 5),
+        status TEXT CHECK(status IN ('pending', 'inProgress', 'completed', 'cancelled', 'overdue')) NOT NULL,
+        completed_at INTEGER,
+        reminder_status TEXT NOT NULL,
+        lifecycle TEXT NOT NULL,
+        metadata TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+        FOREIGN KEY (template_id) REFERENCES task_templates(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS task_meta_templates (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        name TEXT NOT NULL,
+        description TEXT,
+        category TEXT NOT NULL,
+        default_time_config TEXT NOT NULL,
+        default_reminder_config TEXT NOT NULL,
+        default_metadata TEXT NOT NULL,
+        lifecycle TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE
+      )
+    `);
+
     // 添加新字段（如果不存在）
     try {
       db.exec(`ALTER TABLE login_sessions ADD COLUMN token TEXT`);
@@ -110,17 +175,37 @@ export async function initializeDatabase(): Promise<Database> {
         console.error("添加 token 字段失败:", error);
       }
     }
+
+    // 为 users 表添加 uid 字段（如果不存在）
+    try {
+      db.exec(`ALTER TABLE users ADD COLUMN uid TEXT`);
+    } catch (error) {
+      // 如果字段已存在，会抛出错误，这是正常的
+      if (
+        error instanceof Error &&
+        error.message.includes("duplicate column name")
+      ) {
+      } else {
+        console.error("添加 uid 字段失败:", error);
+      }
+    }
     // 创建索引提高查询性能
     db.exec(`
+      CREATE INDEX IF NOT EXISTS idx_users_uid ON users(uid);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_username ON login_sessions(username);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_active ON login_sessions(isActive);
       CREATE INDEX IF NOT EXISTS idx_login_sessions_auto_login ON login_sessions(autoLogin);
-    `);
-    db.exec(`
       CREATE INDEX IF NOT EXISTS idx_user_store_username ON user_store_data(username);
       CREATE INDEX IF NOT EXISTS idx_user_store_name ON user_store_data(store_name);
+      CREATE INDEX IF NOT EXISTS idx_task_templates_username ON task_templates(username);
+      CREATE INDEX IF NOT EXISTS idx_task_templates_created_at ON task_templates(created_at);
+      CREATE INDEX IF NOT EXISTS idx_task_instances_username ON task_instances(username);
+      CREATE INDEX IF NOT EXISTS idx_task_instances_template_id ON task_instances(template_id);
+      CREATE INDEX IF NOT EXISTS idx_task_instances_status ON task_instances(status);
+      CREATE INDEX IF NOT EXISTS idx_task_instances_created_at ON task_instances(created_at);
+      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_username ON task_meta_templates(username);
+      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_category ON task_meta_templates(category);
     `);
-
     return db;
   } catch (error) {
     console.error("数据库初始化失败:", error);
@@ -154,6 +239,7 @@ export function initializeDatabaseSync(): Database {
     // 创建表结构
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
+        uid TEXT NOT NULL,
         username TEXT PRIMARY KEY,
         password TEXT NOT NULL,
         avatar TEXT,

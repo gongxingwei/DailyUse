@@ -2,7 +2,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { TaskInstance } from '../entities/taskInstance';
 import { TaskTemplate } from '../entities/taskTemplate';
 import type { DateTime } from '@/shared/types/myDateTime';
-import type { CreateTaskInstanceOptions } from '../types/task';
 import { TaskTimeUtils } from '@/modules/Task/domain/utils/taskTimeUtils';
 
 /**
@@ -20,7 +19,7 @@ export class TaskInstanceService {
   createInstanceFromTemplate(
     taskTemplate: TaskTemplate,
     scheduledTime?: DateTime,
-    customOptions?: Partial<CreateTaskInstanceOptions> & {
+    customOptions?: {
       title?: string;
       description?: string;
       priority?: 1 | 2 | 3 | 4;

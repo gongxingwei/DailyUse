@@ -1,8 +1,6 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { DateTime } from '@/shared/types/myDateTime';
 
-import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '@/shared/domain/domainEvent';
-
 import type {
   KeyResultLink,
   ITaskInstance,
@@ -12,7 +10,6 @@ import type {
   TaskInstanceLifecycleEvent,
   TaskReminderConfig,
   TaskInstanceTimeConfig,
-  CreateTaskInstanceOptions,
 } from "@/modules/Task/domain/types/task";
 import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 
@@ -57,7 +54,25 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     title: string,
     scheduledTime: DateTime,
     priority: 1 | 2 | 3 | 4 | 5,
-    options?: CreateTaskInstanceOptions
+    options?: {
+      description?: string;
+      keyResultLinks?: KeyResultLink[];
+      category?: string;
+      tags?: string[];
+      estimatedDuration?: number;
+      location?: string;
+      difficulty?: 1 | 2 | 3 | 4 | 5;
+      reminderAlerts?: TaskReminderConfig["alerts"];
+      timeConfig?: {
+        type: TaskInstanceTimeConfig["type"];
+        scheduledTime: DateTime;
+        endTime?: DateTime;
+        estimatedDuration?: number;
+        timezone?: string;
+        allowReschedule?: boolean;
+        maxDelayDays?: number;
+      };
+    }
   ) {
     super(id);
     const now = TimeUtils.now();
@@ -229,346 +244,207 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     return this._status === "overdue";
   }
 
-  // Business methods
+  // ===== UI 校验和操作预览方法 =====
+  // 注意：这些方法仅用于 UI 层面的校验和预览，
+  // 实际的业务操作应通过应用层服务调用 IPC 交给主进程处理
 
-  updateTitle(newTitle: string): void {
-    if (!newTitle || newTitle.trim() === "") {
-      throw new Error("Title cannot be empty");
+  /**
+   * 检查是否可以完成任务（UI 校验）
+   */
+  canComplete(): { canComplete: boolean; reason?: string } {
+    if (this._status === "completed") {
+      return { canComplete: false, reason: "任务已完成" };
     }
-    if (this._status !== "pending" && this._status !== "inProgress") {
-      throw new Error(`Cannot update title in status: ${this._status}`);
+    if (this._status === "cancelled") {
+      return { canComplete: false, reason: "任务已取消" };
     }
-    this._title = newTitle;
-    this._lifecycle.updatedAt = TimeUtils.now();
-    this._lifecycle.events.push({
-      type: "task_title_updated",
-      timestamp: this._lifecycle.updatedAt,
-      details: { newTitle },
-    });
+    return { canComplete: true };
   }
 
-  updateDescription(newDescription: string): void {
-    if (this._status !== "pending" && this._status !== "inProgress") {
-      throw new Error(`Cannot update description in status: ${this._status}`);
-    }
-    this._description = newDescription;
-    this._lifecycle.updatedAt = TimeUtils.now();
-    this._lifecycle.events.push({
-      type: "reminder_scheduled",
-      timestamp: this._lifecycle.updatedAt,
-      details: { newDescription },
-    });
-  }
-
-  updateTimeConfig(
-    newTimeConfig: Partial<TaskInstanceTimeConfig>
-  ): void {
-    if (this._status === "completed" || this._status === "cancelled")
-      throw new Error("Cannot update time config for completed or cancelled tasks");
-    if (!this._timeConfig.allowReschedule) {
-      throw new Error("This task instance does not allow rescheduling");
-    }
-    if (newTimeConfig.scheduledTime) {
-      this._timeConfig.scheduledTime = newTimeConfig.scheduledTime;
-    }
-    if (newTimeConfig.endTime) {
-      this._timeConfig.endTime = newTimeConfig.endTime;
-    }
-    if (newTimeConfig.estimatedDuration !== undefined) {
-      this._timeConfig.estimatedDuration = newTimeConfig.estimatedDuration;
-    }
-    if (newTimeConfig.type) {
-      this._timeConfig.type = newTimeConfig.type;
-    }
-    if (newTimeConfig.timezone) {
-      this._timeConfig.timezone = newTimeConfig.timezone;
-    }
-    if (newTimeConfig.allowReschedule !== undefined) {
-      this._timeConfig.allowReschedule = newTimeConfig.allowReschedule;
-    }
-    if (newTimeConfig.maxDelayDays !== undefined) {
-      this._timeConfig.maxDelayDays = newTimeConfig.maxDelayDays;
-    }
-    this._lifecycle.updatedAt = TimeUtils.now();
-    this._lifecycle.events.push({
-      type: "reminder_scheduled",
-      timestamp: this._lifecycle.updatedAt,
-      details: { newTimeConfig },
-    });
-  }
-
-  updateReminderStatus(
-    enabled: boolean,
-    alerts?: TaskReminderConfig["alerts"]
-  ): void {
-    if (this._status === "completed" || this._status === "cancelled") {
-      throw new Error("Cannot update reminders for completed or cancelled tasks");
-    }
-
-    this._reminderStatus.enabled = enabled;
-
-    if (alerts) {
-      this._reminderStatus.alerts = alerts.map((alert) => ({
-        id: alert.id,
-        alertConfig: alert,
-        status: "pending",
-        scheduledTime: this.calculateReminderTime(alert, this.scheduledTime),
-        snoozeHistory: [],
-      }));
-    }
-
-    this._lifecycle.updatedAt = TimeUtils.now();
-    this._lifecycle.events.push({
-      type: "task_rescheduled",
-      timestamp: this._lifecycle.updatedAt,
-      details: { enabled, alerts },
-    });
-  }
-
-  start(): void {
+  /**
+   * 检查是否可以开始任务（UI 校验）
+   */
+  canStart(): { canStart: boolean; reason?: string } {
     if (this._status !== "pending") {
-      throw new Error(`Cannot start task in status: ${this._status}`);
+      return { canStart: false, reason: `任务状态为 ${this._status}，无法开始` };
     }
-
-    const now = TimeUtils.now();
-    this._status = "inProgress";
-    this._actualStartTime = now;
-    this._lifecycle.startedAt = now;
-    this._lifecycle.updatedAt = now;
-
-    this._lifecycle.events.push({
-      type: "task_started",
-      timestamp: now,
-    });
+    return { canStart: true };
   }
 
-  pending(): void {
-    if (this._status !== "inProgress") {
-      throw new Error(`Cannot set task to pending in status: ${this._status}`);
-    }
-    const now = TimeUtils.now();
-    this._status = "pending";
-    this._actualStartTime = undefined;
-    this._lifecycle.startedAt = undefined;
-    this._lifecycle.updatedAt = now;
-    this._lifecycle.events.push({
-      type: "task_rescheduled",
-      timestamp: now,
-    });
-  }
-
-  complete(): void {
-    if (this._status !== "inProgress" && this._status !== "pending") {
-      throw new Error(`Cannot complete task in status: ${this._status}`);
-    }
-
-    const now = TimeUtils.now();
-    this._status = "completed";
-    this._completedAt = now;
-    this._actualEndTime = now;
-    this._lifecycle.completedAt = now;
-    this._lifecycle.updatedAt = now;
-
-    if (this._keyResultLinks?.length) {
-      const event: TaskCompletedEvent = {
-        eventType: "TaskCompleted",
-        aggregateId: this._id,
-        occurredOn: new Date(),
-        payload: {
-          taskId: this._id,
-          keyResultLinks: this._keyResultLinks,
-          completedAt: new Date(),
-        },
-      };
-      this.addDomainEvent(event);
-      console.log(`发布事件: ${event.eventType}`);
-    }
-    
-    
-
-    // Calculate actual duration if start time exists
-    if (this._actualStartTime) {
-      this._metadata.actualDuration = Math.round(
-        (now.timestamp - this._actualStartTime.timestamp) / (1000 * 60)
-      );
-    }
-
-    this._lifecycle.events.push({
-      type: "task_completed",
-      timestamp: now,
-      details: {
-        actualDuration: this._metadata.actualDuration,
-      },
-    });
-  }
-
-  cancel(): void {
+  /**
+   * 检查是否可以取消任务（UI 校验）
+   */
+  canCancel(): { canCancel: boolean; reason?: string } {
     if (this._status === "completed") {
-      throw new Error("Cannot cancel completed task");
+      return { canCancel: false, reason: "已完成的任务无法取消" };
     }
-
-    const now = TimeUtils.now();
-    this._status = "cancelled";
-    this._lifecycle.cancelledAt = now;
-    this._lifecycle.updatedAt = now;
-
-    this._lifecycle.events.push({
-      type: "task_cancelled",
-      timestamp: now,
-    });
+    if (this._status === "cancelled") {
+      return { canCancel: false, reason: "任务已取消" };
+    }
+    return { canCancel: true };
   }
 
-  markOverdue(): void {
-    if (this._status === "pending") {
-      this._status = "overdue";
-      this._lifecycle.updatedAt = TimeUtils.now();
-    }
-  }
-
-  reschedule(newScheduledTime: DateTime, newEndTime?: DateTime): void {
+  /**
+   * 检查是否可以重新安排任务（UI 校验）
+   */
+  canReschedule(): { canReschedule: boolean; reason?: string } {
     if (this._status === "completed") {
-      throw new Error("Cannot reschedule completed task");
+      return { canReschedule: false, reason: "已完成的任务无法重新安排" };
     }
-
     if (!this._timeConfig.allowReschedule) {
-      throw new Error("This task instance does not allow rescheduling");
+      return { canReschedule: false, reason: "此任务实例不允许重新安排" };
+    }
+    return { canReschedule: true };
+  }
+
+  /**
+   * 检查是否可以撤销完成（UI 校验）
+   */
+  canUndoComplete(): { canUndo: boolean; reason?: string } {
+    if (this._status !== "completed") {
+      return { canUndo: false, reason: "只能撤销已完成的任务" };
+    }
+    return { canUndo: true };
+  }
+
+  /**
+   * 获取当前可用的操作列表（UI 预览）
+   */
+  getAvailableActions(): Array<{
+    action: string;
+    label: string;
+    available: boolean;
+    reason?: string;
+  }> {
+    const actions = [
+      {
+        action: "start",
+        label: "开始任务",
+        ...this.canStart(),
+        available: this.canStart().canStart,
+      },
+      {
+        action: "complete",
+        label: "完成任务",
+        ...this.canComplete(),
+        available: this.canComplete().canComplete,
+      },
+      {
+        action: "cancel",
+        label: "取消任务",
+        ...this.canCancel(),
+        available: this.canCancel().canCancel,
+      },
+      {
+        action: "reschedule",
+        label: "重新安排",
+        ...this.canReschedule(),
+        available: this.canReschedule().canReschedule,
+      },
+      {
+        action: "undoComplete",
+        label: "撤销完成",
+        ...this.canUndoComplete(),
+        available: this.canUndoComplete().canUndo,
+      },
+    ];
+
+    return actions;
+  }
+
+  /**
+   * 预览操作的结果（UI 预览）
+   */
+  previewAction(action: string): {
+    success: boolean;
+    newStatus?: string;
+    changes?: Record<string, any>;
+    error?: string;
+  } {
+    switch (action) {
+      case "start":
+        if (!this.canStart().canStart) {
+          return { success: false, error: this.canStart().reason };
+        }
+        return {
+          success: true,
+          newStatus: "inProgress",
+          changes: { actualStartTime: "当前时间" },
+        };
+
+      case "complete":
+        if (!this.canComplete().canComplete) {
+          return { success: false, error: this.canComplete().reason };
+        }
+        return {
+          success: true,
+          newStatus: "completed",
+          changes: { 
+            completedAt: "当前时间",
+            actualEndTime: "当前时间",
+            actualDuration: this._actualStartTime ? "根据开始时间计算" : undefined
+          },
+        };
+
+      case "cancel":
+        if (!this.canCancel().canCancel) {
+          return { success: false, error: this.canCancel().reason };
+        }
+        return {
+          success: true,
+          newStatus: "cancelled",
+          changes: { cancelledAt: "当前时间" },
+        };
+
+      case "undoComplete":
+        if (!this.canUndoComplete().canUndo) {
+          return { success: false, error: this.canUndoComplete().reason };
+        }
+        return {
+          success: true,
+          newStatus: "inProgress",
+          changes: { 
+            completedAt: null,
+            actualEndTime: null,
+            actualDuration: null
+          },
+        };
+
+      default:
+        return { success: false, error: `未知操作: ${action}` };
+    }
+  }
+
+  /**
+   * 检查重新安排的时间限制（UI 校验）
+   */
+  validateRescheduleTime(newScheduledTime: DateTime): {
+    valid: boolean;
+    reason?: string;
+  } {
+    if (!this.canReschedule().canReschedule) {
+      return { valid: false, reason: this.canReschedule().reason };
     }
 
-    const oldTime = this._timeConfig.scheduledTime;
-    
-    // 检查延期限制
     if (this._timeConfig.maxDelayDays) {
-      const maxAllowedTime = TimeUtils.addDays(oldTime, this._timeConfig.maxDelayDays);
+      const maxAllowedTime = TimeUtils.addDays(
+        this._timeConfig.scheduledTime,
+        this._timeConfig.maxDelayDays
+      );
       if (newScheduledTime.timestamp > maxAllowedTime.timestamp) {
-        throw new Error(`Cannot reschedule beyond ${this._timeConfig.maxDelayDays} days`);
+        return {
+          valid: false,
+          reason: `不能延期超过 ${this._timeConfig.maxDelayDays} 天`,
+        };
       }
     }
 
-    // 更新时间配置
-    this._timeConfig = {
-      ...this._timeConfig,
-      scheduledTime: newScheduledTime,
-      endTime: newEndTime || this._timeConfig.endTime
-    };
-    
-    // Reset overdue status if rescheduled
-    if (this._status === "overdue") {
-      this._status = "pending";
-    }
-
-    const now = TimeUtils.now();
-    this._lifecycle.updatedAt = now;
-    
-    this._lifecycle.events.push({
-      type: "task_rescheduled",
-      timestamp: now,
-      details: { 
-        oldTime: oldTime.isoString, 
-        newTime: newScheduledTime.isoString,
-        oldEndTime: this._timeConfig.endTime?.isoString,
-        newEndTime: newEndTime?.isoString
-      }
-    });
-
-    // 重新计算提醒时间
-    this._reminderStatus.alerts.forEach(alert => {
-      if (alert.status === "pending") {
-        alert.scheduledTime = this.calculateReminderTime(alert.alertConfig, newScheduledTime);
-      }
-    });
+    return { valid: true };
   }
 
-  // 提醒相关方法
-  triggerReminder(alertId: string): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
-    if (alert && alert.status === "pending") {
-      const now = TimeUtils.now();
-      alert.status = "triggered";
-      alert.triggeredAt = now;
-      this._reminderStatus.lastTriggeredAt = now;
-
-      this._lifecycle.events.push({
-        type: "reminder_triggered",
-        timestamp: now,
-        alertId,
-        details: { alertType: alert.alertConfig.type },
-      });
-
-      this._lifecycle.updatedAt = now;
-    }
-  }
-
-  snoozeReminder(
-    alertId: string,
-    snoozeUntil: DateTime,
-    reason?: string
-  ): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
-    if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
-      const now = TimeUtils.now();
-
-      alert.status = "snoozed";
-      alert.scheduledTime = snoozeUntil;
-      alert.snoozeHistory.push({
-        snoozedAt: now,
-        snoozeUntil,
-        reason,
-      });
-
-      this._reminderStatus.globalSnoozeCount++;
-
-      this._lifecycle.events.push({
-        type: "reminder_snoozed",
-        timestamp: now,
-        alertId,
-        details: { snoozeUntil: snoozeUntil.isoString, reason },
-      });
-
-      this._lifecycle.updatedAt = now;
-    }
-  }
-
-  dismissReminder(alertId: string): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
-    if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
-      const now = TimeUtils.now();
-      alert.status = "dismissed";
-      alert.dismissedAt = now;
-
-      this._lifecycle.events.push({
-        type: "reminder_dismissed",
-        timestamp: now,
-        alertId,
-      });
-
-      this._lifecycle.updatedAt = now;
-    }
-  }
-
-  disableReminders(): void {
-    this._reminderStatus.enabled = false;
-    const now = TimeUtils.now();
-
-    // 取消所有待定的提醒
-    this._reminderStatus.alerts.forEach((alert) => {
-      if (alert.status === "pending" || alert.status === "snoozed") {
-        this._lifecycle.events.push({
-          type: "reminder_cancelled",
-          timestamp: now,
-          alertId: alert.id,
-        });
-      }
-    });
-
-    this._lifecycle.updatedAt = now;
-  }
-
-  enableReminders(): void {
-    this._reminderStatus.enabled = true;
-    this._lifecycle.updatedAt = TimeUtils.now();
-  }
-
-  // 获取下一个待触发的提醒
+  /**
+   * 获取下一个待触发的提醒（只读查询）
+   */
   getNextReminder(): { alertId: string; scheduledTime: DateTime } | null {
     if (!this._reminderStatus.enabled) return null;
 
@@ -588,7 +464,9 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     return null;
   }
 
-  // 获取提醒统计
+  /**
+   * 获取提醒统计（只读查询）
+   */
   getReminderStats() {
     const total = this._reminderStatus.alerts.length;
     const triggered = this._reminderStatus.alerts.filter(
@@ -610,73 +488,12 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       globalSnoozeCount: this._reminderStatus.globalSnoozeCount,
     };
   }
+  // ===== 工厂方法和序列化方法 =====
+  // 注意：这些方法仅用于数据创建和转换，不包含业务逻辑
 
-  undoComplete(): void {
-    if (this._status !== "completed") {
-      throw new Error(`Cannot undo completion for task in status: ${this._status}`);
-    }
-
-    const now = TimeUtils.now();
-    this._status = "inProgress";
-    this._completedAt = undefined;
-    this._actualEndTime = undefined;
-    this._metadata.actualDuration = undefined;
-    this._lifecycle.completedAt = undefined;
-    this._lifecycle.updatedAt = now;
-    this._lifecycle.events.push({
-      type: "task_undo",
-      timestamp: now,
-      details: {
-        previousStatus: "completed",
-        newStatus: "inProgress",
-      },
-    });
-
-    if (this._keyResultLinks?.length) {
-      const event: TaskUndoCompletedEvent = {
-        eventType: "TaskUndoCompleted",
-        aggregateId: this._id,
-        occurredOn: new Date(),
-        payload: {
-          taskId: this._id,
-          keyResultLinks: this._keyResultLinks,
-          undoAt: new Date(),
-        }
-      }
-      this.addDomainEvent(event);
-    }
-  }
-
-  // ✅ 添加重置为特定状态的方法
-  resetToStatus(status: "pending" | "inProgress", reason?: string): void {
-    if (this._status === "completed" || this._status === "cancelled") {
-      const now = TimeUtils.now();
-      const previousStatus = this._status;
-      
-      this._status = status;
-      this._lifecycle.updatedAt = now;
-      
-      if (status === "pending") {
-        this._completedAt = undefined;
-        this._actualEndTime = undefined;
-        this._metadata.actualDuration = undefined;
-        this._lifecycle.completedAt = undefined;
-      }
-
-      this._lifecycle.events.push({
-        type: "task_rescheduled",
-        timestamp: now,
-        details: {
-          previousStatus,
-          newStatus: status,
-          reason
-        },
-      });
-    } else {
-      throw new Error(`Cannot reset task from status: ${this._status}`);
-    }
-  }
-  // Factory method for creating from template
+  /**
+   * 从模板创建任务实例（数据创建）
+   */
   static fromTemplate(
     instanceId: string,
     template: {
@@ -864,5 +681,62 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   static isTaskInstance(obj: any): obj is TaskInstance {
     return obj instanceof TaskInstance;
+  }
+}
+
+// === 新架构适配方法 ===
+
+/**
+ * 任务实例映射器
+ * 处理领域模型(TaskInstance)和数据传输对象(ITaskInstance)之间的转换
+ * 
+ * 设计说明：
+ * - TaskInstance：面向对象的领域模型，包含业务逻辑和行为方法
+ * - ITaskInstance：面向过程的数据传输对象，用于序列化和跨进程传输
+ */
+export class TaskInstanceMapper {
+  /**
+   * 将领域模型转换为数据传输对象
+   */
+  static toDTO(instance: TaskInstance): ITaskInstance {
+    return instance.toJSON();
+  }
+
+  /**
+   * 将数据传输对象转换为领域模型
+   */
+  static fromDTO(data: ITaskInstance): TaskInstance {
+    return TaskInstance.fromCompleteData(data);
+  }
+
+  /**
+   * 批量转换领域模型数组为 DTO 数组
+   */
+  static toDTOArray(instances: TaskInstance[]): ITaskInstance[] {
+    return instances.map(instance => this.toDTO(instance));
+  }
+
+  /**
+   * 批量转换 DTO 数组为领域模型数组
+   */
+  static fromDTOArray(dataArray: ITaskInstance[]): TaskInstance[] {
+    return dataArray.map(data => this.fromDTO(data));
+  }
+
+  /**
+   * 创建用于更新的部分 DTO 数据
+   */
+  static toPartialDTO(instance: TaskInstance): Partial<ITaskInstance> {
+    const data = instance.toJSON();
+    return {
+      id: data.id,
+      status: data.status,
+      completedAt: data.completedAt,
+      actualStartTime: data.actualStartTime,
+      actualEndTime: data.actualEndTime,
+      lifecycle: data.lifecycle,
+      metadata: data.metadata,
+      version: data.version,
+    };
   }
 }

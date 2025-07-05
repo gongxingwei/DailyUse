@@ -1,12 +1,10 @@
 import { TaskTemplate } from "../entities/taskTemplate";
-import { TaskInstance } from "../entities/taskInstance";
 import { TaskMetaTemplate } from "../entities/taskMetaTemplate";
+import { TaskInstance } from "../entities/taskInstance";
 import { taskInstanceService } from "./taskInstanceService";
 import { taskTemplateService } from "./taskTemplateService";
 import { taskMetaTemplateService } from "./taskMetaTemplateService";
 import { taskReminderService } from "./taskReminderService";
-import { useTaskStore } from "@/modules/Task/presentation/stores/taskStore";
-import { ensureTaskInstance } from "@/modules/Task/presentation/stores/taskStore";
 import type { ITaskTemplateRepository } from "../repositories/iTaskTemplateRepository";
 import type { ITaskInstanceRepository } from "../repositories/iTaskInstanceRepository";
 import { TaskTemplateValidator } from "../../validation/TaskTemplateValidator";
