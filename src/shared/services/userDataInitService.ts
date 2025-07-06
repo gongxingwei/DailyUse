@@ -6,11 +6,14 @@ import { useGoalReviewStore } from "@/modules/Goal/stores/goalReviewStore";
 import { useReminderStore } from "@/modules/Reminder/stores/reminderStore";
 import { useRepositoryStore } from "@/modules/Repository/stores/repositoryStore";
 import { useSettingStore } from "@/modules/Setting/stores/settingStore";
+import { getTaskDomainApplicationService } from "@/modules/Task/application/services/taskDomainApplicationService";
+import { taskIpcClient } from "@/modules/Task/infrastructure/ipc/taskIpcClient";
 import type { Goal, IRecord, GoalDir } from "@/modules/Goal/types/goal";
 import type { Review } from "@/modules/Goal/stores/goalReviewStore";
 import type { Reminder } from "@/modules/Reminder/stores/reminderStore";
 import type { Repository } from "@/modules/Repository/stores/repositoryStore";
 import type { AppSetting } from "@/modules/Setting/stores/settingStore";
+
 
 /**
  * 用户数据初始化服务
@@ -83,31 +86,23 @@ export class UserDataInitService {
 
   /**
    * 初始化任务模块数据
+   * 现在使用新的独立数据库，通过IPC调用主进程获取数据
    */
   private static async initTaskData(username: string): Promise<void> {
     try {
-      const taskStore = useTaskStore();
-
-      const [templatesResponse, instancesResponse] = await Promise.all([
-        UserStoreService.readWithUsername<TaskTemplate[]>(username, "taskTemplates"),
-        UserStoreService.readWithUsername<TaskInstance[]>(username, "taskInstances"),
-      ]);
-
-      taskStore.$patch({
-        taskTemplates: templatesResponse.success && templatesResponse.data ? templatesResponse.data : [],
-        taskInstances: instancesResponse.success && instancesResponse.data ? instancesResponse.data : [],
-      });
-
-      const templatesCount = templatesResponse.success && templatesResponse.data ? templatesResponse.data.length : 0;
-      const instancesCount = instancesResponse.success && instancesResponse.data ? instancesResponse.data.length : 0;
-
-      console.log(`加载了 ${templatesCount} 个任务模板和 ${instancesCount} 个任务实例`);
+      console.log(`开始初始化任务数据 (用户: ${username})...`);
+      // 通过调用服务同步任务数据
+      const taskService = getTaskDomainApplicationService();
+      await taskService.syncAllData();
+      
+    
     } catch (error) {
-      console.error("任务数据初始化失败:", error);
+      console.error("❌ 任务数据初始化失败:", error);
       const taskStore = useTaskStore();
       taskStore.$patch({
         taskTemplates: [],
         taskInstances: [],
+        metaTemplates: [],
       });
       throw error;
     }
@@ -254,6 +249,7 @@ export class UserDataInitService {
 
       taskStore.taskTemplates = [];
       taskStore.taskInstances = [];
+      taskStore.metaTemplates = [];
 
       goalDirStore.userDirs = [];
       goalDirStore.initTempDir();
@@ -273,6 +269,7 @@ export class UserDataInitService {
 
   /**
    * 保存用户数据到存储
+   * 注意：任务数据现在使用独立数据库，不再保存到文件存储中
    */
   static async saveUserData(): Promise<void> {
     try {
@@ -281,19 +278,16 @@ export class UserDataInitService {
       }
 
       const goalStore = useGoalStore();
-      const taskStore = useTaskStore();
       const goalDirStore = useGoalDirStore();
       const goalReviewStore = useGoalReviewStore();
       const reminderStore = useReminderStore();
       const repositoryStore = useRepositoryStore();
       const settingStore = useSettingStore();
 
-      // 并行保存所有数据
+      // 并行保存所有数据（不包括任务数据，因为任务数据现在使用独立数据库）
       const results = await Promise.all([
         UserStoreService.write("goals", goalStore.goals),
         UserStoreService.write("records", goalStore.records),
-        UserStoreService.write("taskTemplates", taskStore.taskTemplates),
-        UserStoreService.write("taskInstances", taskStore.taskInstances),
         UserStoreService.write("goalDirs", goalDirStore.userDirs),
         UserStoreService.write("goalReviews", goalReviewStore.reviews),
         UserStoreService.write("reminders", reminderStore.reminders),
@@ -308,7 +302,7 @@ export class UserDataInitService {
         throw new Error("部分数据保存失败");
       }
 
-      console.log(`用户数据保存成功`);
+      console.log(`用户数据保存成功 (任务数据自动保存到独立数据库)`);
     } catch (error) {
       console.error(`用户数据保存失败:`, error);
       throw error;

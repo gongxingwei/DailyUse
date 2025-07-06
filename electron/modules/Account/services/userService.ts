@@ -8,6 +8,7 @@ import type {
 import { UserModel } from "../models/userModel";
 import bcrypt from "bcrypt";
 import { v4 as uuidv4 } from "uuid"; // 使用UUID生成唯一ID
+import { initializeUserSession } from "../../../shared/initialization/appInitializer";
 /**
  * 用户服务类
  * 处理与用户账户相关的业务逻辑
@@ -141,6 +142,14 @@ export class UserService {
           success: false,
           message: "密码错误",
         };
+      }
+
+      // 登录成功，初始化用户会话
+      try {
+        await initializeUserSession(user.username);
+      } catch (error) {
+        console.error('Failed to initialize user session:', error);
+        // 不影响登录流程，只记录错误
       }
 
       // 登录成功，返回用户信息（不包含密码）

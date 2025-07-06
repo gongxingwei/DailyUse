@@ -44,7 +44,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
    * 将 TaskInstance 实体转换为数据库记录
    */
   private toDbRecord(instance: TaskInstance): any {
-    const json = instance.toJSON();
+    const json = instance.toDTO();
     return {
       id: json.id,
       username: this.getCurrentUsername(),

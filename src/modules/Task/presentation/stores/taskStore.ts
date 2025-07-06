@@ -4,7 +4,6 @@ import { TaskInstance } from "../../domain/entities/taskInstance";
 import { TaskMetaTemplate } from "../../domain/entities/taskMetaTemplate";
 import { useStoreSave } from "@/shared/composables/useStoreSave";
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-import { TaskMetaTemplateFactory } from "@/modules/Task/domain/utils/taskMetaTemplateFactory";
 let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;
 
 function getAutoSave() {
@@ -493,10 +492,26 @@ export const useTaskStore = defineStore("task", {
     },
 
     /**
+     * 清空所有任务模板
+     */
+    clearAllTaskTemplates(): void {
+      this.taskTemplates = [];
+      console.log('🧹 [TaskStore] 已清空所有任务模板');
+    },
+
+    /**
      * 批量设置任务实例（从主进程同步数据时使用）
      */
     setTaskInstances(instances: any[]): void {
       this.taskInstances = instances.map(instance => ensureTaskInstance(instance));
+    },
+
+    /**
+     * 清空所有任务实例
+     */
+    clearAllTaskInstances(): void {
+      this.taskInstances = [];
+      console.log('🧹 [TaskStore] 已清空所有任务实例');
     },
 
     /**
@@ -510,9 +525,26 @@ export const useTaskStore = defineStore("task", {
      * 批量同步所有数据（从主进程同步时使用）
      */
     syncAllData(templates: any[], instances: any[], metaTemplates: any[]): void {
-      this.setTaskTemplates(templates);
-      this.setTaskInstances(instances);
-      this.setMetaTemplates(metaTemplates);
+      console.log('🔄 [TaskStore] syncAllData 开始同步数据...');
+      console.log('📊 输入数据:', { 
+        templatesCount: templates.length, 
+        instancesCount: instances.length, 
+        metaTemplatesCount: metaTemplates.length 
+      });
+      
+      // 直接使用 $patch 批量更新，避免重复调用
+      this.$patch({
+        taskTemplates: templates.map(template => ensureTaskTemplate(template)),
+        taskInstances: instances.map(instance => ensureTaskInstance(instance)),
+        metaTemplates: metaTemplates.map(meta => ensureTaskMetaTemplate(meta)),
+      });
+      
+      console.log('✅ [TaskStore] syncAllData 同步完成');
+      console.log('📈 最终状态:', {
+        templatesCount: this.taskTemplates.length,
+        instancesCount: this.taskInstances.length,
+        metaTemplatesCount: this.metaTemplates.length
+      });
     },
 
     setTaskData(templates: TaskTemplate[], instances: TaskInstance[]) {
@@ -694,19 +726,6 @@ export const useTaskStore = defineStore("task", {
       });
       
       return autoSave.debounceSave("metaTemplates", metaTemplatesAsJson);
-    },
-
-    // ✅ 初始化默认 MetaTemplates
-    initializeDefaultMetaTemplates() {
-      if (this.metaTemplates.length === 0) {
-        this.metaTemplates = [
-          TaskMetaTemplateFactory.createEmpty(),
-          TaskMetaTemplateFactory.createHabit(),
-          TaskMetaTemplateFactory.createEvent(),
-          TaskMetaTemplateFactory.createDeadline(),
-          TaskMetaTemplateFactory.createMeeting(),
-        ];
-      }
     },
   },
 

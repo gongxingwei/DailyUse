@@ -853,13 +853,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
    * 克隆实例（用于创建副本）
    */
   clone(): TaskInstance {
-    return TaskInstance.fromCompleteData(this.toJSON());
+    return TaskInstance.fromCompleteData(this.toDTO());
   }
 
   /**
-   * 导出完整数据（用于序列化）
+   * 转换为数据传输对象
    */
-  toJSON(): ITaskInstance {
+  toDTO(): ITaskInstance {
     return {
       id: this.id,
       templateId: this._templateId,
@@ -877,6 +877,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       metadata: this._metadata,
       version: this._version,
     };
+  }
+
+  /**
+   * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   */
+  toJSON(): ITaskInstance {
+    return this.toDTO();
   }
 
   static isTaskInstance(obj: any): obj is TaskInstance {

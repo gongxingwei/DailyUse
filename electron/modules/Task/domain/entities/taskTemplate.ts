@@ -281,7 +281,6 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       data.reminderConfig || data._reminderConfig,
       {
         description: data.description || data._description,
-        keyResultLinks: data.keyResultLinks || data._keyResultLinks,
         category: data.metadata?.category || data._metadata?.category,
         tags: data.metadata?.tags || data._metadata?.tags,
         priority: data.metadata?.priority || data._metadata?.priority,
@@ -289,10 +288,11 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         estimatedDuration: data.metadata?.estimatedDuration || data._metadata?.estimatedDuration,
         location: data.metadata?.location || data._metadata?.location,
         schedulingPolicy: data.schedulingPolicy || data._schedulingPolicy,
+        keyResultLinks: data.keyResultLinks || data._keyResultLinks,
       }
     );
 
-    // 恢复完整的生命周期状态
+    // 恢复生命周期状态
     if (data.lifecycle || data._lifecycle) {
       const lifecycle = data.lifecycle || data._lifecycle;
       instance._lifecycle = {
@@ -304,15 +304,12 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       };
     }
 
-    // 恢复分析数据
+    // 恢复统计数据
     if (data.analytics || data._analytics) {
       const analytics = data.analytics || data._analytics;
       instance._analytics = {
-        totalInstances: analytics.totalInstances || 0,
-        completedInstances: analytics.completedInstances || 0,
-        averageCompletionTime: analytics.averageCompletionTime,
-        successRate: analytics.successRate || 0,
-        lastInstanceDate: analytics.lastInstanceDate || undefined,
+        ...instance._analytics,
+        ...analytics,
       };
     }
 
@@ -321,33 +318,23 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       instance._version = data.version || data._version || 1;
     }
 
-    // 恢复完整的元数据（如果有额外信息）
-    if (data.metadata || data._metadata) {
-      const metadata = data.metadata || data._metadata;
-      instance._metadata = {
-        ...instance._metadata,
-        ...metadata,
-      };
-    }
-
-    // 恢复调度策略
-    if (data.schedulingPolicy || data._schedulingPolicy) {
-      const policy = data.schedulingPolicy || data._schedulingPolicy;
-      instance._schedulingPolicy = {
-        ...instance._schedulingPolicy,
-        ...policy,
-      };
-    }
-
     return instance;
   }
 
   /**
-   * 从JSON数据创建 TaskTemplate 实例（标准反序列化方法）
-   * 用于从序列化数据、持久化数据或IPC传输的数据恢复领域对象
+   * 从JSON数据创建 TaskTemplate 实例（用于反序列化）
+   * 保留所有原始状态信息
    */
-  static fromJSON(data: any): TaskTemplate {
+  static fromDTO(data: ITaskTemplate): TaskTemplate {
     return TaskTemplate.fromCompleteData(data);
+  }
+
+  /**
+   * 保持向后兼容性
+   * @deprecated 请使用 fromDTO() 方法
+   */
+  static fromDto(data: ITaskTemplate): TaskTemplate {
+    return TaskTemplate.fromDTO(data);
   }
 
   isTaskTemplate(): this is TaskTemplate {
@@ -357,25 +344,105 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 克隆实例（用于创建副本）
    */
   clone(): TaskTemplate {
-    return TaskTemplate.fromCompleteData(this.toJSON());
+    return TaskTemplate.fromCompleteData(this.toDTO());
+  }
+
+  /**
+   * 转换为数据传输对象
+   */
+  toDTO(): ITaskTemplate {
+    console.log('🔄 [TaskTemplate] 开始转换为DTO');
+    
+    try {
+      const dto = {
+        id: this.id,
+        title: this._title,
+        description: this._description,
+        timeConfig: this._timeConfig,
+        reminderConfig: this._reminderConfig,
+        schedulingPolicy: this._schedulingPolicy,
+        metadata: this._metadata,
+        lifecycle: this._lifecycle,
+        analytics: this._analytics,
+        keyResultLinks: this._keyResultLinks,
+        version: this._version,
+      };
+      
+      console.log('✅ [TaskTemplate] DTO 对象创建成功');
+      console.log('🔍 [TaskTemplate] DTO 属性检查:');
+      for (const key in dto) {
+        const value = (dto as any)[key];
+        console.log(`  - ${key}:`, typeof value);
+        
+        // 检查每个属性是否可序列化
+        try {
+          JSON.stringify(value);
+          console.log(`    ✅ ${key} 可序列化`);
+        } catch (err) {
+          console.error(`    ❌ ${key} 不可序列化:`, err);
+          console.error(`    ❌ ${key} 值:`, value);
+        }
+      }
+      
+      // 验证整个DTO对象
+      try {
+        const serialized = JSON.stringify(dto);
+        console.log('✅ [TaskTemplate] 完整DTO对象可序列化，字符串长度:', serialized.length);
+      } catch (error) {
+        console.error('❌ [TaskTemplate] 完整DTO对象不可序列化:', error);
+        
+        // 尝试创建一个更安全的版本
+        const safeDto = {
+          id: String(this.id || ''),
+          title: String(this._title || ''),
+          description: String(this._description || ''),
+          timeConfig: this._timeConfig ? JSON.parse(JSON.stringify(this._timeConfig)) : null,
+          reminderConfig: this._reminderConfig ? JSON.parse(JSON.stringify(this._reminderConfig)) : null,
+          schedulingPolicy: this._schedulingPolicy ? JSON.parse(JSON.stringify(this._schedulingPolicy)) : {
+            allowReschedule: true,
+            maxDelayDays: 3,
+            skipWeekends: false,
+            skipHolidays: false,
+            workingHoursOnly: false
+          },
+          metadata: this._metadata ? JSON.parse(JSON.stringify(this._metadata)) : {},
+          lifecycle: this._lifecycle ? JSON.parse(JSON.stringify(this._lifecycle)) : {},
+          analytics: this._analytics ? JSON.parse(JSON.stringify(this._analytics)) : {},
+          keyResultLinks: this._keyResultLinks ? JSON.parse(JSON.stringify(this._keyResultLinks)) : [],
+          version: Number(this._version || 1),
+        };
+        
+        console.log('🔄 [TaskTemplate] 创建安全版本DTO');
+        try {
+          JSON.stringify(safeDto);
+          console.log('✅ [TaskTemplate] 安全版本DTO可序列化');
+          return safeDto;
+        } catch (safeError) {
+          console.error('❌ [TaskTemplate] 连安全版本DTO也不可序列化:', safeError);
+          throw new Error('Unable to create serializable DTO');
+        }
+      }
+      
+      return dto;
+    } catch (error) {
+      console.error('❌ [TaskTemplate] toDTO()过程中发生错误:', error);
+      throw error;
+    }
   }
 
   /**
    * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
    */
   toJSON(): ITaskTemplate {
-    return {
-      id: this.id,
-      title: this._title,
-      description: this._description,
-      timeConfig: this._timeConfig,
-      reminderConfig: this._reminderConfig,
-      schedulingPolicy: this._schedulingPolicy,
-      metadata: this._metadata,
-      lifecycle: this._lifecycle,
-      analytics: this._analytics,
-      keyResultLinks: this._keyResultLinks,
-      version: this._version,
-    };
+    return this.toDTO();
+  }
+
+  /**
+   * 保持向后兼容性
+   * @deprecated 请使用 toDTO() 方法
+   */
+  toDto(): ITaskTemplate {
+    return this.toDTO();
   }
 }

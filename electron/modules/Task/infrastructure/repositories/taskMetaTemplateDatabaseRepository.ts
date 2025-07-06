@@ -43,7 +43,7 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
    * 将 TaskMetaTemplate 实体转换为数据库记录
    */
   private toDbRecord(metaTemplate: TaskMetaTemplate): any {
-    const json = metaTemplate.toJSON();
+    const json = metaTemplate.toDTO();
     return {
       id: json.id,
       username: this.getCurrentUsername(),

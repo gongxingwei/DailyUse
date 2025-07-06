@@ -64,8 +64,66 @@ export class TaskIpcHandler {
     });
 
     // 创建任务模板
+    // 流程第2步：主进程 IPC 处理器 - 接收渲染进程数据并调用应用服务
     ipcMain.handle('task:templates:create', async (_event, dto: ITaskTemplate) => {
-      return await this.taskService.createTaskTemplate(dto);
+      console.log('🔄 [主进程-步骤2] IPC处理器：接收到创建任务模板请求');
+      console.log('📋 [主进程-步骤2] 接收到的DTO数据类型:', typeof dto);
+      console.log('📋 [主进程-步骤2] 接收到的DTO数据:', dto);
+      
+      // 验证接收到的数据是否可序列化
+      try {
+        const serializedCheck = JSON.stringify(dto);
+        console.log('✅ [主进程-步骤2] 接收到的DTO数据可序列化，字符串长度:', serializedCheck.length);
+      } catch (error) {
+        console.error('❌ [主进程-步骤2] 接收到的DTO数据不可序列化:', error);
+        return { success: false, message: 'Received data is not serializable' };
+      }
+      
+      // 检查必要属性
+      console.log('🔍 [主进程-步骤2] DTO 属性检查:');
+      console.log('  - ID:', dto?.id, typeof dto?.id);
+      console.log('  - Title:', dto?.title, typeof dto?.title);
+      console.log('  - TimeConfig:', dto?.timeConfig, typeof dto?.timeConfig);
+      console.log('  - ReminderConfig:', dto?.reminderConfig, typeof dto?.reminderConfig);
+      
+      try {
+        console.log('🔄 [主进程-步骤2] 准备调用应用服务');
+        const result = await this.taskService.createTaskTemplate(dto);
+        console.log('✅ [主进程-步骤2] 应用服务调用成功');
+        console.log('🔍 [主进程-步骤2] 应用服务返回结果类型:', typeof result);
+        console.log('🔍 [主进程-步骤2] 应用服务返回结果:', result);
+        
+        // 验证返回结果是否可序列化
+        try {
+          const serializedResult = JSON.stringify(result);
+          console.log('✅ [主进程-步骤2] 返回结果可序列化，字符串长度:', serializedResult.length);
+        } catch (error) {
+          console.error('❌ [主进程-步骤2] 返回结果不可序列化:', error);
+          console.error('❌ [主进程-步骤2] 问题可能出现在应用服务的返回值中');
+          
+          // 尝试修复序列化问题
+          if (result && typeof result === 'object') {
+            try {
+              const safeResult = JSON.parse(JSON.stringify(result));
+              console.log('🔄 [主进程-步骤2] 使用深拷贝修复序列化问题');
+              return safeResult;
+            } catch (deepError) {
+              console.error('❌ [主进程-步骤2] 深拷贝也无法修复序列化问题:', deepError);
+              return { success: false, message: 'Result data contains non-serializable content' };
+            }
+          }
+        }
+        
+        console.log('✅ [主进程-步骤2] 准备返回结果给渲染进程');
+        return result;
+      } catch (error) {
+        console.error('❌ [主进程-步骤2] 应用服务调用失败:', error);
+        console.error('❌ [主进程-步骤2] 错误堆栈:', error instanceof Error ? error.stack : 'No stack trace');
+        return { 
+          success: false, 
+          message: `IPC handler error: ${error instanceof Error ? error.message : '未知错误'}` 
+        };
+      }
     });
 
     // 更新任务模板
@@ -76,6 +134,11 @@ export class TaskIpcHandler {
     // 删除任务模板
     ipcMain.handle('task:templates:delete', async (_event, id: string) => {
       return await this.taskService.deleteTaskTemplate(id);
+    });
+
+    // 删除所有任务模板
+    ipcMain.handle('task:templates:delete-all', async () => {
+      return await this.taskService.deleteAllTaskTemplates();
     });
 
     // 激活任务模板

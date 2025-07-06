@@ -1,10 +1,11 @@
 import { ref } from "vue";
-import { taskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useTaskStore } from "../stores/taskStore";
 import type { TaskTemplate } from "../../domain/entities/taskTemplate";
 import type { TaskInstance } from "../../domain/entities/taskInstance";
 
 // 使用新架构的服务
+const getTaskService = () => getTaskDomainApplicationService();
 
 interface SnackbarConfig {
   show: boolean;
@@ -51,8 +52,9 @@ export function useTaskService() {
     showTemplateSelectionDialog.value = false;
 
     try {
-      // 使用新架构：从元模板创建完整的任务模板
-      const newTaskTemplate = await taskDomainApplicationService.createTaskTemplateFromMetaTemplate(
+      // 使用修复后的架构：从元模板创建任务模板但不保存
+      // 注意：这个方法现在只创建模板对象，不会保存到数据库
+      const newTaskTemplate = await getTaskService().createTaskTemplateFromMetaTemplate(
         metaTemplateId,
         '新任务模板', // 默认标题，用户可以在编辑器中修改
         {
@@ -62,17 +64,17 @@ export function useTaskService() {
         }
       );
       
-      console.log('✓ 从元模板创建任务模板成功:', newTaskTemplate.title);
+      console.log('✓ 从元模板创建任务模板成功（待保存）:', newTaskTemplate.title);
       
-      // 将创建的完整任务模板传递给编辑器
+      // 将创建的模板传递给编辑器
       taskStore.updateTaskTemplateBeingEdited(newTaskTemplate);
-      isEditMode.value = false; // 这是新创建的模板，不是编辑模式
+      isEditMode.value = false; // 这是新创建的模板，需要保存
 
       // 显示编辑对话框，让用户进一步编辑
       showEditTaskTemplateDialog.value = true;
       
       showSnackbar(
-        `成功创建任务模板 "${newTaskTemplate.title}"，请继续编辑`,
+        `成功创建任务模板 "${newTaskTemplate.title}"，请编辑并保存`,
         'success'
       );
     } catch (error) {
@@ -93,7 +95,7 @@ export function useTaskService() {
   const startEditTaskTemplate = async (templateId: string) => {
     try {
       // 使用新架构的服务获取任务模板
-      const template = await taskDomainApplicationService.getTaskTemplate(templateId);
+      const template = await getTaskService().getTaskTemplate(templateId);
       
       if (template) {
         // 将领域对象转换为 store 需要的格式（深拷贝以避免修改原始数据）
@@ -125,11 +127,13 @@ export function useTaskService() {
       
       let result;
       if (isEditMode.value && taskTemplateBeingEdited.id) {
-        // 更新现有模板
-        result = await taskDomainApplicationService.updateTaskTemplate(taskTemplateBeingEdited);
+        // 更新现有模板 - 使用深度序列化确保数据可传输
+        const templateDto = JSON.parse(JSON.stringify(taskTemplateBeingEdited.toDTO()));
+        result = await getTaskService().updateTaskTemplate(templateDto);
       } else {
-        // 创建新模板
-        result = await taskDomainApplicationService.createTaskTemplate(taskTemplateBeingEdited);
+        // 创建新模板 - 使用深度序列化确保数据可传输
+        const templateDto = JSON.parse(JSON.stringify(taskTemplateBeingEdited.toDTO()));
+        result = await getTaskService().createTaskTemplate(templateDto);
       }
 
       if (result.success && result.template) {
@@ -166,7 +170,7 @@ export function useTaskService() {
   // 删除任务模板
   const handleDeleteTaskTemplate = async (template: TaskTemplate) => {
     try {
-      const result = await taskDomainApplicationService.deleteTaskTemplate(template.id);
+      const result = await getTaskService().deleteTaskTemplate(template.id);
       
       if (result.success) {
         showSnackbar(result.message || '删除任务模板成功', 'success', 5000);
@@ -189,7 +193,7 @@ export function useTaskService() {
   // 删除任务实例
   const handleDeleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.deleteTaskInstance(taskId);
+      const result = await getTaskService().deleteTaskInstance(taskId);
       
       if (result.success) {
         showSnackbar(
@@ -215,7 +219,7 @@ export function useTaskService() {
 
   const handlePauseTaskTemplate = async (templateId: string) => {
     try {
-      const result = await taskDomainApplicationService.pauseTaskTemplate(templateId);
+      const result = await getTaskService().pauseTaskTemplate(templateId);
       
       if (result.success) {
         showSnackbar(`任务模板已暂停`, 'success', 4000);
@@ -233,7 +237,7 @@ export function useTaskService() {
 
   const handleResumeTaskTemplate = async (templateId: string) => {
     try {
-      const result = await taskDomainApplicationService.resumeTaskTemplate(templateId);
+      const result = await getTaskService().resumeTaskTemplate(templateId);
       
       if (result.success) {
         showSnackbar(`任务模板已恢复`, 'success', 4000);
@@ -251,7 +255,7 @@ export function useTaskService() {
 
   const handleCompleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.completeTaskInstance(taskId);
+      const result = await getTaskService().completeTaskInstance(taskId);
       
       if (result.success) {
         showSnackbar(
@@ -277,7 +281,7 @@ export function useTaskService() {
 
   const handleUndoCompleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.undoCompleteTaskInstance(taskId);
+      const result = await getTaskService().undoCompleteTaskInstance(taskId);
       
       if (result.success) {
         showSnackbar(
@@ -304,7 +308,7 @@ export function useTaskService() {
   // 获取所有元模板
   const getMetaTemplates = async () => {
     try {
-      const metaTemplates = await taskDomainApplicationService.getAllMetaTemplates();
+      const metaTemplates = await getTaskService().getAllMetaTemplates();
       return metaTemplates;
     } catch (error) {
       console.error('获取元模板失败:', error);
@@ -319,7 +323,7 @@ export function useTaskService() {
   // 获取所有任务模板
   const getTaskTemplates = async () => {
     try {
-      const templates = await taskDomainApplicationService.getAllTaskTemplates();
+      const templates = await getTaskService().getAllTaskTemplates();
       return templates;
     } catch (error) {
       console.error('获取任务模板失败:', error);
@@ -334,7 +338,7 @@ export function useTaskService() {
   // 获取今日任务实例
   const getTodayTaskInstances = async () => {
     try {
-      const instances = await taskDomainApplicationService.getTodayTasks();
+      const instances = await getTaskService().getTodayTasks();
       return instances;
     } catch (error) {
       console.error('获取今日任务失败:', error);
@@ -365,7 +369,7 @@ export function useTaskService() {
   const batchCompleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => taskDomainApplicationService.completeTaskInstance(id))
+        taskIds.map(id => getTaskService().completeTaskInstance(id))
       );
       
       const successCount = results.filter(r => r.success).length;
@@ -398,7 +402,7 @@ export function useTaskService() {
   const batchDeleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => taskDomainApplicationService.deleteTaskInstance(id))
+        taskIds.map(id => getTaskService().deleteTaskInstance(id))
       );
       
       const successCount = results.filter((r: any) => r.success).length;
@@ -431,13 +435,13 @@ export function useTaskService() {
   const searchTasks = async (query: string, type: 'template' | 'instance' = 'instance') => {
     try {
       if (type === 'template') {
-        const templates = await taskDomainApplicationService.getAllTaskTemplates();
+        const templates = await getTaskService().getAllTaskTemplates();
         return templates.filter(t => 
           t.title.toLowerCase().includes(query.toLowerCase()) ||
           (t.description && t.description.toLowerCase().includes(query.toLowerCase()))
         );
       } else {
-        const instances = await taskDomainApplicationService.getTodayTasks();
+        const instances = await getTaskService().getTodayTasks();
         return instances.filter((i: TaskInstance) => 
           i.title.toLowerCase().includes(query.toLowerCase()) ||
           (i.description && i.description.toLowerCase().includes(query.toLowerCase()))

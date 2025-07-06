@@ -1,3 +1,5 @@
+import { generateUUID } from "../utils/uuid";
+
 export abstract class Entity {
   protected constructor(protected readonly _id: string) {}
 
@@ -13,7 +15,6 @@ export abstract class Entity {
   }
 
   protected static generateId(): string {
-    // 简单的 ID 生成，您也可以使用 uuid
-    return Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+    return generateUUID();
   }
 }

@@ -1,6 +1,6 @@
 import { ref, computed, onMounted } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import { taskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
+import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 import { useNotification } from './useNotification';
 import { useTaskInstance } from './useTaskInstance';
 import { useTaskTemplate } from './useTaskTemplate';
@@ -101,10 +101,11 @@ export function useTaskManagement() {
    */
   const loadAllData = async () => {
     try {
+      const taskService = getTaskDomainApplicationService();
       const [instances, templates, metaTemplates] = await Promise.all([
-        taskDomainApplicationService.getAllTaskInstances(),
-        taskDomainApplicationService.getAllTaskTemplates(),
-        taskDomainApplicationService.getAllMetaTemplates()
+        taskService.getAllTaskInstances(),
+        taskService.getAllTaskTemplates(),
+        taskService.getAllMetaTemplates()
       ]);
 
       // 同步到 store

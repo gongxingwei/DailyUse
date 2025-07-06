@@ -478,14 +478,15 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 克隆实例（用于创建副本）
    */
   clone(): TaskTemplate {
-    return TaskTemplate.fromCompleteData(this.toJSON());
+    return TaskTemplate.fromCompleteData(this.toDTO());
   }
 
   /**
-   * 导出完整数据（用于序列化）
+   * 转换为数据传输对象
+   * 使用 JSON.parse(JSON.stringify()) 确保返回纯净的 JSON 对象，移除所有 Proxy 和不可序列化内容
    */
-  toJSON(): any {
-    return {
+  toDTO(): ITaskTemplate {
+    const rawData = {
       id: this.id,
       title: this._title,
       description: this._description,
@@ -498,6 +499,39 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       keyResultLinks: this._keyResultLinks,
       version: this._version,
     };
+
+    // 使用深度序列化确保返回纯净的 JSON 对象，移除 Proxy 等不可序列化内容
+    try {
+      return JSON.parse(JSON.stringify(rawData));
+    } catch (error) {
+      console.error('❌ [TaskTemplate.toDTO] 序列化失败:', error);
+      // 如果序列化失败，返回基本信息
+      return {
+        id: this.id,
+        title: this._title,
+        description: this._description,
+        timeConfig: JSON.parse(JSON.stringify(this._timeConfig)),
+        reminderConfig: JSON.parse(JSON.stringify(this._reminderConfig)),
+        schedulingPolicy: JSON.parse(JSON.stringify(this._schedulingPolicy)),
+        metadata: JSON.parse(JSON.stringify(this._metadata)),
+        lifecycle: JSON.parse(JSON.stringify(this._lifecycle)),
+        analytics: JSON.parse(JSON.stringify(this._analytics)),
+        keyResultLinks: this._keyResultLinks ? JSON.parse(JSON.stringify(this._keyResultLinks)) : undefined,
+        version: this._version,
+      };
+    }
+  }
+
+  /**
+   * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   */
+  toJSON(): ITaskTemplate {
+    return this.toDTO();
+  }
+
+  static fromJSON(data: { id: string; title: string; description?: string; timeConfig: TaskTimeConfig; reminderConfig: TaskReminderConfig; schedulingPolicy: ITaskTemplate["schedulingPolicy"]; metadata: ITaskTemplate["metadata"]; lifecycle: ITaskTemplate["lifecycle"]; analytics: ITaskTemplate["analytics"]; keyResultLinks?: KeyResultLink[]; version: number; }): ITaskTemplate {
+    return TaskTemplate.fromCompleteData(data);
   }
 }
 
@@ -516,7 +550,7 @@ export class TaskTemplateMapper {
    * 将领域模型转换为数据传输对象
    */
   static toDTO(template: TaskTemplate): ITaskTemplate {
-    return template.toJSON();
+    return template.toDTO();
   }
 
   /**
@@ -544,7 +578,7 @@ export class TaskTemplateMapper {
    * 创建用于更新的部分 DTO 数据
    */
   static toPartialDTO(template: TaskTemplate): Partial<ITaskTemplate> {
-    const data = template.toJSON();
+    const data = template.toDTO();
     return {
       id: data.id,
       lifecycle: data.lifecycle,

@@ -1,6 +1,5 @@
 import { TaskDomainService } from "../domain/services/taskDomainService";
 import { TaskContainer } from "../infrastructure/di/taskContainer";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import type { ITaskTemplateRepository } from "../domain/repositories/iTaskTemplateRepository";
 import type { ITaskInstanceRepository } from "../domain/repositories/iTaskInstanceRepository";
 import type { ITaskMetaTemplateRepository } from "../domain/repositories/iTaskMetaTemplateRepository";
@@ -11,9 +10,7 @@ import { TaskTemplateValidator } from "../validation/TaskTemplateValidator";
 import type { 
   ITaskTemplate,
   ITaskInstance,
-  ITaskMetaTemplate,
-  TaskTimeConfig,
-  TaskReminderConfig
+  ITaskMetaTemplate
 } from "../domain/types/task";
 import type { 
   TaskResponse,
@@ -54,7 +51,7 @@ export class MainTaskApplicationService {
 
     // 从渲染进程的实体创建主进程的实体
     // 使用 JSON 序列化/反序列化来实现深拷贝和类型转换
-    const json = template.toJSON ? template.toJSON() : template;
+    const json = template.toDTO ? template.toDTO() : (template.toJSON ? template.toJSON() : template);
     
     // 使用正确的构造函数参数
     return new TaskMetaTemplate(
@@ -75,26 +72,32 @@ export class MainTaskApplicationService {
 
   /**
    * 将 TaskTemplate 转换为接口数据
-   * 直接使用领域对象的 toJSON 方法，无需额外序列化
+   * 直接使用领域对象的 toDTO 方法，并确保数据可序列化
    */
   private taskTemplateToData(template: TaskTemplate): ITaskTemplate {
-    return template.toJSON();
+    const dto = template.toDTO();
+    // 确保返回的数据是可序列化的纯对象
+    return JSON.parse(JSON.stringify(dto));
   }
 
   /**
    * 将 TaskInstance 转换为接口数据
-   * 直接使用领域对象的 toJSON 方法，无需额外序列化
+   * 直接使用领域对象的 toDTO 方法，并确保数据可序列化
    */
   private taskInstanceToData(instance: TaskInstance): ITaskInstance {
-    return instance.toJSON();
+    const dto = instance.toDTO();
+    // 确保返回的数据是可序列化的纯对象
+    return JSON.parse(JSON.stringify(dto));
   }
 
   /**
    * 将 TaskMetaTemplate 转换为接口数据
-   * 直接使用领域对象的 toJSON 方法，无需额外序列化
+   * 直接使用领域对象的 toDTO 方法，并确保数据可序列化
    */
   private taskMetaTemplateToData(metaTemplate: TaskMetaTemplate): ITaskMetaTemplate {
-    return metaTemplate.toJSON();
+    const dto = metaTemplate.toDTO();
+    // 确保返回的数据是可序列化的纯对象
+    return JSON.parse(JSON.stringify(dto));
   }
 
   // === MetaTemplate 相关方法 ===
@@ -129,6 +132,7 @@ export class MainTaskApplicationService {
         return { success: false, message: `Meta template with id ${id} not found` };
       }
       const adaptedTemplate = this.adaptTaskMetaTemplate(response.data);
+      console.log(this.taskMetaTemplateToData(adaptedTemplate))
       return { success: true, data: this.taskMetaTemplateToData(adaptedTemplate) };
     } catch (error) {
       return { 
@@ -218,25 +222,73 @@ export class MainTaskApplicationService {
 
   /**
    * 创建任务模板
+   * 流程第3步：主进程应用服务 - 将DTO转换为领域实体并保存
+   * 自动激活模板，并创建任务实例和提醒
    */
   async createTaskTemplate(dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+    console.log('🔄 [主进程-步骤3] 应用服务：开始创建任务模板');
+    console.log('📋 [主进程-步骤3] 接收到的DTO数据类型:', typeof dto);
+    console.log('📋 [主进程-步骤3] 接收到的DTO数据:', dto);
+    
     try {
       // 这里需要将 DTO 转换为领域实体
-      // 由于原始构造函数的复杂性，这里简化处理
-      const template = TaskTemplate.fromJSON(dto);
+      console.log('🔄 [主进程-步骤3] 开始将DTO转换为领域实体');
+      const template = TaskTemplate.fromDTO(dto);
+      console.log('✅ [主进程-步骤3] DTO转换为领域实体成功:', template);
       
+      // 验证任务模板
+      console.log('🔄 [主进程-步骤3] 开始验证任务模板');
       const validation = TaskTemplateValidator.validate(template);
       if (!validation.isValid) {
+        console.error('❌ [主进程-步骤3] 任务模板验证失败:', validation.errors);
         return { success: false, message: validation.errors.join(", ") };
       }
+      console.log('✅ [主进程-步骤3] 任务模板验证通过');
 
+      // 自动激活模板（跳过草稿状态）
+      console.log('🔄 [主进程-步骤3] 自动激活模板');
+      template.activate();
+      console.log('✅ [主进程-步骤3] 模板已激活');
+
+      // 保存到数据库
+      console.log('🔄 [主进程-步骤3] 开始保存到数据库');
       const response = await this.taskTemplateRepo.save(template);
       if (!response.success) {
+        console.error('❌ [主进程-步骤3] 数据库保存失败:', response.message);
         return { success: false, message: response.message };
       }
+      console.log('✅ [主进程-步骤3] 数据库保存成功');
       
-      return { success: true, data: this.taskTemplateToData(template) };
+      // 创建任务实例和提醒
+      console.log('🔄 [主进程-步骤3] 开始创建任务实例和提醒');
+      try {
+        const instances = await this.taskDomainService.generateInstancesWithBusinessRules(
+          template,
+          this.taskInstanceRepo,
+          { maxInstances: 10 } // 最多生成10个实例
+        );
+        
+        // 保存生成的实例
+        for (const instance of instances) {
+          const saveInstanceResponse = await this.taskInstanceRepo.save(instance);
+          if (!saveInstanceResponse.success) {
+            console.warn('⚠️ [主进程-步骤3] 保存任务实例失败:', saveInstanceResponse.message);
+          }
+        }
+        
+        console.log(`✅ [主进程-步骤3] 成功创建 ${instances.length} 个任务实例`);
+      } catch (scheduleError) {
+        console.warn('⚠️ [主进程-步骤3] 创建任务实例时发生错误，但不影响模板创建:', scheduleError);
+      }
+      
+      // 转换为DTO并返回
+      console.log('🔄 [主进程-步骤3] 开始将结果转换为DTO');
+      const resultData = this.taskTemplateToData(template);
+      console.log('✅ [主进程-步骤3] 结果转换完成，准备返回:', resultData);
+      
+      return { success: true, data: resultData };
     } catch (error) {
+      console.error('❌ [主进程-步骤3] 创建任务模板过程中发生错误:', error);
       return { 
         success: false, 
         message: `Failed to create task template: ${error instanceof Error ? error.message : '未知错误'}` 
@@ -309,6 +361,85 @@ export class MainTaskApplicationService {
       return { 
         success: false, 
         message: `Failed to delete task template: ${error instanceof Error ? error.message : '未知错误'}` 
+      };
+    }
+  }
+
+  /**
+   * 删除所有任务模板
+   * 批量删除所有任务模板及其关联的任务实例
+   */
+  async deleteAllTaskTemplates(): Promise<TaskResponse<void>> {
+    try {
+      console.log('🔄 [主进程] 开始删除所有任务模板');
+      
+      // 获取所有任务模板
+      const allTemplatesResponse = await this.taskTemplateRepo.findAll();
+      if (!allTemplatesResponse.success) {
+        return { success: false, message: allTemplatesResponse.message };
+      }
+
+      const templates = allTemplatesResponse.data || [];
+      console.log(`📋 [主进程] 找到 ${templates.length} 个任务模板需要删除`);
+
+      if (templates.length === 0) {
+        return { success: true, message: "No task templates to delete" };
+      }
+
+      let successCount = 0;
+      let errorCount = 0;
+      const errors: string[] = [];
+
+      // 逐个删除任务模板（包括其关联的任务实例）
+      for (const template of templates) {
+        try {
+          const deleteResponse = await this.taskDomainService.deleteTaskTemplate(
+            template,
+            this.taskTemplateRepo,
+            this.taskInstanceRepo,
+            true // 同时删除关联的任务实例
+          );
+          
+          if (deleteResponse.success) {
+            successCount++;
+            console.log(`✅ [主进程] 成功删除任务模板: ${template.title}`);
+          } else {
+            errorCount++;
+            errors.push(`Failed to delete template "${template.title}": ${deleteResponse.message}`);
+            console.error(`❌ [主进程] 删除任务模板失败: ${template.title}`, deleteResponse.message);
+          }
+        } catch (error) {
+          errorCount++;
+          const errorMessage = error instanceof Error ? error.message : '未知错误';
+          errors.push(`Error deleting template "${template.title}": ${errorMessage}`);
+          console.error(`❌ [主进程] 删除任务模板时发生异常: ${template.title}`, error);
+        }
+      }
+
+      console.log(`📊 [主进程] 删除操作完成 - 成功: ${successCount}, 失败: ${errorCount}`);
+
+      // 根据结果返回相应的响应
+      if (errorCount === 0) {
+        return { 
+          success: true, 
+          message: `Successfully deleted all ${successCount} task templates` 
+        };
+      } else if (successCount === 0) {
+        return { 
+          success: false, 
+          message: `Failed to delete all task templates: ${errors.join('; ')}` 
+        };
+      } else {
+        return { 
+          success: true, 
+          message: `Partially completed: ${successCount} templates deleted successfully, ${errorCount} failed. Errors: ${errors.join('; ')}` 
+        };
+      }
+    } catch (error) {
+      console.error('❌ [主进程] 删除所有任务模板时发生严重错误:', error);
+      return { 
+        success: false, 
+        message: `Failed to delete all task templates: ${error instanceof Error ? error.message : '未知错误'}` 
       };
     }
   }
@@ -641,7 +772,7 @@ export class MainTaskApplicationService {
 
   /**
    * 从元模板创建任务模板
-   * 新架构：主进程直接返回完整的任务模板对象，渲染进程只需要修改和展示
+   * 修复后架构：主进程只创建模板对象但不保存，等用户编辑完成后再保存
    */
   async createTaskTemplateFromMetaTemplate(
     metaTemplateId: string, 
@@ -670,13 +801,11 @@ export class MainTaskApplicationService {
         return { success: false, message: validation.errors.join(", ") };
       }
 
-      // 保存任务模板
-      const saveResponse = await this.taskTemplateRepo.save(taskTemplate);
-      if (!saveResponse.success) {
-        return { success: false, message: saveResponse.message };
-      }
+      // 注意：这里不保存到数据库，只返回创建的模板对象
+      // 等用户在前端编辑完成后，再通过 createTaskTemplate 保存
+      console.log('✅ [主进程] 从元模板创建任务模板成功（未保存）:', taskTemplate.title);
       
-      return { success: true, data: this.taskTemplateToData(taskTemplate) };
+      return { success: true, message: 'Task template created from meta template (not saved yet)', data: this.taskTemplateToData(taskTemplate) };
     } catch (error) {
       return { 
         success: false, 
@@ -685,42 +814,17 @@ export class MainTaskApplicationService {
     }
   }
 
-  /**
-   * 生成任务模板ID
-   */
-  private generateId(): string {
-    return `task-template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
-   * 获取默认时间配置
-   */
-  private getDefaultTimeConfig(): TaskTimeConfig {
-    return {
-      type: 'timed',
-      baseTime: {
-        start: TimeUtils.now(),
-        end: TimeUtils.addMinutes(TimeUtils.now(), 60),
-        duration: 60
-      },
-      recurrence: { type: 'none' },
-      timezone: 'UTC',
-      dstHandling: 'auto'
-    };
-  }
-
-  /**
-   * 获取默认提醒配置
-   */
-  private getDefaultReminderConfig(): TaskReminderConfig {
-    return {
-      enabled: false,
-      alerts: [],
-      snooze: {
-        enabled: false,
-        interval: 5,
-        maxCount: 1
+  async initializeSystemTemplates(): Promise<TResponse<void>> {
+      try {
+        const result = await this.taskDomainService.initializeSystemTemplates(
+          this.taskMetaTemplateRepo,
+        );
+        return result;
+      } catch (error) {
+        return { 
+          success: false, 
+          message: `Failed to initialize system templates: ${error instanceof Error ? error.message : '未知错误'}` 
+        };
       }
-    };
-  }
+    }
 }

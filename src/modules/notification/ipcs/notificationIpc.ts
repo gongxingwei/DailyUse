@@ -1,11 +1,12 @@
 import { TResponse } from '@/shared/types/response';
 import { NotificationWindowOptions } from '../types/notification';
+import { serializeForIpc } from '@/shared/utils/ipcSerialization';
 
 export class NotificationIpc {
     public static showNotification(
         options: NotificationWindowOptions 
     ): Promise<TResponse<void>> {
-        return window.shared.ipcRenderer.invoke('show-notification', options);
+        return window.shared.ipcRenderer.invoke('show-notification', serializeForIpc(options));
     }
 
     public static closeNotification(id: string): Promise<TResponse<void>> {
@@ -16,7 +17,7 @@ export class NotificationIpc {
         id: string,
         action: { text: string; type: string }
     ): Promise<TResponse<void>> {
-        return window.shared.ipcRenderer.invoke('notification-action', id, action);
+        return window.shared.ipcRenderer.invoke('notification-action', id, serializeForIpc(action));
     } 
 
     public static onNotificationAction(

@@ -653,13 +653,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
    * 克隆实例（用于创建副本）
    */
   clone(): TaskInstance {
-    return TaskInstance.fromCompleteData(this.toJSON());
+    return TaskInstance.fromCompleteData(this.toDTO());
   }
 
   /**
-   * 导出完整数据（用于序列化）
+   * 转换为数据传输对象
    */
-  toJSON(): any {
+  toDTO(): ITaskInstance {
     return {
       id: this.id,
       templateId: this._templateId,
@@ -677,6 +677,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       metadata: this._metadata,
       version: this._version,
     };
+  }
+
+  /**
+   * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   */
+  toJSON(): ITaskInstance {
+    return this.toDTO();
   }
 
   static isTaskInstance(obj: any): obj is TaskInstance {
@@ -699,7 +707,7 @@ export class TaskInstanceMapper {
    * 将领域模型转换为数据传输对象
    */
   static toDTO(instance: TaskInstance): ITaskInstance {
-    return instance.toJSON();
+    return instance.toDTO();
   }
 
   /**
@@ -727,7 +735,7 @@ export class TaskInstanceMapper {
    * 创建用于更新的部分 DTO 数据
    */
   static toPartialDTO(instance: TaskInstance): Partial<ITaskInstance> {
-    const data = instance.toJSON();
+    const data = instance.toDTO();
     return {
       id: data.id,
       status: data.status,

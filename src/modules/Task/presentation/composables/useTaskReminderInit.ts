@@ -2,7 +2,7 @@ import { onMounted, onUnmounted, watch } from "vue";
 import { scheduleService } from "@/shared/services/scheduleService";
 import { notificationService } from "@/modules/notification/services/notificationService";
 import { useTaskStore } from "@/modules/Task/presentation/stores/taskStore";
-import { taskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 
 /**
  * 任务提醒初始化 Composable
@@ -36,7 +36,7 @@ export function useTaskReminderInit(autoInit: boolean = true) {
 
       // 在新架构下，通过应用服务来初始化提醒
       // 主进程会负责所有的提醒调度逻辑
-      await taskDomainApplicationService.initializeTaskReminders();
+      await getTaskDomainApplicationService().initializeTaskReminders();
 
       cleanup = scheduleService.onScheduleTriggered(async ({ task }) => {
         if (task.type === "taskReminder") {

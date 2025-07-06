@@ -3,7 +3,7 @@
 // import { initializeLanguage } from '@/i18n/index';
 import { ReminderInitService } from '@/modules/Reminder/services/reminderInitService';
 import { UserDataInitService } from '@/shared/services/userDataInitService';
-import { taskDomainApplicationService } from '@/modules/Task/application/services/taskDomainApplicationService';
+import { getTaskDomainApplicationService } from '@/modules/Task/application/services/taskDomainApplicationService';
 
 export interface InitializationOptions {
   autoInit?: boolean;
@@ -92,7 +92,7 @@ export class AppInitService {
 
     await Promise.all([
       ReminderInitService.initialize(),
-      taskDomainApplicationService.initializeTaskReminders()
+      getTaskDomainApplicationService().initializeTaskReminders()
     ]);
 
     console.log('✓ 功能服务初始化完成');

@@ -7,7 +7,29 @@
             </v-card-title>
 
             <v-card-text class="template-grid">
+                <!-- 加载状态 -->
+                <div v-if="loading" class="text-center pa-8">
+                    <v-progress-circular 
+                        color="primary" 
+                        indeterminate 
+                        size="48"
+                        class="mb-4"
+                    />
+                    <p class="text-body-1">正在加载模板...</p>
+                </div>
+
+                <!-- 无数据状态 -->
+                <div v-else-if="metaTemplates.length === 0" class="text-center pa-8">
+                    <v-icon size="64" color="grey" class="mb-4">mdi-folder-open-outline</v-icon>
+                    <p class="text-body-1 text-medium-emphasis">暂无可用模板</p>
+                    <v-btn color="primary" variant="text" @click="loadMetaTemplates">
+                        重新加载
+                    </v-btn>
+                </div>
+
+                <!-- 模板列表 -->
                 <v-card 
+                    v-else
                     v-for="metaTemplate in metaTemplates" 
                     :key="metaTemplate.id" 
                     class="template-type-card"
@@ -64,7 +86,6 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { TaskMetaTemplate } from '@/modules/Task/domain/entities/taskMetaTemplate';
-import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 
 interface Props {
     visible: boolean;
@@ -81,13 +102,28 @@ const emit = defineEmits<Emits>();
 
 const metaTemplates = ref<TaskMetaTemplate[]>([]);
 const selectedMetaTemplateId = ref<string>('');
-const taskStore = useTaskStore();
+const loading = ref(false);
 
 onMounted(async () => {
-    // 确保初始化了默认的 MetaTemplates
-    taskStore.initializeDefaultMetaTemplates();
-    metaTemplates.value = taskStore.getAllMetaTemplates;
+    await loadMetaTemplates();
 });
+
+const loadMetaTemplates = async () => {
+    try {
+        loading.value = true;
+        // 从主进程获取元模板，而不是使用本地初始化
+        const { getTaskDomainApplicationService } = await import('../../application/services/taskDomainApplicationService');
+        const taskService = getTaskDomainApplicationService();
+        const result = await taskService.getAllMetaTemplates();
+        // 转换为 TaskMetaTemplate 实例
+        metaTemplates.value = result.map(template => TaskMetaTemplate.fromCompleteData(template));
+    } catch (error) {
+        console.error('获取元模板失败:', error);
+        metaTemplates.value = [];
+    } finally {
+        loading.value = false;
+    }
+};
 
 const selectMetaTemplate = (metaTemplateId: string) => {
     selectedMetaTemplateId.value = metaTemplateId;

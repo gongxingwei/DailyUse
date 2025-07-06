@@ -1,6 +1,8 @@
 import { TaskTemplate, TaskTemplateMapper } from '@/modules/Task/domain/entities/taskTemplate';
 import { TaskInstance, TaskInstanceMapper } from '@/modules/Task/domain/entities/taskInstance';
 import { taskIpcClient } from '@/modules/Task/infrastructure/ipc/taskIpcClient';
+import type { ITaskStateRepository } from '@/modules/Task/domain/repositories/ITaskStateRepository';
+import { PiniaTaskStateRepository } from '@/modules/Task/infrastructure/repositories/piniaTaskStateRepository';
 import type { 
     ITaskTemplate,
     ITaskInstance,
@@ -18,8 +20,127 @@ import type {
  * 2. 使用 Mapper 自动转换 DTO 为领域对象
  * 3. 为 UI 层提供简洁的业务接口
  * 4. 处理错误和异常情况
+ * 5. 通过抽象状态仓库自动同步前端状态，保持状态管理一致性
  */
 export class TaskDomainApplicationService {
+  private stateRepository: ITaskStateRepository;
+
+  constructor(stateRepository?: ITaskStateRepository) {
+    // 默认使用 Pinia 实现，但支持依赖注入其他实现
+    this.stateRepository = stateRepository || new PiniaTaskStateRepository();
+  }
+
+  /**
+   * 自动同步状态数据 - 确保与数据库一致性
+   */
+  private async syncAllState() {
+    try {
+      if (!this.stateRepository.isAvailable()) {
+        console.warn('⚠️ 状态仓库不可用，跳过同步');
+        return;
+      }
+
+      console.log('🔄 开始同步任务数据到状态仓库...');
+      
+      // 并行获取所有数据
+      const [templatesResponse, instancesResponse, metaTemplatesResponse] = await Promise.all([
+        taskIpcClient.getAllTaskTemplates(),
+        taskIpcClient.getAllTaskInstances(),
+        taskIpcClient.getAllMetaTemplates()
+      ]);
+
+      // 批量同步所有数据
+      const templates = templatesResponse.success ? templatesResponse.data || [] : [];
+      const instances = instancesResponse.success ? instancesResponse.data || [] : [];
+      const metaTemplates = metaTemplatesResponse.success ? metaTemplatesResponse.data || [] : [];
+
+      await this.stateRepository.syncAllTaskData(templates, instances, metaTemplates);
+      console.log('✅ 任务数据同步完成');
+    } catch (error) {
+      console.error('❌ 同步任务数据失败:', error);
+    }
+  }
+
+  /**
+   * 同步单个任务模板
+   */
+  private async syncTaskTemplate(templateId: string) {
+    try {
+      if (!this.stateRepository.isAvailable()) {
+        console.warn('⚠️ 状态仓库不可用，跳过同步');
+        return;
+      }
+
+      const response = await taskIpcClient.getTaskTemplate(templateId);
+      if (response.success && response.data) {
+        await this.stateRepository.updateTaskTemplate(response.data);
+        console.log(`✓ 同步任务模板: ${templateId}`);
+      }
+    } catch (error) {
+      console.error(`❌ 同步任务模板失败: ${templateId}`, error);
+    }
+  }
+
+  /**
+   * 同步单个任务实例
+   */
+  private async syncTaskInstance(instanceId: string) {
+    try {
+      if (!this.stateRepository.isAvailable()) {
+        console.warn('⚠️ 状态仓库不可用，跳过同步');
+        return;
+      }
+
+      const response = await taskIpcClient.getTaskInstance(instanceId);
+      if (response.success && response.data) {
+        await this.stateRepository.updateTaskInstance(response.data);
+        console.log(`✓ 同步任务实例: ${instanceId}`);
+      }
+    } catch (error) {
+      console.error(`❌ 同步任务实例失败: ${instanceId}`, error);
+    }
+  }
+
+  /**
+   * 从状态仓库中删除任务模板
+   */
+  private async removeTaskTemplateFromState(templateId: string) {
+    try {
+      if (!this.stateRepository.isAvailable()) {
+        console.warn('⚠️ 状态仓库不可用，跳过删除');
+        return;
+      }
+
+      await this.stateRepository.removeTaskTemplate(templateId);
+      console.log(`✓ 从状态删除任务模板: ${templateId}`);
+    } catch (error) {
+      console.error(`❌ 从状态删除任务模板失败: ${templateId}`, error);
+    }
+  }
+
+  /**
+   * 从状态仓库中删除任务实例
+   */
+  private async removeTaskInstanceFromState(instanceId: string) {
+    try {
+      if (!this.stateRepository.isAvailable()) {
+        console.warn('⚠️ 状态仓库不可用，跳过删除');
+        return;
+      }
+
+      await this.stateRepository.removeTaskInstance(instanceId);
+      console.log(`✓ 从状态删除任务实例: ${instanceId}`);
+    } catch (error) {
+      console.error(`❌ 从状态删除任务实例失败: ${instanceId}`, error);
+    }
+  }
+
+  /**
+   * 批量同步数据 - 公开方法，供外部调用
+   */
+  async syncAllData(): Promise<void> {
+    await this.syncAllState();
+  }
 
   // === MetaTemplate 相关操作 ===
 
@@ -122,9 +243,23 @@ export class TaskDomainApplicationService {
   }> {
     try {
       const response = await taskIpcClient.createTaskTemplate(dto);
+      
+      if (response.success) {
+        // 自动同步状态：将主进程创建并保存的模板同步到前端状态
+        if (response.data) {
+          await this.stateRepository.addTaskTemplate(response.data);
+          console.log(`✅ 创建任务模板成功并同步到前端状态: ${response.data.id}`);
+        }
+        
+        return {
+          success: true,
+          template: response.data ? TaskTemplateMapper.fromDTO(response.data) : undefined,
+          message: response.message
+        };
+      }
+      
       return {
-        success: response.success,
-        template: response.success && response.data ? TaskTemplateMapper.fromDTO(response.data) : undefined,
+        success: false,
         message: response.message
       };
     } catch (error) {
@@ -143,9 +278,23 @@ export class TaskDomainApplicationService {
   }> {
     try {
       const response = await taskIpcClient.updateTaskTemplate(dto);
+      
+      if (response.success) {
+        // 自动同步状态：更新现有模板
+        if (response.data) {
+          await this.stateRepository.updateTaskTemplate(response.data);
+          console.log(`✅ 更新任务模板成功并同步到状态: ${response.data.id}`);
+        }
+        
+        return {
+          success: true,
+          template: response.data ? TaskTemplateMapper.fromDTO(response.data) : undefined,
+          message: response.message
+        };
+      }
+      
       return {
-        success: response.success,
-        template: response.success && response.data ? TaskTemplateMapper.fromDTO(response.data) : undefined,
+        success: false,
         message: response.message
       };
     } catch (error) {
@@ -160,6 +309,14 @@ export class TaskDomainApplicationService {
   async deleteTaskTemplate(taskTemplateId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.deleteTaskTemplate(taskTemplateId);
+      
+      if (response.success) {
+        // 自动同步状态：删除模板和相关实例
+        await this.removeTaskTemplateFromState(taskTemplateId);
+        await this.stateRepository.removeInstancesByTemplateId(taskTemplateId);
+        console.log(`✅ 删除任务模板成功并同步到状态: ${taskTemplateId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -171,11 +328,44 @@ export class TaskDomainApplicationService {
   }
 
   /**
+   * 删除所有任务模板
+   */
+  async deleteAllTaskTemplates(): Promise<{ success: boolean; message?: string; }> {
+    try {
+      console.log('🔄 [渲染进程] 开始删除所有任务模板');
+      
+      const response = await taskIpcClient.deleteAllTaskTemplates();
+      
+      if (response.success) {
+        // 自动同步状态：清空所有模板和实例
+        await this.stateRepository.clearAllTaskTemplates();
+        await this.stateRepository.clearAllTaskInstances();
+        console.log('✅ 删除所有任务模板成功并清空状态');
+      }
+      
+      return {
+        success: response.success,
+        message: response.message
+      };
+    } catch (error) {
+      console.error('Failed to delete all task templates:', error);
+      return { success: false, message: 'Failed to delete all task templates' };
+    }
+  }
+
+  /**
    * 激活任务模板
    */
   async activateTaskTemplate(taskTemplateId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.activateTaskTemplate(taskTemplateId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的模板
+        await this.syncTaskTemplate(taskTemplateId);
+        console.log(`✅ 激活任务模板成功并同步到状态: ${taskTemplateId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -192,6 +382,13 @@ export class TaskDomainApplicationService {
   async pauseTaskTemplate(taskTemplateId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.pauseTaskTemplate(taskTemplateId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的模板
+        await this.syncTaskTemplate(taskTemplateId);
+        console.log(`✅ 暂停任务模板成功并同步到状态: ${taskTemplateId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -208,6 +405,13 @@ export class TaskDomainApplicationService {
   async resumeTaskTemplate(taskTemplateId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.resumeTaskTemplate(taskTemplateId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的模板
+        await this.syncTaskTemplate(taskTemplateId);
+        console.log(`✅ 恢复任务模板成功并同步到状态: ${taskTemplateId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -224,6 +428,13 @@ export class TaskDomainApplicationService {
   async archiveTaskTemplate(taskTemplateId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.archiveTaskTemplate(taskTemplateId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的模板
+        await this.syncTaskTemplate(taskTemplateId);
+        console.log(`✅ 归档任务模板成功并同步到状态: ${taskTemplateId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -257,6 +468,10 @@ export class TaskDomainApplicationService {
       if (!response.success || !response.data) {
         throw new Error(response.message || 'Failed to create task template from meta template');
       }
+
+      // 注意：这里不同步状态，因为模板还没有保存到数据库
+      // 只返回创建的模板对象供前端编辑
+      console.log(`✅ 从元模板创建任务模板成功（待保存）: ${response.data.id}`);
 
       return TaskTemplateMapper.fromDTO(response.data);
     } catch (error) {
@@ -325,9 +540,23 @@ export class TaskDomainApplicationService {
   }> {
     try {
       const response = await taskIpcClient.createTaskInstance(dto);
+      
+      if (response.success) {
+        // 自动同步状态：添加新创建的实例
+        if (response.data) {
+          await this.stateRepository.addTaskInstance(response.data);
+          console.log(`✅ 创建任务实例成功并同步到状态: ${response.data.id}`);
+        }
+        
+        return {
+          success: true,
+          instance: response.data ? TaskInstanceMapper.fromDTO(response.data) : undefined,
+          message: response.message
+        };
+      }
+      
       return {
-        success: response.success,
-        instance: response.success && response.data ? TaskInstanceMapper.fromDTO(response.data) : undefined,
+        success: false,
         message: response.message
       };
     } catch (error) {
@@ -342,6 +571,13 @@ export class TaskDomainApplicationService {
   async startTaskInstance(taskInstanceId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.startTaskInstance(taskInstanceId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的实例
+        await this.syncTaskInstance(taskInstanceId);
+        console.log(`✅ 开始任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -358,6 +594,13 @@ export class TaskDomainApplicationService {
   async completeTaskInstance(taskInstanceId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.completeTaskInstance(taskInstanceId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的实例
+        await this.syncTaskInstance(taskInstanceId);
+        console.log(`✅ 完成任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -374,6 +617,13 @@ export class TaskDomainApplicationService {
   async undoCompleteTaskInstance(taskInstanceId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.undoCompleteTaskInstance(taskInstanceId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的实例
+        await this.syncTaskInstance(taskInstanceId);
+        console.log(`✅ 撤销完成任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -390,6 +640,13 @@ export class TaskDomainApplicationService {
   async cancelTaskInstance(taskInstanceId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.cancelTaskInstance(taskInstanceId);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的实例
+        await this.syncTaskInstance(taskInstanceId);
+        console.log(`✅ 取消任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -406,6 +663,13 @@ export class TaskDomainApplicationService {
   async rescheduleTaskInstance(taskInstanceId: string, newScheduledTime: string, newEndTime?: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.rescheduleTaskInstance(taskInstanceId, newScheduledTime, newEndTime);
+      
+      if (response.success) {
+        // 自动同步状态：重新获取更新后的实例
+        await this.syncTaskInstance(taskInstanceId);
+        console.log(`✅ 延期任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -422,6 +686,13 @@ export class TaskDomainApplicationService {
   async deleteTaskInstance(taskInstanceId: string): Promise<{ success: boolean; message?: string; }> {
     try {
       const response = await taskIpcClient.deleteTaskInstance(taskInstanceId);
+      
+      if (response.success) {
+        // 自动同步状态：删除实例
+        await this.removeTaskInstanceFromState(taskInstanceId);
+        console.log(`✅ 删除任务实例成功并同步到状态: ${taskInstanceId}`);
+      }
+      
       return {
         success: response.success,
         message: response.message
@@ -581,4 +852,39 @@ export class TaskDomainApplicationService {
   }
 }
 
-export const taskDomainApplicationService = new TaskDomainApplicationService();
+/**
+ * 创建任务应用服务实例的工厂方法
+ * 支持依赖注入，便于测试和扩展
+ */
+export function createTaskDomainApplicationService(
+  stateRepository?: ITaskStateRepository
+): TaskDomainApplicationService {
+  return new TaskDomainApplicationService(stateRepository);
+}
+
+/**
+ * 延迟初始化的任务应用服务单例
+ * 避免在模块加载时就创建实例，防止 Pinia 未初始化的问题
+ */
+let _taskDomainApplicationServiceInstance: TaskDomainApplicationService | null = null;
+
+/**
+ * 获取任务应用服务实例（延迟初始化）
+ * 确保在 Pinia 初始化后才创建实例
+ */
+export function getTaskDomainApplicationService(): TaskDomainApplicationService {
+  if (!_taskDomainApplicationServiceInstance) {
+    _taskDomainApplicationServiceInstance = new TaskDomainApplicationService();
+  }
+  return _taskDomainApplicationServiceInstance;
+}
+
+/**
+ * @deprecated 使用 getTaskDomainApplicationService() 替代
+ * 为了向后兼容而保留，但建议使用函数形式避免 Pinia 初始化问题
+ */
+export const taskDomainApplicationService = {
+  get instance() {
+    return getTaskDomainApplicationService();
+  }
+};

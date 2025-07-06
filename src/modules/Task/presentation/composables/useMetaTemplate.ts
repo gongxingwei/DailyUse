@@ -1,4 +1,4 @@
-import { taskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useNotification } from "./useNotification";
 
 /**
@@ -11,7 +11,7 @@ export function useMetaTemplate() {
   // 获取所有元模板
   const getMetaTemplates = async () => {
     try {
-      const metaTemplates = await taskDomainApplicationService.getAllMetaTemplates();
+      const metaTemplates = await getTaskDomainApplicationService().getAllMetaTemplates();
       return metaTemplates;
     } catch (error) {
       console.error('获取元模板失败:', error);
@@ -24,8 +24,8 @@ export function useMetaTemplate() {
 
   // 根据ID获取元模板
   const getMetaTemplate = async (id: string) => {
-    try {
-      const metaTemplate = await taskDomainApplicationService.getMetaTemplate(id);
+    try { 
+      const metaTemplate = await getTaskDomainApplicationService().getMetaTemplate(id);
       return metaTemplate;
     } catch (error) {
       console.error('获取元模板失败:', error);
@@ -41,3 +41,4 @@ export function useMetaTemplate() {
     getMetaTemplate
   };
 }
+

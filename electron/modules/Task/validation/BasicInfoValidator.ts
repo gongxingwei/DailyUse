@@ -2,6 +2,7 @@
 import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
+import { isValidUUID } from '../../../../src/shared/utils/uuid';
 
 /**
  * 基础信息验证器
@@ -121,9 +122,8 @@ export class BasicInfoValidator implements ITemplateValidator {
       return requiredResult;
     }
 
-    // UUID格式验证
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    if (!uuidRegex.test(id)) {
+    // 使用统一的 UUID 验证函数
+    if (!isValidUUID(id)) {
       return ValidationUtils.failure(['任务模板ID格式不正确']);
     }
 

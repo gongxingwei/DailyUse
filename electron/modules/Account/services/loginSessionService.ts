@@ -2,7 +2,8 @@ import type { TResponse } from "@/shared/types/response";
 import type { TLoginSessionData } from "@/modules/Account/types/account";
 import { LoginSessionModel } from "../models/loginSessionModel";
 import crypto from "crypto";
-import { userService } from './userService'
+import { userService } from './userService';
+import { initializeUserSession } from "../../../shared/initialization/appInitializer";
 /**
  * 本地会话服务类
  * 负责处理登录会话相关的业务逻辑，包括会话保存、更新、查询和管理
@@ -241,6 +242,14 @@ export class LoginSessionService {
             lastLoginTime: Date.now(),
             isActive: 1,
           });
+
+          // 初始化用户会话
+          try {
+            await initializeUserSession(username);
+          } catch (error) {
+            console.error('Failed to initialize user session:', error);
+            // 不影响登录流程，只记录错误
+          }
 
           return {
             success: true,

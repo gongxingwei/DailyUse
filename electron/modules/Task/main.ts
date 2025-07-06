@@ -1,22 +1,25 @@
-import { TaskIpcHandler } from './ipc/taskIpcHandler';
+import { initializeTaskModule as newInitializeTaskModule, initializeTaskModuleForUser as newInitializeTaskModuleForUser } from './initialization/taskInitialization';
 
 /**
  * 初始化主进程中的任务模块
- * 注册所有 IPC 处理器
+ * 注册所有 IPC 处理器，但不初始化系统模板（需要用户登录后才初始化）
+ * 
+ * @deprecated 建议使用新的初始化管理系统
  */
-export function initializeTaskModule(): void {
-  console.log('Initializing Task module in main process...');
-  
-  try {
-    // 注册 IPC 处理器
-    const taskIpcHandler = new TaskIpcHandler();
-    taskIpcHandler.register();
-    
-    console.log('✓ Task module initialized successfully');
-  } catch (error) {
-    console.error('✗ Failed to initialize Task module:', error);
-    throw error;
-  }
+export async function initializeTaskModule(): Promise<void> {
+  console.log('Initializing Task module (legacy method)...');
+  await newInitializeTaskModule();
+}
+
+/**
+ * 用户登录时的任务模块初始化
+ * 设置当前用户并初始化系统模板
+ * 
+ * @deprecated 建议使用新的初始化管理系统
+ */
+export async function initializeTaskModuleForUser(username: string): Promise<void> {
+  console.log(`Initializing Task module for user: ${username} (legacy method)...`);
+  await newInitializeTaskModuleForUser(username);
 }
 
 /**

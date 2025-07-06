@@ -1,4 +1,4 @@
-import { taskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useNotification } from "./useNotification";
 import type { TaskTemplate } from "../../domain/entities/taskTemplate";
 
@@ -7,12 +7,15 @@ import type { TaskTemplate } from "../../domain/entities/taskTemplate";
  * 专门处理任务模板的 CRUD 操作
  */
 export function useTaskTemplate() {
-  const { showSuccess, showError, showInfo } = useNotification();
+  const { showSuccess, showError } = useNotification();
   
+  // 获取任务服务实例
+  const getTaskService = () => getTaskDomainApplicationService();
+
   // 获取所有任务模板
   const getTaskTemplates = async () => {
     try {
-      const templates = await taskDomainApplicationService.getAllTaskTemplates();
+      const templates = await getTaskService().getAllTaskTemplates();
       return templates;
     } catch (error) {
       console.error('获取任务模板失败:', error);
@@ -23,17 +26,20 @@ export function useTaskTemplate() {
     }
   };
 
-  // 根据ID获取任务模板
+  // 根据 ID 获取任务模板
   const getTaskTemplate = async (templateId: string) => {
+    if (!templateId) {
+      showError('模板 ID 不能为空');
+      return null;
+    }
+
     try {
-      const template = await taskDomainApplicationService.getTaskTemplate(templateId);
-      if (template) {
-        showInfo(`获取任务模板 "${template.title}" 成功`);
-        return template;
-      } else {
-        showError('未找到指定的任务模板');
+      const template = await getTaskService().getTaskTemplate(templateId);
+      if (!template) {
+        showError(`未找到 ID 为 ${templateId} 的任务模板`);
         return null;
       }
+      return template;
     } catch (error) {
       console.error('获取任务模板失败:', error);
       showError(
@@ -45,91 +51,103 @@ export function useTaskTemplate() {
 
   // 创建任务模板
   const createTaskTemplate = async (templateData: any) => {
+    if (!templateData || !templateData.title) {
+      showError('模板数据不完整，至少需要包含标题');
+      return { success: false };
+    }
+
     try {
-      const result = await taskDomainApplicationService.createTaskTemplate(templateData);
+      const result = await getTaskService().createTaskTemplate(templateData);
       
-      if (result.success && result.template) {
-        showSuccess(`任务模板 "${result.template.title}" 创建成功`);
-        return result.template;
+      if (result.success) {
+        showSuccess(`任务模板 "${templateData.title}" 创建成功`);
+        return { success: true, data: result.template };
       } else {
         showError(result.message || '创建任务模板失败');
-        return null;
+        return { success: false, message: result.message };
       }
     } catch (error) {
       console.error('创建任务模板失败:', error);
-      showError(
-        `创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
-      return null;
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showError(`创建任务模板失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
   };
 
   // 更新任务模板
   const updateTaskTemplate = async (templateData: any) => {
+    if (!templateData || !templateData.id) {
+      showError('模板数据不完整，缺少 ID');
+      return { success: false };
+    }
+
     try {
-      const result = await taskDomainApplicationService.updateTaskTemplate(templateData);
+      const result = await getTaskService().updateTaskTemplate(templateData);
       
-      if (result.success && result.template) {
-        showSuccess(`任务模板 "${result.template.title}" 更新成功`);
-        return result.template;
+      if (result.success) {
+        showSuccess(`任务模板 "${templateData.title}" 更新成功`);
+        return { success: true, data: result.template };
       } else {
         showError(result.message || '更新任务模板失败');
-        return null;
+        return { success: false, message: result.message };
       }
     } catch (error) {
       console.error('更新任务模板失败:', error);
-      showError(
-        `更新任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
-      return null;
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showError(`更新任务模板失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
   };
 
   // 删除任务模板
   const deleteTaskTemplate = async (template: TaskTemplate) => {
+    if (!template || !template.id) {
+      showError('模板信息不完整');
+      return { success: false };
+    }
+
     try {
-      const result = await taskDomainApplicationService.deleteTaskTemplate(template.id);
+      const result = await getTaskService().deleteTaskTemplate(template.id);
       
       if (result.success) {
         showSuccess(`任务模板 "${template.title}" 删除成功`);
-        return true;
+        return { success: true };
       } else {
         showError(result.message || '删除任务模板失败');
-        return false;
+        return { success: false, message: result.message };
       }
     } catch (error) {
       console.error('删除任务模板失败:', error);
-      showError(
-        `删除任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
-      return false;
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showError(`删除任务模板失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
   };
 
   // 从元模板创建任务模板
-  const createTaskTemplateFromMetaTemplate = async (
+  const createFromMetaTemplate = async (
     metaTemplateId: string,
-    title: string = '新任务模板',
-    options?: any
+    title: string,
+    description?: string
   ) => {
+    if (!metaTemplateId || !title) {
+      showError('元模板 ID 和标题不能为空');
+      return null;
+    }
+
     try {
-      const newTaskTemplate = await taskDomainApplicationService.createTaskTemplateFromMetaTemplate(
+      const newTaskTemplate = await getTaskService().createTaskTemplateFromMetaTemplate(
         metaTemplateId,
         title,
-        options || {
-          description: '基于元模板创建的任务',
-          priority: 3,
-          tags: ['新建'],
-        }
+        { description }
       );
-      
-      showSuccess(`成功从元模板创建任务模板 "${newTaskTemplate.title}"`);
+
+      showSuccess(`从元模板创建任务模板 "${title}" 成功`);
       return newTaskTemplate;
     } catch (error) {
       console.error('从元模板创建任务模板失败:', error);
-      showError(
-        `创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
+      const errorMessage = error instanceof Error ? error.message : '未知错误';
+      showError(`从元模板创建任务模板失败: ${errorMessage}`);
       return null;
     }
   };
@@ -140,6 +158,6 @@ export function useTaskTemplate() {
     createTaskTemplate,
     updateTaskTemplate,
     deleteTaskTemplate,
-    createTaskTemplateFromMetaTemplate
+    createFromMetaTemplate
   };
 }

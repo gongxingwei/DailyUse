@@ -1,11 +1,12 @@
 import type { NotificationWindowOptions } from "../types/notification";
 import type { TResponse } from "@/shared/types/response";
+import { generateUUID } from "@/shared/utils/uuid";
+import { serializeForIpc } from "@/shared/utils/ipcSerialization";
 
 export class NotificationService {
 
   private generateId(): string {
-    const id = `notification-${Date.now()}-${Math.random().toString(36).substring(2, 15)}`;
-    return id;
+    return generateUUID();
   }
   /**
    * 显示通知
@@ -23,7 +24,7 @@ export class NotificationService {
       };
       const response = await window.shared.ipcRenderer.invoke(
         "show-notification",
-        fullOptions
+        serializeForIpc(fullOptions)
       );
       return response;
     } catch (error) {

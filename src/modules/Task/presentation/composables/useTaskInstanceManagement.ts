@@ -2,7 +2,7 @@ import { ref, computed } from 'vue';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { TaskInstance } from '../../domain/entities/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
-import { taskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
+import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 import { useNotification } from './useNotification';
 
 /**
@@ -13,6 +13,9 @@ import { useNotification } from './useNotification';
 export function useTaskInstanceManagement() {
   const taskStore = useTaskStore();
   const { showSuccess, showError, showInfo } = useNotification();
+  
+  // Helper function to get task service
+  const getTaskService = () => getTaskDomainApplicationService();
   
   const selectedDate = ref(new Date().toISOString().split('T')[0]);
   const currentWeekStart = ref(new Date());
@@ -48,7 +51,7 @@ export function useTaskInstanceManagement() {
   const completeTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskDomainApplicationService.completeTaskInstance(task.id);
+      const result = await getTaskService().completeTaskInstance(task.id);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已完成`);
@@ -67,7 +70,7 @@ export function useTaskInstanceManagement() {
   const undoCompleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskDomainApplicationService.undoCompleteTaskInstance(task.id);
+      const result = await getTaskService().undoCompleteTaskInstance(task.id);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 撤销完成成功`);
@@ -86,7 +89,7 @@ export function useTaskInstanceManagement() {
   const deleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskDomainApplicationService.deleteTaskInstance(task.id);
+      const result = await getTaskService().deleteTaskInstance(task.id);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已删除`);
@@ -105,7 +108,7 @@ export function useTaskInstanceManagement() {
   const startTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskDomainApplicationService.startTaskInstance(task.id);
+      const result = await getTaskService().startTaskInstance(task.id);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已开始`);
@@ -124,7 +127,7 @@ export function useTaskInstanceManagement() {
   const cancelTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await taskDomainApplicationService.cancelTaskInstance(task.id);
+      const result = await getTaskService().cancelTaskInstance(task.id);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已取消`);
@@ -147,7 +150,7 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => taskDomainApplicationService.completeTaskInstance(task.id))
+        tasks.map(task => getTaskService().completeTaskInstance(task.id))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
@@ -174,7 +177,7 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => taskDomainApplicationService.deleteTaskInstance(task.id))
+        tasks.map(task => getTaskService().deleteTaskInstance(task.id))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
@@ -200,7 +203,7 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       // 通过应用服务获取最新的任务实例数据
-      const latestInstances = await taskDomainApplicationService.getAllTaskInstances();
+      const latestInstances = await getTaskService().getAllTaskInstances();
       // 同步到 store 中
       taskStore.setTaskInstances(latestInstances);
     } catch (error) {

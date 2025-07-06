@@ -1,4 +1,4 @@
-import { taskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
+import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useNotification } from "./useNotification";
 
 /**
@@ -8,10 +8,13 @@ import { useNotification } from "./useNotification";
 export function useTaskInstance() {
   const { showSuccess, showError, showInfo } = useNotification();
   
+  // Helper function to get task service
+  const getTaskService = () => getTaskDomainApplicationService();
+  
   // 获取今日任务实例
   const getTodayTaskInstances = async () => {
     try {
-      const instances = await taskDomainApplicationService.getTodayTasks();
+      const instances = await getTaskService().getTodayTasks();
       return instances;
     } catch (error) {
       console.error('获取今日任务失败:', error);
@@ -25,7 +28,7 @@ export function useTaskInstance() {
   // 根据ID获取任务实例
   const getTaskInstance = async (taskId: string) => {
     try {
-      const instance = await taskDomainApplicationService.getTaskInstance(taskId);
+      const instance = await getTaskService().getTaskInstance(taskId);
       if (instance) {
         return instance;
       } else {
@@ -44,7 +47,7 @@ export function useTaskInstance() {
   // 完成任务实例
   const completeTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.completeTaskInstance(taskId);
+      const result = await getTaskService().completeTaskInstance(taskId);
       
       if (result.success) {
         showSuccess(`任务已完成`);
@@ -65,7 +68,7 @@ export function useTaskInstance() {
   // 撤销完成任务实例
   const undoCompleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.undoCompleteTaskInstance(taskId);
+      const result = await getTaskService().undoCompleteTaskInstance(taskId);
       
       if (result.success) {
         showSuccess(`任务撤销完成成功`);
@@ -86,7 +89,7 @@ export function useTaskInstance() {
   // 删除任务实例
   const deleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await taskDomainApplicationService.deleteTaskInstance(taskId);
+      const result = await getTaskService().deleteTaskInstance(taskId);
       
       if (result.success) {
         showSuccess(`任务实例删除成功`);
@@ -166,3 +169,4 @@ export function useTaskInstance() {
     batchDeleteTaskInstances
   };
 }
+

@@ -2,6 +2,7 @@ import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { DateTime } from '@/shared/types/myDateTime';
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import { TaskTemplate } from './taskTemplate';
+import { randomUUID } from "crypto";
 import type { 
   ITaskMetaTemplate
 } from '../types/task';
@@ -151,7 +152,10 @@ export class TaskMetaTemplate extends AggregateRoot implements ITaskMetaTemplate
     );
   }
 
-  toJSON(): ITaskMetaTemplate{
+  /**
+   * 转换为数据传输对象
+   */
+  toDTO(): ITaskMetaTemplate {
     return {
       id: this.id,
       name: this._name,
@@ -169,10 +173,18 @@ export class TaskMetaTemplate extends AggregateRoot implements ITaskMetaTemplate
   }
 
   /**
+   * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   */
+  toJSON(): ITaskMetaTemplate {
+    return this.toDTO();
+  }
+
+  /**
    * 从此元模板创建一个完整的任务模板
    * 主进程可以直接调用此方法返回一个可以被渲染进程直接修改的完整对象
    */
-  createTaskTemplate(title: string, customOptions?: {
+  createTaskTemplate(title: string = '', customOptions?: {
     description?: string;
     priority?: 1 | 2 | 3 | 4 | 5 ; // 优先级
     tags?: string[];
@@ -202,6 +214,6 @@ export class TaskMetaTemplate extends AggregateRoot implements ITaskMetaTemplate
    * 生成新的任务模板ID
    */
   private generateId(): string {
-    return `task-template-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    return randomUUID();
   }
 }

@@ -1,6 +1,7 @@
 import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
+import { ITaskMetaTemplateRepository } from '../repositories/iTaskMetaTemplateRepository';
 import type { TaskTimeConfig, TaskReminderConfig } from '../types/task';
-
+import { TaskMetaTemplateFactory } from '../utils/taskMetaTemplateFactory';
 /**
  * 任务元模板领域服务
  * 处理TaskMetaTemplate实体的业务逻辑
@@ -97,6 +98,46 @@ export class TaskMetaTemplateService {
       valid: errors.length === 0,
       errors
     };
+  }
+
+  async initializeSystemTemplates(metaTemplateRepository: ITaskMetaTemplateRepository): Promise<TResponse<void>> {
+    try {
+      // 检查是否已经初始化过
+      const existingTemplates = await metaTemplateRepository.findAll();
+      if (existingTemplates.data && existingTemplates.data.length > 0) {
+        return {
+          success: true,
+          message: '系统模板已存在，跳过初始化'
+        };
+      }
+
+      // 创建系统预设模板
+      const systemTemplates = [
+        TaskMetaTemplateFactory.createEmpty(),
+        TaskMetaTemplateFactory.createHabit(),
+        TaskMetaTemplateFactory.createEvent(),
+        TaskMetaTemplateFactory.createDeadline(),
+        TaskMetaTemplateFactory.createMeeting()
+      ];
+
+      // 批量保存
+      for (const template of systemTemplates) {
+        const result = await metaTemplateRepository.save(template);
+        if (!result.success) {
+          console.error(`保存模板失败: ${template.name}`, result.message);
+        }
+      }
+
+      return {
+        success: true,
+        message: `成功初始化 ${systemTemplates.length} 个系统模板`
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `初始化系统模板失败: ${error instanceof Error ? error.message : '未知错误'}`
+      };
+    }
   }
 }
 

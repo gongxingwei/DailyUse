@@ -1,5 +1,5 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-
+import { TaskTemplate } from "./taskTemplate";
 import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 
 
@@ -139,7 +139,10 @@ export class TaskMetaTemplate extends AggregateRoot {
     );
   }
 
-  toJSON(): any{
+  /**
+   * 转换为数据传输对象
+   */
+  toDTO(): ITaskMetaTemplate {
     return {
       id: this.id,
       name: this._name,
@@ -154,5 +157,13 @@ export class TaskMetaTemplate extends AggregateRoot {
         status: this._lifecycle.status
       }
     };
+  }
+
+  /**
+   * 导出完整数据（用于序列化）
+   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   */
+  toJSON(): ITaskMetaTemplate {
+    return this.toDTO();
   }
 }

@@ -9,6 +9,7 @@ import type { ITaskTemplateRepository } from "../repositories/iTaskTemplateRepos
 import type { ITaskInstanceRepository } from "../repositories/iTaskInstanceRepository";
 import { TaskTemplateValidator } from "../../validation/TaskTemplateValidator";
 import type { DateTime } from "@/shared/types/myDateTime";
+import type { ITaskMetaTemplateRepository } from "../repositories/iTaskMetaTemplateRepository";
 
 /**
  * 任务领域服务
@@ -736,4 +737,24 @@ export class TaskDomainService {
       return conflicts.length === 0;
     });
   }
+
+  async initializeSystemTemplates(taskMetaTemplateRepository: ITaskMetaTemplateRepository): Promise<TResponse<void>> {
+      try {
+        const response = await taskMetaTemplateService.initializeSystemTemplates(
+          taskMetaTemplateRepository
+        );
+        if (!response.success) {
+          return {
+            success: false,
+            message: `初始化系统模板失败: ${response.message}`,
+          };
+        }
+        return { success: true, message: "System templates initialized successfully" };
+      } catch (error) {
+        return {
+          success: false,
+          message: `Failed to initialize system templates: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        };
+      }
+    }
 }
