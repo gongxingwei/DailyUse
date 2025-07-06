@@ -162,6 +162,81 @@ export async function initializeDatabase(): Promise<Database> {
       )
     `);
 
+    // 创建 Goal 相关表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS goal_directories (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        name TEXT NOT NULL,
+        icon TEXT NOT NULL,
+        parent_id TEXT,
+        lifecycle TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+        FOREIGN KEY (parent_id) REFERENCES goal_directories(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS goals (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        title TEXT NOT NULL,
+        description TEXT,
+        color TEXT NOT NULL,
+        dir_id TEXT NOT NULL,
+        start_time INTEGER NOT NULL,
+        end_time INTEGER NOT NULL,
+        note TEXT,
+        analysis TEXT NOT NULL,
+        lifecycle TEXT NOT NULL,
+        analytics TEXT NOT NULL,
+        version INTEGER NOT NULL DEFAULT 1,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+        FOREIGN KEY (dir_id) REFERENCES goal_directories(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS key_results (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        goal_id TEXT NOT NULL,
+        name TEXT NOT NULL,
+        start_value REAL NOT NULL,
+        target_value REAL NOT NULL,
+        current_value REAL NOT NULL DEFAULT 0,
+        calculation_method TEXT CHECK(calculation_method IN ('sum', 'average', 'max', 'min', 'custom')) NOT NULL,
+        weight INTEGER CHECK(weight BETWEEN 0 AND 10) NOT NULL,
+        lifecycle TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+        FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE
+      )
+    `);
+
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS goal_records (
+        id TEXT PRIMARY KEY,
+        username TEXT NOT NULL,
+        goal_id TEXT NOT NULL,
+        key_result_id TEXT NOT NULL,
+        value REAL NOT NULL,
+        date INTEGER NOT NULL,
+        note TEXT,
+        lifecycle TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (username) REFERENCES users(username) ON DELETE CASCADE,
+        FOREIGN KEY (goal_id) REFERENCES goals(id) ON DELETE CASCADE,
+        FOREIGN KEY (key_result_id) REFERENCES key_results(id) ON DELETE CASCADE
+      )
+    `);
+
     // 添加新字段（如果不存在）
     try {
       db.exec(`ALTER TABLE login_sessions ADD COLUMN token TEXT`);
@@ -205,6 +280,21 @@ export async function initializeDatabase(): Promise<Database> {
       CREATE INDEX IF NOT EXISTS idx_task_instances_created_at ON task_instances(created_at);
       CREATE INDEX IF NOT EXISTS idx_task_meta_templates_username ON task_meta_templates(username);
       CREATE INDEX IF NOT EXISTS idx_task_meta_templates_category ON task_meta_templates(category);
+      CREATE INDEX IF NOT EXISTS idx_goal_directories_username ON goal_directories(username);
+      CREATE INDEX IF NOT EXISTS idx_goal_directories_parent_id ON goal_directories(parent_id);
+      CREATE INDEX IF NOT EXISTS idx_goals_username ON goals(username);
+      CREATE INDEX IF NOT EXISTS idx_goals_dir_id ON goals(dir_id);
+      CREATE INDEX IF NOT EXISTS idx_goals_start_time ON goals(start_time);
+      CREATE INDEX IF NOT EXISTS idx_goals_end_time ON goals(end_time);
+      CREATE INDEX IF NOT EXISTS idx_goals_created_at ON goals(created_at);
+      CREATE INDEX IF NOT EXISTS idx_key_results_username ON key_results(username);
+      CREATE INDEX IF NOT EXISTS idx_key_results_goal_id ON key_results(goal_id);
+      CREATE INDEX IF NOT EXISTS idx_key_results_created_at ON key_results(created_at);
+      CREATE INDEX IF NOT EXISTS idx_goal_records_username ON goal_records(username);
+      CREATE INDEX IF NOT EXISTS idx_goal_records_goal_id ON goal_records(goal_id);
+      CREATE INDEX IF NOT EXISTS idx_goal_records_key_result_id ON goal_records(key_result_id);
+      CREATE INDEX IF NOT EXISTS idx_goal_records_date ON goal_records(date);
+      CREATE INDEX IF NOT EXISTS idx_goal_records_created_at ON goal_records(created_at);
     `);
     return db;
   } catch (error) {

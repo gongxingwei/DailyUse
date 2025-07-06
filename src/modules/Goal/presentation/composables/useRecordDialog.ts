@@ -12,13 +12,21 @@ export function useRecordDialog() {
         showRecordDialog.value = true;
     };
 
-    const handleSaveRecord = (record: IRecordCreate, goalId: string, keyResultId: string) => {
-        const result = goalStore.addRecord(record, goalId, keyResultId);
-        if (result.message) {
-
+    const handleSaveRecord = async (record: IRecordCreate, goalId: string, keyResultId: string) => {
+        try {
+            // Convert the date string to a proper DateTime format
+            const recordData = {
+                keyResultId,
+                value: record.value,
+                note: record.note
+            };
+            
+            await goalStore.addRecord(goalId, recordData);
+            closeRecordDialog();
+        } catch (error) {
+            console.error('Failed to save record:', error);
+            // Handle error (could emit an error event or show notification)
         }
-
-        closeRecordDialog();
     };
 
     const handleCancelAddRecord = () => {
@@ -29,6 +37,7 @@ export function useRecordDialog() {
         showRecordDialog.value = false;
         selectedKeyResultId.value = '';
     };
+    
     return {
         showRecordDialog,
         selectedKeyResultId,

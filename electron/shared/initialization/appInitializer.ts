@@ -5,6 +5,7 @@ import { setupScheduleHandlers } from '../../modules/schedule/main';
 import { setupNotificationHandler } from '../../modules/notification/ipcs/notification.ipc';
 import { registerAccountInitializationTasks } from '../../modules/Account/initialization/accountInitialization';
 import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
+import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
 
 /**
  * 基础设施模块的初始化任务
@@ -71,6 +72,7 @@ export function registerAllInitializationTasks(): void {
   // 注册各模块的任务
   registerAccountInitializationTasks();
   registerTaskInitializationTasks();
+  registerGoalInitializationTasks();
   
   console.log('All initialization tasks registered');
 }

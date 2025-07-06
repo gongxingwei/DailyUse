@@ -5,7 +5,7 @@
         <v-card-title class="d-flex justify-space-between pa-4">
           <v-btn variant="text" @click="handleCancel">取消</v-btn>
           <span class="text-h5">
-            {{ tempKeyResult.id === 'temp' ? '添加关键结果' : '编辑关键结果' }}
+            {{ props.keyResult ? '编辑关键结果' : '添加关键结果' }}
           </span>
           <v-btn 
             color="primary" 
@@ -24,7 +24,7 @@
             </v-col>
             <v-col cols="10">
               <v-text-field
-                v-model="tempKeyResult.name"
+                v-model="formData.name"
                 placeholder="例如：完成leetcode题目数量"
                 :error-messages="errors.name"
                 @blur="validateName"
@@ -40,7 +40,7 @@
               <v-row>
                 <v-col cols="6">
                   <v-text-field
-                    v-model.number="tempKeyResult.startValue"
+                    v-model.number="formData.startValue"
                     label="起始值"
                     type="number"
                     :error-messages="errors.startValue"
@@ -50,7 +50,7 @@
                 </v-col>
                 <v-col cols="6">
                   <v-text-field
-                    v-model.number="tempKeyResult.targetValue"
+                    v-model.number="formData.targetValue"
                     label="目标值"
                     type="number"
                     :error-messages="errors.targetValue"
@@ -66,7 +66,7 @@
           <v-row class="mb-4">
             <v-col cols="12">
               <v-select
-                v-model="tempKeyResult.calculationMethod"
+                v-model="formData.calculationMethod"
                 label="计算方式"
                 :items="[
                   { title: '求和', value: 'sum' },
@@ -86,7 +86,7 @@
           <v-row>
             <v-col cols="12">
               <v-text-field
-                v-model.number="tempKeyResult.weight"
+                v-model.number="formData.weight"
                 label="权重 (0-10)"
                 type="number"
                 min="0"
@@ -103,21 +103,67 @@
   </template>
   
   <script setup lang="ts">
-  import { reactive, computed } from 'vue';
+  import { reactive, computed, watch } from 'vue';
   import { useGoalStore } from '../stores/goalStore';
-  import { storeToRefs } from 'pinia';
+  import type { IKeyResultCreateDTO } from '../types/goal';
   
-  const { tempKeyResult } = storeToRefs(useGoalStore());
+  const goalStore = useGoalStore();
   
   const props = defineProps<{
     visible: boolean;
     goalId: string;
+    keyResult?: {
+      id: string;
+      name: string;
+      startValue: number;
+      targetValue: number;
+      currentValue: number;
+      calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
+      weight: number;
+    };
   }>();
   
   const emit = defineEmits<{
     (e: 'save'): void;
     (e: 'cancel'): void;
   }>();
+
+  // Form state
+  const formData = reactive<IKeyResultCreateDTO>({
+    name: '',
+    startValue: 0,
+    targetValue: 1,
+    currentValue: 0,
+    calculationMethod: 'sum',
+    weight: 1
+  });
+
+  // Initialize form when dialog opens or keyResult prop changes
+  watch([() => props.visible, () => props.keyResult], () => {
+    if (props.visible) {
+      if (props.keyResult) {
+        // Editing existing key result
+        formData.name = props.keyResult.name;
+        formData.startValue = props.keyResult.startValue;
+        formData.targetValue = props.keyResult.targetValue;
+        formData.currentValue = props.keyResult.currentValue;
+        formData.calculationMethod = props.keyResult.calculationMethod;
+        formData.weight = props.keyResult.weight;
+      } else {
+        // Creating new key result
+        formData.name = '';
+        formData.startValue = 0;
+        formData.targetValue = 1;
+        formData.currentValue = 0;
+        formData.calculationMethod = 'sum';
+        formData.weight = 1;
+      }
+      // Clear errors
+      Object.keys(errors).forEach(key => {
+        errors[key as keyof typeof errors] = '';
+      });
+    }
+  }, { immediate: true });
   
   // Form validation
   const errors = reactive({
@@ -128,7 +174,7 @@
   });
   
   const validateName = () => {
-    if (!tempKeyResult.value.name.trim()) {
+    if (!formData.name.trim()) {
       errors.name = '不能为空';
     } else {
       errors.name = '';
@@ -136,9 +182,9 @@
   };
   
   const validateStartValue = () => {
-    if (tempKeyResult.value.startValue === undefined) {
+    if (formData.startValue === undefined || formData.startValue === null) {
       errors.startValue = '请输入起始值';
-    } else if (tempKeyResult.value.startValue < 0) {
+    } else if (formData.startValue < 0) {
       errors.startValue = '起始值不能小于0';
     } else {
       errors.startValue = '';
@@ -146,9 +192,9 @@
   };
   
   const validateTargetValue = () => {
-    if (tempKeyResult.value.targetValue === undefined) {
+    if (formData.targetValue === undefined || formData.targetValue === null) {
       errors.targetValue = '请输入目标值';
-    } else if (tempKeyResult.value.targetValue <= tempKeyResult.value.startValue) {
+    } else if (formData.targetValue <= formData.startValue) {
       errors.targetValue = '目标值必须大于起始值';
     } else {
       errors.targetValue = '';
@@ -156,9 +202,9 @@
   };
   
   const validateWeight = () => {
-    if (tempKeyResult.value.weight === undefined) {
+    if (formData.weight === undefined || formData.weight === null) {
       errors.weight = '请输入权重';
-    } else if (tempKeyResult.value.weight < 0 || tempKeyResult.value.weight > 10) {
+    } else if (formData.weight < 0 || formData.weight > 10) {
       errors.weight = '权重必须在0-10之间';
     } else {
       errors.weight = '';
@@ -174,16 +220,27 @@
   
   const isValid = computed(() => {
     return !Object.values(errors).some(error => error) &&
-      tempKeyResult.value.name.trim() !== '' &&
-      tempKeyResult.value.startValue !== undefined &&
-      tempKeyResult.value.targetValue !== undefined &&
-      tempKeyResult.value.weight !== undefined;
+      formData.name.trim() !== '' &&
+      formData.startValue !== undefined &&
+      formData.targetValue !== undefined &&
+      formData.weight !== undefined;
   });
   
-  const handleSave = () => {
+  const handleSave = async () => {
     validateAll();
     if (isValid.value) {
-      emit('save');
+      try {
+        if (props.keyResult) {
+          // TODO: Implement update key result functionality when needed
+          console.log('Update key result not implemented yet');
+        } else {
+          // Add new key result
+          await goalStore.addKeyResult(props.goalId, formData);
+        }
+        emit('save');
+      } catch (error) {
+        console.error('Failed to save key result:', error);
+      }
     }
   };
   
