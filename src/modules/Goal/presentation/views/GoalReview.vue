@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { ref, computed, type ComputedRef, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 import { useGoalReviewStore } from '../stores/goalReviewStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 import { useGoalReview } from '../composables/useGoalReview';

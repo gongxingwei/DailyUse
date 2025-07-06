@@ -1,5 +1,5 @@
 import { ref, reactive, computed, watch } from 'vue'
-import { useGoalStore } from '../stores/goalStore'
+import { useGoalStore } from '../stores/goalStore.new'
 import { useGoalDirStore } from '../stores/goalDirStore';
 import { storeToRefs } from 'pinia';
 

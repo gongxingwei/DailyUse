@@ -86,7 +86,7 @@ import { computed } from 'vue';
 import type { KeyResult } from '../types/goal';
 import RecordDialog from './RecordDialog.vue';
 import { useRecordDialog } from '../composables/useRecordDialog';
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 
 const router = useRouter();
 const goalStore = useGoalStore();

@@ -75,7 +75,7 @@
   
   <script setup lang="ts">
   import { ref, onMounted } from 'vue';
-  import { useGoalStore } from '../stores/goalStore';
+  import { useGoalStore } from '../stores/goalStore.new';
   import type { Goal } from '../types/goal';
   
   const goalStore = useGoalStore();

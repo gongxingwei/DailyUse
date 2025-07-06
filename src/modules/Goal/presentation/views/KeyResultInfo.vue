@@ -101,7 +101,7 @@ import { computed, onMounted, ref } from 'vue';
 // vue-router
 import { useRoute, useRouter } from 'vue-router';
 // stores
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
 import KeyResultCard from '../components/KeyResultCard.vue';

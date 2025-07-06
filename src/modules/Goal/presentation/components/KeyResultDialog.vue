@@ -104,7 +104,7 @@
   
   <script setup lang="ts">
   import { reactive, computed, watch } from 'vue';
-  import { useGoalStore } from '../stores/goalStore';
+  import { useGoalStore } from '../stores/goalStore.new';
   import type { IKeyResultCreateDTO } from '../types/goal';
   
   const goalStore = useGoalStore();

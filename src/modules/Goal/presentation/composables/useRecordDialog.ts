@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 import type { IRecordCreate } from '../types/goal';
 
 export function useRecordDialog() {

@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 
 export function useGoalManagement() {
     const goalStore = useGoalStore();

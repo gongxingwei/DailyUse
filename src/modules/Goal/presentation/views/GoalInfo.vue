@@ -211,7 +211,7 @@
 import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 // store
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '../stores/goalStore.new';
 import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
