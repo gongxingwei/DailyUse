@@ -8,7 +8,6 @@ import type {
   IGoalDirCreateDTO
 } from "@/modules/Goal/domain/types/goal";
 import { Goal } from "@/modules/Goal/domain/entities/goal";
-import { Record } from "@/modules/Goal/domain/entities/record";
 import { GoalDir } from "@/modules/Goal/domain/entities/goalDir";
 import { GoalContainer } from "../infrastructure/di/goalContainer";
 import type { IGoalRepository } from "../domain/repositories/iGoalRepository";
@@ -329,52 +328,81 @@ export class MainGoalApplicationService {
     }
   }
 
-  // ========== 记录管理 ==========
-
   /**
-   * 创建记录
+   * 为目标的关键结果添加记录（通过聚合根）
    */
-  async createRecord(recordData: IRecordCreateDTO): Promise<TResponse<IRecord>> {
+  async addRecordToGoal(goalId: string, keyResultId: string, value: number, note?: string): Promise<TResponse<{ goal: IGoal; record: IRecord }>> {
     try {
-      console.log('🔄 [主进程] 创建记录:', recordData);
+      console.log('🔄 [主进程] 为目标关键结果添加记录:', { goalId, keyResultId, value, note });
 
-      // 验证数据
-      const validation = Record.validate(recordData);
-      if (!validation.isValid) {
+      if (value <= 0) {
         return {
           success: false,
-          message: `记录数据验证失败: ${validation.errors.join(', ')}`,
+          message: '记录值必须大于0',
         };
       }
 
       const repository = await this.getRepository();
 
-      // 检查目标是否存在
-      const goal = await repository.getGoalById(recordData.goalId);
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
       if (!goal) {
         return {
           success: false,
-          message: `目标不存在: ${recordData.goalId}`,
+          message: `目标不存在: ${goalId}`,
         };
       }
 
-      // 检查关键结果是否存在
-      const keyResult = goal.keyResults.find(kr => kr.id === recordData.keyResultId);
-      if (!keyResult) {
-        return {
-          success: false,
-          message: `关键结果不存在: ${recordData.keyResultId}`,
-        };
-      }
+      // 通过聚合根添加记录
+      const record = goal.addRecord(keyResultId, value, note);
 
-      // 创建记录
-      const record = await repository.createRecord(recordData);
+      // 保存更新后的聚合根
+      const updatedGoal = await repository.updateGoal(goalId, goal.toDTO());
 
-      console.log('✅ [主进程] 记录创建成功:', record.id);
+      console.log('✅ [主进程] 记录添加成功:', record.id);
       return {
         success: true,
-        message: '记录创建成功',
-        data: record.toDTO(),
+        message: '记录添加成功',
+        data: { 
+          goal: updatedGoal.toDTO(),
+          record: record.toDTO()
+        },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 添加记录失败:', error);
+      return {
+        success: false,
+        message: `添加记录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 创建记录（兼容性方法，推荐使用 addRecordToGoal）
+   */
+  async createRecord(recordData: IRecordCreateDTO): Promise<TResponse<IRecord>> {
+    try {
+      console.log('🔄 [主进程] 创建记录:', recordData);
+
+      // 委托给聚合根方法
+      const result = await this.addRecordToGoal(
+        recordData.goalId,
+        recordData.keyResultId,
+        recordData.value,
+        recordData.note
+      );
+
+      if (result.success && result.data) {
+        return {
+          success: true,
+          message: result.message,
+          data: result.data.record,
+        };
+      }
+
+      return {
+        success: false,
+        message: result.message,
       };
     } catch (error) {
       console.error('❌ [主进程] 创建记录失败:', error);
@@ -572,6 +600,228 @@ export class MainGoalApplicationService {
       return {
         success: false,
         message: `删除目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 为目标添加关键结果（通过聚合根）
+   */
+  async addKeyResultToGoal(
+    goalId: string,
+    keyResultData: {
+      name: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+      weight?: number;
+    }
+  ): Promise<TResponse<{ goal: IGoal; keyResultId: string }>> {
+    try {
+      console.log('🔄 [主进程] 为目标添加关键结果:', { goalId, ...keyResultData });
+
+      const repository = await this.getRepository();
+      const goalWithRecords = await repository.getGoalById(goalId);
+      
+      if (!goalWithRecords) {
+        return {
+          success: false,
+          message: '目标不存在',
+        };
+      }
+
+      // 填充默认值
+      const fullKeyResultData = {
+        name: keyResultData.name,
+        startValue: keyResultData.startValue,
+        targetValue: keyResultData.targetValue,
+        currentValue: keyResultData.currentValue ?? keyResultData.startValue,
+        calculationMethod: keyResultData.calculationMethod ?? 'sum' as const,
+        weight: keyResultData.weight ?? 1,
+      };
+
+      // 通过聚合根添加关键结果
+      const keyResultId = goalWithRecords.addKeyResult(fullKeyResultData);
+
+      // 保存到数据库
+      await repository.updateGoal(goalId, {
+        title: goalWithRecords.title,
+        description: goalWithRecords.description,
+        color: goalWithRecords.color,
+        dirId: goalWithRecords.dirId,
+        startTime: goalWithRecords.startTime,
+        endTime: goalWithRecords.endTime,
+        note: goalWithRecords.note,
+        keyResults: goalWithRecords.keyResults,
+      });
+
+      console.log('✅ [主进程] 关键结果添加成功:', keyResultId);
+      return {
+        success: true,
+        message: '关键结果添加成功',
+        data: { 
+          goal: goalWithRecords.toDTO(),
+          keyResultId: keyResultId
+        },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 添加关键结果失败:', error);
+      return {
+        success: false,
+        message: `添加关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 删除目标的关键结果（通过聚合根）
+   */
+  async removeKeyResultFromGoal(goalId: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [主进程] 删除目标关键结果:', { goalId, keyResultId });
+
+      const repository = await this.getRepository();
+      const goalWithRecords = await repository.getGoalById(goalId);
+      
+      if (!goalWithRecords) {
+        return {
+          success: false,
+          message: '目标不存在',
+        };
+      }
+
+      // 通过聚合根删除关键结果（会自动删除相关记录）
+      goalWithRecords.removeKeyResult(keyResultId);
+
+      // 保存到数据库
+      await repository.updateGoal(goalId, {
+        title: goalWithRecords.title,
+        description: goalWithRecords.description,
+        color: goalWithRecords.color,
+        dirId: goalWithRecords.dirId,
+        startTime: goalWithRecords.startTime,
+        endTime: goalWithRecords.endTime,
+        note: goalWithRecords.note,
+        keyResults: goalWithRecords.keyResults,
+      });
+
+      console.log('✅ [主进程] 关键结果删除成功:', keyResultId);
+      return {
+        success: true,
+        message: '关键结果删除成功',
+        data: { goal: goalWithRecords.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 删除关键结果失败:', error);
+      return {
+        success: false,
+        message: `删除关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的关键结果（通过聚合根）
+   */
+  async updateKeyResultOfGoal(
+    goalId: string,
+    keyResultId: string,
+    updates: {
+      name?: string;
+      targetValue?: number;
+      weight?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    }
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [主进程] 更新目标关键结果:', { goalId, keyResultId, updates });
+
+      const repository = await this.getRepository();
+      const goalWithRecords = await repository.getGoalById(goalId);
+      
+      if (!goalWithRecords) {
+        return {
+          success: false,
+          message: '目标不存在',
+        };
+      }
+
+      // 通过聚合根更新关键结果
+      goalWithRecords.updateKeyResult(keyResultId, updates);
+
+      // 保存到数据库
+      await repository.updateGoal(goalId, {
+        title: goalWithRecords.title,
+        description: goalWithRecords.description,
+        color: goalWithRecords.color,
+        dirId: goalWithRecords.dirId,
+        startTime: goalWithRecords.startTime,
+        endTime: goalWithRecords.endTime,
+        note: goalWithRecords.note,
+        keyResults: goalWithRecords.keyResults,
+      });
+
+      console.log('✅ [主进程] 关键结果更新成功:', keyResultId);
+      return {
+        success: true,
+        message: '关键结果更新成功',
+        data: { goal: goalWithRecords.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 更新关键结果失败:', error);
+      return {
+        success: false,
+        message: `更新关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  // ========== 记录管理 ==========
+
+  /**
+   * 从目标中删除记录（通过聚合根）
+   */
+  async removeRecordFromGoal(goalId: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [主进程] 从目标删除记录:', { goalId, recordId });
+
+      const repository = await this.getRepository();
+      const goalWithRecords = await repository.getGoalById(goalId);
+      
+      if (!goalWithRecords) {
+        return {
+          success: false,
+          message: '目标不存在',
+        };
+      }
+
+      // 通过聚合根删除记录
+      goalWithRecords.removeRecord(recordId);
+
+      // 保存到数据库
+      await repository.updateGoal(goalId, {
+        title: goalWithRecords.title,
+        description: goalWithRecords.description,
+        color: goalWithRecords.color,
+        dirId: goalWithRecords.dirId,
+        startTime: goalWithRecords.startTime,
+        endTime: goalWithRecords.endTime,
+        note: goalWithRecords.note,
+        keyResults: goalWithRecords.keyResults,
+      });
+
+      console.log('✅ [主进程] 记录删除成功:', recordId);
+      return {
+        success: true,
+        message: '记录删除成功',
+        data: { goal: goalWithRecords.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 删除记录失败:', error);
+      return {
+        success: false,
+        message: `删除记录失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }

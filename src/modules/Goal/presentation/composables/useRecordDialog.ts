@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { useGoalStore } from '../stores/goalStore.new';
+import { useGoalStore } from '../stores/goalStore';
 import type { IRecordCreate } from '../types/goal';
 
 export function useRecordDialog() {
@@ -14,7 +14,6 @@ export function useRecordDialog() {
 
     const handleSaveRecord = async (record: IRecordCreate, goalId: string, keyResultId: string) => {
         try {
-            // Convert the date string to a proper DateTime format
             const recordData = {
                 keyResultId,
                 value: record.value,

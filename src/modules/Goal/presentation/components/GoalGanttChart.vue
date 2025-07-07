@@ -147,7 +147,7 @@
   
   <script setup lang="ts">
   import { computed } from 'vue';
-  import { useGoalStore } from '../stores/goalStore.new';
+  import { useGoalStore } from '../stores/goalStore';
   import type { Goal } from '../types/goal';
   
   const goalStore = useGoalStore();

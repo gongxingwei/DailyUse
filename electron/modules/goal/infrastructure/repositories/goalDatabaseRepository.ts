@@ -769,4 +769,70 @@ export class GoalDatabaseRepository implements IGoalRepository {
       }
     };
   }
+
+  /**
+   * 获取目标聚合（优化版本）- 使用 JOIN 减少查询次数
+   */
+  async getGoalByIdOptimized(id: string): Promise<Goal | null> {
+    // 一次查询获取所有相关数据
+    const goalStmt = this.db.prepare(`
+      SELECT 
+        g.*,
+        kr.id as kr_id, kr.name as kr_name, kr.start_value, kr.target_value, 
+        kr.current_value, kr.calculation_method, kr.weight, kr.lifecycle as kr_lifecycle,
+        r.id as r_id, r.key_result_id as r_kr_id, r.value as r_value, 
+        r.date as r_date, r.note as r_note, r.lifecycle as r_lifecycle
+      FROM goals g
+      LEFT JOIN key_results kr ON g.id = kr.goal_id
+      LEFT JOIN goal_records r ON g.id = r.goal_id
+      WHERE g.id = ?
+      ORDER BY kr.created_at ASC, r.date DESC
+    `);
+
+    const rows = goalStmt.all(id) as any[];
+    if (rows.length === 0) return null;
+
+    const goalRow = rows[0];
+    const goalDTO = this.mapRowToGoal(goalRow);
+
+    // 组装关键结果和记录
+    const keyResultsMap = new Map<string, IKeyResult>();
+    const recordsMap = new Map<string, IRecord>();
+
+    for (const row of rows) {
+      // 处理关键结果
+      if (row.kr_id && !keyResultsMap.has(row.kr_id)) {
+        const kr = this.mapRowToKeyResult({
+          id: row.kr_id,
+          name: row.kr_name,
+          start_value: row.start_value,
+          target_value: row.target_value,
+          current_value: row.current_value,
+          calculation_method: row.calculation_method,
+          weight: row.weight,
+          lifecycle: row.kr_lifecycle
+        });
+        keyResultsMap.set(row.kr_id, kr);
+      }
+
+      // 处理记录
+      if (row.r_id && !recordsMap.has(row.r_id)) {
+        const record = this.mapRowToRecord({
+          id: row.r_id,
+          goal_id: id,
+          key_result_id: row.r_kr_id,
+          value: row.r_value,
+          date: row.r_date,
+          note: row.r_note,
+          lifecycle: row.r_lifecycle
+        });
+        recordsMap.set(row.r_id, record);
+      }
+    }
+
+    goalDTO.keyResults = Array.from(keyResultsMap.values());
+    goalDTO.records = Array.from(recordsMap.values());
+
+    return Goal.fromDTO(goalDTO);
+  }
 }

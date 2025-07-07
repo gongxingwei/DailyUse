@@ -1,6 +1,6 @@
 import type { IGoalStateRepository } from "../../domain/repositories/IGoalStateRepository";
 import type { IGoal, IRecord, IGoalDir } from "../../domain/types/goal";
-import { useGoalStore } from "../../presentation/stores/goalStore";
+import { useGoalStore } from "@/modules/Goal/presentation/stores/goalStore";
 
 /**
  * Pinia 目标状态仓库实现

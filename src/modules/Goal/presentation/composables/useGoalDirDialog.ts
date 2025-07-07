@@ -1,18 +1,18 @@
 import { computed, ref } from 'vue';
-import { useGoalDirStore } from '../stores/goalDirStore';
+import { useGoalStore } from '../stores/goalStore';
 
 export function useGoalDirDialog() {
     const showGoalDirDialog = ref(false);
     const selectedDirId = ref<string>('all');
 
-    const goalDirStore = useGoalDirStore();
+    const goalStore = useGoalStore();
 
     // 目录相关
-    const goalDirs = computed(() => goalDirStore.getAllDirs);
+    const goalDirs = computed(() => goalStore.getAllDirs);
 
     // 开始创建目标节点
     const startCreateGoalDir = () => {
-        const tempDir = goalDirStore.initTempDir();
+        const tempDir = goalStore.initTempDir();
         if (!tempDir) {
             console.error('目录创建失败');
             return;
@@ -21,7 +21,7 @@ export function useGoalDirDialog() {
     };
     // 开始编辑目标节点
     const startEditGoalDir = (dirId: string) => {
-        const tempDir = goalDirStore.initTempDirByDirId(dirId);
+        const tempDir = goalStore.initTempDirByDirId(dirId);
         if (!tempDir) {
             console.error('目录编辑失败');
             return;
@@ -30,7 +30,7 @@ export function useGoalDirDialog() {
     };
     // 保存目标节点
     const saveGoalDir = () => {
-        goalDirStore.saveTempDir();
+        goalStore.saveTempDir();
         showGoalDirDialog.value = false;
     }
 

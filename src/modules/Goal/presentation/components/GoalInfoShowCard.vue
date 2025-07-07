@@ -97,7 +97,7 @@
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
 import type { Goal } from '../types/goal';
-import { useGoalStore } from '../stores/goalStore.new';
+import { useGoalStore } from '../stores/goalStore';
 import KeyResultCard from './KeyResultCard.vue';
 
 const props = defineProps<{

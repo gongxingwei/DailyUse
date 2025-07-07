@@ -175,6 +175,100 @@ export class GoalIpcClient {
   // ========== 关键结果管理 ==========
 
   /**
+   * 为目标添加关键结果（聚合根驱动）
+   */
+  async addKeyResultToGoal(
+    goalId: string,
+    keyResultData: {
+      name: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+      weight?: number;
+    }
+  ): Promise<TResponse<{ goal: IGoal; keyResultId: string }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 为目标添加关键结果:', { goalId, ...keyResultData });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:addKeyResult', goalId, keyResultData);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 关键结果添加成功:', response.data?.keyResultId);
+      } else {
+        console.error('❌ [渲染进程-IPC] 关键结果添加失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 添加关键结果通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 删除目标的关键结果（聚合根驱动）
+   */
+  async removeKeyResultFromGoal(goalId: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 删除目标关键结果:', { goalId, keyResultId });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:removeKeyResult', goalId, keyResultId);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 关键结果删除成功:', keyResultId);
+      } else {
+        console.error('❌ [渲染进程-IPC] 关键结果删除失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 删除关键结果通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的关键结果（聚合根驱动）
+   */
+  async updateKeyResultOfGoal(
+    goalId: string,
+    keyResultId: string,
+    updates: {
+      name?: string;
+      targetValue?: number;
+      weight?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    }
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 更新目标关键结果:', { goalId, keyResultId, updates });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:updateKeyResult', goalId, keyResultId, updates);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 关键结果更新成功:', keyResultId);
+      } else {
+        console.error('❌ [渲染进程-IPC] 关键结果更新失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 更新关键结果通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
    * 更新关键结果当前值
    */
   async updateKeyResultCurrentValue(
@@ -186,7 +280,7 @@ export class GoalIpcClient {
       console.log('🔄 [渲染进程-IPC] 更新关键结果当前值:', { goalId, keyResultId, currentValue });
       
       const response = await window.shared.ipcRenderer.invoke(
-        'goal:key-result:update-current-value', 
+        'goal:updateKeyResultCurrentValue', 
         goalId, 
         keyResultId, 
         currentValue
@@ -220,7 +314,7 @@ export class GoalIpcClient {
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(recordData);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:record:create', serializedData);
+      const response = await window.shared.ipcRenderer.invoke('goal:createRecord', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录创建成功:', response.data?.id);
@@ -245,7 +339,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 获取所有记录');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:record:get-all');
+      const response = await window.shared.ipcRenderer.invoke('goal:getAllRecords');
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取记录成功，数量: ${response.data?.length || 0}`);
@@ -270,7 +364,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 获取目标记录:', goalId);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:record:get-by-goal-id', goalId);
+      const response = await window.shared.ipcRenderer.invoke('goal:getRecordsByGoal', goalId);
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取目标记录成功，数量: ${response.data?.length || 0}`);
@@ -295,7 +389,93 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 删除记录:', recordId);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:record:delete', recordId);
+      const response = await window.shared.ipcRenderer.invoke('goal:deleteRecord', recordId);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 记录删除成功:', recordId);
+      } else {
+        console.error('❌ [渲染进程-IPC] 记录删除失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 删除记录通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 为目标的关键结果添加记录（聚合根驱动）
+   */
+  async addRecordToGoal(
+    goalId: string, 
+    keyResultId: string, 
+    value: number, 
+    note?: string
+  ): Promise<TResponse<{ goal: IGoal; record: IRecord }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 为目标关键结果添加记录:', { goalId, keyResultId, value, note });
+      
+      const response = await window.shared.ipcRenderer.invoke(
+        'goal:addRecordToGoal', 
+        goalId, 
+        keyResultId, 
+        value, 
+        note
+      );
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 记录添加成功:', response.data?.record?.id);
+      } else {
+        console.error('❌ [渲染进程-IPC] 记录添加失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 添加记录通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 创建记录（兼容性方法，推荐使用 addRecordToGoal）
+   */
+  async createRecordCompat(
+    goalId: string, 
+    keyResultId: string, 
+    value: number, 
+    note?: string
+  ): Promise<TResponse<IRecord>> {
+    const result = await this.addRecordToGoal(goalId, keyResultId, value, note);
+    
+    if (result.success && result.data) {
+      return {
+        success: true,
+        message: result.message,
+        data: result.data.record,
+      };
+    }
+    
+    return {
+      success: false,
+      message: result.message,
+    };
+  }
+
+  /**
+   * 从目标中删除记录（聚合根驱动）
+   */
+  async removeRecordFromGoal(goalId: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 从目标删除记录:', { goalId, recordId });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:removeRecord', goalId, recordId);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录删除成功:', recordId);

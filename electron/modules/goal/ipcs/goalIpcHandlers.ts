@@ -64,11 +64,31 @@ export function registerGoalIpcHandlers() {
 
   // ========== 关键结果 IPC ==========
 
+  ipcMain.handle('goal:addKeyResult', async (_event, goalId: string, keyResultData: any) => {
+    return await goalApplicationService.addKeyResultToGoal(goalId, keyResultData);
+  });
+
+  ipcMain.handle('goal:removeKeyResult', async (_event, goalId: string, keyResultId: string) => {
+    return await goalApplicationService.removeKeyResultFromGoal(goalId, keyResultId);
+  });
+
+  ipcMain.handle('goal:updateKeyResult', async (_event, goalId: string, keyResultId: string, updates: any) => {
+    return await goalApplicationService.updateKeyResultOfGoal(goalId, keyResultId, updates);
+  });
+
   ipcMain.handle('goal:updateKeyResultCurrentValue', async (_event, goalId: string, keyResultId: string, currentValue: number) => {
     return await goalApplicationService.updateKeyResultCurrentValue(goalId, keyResultId, currentValue);
   });
 
   // ========== 记录 IPC ==========
+
+  ipcMain.handle('goal:addRecordToGoal', async (_event, goalId: string, keyResultId: string, value: number, note?: string) => {
+    return await goalApplicationService.addRecordToGoal(goalId, keyResultId, value, note);
+  });
+
+  ipcMain.handle('goal:removeRecord', async (_event, goalId: string, recordId: string) => {
+    return await goalApplicationService.removeRecordFromGoal(goalId, recordId);
+  });
 
   ipcMain.handle('goal:createRecord', async (_event, recordData: IRecordCreateDTO) => {
     return await goalApplicationService.createRecord(recordData);
@@ -80,10 +100,6 @@ export function registerGoalIpcHandlers() {
 
   ipcMain.handle('goal:getRecordsByGoal', async (_event, goalId: string) => {
     return await goalApplicationService.getRecordsByGoalId(goalId);
-  });
-
-  ipcMain.handle('goal:deleteRecord', async (_event, id: string) => {
-    return await goalApplicationService.deleteRecord(id);
   });
 
   console.log('✅ Goal IPC handlers registered');
@@ -104,11 +120,15 @@ export function unregisterGoalIpcHandlers() {
     'goal:update',
     'goal:delete',
     'goal:deleteAll',
+    'goal:addKeyResult',
+    'goal:removeKeyResult',
+    'goal:updateKeyResult',
     'goal:updateKeyResultCurrentValue',
+    'goal:addRecordToGoal',
+    'goal:removeRecord',
     'goal:createRecord',
     'goal:getAllRecords',
-    'goal:getRecordsByGoal',
-    'goal:deleteRecord'
+    'goal:getRecordsByGoal'
   ];
 
   channels.forEach(channel => {

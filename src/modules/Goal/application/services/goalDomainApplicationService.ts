@@ -211,7 +211,134 @@ export class GoalDomainApplicationService {
     }
   }
 
-  // ========== 关键结果管理 ==========
+  // ========== 关键结果管理（聚合根驱动）==========
+
+  /**
+   * 为目标添加关键结果（聚合根驱动）
+   */
+  async addKeyResultToGoal(
+    goalId: string,
+    keyResultData: {
+      name: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+      weight?: number;
+    }
+  ): Promise<TResponse<{ goal: IGoal; keyResultId: string }>> {
+    try {
+      console.log('🔄 [目标应用服务] 为目标添加关键结果:', { goalId, ...keyResultData });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.addKeyResultToGoal(goalId, keyResultData);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 关键结果添加并同步成功:', response.data.keyResultId);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 关键结果添加失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 添加关键结果异常:', error);
+      return {
+        success: false,
+        message: `添加关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 删除目标的关键结果（聚合根驱动）
+   */
+  async removeKeyResultFromGoal(goalId: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [目标应用服务] 删除目标关键结果:', { goalId, keyResultId });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.removeKeyResultFromGoal(goalId, keyResultId);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 关键结果删除并同步成功:', keyResultId);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 关键结果删除失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 删除关键结果异常:', error);
+      return {
+        success: false,
+        message: `删除关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的关键结果（聚合根驱动）
+   */
+  async updateKeyResultOfGoal(
+    goalId: string,
+    keyResultId: string,
+    updates: {
+      name?: string;
+      targetValue?: number;
+      weight?: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    }
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [目标应用服务] 更新目标关键结果:', { goalId, keyResultId, updates });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.updateKeyResultOfGoal(goalId, keyResultId, updates);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 关键结果更新并同步成功:', keyResultId);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 关键结果更新失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 更新关键结果异常:', error);
+      return {
+        success: false,
+        message: `更新关键结果失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
 
   /**
    * 更新关键结果当前值
@@ -253,10 +380,94 @@ export class GoalDomainApplicationService {
     }
   }
 
-  // ========== 记录管理 ==========
+  // ========== 记录管理（聚合根驱动）==========
 
   /**
-   * 创建记录
+   * 为目标的关键结果添加记录（聚合根驱动）
+   * 这是推荐的业务方法，确保通过 Goal 聚合根来控制记录添加
+   */
+  async addRecordToGoal(
+    goalId: string,
+    keyResultId: string,
+    value: number,
+    note?: string
+  ): Promise<TResponse<{ goal: IGoal; record: IRecord }>> {
+    try {
+      console.log('🔄 [目标应用服务] 为目标关键结果添加记录:', { goalId, keyResultId, value, note });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.addRecordToGoal(goalId, keyResultId, value, note);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态（包含新记录）
+        await this.syncGoalToState(response.data.goal);
+        
+        // 同步记录到前端状态
+        await this.syncRecordToState(response.data.record);
+
+        console.log('✅ [目标应用服务] 记录添加并同步成功:', response.data.record.id);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 记录添加失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 添加记录异常:', error);
+      return {
+        success: false,
+        message: `添加记录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 从目标中删除记录（聚合根驱动）
+   */
+  async removeRecordFromGoal(goalId: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [目标应用服务] 从目标删除记录:', { goalId, recordId });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.removeRecordFromGoal(goalId, recordId);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态
+        await this.syncGoalToState(response.data.goal);
+        
+        // 从前端状态移除记录
+        await this.removeRecordFromState(recordId);
+
+        console.log('✅ [目标应用服务] 记录删除并同步成功:', recordId);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 记录删除失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 删除记录异常:', error);
+      return {
+        success: false,
+        message: `删除记录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 创建记录（兼容性方法，推荐使用 addRecordToGoal）
    */
   async createRecord(recordData: IRecordCreateDTO): Promise<TResponse<{ record: IRecord }>> {
     try {
@@ -332,41 +543,6 @@ export class GoalDomainApplicationService {
     } catch (error) {
       console.error('❌ [目标应用服务] 获取目标记录异常:', error);
       return [];
-    }
-  }
-
-  /**
-   * 删除记录
-   */
-  async deleteRecord(recordId: string): Promise<TResponse<void>> {
-    try {
-      console.log('🔄 [目标应用服务] 删除记录:', recordId);
-
-      // 调用主进程删除记录
-      const response = await goalIpcClient.deleteRecord(recordId);
-
-      if (response.success) {
-        // 从前端状态移除
-        await this.removeRecordFromState(recordId);
-
-        console.log('✅ [目标应用服务] 记录删除并同步成功:', recordId);
-        return {
-          success: true,
-          message: response.message,
-        };
-      }
-
-      console.error('❌ [目标应用服务] 记录删除失败:', response.message);
-      return {
-        success: false,
-        message: response.message,
-      };
-    } catch (error) {
-      console.error('❌ [目标应用服务] 删除记录异常:', error);
-      return {
-        success: false,
-        message: `删除记录失败: ${error instanceof Error ? error.message : '未知错误'}`,
-      };
     }
   }
 

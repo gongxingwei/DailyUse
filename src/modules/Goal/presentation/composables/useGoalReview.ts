@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
-import { useGoalReviewStore } from '../stores/goalReviewStore';
+import { useGoalStore } from '../stores/goalStore';
 
 
 
@@ -24,11 +24,11 @@ export interface PeriodStats {
 export function useGoalReview() {
     const route = useRoute();
     const router = useRouter();
-    const goalReviewStore = useGoalReviewStore();
+    const goalStore = useGoalStore();
     
     const showGoalReviewRecored = ref(false); // 控制复盘记录的显示与隐藏
     const goalId = route.params.goalId as string;
-    const allReviews = goalReviewStore.getReviewsByGoalId(goalId); // 获取所有复盘记录
+    const allReviews = goalStore.getReviewsByGoalId(goalId); // 获取所有复盘记录
     // 期中复盘相关
     /* 开始期中复盘 */
     const startMidtermReview = (goalId: string) => {
@@ -41,7 +41,7 @@ export function useGoalReview() {
     };
     // 保存复盘
     const saveReview = () => {
-        goalReviewStore.saveReview();
+        goalStore.saveReview();
         router.back();
     };
     // 查看所有的复盘记录卡片

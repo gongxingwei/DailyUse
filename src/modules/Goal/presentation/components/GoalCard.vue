@@ -101,7 +101,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { Goal } from '@/modules/Goal/types/goal'
-import { useGoalStore } from '../stores/goalStore.new'
+import { useGoalStore } from '../stores/goalStore'
 import { useRouter } from 'vue-router'
 
 const goalStore = useGoalStore()
