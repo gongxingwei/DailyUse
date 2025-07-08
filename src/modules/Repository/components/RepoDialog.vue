@@ -128,7 +128,7 @@
 import { ref, computed } from 'vue'
 import { fileSystem } from '@/shared/utils/fileUtils';
 import { useRepositoryStore } from '../stores/repositoryStore'
-import { useGoalStore } from '@/modules/Goal/stores/goalStore'
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
 
 const props = defineProps<{
   modelValue: boolean

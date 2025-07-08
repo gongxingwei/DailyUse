@@ -14,7 +14,7 @@ const userIpcInitTask: InitializationTask = {
   priority: 20,
   dependencies: ['filesystem'],
   initialize: async () => {
-    setupUserHandlers();
+    await setupUserHandlers();
     console.log('✓ User IPC handlers registered');
   }
 };
@@ -26,7 +26,7 @@ const loginSessionIpcInitTask: InitializationTask = {
   priority: 25,
   dependencies: ['user-ipc-handlers'],
   initialize: async () => {
-    setupLoginSessionHandlers();
+    await setupLoginSessionHandlers();
     console.log('✓ Login session IPC handlers registered');
   }
 };

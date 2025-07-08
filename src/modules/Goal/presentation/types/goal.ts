@@ -7,7 +7,7 @@ export type {
   IGoalCreateDTO,
   IKeyResultCreateDTO,
   IRecordCreateDTO,
-  IGoalDirCreateDTO,
+  IGoalDir,
   KeyResultLink
 } from '../../domain/types/goal';
 

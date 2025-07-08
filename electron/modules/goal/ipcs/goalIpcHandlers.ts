@@ -3,7 +3,7 @@ import { MainGoalApplicationService } from '../application/mainGoalApplicationSe
 import type { 
   IGoal,
   IGoalCreateDTO,
-  IGoalDirCreateDTO,
+  IGoalDir,
   IRecordCreateDTO
 } from '../../../../src/modules/Goal/domain/types/goal';
 
@@ -24,29 +24,32 @@ export function registerGoalIpcHandlers() {
 
   // ========== 目标目录 IPC ==========
   
-  ipcMain.handle('goal:createDirectory', async (_event, goalDirData: IGoalDirCreateDTO) => {
+  ipcMain.handle('goal:dir:create', async (_event, goalDirData: IGoalDir) => {
     return await goalApplicationService.createGoalDir(goalDirData);
   });
 
-  ipcMain.handle('goal:getDirectories', async (_event) => {
+  ipcMain.handle('goal:dir:get-all', async (_event) => {
     return await goalApplicationService.getAllGoalDirs();
   });
 
-  ipcMain.handle('goal:deleteDirectory', async (_event, id: string) => {
+  ipcMain.handle('goal:dir:delete', async (_event, id: string) => {
     return await goalApplicationService.deleteGoalDir(id);
   });
 
+  ipcMain.handle('goal:dir:update', async (_event, goalDirData: IGoalDir) => {
+    return await goalApplicationService.updateGoalDir(goalDirData);
+  });
   // ========== 目标 IPC ==========
 
   ipcMain.handle('goal:create', async (_event, goalData: IGoalCreateDTO) => {
     return await goalApplicationService.createGoal(goalData);
   });
 
-  ipcMain.handle('goal:getAll', async (_event) => {
+  ipcMain.handle('goal:get-all', async (_event) => {
     return await goalApplicationService.getAllGoals();
   });
 
-  ipcMain.handle('goal:getById', async (_event, id: string) => {
+  ipcMain.handle('goal:get-by-id', async (_event, id: string) => {
     return await goalApplicationService.getGoalById(id);
   });
 
@@ -58,7 +61,7 @@ export function registerGoalIpcHandlers() {
     return await goalApplicationService.deleteGoal(id);
   });
 
-  ipcMain.handle('goal:deleteAll', async (_event) => {
+  ipcMain.handle('goal:delete-all', async (_event) => {
     return await goalApplicationService.deleteAllGoals();
   });
 
@@ -102,6 +105,41 @@ export function registerGoalIpcHandlers() {
     return await goalApplicationService.getRecordsByGoalId(goalId);
   });
 
+  ipcMain.handle('goal:deleteRecord', async (_event, recordId: string) => {
+    return await goalApplicationService.deleteRecord(recordId);
+  });
+
+  // ========== 复盘 IPC ==========
+
+  ipcMain.handle('goal:addReview', async (_event, data: any) => {
+    const { goalId, reviewData } = data;
+    return await goalApplicationService.addReviewToGoal(goalId, reviewData);
+  });
+
+  ipcMain.handle('goal:updateReview', async (_event, data: any) => {
+    const { goalId, reviewId, updateData } = data;
+    return await goalApplicationService.updateReviewInGoal(goalId, reviewId, updateData);
+  });
+
+  ipcMain.handle('goal:removeReview', async (_event, data: any) => {
+    const { goalId, reviewId } = data;
+    return await goalApplicationService.removeReviewFromGoal(goalId, reviewId);
+  });
+
+  ipcMain.handle('goal:getReviews', async (_event, goalId: string) => {
+    // 从目标获取复盘，需要先获取目标
+    const goalResult = await goalApplicationService.getGoalById(goalId);
+    if (!goalResult.success || !goalResult.data) {
+      return { success: false, message: '目标不存在', data: [] };
+    }
+    // 返回目标的复盘数据
+    return { success: true, data: goalResult.data.reviews || [] };
+  });
+
+  ipcMain.handle('goal:createReviewSnapshot', async (_event, goalId: string) => {
+    return await goalApplicationService.createGoalReviewSnapshot(goalId);
+  });
+
   console.log('✅ Goal IPC handlers registered');
 }
 
@@ -111,15 +149,15 @@ export function registerGoalIpcHandlers() {
 export function unregisterGoalIpcHandlers() {
   const channels = [
     'goal:setUsername',
-    'goal:createDirectory',
-    'goal:getDirectories', 
-    'goal:deleteDirectory',
+    'goal:dir:create',
+    'goal:dir:get-all', 
+    'goal:dir:delete',
     'goal:create',
-    'goal:getAll',
-    'goal:getById',
+    'goal:get-all',
+    'goal:get-by-id',
     'goal:update',
     'goal:delete',
-    'goal:deleteAll',
+    'goal:delete-all',
     'goal:addKeyResult',
     'goal:removeKeyResult',
     'goal:updateKeyResult',
@@ -128,7 +166,13 @@ export function unregisterGoalIpcHandlers() {
     'goal:removeRecord',
     'goal:createRecord',
     'goal:getAllRecords',
-    'goal:getRecordsByGoal'
+    'goal:getRecordsByGoal',
+    'goal:deleteRecord',
+    'goal:addReview',
+    'goal:updateReview',
+    'goal:removeReview',
+    'goal:getReviews',
+    'goal:createReviewSnapshot'
   ];
 
   channels.forEach(channel => {

@@ -3,7 +3,6 @@
     class="goal-card mb-4"
     elevation="2"
     :style="{ borderLeft: `4px solid ${goal.color}` }"
-    @click="navigateToGoalInfo"
   >
     <v-card-text class="pa-6">
       <!-- 目标标题和状态 -->
@@ -33,21 +32,26 @@
         
         <!-- 进度圆环 -->
         <v-progress-circular
-          :model-value="progress"
+          :model-value="goalProgress"
           :color="goal.color"
           size="48"
           width="6"
           class="progress-ring"
         >
-          <span class="text-caption font-weight-bold">{{ progress }}%</span>
+          <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </v-progress-circular>
       </div>
+
+      <!-- 目标描述 -->
+      <p v-if="goal.description" class="text-body-2 text-medium-emphasis mb-4">
+        {{ goal.description }}
+      </p>
 
       <!-- 时间信息 -->
       <div class="d-flex align-center mb-4">
         <v-icon :color="goal.color" size="20" class="mr-2">mdi-calendar-range</v-icon>
         <span class="text-body-2 text-medium-emphasis">
-          {{ formatDate(goal.startTime) }} - {{ formatDate(goal.endTime) }}
+          {{ TimeUtils.formatDisplayTime(goal.startTime) }} - {{ TimeUtils.formatDisplayTime(goal.endTime) }}
         </span>
         <v-spacer />
         <v-chip
@@ -65,10 +69,10 @@
       <div class="mb-2">
         <div class="d-flex justify-space-between align-center mb-1">
           <span class="text-caption text-medium-emphasis">目标进度</span>
-          <span class="text-caption font-weight-bold">{{ progress }}%</span>
+          <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </div>
         <v-progress-linear
-          :model-value="progress"
+          :model-value="goalProgress"
           :color="goal.color"
           height="8"
           rounded
@@ -77,97 +81,196 @@
       </div>
 
       <!-- 关键结果数量 -->
-      <div class="d-flex align-center justify-space-between">
+      <div class="d-flex align-center justify-space-between mb-4">
         <div class="d-flex align-center">
           <v-icon color="medium-emphasis" size="16" class="mr-1">mdi-target</v-icon>
           <span class="text-caption text-medium-emphasis">
-            {{ getKeyResultsCount() }} 个关键结果
+            {{ completedKeyResultsCount }}/{{ getKeyResultsCount() }} 关键结果完成
           </span>
         </div>
         <v-btn
-          :color="goal.color"
-          variant="text"
+          variant="outlined"
           size="small"
-          append-icon="mdi-arrow-right"
-          class="text-caption"
+          :color="goal.color"
+          @click="$emit('add-key-result', goal.id)"
         >
-          查看详情
+          <v-icon left size="16">mdi-plus</v-icon>
+          添加关键结果
         </v-btn>
       </div>
+
+      <!-- 关键结果列表 -->
+      <div v-if="goal.keyResults && goal.keyResults.length > 0" class="key-results-section mb-4">
+        <v-divider class="mb-3"></v-divider>
+        <div class="text-subtitle-2 mb-2">关键结果:</div>
+        <div
+          v-for="kr in goal.keyResults.slice(0, 3)"
+          :key="kr.id"
+          class="key-result-item mb-2"
+        >
+          <div class="d-flex justify-between align-center mb-1">
+            <span class="text-body-2 key-result-name">{{ kr.name }}</span>
+            <div class="d-flex align-center">
+              <span class="text-caption mr-2">
+                {{ kr.currentValue }}/{{ kr.targetValue }}
+              </span>
+              <v-btn
+                icon
+                size="x-small"
+                variant="text"
+                @click="$emit('edit-key-result', goal.id, kr)"
+              >
+                <v-icon size="14">mdi-pencil</v-icon>
+              </v-btn>
+            </div>
+          </div>
+          <v-progress-linear
+            :model-value="getKeyResultProgress(kr)"
+            :color="getKeyResultProgress(kr) >= 100 ? 'success' : goal.color"
+            height="4"
+            rounded
+          ></v-progress-linear>
+        </div>
+        
+        <!-- 显示更多关键结果的提示 -->
+        <div v-if="goal.keyResults.length > 3" class="text-center">
+          <span class="text-caption text-medium-emphasis">
+            还有 {{ goal.keyResults.length - 3 }} 个关键结果...
+          </span>
+        </div>
+      </div>
     </v-card-text>
+
+    <!-- 卡片操作 -->
+    <v-card-actions class="goal-actions">
+      <v-spacer></v-spacer>
+      
+      <!-- 复盘按钮 -->
+      <v-btn
+        v-if="isGoalCompleted || isGoalExpired"
+        variant="text"
+        size="small"
+        color="info"
+        @click="$emit('review-goal', goal.id)"
+      >
+        <v-icon left size="16">mdi-clipboard-text</v-icon>
+        复盘
+      </v-btn>
+      
+      <!-- 编辑按钮 -->
+      <v-btn
+        variant="text"
+        size="small"
+        color="primary"
+        @click="$emit('edit-goal', goal)"
+      >
+        <v-icon left size="16">mdi-pencil</v-icon>
+        编辑
+      </v-btn>
+      
+      <!-- 删除按钮 -->
+      <v-btn
+        variant="text"
+        size="small"
+        color="error"
+        @click="$emit('delete-goal', goal.id)"
+      >
+        <v-icon left size="16">mdi-delete</v-icon>
+        删除
+      </v-btn>
+    </v-card-actions>
   </v-card>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { Goal } from '@/modules/Goal/types/goal'
-import { useGoalStore } from '../stores/goalStore'
-import { useRouter } from 'vue-router'
-
-const goalStore = useGoalStore()
-const router = useRouter()
+import type { IGoal, IKeyResult } from '@/modules/Goal/domain/types/goal'
+import { Goal } from '@/modules/Goal/domain/entities/goal'
+import { TimeUtils } from '@/shared/utils/myDateTimeUtils'
 
 const props = defineProps<{
-  goal: Goal
+  goal: IGoal
 }>()
 
-const navigateToGoalInfo = () => {
-  router.push({
-    name: 'goal-info',
-    params: { goalId: props.goal.id }
-  });
-};
-
-const progress = computed(() => {
-  return goalStore.getGoalProgress(props.goal.id) || 0;
-});
-
-const formatDate = (date: string) => {
-  const dateObj = new Date(date)
-  return `${dateObj.getFullYear()}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${String(
-    dateObj.getDate()
-  ).padStart(2, '0')}`
+// Emits
+interface Emits {
+  (e: 'edit-goal', goal: IGoal): void;
+  (e: 'delete-goal', goalId: string): void;
+  (e: 'add-key-result', goalId: string): void;
+  (e: 'edit-key-result', goalId: string, keyResult: IKeyResult): void;
+  (e: 'review-goal', goalId: string): void;
 }
 
-const isGoalEnded = computed(() => {
-  return new Date(props.goal.endTime) < new Date();
+defineEmits<Emits>();
+
+// 创建 Goal 领域对象实例，以便调用其方法
+const goalEntity = computed(() => {
+  return Goal.fromDTO(props.goal);
+});
+
+// 使用 Goal 对象的方法获取属性
+const goalProgress = computed(() => {
+  return goalEntity.value.progress;
+});
+
+const isGoalExpired = computed(() => {
+  return goalEntity.value.isExpired;
+});
+
+const isGoalCompleted = computed(() => {
+  return goalEntity.value.isCompleted;
 });
 
 const remainingDays = computed(() => {
-  const endDate = new Date(props.goal.endTime);
-  const today = new Date();
-  const timeDiff = endDate.getTime() - today.getTime();
-  return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  return goalEntity.value.remainingDays;
 });
 
+// 关键结果完成数量
+const completedKeyResultsCount = computed(() => {
+  if (!props.goal.keyResults) return 0;
+  return props.goal.keyResults.filter(kr => getKeyResultProgress(kr) >= 100).length;
+});
+
+// Methods
+const getKeyResultProgress = (keyResult: IKeyResult): number => {
+  if (keyResult.targetValue === keyResult.startValue) return 0;
+  const progress = ((keyResult.currentValue - keyResult.startValue) / 
+                   (keyResult.targetValue - keyResult.startValue)) * 100;
+  return Math.max(0, Math.min(100, progress));
+};
+
 const getStatusColor = () => {
-  if (isGoalEnded.value) return 'success';
+  if (isGoalCompleted.value) return 'success';
+  if (isGoalExpired.value) return 'error';
   if (remainingDays.value < 7) return 'warning';
   return 'primary';
 };
 
 const getStatusIcon = () => {
-  if (isGoalEnded.value) return 'mdi-check-circle';
-  if (remainingDays.value < 7) return 'mdi-alert-circle';
+  if (isGoalCompleted.value) return 'mdi-check-circle';
+  if (isGoalExpired.value) return 'mdi-alert-circle';
+  if (remainingDays.value < 7) return 'mdi-clock-alert';
   return 'mdi-play-circle';
 };
 
 const getStatusText = () => {
-  if (isGoalEnded.value) return '已结束';
+  if (isGoalCompleted.value) return '已完成';
+  if (isGoalExpired.value) return '已过期';
   if (remainingDays.value < 7) return '即将到期';
   return '进行中';
 };
 
 const getRemainingDaysColor = () => {
-  if (isGoalEnded.value) return 'success';
-  if (remainingDays.value < 7) return 'error';
-  if (remainingDays.value < 30) return 'warning';
+  if (isGoalCompleted.value) return 'success';
+  if (isGoalExpired.value) return 'error';
+  if (remainingDays.value < 7) return 'warning';
+  if (remainingDays.value < 30) return 'orange';
   return 'primary';
 };
 
 const getRemainingDaysText = () => {
-  if (isGoalEnded.value) return '已结束';
-  if (remainingDays.value < 0) return '已过期';
+  if (isGoalCompleted.value) return '已完成';
+  if (isGoalExpired.value) return '已过期';
   return `${remainingDays.value} 天`;
 };
 

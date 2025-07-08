@@ -1,15 +1,11 @@
 import { UserStoreService } from "./userStoreService";
-import { useGoalStore } from "@/modules/Goal/stores/goalStore";
+import { useGoalStore } from "@/modules/Goal/presentation/stores/goalStore";
 import { useTaskStore } from "@/modules/Task/presentation/stores/taskStore";
-import { useGoalDirStore } from "@/modules/Goal/stores/goalDirStore";
-import { useGoalReviewStore } from "@/modules/Goal/stores/goalReviewStore";
 import { useReminderStore } from "@/modules/Reminder/stores/reminderStore";
 import { useRepositoryStore } from "@/modules/Repository/stores/repositoryStore";
 import { useSettingStore } from "@/modules/Setting/stores/settingStore";
 import { getTaskDomainApplicationService } from "@/modules/Task/application/services/taskDomainApplicationService";
-import { taskIpcClient } from "@/modules/Task/infrastructure/ipc/taskIpcClient";
-import type { Goal, IRecord, GoalDir } from "@/modules/Goal/types/goal";
-import type { Review } from "@/modules/Goal/stores/goalReviewStore";
+import { getGoalDomainApplicationService } from "@/modules/Goal/application/services/goalDomainApplicationService";
 import type { Reminder } from "@/modules/Reminder/stores/reminderStore";
 import type { Repository } from "@/modules/Repository/stores/repositoryStore";
 import type { AppSetting } from "@/modules/Setting/stores/settingStore";
@@ -38,8 +34,6 @@ export class UserDataInitService {
       await Promise.all([
         this.initGoalData(targetUsername),
         this.initTaskData(targetUsername),
-        this.initGoalDirData(targetUsername),
-        this.initGoalReviewData(targetUsername),
         this.initReminderData(targetUsername),
         this.initRepositoryData(targetUsername),
         this.initSettingData(targetUsername),
@@ -54,31 +48,22 @@ export class UserDataInitService {
 
   /**
    * 初始化目标模块数据
+   * 现在使用新的独立数据库，通过IPC调用主进程获取数据
    */
   private static async initGoalData(username: string): Promise<void> {
     try {
-      const goalStore = useGoalStore();
-
-      const [goalsResponse, recordsResponse] = await Promise.all([
-        UserStoreService.readWithUsername<Goal[]>(username, "goals"),
-        UserStoreService.readWithUsername<IRecord[]>(username, "records"),
-      ]);
-
-      goalStore.$patch({
-        goals: goalsResponse.success && goalsResponse.data ? goalsResponse.data : [],
-        records: recordsResponse.success && recordsResponse.data ? recordsResponse.data : [],
-      });
-
-      const goalsCount = goalsResponse.success && goalsResponse.data ? goalsResponse.data.length : 0;
-      const recordsCount = recordsResponse.success && recordsResponse.data ? recordsResponse.data.length : 0;
-
-      console.log(`加载了 ${goalsCount} 个目标和 ${recordsCount} 条记录`);
+      console.log(`开始初始化目标数据 (用户: ${username})...`);
+      // 通过调用服务同步目标数据
+      const goalService = getGoalDomainApplicationService();
+      await goalService.syncAllData();
+      
+      console.log(`✅ 目标数据初始化完成`);
     } catch (error) {
-      console.error("目标数据初始化失败:", error);
+      console.error("❌ 目标数据初始化失败:", error);
       const goalStore = useGoalStore();
       goalStore.$patch({
         goals: [],
-        records: [],
+        goalDirs: [],
       });
       throw error;
     }
@@ -103,56 +88,6 @@ export class UserDataInitService {
         taskTemplates: [],
         taskInstances: [],
         metaTemplates: [],
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * 初始化目标目录数据
-   */
-  private static async initGoalDirData(username: string): Promise<void> {
-    try {
-      const goalDirStore = useGoalDirStore();
-
-      const dirsResponse = await UserStoreService.readWithUsername<GoalDir[]>(username, "goalDirs");
-
-      goalDirStore.$patch({
-        userDirs: dirsResponse.success && dirsResponse.data ? dirsResponse.data : [],
-      });
-
-      const dirsCount = dirsResponse.success && dirsResponse.data ? dirsResponse.data.length : 0;
-      console.log(`加载了 ${dirsCount} 个目标目录`);
-    } catch (error) {
-      console.error("目标目录数据初始化失败:", error);
-      const goalDirStore = useGoalDirStore();
-      goalDirStore.$patch({
-        userDirs: [],
-      });
-      throw error;
-    }
-  }
-
-  /**
-   * 初始化目标复盘数据
-   */
-  private static async initGoalReviewData(username: string): Promise<void> {
-    try {
-      const goalReviewStore = useGoalReviewStore();
-
-      const reviewsResponse = await UserStoreService.readWithUsername<Review[]>(username, "goalReviews");
-
-      goalReviewStore.$patch({
-        reviews: reviewsResponse.success && reviewsResponse.data ? reviewsResponse.data : [],
-      });
-
-      const reviewsCount = reviewsResponse.success && reviewsResponse.data ? reviewsResponse.data.length : 0;
-      console.log(`加载了 ${reviewsCount} 个目标复盘记录`);
-    } catch (error) {
-      console.error("目标复盘数据初始化失败:", error);
-      const goalReviewStore = useGoalReviewStore();
-      goalReviewStore.$patch({
-        reviews: [],
       });
       throw error;
     }
@@ -236,30 +171,29 @@ export class UserDataInitService {
     try {
       const goalStore = useGoalStore();
       const taskStore = useTaskStore();
-      const goalDirStore = useGoalDirStore();
-      const goalReviewStore = useGoalReviewStore();
       const reminderStore = useReminderStore();
       const repositoryStore = useRepositoryStore();
 
       // 重置各个 store
-      goalStore.goals = [];
-      goalStore.records = [];
-      goalStore.initTempGoal();
-      goalStore.initTempKeyResult();
+      goalStore.$patch({
+        goals: [],
+        goalDirs: [],
+        tempGoalDir: null,
+      });
 
-      taskStore.taskTemplates = [];
-      taskStore.taskInstances = [];
-      taskStore.metaTemplates = [];
+      taskStore.$patch({
+        taskTemplates: [],
+        taskInstances: [],
+        metaTemplates: [],
+      });
 
-      goalDirStore.userDirs = [];
-      goalDirStore.initTempDir();
+      reminderStore.$patch({
+        reminders: [],
+      });
 
-      goalReviewStore.reviews = [];
-      goalReviewStore.tempReview = null;
-
-      reminderStore.reminders = [];
-
-      repositoryStore.repositories = [];
+      repositoryStore.$patch({
+        repositories: [],
+      });
 
       console.log("所有 store 数据已清空");
     } catch (error) {
@@ -269,7 +203,7 @@ export class UserDataInitService {
 
   /**
    * 保存用户数据到存储
-   * 注意：任务数据现在使用独立数据库，不再保存到文件存储中
+   * 注意：任务数据和目标数据现在使用独立数据库，不再保存到文件存储中
    */
   static async saveUserData(): Promise<void> {
     try {
@@ -277,19 +211,12 @@ export class UserDataInitService {
         throw new Error("用户未登录，无法保存数据");
       }
 
-      const goalStore = useGoalStore();
-      const goalDirStore = useGoalDirStore();
-      const goalReviewStore = useGoalReviewStore();
       const reminderStore = useReminderStore();
       const repositoryStore = useRepositoryStore();
       const settingStore = useSettingStore();
 
-      // 并行保存所有数据（不包括任务数据，因为任务数据现在使用独立数据库）
+      // 并行保存所有数据（不包括任务和目标数据，因为它们现在使用独立数据库）
       const results = await Promise.all([
-        UserStoreService.write("goals", goalStore.goals),
-        UserStoreService.write("records", goalStore.records),
-        UserStoreService.write("goalDirs", goalDirStore.userDirs),
-        UserStoreService.write("goalReviews", goalReviewStore.reviews),
         UserStoreService.write("reminders", reminderStore.reminders),
         UserStoreService.write("repositories", repositoryStore.repositories),
         UserStoreService.write("settings", settingStore.$state),
@@ -302,7 +229,7 @@ export class UserDataInitService {
         throw new Error("部分数据保存失败");
       }
 
-      console.log(`用户数据保存成功 (任务数据自动保存到独立数据库)`);
+      console.log(`用户数据保存成功 (任务和目标数据自动保存到独立数据库)`);
     } catch (error) {
       console.error(`用户数据保存失败:`, error);
       throw error;

@@ -16,7 +16,6 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { AppInitService } from '@/shared/services/appInitService';
 import { useThemeInit } from './modules/Theme/useThemeInit';
-
 useThemeInit();
 
 const isLoading = ref(true);
@@ -25,7 +24,7 @@ const initializeApp = async () => {
   try {
     await AppInitService.initialize({
       autoInit: true,
-      skipDataInit: true, // 根据需要调整
+      skipDataInit: false, // 启用数据初始化
     });
   } catch (error) {
     console.error('应用初始化失败:', error);
@@ -35,9 +34,9 @@ const initializeApp = async () => {
   }
 };
 
+
 onMounted(() => {
   initializeApp();
-  
 });
 
 onUnmounted(() => {

@@ -44,7 +44,7 @@
 // vue-router
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
-import { useGoalStore } from '@/modules/Goal/stores/goalStore'
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
 import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
 
 const route = useRoute()

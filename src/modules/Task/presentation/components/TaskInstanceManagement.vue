@@ -254,7 +254,7 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { useTaskInstanceManagement } from '../composables/useTaskInstanceManagement';
 import { useTaskService } from '../composables/useTaskService';

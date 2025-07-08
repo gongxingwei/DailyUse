@@ -1,7 +1,7 @@
 import type { Goal } from '../entities/goal';
 import type { GoalDir } from '../entities/goalDir';
 import type { Record } from '../entities/record';
-import type { IGoalCreateDTO, IGoalDirCreateDTO, IRecordCreateDTO, IKeyResult } from '@/modules/Goal/domain/types/goal';
+import type { IGoalCreateDTO, IGoalDir, IRecordCreateDTO, IKeyResult } from '@/modules/Goal/domain/types/goal';
 
 /**
  * Goal 仓库接口
@@ -50,7 +50,7 @@ export interface IGoalRepository {
   /**
    * 创建目标目录
    */
-  createGoalDirectory(data: IGoalDirCreateDTO): Promise<GoalDir>;
+  createGoalDirectory(data: IGoalDir): Promise<GoalDir>;
   
   /**
    * 根据ID获取目标目录
@@ -65,7 +65,7 @@ export interface IGoalRepository {
   /**
    * 更新目标目录
    */
-  updateGoalDirectory(id: string, updates: Partial<IGoalDirCreateDTO>): Promise<GoalDir>;
+  updateGoalDirectory(data: IGoalDir): Promise<GoalDir>;
   
   /**
    * 删除目标目录

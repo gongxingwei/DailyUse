@@ -5,7 +5,8 @@ import type {
   IRecord, 
   IRecordCreateDTO, 
   IGoalDir, 
-  IGoalDirCreateDTO 
+  IGoalReview,
+  IGoalReviewCreateDTO 
 } from "../../domain/types/goal";
 import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
 
@@ -493,18 +494,164 @@ export class GoalIpcClient {
     }
   }
 
+  // ========== 目标复盘管理 ==========
+
+  /**
+   * 为目标添加复盘
+   */
+  async addReviewToGoal(
+    goalId: string,
+    reviewData: IGoalReviewCreateDTO
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 为目标添加复盘:', goalId);
+      
+      // 使用深度序列化确保数据可以安全传输
+      const serializedData = deepSerializeForIpc({ goalId, reviewData });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:addReview', serializedData);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 复盘添加成功:', response.data?.review?.id);
+      } else {
+        console.error('❌ [渲染进程-IPC] 复盘添加失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 添加复盘通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的复盘
+   */
+  async updateReviewInGoal(
+    goalId: string,
+    reviewId: string,
+    updateData: Partial<IGoalReviewCreateDTO>
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 更新目标复盘:', { goalId, reviewId });
+      
+      // 使用深度序列化确保数据可以安全传输
+      const serializedData = deepSerializeForIpc({ goalId, reviewId, updateData });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:updateReview', serializedData);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 复盘更新成功:', response.data?.review?.id);
+      } else {
+        console.error('❌ [渲染进程-IPC] 复盘更新失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 更新复盘通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 从目标中移除复盘
+   */
+  async removeReviewFromGoal(
+    goalId: string,
+    reviewId: string
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 从目标移除复盘:', { goalId, reviewId });
+      
+      // 使用深度序列化确保数据可以安全传输
+      const serializedData = deepSerializeForIpc({ goalId, reviewId });
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:removeReview', serializedData);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 复盘移除成功');
+      } else {
+        console.error('❌ [渲染进程-IPC] 复盘移除失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 移除复盘通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 获取目标的所有复盘
+   */
+  async getGoalReviews(goalId: string): Promise<TResponse<IGoalReview[]>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 获取目标复盘:', goalId);
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:getReviews', goalId);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 获取目标复盘成功:', response.data?.length);
+      } else {
+        console.error('❌ [渲染进程-IPC] 获取目标复盘失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 获取目标复盘通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 为目标创建复盘快照
+   */
+  async createGoalReviewSnapshot(goalId: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 为目标创建复盘快照:', goalId);
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:createReviewSnapshot', goalId);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 复盘快照创建成功');
+      } else {
+        console.error('❌ [渲染进程-IPC] 复盘快照创建失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 创建复盘快照通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
   // ========== 目标目录管理 ==========
 
   /**
    * 创建目标目录
    */
-  async createGoalDir(goalDirData: IGoalDirCreateDTO): Promise<TResponse<IGoalDir>> {
+  async createGoalDir(goalDirData: IGoalDir): Promise<TResponse<IGoalDir>> {
     try {
       console.log('🔄 [渲染进程-IPC] 创建目标目录:', goalDirData.name);
       
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(goalDirData);
-      
+      console.log('🔄 [渲染进程-IPC] 序列化目标目录数据:', serializedData);
       const response = await window.shared.ipcRenderer.invoke('goal:dir:create', serializedData);
       
       if (response.success) {
@@ -566,6 +713,34 @@ export class GoalIpcClient {
       return response;
     } catch (error) {
       console.error('❌ [渲染进程-IPC] 删除目标目录通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标目录
+   */
+  async updateGoalDir(goalDirData: IGoalDir): Promise<TResponse<IGoalDir>> {
+    try {
+      console.log('🔄 [渲染进程-IPC] 更新目标目录:', goalDirData.name);
+      
+      // 使用深度序列化确保数据可以安全传输
+      const serializedData = deepSerializeForIpc(goalDirData);
+      
+      const response = await window.shared.ipcRenderer.invoke('goal:dir:update', serializedData);
+      
+      if (response.success) {
+        console.log('✅ [渲染进程-IPC] 目标目录更新成功:', goalDirData);
+      } else {
+        console.error('❌ [渲染进程-IPC] 目标目录更新失败:', response.message);
+      }
+      
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 更新目标目录通信错误:', error);
       return {
         success: false,
         message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,

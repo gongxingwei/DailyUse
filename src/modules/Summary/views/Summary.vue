@@ -105,12 +105,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // components
-import GoalInfoShowCard from '@/modules/Goal/components/GoalInfoShowCard.vue';
-import MotivateCard from '@/modules/Goal/components/MotivateCard.vue';
-import GoalGanttChart from '@/modules/Goal/components/GoalGanttChart.vue';
+import GoalInfoShowCard from '@/modules/Goal/presentation/components/GoalInfoShowCard.vue';
+import MotivateCard from '@/modules/Goal/presentation/components/MotivateCard.vue';
+import GoalGanttChart from '@/modules/Goal/presentation/components/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/presentation/components/TaskInSummaryCard.vue';
 import RecentRepoCard from '@/modules/Repository/components/RecentRepoCard.vue';
 

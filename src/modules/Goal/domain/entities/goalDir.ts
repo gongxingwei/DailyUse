@@ -1,6 +1,6 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-import type { IGoalDir, IGoalDirCreateDTO } from "../types/goal";
+import type { IGoalDir } from "../types/goal";
 
 /**
  * 目标目录领域实体
@@ -13,16 +13,16 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   private _lifecycle: IGoalDir['lifecycle'];
 
   constructor(
-    id: string,
-    name: string,
-    icon: string,
+    id?: string,
+    name?: string,
+    icon?: string,
     parentId?: string
   ) {
-    super(id);
+    super(id || GoalDir.generateId());
     const now = TimeUtils.now();
 
-    this._name = name;
-    this._icon = icon;
+    this._name = name || '';
+    this._icon = icon || 'default-icon'; // 默认图标
     this._parentId = parentId;
 
     this._lifecycle = {
@@ -79,6 +79,25 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     this._lifecycle.updatedAt = TimeUtils.now();
   }
 
+  updateName(name: string): void {
+    this._name = name;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateIcon(icon: string): void {
+    this._icon = icon;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
+  updateParentId(parentId?: string): void {
+    // 防止循环引用
+    if (parentId === this.id) {
+      throw new Error("目录不能设置自己为父目录");
+    }
+    this._parentId = parentId;
+    this._lifecycle.updatedAt = TimeUtils.now();
+  }
+
   /**
    * 归档目录
    */
@@ -123,16 +142,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   }
 
   /**
-   * 从数据传输对象创建目录
+   * 从数据传输对象创建目录实例
    */
   static fromDTO(data: IGoalDir): GoalDir {
-    const goalDir = new GoalDir(
-      data.id,
-      data.name,
-      data.icon,
-      data.parentId
-    );
-
+    const goalDir = new GoalDir(data.id, data.name, data.icon, data.parentId);
     goalDir._lifecycle = data.lifecycle;
     return goalDir;
   }
@@ -140,7 +153,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   /**
    * 从创建数据传输对象创建目录
    */
-  static fromCreateDTO(id: string, data: IGoalDirCreateDTO): GoalDir {
+  static fromCreateDTO(id: string, data: IGoalDir): GoalDir {
     return new GoalDir(
       id,
       data.name,
@@ -149,10 +162,20 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     );
   }
 
+  clone(): GoalDir {
+    const clone = new GoalDir(
+      this.id,
+      this._name,
+      this._icon,
+      this._parentId
+    );
+    clone._lifecycle = { ...this._lifecycle }; // 浅拷贝生命周期数据
+    return clone;
+  }
   /**
    * 验证目录数据
    */
-  static validate(data: IGoalDirCreateDTO): {
+  static validate(data: IGoalDir): {
     isValid: boolean;
     errors: string[];
   } {

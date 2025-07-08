@@ -5,7 +5,38 @@
 
 import { MainGoalApplicationService } from '../application/mainGoalApplicationService';
 import { GoalContainer } from '../infrastructure/di/goalContainer';
-import type { IGoalCreateDTO, IGoalDirCreateDTO } from '@/modules/Goal/domain/types/goal';
+import type { IGoalCreateDTO, IGoalDir } from '@/modules/Goal/domain/types/goal';
+import { initializeDatabase } from '../../../config/database';
+
+/**
+ * 创建测试用户
+ */
+async function createTestUser(): Promise<void> {
+  const db = await initializeDatabase();
+  
+  // 检查用户是否已存在
+  const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get('test-user');
+  
+  if (!existingUser) {
+    // 创建测试用户
+    const stmt = db.prepare(`
+      INSERT INTO users (uid, username, password, accountType, createdAt)
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(
+      'test-uid-' + Date.now(),
+      'test-user',
+      'test-password',
+      'local',
+      Date.now()
+    );
+    
+    console.log('✅ 测试用户创建成功');
+  } else {
+    console.log('✅ 测试用户已存在');
+  }
+}
 
 /**
  * 测试 Goal 模块基本功能
@@ -14,6 +45,9 @@ export async function testGoalModule(): Promise<void> {
   console.log('🧪 开始测试 Goal 模块...');
   
   try {
+    // 首先创建测试用户
+    await createTestUser();
+    
     // 初始化服务
     const goalService = new MainGoalApplicationService();
     await goalService.setUsername('test-user');
@@ -21,7 +55,7 @@ export async function testGoalModule(): Promise<void> {
     console.log('✅ Goal 服务初始化成功');
     
     // 测试创建目标目录
-    const testGoalDir: IGoalDirCreateDTO = {
+    const testGoalDir: IGoalDir = {
       name: '测试目录',
       icon: '📁'
     };

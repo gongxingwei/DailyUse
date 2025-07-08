@@ -20,7 +20,7 @@
             prepend-icon="mdi-plus"
             variant="elevated"
             class="create-btn"
-            @click="startCreateGoal"
+            @click="openGoalDialog"
           >
             {{ t('goal.create') }}
           </v-btn>
@@ -86,7 +86,14 @@
                       lg="6"
                       xl="4"
                     >
-                      <GoalCard :goal="goal" />
+                      <GoalCard 
+                        :goal="goal" 
+                        @edit-goal="handleEditGoal"
+                        @delete-goal="handleDeleteGoal"
+                        @add-key-result="handleAddKeyResult"
+                        @edit-key-result="handleEditKeyResult"
+                        @review-goal="handleReviewGoal"
+                      />
                     </v-col>
                   </v-row>
                 </div>
@@ -103,7 +110,7 @@
                         color="primary"
                         variant="elevated"
                         prepend-icon="mdi-plus"
-                        @click="startCreateGoal"
+                        @click="openGoalDialog"
                       >
                         创建一个目标
                       </v-btn>
@@ -116,38 +123,186 @@
         </v-row>
       </div>
     </div>
-
+    <!-- 目标复盘对话框 -->
+    <GoalReviewCard
+      :visible="showReviewDialog"
+      @close="closeReviewDialog"
+      @edit="handleEditReview"
+      @delete="handleDeleteReview"
+    />
+    
     <!-- 目标对话框 -->
     <GoalDialog 
-      :visible="showGoalDialog" 
-      @save="saveGoal" 
-      @cancel="cancelGoalEdit" 
+      :visible="goalDialog.showDialog"
+      :mode="goalDialog.mode"
+      :goal-data="goalDialog.goalData"
+      @save="handleSaveGoal"
+      @cancel="handleCancelGoal"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useI18n } from 'vue-i18n'
-import GoalDir from '../components/GoalDir.vue'
-import GoalCard from '@/modules/Goal/components/GoalCard.vue'
-import GoalDialog from '../components/GoalDialog.vue'
-import { useGoalManagement } from '@/modules/Goal/composables/useGoalManagement'
-import { useGoalDialog } from '../composables/useGoalDialog'
+import { ref, computed } from 'vue';
+import { useI18n } from 'vue-i18n';
+import { createGoalDomainApplicationService } from '@/modules/Goal/application/services/goalDomainApplicationService';
+import { useGoalManagement } from '../composables/useGoalManagement';
+import GoalCard from '../components/GoalCard.vue';
+import GoalDir from '../components/GoalDir.vue';
+import GoalDialog from '../components/GoalDialog.vue';
+import GoalReviewCard from '../components/GoalReviewCard.vue';
+import type { IGoal } from '@/modules/Goal/domain/types/goal';
 
-const { t } = useI18n()
-const { selectDir, statusTabs, selectedStatus, goalsInCurStatus, getGoalCountByStatus } = useGoalManagement()
-const { showGoalDialog, startCreateGoal, cancelGoalEdit, saveGoal } = useGoalDialog()
+// I18n
+const { t } = useI18n();
+
+// Services
+const goalService = createGoalDomainApplicationService();
+
+// 使用 useGoalManagement composable
+const { 
+  selectDir, 
+  statusTabs, 
+  selectedStatus, 
+  goalsInCurStatus, 
+  getGoalCountByStatus 
+} = useGoalManagement();
+
+// 目标对话框状态管理
+const goalDialog = ref({
+  showDialog: false,
+  mode: 'create' as 'create' | 'edit',
+  goalData: null as IGoal | null
+});
+
+// 本地状态
+const showReviewDialog = ref(false);
 
 // 计算选中的状态索引
 const selectedStatusIndex = computed({
   get: () => statusTabs.findIndex(tab => tab.value === selectedStatus.value),
   set: (index) => {
     if (index >= 0 && index < statusTabs.length) {
-      selectedStatus.value = statusTabs[index].value
+      selectedStatus.value = statusTabs[index].value;
     }
   }
-})
+});
+
+// 目标对话框相关方法
+const openGoalDialog = () => {
+  goalDialog.value = {
+    showDialog: true,
+    mode: 'create',
+    goalData: null
+  };
+};
+
+const handleEditGoal = (goal: IGoal) => {
+  goalDialog.value = {
+    showDialog: true,
+    mode: 'edit',
+    goalData: goal
+  };
+};
+
+const handleSaveGoal = async (goalData: any) => {
+  try {
+    let result;
+    
+    if (goalDialog.value.mode === 'edit' && goalDialog.value.goalData) {
+      // 编辑现有目标
+      const goalUpdateData = {
+        ...goalData,
+        id: goalDialog.value.goalData.id
+      };
+      result = await goalService.updateGoal(goalUpdateData);
+    } else {
+      // 创建新目标
+      const goalCreateData = {
+        title: goalData.title,
+        description: goalData.description,
+        color: goalData.color,
+        dirId: goalData.dirId,
+        startTime: goalData.startTime,
+        endTime: goalData.endTime,
+        note: goalData.note,
+        keyResults: goalData.keyResults || [],
+        analysis: goalData.analysis
+      };
+      result = await goalService.createGoal(goalCreateData);
+    }
+    
+    if (result.success) {
+      const action = goalDialog.value.mode === 'edit' ? '更新' : '创建';
+      console.log(`✅ 目标${action}成功`);
+      // 关闭对话框
+      goalDialog.value.showDialog = false;
+      // 刷新数据
+      await goalService.syncAllData();
+    } else {
+      console.error('❌ 目标保存失败:', result.message);
+      alert('保存失败：' + result.message);
+    }
+  } catch (error) {
+    console.error('❌ 保存目标时发生错误:', error);
+    alert('保存目标时发生错误，请稍后重试');
+  }
+};
+
+const handleCancelGoal = () => {
+  goalDialog.value.showDialog = false;
+  console.log('🚫 取消目标编辑');
+};
+
+// 关键结果对话框相关方法 - 现在由 GoalDialog 内部处理
+const handleAddKeyResult = (goalId: string) => {
+  console.log('🎯 添加关键结果事件已转移到 GoalDialog 内部处理:', goalId);
+  // 这个方法现在只是为了兼容 GoalCard 的事件，实际处理在 GoalDialog 内部
+};
+
+const handleEditKeyResult = (goalId: string, keyResult: any) => {
+  console.log('✏️ 编辑关键结果事件已转移到 GoalDialog 内部处理:', goalId, keyResult);
+  // 这个方法现在只是为了兼容 GoalCard 的事件，实际处理在 GoalDialog 内部
+};
+
+const handleDeleteGoal = async (goalId: string) => {
+  // 使用更友好的确认对话框
+  if (confirm('⚠️ 确定要删除这个目标吗？\n\n删除后将无法恢复，包括所有关联的关键结果和记录。')) {
+    try {
+      const result = await goalService.deleteGoal(goalId);
+      if (result.success) {
+        console.log('✅ 目标删除成功');
+        // 刷新数据
+        await goalService.syncAllData();
+      } else {
+        console.error('❌ 目标删除失败:', result.message);
+        alert('删除失败：' + result.message);
+      }
+    } catch (error) {
+      console.error('❌ 删除目标时发生错误:', error);
+      alert('删除目标时发生错误，请稍后重试');
+    }
+  }
+};
+
+const handleReviewGoal = (goalId: string) => {
+  showReviewDialog.value = true;
+  console.log('🔍 开始目标复盘:', goalId);
+};
+
+const closeReviewDialog = () => {
+  showReviewDialog.value = false;
+};
+
+const handleEditReview = (reviewId: string) => {
+  console.log('📝 编辑复盘记录:', reviewId);
+  // TODO: 实现编辑复盘记录功能
+};
+
+const handleDeleteReview = (reviewId: string) => {
+  console.log('🗑️ 删除复盘记录:', reviewId);
+  // TODO: 实现删除复盘记录功能
+};
 </script>
 
 <style scoped>
@@ -282,5 +437,35 @@ const selectedStatusIndex = computed({
     height: 100vh;
     height: 100dvh; /* 支持动态视口高度 */
   }
+}
+
+/* 卡片悬停效果 */
+.goal-main {
+  transition: all 0.3s ease;
+}
+
+.goal-main:hover {
+  box-shadow: 0 8px 32px rgba(var(--v-theme-primary), 0.1);
+}
+
+/* 空状态优化 */
+.v-empty-state {
+  opacity: 0.8;
+  transition: all 0.3s ease;
+}
+
+.v-empty-state:hover {
+  opacity: 1;
+}
+
+/* 徽章样式优化 */
+.v-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* 头像样式优化 */
+.v-avatar {
+  box-shadow: 0 4px 12px rgba(var(--v-theme-primary), 0.2);
 }
 </style>

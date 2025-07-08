@@ -37,22 +37,22 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/goal-management',
                 name: 'goal-management',
-                component: () => import('@/modules/Goal/views/GoalManagement.vue')
+                component: () => import('@/modules/Goal/presentation/views/GoalManagement.vue')
             },
             {
                 path: '/goal/:goalId',
                 name: 'goal-info',
-                component: () => import('@/modules/Goal/views/GoalInfo.vue')
+                component: () => import('@/modules/Goal/presentation/views/GoalInfo.vue')
             },
             {
                 path: '/goal/:goalId/:keyResultId',
                 name: 'key-result-info',
-                component: () => import('@/modules/Goal/views/KeyResultInfo.vue')
+                component: () => import('@/modules/Goal/presentation/views/KeyResultInfo.vue')
             },
             {
                 path: '/goal-review/:goalId',
                 name: 'goal-review',
-                component: () => import('@/modules/Goal/views/GoalReview.vue')
+                component: () => import('@/modules/Goal/presentation/views/GoalReview.vue')
             },
             {
                 path: '/task-management',

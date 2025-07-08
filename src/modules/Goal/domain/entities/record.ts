@@ -160,6 +160,19 @@ export class Record extends Entity implements IRecord {
     );
   }
 
+  clone(): Record {
+    const clone = new Record(
+      this.id,
+      this._goalId,
+      this._keyResultId,
+      this._value,
+      this._date,
+      this._note
+    );
+    clone._lifecycle = { ...this._lifecycle };
+    return clone;
+  }
+
   /**
    * 验证记录数据
    */

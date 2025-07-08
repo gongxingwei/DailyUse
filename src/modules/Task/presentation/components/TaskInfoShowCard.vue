@@ -43,7 +43,7 @@
 </template>
 
 <script setup lang="ts">
-import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { TaskInstance } from '@/modules/Task/domain/entities/taskInstance';
 const props = defineProps<{
     visible: boolean;

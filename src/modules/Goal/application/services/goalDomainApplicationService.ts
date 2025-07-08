@@ -5,10 +5,14 @@ import type {
   IRecord, 
   IRecordCreateDTO, 
   IGoalDir, 
-  IGoalDirCreateDTO 
+  IGoalReview,
+  IGoalReviewCreateDTO 
 } from "../../domain/types/goal";
 import type { IGoalStateRepository } from "../../domain/repositories/IGoalStateRepository";
 import { goalIpcClient } from "../../infrastructure/ipc/goalIpcClient";
+import { PiniaGoalStateRepository } from "../../infrastructure/repositories/piniaGoalStateRepository";
+import { useAuthStore } from "@/modules/Account/stores/authStore";
+import { GoalDir } from "../../domain/entities/goalDir";
 
 /**
  * 目标领域应用服务
@@ -21,7 +25,10 @@ import { goalIpcClient } from "../../infrastructure/ipc/goalIpcClient";
  * 4. 提供统一的业务接口
  */
 export class GoalDomainApplicationService {
-  constructor(private stateRepository?: IGoalStateRepository) {}
+  private stateRepository: IGoalStateRepository;
+  constructor(stateRepository?: IGoalStateRepository) {
+    this.stateRepository = stateRepository || new PiniaGoalStateRepository();
+  }
 
   // ========== 目标管理 ==========
 
@@ -546,14 +553,210 @@ export class GoalDomainApplicationService {
     }
   }
 
+  // ========== 目标复盘管理（聚合根驱动）==========
+
+  /**
+   * 为目标添加复盘（聚合根驱动）
+   */
+  async addReviewToGoal(
+    goalId: string,
+    reviewData: IGoalReviewCreateDTO
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [目标应用服务] 为目标添加复盘:', { goalId, reviewData });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.addReviewToGoal(goalId, reviewData);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态（包含新复盘）
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 复盘添加并同步成功:', response.data.review.id);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 复盘添加失败:', response.message);
+      return {
+        success: false,
+        message: response.message || '添加复盘失败',
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 添加复盘异常:', error);
+      return {
+        success: false,
+        message: `添加复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的复盘（聚合根驱动）
+   */
+  async updateReviewInGoal(
+    goalId: string,
+    reviewId: string,
+    updateData: Partial<IGoalReviewCreateDTO>
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [目标应用服务] 更新目标复盘:', { goalId, reviewId, updateData });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.updateReviewInGoal(goalId, reviewId, updateData);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态（包含更新的复盘）
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 复盘更新并同步成功:', response.data.review.id);
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 复盘更新失败:', response.message);
+      return {
+        success: false,
+        message: response.message || '更新复盘失败',
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 更新复盘异常:', error);
+      return {
+        success: false,
+        message: `更新复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 从目标中移除复盘（聚合根驱动）
+   */
+  async removeReviewFromGoal(
+    goalId: string,
+    reviewId: string
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [目标应用服务] 从目标移除复盘:', { goalId, reviewId });
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.removeReviewFromGoal(goalId, reviewId);
+
+      if (response.success && response.data) {
+        // 同步目标到前端状态（移除复盘后）
+        await this.syncGoalToState(response.data.goal);
+
+        console.log('✅ [目标应用服务] 复盘移除并同步成功');
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 复盘移除失败:', response.message);
+      return {
+        success: false,
+        message: response.message || '移除复盘失败',
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 移除复盘异常:', error);
+      return {
+        success: false,
+        message: `移除复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 获取目标的所有复盘
+   */
+  async getGoalReviews(goalId: string): Promise<IGoalReview[]> {
+    try {
+      console.log('🔄 [目标应用服务] 获取目标复盘:', goalId);
+
+      // 调用主进程获取目标复盘
+      const response = await goalIpcClient.getGoalReviews(goalId);
+
+      if (response.success && response.data) {
+        console.log('✅ [目标应用服务] 获取目标复盘成功:', response.data.length);
+        return response.data;
+      }
+
+      console.error('❌ [目标应用服务] 获取目标复盘失败:', response.message);
+      return [];
+    } catch (error) {
+      console.error('❌ [目标应用服务] 获取目标复盘异常:', error);
+      return [];
+    }
+  }
+
+  /**
+   * 为目标创建复盘快照（聚合根驱动）
+   */
+  async createGoalReviewSnapshot(goalId: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
+    try {
+      console.log('🔄 [目标应用服务] 为目标创建复盘快照:', goalId);
+
+      // 调用主进程的聚合根方法
+      const response = await goalIpcClient.createGoalReviewSnapshot(goalId);
+
+      if (response.success && response.data) {
+        console.log('✅ [目标应用服务] 复盘快照创建成功');
+        return {
+          success: true,
+          message: response.message,
+          data: response.data,
+        };
+      }
+
+      console.error('❌ [目标应用服务] 复盘快照创建失败:', response.message);
+      return {
+        success: false,
+        message: response.message || '创建复盘快照失败',
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 创建复盘快照异常:', error);
+      return {
+        success: false,
+        message: `创建复盘快照失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
   // ========== 目标目录管理 ==========
 
   /**
    * 创建目标目录
    */
-  async createGoalDir(goalDirData: IGoalDirCreateDTO): Promise<TResponse<{ goalDir: IGoalDir }>> {
+  async createGoalDir(goalDirData: GoalDir | IGoalDir): Promise<TResponse<{ goalDir: IGoalDir }>> {
     try {
       console.log('🔄 [目标应用服务] 创建目标目录:', goalDirData.name);
+      console.log('🔍 [目标应用服务] 目录创建数据:', goalDirData);
+
+      // 获取当前用户信息
+      const authStore = useAuthStore();
+      const currentUser = authStore.currentUser;
+      
+      // 确定使用的用户名：优先使用登录用户，否则使用默认用户
+      let username: string;
+      if (currentUser?.username) {
+        username = currentUser.username;
+        console.log('🔍 [目标应用服务] 使用登录用户:', username);
+      } else {
+        username = 'default';
+        console.log('🔍 [目标应用服务] 用户未登录，使用默认用户:', username);
+      }
+      if (goalDirData instanceof GoalDir) {
+        // 如果是 GoalDir 实例，转换为 IGoalDir
+        goalDirData = goalDirData.toDTO();
+      }
+      
 
       // 调用主进程创建目标目录
       const response = await goalIpcClient.createGoalDir(goalDirData);
@@ -569,14 +772,27 @@ export class GoalDomainApplicationService {
           data: { goalDir: response.data },
         };
       }
-
-      console.error('❌ [目标应用服务] 目标目录创建失败:', response.message);
       return {
         success: false,
         message: response.message,
       };
     } catch (error) {
       console.error('❌ [目标应用服务] 创建目标目录异常:', error);
+      
+      // 检查是否是外键约束错误
+      if (error instanceof Error && error.message.includes('FOREIGN KEY constraint failed')) {
+        console.error('🔍 [目标应用服务] 外键约束异常详情:', {
+          error: error.message,
+          stack: error.stack,
+          data: goalDirData
+        });
+        
+        return {
+          success: false,
+          message: '创建目录失败：数据库外键约束错误。请确保用户数据完整，建议重启应用或联系技术支持。',
+        };
+      }
+      
       return {
         success: false,
         message: `创建目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
@@ -637,6 +853,47 @@ export class GoalDomainApplicationService {
       return {
         success: false,
         message: `删除目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标目录
+   */
+  async updateGoalDir(goalDirData: GoalDir | IGoalDir): Promise<TResponse<{ goalDir: IGoalDir }>> {
+    try {
+      console.log('🔄 [目标应用服务] 更新目标目录:', goalDirData.name);
+
+      if (goalDirData instanceof GoalDir) {
+        // 如果是 GoalDir 实例，转换为 IGoalDir
+        goalDirData = goalDirData.toDTO();
+      }
+
+      // 调用主进程更新目标目录
+      const response = await goalIpcClient.updateGoalDir(goalDirData);
+
+      if (response.success && response.data) {
+        // 同步到前端状态
+        await this.syncGoalDirToState(response.data);
+
+        console.log('✅ [目标应用服务] 目标目录更新并同步成功:', goalDirData);
+        return {
+          success: true,
+          message: response.message,
+          data: { goalDir: response.data },
+        };
+      }
+
+      console.error('❌ [目标应用服务] 目标目录更新失败:', response.message);
+      return {
+        success: false,
+        message: response.message,
+      };
+    } catch (error) {
+      console.error('❌ [目标应用服务] 更新目标目录异常:', error);
+      return {
+        success: false,
+        message: `更新目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
       };
     }
   }
@@ -765,12 +1022,12 @@ export function createGoalDomainApplicationService(
 /**
  * 获取目标领域应用服务的默认实例
  */
-let defaultGoalService: GoalDomainApplicationService | null = null;
+let _goalDomainApplicationServiceInstance: GoalDomainApplicationService | null = null;
 
 export function getGoalDomainApplicationService(): GoalDomainApplicationService {
-  if (!defaultGoalService) {
-    // 这里可以注入默认的状态仓库实现
-    defaultGoalService = createGoalDomainApplicationService();
+  if (!_goalDomainApplicationServiceInstance) {
+
+    _goalDomainApplicationServiceInstance = new GoalDomainApplicationService();
   }
-  return defaultGoalService;
+  return _goalDomainApplicationServiceInstance;
 }

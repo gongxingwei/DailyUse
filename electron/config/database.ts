@@ -296,12 +296,52 @@ export async function initializeDatabase(): Promise<Database> {
       CREATE INDEX IF NOT EXISTS idx_goal_records_date ON goal_records(date);
       CREATE INDEX IF NOT EXISTS idx_goal_records_created_at ON goal_records(created_at);
     `);
+
+    // 创建默认用户（如果不存在）
+    await ensureDefaultUser(db);
+
     return db;
   } catch (error) {
     console.error("数据库初始化失败:", error);
     throw error;
   } finally {
     isInitializing = false;
+  }
+}
+
+/**
+ * 确保默认用户存在
+ */
+async function ensureDefaultUser(database: Database): Promise<void> {
+  try {
+    // 检查是否已存在默认用户
+    const existingUser = database.prepare("SELECT username FROM users WHERE username = ?").get('default');
+    
+    if (!existingUser) {
+      console.log('🔄 [数据库] 创建默认用户...');
+      
+      // 创建默认用户
+      const insertUserStmt = database.prepare(`
+        INSERT INTO users (uid, username, password, accountType, createdAt)
+        VALUES (?, ?, ?, ?, ?)
+      `);
+      
+      const now = Date.now();
+      insertUserStmt.run(
+        'default_uid_' + now,
+        'default',
+        'default_password', // 实际应用中应该使用加密密码
+        'local',
+        now
+      );
+      
+      console.log('✅ [数据库] 默认用户创建成功');
+    } else {
+      console.log('🔍 [数据库] 默认用户已存在，跳过创建');
+    }
+  } catch (error) {
+    console.error('❌ [数据库] 创建默认用户失败:', error);
+    // 不抛出异常，避免影响应用启动
   }
 }
 

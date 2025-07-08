@@ -47,6 +47,7 @@
                 color="primary"
                 variant="elevated"
                 prepend-icon="mdi-plus"
+                @click="handleCreate"
               >
                 创建复盘记录
               </v-btn>
@@ -56,7 +57,7 @@
           <!-- 复盘记录列表 -->
           <div v-else class="review-list">
             <v-card
-              v-for="review in allReviews"
+              v-for="review in displayReviews"
               :key="review.id"
               class="review-item mb-4"
               variant="outlined"
@@ -68,30 +69,36 @@
                   <!-- 左侧信息 -->
                   <v-col cols="12" md="8">
                     <div class="review-info">
+                      <!-- 复盘标题 -->
+                      <div class="d-flex align-center mb-2">
+                        <v-icon :color="getReviewTypeColor(review.type)" size="16" class="mr-2">
+                          {{ getReviewTypeIcon(review.type) }}
+                        </v-icon>
+                        <span class="text-h6 font-weight-medium">{{ review.title }}</span>
+                        <v-chip 
+                          :color="getReviewTypeColor(review.type)" 
+                          size="small" 
+                          variant="tonal" 
+                          class="ml-2"
+                        >
+                          {{ getReviewTypeText(review.type) }}
+                        </v-chip>
+                      </div>
+                      
                       <!-- 时间信息 -->
                       <div class="d-flex align-center mb-2">
                         <v-icon color="primary" size="16" class="mr-2">mdi-clock-outline</v-icon>
-                        <span class="text-body-1 font-weight-medium">
-                          {{ formatDateWithTemplate(review.createdAt, 'YYYY/MM/DD HH:mm') }}
+                        <span class="text-body-2 text-medium-emphasis">
+                          {{ formatDateWithTemplate(new Date(review.reviewDate.timestamp), 'YYYY/MM/DD HH:mm') }}
                         </span>
                       </div>
                       
-                      <!-- 进度信息 -->
-                      <div class="d-flex align-center">
-                        <v-icon color="success" size="16" class="mr-2">mdi-trending-up</v-icon>
-                        <span class="text-body-2 text-medium-emphasis">
-                          目标进度: {{ review.goalProgress?.currentProgress }}%
+                      <!-- 复盘内容预览 -->
+                      <div v-if="review.content.achievements" class="d-flex align-center">
+                        <v-icon color="info" size="16" class="mr-2">mdi-text-short</v-icon>
+                        <span class="text-body-2 text-medium-emphasis text-truncate">
+                          成果: {{ review.content.achievements.substring(0, 50) }}...
                         </span>
-                        
-                        <!-- 进度条 -->
-                        <v-progress-linear
-                          :model-value="review.goalProgress?.currentProgress || 0"
-                          color="success"
-                          height="4"
-                          rounded
-                          class="ml-4 flex-grow-1"
-                          style="max-width: 200px;"
-                        />
                       </div>
                     </div>
                   </v-col>
@@ -102,6 +109,17 @@
                       <v-btn
                         color="primary"
                         variant="outlined"
+                        size="small"
+                        prepend-icon="mdi-eye"
+                        class="mr-2"
+                        @click="handleView(review.id)"
+                      >
+                        查看
+                      </v-btn>
+                      
+                      <v-btn
+                        color="primary"
+                        variant="text"
                         size="small"
                         prepend-icon="mdi-pencil"
                         class="mr-2"
@@ -134,29 +152,89 @@
   </template>
   
   <script setup lang="ts">
+  import { computed } from 'vue';
   import { useGoalReview } from '../composables/useGoalReview';
   import { formatDateWithTemplate } from '@/shared/utils/dateUtils';
+  import type { IGoalReview } from '@/modules/Goal/domain/types/goal';
   
-  defineProps<{
+  const props = defineProps<{
     visible: boolean;
+    goalId?: string;
   }>();
   
   const emit = defineEmits<{
     (e: 'close'): void;
     (e: 'edit', reviewId: string): void;
     (e: 'delete', reviewId: string): void;
+    (e: 'view', reviewId: string): void;
+    (e: 'create'): void;
   }>();
   
   const { allReviews } = useGoalReview();
   
+  // 计算属性 - 根据目标ID筛选复盘记录
+  const displayReviews = computed(() => {
+    if (props.goalId) {
+      return allReviews.value.filter(review => review.goalId === props.goalId);
+    }
+    return allReviews.value;
+  });
+  
+  // 复盘类型相关方法
+  const getReviewTypeColor = (type: IGoalReview['type']): string => {
+    const colors = {
+      weekly: 'primary',
+      monthly: 'secondary',
+      midterm: 'warning',
+      final: 'success',
+      custom: 'info'
+    };
+    return colors[type] || 'primary';
+  };
+  
+  const getReviewTypeIcon = (type: IGoalReview['type']): string => {
+    const icons = {
+      weekly: 'mdi-calendar-week',
+      monthly: 'mdi-calendar-month',
+      midterm: 'mdi-calendar-check',
+      final: 'mdi-trophy',
+      custom: 'mdi-calendar-star'
+    };
+    return icons[type] || 'mdi-calendar';
+  };
+  
+  const getReviewTypeText = (type: IGoalReview['type']): string => {
+    const texts = {
+      weekly: '周复盘',
+      monthly: '月复盘',
+      midterm: '中期复盘',
+      final: '最终复盘',
+      custom: '自定义复盘'
+    };
+    return texts[type] || '复盘';
+  };
+  
   // 事件处理
   const handleClose = () => emit('close');
+  
   const handleEdit = (reviewId: string) => {
     emit('edit', reviewId);
     handleClose();
   };
+  
   const handleDelete = (reviewId: string) => {
-    emit('delete', reviewId);
+    if (confirm('确定要删除这条复盘记录吗？')) {
+      emit('delete', reviewId);
+    }
+  };
+  
+  const handleView = (reviewId: string) => {
+    emit('view', reviewId);
+    handleClose();
+  };
+  
+  const handleCreate = () => {
+    emit('create');
     handleClose();
   };
   </script>

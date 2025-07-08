@@ -150,7 +150,7 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { useRouter } from 'vue-router';
 import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
 import type { KeyResultLink } from '@/modules/Task/domain/types/task';

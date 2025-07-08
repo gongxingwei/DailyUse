@@ -27,7 +27,7 @@
           </template>
           
           <v-list class="py-2" min-width="180">
-            <v-list-item @click="showGoalDirDialog = true" class="px-4">
+            <v-list-item @click="goalDirDialog.startCreateGoalDir" class="px-4">
               <template v-slot:prepend>
                 <v-icon color="primary">mdi-folder-plus</v-icon>
               </template>
@@ -77,21 +77,23 @@
   
       <!-- 对话框 -->
       <GoalDirDialog 
-        v-model="showGoalDirDialog"
-        @save="saveGoalDir" 
-        @cancel="closeGoalDirDialog" 
+        v-model="goalDirDialog.showGoalDirDialog.value"
+        :goal-dir-data="goalDirDialog.goalDirData.value"
+        :goal-dir-dialog-mode="goalDirDialog.goalDirDialogMode.value"
+        @save="goalDirDialog.handleSaveGoalDir" 
+        @cancel="goalDirDialog.closeGoalDirDialog" 
       />
     </v-card>
   </template>
   
   <script setup lang="ts">
   import { computed } from 'vue';
-  import { useGoalDirStore } from '../stores/goalDirStore';
+  import { useGoalStore } from '../stores/goalStore';
   import GoalDirDialog from './GoalDirDialog.vue';
   import { useGoalManagement } from '../composables/useGoalManagement';
   import { useGoalDirDialog } from '../composables/useGoalDirDialog';
-  
-  const { showGoalDirDialog, closeGoalDirDialog, saveGoalDir } = useGoalDirDialog();
+
+  const goalDirDialog = useGoalDirDialog();
   const { selectedDirId, getGoalsCountByDirId } = useGoalManagement();
   
   const emit = defineEmits<{
@@ -99,8 +101,8 @@
     (e: 'add-goal-dir'): void
   }>();
   
-  const goalDirStore = useGoalDirStore();
-  const goalDirs = computed(() => goalDirStore.getAllDirs);
+  const goalStore = useGoalStore();
+  const goalDirs = computed(() => goalStore.getAllGoalDirs);
   
   const selectDir = (dirId: string) => {
     selectedDirId.value = dirId;

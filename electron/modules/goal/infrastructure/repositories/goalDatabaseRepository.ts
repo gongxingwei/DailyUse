@@ -5,7 +5,6 @@ import type {
   IKeyResult, 
   IRecord,
   IGoalCreateDTO,
-  IGoalDirCreateDTO,
   IKeyResultCreateDTO,
   IRecordCreateDTO
 } from "../../../../../src/modules/Goal/domain/types/goal";
@@ -36,34 +35,41 @@ export class GoalDatabaseRepository implements IGoalRepository {
   /**
    * 创建目标目录
    */
-  async createGoalDirectory(data: IGoalDirCreateDTO): Promise<GoalDir> {
+  async createGoalDirectory(data: IGoalDir): Promise<GoalDir> {
     const stmt = this.db.prepare(`
       INSERT INTO goal_directories (
         id, username, name, icon, parent_id, lifecycle, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
-
-    const id = `goaldir_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const now = Date.now();
-    const lifecycle = JSON.stringify({
-      createdAt: { timestamp: now },
-      updatedAt: { timestamp: now },
-      status: "active"
+    // 使用前端传递的 username，如果没有则回退到 currentUser
+    const username = this.currentUser;
+    
+    console.log('🔍 [数据库仓库] 创建目录 - 使用用户名:', username);
+    console.log('🔍 [数据库仓库] 创建目录 - 数据:', { 
+      id: data.id, 
+      username, 
+      name: data.name, 
+      icon: data.icon, 
+      parentId: data.parentId,
+      lifecycle: data.lifecycle 
     });
 
+    const now = Date.now();
+    const lifecycleStr = typeof data.lifecycle === 'string' ? data.lifecycle : JSON.stringify(data.lifecycle);
+
     stmt.run(
-      id,
-      this.currentUser,
+      data.id,
+      username,
       data.name,
       data.icon,
       data.parentId || null,
-      lifecycle,
+      lifecycleStr,
       now,
       now
     );
 
     // 返回创建的目录实体
-    const createdDir = await this.getGoalDirById(id);
+    const createdDir = await this.getGoalDirById(data.id);
     if (!createdDir) {
       throw new Error('Failed to create goal directory');
     }
@@ -101,41 +107,71 @@ export class GoalDatabaseRepository implements IGoalRepository {
   }
 
   /**
-   * 更新目标目录
-   */
-  async updateGoalDirectory(id: string, updates: Partial<IGoalDirCreateDTO>): Promise<GoalDir> {
-    const fields: string[] = [];
-    const values: any[] = [];
+ * 更新目标目录
+ */
+async updateGoalDirectory(data: IGoalDir): Promise<GoalDir> {
+  const fields: string[] = [];
+  const values: any[] = [];
 
-    if (updates.name !== undefined) {
-      fields.push('name = ?');
-      values.push(updates.name);
-    }
-    if (updates.icon !== undefined) {
-      fields.push('icon = ?');
-      values.push(updates.icon);
-    }
-    if (updates.parentId !== undefined) {
-      fields.push('parent_id = ?');
-      values.push(updates.parentId);
-    }
-
-    fields.push('updated_at = ?');
-    values.push(Date.now());
-    values.push(id);
-
-    const stmt = this.db.prepare(`
-      UPDATE goal_directories SET ${fields.join(', ')} WHERE id = ?
-    `);
-    stmt.run(...values);
-
-    // 返回更新后的实体
-    const updatedDir = await this.getGoalDirectoryById(id);
-    if (!updatedDir) {
-      throw new Error('Failed to update goal directory');
-    }
-    return updatedDir;
+  // 构建动态更新字段
+  if (data.name !== undefined) {
+    fields.push('name = ?');
+    values.push(data.name);
   }
+  
+  if (data.icon !== undefined) {
+    fields.push('icon = ?');
+    values.push(data.icon);
+  }
+  
+  if (data.parentId !== undefined) {
+    fields.push('parent_id = ?');
+    values.push(data.parentId);
+  }
+
+  // 更新生命周期
+  if (data.lifecycle) {
+    const updatedLifecycle = {
+      ...data.lifecycle,
+      updatedAt: {
+        ...data.lifecycle.updatedAt,
+        timestamp: Date.now()
+      }
+    };
+    fields.push('lifecycle = ?');
+    values.push(JSON.stringify(updatedLifecycle));
+  }
+
+  // 添加更新时间
+  fields.push('updated_at = ?');
+  values.push(Date.now());
+  
+  // 添加 WHERE 条件的参数
+  values.push(data.id);
+
+  // 执行更新
+  const stmt = this.db.prepare(`
+    UPDATE goal_directories 
+    SET ${fields.join(', ')} 
+    WHERE id = ?
+  `);
+  
+  const result = stmt.run(...values);
+  
+  // 检查是否更新成功
+  if (result.changes === 0) {
+    throw new Error(`Goal directory with id ${data.id} not found`);
+  }
+
+  console.log(`✅ [数据库仓库] 更新目录成功: ${data.id}`);
+
+  // 返回更新后的实体
+  const updatedDir = await this.getGoalDirectoryById(data.id);
+  if (!updatedDir) {
+    throw new Error('Failed to update goal directory');
+  }
+  return updatedDir;
+}
 
   /**
    * 删除目标目录
@@ -694,8 +730,28 @@ export class GoalDatabaseRepository implements IGoalRepository {
     };
   }
 
-  private mapRowToGoalDir(row: any): IGoalDir {
+  private mapRowToGoalDir = (row: any): IGoalDir => {
     const lifecycle = JSON.parse(row.lifecycle);
+    
+    // 调试日志
+    console.log('🔍 [数据库仓库] 解析目录生命周期数据:', {
+      rowId: row.id,
+      lifecycle: lifecycle,
+      createdAt: lifecycle.createdAt,
+      updatedAt: lifecycle.updatedAt
+    });
+    
+    // 检查 lifecycle 数据结构
+    if (!lifecycle.createdAt || typeof lifecycle.createdAt.timestamp !== 'number') {
+      console.error('❌ [数据库仓库] 目录生命周期数据格式错误:', lifecycle);
+      throw new Error(`目录 ${row.id} 的生命周期数据格式错误: createdAt.timestamp 不存在或格式不正确`);
+    }
+    
+    if (!lifecycle.updatedAt || typeof lifecycle.updatedAt.timestamp !== 'number') {
+      console.error('❌ [数据库仓库] 目录生命周期数据格式错误:', lifecycle);
+      throw new Error(`目录 ${row.id} 的生命周期数据格式错误: updatedAt.timestamp 不存在或格式不正确`);
+    }
+    
     return {
       id: row.id,
       name: row.name,
@@ -709,7 +765,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
     };
   }
 
-  private mapRowToGoal(row: any): IGoal {
+  private mapRowToGoal = (row: any): IGoal => {
     const lifecycle = JSON.parse(row.lifecycle);
     const analytics = JSON.parse(row.analytics);
     const analysis = JSON.parse(row.analysis);
@@ -725,6 +781,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       note: row.note,
       keyResults: [], // 由调用者填充
       records: [], // 由调用者填充
+      reviews: [],
       analysis,
       lifecycle: {
         createdAt: this.createDateTime(lifecycle.createdAt.timestamp),
@@ -736,7 +793,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
     };
   }
 
-  private mapRowToKeyResult(row: any): IKeyResult {
+  private mapRowToKeyResult = (row: any): IKeyResult => {
     const lifecycle = JSON.parse(row.lifecycle);
     return {
       id: row.id,
@@ -754,7 +811,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
     };
   }
 
-  private mapRowToRecord(row: any): IRecord {
+  private mapRowToRecord = (row: any): IRecord => {
     const lifecycle = JSON.parse(row.lifecycle);
     return {
       id: row.id,

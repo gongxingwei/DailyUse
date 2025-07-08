@@ -2,7 +2,6 @@
 // import { useThemeInit } from '@/modules/Theme/useThemeInit';
 // import { initializeLanguage } from '@/i18n/index';
 import { ReminderInitService } from '@/modules/Reminder/services/reminderInitService';
-import { UserDataInitService } from '@/shared/services/userDataInitService';
 import { getTaskDomainApplicationService } from '@/modules/Task/application/services/taskDomainApplicationService';
 
 export interface InitializationOptions {
@@ -31,11 +30,6 @@ export class AppInitService {
 
       // 1. 基础初始化（同步，必须的）
       await this.initBasicServices(options);
-
-      // 2. 数据初始化（异步，依赖用户登录状态）
-      if (!options.skipDataInit) {
-        await this.initDataServices(options);
-      }
 
       // 3. 功能模块初始化（异步，依赖数据）
       if (!options.skipReminders) {
@@ -68,22 +62,6 @@ export class AppInitService {
     //   console.log('✓ 语言初始化完成');
     // }
   }
-
-  /**
-   * 数据服务初始化（用户数据等）
-   */
-  private static async initDataServices(_options: InitializationOptions): Promise<void> {
-    console.log('初始化数据服务...');
-
-    try {
-      await UserDataInitService.initUserData();
-      console.log('✓ 用户数据初始化完成');
-    } catch (error) {
-      console.warn('用户数据初始化失败，可能是因为用户未登录:', error);
-      // 不抛出错误，允许应用继续运行
-    }
-  }
-
   /**
    * 功能服务初始化（提醒系统等）
    */
@@ -112,24 +90,6 @@ export class AppInitService {
     await this.initialize(options);
   }
 
-  /**
-   * 仅重新初始化数据相关服务
-   */
-  static async reinitializeUserData(): Promise<void> {
-    console.log('重新初始化用户数据...');
-
-    try {
-      // 重新加载用户数据
-      await UserDataInitService.initUserData();
-
-     
-
-      console.log('用户数据重新初始化完成');
-    } catch (error) {
-      console.error('用户数据重新初始化失败:', error);
-      throw error;
-    }
-  }
 
   /**
    * 添加清理函数

@@ -1,9 +1,9 @@
 import { ref } from 'vue';
-import { useGoalStore } from '../stores/goalStore';
+import { getGoalDomainApplicationService } from '../../application/services/goalDomainApplicationService';
 import type { IRecordCreate } from '../types/goal';
 
 export function useRecordDialog() {
-    const goalStore = useGoalStore();
+    const goalService = getGoalDomainApplicationService();
     const showRecordDialog = ref(false);
     const selectedKeyResultId = ref('');
 
@@ -14,14 +14,21 @@ export function useRecordDialog() {
 
     const handleSaveRecord = async (record: IRecordCreate, goalId: string, keyResultId: string) => {
         try {
-            const recordData = {
+            // 使用聚合根驱动的业务方法
+            const response = await goalService.addRecordToGoal(
+                goalId,
                 keyResultId,
-                value: record.value,
-                note: record.note
-            };
+                record.value,
+                record.note
+            );
             
-            await goalStore.addRecord(goalId, recordData);
-            closeRecordDialog();
+            if (response.success) {
+                console.log('记录保存成功:', response.data);
+                closeRecordDialog();
+            } else {
+                console.error('记录保存失败:', response.message);
+                // 可以在这里添加错误提示
+            }
         } catch (error) {
             console.error('Failed to save record:', error);
             // Handle error (could emit an error event or show notification)

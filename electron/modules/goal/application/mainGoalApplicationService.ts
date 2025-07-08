@@ -5,10 +5,14 @@ import type {
   IRecord, 
   IRecordCreateDTO, 
   IGoalDir, 
-  IGoalDirCreateDTO
+  IGoalReview,
+  IGoalReviewCreateDTO
 } from "@/modules/Goal/domain/types/goal";
 import { Goal } from "@/modules/Goal/domain/entities/goal";
+import { GoalReview } from "@/modules/Goal/domain/entities/goalReview";
 import { GoalDir } from "@/modules/Goal/domain/entities/goalDir";
+import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
+import { generateUUID } from "@/shared/utils/uuid";
 import { GoalContainer } from "../infrastructure/di/goalContainer";
 import type { IGoalRepository } from "../domain/repositories/iGoalRepository";
 
@@ -498,23 +502,256 @@ export class MainGoalApplicationService {
     }
   }
 
+  // ========== 目标复盘管理（聚合根驱动）==========
+
+  /**
+   * 为目标添加复盘（聚合根驱动）
+   */
+  async addReviewToGoal(
+    goalId: string,
+    reviewData: IGoalReviewCreateDTO
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [主进程] 为目标添加复盘:', { goalId, reviewData });
+
+      const repository = await this.getRepository();
+
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
+      if (!goal) {
+        console.error('❌ [主进程] 目标不存在:', goalId);
+        return {
+          success: false,
+          message: `目标不存在: ${goalId}`,
+        };
+      }
+
+      // 使用聚合根方法添加复盘
+      const reviewId = generateUUID();
+      const reviewDate = reviewData.reviewDate || TimeUtils.now();
+      
+      const review = new GoalReview(
+        reviewId,
+        goalId,
+        reviewData.title,
+        reviewData.type,
+        reviewDate,
+        reviewData.content,
+        goal.createSnapshot(),
+        reviewData.rating
+      );
+
+      goal.addReview(review);
+
+      // 保存更新后的目标（包含新复盘）
+      await repository.updateGoal(goal.id, { /* goal updates if needed */ });
+
+      console.log('✅ [主进程] 复盘添加成功:', review.id);
+      return {
+        success: true,
+        message: '复盘添加成功',
+        data: { goal: goal.toDTO(), review: review.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 添加复盘失败:', error);
+      return {
+        success: false,
+        message: `添加复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 更新目标的复盘（聚合根驱动）
+   */
+  async updateReviewInGoal(
+    goalId: string,
+    reviewId: string,
+    updateData: Partial<IGoalReviewCreateDTO>
+  ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
+    try {
+      console.log('🔄 [主进程] 更新目标复盘:', { goalId, reviewId, updateData });
+
+      const repository = await this.getRepository();
+
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
+      if (!goal) {
+        console.error('❌ [主进程] 目标不存在:', goalId);
+        return {
+          success: false,
+          message: `目标不存在: ${goalId}`,
+        };
+      }
+
+      // 使用聚合根方法更新复盘
+      goal.updateReview(reviewId, updateData);
+      
+      // 获取更新后的复盘
+      const review = goal.getReview(reviewId);
+      if (!review) {
+        console.error('❌ [主进程] 复盘不存在:', reviewId);
+        return {
+          success: false,
+          message: `复盘不存在: ${reviewId}`,
+        };
+      }
+
+      // 保存更新后的目标（包含更新的复盘）
+      await repository.updateGoal(goal.id, { /* goal updates if needed */ });
+
+      console.log('✅ [主进程] 复盘更新成功:', review.id);
+      return {
+        success: true,
+        message: '复盘更新成功',
+        data: { goal: goal.toDTO(), review: review.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 更新复盘失败:', error);
+      return {
+        success: false,
+        message: `更新复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 从目标中移除复盘（聚合根驱动）
+   */
+  async removeReviewFromGoal(
+    goalId: string,
+    reviewId: string
+  ): Promise<TResponse<{ goal: IGoal }>> {
+    try {
+      console.log('🔄 [主进程] 从目标移除复盘:', { goalId, reviewId });
+
+      const repository = await this.getRepository();
+
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
+      if (!goal) {
+        console.error('❌ [主进程] 目标不存在:', goalId);
+        return {
+          success: false,
+          message: `目标不存在: ${goalId}`,
+        };
+      }
+
+      // 使用聚合根方法移除复盘
+      goal.removeReview(reviewId);
+
+      // 保存更新后的目标（移除复盘后）
+      await repository.updateGoal(goal.id, { /* goal updates if needed */ });
+
+      console.log('✅ [主进程] 复盘移除成功');
+      return {
+        success: true,
+        message: '复盘移除成功',
+        data: { goal: goal.toDTO() },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 移除复盘失败:', error);
+      return {
+        success: false,
+        message: `移除复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 获取目标的所有复盘
+   */
+  async getGoalReviews(goalId: string): Promise<TResponse<IGoalReview[]>> {
+    try {
+      console.log('🔄 [主进程] 获取目标复盘:', goalId);
+
+      const repository = await this.getRepository();
+
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
+      if (!goal) {
+        console.error('❌ [主进程] 目标不存在:', goalId);
+        return {
+          success: false,
+          message: `目标不存在: ${goalId}`,
+        };
+      }
+
+      // 获取排序后的复盘列表
+      const reviews = goal.getReviewsSortedByDate();
+      const reviewDTOs = reviews.map(review => review.toDTO());
+
+      console.log('✅ [主进程] 获取目标复盘成功:', reviews.length);
+      return {
+        success: true,
+        message: '获取目标复盘成功',
+        data: reviewDTOs,
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 获取目标复盘失败:', error);
+      return {
+        success: false,
+        message: `获取目标复盘失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 为目标创建复盘快照（聚合根驱动）
+   */
+  async createGoalReviewSnapshot(goalId: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
+    try {
+      console.log('🔄 [主进程] 为目标创建复盘快照:', goalId);
+
+      const repository = await this.getRepository();
+
+      // 获取目标聚合根
+      const goal = await repository.getGoalById(goalId);
+      if (!goal) {
+        console.error('❌ [主进程] 目标不存在:', goalId);
+        return {
+          success: false,
+          message: `目标不存在: ${goalId}`,
+        };
+      }
+
+      // 使用聚合根方法创建快照
+      const snapshot = goal.createSnapshot();
+
+      console.log('✅ [主进程] 复盘快照创建成功');
+      return {
+        success: true,
+        message: '复盘快照创建成功',
+        data: { goal: goal.toDTO(), snapshot },
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 创建复盘快照失败:', error);
+      return {
+        success: false,
+        message: `创建复盘快照失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
   // ========== 目标目录管理 ==========
 
   /**
    * 创建目标目录
    */
-  async createGoalDir(goalDirData: IGoalDirCreateDTO): Promise<TResponse<IGoalDir>> {
+  async createGoalDir(goalDirData: IGoalDir): Promise<TResponse<IGoalDir>> {
     try {
-      console.log('🔄 [主进程] 创建目标目录:', goalDirData.name);
+      console.log('🔄 [mainprocesss] 创建目标目录:', goalDirData.name);
 
       // 验证数据
       const validation = GoalDir.validate(goalDirData);
+      console.log('ddddyancheng', validation);
       if (!validation.isValid) {
         return {
           success: false,
           message: `目录数据验证失败: ${validation.errors.join(', ')}`,
         };
       }
+      console.log('✅ [主进程] 目录数据验证通过');
 
       const repository = await this.getRepository();
       const goalDir = await repository.createGoalDirectory(goalDirData);
@@ -545,7 +782,7 @@ export class MainGoalApplicationService {
       const goalDirs = await repository.getAllGoalDirectories();
       const goalDirDTOs = goalDirs.map(goalDir => goalDir.toDTO());
 
-      console.log(`✅ [主进程] 获取目标目录成功，数量: ${goalDirs.length}`);
+      console.log(` [mainProgress] success to get goal-dir，total: ${goalDirs.length}`);
       return {
         success: true,
         message: '获取目标目录成功',
@@ -604,6 +841,41 @@ export class MainGoalApplicationService {
     }
   }
 
+  /**
+   * 更新目标目录
+   */
+  async updateGoalDir(goalDirData: IGoalDir): Promise<TResponse<IGoalDir>> {
+    try {
+      console.log('🔄 [主进程] 更新目标目录:', goalDirData.id);
+
+      const repository = await this.getRepository();
+
+      // 检查目录是否存在
+      const existingGoalDir = await repository.getGoalDirectoryById(goalDirData.id);
+      if (!existingGoalDir) {
+        return {
+          success: false,
+          message: `目标目录不存在: ${goalDirData.id}`,
+        };
+      }
+
+      // 更新目录
+      const updatedGoalDir = await repository.updateGoalDirectory(goalDirData);
+
+      console.log('✅ [主进程] 目标目录更新成功:', goalDirData.id);
+      return {
+        success: true,
+        message: '目标目录更新成功',
+        data: updatedGoalDir.toDTO(),
+      };
+    } catch (error) {
+      console.error('❌ [主进程] 更新目标目录失败:', error);
+      return {
+        success: false,
+        message: `更新目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
   /**
    * 为目标添加关键结果（通过聚合根）
    */

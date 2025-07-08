@@ -6,7 +6,7 @@ import type {
   IRecord, 
   IRecordCreateDTO, 
   IGoalDir, 
-  IGoalDirCreateDTO 
+  IGoalDir 
 } from '@/modules/Goal/domain/types/goal';
 import type { DateTime } from "@/shared/types/myDateTime";
 

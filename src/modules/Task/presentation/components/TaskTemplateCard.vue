@@ -166,7 +166,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
-import { useGoalStore } from '@/modules/Goal/stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
 interface Props {
     template: TaskTemplate;

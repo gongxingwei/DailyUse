@@ -103,7 +103,7 @@
     
     // 过滤有内容的目标
     const validGoals = goals.filter(goal => 
-      isShowingMotive.value ? goal.motive?.trim() : goal.feasibility?.trim()
+      isShowingMotive.value ? goal.analysis?.motive?.trim() : goal.analysis?.feasibility?.trim()
     );
   
     if (!validGoals.length) {
@@ -117,8 +117,8 @@
     const randomGoal = validGoals[Math.floor(Math.random() * validGoals.length)];
     currentGoal.value = randomGoal;
     currentContent.value = isShowingMotive.value ? 
-      randomGoal.motive : 
-      randomGoal.feasibility;
+      randomGoal.analysis?.motive : 
+      randomGoal.analysis?.feasibility;
       
     isRefreshing.value = false;
   };

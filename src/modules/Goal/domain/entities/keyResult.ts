@@ -88,6 +88,17 @@ export class KeyResult extends Entity implements IKeyResult {
   }
 
   /**
+   * 计算加权进度
+   * 根据权重和进度计算加权进度
+   * @return 加权进度百分比
+   */
+  get weightedProgress(): number {
+    if (this._targetValue === this._startValue) return 0;
+    const progress = (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
+    return Math.max(0, Math.min(100, progress * 100 * (this._weight / 10)));
+  }
+  
+  /**
    * 更新当前值
    */
   updateCurrentValue(newValue: number): void {
@@ -151,6 +162,8 @@ export class KeyResult extends Entity implements IKeyResult {
     this._lifecycle.status = "archived";
     this._lifecycle.updatedAt = TimeUtils.now();
   }
+
+
 
   /**
    * 转换为数据传输对象
@@ -226,6 +239,20 @@ export class KeyResult extends Entity implements IKeyResult {
     );
   }
 
+  clone(): KeyResult {
+    const clone = new KeyResult(
+      this.id,
+      this._name,
+      this._startValue,
+      this._targetValue,
+      this._currentValue,
+      this._calculationMethod,
+      this._weight
+    );
+    clone._lifecycle = { ...this._lifecycle };
+    return clone;
+  }
+  
   /**
    * 验证关键结果数据
    */
