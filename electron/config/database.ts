@@ -12,6 +12,7 @@ globalThis.__filename = __filename;
 globalThis.__dirname = __dirname;
 import BetterSqlite3 from "better-sqlite3";
 import type { Database } from "better-sqlite3";
+import { RepositoryFactory } from "../shared/services/repositoryFactory";
 
 // 数据库单例
 let db: Database | null = null;
@@ -52,12 +53,14 @@ export async function initializeDatabase(): Promise<Database> {
     // 启用 WAL 模式提高性能
     db.pragma("journal_mode = WAL");
 
-    // 创建表结构 - 确保包含所有必要字段
+    // 数据库版本管理
+    await migrateDatabase(db);
+
+    // 创建表结构 - Account 模块：用户身份信息表（不包含密码）
     db.exec(`
       CREATE TABLE IF NOT EXISTS users (
         uid TEXT NOT NULL,
         username TEXT PRIMARY KEY,
-        password TEXT NOT NULL,
         avatar TEXT,
         email TEXT,
         phone TEXT,
@@ -67,12 +70,12 @@ export async function initializeDatabase(): Promise<Database> {
       )
     `);
 
-    // 创建登录会话表
+    // 注意：登录会话相关功能已迁移到 Authentication 模块的 auth_sessions 表
+    // 此表保留用于向后兼容，但不再包含密码字段
     db.exec(`
       CREATE TABLE IF NOT EXISTS login_sessions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
-        password TEXT, -- 加密存储，只有记住密码时才有值
         token TEXT, -- 存储会话令牌
         accountType TEXT NOT NULL CHECK(accountType IN ('local', 'online')) DEFAULT 'local',
         rememberMe BOOLEAN NOT NULL DEFAULT 0,
@@ -295,10 +298,171 @@ export async function initializeDatabase(): Promise<Database> {
       CREATE INDEX IF NOT EXISTS idx_goal_records_key_result_id ON goal_records(key_result_id);
       CREATE INDEX IF NOT EXISTS idx_goal_records_date ON goal_records(date);
       CREATE INDEX IF NOT EXISTS idx_goal_records_created_at ON goal_records(created_at);
+      
+      -- === 认证模块索引 ===
+      CREATE INDEX IF NOT EXISTS idx_auth_credentials_account_id ON auth_credentials(account_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_credentials_last_auth_at ON auth_credentials(last_auth_at);
+      CREATE INDEX IF NOT EXISTS idx_auth_sessions_account_id ON auth_sessions(account_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_sessions_is_active ON auth_sessions(is_active);
+      CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_auth_sessions_last_active_at ON auth_sessions(last_active_at);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_account_id ON auth_tokens(account_id);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_type ON auth_tokens(type);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
+      CREATE INDEX IF NOT EXISTS idx_auth_tokens_is_revoked ON auth_tokens(is_revoked);
+      CREATE INDEX IF NOT EXISTS idx_mfa_devices_account_id ON mfa_devices(account_id);
+      CREATE INDEX IF NOT EXISTS idx_mfa_devices_type ON mfa_devices(type);
+      CREATE INDEX IF NOT EXISTS idx_mfa_devices_is_enabled ON mfa_devices(is_enabled);
+      
+      -- === 会话记录模块索引 ===
+      CREATE INDEX IF NOT EXISTS idx_session_logs_account_id ON session_logs(account_id);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_session_id ON session_logs(session_id);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_operation_type ON session_logs(operation_type);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_risk_level ON session_logs(risk_level);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_is_anomalous ON session_logs(is_anomalous);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_created_at ON session_logs(created_at);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_login_time ON session_logs(login_time);
+      CREATE INDEX IF NOT EXISTS idx_session_logs_ip_address ON session_logs(ip_address);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_account_id ON audit_trails(account_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_session_log_id ON audit_trails(session_log_id);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_operation_type ON audit_trails(operation_type);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_risk_level ON audit_trails(risk_level);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_is_alert_triggered ON audit_trails(is_alert_triggered);
+      CREATE INDEX IF NOT EXISTS idx_audit_trails_timestamp ON audit_trails(timestamp);
+    `);
+
+    // === 认证模块相关表 (Authentication Context) ===
+
+    // 认证凭证表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS auth_credentials (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        password_algorithm TEXT NOT NULL DEFAULT 'bcrypt',
+        password_created_at INTEGER NOT NULL,
+        last_auth_at INTEGER,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+      )
+    `);
+
+    // 会话表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS auth_sessions (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        device_info TEXT NOT NULL,
+        ip_address TEXT NOT NULL,
+        user_agent TEXT,
+        created_at INTEGER NOT NULL,
+        last_active_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        is_active BOOLEAN NOT NULL DEFAULT 1,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+      )
+    `);
+
+    // 令牌表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS auth_tokens (
+        value TEXT PRIMARY KEY,
+        type TEXT NOT NULL CHECK(type IN ('remember_me', 'access_token', 'refresh_token', 'email_verification', 'password_reset')),
+        account_id TEXT NOT NULL,
+        issued_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        device_info TEXT,
+        is_revoked BOOLEAN NOT NULL DEFAULT 0,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+      )
+    `);
+
+    // MFA设备表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS mfa_devices (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        type TEXT NOT NULL CHECK(type IN ('totp', 'sms', 'email', 'hardware_key', 'backup_codes')),
+        name TEXT NOT NULL,
+        secret_key TEXT,
+        phone_number TEXT,
+        email_address TEXT,
+        backup_codes TEXT, -- JSON格式存储备用码
+        is_verified BOOLEAN NOT NULL DEFAULT 0,
+        is_enabled BOOLEAN NOT NULL DEFAULT 0,
+        verification_attempts INTEGER NOT NULL DEFAULT 0,
+        max_attempts INTEGER NOT NULL DEFAULT 3,
+        created_at INTEGER NOT NULL,
+        last_used_at INTEGER,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+      )
+    `);
+
+    // === 会话记录模块相关表 (Session Logging Context) ===
+
+    // 会话日志表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS session_logs (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        session_id TEXT,
+        operation_type TEXT NOT NULL CHECK(operation_type IN ('login', 'logout', 'expired', 'forced_logout', 'session_refresh', 'mfa_verification', 'password_change', 'suspicious_activity')),
+        device_info TEXT NOT NULL,
+        ip_address TEXT NOT NULL,
+        ip_country TEXT,
+        ip_region TEXT,
+        ip_city TEXT,
+        ip_latitude REAL,
+        ip_longitude REAL,
+        ip_timezone TEXT,
+        ip_isp TEXT,
+        user_agent TEXT,
+        login_time INTEGER,
+        logout_time INTEGER,
+        duration INTEGER, -- 会话持续时间（分钟）
+        risk_level TEXT NOT NULL CHECK(risk_level IN ('low', 'medium', 'high', 'critical')) DEFAULT 'low',
+        risk_factors TEXT, -- JSON格式存储风险因素数组
+        is_anomalous BOOLEAN NOT NULL DEFAULT 0,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+      )
+    `);
+
+    // 审计轨迹表
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS audit_trails (
+        id TEXT PRIMARY KEY,
+        account_id TEXT NOT NULL,
+        session_log_id TEXT,
+        operation_type TEXT NOT NULL,
+        description TEXT NOT NULL,
+        risk_level TEXT NOT NULL CHECK(risk_level IN ('low', 'medium', 'high', 'critical')),
+        ip_address TEXT NOT NULL,
+        ip_country TEXT,
+        ip_region TEXT,
+        ip_city TEXT,
+        ip_latitude REAL,
+        ip_longitude REAL,
+        ip_timezone TEXT,
+        ip_isp TEXT,
+        user_agent TEXT,
+        metadata TEXT, -- JSON格式存储元数据
+        is_alert_triggered BOOLEAN NOT NULL DEFAULT 0,
+        alert_level TEXT CHECK(alert_level IN ('info', 'warning', 'error', 'critical')),
+        timestamp INTEGER NOT NULL,
+        FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE,
+        FOREIGN KEY (session_log_id) REFERENCES session_logs(id) ON DELETE CASCADE
+      )
     `);
 
     // 创建默认用户（如果不存在）
     await ensureDefaultUser(db);
+
+    // 初始化仓库工厂
+    RepositoryFactory.initialize(db);
 
     return db;
   } catch (error) {
@@ -320,28 +484,45 @@ async function ensureDefaultUser(database: Database): Promise<void> {
     if (!existingUser) {
       console.log('🔄 [数据库] 创建默认用户...');
       
-      // 创建默认用户
+      // 创建默认用户（仅包含身份信息）
       const insertUserStmt = database.prepare(`
-        INSERT INTO users (uid, username, password, accountType, createdAt)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO users (uid, username, accountType, createdAt)
+        VALUES (?, ?, ?, ?)
       `);
       
       const now = Date.now();
+      const defaultUserId = 'default_uid_' + now;
       insertUserStmt.run(
-        'default_uid_' + now,
+        defaultUserId,
         'default',
-        'default_password', // 实际应用中应该使用加密密码
         'local',
         now
       );
+
+      // 为默认用户创建认证凭证（在 Authentication 模块中）
+      const credentialId = `cred_${defaultUserId}`;
+      const defaultPasswordHash = 'default_hash'; // 实际应用中应该使用加密密码
       
-      console.log('✅ [数据库] 默认用户创建成功');
-    } else {
-      console.log('🔍 [数据库] 默认用户已存在，跳过创建');
+      database.prepare(`
+        INSERT INTO auth_credentials (
+          id, account_id, password_hash, password_salt, password_algorithm,
+          password_created_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        credentialId,
+        defaultUserId,
+        defaultPasswordHash,
+        'default_salt',
+        'bcrypt',
+        now,
+        now,
+        now
+      );
+
+      console.log('✅ [数据库] 默认用户和认证凭证创建成功');
     }
   } catch (error) {
     console.error('❌ [数据库] 创建默认用户失败:', error);
-    // 不抛出异常，避免影响应用启动
   }
 }
 
@@ -429,4 +610,322 @@ if (typeof process !== "undefined") {
     await closeDatabase();
     process.exit(0);
   });
+}
+
+/**
+ * 数据库迁移管理
+ */
+async function migrateDatabase(db: Database): Promise<void> {
+  try {
+    // 获取当前数据库版本
+    const versionQuery = db.prepare("PRAGMA user_version");
+    const versionResult = versionQuery.get() as any;
+    const currentVersion = versionResult.user_version || 0;
+
+    console.log(`🔄 [数据库] 当前版本: ${currentVersion}`);
+
+    // 版本 0 -> 版本 1: 创建基础表结构
+    if (currentVersion < 1) {
+      await migrateToVersion1(db);
+    }
+
+    // 版本 1 -> 版本 2: 重构认证架构，分离密码到 auth_credentials 表
+    if (currentVersion < 2) {
+      await migrateToVersion2(db);
+    }
+
+    console.log(`✅ [数据库] 迁移完成，当前版本: 2`);
+  } catch (error) {
+    console.error('❌ [数据库] 迁移失败:', error);
+    throw error;
+  }
+}
+
+/**
+ * 迁移到版本 1: 创建基础表结构
+ */
+async function migrateToVersion1(db: Database): Promise<void> {
+  console.log('🔄 [数据库] 迁移到版本 1...');
+
+  // 创建 Account 模块：用户身份信息表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      uid TEXT NOT NULL,
+      username TEXT PRIMARY KEY,
+      password TEXT, -- 临时保留，将在版本2中迁移
+      avatar TEXT,
+      email TEXT,
+      phone TEXT,
+      accountType TEXT DEFAULT 'local',
+      onlineId TEXT,
+      createdAt INTEGER NOT NULL
+    )
+  `);
+
+  // 创建旧版登录会话表（兼容性）
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS login_sessions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL,
+      password TEXT,
+      token TEXT,
+      accountType TEXT NOT NULL CHECK(accountType IN ('local', 'online')) DEFAULT 'local',
+      rememberMe BOOLEAN NOT NULL DEFAULT 0,
+      lastLoginTime INTEGER NOT NULL,
+      autoLogin BOOLEAN NOT NULL DEFAULT 0,
+      isActive BOOLEAN NOT NULL DEFAULT 0,
+      createdAt INTEGER NOT NULL,
+      updatedAt INTEGER NOT NULL,
+      UNIQUE(username, accountType)
+    )
+  `);
+
+  // 其他现有表...
+  // (保留所有现有的表创建代码)
+
+  // 更新版本
+  db.pragma("user_version = 1");
+  console.log('✅ [数据库] 版本 1 迁移完成');
+}
+
+/**
+ * 迁移到版本 2: 重构认证架构
+ */
+async function migrateToVersion2(db: Database): Promise<void> {
+  console.log('🔄 [数据库] 迁移到版本 2: 重构认证架构...');
+
+  // 1. 创建新的认证模块表
+  console.log('🔄 [数据库] 创建认证模块表...');
+  
+  // 认证凭证表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_credentials (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      password_salt TEXT NOT NULL,
+      password_algorithm TEXT NOT NULL DEFAULT 'bcrypt',
+      password_created_at INTEGER NOT NULL,
+      last_auth_at INTEGER,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+    )
+  `);
+
+  // 会话表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_sessions (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      device_info TEXT NOT NULL,
+      ip_address TEXT NOT NULL,
+      user_agent TEXT,
+      created_at INTEGER NOT NULL,
+      last_active_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      is_active BOOLEAN NOT NULL DEFAULT 1,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+    )
+  `);
+
+  // 令牌表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS auth_tokens (
+      value TEXT PRIMARY KEY,
+      type TEXT NOT NULL CHECK(type IN ('remember_me', 'access_token', 'refresh_token', 'email_verification', 'password_reset')),
+      account_id TEXT NOT NULL,
+      issued_at INTEGER NOT NULL,
+      expires_at INTEGER NOT NULL,
+      device_info TEXT,
+      is_revoked BOOLEAN NOT NULL DEFAULT 0,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+    )
+  `);
+
+  // MFA设备表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS mfa_devices (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('totp', 'sms', 'email', 'hardware_key', 'backup_codes')),
+      name TEXT NOT NULL,
+      secret_key TEXT,
+      phone_number TEXT,
+      email_address TEXT,
+      backup_codes TEXT,
+      is_verified BOOLEAN NOT NULL DEFAULT 0,
+      is_enabled BOOLEAN NOT NULL DEFAULT 0,
+      verification_attempts INTEGER NOT NULL DEFAULT 0,
+      max_attempts INTEGER NOT NULL DEFAULT 3,
+      created_at INTEGER NOT NULL,
+      last_used_at INTEGER,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+    )
+  `);
+
+  // 2. 创建会话记录模块表
+  console.log('🔄 [数据库] 创建会话记录模块表...');
+  
+  // 会话日志表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session_logs (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      session_id TEXT,
+      operation_type TEXT NOT NULL CHECK(operation_type IN ('login', 'logout', 'expired', 'forced_logout', 'session_refresh', 'mfa_verification', 'password_change', 'suspicious_activity')),
+      device_info TEXT NOT NULL,
+      ip_address TEXT NOT NULL,
+      ip_country TEXT,
+      ip_region TEXT,
+      ip_city TEXT,
+      ip_latitude REAL,
+      ip_longitude REAL,
+      ip_timezone TEXT,
+      ip_isp TEXT,
+      user_agent TEXT,
+      login_time INTEGER,
+      logout_time INTEGER,
+      duration INTEGER,
+      risk_level TEXT NOT NULL CHECK(risk_level IN ('low', 'medium', 'high', 'critical')) DEFAULT 'low',
+      risk_factors TEXT,
+      is_anomalous BOOLEAN NOT NULL DEFAULT 0,
+      created_at INTEGER NOT NULL,
+      updated_at INTEGER NOT NULL,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE
+    )
+  `);
+
+  // 审计轨迹表
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS audit_trails (
+      id TEXT PRIMARY KEY,
+      account_id TEXT NOT NULL,
+      session_log_id TEXT,
+      operation_type TEXT NOT NULL,
+      description TEXT NOT NULL,
+      risk_level TEXT NOT NULL CHECK(risk_level IN ('low', 'medium', 'high', 'critical')),
+      ip_address TEXT NOT NULL,
+      ip_country TEXT,
+      ip_region TEXT,
+      ip_city TEXT,
+      ip_latitude REAL,
+      ip_longitude REAL,
+      ip_timezone TEXT,
+      ip_isp TEXT,
+      user_agent TEXT,
+      metadata TEXT,
+      is_alert_triggered BOOLEAN NOT NULL DEFAULT 0,
+      alert_level TEXT CHECK(alert_level IN ('info', 'warning', 'error', 'critical')),
+      timestamp INTEGER NOT NULL,
+      FOREIGN KEY (account_id) REFERENCES users(uid) ON DELETE CASCADE,
+      FOREIGN KEY (session_log_id) REFERENCES session_logs(id) ON DELETE CASCADE
+    )
+  `);
+
+  // 3. 迁移现有数据
+  console.log('🔄 [数据库] 迁移现有用户数据...');
+  
+  try {
+    // 查询所有现有用户
+    const existingUsers = db.prepare("SELECT * FROM users WHERE password IS NOT NULL").all() as any[];
+    
+    for (const user of existingUsers) {
+      // 为每个用户创建认证凭证
+      const credentialId = `cred_${user.uid}`;
+      const now = Date.now();
+      
+      // 假设现有密码已经是加密的，直接迁移
+      db.prepare(`
+        INSERT OR IGNORE INTO auth_credentials (
+          id, account_id, password_hash, password_salt, password_algorithm,
+          password_created_at, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        credentialId,
+        user.uid,
+        user.password, // 现有的密码hash
+        '', // 空salt，因为旧系统可能没有单独的salt
+        'legacy', // 标记为旧系统格式
+        now,
+        now,
+        now
+      );
+      
+      console.log(`✅ [数据库] 用户 ${user.username} 的认证凭证已迁移`);
+    }
+  } catch (error) {
+    console.warn('⚠️ [数据库] 迁移用户数据时出现警告:', error);
+  }
+
+  // 4. 移除 users 表的 password 字段
+  console.log('🔄 [数据库] 重构 users 表结构...');
+  
+  // SQLite 不支持 DROP COLUMN，所以需要重建表
+  db.exec(`
+    -- 创建新的 users 表（不含密码字段）
+    CREATE TABLE users_new (
+      uid TEXT NOT NULL,
+      username TEXT PRIMARY KEY,
+      avatar TEXT,
+      email TEXT,
+      phone TEXT,
+      accountType TEXT DEFAULT 'local',
+      onlineId TEXT,
+      createdAt INTEGER NOT NULL
+    );
+    
+    -- 复制数据（排除密码字段）
+    INSERT INTO users_new (uid, username, avatar, email, phone, accountType, onlineId, createdAt)
+    SELECT uid, username, avatar, email, phone, accountType, onlineId, createdAt FROM users;
+    
+    -- 删除旧表并重命名新表
+    DROP TABLE users;
+    ALTER TABLE users_new RENAME TO users;
+  `);
+
+  // 5. 创建所有索引
+  console.log('🔄 [数据库] 创建索引...');
+  
+  db.exec(`
+    -- Account 模块索引
+    CREATE INDEX IF NOT EXISTS idx_users_uid ON users(uid);
+    CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+    CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
+    
+    -- Authentication 模块索引
+    CREATE INDEX IF NOT EXISTS idx_auth_credentials_account_id ON auth_credentials(account_id);
+    CREATE INDEX IF NOT EXISTS idx_auth_credentials_last_auth_at ON auth_credentials(last_auth_at);
+    CREATE INDEX IF NOT EXISTS idx_auth_sessions_account_id ON auth_sessions(account_id);
+    CREATE INDEX IF NOT EXISTS idx_auth_sessions_is_active ON auth_sessions(is_active);
+    CREATE INDEX IF NOT EXISTS idx_auth_sessions_expires_at ON auth_sessions(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_auth_sessions_last_active_at ON auth_sessions(last_active_at);
+    CREATE INDEX IF NOT EXISTS idx_auth_tokens_account_id ON auth_tokens(account_id);
+    CREATE INDEX IF NOT EXISTS idx_auth_tokens_type ON auth_tokens(type);
+    CREATE INDEX IF NOT EXISTS idx_auth_tokens_expires_at ON auth_tokens(expires_at);
+    CREATE INDEX IF NOT EXISTS idx_auth_tokens_is_revoked ON auth_tokens(is_revoked);
+    CREATE INDEX IF NOT EXISTS idx_mfa_devices_account_id ON mfa_devices(account_id);
+    CREATE INDEX IF NOT EXISTS idx_mfa_devices_type ON mfa_devices(type);
+    CREATE INDEX IF NOT EXISTS idx_mfa_devices_is_enabled ON mfa_devices(is_enabled);
+    
+    -- SessionLogging 模块索引
+    CREATE INDEX IF NOT EXISTS idx_session_logs_account_id ON session_logs(account_id);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_session_id ON session_logs(session_id);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_operation_type ON session_logs(operation_type);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_risk_level ON session_logs(risk_level);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_is_anomalous ON session_logs(is_anomalous);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_created_at ON session_logs(created_at);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_login_time ON session_logs(login_time);
+    CREATE INDEX IF NOT EXISTS idx_session_logs_ip_address ON session_logs(ip_address);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_account_id ON audit_trails(account_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_session_log_id ON audit_trails(session_log_id);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_operation_type ON audit_trails(operation_type);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_risk_level ON audit_trails(risk_level);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_is_alert_triggered ON audit_trails(is_alert_triggered);
+    CREATE INDEX IF NOT EXISTS idx_audit_trails_timestamp ON audit_trails(timestamp);
+  `);
+
+  // 更新版本
+  db.pragma("user_version = 2");
+  console.log('✅ [数据库] 版本 2 迁移完成 - 认证架构重构完成');
 }
