@@ -421,6 +421,7 @@ export class SessionLog extends AggregateRoot {
     );
 
     const sessionLog = new SessionLog(
+      row.id,
       row.account_id,
       row.operation_type as OperationType,
       row.device_info,

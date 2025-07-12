@@ -4,7 +4,7 @@ import { AuditTrail } from "../entities/auditTrail";
 /**
  * 会话日志存储库接口
  */
-export interface ISessionLogRepository {
+export interface ISessionLoggingRepository {
   save(sessionLog: SessionLog): Promise<void>;
   findById(id: string): Promise<SessionLog | null>;
   findByAccountId(accountId: string): Promise<SessionLog[]>;

@@ -25,6 +25,7 @@ const buildInputs = {
 // 收集所有预加载脚本
 const preloadInputs = {
   main_preload: path.join(__dirname, 'electron/preload.ts'),
+  login_preload: path.join(__dirname, 'electron/preload/loginPreload.ts'),
   ...Object.fromEntries(
     plugins
       .filter(plugin => fs.existsSync(path.join(pluginsDir, plugin, 'electron/preload.ts')))

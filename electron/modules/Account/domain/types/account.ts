@@ -24,23 +24,23 @@ export interface IAccount {
   createdAt: DateTime;
   updatedAt: DateTime;
   lastLoginAt?: DateTime;
-  
-  // 聚合根方法 - 仅包含账号身份信息管理，不包含密码认证
-  updateEmail(email: string): void;
-  updatePhone(phone: string): void;
-  disable(): void;
-  enable(): void;
-  suspend(): void;
-  verifyEmail(): void;
-  addRole(roleId: string): void;
-  removeRole(roleId: string): void;
 }
 
-// 注册数据类型（不包含密码，密码在 Authentication 模块处理）
-export interface RegisterData {
+// 注册数据类型（包含密码，密码在 Authentication 模块处理）
+export interface AccountRegistrationRequest {
   username: string;
+  password: string;
+  confirmPassword: string;
   email?: string;
   phone?: string;
+  // User 实体相关字段
+  firstName?: string;
+  lastName?: string;
+  sex?: string;
+  avatar?: string;
+  bio?: string;
+  // Account 相关字段
+  accountType?: AccountType;
 }
 
 // 账号更新数据类型
@@ -49,4 +49,41 @@ export interface AccountUpdateData {
   phone?: string;
   bio?: string;
   avatar?: string;
+}
+
+
+
+// 账号注销请求类型
+export interface AccountDeactivationRequest {
+  reason: string;
+  confirmDeletion: boolean;
+  feedback?: string;
+}
+
+export interface AccountDTO {
+  id: string;
+  username: string;
+  status: AccountStatus;
+  accountType: AccountType;
+  createdAt: DateTime;
+  updatedAt: DateTime;
+  lastLoginAt?: DateTime;
+  email?: string;
+  emailVerificationToken?: string;
+  isEmailVerified: boolean;
+  phone?: string;
+  phoneVerificationCode?: string;
+  isPhoneVerified: boolean;
+  roleIds?: Set<string>;
+  user: UserDTO;
+}
+
+export interface UserDTO {
+  id: string;
+  firstName: string | null;
+  lastName: string | null;
+  sex: string | null;
+  avatar: string | null;
+  bio: string | null;
+  socialAccounts: Map<string, string>;
 }

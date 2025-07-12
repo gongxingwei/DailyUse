@@ -1,0 +1,1 @@
+export type { TaskCompletedEvent } from './domain/events/taskEvents';

@@ -1,7 +1,6 @@
 import type { IGoalRepository } from '../../domain/repositories/iGoalRepository';
 import { GoalDatabaseRepository } from '../repositories/goalDatabaseRepository';
-import { getDatabase } from '../../../../config/database';
-
+import { getDatabase } from "../../../../shared/database/index";
 export class GoalContainer {
   private static instance: GoalContainer;
   private goalRepository: IGoalRepository | null = null;

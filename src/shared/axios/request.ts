@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import type { TResponse } from "@/shared/types/response";
 import { TokenManager } from "@/modules/Account/utils/tokenManagement";
 import type { InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
-import { remoteAuthService } from "@/modules/Account/services/remoteAuthService";
+import { remoteAuthService } from "@/modules/Account/domain/services/remoteAuthService";
 // 创建自定义的 axios 实例类型
 interface CustomAxiosInstance
   extends Omit<AxiosInstance, "get" | "post" | "put" | "delete"> {

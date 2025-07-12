@@ -9,21 +9,7 @@
  * 在 Node.js 环境中使用 crypto.randomUUID()
  */
 export function generateUUID(): string {
-  // 检查是否在 Node.js 环境中
-  if (typeof window === 'undefined' && typeof require !== 'undefined') {
-    try {
-      const { randomUUID } = require('crypto');
-      return randomUUID();
-    } catch (error) {
-      // 如果 Node.js 版本不支持 randomUUID，使用备用方案
-    }
-  }
-  
-  // 在浏览器环境中，优先使用 Web Crypto API
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  
+
   // 备用 UUID v4 生成方案（RFC 4122 兼容）
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
     const r = Math.random() * 16 | 0;

@@ -30,10 +30,12 @@ export interface IAccountRepository {
  * 用户存储库接口
  */
 export interface IUserRepository {
-  save(user: User): Promise<void>;
+  save(user: User, account_uuid: string): Promise<void>;
   findById(id: string): Promise<User | null>;
+  findByAccountId(accountId: string): Promise<User | null>;
   delete(id: string): Promise<void>;
   findAll(): Promise<User[]>;
+  update(user: User): Promise<void>;
 }
 
 /**

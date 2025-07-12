@@ -3,13 +3,29 @@ import { registerFileSystemHandlers } from '../ipc/filesystem';
 import { registerGitHandlers } from '../ipc/git';
 import { setupScheduleHandlers } from '../../modules/schedule/main';
 import { setupNotificationHandler } from '../../modules/notification/ipcs/notification.ipc';
+
+import { initializeEventSubscriptions } from './eventSubscriptionInitializer';
+import { initializeDatabase } from '../../shared/database/index';
+// 每个模块的初始化任务
+import { registerSessionLoggingInitializationTasks } from '../../modules/SessionLogging/initialization/sessionLoggingInitialization';
 import { registerAccountInitializationTasks } from '../../modules/Account/initialization/accountInitialization';
 import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
-
+import { registerAuthenticationInitializationTasks } from '../../modules/Authentication/initialization/authenticationInitialization';
 /**
  * 基础设施模块的初始化任务
  */
+// 数据库初始化
+const databaseInitTask: InitializationTask = {
+  name: 'database',
+  phase: InitializationPhase.APP_STARTUP,
+  priority: 5,
+  initialize: async () => {
+    await initializeDatabase();
+    console.log('✓ Database initialized');
+  }
+};
+
 
 // 文件系统处理器
 const fileSystemInitTask: InitializationTask = {
@@ -57,6 +73,18 @@ const scheduleInitTask: InitializationTask = {
   }
 };
 
+// 事件订阅
+const eventSubscriptionInitTask: InitializationTask = {
+  name: 'eventSubscription',
+  phase: InitializationPhase.APP_STARTUP,
+  priority: 50,
+  dependencies: ['notification'],
+  initialize: async () => {
+    initializeEventSubscriptions();
+    console.log('✓ Event subscriptions initialized');
+  }
+};
+
 /**
  * 注册所有模块的初始化任务
  */
@@ -64,15 +92,19 @@ export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
   
   // 注册基础设施任务
+  manager.registerTask(databaseInitTask);
   manager.registerTask(fileSystemInitTask);
   manager.registerTask(gitInitTask);
   manager.registerTask(notificationInitTask);
   manager.registerTask(scheduleInitTask);
+  manager.registerTask(eventSubscriptionInitTask);
   
   // 注册各模块的任务
   registerAccountInitializationTasks();
   registerTaskInitializationTasks();
   registerGoalInitializationTasks();
+  registerAuthenticationInitializationTasks();
+  registerSessionLoggingInitializationTasks();
   
   console.log('All initialization tasks registered');
 }
@@ -82,6 +114,7 @@ export function registerAllInitializationTasks(): void {
  */
 export async function initializeApp(): Promise<void> {
   console.log('Starting application initialization...');
+  console.log('💫 [Debug] initializeApp() 调用堆栈:', new Error().stack);
   
   // 注册所有初始化任务
   registerAllInitializationTasks();

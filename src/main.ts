@@ -9,7 +9,7 @@ import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
 import '@/shared/styles/icons.css'
 import { i18n } from './i18n'
-import { EventSystem } from './shared/infrastructure/eventSystem'
+import { initializeApp } from './shared/initialization/appInitialization'
 // import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
 // // 配置 Monaco Editor 的 worker
@@ -40,8 +40,11 @@ pluginManager.register(quickLauncherPlugin)
 app.mount('#app')
   .$nextTick(() => {
     // 初始化所有插件
-    window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
-      console.log(message)
-    })
-    EventSystem.initialize();
+      window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
+        console.log(message)
+      })
+     (async () => {
+      await initializeApp()
+      console.log('🚀！！[src/main]: 初始化APP 成功')
+    })()
   })

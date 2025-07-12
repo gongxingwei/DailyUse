@@ -9,6 +9,7 @@
       <p class="mt-4">正在初始化应用...</p>
     </div>
     <router-view v-else></router-view>
+
   </v-app>
 </template>
 
@@ -16,6 +17,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { AppInitService } from '@/shared/services/appInitService';
 import { useThemeInit } from './modules/Theme/useThemeInit';
+
 useThemeInit();
 
 const isLoading = ref(true);

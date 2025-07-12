@@ -1,18 +1,24 @@
 import { Database } from "better-sqlite3";
-import { getDatabase } from "../../../../config/database";
-import { IAccountRepository } from "../../domain/repositories/accountRepository";
+import { getDatabase } from "../../../../shared/database/index";
+import { IAccountRepository } from "../../index";
+import { IUserRepository } from "../../index";
 import { Account } from "../../domain/aggregates/account";
 import { User } from "../../domain/entities/user";
 import { Email } from "../../domain/valueObjects/email";
 import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
-import { AccountType } from "../../domain/types/account";
-
+import { AccountType, AccountStatus } from "../../domain/types/account";
+import { SqliteUserRepository } from "./sqliteUserRepository";
 /**
  * SQLite 账号存储库实现
  * 负责账号数据的持久化和查询
  */
 export class SqliteAccountRepository implements IAccountRepository {
   private db: Database | null = null;
+  private userRepository: IUserRepository;
+  constructor() {
+    // 初始化 User 仓库
+    this.userRepository = new SqliteUserRepository();
+  }
 
   /**
    * 获取数据库连接
@@ -31,18 +37,18 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
-        WHERE uid = ?
+        SELECT * FROM accounts 
+        WHERE uuid = ?
       `;
       const row = db.prepare(query).get(id) as any;
-      
+
       if (!row) {
         return null;
       }
 
-      return this.mapRowToAccount(row);
+      return await this.mapRowToAccount(row);
     } catch (error) {
-      console.error('查找账号失败 (ID):', error);
+      console.error("查找账号失败 (ID):", error);
       throw error;
     }
   }
@@ -54,18 +60,18 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
+        SELECT * FROM accounts 
         WHERE username = ?
       `;
       const row = db.prepare(query).get(username) as any;
-      
+
       if (!row) {
         return null;
       }
 
-      return this.mapRowToAccount(row);
+      return await this.mapRowToAccount(row);
     } catch (error) {
-      console.error('查找账号失败 (用户名):', error);
+      console.error("查找账号失败 (用户名):", error);
       throw error;
     }
   }
@@ -77,18 +83,18 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
+        SELECT * FROM accounts 
         WHERE email = ?
       `;
       const row = db.prepare(query).get(email) as any;
-      
+
       if (!row) {
         return null;
       }
 
       return this.mapRowToAccount(row);
     } catch (error) {
-      console.error('查找账号失败 (邮箱):', error);
+      console.error("查找账号失败 (邮箱):", error);
       throw error;
     }
   }
@@ -100,14 +106,20 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
-        ORDER BY createdAt DESC
+        SELECT * FROM accounts 
+        ORDER BY created_at DESC
       `;
       const rows = db.prepare(query).all() as any[];
-      
-      return rows.map(row => this.mapRowToAccount(row));
+
+      const accounts = [];
+      for (const row of rows) {
+        const account = await this.mapRowToAccount(row);
+        accounts.push(account);
+      }
+
+      return accounts;
     } catch (error) {
-      console.error('获取所有账号失败:', error);
+      console.error("获取所有账号失败:", error);
       throw error;
     }
   }
@@ -119,18 +131,18 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
+        SELECT * FROM accounts 
         WHERE phone = ?
       `;
       const row = db.prepare(query).get(phone) as any;
-      
+
       if (!row) {
         return null;
       }
 
       return this.mapRowToAccount(row);
     } catch (error) {
-      console.error('查找账号失败 (手机号):', error);
+      console.error("查找账号失败 (手机号):", error);
       throw error;
     }
   }
@@ -141,10 +153,10 @@ export class SqliteAccountRepository implements IAccountRepository {
   async findByStatus(_status: string): Promise<Account[]> {
     try {
       // 注意：当前数据库表没有status字段，返回空数组
-      console.warn('数据库表中没有status字段，返回空数组');
+      console.warn("数据库表中没有status字段，返回空数组");
       return [];
     } catch (error) {
-      console.error('根据状态查找账号失败:', error);
+      console.error("根据状态查找账号失败:", error);
       throw error;
     }
   }
@@ -156,15 +168,21 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       const db = await this.getDb();
       const query = `
-        SELECT * FROM users 
-        WHERE accountType = ?
-        ORDER BY createdAt DESC
+        SELECT * FROM accounts 
+        WHERE account_type = ?
+        ORDER BY created_at DESC
       `;
       const rows = db.prepare(query).all(accountType) as any[];
-      
-      return rows.map(row => this.mapRowToAccount(row));
+
+      const accounts = [];
+      for (const row of rows) {
+        const account = await this.mapRowToAccount(row);
+        accounts.push(account);
+      }
+
+      return accounts;
     } catch (error) {
-      console.error('根据账号类型查找账号失败:', error);
+      console.error("根据账号类型查找账号失败:", error);
       throw error;
     }
   }
@@ -175,11 +193,11 @@ export class SqliteAccountRepository implements IAccountRepository {
   async existsByPhone(phone: string): Promise<boolean> {
     try {
       const db = await this.getDb();
-      const query = `SELECT 1 FROM users WHERE phone = ?`;
+      const query = `SELECT 1 FROM accounts WHERE phone = ?`;
       const result = db.prepare(query).get(phone);
       return result !== undefined;
     } catch (error) {
-      console.error('检查手机号存在性失败:', error);
+      console.error("检查手机号存在性失败:", error);
       throw error;
     }
   }
@@ -191,14 +209,16 @@ export class SqliteAccountRepository implements IAccountRepository {
     try {
       // 检查账号是否已存在
       const existing = await this.findById(account.id);
-      
+
       if (existing) {
         await this.updateAccount(account);
       } else {
         await this.insertAccount(account);
       }
+
+      await this.userRepository.save(account.user, account.id);
     } catch (error) {
-      console.error('保存账号失败:', error);
+      console.error("保存账号失败:", error);
       throw error;
     }
   }
@@ -209,16 +229,21 @@ export class SqliteAccountRepository implements IAccountRepository {
   async delete(id: string): Promise<void> {
     try {
       const db = await this.getDb();
-      const query = `DELETE FROM users WHERE uid = ?`;
+
+      // 先删除用户资料
+      await this.userRepository.delete(id);
+
+      // 再删除账号
+      const query = `DELETE FROM accounts WHERE uuid = ?`;
       const result = db.prepare(query).run(id);
-      
+
       if (result.changes === 0) {
-        throw new Error('账号不存在或删除失败');
+        throw new Error("账号不存在或删除失败");
       }
-      
+
       console.log(`账号 ${id} 删除成功`);
     } catch (error) {
-      console.error('删除账号失败:', error);
+      console.error("删除账号失败:", error);
       throw error;
     }
   }
@@ -229,11 +254,11 @@ export class SqliteAccountRepository implements IAccountRepository {
   async existsByUsername(username: string): Promise<boolean> {
     try {
       const db = await this.getDb();
-      const query = `SELECT 1 FROM users WHERE username = ?`;
+      const query = `SELECT 1 FROM accounts WHERE username = ?`;
       const result = db.prepare(query).get(username);
       return result !== undefined;
     } catch (error) {
-      console.error('检查用户名存在性失败:', error);
+      console.error("检查用户名存在性失败:", error);
       throw error;
     }
   }
@@ -244,11 +269,11 @@ export class SqliteAccountRepository implements IAccountRepository {
   async existsByEmail(email: string): Promise<boolean> {
     try {
       const db = await this.getDb();
-      const query = `SELECT 1 FROM users WHERE email = ?`;
+      const query = `SELECT 1 FROM accounts WHERE email = ?`;
       const result = db.prepare(query).get(email);
       return result !== undefined;
     } catch (error) {
-      console.error('检查邮箱存在性失败:', error);
+      console.error("检查邮箱存在性失败:", error);
       throw error;
     }
   }
@@ -259,24 +284,30 @@ export class SqliteAccountRepository implements IAccountRepository {
   private async insertAccount(account: Account): Promise<void> {
     const db = await this.getDb();
     const query = `
-      INSERT INTO users (
-        uid, username, avatar, email, phone, 
-        accountType, onlineId, createdAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO accounts (
+        uuid, username, email, phone, 
+        account_type, status, role_ids, created_at, updated_at,
+        last_login_at, email_verification_token, phone_verification_code
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
+
     const stmt = db.prepare(query);
+    const now = Date.now();
     stmt.run(
       account.id,
       account.username,
-      account.user.avatar,
       account.email?.value,
       account.phoneNumber?.number,
       account.accountType,
-      null, // onlineId
-      account.createdAt.getTime()
+      account.status,
+      JSON.stringify(Array.from(account.roleIds)),
+      now,
+      now,
+      account.lastLoginAt?.getTime() || null,
+      null, // emailVerificationToken - 需要通过getter获取
+      null, // phoneVerificationCode - 需要通过getter获取
     );
-    
+
     console.log(`账号 ${account.username} 创建成功`);
   }
 
@@ -284,66 +315,69 @@ export class SqliteAccountRepository implements IAccountRepository {
    * 更新账号
    */
   private async updateAccount(account: Account): Promise<void> {
+    // 先更新 User 实体
+    await this.userRepository.update(account.user);
+
     const db = await this.getDb();
     const query = `
-      UPDATE users SET 
-        username = ?, avatar = ?, email = ?, 
-        phone = ?, accountType = ?, onlineId = ?
-      WHERE uid = ?
+      UPDATE accounts SET 
+        username = ?, email = ?, phone = ?, 
+        account_type = ?, status = ?, role_ids = ?, updated_at = ?,
+        last_login_at = ?, email_verification_token = ?, phone_verification_code = ?
+      WHERE uuid = ?
     `;
-    
+
     const stmt = db.prepare(query);
     const result = stmt.run(
       account.username,
-      account.user.avatar,
       account.email?.value,
       account.phoneNumber?.number,
       account.accountType,
-      null, // onlineId
+      account.status,
+      JSON.stringify(Array.from(account.roleIds)),
+      Date.now(),
+      account.lastLoginAt?.getTime() || null,
+      null, // emailVerificationToken - 需要通过getter获取
+      null, // phoneVerificationCode - 需要通过getter获取
       account.id
     );
-    
+
     if (result.changes === 0) {
-      throw new Error('账号更新失败，未找到目标记录');
+      throw new Error("账号更新失败，未找到目标记录");
     }
-    
+
     console.log(`账号 ${account.username} 更新成功`);
   }
 
   /**
    * 将数据库行映射为 Account 聚合根
    */
-  private mapRowToAccount(row: any): Account {
-    // 创建 User 实体
-    const user = new User(
-      row.uid + '_user', // 为用户实体生成ID
-      row.username,      // firstName
-      '',                // lastName - 使用空字符串而不是undefined
-      '',                // bio - 使用空字符串而不是undefined
-      row.avatar
-    );
-
-    // 创建邮箱值对象（如果存在）
-    let email: Email | undefined;
-    if (row.email) {
-      email = new Email(row.email, true); // 假设数据库中的邮箱已验证
+  private async mapRowToAccount(row: any): Promise<Account> {
+    // 从 user_profiles 表获取 User 实体信息
+    const user = await this.userRepository.findByAccountId(row.uuid);
+    if (!user) {
+      throw new Error(`User profile not found for account: ${row.uuid}`);
     }
-
-    // 创建手机号值对象（如果存在）
-    let phoneNumber: PhoneNumber | undefined;
-    if (row.phone) {
-      phoneNumber = new PhoneNumber(row.phone);
-    }
-
-    // 创建账号聚合根（不包含密码）
-    const account = new Account(
-      row.uid,
-      row.username,
-      row.accountType as AccountType || AccountType.LOCAL,
-      user,
-      email,
-      phoneNumber
-    );
+    const UserDTO = user.toDTO();
+    console.log('UserDTO:', UserDTO);
+    // 解析角色ID (暂时不使用，预留用于将来扩展)
+    // let roleIds: Set<string> = new Set();
+    // if (row.roleIds) {
+    //   try {
+    //     const roleIdArray = JSON.parse(row.roleIds);
+    //     roleIds = new Set(roleIdArray);
+    //   } catch (error) {
+    //     console.warn("Failed to parse role IDs:", error);
+    //   }
+    // }
+    const { uuid, ...rest} = row;
+    const accountDTO = {...rest, user:UserDTO, id: uuid}
+    console.log(accountDTO)
+    // 创建账号聚合根
+    const account = Account.fromDTO(accountDTO);
+    console.log('[sqliteAccountRepo::Account]', account)
+    // 设置其他属性（如果需要，可以通过反射或者账号的公共方法）
+    // 注意：这里可能需要扩展 Account 类以提供设置这些私有字段的方法
 
     return account;
   }

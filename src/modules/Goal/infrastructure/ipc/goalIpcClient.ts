@@ -16,7 +16,7 @@ import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
  */
 export class GoalIpcClient {
   // ========== 目标管理 ==========
-
+  name = 'GoalIpcClient';
   /**
    * 创建目标
    */

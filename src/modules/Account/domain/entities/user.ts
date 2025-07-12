@@ -1,25 +1,29 @@
+import { Entity } from "@/shared/domain/entity";
+import type { UserDTO } from "@/modules/Account/domain/types/account";
 /**
  * User 实体
  * 用户个人信息实体
  */
-export class User {
-  private _id: string;
-  private _firstName: string;
-  private _lastName: string;
-  private _avatar?: string;
-  private _bio?: string;
+export class User extends Entity {
+  private _firstName: string | null;
+  private _lastName: string | null;
+  private _sex: string | null;
+  private _avatar: string | null;
+  private _bio: string | null;
   private _socialAccounts: Map<string, string>; // 社交账号映射
 
   constructor(
     id: string,
-    firstName: string,
-    lastName: string,
-    avatar?: string,
-    bio?: string
+    firstName: string | null,
+    lastName: string | null,
+    sex: string | null,
+    avatar: string | null,
+    bio: string | null
   ) {
-    this._id = id;
+    super(id);
     this._firstName = firstName;
     this._lastName = lastName;
+    this._sex = sex;
     this._avatar = avatar;
     this._bio = bio;
     this._socialAccounts = new Map();
@@ -29,23 +33,27 @@ export class User {
     return this._id;
   }
 
-  get firstName(): string {
+  get firstName(): string | null {
     return this._firstName;
   }
 
-  get lastName(): string {
+  get lastName(): string | null {
     return this._lastName;
   }
 
-  get fullName(): string {
+  get fullName(): string | null {
     return `${this._firstName} ${this._lastName}`.trim();
   }
 
-  get avatar(): string | undefined {
+  get sex(): string | null | undefined {
+    return this._sex;
+  }
+
+  get avatar(): string | null | undefined {
     return this._avatar;
   }
 
-  get bio(): string | undefined {
+  get bio(): string | null | undefined {
     return this._bio;
   }
 
@@ -70,6 +78,13 @@ export class User {
   }
 
   /**
+   * 当从 DTO 数据恢复 User 对象时，设置社交账号
+   */
+  setSocialAccounts(accounts: Map<string, string>): void {
+    this._socialAccounts = accounts;
+  }
+
+  /**
    * 绑定社交账号
    */
   addSocialAccount(platform: string, accountId: string): void {
@@ -89,4 +104,30 @@ export class User {
   getSocialAccount(platform: string): string | undefined {
     return this._socialAccounts.get(platform);
   }
+
+  toDTO(): UserDTO {
+    return {
+      id: this.id,
+      firstName: this.firstName || null,
+      lastName: this.lastName || null,
+      sex: this.sex ||  null,
+      avatar: this.avatar || null,
+      bio: this.bio || null,
+      socialAccounts: this.socialAccounts,
+    };
+  } 
+
+  static fromDTO(dto: UserDTO): User { 
+    const user = new User(
+      dto.id,
+      dto.firstName || null,
+      dto.lastName || null,
+      dto.sex || null,
+      dto.avatar || null,
+      dto.bio || null
+    );
+    user.setSocialAccounts(dto.socialAccounts);
+    return user;
+  }
+  
 }

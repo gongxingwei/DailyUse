@@ -11,7 +11,6 @@ import type {
 import type { IGoalStateRepository } from "../../domain/repositories/IGoalStateRepository";
 import { goalIpcClient } from "../../infrastructure/ipc/goalIpcClient";
 import { PiniaGoalStateRepository } from "../../infrastructure/repositories/piniaGoalStateRepository";
-import { useAuthStore } from "@/modules/Account/stores/authStore";
 import { GoalDir } from "../../domain/entities/goalDir";
 
 /**
@@ -739,9 +738,10 @@ export class GoalDomainApplicationService {
       console.log('🔄 [目标应用服务] 创建目标目录:', goalDirData.name);
       console.log('🔍 [目标应用服务] 目录创建数据:', goalDirData);
 
-      // 获取当前用户信息
-      const authStore = useAuthStore();
-      const currentUser = authStore.currentUser;
+
+      const currentUser = {
+        username: 'text'
+      };
       
       // 确定使用的用户名：优先使用登录用户，否则使用默认用户
       let username: string;

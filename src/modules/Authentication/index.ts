@@ -1,7 +1,9 @@
 // Authentication 模块导出
-export { AuthenticationService } from './services/authenticationService';
+export { AuthenticationService } from './application/services/authenticationService';
 
 export type { 
+  PasswordAuthenticationRequest,
+  PasswordAuthenticationResponse,
   LoginCredentials, 
   AuthResult, 
   RegisterData 

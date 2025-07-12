@@ -1,21 +1,18 @@
-export interface LoginCredentials {
+export interface PasswordAuthenticationRequest {
   username: string;
   password: string;
   remember?: boolean;
+  clientInfo?: {
+    ip: string;
+    userAgent: string;
+    deviceId: string;
+    location: string;
+    country: string;
+    city: string;
+  };
 }
-
-export interface AuthResult {
-  success: boolean;
-  message: string;
-  accountId?: string;
-  username?: string;
-  token?: string;
-}
-
-export interface RegisterData {
+export interface PasswordAuthenticationResponse {
+  token: string | null;
   username: string;
-  password: string;
-  confirmPassword: string;
-  email?: string;
-  phone?: string;
+  accountId: string;
 }

@@ -1,7 +1,14 @@
-import { IAccountRepository } from "../../domain/repositories/accountRepository";
+import type { IAccountRepository } from "../../../Account";
+// import type { IUserRepository } from "../../../Account";
 import { Account } from "../../domain/aggregates/account";
+import { User } from "../../domain/entities/user";
+import { Email } from "../../domain/valueObjects/email";
+import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
 import type { TResponse } from "@/shared/types/response";
-import { RegisterData } from "../../domain/types/account";
+import { AccountRegistrationRequest, AccountType } from "../../domain/types/account";
+import { generateUUID } from "@/shared/utils/uuid";
+import { eventBus } from "../../../../shared/events/eventBus";
+import { AccountContainer } from "../../infrastructure/di/accountContainer";
 
 /**
  * 主进程中的账号应用服务
@@ -10,34 +17,111 @@ import { RegisterData } from "../../domain/types/account";
  */
 export class MainAccountApplicationService {
   private static instance: MainAccountApplicationService;
+  private accountRepository: IAccountRepository;
+  // private userRepository: IUserRepository;
   
-  constructor(
-    private accountRepository: IAccountRepository
-  ) {}
+  constructor() {
+    const container = AccountContainer.getInstance();
+    this.accountRepository = container.getAccountRepository();
+    // this.userRepository = container.getUserRepository();
+  }
 
-  public static getInstance(
-    accountRepository: IAccountRepository
-  ): MainAccountApplicationService {
+  public static getMainAccountApplicationService(): MainAccountApplicationService {
     if (!MainAccountApplicationService.instance) {
-      MainAccountApplicationService.instance = new MainAccountApplicationService(
-        accountRepository
-      );
+      MainAccountApplicationService.instance = new MainAccountApplicationService();
     }
     return MainAccountApplicationService.instance;
   }
 
   /**
-   * 注册账号（仅创建身份信息，密码在 Authentication 模块处理）
+   * 注册账号
    */
-  async register(_registerData: RegisterData): Promise<TResponse<Account>> {
-    console.log('⚠️ [主进程-注册] 注册功能需要与 Authentication 模块集成');
-    
-    // TODO: 实现纯身份信息的账号创建
-    return {
-      success: false,
-      message: '注册功能正在重构中，需要与 Authentication 模块集成',
-      data: undefined
-    };
+  async register(registerData: AccountRegistrationRequest): Promise<TResponse<Account>> {
+    console.log('🔄 [主进程-注册] 开始注册账号流程', registerData);
+    try {
+      // 1. 检查用户名是否已存在
+      const isAccountExists = await this.accountRepository.existsByUsername(registerData.username);
+      if (isAccountExists) {
+        return {
+          success: false,
+          message: '用户名已存在',
+          data: undefined
+        };
+      }
+
+      // 2. 检查邮箱是否已存在（如果提供）
+      if (registerData.email) {
+        const isEmailExists = await this.accountRepository.existsByEmail(registerData.email);
+        if (isEmailExists) {
+          return {
+            success: false,
+            message: '邮箱已被使用',
+            data: undefined
+          };
+        }
+      }
+
+      // 3. 检查手机号是否已存在（如果提供）
+      if (registerData.phone) {
+        const isPhoneExists = await this.accountRepository.existsByPhone(registerData.phone);
+        if (isPhoneExists) {
+          return {
+            success: false,
+            message: '手机号已被使用',
+            data: undefined
+          };
+        }
+      }
+
+      // 4. 创建 User 实体（个人资料）
+      const user = new User(
+        generateUUID(),
+        registerData.firstName || '',
+        registerData.lastName || '',
+        registerData.sex || '2',
+        registerData.avatar || '',
+        registerData.bio || '',
+      );
+
+      // 5. 创建 Account 聚合根（身份信息）
+      const account = Account.createForRegistration(
+        registerData.username,
+        registerData.accountType || AccountType.LOCAL,
+        user,
+        registerData.password,
+        registerData.email ? new Email(registerData.email) : undefined,
+        registerData.phone ? new PhoneNumber(registerData.phone) : undefined
+      );
+
+      // 6. 保存 Account（包含 User）
+      await this.accountRepository.save(account);
+
+      console.log('✅ [主进程-注册] 账号身份信息创建成功');
+
+      // 7. 发布领域事件，通知其他模块
+      const domainEvents = account.getDomainEvents();
+      for (const event of domainEvents) {
+        console.log(`📢 [领域事件] ${event.eventType}:`, event.payload);
+        // 通过事件总线发布给其他模块
+        await eventBus.publish(event);
+      }
+
+      account.clearDomainEvents();
+
+      return {
+        success: true,
+        message: '账号注册成功，请完成认证设置',
+        data: account
+      };
+
+    } catch (error) {
+      console.error('❌ [主进程-注册] 注册账号失败:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '注册失败',
+        data: undefined
+      };
+    }
   }
 
   /**
@@ -163,7 +247,18 @@ export class MainAccountApplicationService {
         account.updatePhone(updateData.phone);
       }
 
-      // TODO: 更新用户实体信息 (firstName, lastName, bio, avatar)
+      // 更新用户实体信息
+      if (updateData.firstName || updateData.lastName || updateData.bio) {
+        account.user.updateProfile(
+          updateData.firstName,
+          updateData.lastName,
+          updateData.bio
+        );
+      }
+
+      if (updateData.avatar) {
+        account.user.updateAvatar(updateData.avatar);
+      }
 
       await this.accountRepository.save(account);
 
@@ -313,6 +408,36 @@ export class MainAccountApplicationService {
       return {
         success: false,
         message: error instanceof Error ? error.message : '手机号验证失败',
+        data: undefined
+      };
+    }
+  }
+
+  /**
+   * 通过 username 获取 account_uuid
+   */
+  async getAccountIdByUsername(username: string): Promise<TResponse<Account>> {
+    try {
+      const account = await this.accountRepository.findByUsername(username);
+
+      if (!account) {
+        return {
+          success: false,
+          message: '账号不存在',
+          data: undefined
+        };
+      }
+
+      return {
+        success: true,
+        message: '获取账号ID成功',
+        data: account
+      }
+    } catch (error) {
+      console.error('❌ [主进程-获取] 获取账号ID失败:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '获取账号ID失败',
         data: undefined
       };
     }

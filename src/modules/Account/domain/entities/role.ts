@@ -35,33 +35,4 @@ export class Role {
   get permissions(): Set<string> {
     return new Set(this._permissions);
   }
-
-  /**
-   * 添加权限
-   */
-  addPermission(permissionId: string): void {
-    this._permissions.add(permissionId);
-  }
-
-  /**
-   * 移除权限
-   */
-  removePermission(permissionId: string): void {
-    this._permissions.delete(permissionId);
-  }
-
-  /**
-   * 检查是否拥有某个权限
-   */
-  hasPermission(permissionId: string): boolean {
-    return this._permissions.has(permissionId);
-  }
-
-  /**
-   * 更新角色信息
-   */
-  updateInfo(name?: string, description?: string): void {
-    if (name) this._name = name;
-    if (description) this._description = description;
-  }
 }

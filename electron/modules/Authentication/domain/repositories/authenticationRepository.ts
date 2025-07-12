@@ -16,6 +16,11 @@ export interface IAuthCredentialRepository {
   // 查询操作
   findAll(): Promise<AuthCredential[]>;
   existsByAccountId(accountId: string): Promise<boolean>;
+
+  /**
+   * 根据用户名查找认证凭证
+   */
+  findByUsername(username: string): Promise<AuthCredential | null>;
 }
 
 /**

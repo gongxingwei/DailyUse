@@ -63,4 +63,32 @@ export class TimeUtils {
     
     return result;
   }
+
+  /**
+   * 将 DateTime 转换为时间戳（毫秒）
+   */
+  static toTimestamp(date: DateTime): number {
+    return date.getTime();
+  }
+
+  /**
+   * 从时间戳（毫秒）创建 DateTime
+   */
+  static fromTimestamp(timestamp: number): DateTime {
+    return new Date(timestamp);
+  }
+
+  /**
+   * 将 DateTime 转换为 Unix 时间戳（秒）
+   */
+  static toUnixTimestamp(date: DateTime): number {
+    return Math.floor(date.getTime() / 1000);
+  }
+
+  /**
+   * 从 Unix 时间戳（秒）创建 DateTime
+   */
+  static fromUnixTimestamp(timestamp: number): DateTime {
+    return new Date(timestamp * 1000);
+  }
 }

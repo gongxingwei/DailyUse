@@ -1,6 +1,6 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
 import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
-import { useAuthStore } from '@/modules/Account/stores/authStore';
+import { useAccountStore } from '@/modules/Account/index';
 import MainLayout from '@/modules/App/MainLayout.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
 import Summary from '@/modules/Summary/views/Summary.vue';
@@ -10,6 +10,16 @@ const routes: RouteRecordRaw[] = [
     {
         path: '/',
         redirect: '/summary'
+    },
+    {
+        path: '/login',
+        name: 'login',
+        component: () => import('@/views/AuthView.vue'),
+        meta: {
+            requiresAuth: false,
+            hideLayout: true,
+            title: '用户登录'
+        }
     },
     {
         path: '/notification',
@@ -23,7 +33,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/auth',
                 name: 'auth',
-                component: () => import('@/modules/Account/views/AuthView.vue'),
+                component: () => import('@/views/AuthView.vue'),
                 meta: {
                     requiresAuth: false,
                     title: '用户认证'
@@ -63,7 +73,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/profile',
                 name: 'profile',
-                component: () => import('@/modules/Account/views/Profile.vue')
+                component: () => import('@/modules/Account/presentation/views/Profile.vue')
             },
             {
                 path: '/repository',
@@ -101,7 +111,7 @@ const router = createRouter({
 
 // 全局前置守卫（可选）
 router.beforeEach((to, _from, next) => {
-    const authStore = useAuthStore()
+    const accountStore = useAccountStore()
     // 设置页面标题
     document.title = `${to.meta.title || '默认标题'}`
 
@@ -109,7 +119,7 @@ router.beforeEach((to, _from, next) => {
     const publicPages = ['/auth','/notification']
     const authRequired = !publicPages.includes(to.path)
 
-   if (authRequired && !authStore.isAuthenticated) {
+   if (authRequired && !accountStore.isAuthenticated) {
         // 存储原始目标路由
         return next({
             name: 'auth',
@@ -118,7 +128,7 @@ router.beforeEach((to, _from, next) => {
     }
 
     // 已登录用户访问登录/注册页面时重定向到首页
-    if (authStore.isAuthenticated && publicPages.includes(to.path)) {
+    if (accountStore.isAuthenticated && publicPages.includes(to.path)) {
         return next('/summary')
     }
 

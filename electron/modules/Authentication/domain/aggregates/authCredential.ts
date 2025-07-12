@@ -24,6 +24,11 @@ export class AuthCredential extends AggregateRoot {
   private _createdAt: DateTime;
   private _updatedAt: DateTime;
   private _lastAuthAt?: DateTime; // 最后认证时间
+  private _failedAttempts: number;
+  private _maxAttempts: number;
+  private _lockedUntil?: DateTime;
+  private _tokens: Map<string, Token>;
+
 
   constructor(
     id: string,
@@ -38,6 +43,10 @@ export class AuthCredential extends AggregateRoot {
     this._rememberTokens = new Map();
     this._createdAt = TimeUtils.now();
     this._updatedAt = TimeUtils.now();
+    this._failedAttempts = 0;
+    this._maxAttempts = 5;
+    this._lockedUntil = undefined;
+    this._tokens = new Map();
   }
 
   // Getters
@@ -65,16 +74,47 @@ export class AuthCredential extends AggregateRoot {
     return Array.from(this._mfaDevices.values());
   }
 
+  get failedAttempts(): number {
+    return this._failedAttempts;
+  }
+
+  get maxAttempts(): number {
+    return this._maxAttempts;
+  }
+
+  get lockedUntil(): DateTime | undefined {
+    return this._lockedUntil;
+  }
+
+  get tokens(): Token[] { 
+    return Array.from(this._tokens.values());
+  }
+
+  isAccountLocked(): boolean {
+    return this._lockedUntil !== undefined && this._lockedUntil > TimeUtils.now();
+  }
+
   /**
    * 验证密码
    */
-  verifyPassword(password: string): boolean {
+  verifyPassword(password: string): {
+    success: boolean;
+    tokenValue: string | undefined;
+  } {
+    let tokenValue: string | undefined;
+    if (this.isAccountLocked()) {
+    throw new Error('Account is locked. Please try again later.');
+  }
+
     const isValid = this._password.verify(password);
     
     if (isValid) {
+      this._failedAttempts = 0;
       this._lastAuthAt = TimeUtils.now();
       this._updatedAt = this._lastAuthAt;
-      
+      const accessToken = Token.createAccessToken(this.id, 9999);
+      tokenValue = accessToken.value;
+      this._tokens.set('access_token', accessToken)
       this.addDomainEvent({
         aggregateId: this.id,
         eventType: 'PasswordVerified',
@@ -82,6 +122,16 @@ export class AuthCredential extends AggregateRoot {
         payload: { accountId: this._accountId, timestamp: this._lastAuthAt }
       });
     } else {
+      this._failedAttempts++;
+      if (this._failedAttempts >= this._maxAttempts) {
+        this._lockedUntil = TimeUtils.add(TimeUtils.now(), 5, "minutes");
+        this.addDomainEvent({
+          aggregateId: this.id,
+          eventType: 'AccountLocked',
+          occurredOn: new Date(),
+          payload: { accountId: this._accountId, timestamp: TimeUtils.now() }
+        })
+      }
       this.addDomainEvent({
         aggregateId: this.id,
         eventType: 'PasswordVerificationFailed',
@@ -90,7 +140,10 @@ export class AuthCredential extends AggregateRoot {
       });
     }
     
-    return isValid;
+    return {
+      success: isValid,
+      tokenValue: tokenValue,
+    };
   }
 
   /**
@@ -368,6 +421,66 @@ export class AuthCredential extends AggregateRoot {
    */
   isMFAEnabled(): boolean {
     return this._mfaDevices.size > 0;
+  }
+
+  /**
+   * 获取密码信息用于持久化 (仅限仓库层使用)
+   * 这是一个基础设施层方法，违反了一定的封装性，但是必要的
+   */
+  getPasswordInfo(): {
+    hashedValue: string;
+    salt: string;
+    algorithm: string;
+    createdAt: DateTime;
+    expiresAt?: DateTime;
+  } {
+    return {
+      hashedValue: (this._password as any)._hashedValue,
+      salt: (this._password as any)._salt,
+      algorithm: (this._password as any)._algorithm,
+      createdAt: (this._password as any)._createdAt,
+      expiresAt: (this._password as any)._expiresAt
+    };
+  }
+
+  /**
+   * 用于仓库层重建对象时设置私有属性
+   */
+  static restoreFromPersistence(
+    id: string,
+    accountId: string,
+    passwordHash: string,
+    passwordSalt: string,
+    passwordAlgorithm: string,
+    passwordCreatedAt: DateTime,
+    createdAt: DateTime,
+    updatedAt: DateTime,
+    lastAuthAt?: DateTime,
+    passwordExpiresAt?: DateTime,
+    failedAttempts?: number,
+    maxAttempts?: number,
+    lockedUntil?: DateTime
+  ): AuthCredential {
+    const password = Password.fromHashWithTimestamp(
+      passwordHash, 
+      passwordSalt, 
+      passwordAlgorithm, 
+      passwordCreatedAt,
+      passwordExpiresAt
+    );
+    const credential = new AuthCredential(id, accountId, password);
+    
+    // 设置私有属性
+    (credential as any)._createdAt = createdAt;
+    (credential as any)._updatedAt = updatedAt;
+    credential._lockedUntil = lockedUntil;
+    credential._failedAttempts = failedAttempts || 0;
+    credential._maxAttempts = maxAttempts || 5;
+    if (lastAuthAt) {
+      (credential as any)._lastAuthAt = lastAuthAt;
+    }
+    
+    return credential;
   }
 
   /**

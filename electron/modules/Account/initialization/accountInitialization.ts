@@ -1,45 +1,34 @@
 import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
-import { setupUserHandlers } from '../ipcs/userIpc';
-import { setupLoginSessionHandlers } from '../ipcs/loginSessionIpc';
-import { StoreIpc } from '../ipcs/storeIpc';
-
+import { AccountIpcHandler } from '../infrastructure/ipc/accountIpcHandler';
+import { AccountInfoGetterEventHandlers } from '../application/eventHandlers/accountInfoGetterEventHandler';
+import { AccountStatusVerificationHandler } from '../application/eventHandlers/accountStatusVerificationHandler';
+import { registerAccountEventHandlers } from '../application/eventHandlers';
 /**
  * 账户模块的初始化任务定义
  */
 
-// 用户 IPC 处理器初始化
-const userIpcInitTask: InitializationTask = {
-  name: 'user-ipc-handlers',
+const accountIpcInitTask: InitializationTask = {
+  name: 'account-ipc-handlers',
+  phase: InitializationPhase.APP_STARTUP,
+  priority: 10,
+  dependencies: [],
+  initialize: async () => {
+    await new AccountIpcHandler().initialize();
+    console.log('✓ Account IPC handlers registered');
+  }
+};
+
+/**
+ * Account 模块的 事件处理器 初始化
+ */
+const accountEventHandlersInitTask: InitializationTask = {
+  name: 'account-event-handlers',
   phase: InitializationPhase.APP_STARTUP,
   priority: 20,
-  dependencies: ['filesystem'],
+  dependencies: [],
   initialize: async () => {
-    await setupUserHandlers();
-    console.log('✓ User IPC handlers registered');
-  }
-};
-
-// 登录会话 IPC 处理器初始化
-const loginSessionIpcInitTask: InitializationTask = {
-  name: 'login-session-ipc-handlers',
-  phase: InitializationPhase.APP_STARTUP,
-  priority: 25,
-  dependencies: ['user-ipc-handlers'],
-  initialize: async () => {
-    await setupLoginSessionHandlers();
-    console.log('✓ Login session IPC handlers registered');
-  }
-};
-
-// 存储 IPC 处理器初始化
-const storeIpcInitTask: InitializationTask = {
-  name: 'store-ipc-handlers',
-  phase: InitializationPhase.APP_STARTUP,
-  priority: 30,
-  dependencies: ['user-ipc-handlers'],
-  initialize: async () => {
-    StoreIpc.registerHandlers();
-    console.log('✓ Store IPC handlers registered');
+    registerAccountEventHandlers();
+    console.log('✓ Account 模块 的事件处理器 注册成功');
   }
 };
 
@@ -48,10 +37,9 @@ const storeIpcInitTask: InitializationTask = {
  */
 export function registerAccountInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  
-  manager.registerTask(userIpcInitTask);
-  manager.registerTask(loginSessionIpcInitTask);
-  manager.registerTask(storeIpcInitTask);
+  manager.registerTask(accountIpcInitTask);
+  manager.registerTask(accountEventHandlersInitTask)
+
   
   console.log('Account module initialization tasks registered');
 }

@@ -1,5 +1,5 @@
 import type { Database } from 'better-sqlite3';
-import { getDatabase } from '@electron/config/database';
+import { getDatabase } from "../../../../shared/database/index";
 import type { ITaskMetaTemplateRepository } from '../../domain/repositories/iTaskMetaTemplateRepository';
 import { TaskMetaTemplate } from '../../domain/entities/taskMetaTemplate';
 import type { TResponse } from '@/shared/types/response';

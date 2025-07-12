@@ -5,7 +5,7 @@ import { User } from "../entities/user";
 import { Email } from "../valueObjects/email";
 import { PhoneNumber } from "../valueObjects/phoneNumber";
 import { Address } from "../valueObjects/address";
-import { AccountStatus, AccountType, IAccount } from "../types/account";
+import { AccountStatus, AccountType, IAccount, AccountDTO } from "../types/account";
 
 /**
  * Account 聚合根
@@ -31,16 +31,24 @@ export class Account extends AggregateRoot implements IAccount {
   private _lastLoginAt?: DateTime;
   private _emailVerificationToken?: string;
   private _phoneVerificationCode?: string;
+  private _isEmailVerified: boolean;
+  private _isPhoneVerified: boolean;
 
   constructor(
-    id: string,
     username: string,
     accountType: AccountType,
     user: User,
+    password?: string,
+    id?: string,
     email?: Email,
-    phoneNumber?: PhoneNumber
+
+    phoneNumber?: PhoneNumber,
+    createdAt?: DateTime,
+    updatedAt?: DateTime,
+    lastLoginAt?: DateTime,
+    isRegistration: boolean = false
   ) {
-    super(id);
+    super(id || Account.generateId());
     this._username = username;
     this._email = email;
     this._phoneNumber = phoneNumber;
@@ -48,13 +56,75 @@ export class Account extends AggregateRoot implements IAccount {
     this._accountType = accountType;
     this._user = user;
     this._roleIds = new Set();
-    this._createdAt = TimeUtils.now();
-    this._updatedAt = TimeUtils.now();
+    this._createdAt = createdAt || TimeUtils.now();
+    this._updatedAt = updatedAt ||TimeUtils.now();
+    this._lastLoginAt = lastLoginAt;
+    this._isEmailVerified = email ? email.isVerified : false;
+    this._isPhoneVerified = phoneNumber ? phoneNumber.isVerified : false;
 
     // 如果没有邮箱和手机号，直接激活本地账号
     if (accountType === AccountType.LOCAL && !email && !phoneNumber) {
       this._status = AccountStatus.ACTIVE;
     }
+
+    // 根据场景发布不同的事件
+    if (isRegistration) {
+      // 发布账号注册事件
+      this.addDomainEvent({
+        aggregateId: this._id,
+        eventType: 'AccountRegistered',
+        occurredOn: new Date(),
+        payload: {
+          accountId: this._id,
+          username: this._username,
+          password: password,
+          email: this._email?.value,
+          phone: this._phoneNumber?.number,
+          accountType: this._accountType,
+          userId: this._user.id,
+          userProfile: {
+            firstName: this._user.firstName,
+            lastName: this._user.lastName,
+            avatar: this._user.avatar,
+            bio: this._user.bio
+          },
+          status: this._status,
+          createdAt: this._createdAt,
+          // 标识这是一个注册事件，Authentication 模块需要创建认证凭证
+          requiresAuthentication: true
+        }
+      });
+    } else {
+      // 发布普通账号创建事件
+      this.addDomainEvent({
+        aggregateId: this._id,
+        eventType: 'AccountCreated',
+        occurredOn: new Date(),
+        payload: {
+          accountId: this._id,
+          username: this._username,
+          email: this._email?.value,
+          phone: this._phoneNumber?.number,
+          accountType: this._accountType,
+          userId: this._user.id,
+          createdAt: this._createdAt
+        }
+      });
+    }
+  }
+
+  /**
+   * 注册场景下的账号创建工厂方法
+   */
+  static createForRegistration(
+    username: string,
+    accountType: AccountType,
+    user: User,
+    password?: string,
+    email?: Email,
+    phoneNumber?: PhoneNumber
+  ): Account {
+    return new Account(username, accountType, user, password, undefined, email, phoneNumber, undefined, undefined, undefined, true);
   }
 
   // Getters
@@ -66,6 +136,21 @@ export class Account extends AggregateRoot implements IAccount {
     return this._email;
   }
 
+  get emailVerificationToken(): string | undefined {
+    return this._emailVerificationToken;
+  }
+
+  
+  get isEmailVerified(): boolean {
+    return this._isEmailVerified;
+  }
+  get phoneVerificationCode(): string | undefined {
+    return this._phoneVerificationCode;
+  }
+
+  get isPhoneVerified(): boolean {
+    return this._isPhoneVerified;
+  }
   get phoneNumber(): PhoneNumber | undefined {
     return this._phoneNumber;
   }
@@ -102,6 +187,32 @@ export class Account extends AggregateRoot implements IAccount {
     return this._lastLoginAt;
   }
 
+  set phoneVerificationCode(code: string | undefined) {
+    this._phoneVerificationCode = code;
+  }
+
+  set emailVerificationToken(token: string | undefined) {
+    this._emailVerificationToken = token;
+  }
+
+  set status(status: AccountStatus) {
+    this._status = status;
+  }
+
+  set isEmailVerified(isVerified: boolean) {
+    this._isEmailVerified = isVerified;
+  }
+
+  set isPhoneVerified(isVerified: boolean) {
+    this._isPhoneVerified = isVerified;
+  }
+  set roleIds(roleIds: Set<string>) {
+    this._roleIds = roleIds;
+  }
+
+  set user(user: User) {
+    this._user = user;
+  }
   /**
    * 更新邮箱
    */
@@ -343,5 +454,52 @@ export class Account extends AggregateRoot implements IAccount {
    */
   validatePhoneCode(code: string): boolean {
     return this._phoneVerificationCode === code;
+  }
+
+  toDTO(): AccountDTO {
+    let user = this.user.toDTO();
+    let accountDTO = {
+      id: this.id,
+      username: this.username,
+      status: this.status,
+      accountType: this.accountType,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      lastLoginAt: this.lastLoginAt,
+      email: this.email?.value,
+      phone: this.phoneNumber?.fullNumber,
+      _emailVerificationToken: this._emailVerificationToken,
+      phoneVerificationCode: this.phoneVerificationCode,
+      roleIds: this.roleIds,
+      isEmailVerified: this.isEmailVerified,
+      isPhoneVerified: this.isPhoneVerified,
+      user: user
+    }
+    console.log('将账号数据转换为DTO', accountDTO)
+    return accountDTO;
+  }
+
+  static fromDTO(dto: AccountDTO): Account { 
+    const account = new Account(
+      dto.username,
+      dto.accountType,
+      User.fromDTO(dto.user),
+      undefined,
+      dto.id,
+      dto.email ? new Email(dto.email) : undefined,
+      dto.phone ? new PhoneNumber(dto.phone) : undefined,
+      dto.createdAt,
+      dto.updatedAt,
+      dto.lastLoginAt,
+    )
+    account.roleIds = dto.roleIds || new Set()
+    account.emailVerificationToken = dto.emailVerificationToken
+    account.phoneVerificationCode = dto.phoneVerificationCode
+    account.status = dto.status
+    account.isEmailVerified = dto.isEmailVerified
+    account.isPhoneVerified = dto.isPhoneVerified
+
+
+    return account
   }
 }

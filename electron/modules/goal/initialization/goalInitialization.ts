@@ -37,6 +37,7 @@ const goalModuleInitTask: InitializationTask = {
  * 注册 Goal 模块的所有初始化任务
  */
 export function registerGoalInitializationTasks(): void {
+  console.log('🚀, Registering Goal module initialization tasks...');
   const manager = InitializationManager.getInstance();
   
   manager.registerTask(goalModuleInitTask);

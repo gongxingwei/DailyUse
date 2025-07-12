@@ -10,6 +10,7 @@ export class Password {
   private readonly _salt: string;
   private readonly _algorithm: string;
   private readonly _createdAt: DateTime;
+  private readonly _expiresAt: DateTime | undefined;
 
   constructor(plainPassword: string) {
     if (!Password.validateStrength(plainPassword)) {
@@ -20,6 +21,7 @@ export class Password {
     this._algorithm = 'bcrypt'; // 实际应用中应使用真正的加密算法
     this._hashedValue = this.hashPassword(plainPassword, this._salt);
     this._createdAt = TimeUtils.now();
+    this._expiresAt = undefined;
   }
 
   /**
@@ -31,6 +33,26 @@ export class Password {
     password._salt = salt;
     password._algorithm = algorithm;
     password._createdAt = TimeUtils.now();
+    password._expiresAt = undefined;
+    return password;
+  }
+
+  /**
+   * 从已有的哈希值和时间戳创建密码对象（用于从数据库恢复）
+   */
+  static fromHashWithTimestamp(
+    hashedValue: string, 
+    salt: string, 
+    algorithm: string, 
+    createdAt: DateTime,
+    expiresAt?: DateTime | undefined
+  ): Password {
+    const password = Object.create(Password.prototype);
+    password._hashedValue = hashedValue;
+    password._salt = salt;
+    password._algorithm = algorithm;
+    password._createdAt = createdAt;
+    password._expiresAt = expiresAt;
     return password;
   }
 
@@ -43,21 +65,22 @@ export class Password {
   }
 
   /**
-   * 验证密码强度
-   */
-  static validateStrength(password: string): boolean {
-    if (password.length < 8) {
-      return false;
-    }
-
-    // 至少包含一个大写字母、一个小写字母、一个数字
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
-
-    return hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
+ * 验证密码强度（至少满足3个条件）
+ */
+static validateStrength(password: string): boolean {
+  if (password.length < 8) {
+    return false;
   }
+
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumbers = /\d/.test(password);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  const criteriaMet = [hasUpperCase, hasLowerCase, hasNumbers, hasSpecialChar].filter(Boolean).length;
+
+  return criteriaMet >= 3;
+}
 
   /**
    * 获取密码强度等级
@@ -104,6 +127,10 @@ export class Password {
 
   get createdAt(): DateTime {
     return this._createdAt;
+  }
+
+  get expiresAt(): DateTime | undefined {
+    return this._expiresAt;
   }
 
   /**

@@ -2,11 +2,10 @@
 export { Account } from './domain/aggregates/account';
 export { User } from './domain/entities/user';
 export { Role } from './domain/entities/role';
-export { Permission } from './domain/entities/permission';
+
 
 export { Email } from './domain/valueObjects/email';
 export { PhoneNumber } from './domain/valueObjects/phoneNumber';
-export { Password } from './domain/valueObjects/password';
 export { Address } from './domain/valueObjects/address';
 
 export type { 
@@ -23,11 +22,11 @@ export {
 
 export type { 
   IAccount,
-  RegisterData,
+  AccountRegistrationRequest,
   AccountUpdateData
 } from './domain/types/account';
+/** presentation */
+// stores
+export { useAccountStore } from './presentation/stores/accountStore';
 
 export { AccountApplicationService } from './application/services/accountApplicationService';
-
-// 保持向后兼容
-export { localUserService } from './services/localUserService';
