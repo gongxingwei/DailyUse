@@ -1,6 +1,7 @@
 import { EventBus } from '@/shared/events/eventBus';
-import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '@/shared/domain/domainEvent';
-
+import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../../../Task/index';
+import { MainGoalApplicationService } from '../../application/services/mainGoalApplicationService';
+const goalApplicationService = new MainGoalApplicationService();
 /**
  * Goal 模块主进程事件处理器
  * 负责处理来自其他模块的事件，如任务完成、撤销等
@@ -52,8 +53,7 @@ export class GoalEventHandlers {
    * 处理任务完成事件
    */
   private static async handleTaskCompleted(event: TaskCompletedEvent): Promise<void> {
-    const { MainGoalApplicationService } = await import('../../application/mainGoalApplicationService');
-    const goalApplicationService = new MainGoalApplicationService();
+
 
     for (const link of event.payload.keyResultLinks!) {
       try {
@@ -81,8 +81,6 @@ export class GoalEventHandlers {
    * 处理任务撤销完成事件
    */
   private static async handleTaskUndoCompleted(event: TaskUndoCompletedEvent): Promise<void> {
-    const { MainGoalApplicationService } = await import('../../application/mainGoalApplicationService');
-    const goalApplicationService = new MainGoalApplicationService();
 
     for (const link of event.payload.keyResultLinks!) {
       try {

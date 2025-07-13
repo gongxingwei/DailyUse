@@ -14,6 +14,11 @@ export class AuthenticationIpcClient {
         return await window.shared.ipcRenderer.invoke('authentication:password-authentication', serializedCredentials);
     }
 
+    async loginSuccessEvent(): Promise<void> {
+        console.log('[AuthenticationIpcClient] 发送登录成功事件');
+       return await window.shared.ipcRenderer.send('login:success');
+    }
+
     
 }
 

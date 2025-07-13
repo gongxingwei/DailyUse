@@ -13,8 +13,8 @@ import { GoalReview } from "@/modules/Goal/domain/entities/goalReview";
 import { GoalDir } from "@/modules/Goal/domain/entities/goalDir";
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import { generateUUID } from "@/shared/utils/uuid";
-import { GoalContainer } from "../infrastructure/di/goalContainer";
-import type { IGoalRepository } from "../domain/repositories/iGoalRepository";
+import { GoalContainer } from "../../infrastructure/di/goalContainer";
+import type { IGoalRepository } from "../../domain/repositories/iGoalRepository";
 
 /**
  * 主进程目标应用服务

@@ -1,5 +1,5 @@
 import { AccountDTO } from "../../domain/types/account";
-import { Account } from "@electron/modules/Account";
+import { Account } from "../../../../modules/Account";
 import { accountIpcClient } from "../../infrastructure/ipcs/accountIpcClient";
 import { useAccountStore } from "../../presentation/stores/accountStore";
 
@@ -19,7 +19,9 @@ export class AccountLoggedService {
       if (response.success && response.data) {
         let account = Account.fromDTO(response.data);
         this.accountStore.setAccount(account);
+       
         console.log('success to get account info', account)
+         console.log('是否认证状态', this.accountStore.isAuthenticated);
       }
       return response;
     } catch (error) {

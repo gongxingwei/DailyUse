@@ -70,6 +70,7 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
 
     // 监听登录成功事件
     this.window.webContents.on('ipc-message', (_event, channel, ...args) => {
+      console.log(`[LoginWindow] 接收到IPC消息: ${channel}`, args);
       switch (channel) {
         case 'login:success':
           console.log('✅ [LoginWindow] 登录成功');

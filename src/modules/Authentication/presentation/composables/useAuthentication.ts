@@ -9,7 +9,7 @@ import type {
 } from "@/modules/Authentication/domain/types";
 const { snackbar, showError, showSuccess } = useSnackbar();
 const authenticationService = AuthenticationService.getInstance();
-const router = useRouter();
+
 // /**
 //  * 认证管理 Composable
 //  * 封装认证相关的响应式状态和操作方法
@@ -144,6 +144,7 @@ const router = useRouter();
  * 专门用于登录表单的状态管理
  */
 export function usePasswordAuthentication() {
+  const router = useRouter();
   const loading = ref(false);
   const passwordAuthenticationForm = ref<PasswordAuthenticationRequest>({
     username: "Test1",
@@ -190,7 +191,8 @@ export function usePasswordAuthentication() {
       // 登录成功
       showSuccess("登录成功");
       // 跳转到首页
-      router.push("/");
+      router.push("/summary");
+      console.log("🚀！！[useAuthentication]: 登录成功", response.data);
     } else {
       // 登录失败
       showError(response.message);

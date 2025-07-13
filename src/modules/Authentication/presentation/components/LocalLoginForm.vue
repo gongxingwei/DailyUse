@@ -6,11 +6,9 @@
 
             <v-card-text>
                 <!-- 用户名下拉选择框 -->
-                <v-combobox v-model="passwordAuthenticationForm.username" :items="rememberedUsernames" :loading="loading"
-                    label="用户名" :rules=usernameRules @update:model-value="handleAccountSelect" 
-                    prepend-inner-icon="mdi-account"
-                    density="comfortable"
-                    clearable required>
+                <v-combobox v-model="passwordAuthenticationForm.username" :items="rememberedUsernames"
+                    :loading="loading" label="用户名" :rules=usernameRules @update:model-value="handleAccountSelect"
+                    prepend-inner-icon="mdi-account" density="comfortable" clearable required>
 
                     <!-- 自定义下拉选项 -->
                     <template v-slot:item="{ item, props }">
@@ -51,12 +49,12 @@
                     required />
 
                 <!-- 记住密码选项 -->
-                <v-checkbox v-model="passwordAuthenticationForm.remember" label="记住密码" color="primary" density="comfortable" />
+                <v-checkbox v-model="passwordAuthenticationForm.remember" label="记住密码" color="primary"
+                    density="comfortable" />
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4">
-                <v-btn color="primary" type="submit" :loading="loading" :disabled="!!loading" block
-                    size="large">
+                <v-btn color="primary" type="submit" :loading="loading" :disabled="!!loading" block size="large">
                     登录
                 </v-btn>
             </v-card-actions>
@@ -72,16 +70,70 @@
 
 <script setup lang="ts">
 import { computed, reactive, ref } from 'vue';
-
+import { useRouter } from 'vue-router';
+import type { PasswordAuthenticationRequest } from '@/modules/Authentication/domain/types';
+import { useSnackbar } from '@/shared/composables/useSnackbar';
 // utils
 import { usernameRules, passwordRules } from '../../../Account/validations/accountFormRules';
-// composables
-import { usePasswordAuthentication } from '../../../Authentication/presentation/composables/useAuthentication';
+// services
+import { AuthenticationService } from "../../application/services/authenticationService";
+const authenticationService = AuthenticationService.getInstance();
+const { snackbar, showError, showSuccess } = useSnackbar();
+const router = useRouter();
+const loading = ref(false);
+const passwordAuthenticationForm = ref<PasswordAuthenticationRequest>({
+    username: "Test1",
+    password: "Llh123123",
+    remember: false,
+});
 
-const { loading, passwordAuthenticationForm, handleLocalLogin, handleAccountSelect, handleRemoveAccount, snackbar } = usePasswordAuthentication();
-
-// 本地状态
+const formValid = ref(false);
 const showPassword = ref(false);
+
+/**
+ * 重置表单
+ */
+const resetForm = (): void => {
+    passwordAuthenticationForm.value = {
+        username: "",
+        password: "",
+        remember: false,
+    };
+    formValid.value = false;
+    showPassword.value = false;
+};
+
+const handleAccountSelect = (selectedUsername: string | null): void => {
+    if (selectedUsername) {
+        passwordAuthenticationForm.value.username = selectedUsername;
+        // const savedPassword = getSavedPasswordForUser(selectedUsername);
+        // if (savedPassword) {
+        //   passwordAuthenticationForm.password = savedPassword;
+        // }
+    }
+};
+
+const handleRemoveAccount = (username: string): void => {
+    // 删除用户信息
+    console.log(`Removing account: ${username}`);
+};
+const handleLocalLogin = async (): Promise<void> => {
+    console.log("[useAuthentication]: handleLocalLogin");
+    const response = await authenticationService.passwordAuthentication(
+        passwordAuthenticationForm.value
+    );
+    if (response.success) {
+        // 登录成功
+        showSuccess("登录成功");
+        // 跳转到首页
+        router.push("/summary");
+        console.log("🚀！！[useAuthentication]: 登录成功", response.data);
+    } else {
+        // 登录失败
+        showError(response.message);
+    }
+};
+
 const rememberedUsernames = ref([]);
 </script>
 

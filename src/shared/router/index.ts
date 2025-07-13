@@ -69,12 +69,6 @@ const routes: RouteRecordRaw[] = [
                 name: 'task-management',
                 component: () => import('@/modules/Task/presentation/views/TaskManagementView.vue')
             },
-
-            {
-                path: '/profile',
-                name: 'profile',
-                component: () => import('@/modules/Account/presentation/views/Profile.vue')
-            },
             {
                 path: '/repository',
                 name: 'repository',
@@ -110,7 +104,8 @@ const router = createRouter({
 })
 
 // 全局前置守卫（可选）
-router.beforeEach((to, _from, next) => {
+router.beforeEach((to, from, next) => {
+    console.log('[router.beforeEach] 跳转到:', to.fullPath, '来自:', from.fullPath)
     const accountStore = useAccountStore()
     // 设置页面标题
     document.title = `${to.meta.title || '默认标题'}`
@@ -138,6 +133,10 @@ router.beforeEach((to, _from, next) => {
         store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
     }
     next()
+})
+
+router.afterEach((to, from) => {
+  console.log('[router.afterEach] 跳转到:', to.fullPath, '来自:', from.fullPath)
 })
 
 export default router

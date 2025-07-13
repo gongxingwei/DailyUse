@@ -12,7 +12,6 @@ export type {
   IAccountRepository, 
   IUserRepository, 
   IRoleRepository, 
-  IPermissionRepository 
 } from './domain/repositories/accountRepository';
 
 export { 

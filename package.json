@@ -60,11 +60,6 @@
     "vite-plugin-monaco-editor": "^1.1.0",
     "vue-tsc": "https://pkg.pr.new/vuejs/language-tools/vue-tsc@3fb59af"
   },
-  "main": "dist-electron/main.js",
-  "pnpm": {
-    "overrides": {
-      "minimatch": "^9.0.5",
-      "brace-expansion": "^2.0.1"
-    }
-  }
+  "main": "dist-electron/main.js"
+
 }

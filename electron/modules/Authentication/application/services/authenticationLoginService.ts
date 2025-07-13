@@ -17,7 +17,7 @@ import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } fr
 /**
  * Authentication 模块的登录服务
  */
-export class AuthenticationLoginService {
+export class AuthenticationLoginService{
   private pendingAccountIdRequests = new Map<
     string,
     {
@@ -197,7 +197,6 @@ export class AuthenticationLoginService {
         accountId,
         sessionId,
       });
-
       return {
         success: true,
         message: "登录成功",
@@ -207,6 +206,7 @@ export class AuthenticationLoginService {
           token: tokenValue || null
         },
       };
+      
     } catch (error) {
       console.error("❌ [AuthLogin] 登录处理异常:", error);
 

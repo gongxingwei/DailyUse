@@ -1,7 +1,7 @@
 import { Account } from "../aggregates/account";
 import { User } from "../entities/user";
 import { Role } from "../entities/role";
-import { Permission } from "../entities/permission";
+
 
 /**
  * 账号存储库接口
@@ -48,14 +48,3 @@ export interface IRoleRepository {
   findByPermission(permissionId: string): Promise<Role[]>;
 }
 
-/**
- * 权限存储库接口
- */
-export interface IPermissionRepository {
-  save(permission: Permission): Promise<void>;
-  findById(id: string): Promise<Permission | null>;
-  findByCode(code: string): Promise<Permission | null>;
-  delete(id: string): Promise<void>;
-  findAll(): Promise<Permission[]>;
-  findByModule(module: string): Promise<Permission[]>;
-}

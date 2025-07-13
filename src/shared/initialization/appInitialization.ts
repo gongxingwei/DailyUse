@@ -10,6 +10,7 @@ export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
 
   registerAccountInitializationTasks();
+  registerTaskInitializationTasks();
   console.log(
     "渲染进程：Authentication module initialization tasks registered"
   );
@@ -24,7 +25,7 @@ export async function initializeApp(): Promise<void> {
 
   // 注册所有初始化任务
   registerAllInitializationTasks();
-  registerTaskInitializationTasks();
+  
   
   // 执行应用启动阶段的初始化
   const manager = InitializationManager.getInstance();

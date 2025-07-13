@@ -50,6 +50,7 @@ export class AuthenticationService {
           accountId: response.data.accountId,
         });
         console.log("登录成功,开始发送用户登录事件")
+        await authenticationIpcClient.loginSuccessEvent();
         await this.publishUserLoggedInEvent(response.data);
       }
       return response;

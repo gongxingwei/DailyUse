@@ -1,10 +1,9 @@
 //services
-import { localAccountService } from "../../domain/services/localAccountService";
 import { Account } from "../../domain/aggregates/account";
 import type { TResponse } from "@/shared/types/response";
 import type { AccountRegistrationRequest } from "../../index";
 import type { UserSession } from "@/modules/SessionManagement/domain/types";
-
+import { localAccountService } from "../../domain/services/localAccountService";
 /**
  * 账号应用服务
  * 协调账号、认证和会话管理的业务流程

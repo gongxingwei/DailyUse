@@ -39,10 +39,6 @@ pluginManager.register(quickLauncherPlugin)
 
 app.mount('#app')
   .$nextTick(() => {
-    // 初始化所有插件
-      window.shared.ipcRenderer.on('main-process-message', (_event: any, message: any) => {
-        console.log(message)
-      })
      (async () => {
       await initializeApp()
       console.log('🚀！！[src/main]: 初始化APP 成功')

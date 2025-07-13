@@ -59,25 +59,7 @@ export function registerTaskInitializationTasks(): void {
   manager.registerTask(taskIpcInitTask);
   manager.registerTask(taskSystemTemplatesInitTask);
   
-  console.log('Task module initialization tasks registered');
-}
-
-/**
- * 传统的模块初始化函数（保持向后兼容）
- */
-export async function initializeTaskModule(): Promise<void> {
-  console.log('Initializing Task module (legacy method)...');
-  await taskIpcInitTask.initialize();
-  console.log('✓ Task module initialized');
-}
-
-/**
- * 用户登录时的任务模块初始化（保持向后兼容）
- */
-export async function initializeTaskModuleForUser(username: string): Promise<void> {
-  console.log(`Initializing Task module for user: ${username} (legacy method)...`);
-  await taskSystemTemplatesInitTask.initialize({ username });
-  console.log(`✓ Task module initialized for user: ${username}`);
+  console.log('【主进程::Task 模块】 初始化任务已注册');
 }
 
 /**

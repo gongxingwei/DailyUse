@@ -1,6 +1,5 @@
 import type { AccountRegistrationRequest } from "../../index";
 import type { TResponse } from "../../../../shared/types/response";
-import { UserDataInitService } from "@/shared/services/userDataInitService";
 import { accountIpcClient } from "../../infrastructure/ipcs/accountIpcClient";
 
 /**
