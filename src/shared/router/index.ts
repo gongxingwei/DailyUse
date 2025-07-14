@@ -40,6 +40,11 @@ const routes: RouteRecordRaw[] = [
                 }
             },
             {
+                path: '/profile',
+                name: 'profile',
+                component: () => import('@/views/Profile.vue'),
+            },
+            {
                 path: '/summary',
                 name: 'summary',
                 component: Summary,
@@ -111,21 +116,21 @@ router.beforeEach((to, from, next) => {
     document.title = `${to.meta.title || '默认标题'}`
 
     // 检查认证状态
-    const publicPages = ['/auth','/notification']
-    const authRequired = !publicPages.includes(to.path)
+//     const publicPages = ['/auth','/notification']
+//     const authRequired = !publicPages.includes(to.path)
 
-   if (authRequired && !accountStore.isAuthenticated) {
-        // 存储原始目标路由
-        return next({
-            name: 'auth',
-            query: { redirect: to.fullPath }
-        })
-    }
+//    if (authRequired && !accountStore.isAuthenticated) {
+//         // 存储原始目标路由
+//         return next({
+//             name: 'auth',
+//             query: { redirect: to.fullPath }
+//         })
+//     }
 
-    // 已登录用户访问登录/注册页面时重定向到首页
-    if (accountStore.isAuthenticated && publicPages.includes(to.path)) {
-        return next('/summary')
-    }
+//     // 已登录用户访问登录/注册页面时重定向到首页
+//     if (accountStore.isAuthenticated && publicPages.includes(to.path)) {
+//         return next('/summary')
+//     }
 
     // 检查是否访问仓库
     if (to.name === 'repository-detail' && to.params.title) {

@@ -17,7 +17,7 @@
 import { onMounted, onUnmounted, ref } from 'vue';
 import { AppInitService } from '@/shared/services/appInitService';
 import { useThemeInit } from './modules/Theme/useThemeInit';
-
+import { init } from './aaa';
 useThemeInit();
 
 const isLoading = ref(true);
@@ -39,6 +39,7 @@ const initializeApp = async () => {
 
 onMounted(() => {
   initializeApp();
+  init();
 });
 
 onUnmounted(() => {

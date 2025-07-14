@@ -126,7 +126,7 @@ const handleLocalLogin = async (): Promise<void> => {
         // 登录成功
         showSuccess("登录成功");
         // 跳转到首页
-        router.push("/summary");
+        // router.push("/summary");
         console.log("🚀！！[useAuthentication]: 登录成功", response.data);
     } else {
         // 登录失败
