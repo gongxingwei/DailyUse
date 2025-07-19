@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
 import { createGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
-import { useGoalStore } from "../../presentation/stores/goalStore";
+import { useGoalStore } from "../stores/goalStore";
 import { Goal } from "../../domain/entities/goal";
 /**
  * 目标对话框组合式函数 - 使用临时对象模式

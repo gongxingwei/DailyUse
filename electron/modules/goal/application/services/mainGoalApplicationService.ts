@@ -738,7 +738,7 @@ export class MainGoalApplicationService {
   /**
    * 创建目标目录
    */
-  async createGoalDir(goalDirData: IGoalDir): Promise<TResponse<IGoalDir>> {
+  async createGoalDir(goalDirData: IGoalDir, accountId: string): Promise<TResponse<IGoalDir>> {
     try {
       console.log('🔄 [mainprocesss] 创建目标目录:', goalDirData.name);
 
@@ -754,7 +754,7 @@ export class MainGoalApplicationService {
       console.log('✅ [主进程] 目录数据验证通过');
 
       const repository = await this.getRepository();
-      const goalDir = await repository.createGoalDirectory(goalDirData);
+      const goalDir = await repository.createGoalDirectory(accountId,goalDirData);
 
       console.log('✅ [主进程] 目标目录创建成功:', goalDir.id);
       return {

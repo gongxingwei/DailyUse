@@ -1,21 +1,9 @@
 import { defineStore } from "pinia";
-import { TaskTemplate } from "../../domain/entities/taskTemplate";
-import { TaskInstance } from "../../domain/entities/taskInstance";
-import { TaskMetaTemplate } from "../../domain/entities/taskMetaTemplate";
-import { useStoreSave } from "@/shared/composables/useStoreSave";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-let autoSaveInstance: ReturnType<typeof useStoreSave> | null = null;
+import { TaskTemplate } from "../../domain/aggregates/taskTemplate";
+import { TaskInstance } from "../../domain/aggregates/taskInstance";
+import { TaskMetaTemplate } from "../../domain/aggregates/taskMetaTemplate";
 
-function getAutoSave() {
-  if (!autoSaveInstance) {
-    autoSaveInstance = useStoreSave({
-      onSuccess: (storeName) => console.log(`✓ ${storeName} 数据保存成功`),
-      onError: (storeName, error) =>
-        console.error(`✗ ${storeName} 数据保存失败:`, error),
-    });
-  }
-  return autoSaveInstance;
-}
+import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 
 export function ensureTaskInstance(data: any): TaskInstance {
   if (data instanceof TaskInstance) {
@@ -411,7 +399,6 @@ export const useTaskStore = defineStore("task", {
       try {
         const safeMetaTemplate = ensureTaskMetaTemplate(metaTemplate);
         this.metaTemplates.push(safeMetaTemplate);
-        await this.saveMetaTemplates();
         return {
           success: true,
           message: "元模板添加成功",
@@ -432,7 +419,6 @@ export const useTaskStore = defineStore("task", {
         const index = this.metaTemplates.findIndex(t => t.id === safeMetaTemplate.id);
         if (index !== -1) {
           this.metaTemplates[index] = safeMetaTemplate;
-          await this.saveMetaTemplates();
           return {
             success: true,
             message: "元模板更新成功",
@@ -457,7 +443,6 @@ export const useTaskStore = defineStore("task", {
         const index = this.metaTemplates.findIndex(t => t.id === metaTemplateId);
         if (index !== -1) {
           this.metaTemplates.splice(index, 1);
-          await this.saveMetaTemplates();
           return {
             success: true,
             message: "元模板删除成功",
@@ -551,90 +536,6 @@ export const useTaskStore = defineStore("task", {
       this.taskTemplates = templates;
       this.taskInstances = instances;
     },
-
-    // === 数据持久化方法 ===
-    // ✅ 保存模板（转换为 JSON）
-    async saveTaskTemplates(): Promise<boolean> {
-      const autoSave = getAutoSave();
-      
-      // 确保所有数据都是类实例，然后转换为 JSON
-      const templatesAsJson = this.taskTemplates.map(template => {
-        const safeTemplate = ensureTaskTemplate(template);
-        return safeTemplate.toJSON();
-      });
-      
-      return autoSave.debounceSave("taskTemplates", templatesAsJson);
-    },
-
-    // ✅ 保存实例（转换为 JSON）
-    async saveTaskInstances(): Promise<boolean> {
-      const autoSave = getAutoSave();
-      
-      // 确保所有数据都是类实例，然后转换为 JSON
-      const instancesAsJson = this.taskInstances.map(instance => {
-        const safeInstance = ensureTaskInstance(instance);
-        return safeInstance.toJSON();
-      });
-      
-      return autoSave.debounceSave("taskInstances", instancesAsJson);
-    },
-
-    // ✅ 保存所有任务数据
-    async saveAllTaskData(): Promise<{
-      templates: boolean;
-      instances: boolean;
-    }> {
-      const [templatesResult, instancesResult] = await Promise.all([
-        this.saveTaskTemplates(),
-        this.saveTaskInstances(),
-      ]);
-
-      return {
-        templates: templatesResult,
-        instances: instancesResult,
-      };
-    },
-
-    // ✅ 立即保存模板（转换为 JSON）
-    async saveTaskTemplatesImmediately(): Promise<boolean> {
-      const autoSave = getAutoSave();
-      
-      const templatesAsJson = this.taskTemplates.map(template => {
-        const safeTemplate = ensureTaskTemplate(template);
-        return safeTemplate.toJSON();
-      });
-      
-      return autoSave.saveImmediately("taskTemplates", templatesAsJson);
-    },
-
-    // ✅ 立即保存实例（转换为 JSON）
-    async saveTaskInstancesImmediately(): Promise<boolean> {
-      const autoSave = getAutoSave();
-      
-      const instancesAsJson = this.taskInstances.map(instance => {
-        const safeInstance = ensureTaskInstance(instance);
-        return safeInstance.toJSON();
-      });
-      
-      return autoSave.saveImmediately("taskInstances", instancesAsJson);
-    },
-
-    isSavingTaskTemplates(): boolean {
-      const autoSave = getAutoSave();
-      return autoSave.isSaving("taskTemplates");
-    },
-
-    isSavingTaskInstances(): boolean {
-      const autoSave = getAutoSave();
-      return autoSave.isSaving("taskInstances");
-    },
-
-    isSavingAnyTaskData(): boolean {
-      const autoSave = getAutoSave();
-      return autoSave.isSaving();
-    },
-
-    // === 额外的辅助方法 ===
     
     // ✅ 获取可序列化的状态快照
     getSerializableSnapshot(): {
@@ -706,9 +607,6 @@ export const useTaskStore = defineStore("task", {
         
         this.restoreFromSnapshot(snapshot);
         
-        // 导入后立即保存
-        await this.saveAllTaskData();
-        
         console.log('✓ 任务数据导入成功');
         return true;
       } catch (error) {
@@ -717,16 +615,6 @@ export const useTaskStore = defineStore("task", {
       }
     },
 
-    // ✅ 保存 MetaTemplates
-    async saveMetaTemplates(): Promise<boolean> {
-      const autoSave = getAutoSave();
-      
-      const metaTemplatesAsJson = this.metaTemplates.map(metaTemplate => {
-        return metaTemplate.toJSON();
-      });
-      
-      return autoSave.debounceSave("metaTemplates", metaTemplatesAsJson);
-    },
   },
 
 });

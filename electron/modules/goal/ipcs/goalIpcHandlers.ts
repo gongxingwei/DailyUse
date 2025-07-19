@@ -1,11 +1,12 @@
 import { ipcMain } from 'electron';
-import { MainGoalApplicationService } from '../application/mainGoalApplicationService';
+import { MainGoalApplicationService } from '../application/services/mainGoalApplicationService';
 import type { 
   IGoal,
   IGoalCreateDTO,
   IGoalDir,
   IRecordCreateDTO
 } from '../../../../src/modules/Goal/domain/types/goal';
+import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
 
 // 创建应用服务实例
 const goalApplicationService = new MainGoalApplicationService();
@@ -24,9 +25,18 @@ export function registerGoalIpcHandlers() {
 
   // ========== 目标目录 IPC ==========
   
-  ipcMain.handle('goal:dir:create', async (_event, goalDirData: IGoalDir) => {
-    return await goalApplicationService.createGoalDir(goalDirData);
-  });
+  ipcMain.handle('goal:dir:create', withAuth(async (_event, [goalDirData], auth) => {
+    try {
+      console.log('[GoalIpc] 创建目标目录:', goalDirData, auth);
+      if (!auth.account_uuid) {
+        return { success: false, message: '未登录或登录已过期，请重新登录' };
+      }
+      return await goalApplicationService.createGoalDir(goalDirData, auth.account_uuid);
+    } catch (error) {
+      console.error('[GoalIpc] 创建目标目录失败:', error);
+      return { success: false, message: '创建目标目录失败' };
+    }
+  }));
 
   ipcMain.handle('goal:dir:get-all', async (_event) => {
     return await goalApplicationService.getAllGoalDirs();

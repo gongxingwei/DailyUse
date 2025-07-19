@@ -6,11 +6,13 @@ import {
 // 渲染进程各个模块的初始化任务
 import { registerAccountInitializationTasks } from "@/modules/Account/initialization/accountInitialization";
 import { registerTaskInitializationTasks } from "@/modules/Task/initialization/taskInitialization";
+import { registerPatchIpcRendererInvokeWithAuthTask } from "@/shared/initialization/patchIpcRenderer";
 export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
 
   registerAccountInitializationTasks();
   registerTaskInitializationTasks();
+  registerPatchIpcRendererInvokeWithAuthTask();
   console.log(
     "渲染进程：Authentication module initialization tasks registered"
   );

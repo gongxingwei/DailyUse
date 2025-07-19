@@ -1,6 +1,6 @@
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 import type { ITaskMetaTemplateRepository } from '../../domain/repositories/iTaskMetaTemplateRepository';
-import { TaskMetaTemplate } from '@/modules/Task/domain/entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '@/modules/Task/domain/aggregates/taskMetaTemplate';
 
 /**
  * TaskMetaTemplate存储库实现

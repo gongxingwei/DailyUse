@@ -1,4 +1,4 @@
-import type { TaskInstance } from '../entities/taskInstance';
+import type { TaskInstance } from '../aggregates/taskInstance';
 import type { DateTime } from '@/shared/types/myDateTime';
 import type { TResponse } from '@/shared/types/response';
 

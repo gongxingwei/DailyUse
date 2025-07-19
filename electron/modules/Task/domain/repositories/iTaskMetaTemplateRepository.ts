@@ -1,4 +1,4 @@
-import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import type { TResponse } from '@/shared/types/response';
 
 export interface ITaskMetaTemplateRepository {

@@ -1,7 +1,7 @@
-import { TaskInstance } from "../entities/taskInstance";
+import { TaskInstance } from "../aggregates/taskInstance";
 import { TResponse } from "../../../../../src/shared/types/response";
 import { TimeUtils } from "../../../../../src/shared/utils/myDateTimeUtils";
-import { scheduleService } from "../../../schedule/services/scheduleService";
+import { scheduleService } from "../../../../shared/schedule/services/scheduleService";
 import { TaskTimeUtils } from "../utils/taskTimeUtils";
 import type { TaskReminderConfig } from "../types/task";
 

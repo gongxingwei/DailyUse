@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { Account } from '../../domain/aggregates/account';
+
 export const useAccountStore = defineStore('auth', {
     state: () => ({
         account: null as Account | null,
@@ -11,7 +12,7 @@ export const useAccountStore = defineStore('auth', {
     getters: {
         isAuthenticated: (state) => !!state.account,
         currentAccount: (state) => state.account,
-
+        getAccountUuid: (state) => state.account ? state.account.id : null,
         getAllSavedAccounts: (state) => {
             return state.savedAccounts;
         },

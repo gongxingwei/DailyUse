@@ -45,7 +45,7 @@
 import { useRoute } from 'vue-router'
 import { computed } from 'vue'
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
-import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
+import { useRepositoryStore } from '@/modules/Repository/presentation/stores/repositoryStore'
 
 const route = useRoute()
 // 获取仓库ID

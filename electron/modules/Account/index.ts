@@ -22,6 +22,8 @@ export type {
   IAccount,
   AccountRegistrationRequest,
   AccountUpdateData,
+  AccountDTO,
+  UserDTO,
 } from "./domain/types/account";
 
 export { MainAccountApplicationService } from "./application/services/mainAccountApplicationService";

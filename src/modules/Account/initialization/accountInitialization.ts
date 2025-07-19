@@ -14,6 +14,8 @@ const accountEventHandlersInitTask: InitializationTask = {
   }
 };
 
+
+
 export function registerAccountInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
   manager.registerTask(accountEventHandlersInitTask);

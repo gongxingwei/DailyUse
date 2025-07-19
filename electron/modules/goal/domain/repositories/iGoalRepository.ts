@@ -50,7 +50,7 @@ export interface IGoalRepository {
   /**
    * 创建目标目录
    */
-  createGoalDirectory(data: IGoalDir): Promise<GoalDir>;
+  createGoalDirectory(accountId: string, data: IGoalDir): Promise<GoalDir>;
   
   /**
    * 根据ID获取目标目录

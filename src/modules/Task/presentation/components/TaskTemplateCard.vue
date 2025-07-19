@@ -167,7 +167,7 @@
 import { computed } from 'vue';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
-import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
+import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 interface Props {
     template: TaskTemplate;
     statusFilters?: Array<{

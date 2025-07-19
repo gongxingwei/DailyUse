@@ -376,8 +376,6 @@ export class SqliteAccountRepository implements IAccountRepository {
     // 创建账号聚合根
     const account = Account.fromDTO(accountDTO);
     console.log('[sqliteAccountRepo::Account]', account)
-    // 设置其他属性（如果需要，可以通过反射或者账号的公共方法）
-    // 注意：这里可能需要扩展 Account 类以提供设置这些私有字段的方法
 
     return account;
   }

@@ -85,7 +85,7 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
-import { TaskMetaTemplate } from '@/modules/Task/domain/entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '@/modules/Task/domain/aggregates/taskMetaTemplate';
 
 interface Props {
     visible: boolean;

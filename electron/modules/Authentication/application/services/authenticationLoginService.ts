@@ -1,5 +1,6 @@
-import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { SqliteAuthCredentialRepository } from "../../index";
+import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
+import { IAuthCredentialRepository, ITokenRepository } from "../../domain/repositories/authenticationRepository";
+import { SqliteAuthCredentialRepository, SqliteTokenRepository } from "../../index";
 import {
   AccountIdGetterRequestedEvent,
   AccountStatusVerificationRequestedEvent,
@@ -11,13 +12,19 @@ import { AccountStatusVerificationResponseEvent } from "../../../Account/domain/
 import { eventBus } from "../../../../shared/events/eventBus";
 import { generateUUID } from "@/shared/utils/uuid";
 import { AccountIdGetterResponseEvent } from "../../../Account/index"
+// domainServices
+import { tokenService } from "../../domain/services/tokenService";
 // types
 import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } from "../../domain/types";
+
 
 /**
  * Authentication 模块的登录服务
  */
 export class AuthenticationLoginService{
+  private static instance: AuthenticationLoginService | null = null;
+  private authCredentialRepository: IAuthCredentialRepository;
+  private tokenRepository: ITokenRepository;
   private pendingAccountIdRequests = new Map<
     string,
     {
@@ -38,12 +45,33 @@ export class AuthenticationLoginService{
     }
   >();
 
-  private authCredentialRepository: IAuthCredentialRepository;
-
-  constructor() {
+  constructor(authCredentialRepository: IAuthCredentialRepository, tokenRepository: ITokenRepository) {
     // 监听账号状态验证响应
-    this.authCredentialRepository = new SqliteAuthCredentialRepository();
+    this.authCredentialRepository = authCredentialRepository;
+    this.tokenRepository = tokenRepository;
     this.setupEventListeners();
+  }
+
+  /**
+   * 创建服务实例
+   * @param authCredentialRepository 可选的认证凭证仓库
+   * @param tokenRepository 可选的令牌仓库
+   * @return 返回一个新的 AuthenticationLoginService 实例
+   * 可以通过依赖注入的方式传入自定义的仓库实现，默认为容器中的实现
+   */
+  static async createInstance(authCredentialRepository?: IAuthCredentialRepository, tokenRepository?: ITokenRepository): Promise<AuthenticationLoginService> {
+    const authenticationContainer = await AuthenticationContainer.getInstance();
+    authCredentialRepository = authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
+    tokenRepository = tokenRepository || authenticationContainer.getTokenRepository();
+    console.log('[AuthLoginService] 创建实例', { authCredentialRepository, tokenRepository })
+    return new AuthenticationLoginService(authCredentialRepository, tokenRepository);
+  }
+
+  static async getInstance(): Promise<AuthenticationLoginService> {
+    if (!AuthenticationLoginService.instance) {
+      AuthenticationLoginService.instance = await AuthenticationLoginService.createInstance();
+    }
+    return AuthenticationLoginService.instance;
   }
 
   /**
@@ -126,9 +154,11 @@ export class AuthenticationLoginService{
       console.log("✓ [AuthLogin] 账号状态验证通过");
 
       // 3. 验证登录凭证（密码）
-      const {success: credentialValid, tokenValue} = authCredential.verifyPassword(password);
+      const {success: credentialValid, token: accessToken} = authCredential.verifyPassword(password);
 
-      if (!credentialValid) {
+      
+      // 如果凭证验证失败
+      if (!credentialValid || !accessToken) {
         console.log("❌ [AuthLogin] 密码验证失败");
 
         // 发布凭证验证失败事件
@@ -157,8 +187,9 @@ export class AuthenticationLoginService{
           message: "用户名或密码错误",
         };
       }
-
-      console.log("✓ [AuthLogin] 密码验证通过");
+      console.log("✓ [AuthLogin] 密码验证通过，生成访问令牌");
+      await tokenService.saveToken(accessToken,this.tokenRepository);
+      console.log("✓ [AuthLogin] 密码验证通过，访问令牌已保存");
 
       // 4. 生成会话ID
       const sessionId = generateUUID();
@@ -203,7 +234,7 @@ export class AuthenticationLoginService{
         data: {
           username,
           accountId,
-          token: tokenValue || null
+          token: accessToken.value || null
         },
       };
       

@@ -14,37 +14,22 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref } from 'vue';
-import { AppInitService } from '@/shared/services/appInitService';
+import { onMounted, ref } from 'vue';
 import { useThemeInit } from './modules/Theme/useThemeInit';
 import { init } from './aaa';
 useThemeInit();
 
-const isLoading = ref(true);
+const isLoading = ref(false);
 
-const initializeApp = async () => {
-  try {
-    await AppInitService.initialize({
-      autoInit: true,
-      skipDataInit: false, // 启用数据初始化
-    });
-  } catch (error) {
-    console.error('应用初始化失败:', error);
-    // 可以显示错误提示给用户
-  } finally {
-    isLoading.value = false;
-  }
-};
+
 
 
 onMounted(() => {
-  initializeApp();
+
   init();
 });
 
-onUnmounted(() => {
-  AppInitService.cleanup();
-});
+
 </script>
 
 <style scoped>

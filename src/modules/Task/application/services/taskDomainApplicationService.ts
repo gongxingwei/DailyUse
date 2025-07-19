@@ -1,5 +1,5 @@
-import { TaskTemplate, TaskTemplateMapper } from '@/modules/Task/domain/entities/taskTemplate';
-import { TaskInstance, TaskInstanceMapper } from '@/modules/Task/domain/entities/taskInstance';
+import { TaskTemplate, TaskTemplateMapper } from '@/modules/Task/domain/aggregates/taskTemplate';
+import { TaskInstance, TaskInstanceMapper } from '@/modules/Task/domain/aggregates/taskInstance';
 import { taskIpcClient } from '@/modules/Task/infrastructure/ipc/taskIpcClient';
 import type { ITaskStateRepository } from '@/modules/Task/domain/repositories/ITaskStateRepository';
 import { PiniaTaskStateRepository } from '@/modules/Task/infrastructure/repositories/piniaTaskStateRepository';
@@ -879,12 +879,3 @@ export function getTaskDomainApplicationService(): TaskDomainApplicationService 
   return _taskDomainApplicationServiceInstance;
 }
 
-/**
- * @deprecated 使用 getTaskDomainApplicationService() 替代
- * 为了向后兼容而保留，但建议使用函数形式避免 Pinia 初始化问题
- */
-export const taskDomainApplicationService = {
-  get instance() {
-    return getTaskDomainApplicationService();
-  }
-};

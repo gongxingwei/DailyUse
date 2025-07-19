@@ -99,9 +99,9 @@ export class AuthCredential extends AggregateRoot {
    */
   verifyPassword(password: string): {
     success: boolean;
-    tokenValue: string | undefined;
+    token: Token | undefined;
   } {
-    let tokenValue: string | undefined;
+    let token: Token | undefined;
     if (this.isAccountLocked()) {
     throw new Error('Account is locked. Please try again later.');
   }
@@ -113,7 +113,7 @@ export class AuthCredential extends AggregateRoot {
       this._lastAuthAt = TimeUtils.now();
       this._updatedAt = this._lastAuthAt;
       const accessToken = Token.createAccessToken(this.id, 9999);
-      tokenValue = accessToken.value;
+      token = accessToken;
       this._tokens.set('access_token', accessToken)
       this.addDomainEvent({
         aggregateId: this.id,
@@ -142,7 +142,7 @@ export class AuthCredential extends AggregateRoot {
     
     return {
       success: isValid,
-      tokenValue: tokenValue,
+      token,
     };
   }
 

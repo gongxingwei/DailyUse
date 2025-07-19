@@ -1,8 +1,8 @@
 import { ref } from "vue";
 import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useTaskStore } from "../stores/taskStore";
-import type { TaskTemplate } from "../../domain/entities/taskTemplate";
-import type { TaskInstance } from "../../domain/entities/taskInstance";
+import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
+import type { TaskInstance } from "../../domain/aggregates/taskInstance";
 
 // 使用新架构的服务
 const getTaskService = () => getTaskDomainApplicationService();

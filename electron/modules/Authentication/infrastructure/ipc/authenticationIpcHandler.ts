@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 import { AuthenticationLoginService} from "../../application/services/authenticationLoginService";
 import { AuthenticationLogoutService} from "../../application/services/authenticationLogoutService";
 import type { PasswordAuthenticationRequest, PasswordAuthenticationResponse } from "../../domain/types";
-
+import { withAuth } from "../../application/services/authTokenService";
 
 /**
  * Authentication 模块的 IPC 处理器
@@ -13,16 +13,19 @@ export class AuthenticationIpcHandler {
   private loginService: AuthenticationLoginService;
   private logoutService: AuthenticationLogoutService;
 
-  constructor(logoutService: AuthenticationLogoutService) {
-    this.logoutService = logoutService;
-    this.loginService = new AuthenticationLoginService();
-
-    this.setupIpcHandlers();
-  }
+  constructor(
+  loginService: AuthenticationLoginService,
+  logoutService: AuthenticationLogoutService
+) {
+  this.loginService = loginService;
+  this.logoutService = logoutService;
+  this.setupIpcHandlers();
+}
 
   static async createInstance(): Promise<AuthenticationIpcHandler> {
+    const loginService = await AuthenticationLoginService.getInstance();
     const logoutService = await AuthenticationLogoutService.getInstance();
-    return new AuthenticationIpcHandler(logoutService);
+    return new AuthenticationIpcHandler(loginService, logoutService);
   }
   static async getInstance(): Promise<AuthenticationIpcHandler> {
     if (!AuthenticationIpcHandler.instance) {

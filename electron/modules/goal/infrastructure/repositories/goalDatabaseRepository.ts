@@ -35,7 +35,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
   /**
    * 创建目标目录
    */
-  async createGoalDirectory(data: IGoalDir): Promise<GoalDir> {
+  async createGoalDirectory(accountId: string, data: IGoalDir): Promise<GoalDir> {
     const stmt = this.db.prepare(`
       INSERT INTO goal_directories (
         id, username, name, icon, parent_id, lifecycle, created_at, updated_at

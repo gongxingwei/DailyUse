@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 import { getDatabase } from "../../../../shared/database/index";
 import type { ITaskInstanceRepository } from '../../domain/repositories/iTaskInstanceRepository';
-import { TaskInstance } from '../../domain/entities/taskInstance';
+import { TaskInstance } from '../../domain/aggregates/taskInstance';
 import type { TResponse } from '@/shared/types/response';
 import type { DateTime } from '@/shared/types/myDateTime';
 

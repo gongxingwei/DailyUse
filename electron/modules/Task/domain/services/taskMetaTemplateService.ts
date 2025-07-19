@@ -1,4 +1,4 @@
-import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { ITaskMetaTemplateRepository } from '../repositories/iTaskMetaTemplateRepository';
 import type { TaskTimeConfig, TaskReminderConfig } from '../types/task';
 import { TaskMetaTemplateFactory } from '../utils/taskMetaTemplateFactory';

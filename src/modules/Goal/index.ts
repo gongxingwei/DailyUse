@@ -1,0 +1,1 @@
+export { GoalDomainApplicationService, getGoalDomainApplicationService } from "./application/services/goalDomainApplicationService";

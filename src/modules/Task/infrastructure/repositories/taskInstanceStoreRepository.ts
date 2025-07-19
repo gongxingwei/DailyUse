@@ -1,6 +1,6 @@
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 import type { ITaskInstanceRepository } from '../../domain/repositories/iTaskInstanceRepository';
-import type { TaskInstance } from '../../domain/entities/taskInstance';
+import type { TaskInstance } from '../../domain/aggregates/taskInstance';
 import type { DateTime } from '@/shared/types/myDateTime';
 
 /**

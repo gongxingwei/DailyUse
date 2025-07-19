@@ -1,7 +1,7 @@
 import type { Database } from 'better-sqlite3';
 import { getDatabase } from "../../../../shared/database/index";
 import type { ITaskTemplateRepository } from '../../domain/repositories/iTaskTemplateRepository';
-import { TaskTemplate } from '../../domain/entities/taskTemplate';
+import { TaskTemplate } from '../../domain/aggregates/taskTemplate';
 import type { TResponse } from '@/shared/types/response';
 
 /**

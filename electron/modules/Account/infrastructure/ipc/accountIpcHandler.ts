@@ -5,7 +5,7 @@ import {
 } from "../../application/services/accountDeactivationService";
 import { MainAccountApplicationService } from "../../application/services/mainAccountApplicationService";
 import type { AccountRegistrationRequest, AccountDTO } from '../../domain/types/account';
-import { Account } from "@/modules/Account";
+
 /**
  * Account 模块的 IPC 处理器
  * 处理来自渲染进程的账号相关请求
@@ -60,7 +60,32 @@ export class AccountIpcHandler {
    * 设置IPC处理器
    */
   private async setupIpcHandlers(): Promise<void> {
-    
+    ipcMain.handle(
+      'account:register',
+      async (_event, request: AccountRegistrationRequest): Promise<TResponse<AccountDTO>> => {
+        try {
+          await this.ensureInitialized();
+          
+          console.log('🏠 [AccountIpc] 收到账号注册请求:', request);
+          
+          const response = await this.accountApplicationService!.register(request);
+          if (response.success && response.data) {
+            console.log('✅ [AccountIpc] 账号注册成功:', response.data);
+            return {
+              success: true,
+              data: response.data.toDTO(),
+              message: '账号注册成功'
+            };
+          } else {
+            console.error('❌ [AccountIpc] 账号注册失败:', response.message);
+            throw new Error(response.message || '账号注册失败，请稍后重试');
+          }
+        } catch (error) {
+          console.error('❌ [AccountIpc] 账号注册处理异常:', error);
+          throw error;
+        }
+      }
+    );
     ipcMain.handle(
       'account:get-by-id',
       async (_event, accountId: string): Promise<TResponse<AccountDTO>> => {

@@ -9,6 +9,7 @@ export const useAuthenticationStore = defineStore("authentication", {
   getters: {
     isAuthenticated: (state) => !!state.token,
     getToken: (state) => state.token,
+    getAccountId: (state) => state.accountId,
 
   },
   actions: {

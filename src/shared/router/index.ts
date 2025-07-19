@@ -1,5 +1,5 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore'
+import { useRepositoryStore } from '@/modules/Repository/presentation/stores/repositoryStore'
 import { useAccountStore } from '@/modules/Account/index';
 import MainLayout from '@/modules/App/MainLayout.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
@@ -81,7 +81,7 @@ const routes: RouteRecordRaw[] = [
             }, {
                 path: '/reminder',
                 name: 'reminder',
-                component: () => import('@/modules/Reminder/views/Reminder.vue')
+                component: () => import('@/views/ReminderView.vue')
             },
             {
                 path: '/repository/:title',
@@ -132,11 +132,6 @@ router.beforeEach((to, from, next) => {
 //         return next('/summary')
 //     }
 
-    // 检查是否访问仓库
-    if (to.name === 'repository-detail' && to.params.title) {
-        const store = useRepositoryStore()
-        store.updateRepoLastVisitTime(decodeURIComponent(to.params.title as string))
-    }
     next()
 })
 

@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import type { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
+import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import { useTimeConfigValidation } from '@/modules/Task/presentation/composables/useTimeConfigValidation';

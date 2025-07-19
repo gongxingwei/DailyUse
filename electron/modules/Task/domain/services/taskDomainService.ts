@@ -1,6 +1,6 @@
-import { TaskTemplate } from "../entities/taskTemplate";
-import { TaskMetaTemplate } from "../entities/taskMetaTemplate";
-import { TaskInstance } from "../entities/taskInstance";
+import { TaskTemplate } from "../aggregates/taskTemplate";
+import { TaskMetaTemplate } from "../aggregates/taskMetaTemplate";
+import { TaskInstance } from "../aggregates/taskInstance";
 import { taskInstanceService } from "./taskInstanceService";
 import { taskTemplateService } from "./taskTemplateService";
 import { taskMetaTemplateService } from "./taskMetaTemplateService";

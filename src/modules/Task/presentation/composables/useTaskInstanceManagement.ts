@@ -1,6 +1,6 @@
 import { ref, computed } from 'vue';
 import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
-import { TaskInstance } from '../../domain/entities/taskInstance';
+import { TaskInstance } from '../../domain/aggregates/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
 import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 import { useNotification } from './useNotification';

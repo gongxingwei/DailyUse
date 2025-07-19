@@ -1,10 +1,9 @@
-import { AccountDTO } from '../../domain/types/account';
-import type { User, AccountRegistrationRequest } from '../../index';
+import type { AccountRegistrationRequest, AccountDTO } from '@electron/modules/Account';
 
 export class AccountIpcClient {
     async accountRegistration(
         registrationData: AccountRegistrationRequest
-    ): Promise<TResponse<User>> {
+    ): Promise<TResponse<AccountDTO>> {
         console.log('📝 [AccountIpcClient] 发送账号注册请求', registrationData);
         const serializedDto = JSON.parse(JSON.stringify(registrationData));
         console.log('📝 [AccountIpcClient] 序列化后的注册数据', serializedDto);

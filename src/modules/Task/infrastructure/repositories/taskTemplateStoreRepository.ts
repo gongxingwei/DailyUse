@@ -1,6 +1,6 @@
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 import type { ITaskTemplateRepository } from '../../domain/repositories/iTaskTemplateRepository';
-import type { TaskTemplate } from '../../domain/entities/taskTemplate';
+import type { TaskTemplate } from '../../domain/aggregates/taskTemplate';
 
 /**
  * TaskTemplate存储库实现

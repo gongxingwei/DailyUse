@@ -1,25 +1,22 @@
 import type { NotificationWindowOptions } from "../types/notification";
 import type { TResponse } from "@/shared/types/response";
-import { generateUUID } from "@/shared/utils/uuid";
+
 import { serializeForIpc } from "@/shared/utils/ipcSerialization";
 
 export class NotificationService {
 
-  private generateId(): string {
-    return generateUUID();
-  }
+
   /**
    * 显示通知
    * @param options 通知选项
    * @returns Promise<TResponse>
    */
   public async showNotification(
-    options: Omit<NotificationWindowOptions, 'id'>
+    options: NotificationWindowOptions
   ): Promise<TResponse> {
-    const id = this.generateId(); // 为通知生成唯一ID
+
     try {
-      const fullOptions: NotificationWindowOptions = {
-        id, // 将生成的ID添加到选项中
+      const fullOptions: any = {
         ...options,
       };
       const response = await window.shared.ipcRenderer.invoke(
@@ -104,7 +101,7 @@ export class NotificationService {
     return await this.showNotification({
       title,
       body: message,
-      urgency: 'normal',
+      importance: 'normal',
     });
 
   }

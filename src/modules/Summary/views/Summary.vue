@@ -112,7 +112,7 @@ import GoalInfoShowCard from '@/modules/Goal/presentation/components/GoalInfoSho
 import MotivateCard from '@/modules/Goal/presentation/components/MotivateCard.vue';
 import GoalGanttChart from '@/modules/Goal/presentation/components/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/presentation/components/TaskInSummaryCard.vue';
-import RecentRepoCard from '@/modules/Repository/components/RecentRepoCard.vue';
+import RecentRepoCard from '@/modules/Repository/presentation/components/RecentRepoCard.vue';
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();

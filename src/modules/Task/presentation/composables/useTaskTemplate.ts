@@ -1,6 +1,6 @@
 import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 import { useNotification } from "./useNotification";
-import type { TaskTemplate } from "../../domain/entities/taskTemplate";
+import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
 
 /**
  * 任务模板管理 Composable

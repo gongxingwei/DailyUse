@@ -1,5 +1,5 @@
  // src/modules/Task/utils/taskTemplateFactory.ts
-import { TaskMetaTemplate } from '../entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { v4 as uuidv4 } from 'uuid';
 import { TaskTimeUtils } from './taskTimeUtils';
 

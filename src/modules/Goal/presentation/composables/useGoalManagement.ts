@@ -1,7 +1,7 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
 import { createGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
-import { useGoalStore } from "../../presentation/stores/goalStore";
+import { useGoalStore } from "../stores/goalStore";
 import type { IGoal } from "../../domain/types/goal";
 import { Goal } from "../../domain/entities/goal";
 

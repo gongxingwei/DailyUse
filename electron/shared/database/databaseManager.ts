@@ -4,7 +4,8 @@ import { AuthenticationTables } from "./authenticationTables";
 import { SessionLoggingTables } from "./sessionLoggingTables";
 import { TaskTables } from "./taskTables";
 import { GoalTables } from "./goalTables";
-
+import { RepositoryTables } from "./repositoryTables";
+import { ReminderTables } from "./reminderTables";
 /**
  * 数据库表管理器
  * 统一管理所有模块的数据表
@@ -32,7 +33,14 @@ export class DatabaseManager {
     console.log('🎯 [数据库管理器] 创建目标模块表...');
     GoalTables.createTables(db);
 
+    console.log('📦 [数据库管理器] 创建仓库模块表...');
+    RepositoryTables.createTables(db);
+
     console.log('✅ [数据库管理器] 所有数据表创建完成');
+
+    // 创建提醒相关表
+    ReminderTables.createTables(db);
+    console.log('⏰ [数据库管理器] 创建提醒模块表...');
   }
 
   /**

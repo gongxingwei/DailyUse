@@ -3,9 +3,9 @@ import { TaskContainer } from "../infrastructure/di/taskContainer";
 import type { ITaskTemplateRepository } from "../domain/repositories/iTaskTemplateRepository";
 import type { ITaskInstanceRepository } from "../domain/repositories/iTaskInstanceRepository";
 import type { ITaskMetaTemplateRepository } from "../domain/repositories/iTaskMetaTemplateRepository";
-import { TaskTemplate } from "../domain/entities/taskTemplate";
-import { TaskInstance } from "../domain/entities/taskInstance";
-import { TaskMetaTemplate } from "../domain/entities/taskMetaTemplate";
+import { TaskTemplate } from "../domain/aggregates/taskTemplate";
+import { TaskInstance } from "../domain/aggregates/taskInstance";
+import { TaskMetaTemplate } from "../domain/aggregates/taskMetaTemplate";
 import { TaskTemplateValidator } from "../validation/TaskTemplateValidator";
 import type { 
   ITaskTemplate,

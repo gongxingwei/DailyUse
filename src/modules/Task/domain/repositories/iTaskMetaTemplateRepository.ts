@@ -1,4 +1,4 @@
-import { TaskMetaTemplate } from '@/modules/Task/domain/entities/taskMetaTemplate';
+import { TaskMetaTemplate } from '@/modules/Task/domain/aggregates/taskMetaTemplate';
 import type { TResponse } from '@/shared/types/response';
 
 export interface ITaskMetaTemplateRepository {

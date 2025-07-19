@@ -212,7 +212,7 @@ import { computed, ref } from 'vue';
 import { useRoute } from 'vue-router';
 // store
 import { useGoalStore } from '../stores/goalStore';
-import { useRepositoryStore } from '@/modules/Repository/stores/repositoryStore';
+import { useRepositoryStore } from '@/modules/Repository/presentation/stores/repositoryStore';
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';

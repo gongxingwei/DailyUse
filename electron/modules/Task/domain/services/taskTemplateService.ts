@@ -1,5 +1,5 @@
-import { TaskTemplate } from "../entities/taskTemplate";
-import { TaskMetaTemplate } from "../entities/taskMetaTemplate";
+import { TaskTemplate } from "../aggregates/taskTemplate";
+import { TaskMetaTemplate } from "../aggregates/taskMetaTemplate";
 import { taskInstanceService } from "./taskInstanceService";
 import type {
   TaskTimeConfig,

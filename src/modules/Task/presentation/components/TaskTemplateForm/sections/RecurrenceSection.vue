@@ -93,7 +93,7 @@
 </template>
 
 <script setup lang="ts">
-import { TaskTemplate } from '@/modules/Task/domain/entities/taskTemplate';
+import { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import WeekdaySelector from '../widgets/WeekdaySelector.vue';

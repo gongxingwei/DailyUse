@@ -167,9 +167,9 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import { useRepositoryStore } from '../stores/repositoryStore'
+import { useRepositoryStore } from '../presentation/stores/repositoryStore'
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
-import type { Repository } from '../stores/repositoryStore'
+import type { Repository } from '../presentation/stores/repositoryStore'
 import RepoDialog from '../components/RepoDialog.vue'
 import RepoSettings from '../components/RepoSettings.vue'
 // utils

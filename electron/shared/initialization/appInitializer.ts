@@ -1,8 +1,8 @@
 import { InitializationManager, InitializationPhase, InitializationTask } from './initializationManager';
 import { registerFileSystemHandlers } from '../ipc/filesystem';
 import { registerGitHandlers } from '../ipc/git';
-import { setupScheduleHandlers } from '../../modules/schedule/main';
-import { setupNotificationHandler } from '../../modules/notification/ipcs/notification.ipc';
+import { setupScheduleHandlers } from '../schedule/main';
+import { setupNotificationHandler } from '../notification/ipcs/notification.ipc';
 
 import { initializeEventSubscriptions } from './eventSubscriptionInitializer';
 import { initializeDatabase } from '../../shared/database/index';
@@ -12,6 +12,9 @@ import { registerAccountInitializationTasks } from '../../modules/Account/initia
 import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
 import { registerAuthenticationInitializationTasks } from '../../modules/Authentication/initialization/authenticationInitialization';
+import { registerRepositoryInitializationTasks } from '../../modules/Repository/initialization/repositoryInitialization';
+import { registerReminderInitializationTasks } from '../../modules/Reminder/initialization/reminderInitialization';
+
 /**
  * 基础设施模块的初始化任务
  */
@@ -105,7 +108,9 @@ export function registerAllInitializationTasks(): void {
   registerGoalInitializationTasks();
   registerAuthenticationInitializationTasks();
   registerSessionLoggingInitializationTasks();
-  
+  registerRepositoryInitializationTasks();
+  registerReminderInitializationTasks();
+
   console.log('All initialization tasks registered');
 }
 
