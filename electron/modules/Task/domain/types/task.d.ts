@@ -6,7 +6,7 @@ import type { DateTime, TimePoint, TimeRange } from "@/shared/types/myDateTime";
  */
 export type KeyResultLink = {
   /** 目标ID */
-  goalId: string;
+  goalUuid: string;
   /** 关键结果ID */
   keyResultId: string;
   /** 完成任务时增加的值 */
@@ -23,7 +23,7 @@ export type TaskReminderConfig = {
   /** 多个提醒时间点 */
   alerts: Array<{
     /** 提醒ID */
-    id: string;
+    uuid: string;
     /** 提醒时间设置 */
     timing: {
       /** 提醒时间类型 */
@@ -91,7 +91,7 @@ export type TaskTimeConfig = {
  */
 export interface ITaskTemplate {
   /** 任务模板ID */
-  id: string;
+  uuid: string;
   /** 任务标题 */
   title: string;
   /** 任务描述 */
@@ -149,7 +149,7 @@ export type TaskInstanceReminderStatus = {
   /** 提醒项状态列表 */
   alerts: Array<{
     /** 提醒ID */
-    id: string;
+    uuid: string;
     /** 提醒配置 */
     alertConfig: TaskReminderConfig['alerts'][number];
     /** 提醒状态 */
@@ -211,7 +211,7 @@ export type TaskInstanceTimeConfig = {
  */
 export interface ITaskInstance {
   /** 任务实例ID */
-  id: string;
+  uuid: string;
   /** 关联的任务模板ID */
   templateId: string;
   /** 任务标题 */
@@ -263,7 +263,7 @@ export interface ITaskInstance {
  */
 export interface ITaskMetaTemplate {
   /** 元模板ID */
-  id: string;
+  uuid: string;
   /** 元模板名称 */
   name: string;
   /** 元模板描述 */

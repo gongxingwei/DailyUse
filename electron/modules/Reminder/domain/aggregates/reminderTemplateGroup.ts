@@ -1,6 +1,6 @@
 import { ReminderTemplate } from "./reminderTemplate";
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from "../types";
+import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from "@common/modules/reminder";
 
 export class ReminderTemplateGroup extends AggregateRoot implements IReminderTemplateGroup {
 
@@ -10,20 +10,20 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
   private _enableMode: ReminderTemplateEnableMode = "group"; // 新增属性
 
   constructor(
-    id: string,
+    uuid: string,
     name: string,
     enabled = true,
     templates: ReminderTemplate[] = [],
     enableMode: ReminderTemplateEnableMode = "group"
   ) {
-    super(id || ReminderTemplateGroup.generateId());
+    super(uuid || ReminderTemplateGroup.generateId());
     this._name = name;
     this._enabled = enabled;
     this._templates = templates;
     this._enableMode = enableMode;
   }
 
-  get id() { return this._id; }
+  get id() { return this._uuid; }
   get name() { return this._name; }
   set name(val: string) { this._name = val; }
   get enabled() { return this._enabled; }
@@ -55,7 +55,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    * 添加模板到分组
    */
   addTemplate(template: ReminderTemplate) {
-    if (!this._templates.find(t => t.id === template.id)) {
+    if (!this._templates.find(t => t.uuid === template.uuid)) {
       this._templates.push(template);
       // 计算并设置模板的启用状态
       const mode = this._enableMode === "individual" ? "individual" : "group";
@@ -67,7 +67,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    * 从分组移除模板
    */
   removeTemplate(templateId: string) {
-    this._templates = this._templates.filter(t => t.id !== templateId);
+    this._templates = this._templates.filter(t => t.uuid !== templateId);
   }
 
   /**
@@ -104,7 +104,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
   }
 
   static isReminderTemplateGroup(obj: any): obj is ReminderTemplateGroup {
-    return obj instanceof ReminderTemplateGroup || (obj && obj.id && obj.name && Array.isArray(obj.templates));
+    return obj instanceof ReminderTemplateGroup || (obj && obj.uuid && obj.name && Array.isArray(obj.templates));
   }
 
   /**
@@ -112,7 +112,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    */
   toDTO() {
     return {
-      id: this._id,
+      uuid: this._uuid,
       name: this._name,
       enabled: this._enabled,
       templates: this._templates.map(t => t.toDTO()),
@@ -125,7 +125,7 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    */
   static fromDTO(dto: any) {
     return new ReminderTemplateGroup(
-      dto.id,
+      dto.uuid,
       dto.name,
       dto.enabled,
       (dto.templates || []).map((t: any) => ReminderTemplate.fromDTO(t)),

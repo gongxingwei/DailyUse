@@ -51,15 +51,15 @@ export const useReminderStore = defineStore("Reminder", {
       const reminderTemplates = state.ReminderTemplates
       return reminderTemplates.map(ensureReminderTemplate);
     },
-    getReminderTemplateById: (state) => (id: string): ReminderTemplate | null => {
-      const item = state.ReminderTemplates.find((t) => t.id === id);
+    getReminderTemplateById: (state) => (uuid: string): ReminderTemplate | null => {
+      const item = state.ReminderTemplates.find((t) => t.uuid === id);
       return item ? ensureReminderTemplate(item) : null;
     },
     getReminderGroups: (state) => {
       return state.ReminderGroups.map(ReminderTemplateGroup.ensureReminderTemplateGroup);
     },
-    getReminderGroupById: (state) => (id: string): ReminderTemplateGroup | null => {
-      const item = state.ReminderGroups.find((g) => g.id === id);
+    getReminderGroupById: (state) => (uuid: string): ReminderTemplateGroup | null => {
+      const item = state.ReminderGroups.find((g) => g.uuid === id);
       return item ? ReminderTemplateGroup.ensureReminderTemplateGroup(item) : null;
     },
       
@@ -75,14 +75,14 @@ export const useReminderStore = defineStore("Reminder", {
     },
 
     updateReminderTemplate(template: ReminderTemplate | any) {
-      const index = this.ReminderTemplates.findIndex((item) => item.id === template.id);
+      const index = this.ReminderTemplates.findIndex((item) => item.uuid === template.uuid);
       if (index !== -1) {
         this.ReminderTemplates.splice(index, 1, ensureReminderTemplate(template));
       }
     },
 
-    removeReminderTemplate(id: string) {
-      this.ReminderTemplates = this.ReminderTemplates.filter((t) => t.id !== id);
+    removeReminderTemplate(uuid: string) {
+      this.ReminderTemplates = this.ReminderTemplates.filter((t) => t.uuid !== id);
     },
 
     /** --------------- TemplateGroup ------------------- */
@@ -94,13 +94,13 @@ export const useReminderStore = defineStore("Reminder", {
       this.ReminderGroups.push(ReminderTemplateGroup.ensureReminderTemplateGroup(group));
     },
     updateReminderGroup(group: ReminderTemplateGroup | any) {
-      const index = this.ReminderGroups.findIndex((item) => item.id === group.id);
+      const index = this.ReminderGroups.findIndex((item) => item.uuid === group.uuid);
       if (index !== -1) {
         this.ReminderGroups.splice(index, 1, ReminderTemplateGroup.ensureReminderTemplateGroup(group));
       }
     },
-    removeReminderGroup(id: string) {
-      this.ReminderGroups = this.ReminderGroups.filter((g) => g.id !== id);
+    removeReminderGroup(uuid: string) {
+      this.ReminderGroups = this.ReminderGroups.filter((g) => g.uuid !== id);
     },
 
     setLoading(loading: boolean) {

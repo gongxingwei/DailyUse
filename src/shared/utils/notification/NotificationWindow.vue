@@ -31,7 +31,7 @@ const title = ref(route.query.title as string);
 const body = ref(route.query.body as string);
 const icon = ref(route.query.icon as string);
 const urgency = ref(route.query.urgency as string);
-const id = ref(route.query.id as string);
+const id = ref(route.query.uuid as string);
 
 // 进度条宽度
 const progressWidth = ref(100);

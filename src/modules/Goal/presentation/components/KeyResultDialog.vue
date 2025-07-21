@@ -224,7 +224,7 @@ import type { IKeyResult } from '@/modules/Goal/domain/types/goal';
 const props = defineProps<{
   visible: boolean
   mode: 'create' | 'edit'
-  goalId: string
+  goalUuid: string
   keyResultData?: IKeyResult | null
 }>();
 
@@ -447,7 +447,7 @@ const handleSave = async () => {
   if (!validateForm()) return;
   
   const keyResultData = {
-    goalId: props.goalId,
+    goalUuid: props.goalUuid,
     name: name.value,
     description: description.value,
     startValue: startValue.value,

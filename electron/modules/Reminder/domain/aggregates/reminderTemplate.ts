@@ -1,13 +1,13 @@
-import { IReminderTemplate } from "../types";
+
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { ReminderInstance } from "../entities/reminderInstance";
-import type { RelativeTimeSchedule, ReminderSchedule, DurationRange } from "../types/index.d.ts";
+import type { IReminderTemplate, RelativeTimeSchedule, ReminderSchedule } from "@common/modules/reminder";
 
 export class ReminderTemplate 
   extends AggregateRoot
   implements IReminderTemplate
 {
-  private _groupId: string;
+  private _groupUuid: string;
   private _name: string;
   private _description?: string;
   private _importanceLevel: IReminderTemplate["importanceLevel"];
@@ -32,11 +32,11 @@ export class ReminderTemplate
       popup: boolean;
     },
     timeConfig: IReminderTemplate["timeConfig"],
-    id?: string,
+    uuid?: string,
     description?: string
   ) {
-    super(id || ReminderTemplate.generateId());
-    this._groupId = groupId;
+    super(uuid || ReminderTemplate.generateId());
+    this._groupUuid = groupId;
     this._name = name;
     this._description = description;
     this._importanceLevel = importanceLevel;
@@ -48,11 +48,11 @@ export class ReminderTemplate
     this._enabled = selfEnabled;
   }
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
   get groupId(): string {
-    return this._groupId;
+    return this._groupUuid;
   }
 
   get name(): string {
@@ -150,15 +150,16 @@ export class ReminderTemplate
       });
     };
     if (this._timeConfig.type === "absolute") {
-      this._timeConfig.times.forEach((t) => {
+      // 绝对时间配置，直接使用 ISO8601 字符串
+      const { name, description, schedule } = this._timeConfig;
         schedules.push({
-          name: this._name,
-          description: this._description,
-          time: t,
+          name: name,
+          description: description,
+          time: schedule,
         });
-      });
+
     } else if (this._timeConfig.type === "relative") {
-      traverse(this._timeConfig.times, baseDate);
+      console.log('Calculating relative reminder schedules...');
     }
     return schedules;
   }
@@ -169,7 +170,7 @@ export class ReminderTemplate
   createInstance(baseTime: string): ReminderInstance {
     const reminderSchedules = this.calculateReminderSchedules(baseTime);
     return new ReminderInstance(
-      this.id,
+      this.uuid,
       this.name,
       this.importanceLevel,
       this.enabled,
@@ -181,7 +182,7 @@ export class ReminderTemplate
 
   toDTO(): IReminderTemplate {
     const reminderTemplateDTO: IReminderTemplate = {
-      id: this.id,
+      uuid: this.uuid,
       groupId: this.groupId,
       name: this.name,
       description: this.description,
@@ -202,7 +203,7 @@ export class ReminderTemplate
       dto.selfEnabled,
       dto.notificationSettings,
       dto.timeConfig,
-      dto.id,
+      dto.uuid,
       dto.description
     );
     // 设置计算出的 enabled 状态

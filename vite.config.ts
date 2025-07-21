@@ -51,6 +51,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       'src': path.resolve(__dirname, './src'),
       '@electron': path.resolve(__dirname, './electron'),
+      '@common': path.resolve(__dirname, './common'),
     }
   },
   base: './',

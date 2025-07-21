@@ -8,7 +8,7 @@ console.log('🧪 [测试脚本] 开始验证序列化修复效果');
 // 创建测试用的任务模板数据
 const createTestTaskTemplate = () => {
   return {
-    id: 'test-' + Date.now(),
+    uuid: 'test-' + Date.now(),
     title: '序列化测试任务模板',
     description: '用于验证序列化问题修复的测试模板',
     timeConfig: {

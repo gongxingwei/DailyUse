@@ -12,7 +12,7 @@ export function useDragAndDrop() {
     
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'move';
-      event.dataTransfer.setData('text/plain', item.id);
+      event.dataTransfer.setData('text/plain', item.uuid);
     }
   };
 
@@ -62,10 +62,10 @@ export function useDragAndDrop() {
   const canDropIntoGroup = (draggedItem: GridItem, targetGroup: GridItem): boolean => {
     if (draggedItem.type !== 'template') return false;
     if (targetGroup.type !== 'group') return false;
-    if (draggedItem.id === targetGroup.id) return false;
+    if (draggedItem.uuid === targetGroup.uuid) return false;
     
     // Check if template is already in the group
-    return !targetGroup.data.reminderTemplates.includes(draggedItem.id);
+    return !targetGroup.data.reminderTemplates.includes(draggedItem.uuid);
   };
 
   // Calculate drop position based on mouse coordinates

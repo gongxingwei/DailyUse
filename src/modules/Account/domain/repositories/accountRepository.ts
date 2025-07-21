@@ -9,11 +9,11 @@ import { Role } from "../entities/role";
 export interface IAccountRepository {
   // 账号基本操作
   save(account: Account): Promise<void>;
-  findById(id: string): Promise<Account | null>;
+  findById(uuid: string): Promise<Account | null>;
   findByUsername(username: string): Promise<Account | null>;
   findByEmail(email: string): Promise<Account | null>;
   findByPhone(phone: string): Promise<Account | null>;
-  delete(id: string): Promise<void>;
+  delete(uuid: string): Promise<void>;
   
   // 查询操作
   findAll(): Promise<Account[]>;
@@ -31,8 +31,8 @@ export interface IAccountRepository {
  */
 export interface IUserRepository {
   save(user: User): Promise<void>;
-  findById(id: string): Promise<User | null>;
-  delete(id: string): Promise<void>;
+  findById(uuid: string): Promise<User | null>;
+  delete(uuid: string): Promise<void>;
   findAll(): Promise<User[]>;
 }
 
@@ -41,9 +41,9 @@ export interface IUserRepository {
  */
 export interface IRoleRepository {
   save(role: Role): Promise<void>;
-  findById(id: string): Promise<Role | null>;
+  findById(uuid: string): Promise<Role | null>;
   findByName(name: string): Promise<Role | null>;
-  delete(id: string): Promise<void>;
+  delete(uuid: string): Promise<void>;
   findAll(): Promise<Role[]>;
   findByPermission(permissionId: string): Promise<Role[]>;
 }

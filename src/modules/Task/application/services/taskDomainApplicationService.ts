@@ -160,9 +160,9 @@ export class TaskDomainApplicationService {
   /**
    * 根据ID获取元模板
    */
-  async getMetaTemplate(id: string) {
+  async getMetaTemplate(uuid: string) {
     try {
-      const response = await taskIpcClient.getMetaTemplate(id);
+      const response = await taskIpcClient.getMetaTemplate(uuid);
       return response.success ? response.data || null : null;
     } catch (error) {
       console.error('Failed to get meta template:', error);
@@ -220,9 +220,9 @@ export class TaskDomainApplicationService {
   /**
    * 根据关键结果获取任务模板（返回领域对象数组）
    */
-  async getTaskTemplateForKeyResult(goalId: string, keyResultId: string): Promise<TaskTemplate[]> {
+  async getTaskTemplateForKeyResult(goalUuid: string, keyResultId: string): Promise<TaskTemplate[]> {
     try {
-      const response = await taskIpcClient.getTaskTemplateForKeyResult(goalId, keyResultId);
+      const response = await taskIpcClient.getTaskTemplateForKeyResult(goalUuid, keyResultId);
       if (response.success && response.data) {
         return TaskTemplateMapper.fromDTOArray(response.data);
       }
@@ -248,7 +248,7 @@ export class TaskDomainApplicationService {
         // 自动同步状态：将主进程创建并保存的模板同步到前端状态
         if (response.data) {
           await this.stateRepository.addTaskTemplate(response.data);
-          console.log(`✅ 创建任务模板成功并同步到前端状态: ${response.data.id}`);
+          console.log(`✅ 创建任务模板成功并同步到前端状态: ${response.data.uuid}`);
         }
         
         return {
@@ -283,7 +283,7 @@ export class TaskDomainApplicationService {
         // 自动同步状态：更新现有模板
         if (response.data) {
           await this.stateRepository.updateTaskTemplate(response.data);
-          console.log(`✅ 更新任务模板成功并同步到状态: ${response.data.id}`);
+          console.log(`✅ 更新任务模板成功并同步到状态: ${response.data.uuid}`);
         }
         
         return {
@@ -471,7 +471,7 @@ export class TaskDomainApplicationService {
 
       // 注意：这里不同步状态，因为模板还没有保存到数据库
       // 只返回创建的模板对象供前端编辑
-      console.log(`✅ 从元模板创建任务模板成功（待保存）: ${response.data.id}`);
+      console.log(`✅ 从元模板创建任务模板成功（待保存）: ${response.data.uuid}`);
 
       return TaskTemplateMapper.fromDTO(response.data);
     } catch (error) {
@@ -545,7 +545,7 @@ export class TaskDomainApplicationService {
         // 自动同步状态：添加新创建的实例
         if (response.data) {
           await this.stateRepository.addTaskInstance(response.data);
-          console.log(`✅ 创建任务实例成功并同步到状态: ${response.data.id}`);
+          console.log(`✅ 创建任务实例成功并同步到状态: ${response.data.uuid}`);
         }
         
         return {
@@ -828,9 +828,9 @@ export class TaskDomainApplicationService {
   /**
    * 获取目标下的任务统计
    */
-  async getTaskStatsForGoal(goalId: string): Promise<TaskStats | null> {
+  async getTaskStatsForGoal(goalUuid: string): Promise<TaskStats | null> {
     try {
-      const response = await taskIpcClient.getTaskStatsForGoal(goalId);
+      const response = await taskIpcClient.getTaskStatsForGoal(goalUuid);
       return response.success ? response.data || null : null;
     } catch (error) {
       console.error('Failed to get task stats for goal:', error);
@@ -841,9 +841,9 @@ export class TaskDomainApplicationService {
   /**
    * 获取任务完成时间线
    */
-  async getTaskCompletionTimeline(goalId: string, startDate: string, endDate: string): Promise<TaskTimeline[]> {
+  async getTaskCompletionTimeline(goalUuid: string, startDate: string, endDate: string): Promise<TaskTimeline[]> {
     try {
-      const response = await taskIpcClient.getTaskCompletionTimeline(goalId, startDate, endDate);
+      const response = await taskIpcClient.getTaskCompletionTimeline(goalUuid, startDate, endDate);
       return response.success ? response.data || [] : [];
     } catch (error) {
       console.error('Failed to get task completion timeline:', error);

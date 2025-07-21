@@ -5,12 +5,12 @@ import { AuthenticationDeactivationVerificationHandler } from '../../../Authenti
 class MockAccountRepository {
   private accounts = new Map();
 
-  async findById(id: string) {
-    const account = this.accounts.get(id);
+  async findById(uuid: string) {
+    const account = this.accounts.get(uuid);
     if (!account) return null;
     
     return {
-      id,
+      uuid,
       username: account.username,
       status: account.status,
       disable: () => {
@@ -20,36 +20,36 @@ class MockAccountRepository {
   }
 
   async save(account: any) {
-    this.accounts.set(account.id, account);
+    this.accounts.set(account.uuid, account);
   }
 
   // 添加测试数据
-  addTestAccount(id: string, username: string, status = 'active') {
-    this.accounts.set(id, { id, username, status });
+  addTestAccount(uuid: string, username: string, status = 'active') {
+    this.accounts.set(uuid, { uuid, username, status });
   }
 }
 
 class MockAuthCredentialRepository {
   private credentials = new Map();
 
-  async findByAccountId(accountId: string) {
-    const credential = this.credentials.get(accountId);
+  async findByAccountUuid(accountUuid: string) {
+    const credential = this.credentials.get(accountUuid);
     if (!credential) return null;
     
     return {
-      id: credential.id,
-      accountId,
+      uuid: credential.uuid,
+      accountUuid,
       verifyPassword: (password: string) => password === 'correctpassword'
     };
   }
 
-  async delete(accountId: string) {
-    this.credentials.delete(accountId);
+  async delete(accountUuid: string) {
+    this.credentials.delete(accountUuid);
   }
 
   // 添加测试数据
-  addTestCredential(accountId: string, id: string) {
-    this.credentials.set(accountId, { id, accountId });
+  addTestCredential(accountUuid: string, uuid: string) {
+    this.credentials.set(accountUuid, { uuid, accountUuid });
   }
 }
 
@@ -78,7 +78,7 @@ describe('Account Deactivation Flow Integration Test', () => {
   let deactivationService: AccountDeactivationService;
   let verificationHandler: AuthenticationDeactivationVerificationHandler;
 
-  const testAccountId = 'test-account-1';
+  const testAccountUuid = 'test-account-1';
   const testUsername = 'testuser';
 
   beforeEach(() => {
@@ -88,8 +88,8 @@ describe('Account Deactivation Flow Integration Test', () => {
     mockEventBus = new MockEventBus();
 
     // 添加测试数据
-    mockAccountRepo.addTestAccount(testAccountId, testUsername, 'active');
-    mockAuthCredentialRepo.addTestCredential(testAccountId, 'cred-1');
+    mockAccountRepo.addTestAccount(testAccountUuid, testUsername, 'active');
+    mockAuthCredentialRepo.addTestCredential(testAccountUuid, 'cred-1');
 
     // 初始化服务
     deactivationService = new AccountDeactivationService(mockAccountRepo as any);
@@ -104,7 +104,7 @@ describe('Account Deactivation Flow Integration Test', () => {
   test('should complete user-initiated account deactivation flow', async () => {
     // 模拟用户发起的注销请求
     const deactivationRequest = {
-      accountId: testAccountId,
+      accountUuid: testAccountUuid,
       username: testUsername,
       requestedBy: 'user' as const,
       reason: '用户主动注销',
@@ -136,7 +136,7 @@ describe('Account Deactivation Flow Integration Test', () => {
 
   test('should handle admin-forced account deactivation', async () => {
     const deactivationRequest = {
-      accountId: testAccountId,
+      accountUuid: testAccountUuid,
       username: testUsername,
       requestedBy: 'admin' as const,
       reason: '违规行为',
@@ -159,7 +159,7 @@ describe('Account Deactivation Flow Integration Test', () => {
 
   test('should fail for non-existent account', async () => {
     const deactivationRequest = {
-      accountId: 'non-existent-account',
+      accountUuid: 'non-existent-account',
       requestedBy: 'user' as const,
       reason: '测试不存在的账号'
     };
@@ -173,10 +173,10 @@ describe('Account Deactivation Flow Integration Test', () => {
 
   test('should fail for already deactivated account', async () => {
     // 先设置账号为已禁用状态
-    mockAccountRepo.addTestAccount(testAccountId, testUsername, 'disabled');
+    mockAccountRepo.addTestAccount(testAccountUuid, testUsername, 'disabled');
 
     const deactivationRequest = {
-      accountId: testAccountId,
+      accountUuid: testAccountUuid,
       requestedBy: 'user' as const,
       reason: '测试已禁用账号'
     };
@@ -192,7 +192,7 @@ describe('Account Deactivation Flow Integration Test', () => {
     // 这个测试需要模拟超时情况
     // 在实际测试中可以通过缩短超时时间来测试
     const deactivationRequest = {
-      accountId: testAccountId,
+      accountUuid: testAccountUuid,
       requestedBy: 'user' as const,
       reason: '测试超时'
     };

@@ -92,7 +92,7 @@
           variant="outlined"
           size="small"
           :color="goal.color"
-          @click="$emit('add-key-result', goal.id)"
+          @click="$emit('add-key-result', goal.uuid)"
         >
           <v-icon left size="16">mdi-plus</v-icon>
           添加关键结果
@@ -105,7 +105,7 @@
         <div class="text-subtitle-2 mb-2">关键结果:</div>
         <div
           v-for="kr in goal.keyResults.slice(0, 3)"
-          :key="kr.id"
+          :key="kr.uuid"
           class="key-result-item mb-2"
         >
           <div class="d-flex justify-between align-center mb-1">
@@ -118,7 +118,7 @@
                 icon
                 size="x-small"
                 variant="text"
-                @click="$emit('edit-key-result', goal.id, kr)"
+                @click="$emit('edit-key-result', goal.uuid, kr)"
               >
                 <v-icon size="14">mdi-pencil</v-icon>
               </v-btn>
@@ -151,7 +151,7 @@
         variant="text"
         size="small"
         color="info"
-        @click="$emit('review-goal', goal.id)"
+        @click="$emit('review-goal', goal.uuid)"
       >
         <v-icon left size="16">mdi-clipboard-text</v-icon>
         复盘
@@ -173,7 +173,7 @@
         variant="text"
         size="small"
         color="error"
-        @click="$emit('delete-goal', goal.id)"
+        @click="$emit('delete-goal', goal.uuid)"
       >
         <v-icon left size="16">mdi-delete</v-icon>
         删除
@@ -195,10 +195,10 @@ const props = defineProps<{
 // Emits
 interface Emits {
   (e: 'edit-goal', goal: IGoal): void;
-  (e: 'delete-goal', goalId: string): void;
-  (e: 'add-key-result', goalId: string): void;
-  (e: 'edit-key-result', goalId: string, keyResult: IKeyResult): void;
-  (e: 'review-goal', goalId: string): void;
+  (e: 'delete-goal', goalUuid: string): void;
+  (e: 'add-key-result', goalUuid: string): void;
+  (e: 'edit-key-result', goalUuid: string, keyResult: IKeyResult): void;
+  (e: 'review-goal', goalUuid: string): void;
 }
 
 defineEmits<Emits>();

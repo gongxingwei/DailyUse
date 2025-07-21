@@ -154,9 +154,9 @@ export class MainAccountApplicationService {
   /**
    * 根据ID获取账号
    */
-  async getAccountById(accountId: string): Promise<TResponse<Account>> {
+  async getAccountById(accountUuid: string): Promise<TResponse<Account>> {
     try {
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       
       if (!account) {
         return {
@@ -217,7 +217,7 @@ export class MainAccountApplicationService {
    * 更新账号信息
    */
   async updateAccountInfo(
-    accountId: string,
+    accountUuid: string,
     updateData: {
       email?: string;
       phone?: string;
@@ -230,7 +230,7 @@ export class MainAccountApplicationService {
     try {
       console.log('🔄 [主进程-更新] 开始更新账号信息流程');
       
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -283,9 +283,9 @@ export class MainAccountApplicationService {
   /**
    * 禁用账号
    */
-  async disableAccount(accountId: string): Promise<TResponse> {
+  async disableAccount(accountUuid: string): Promise<TResponse> {
     try {
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -318,9 +318,9 @@ export class MainAccountApplicationService {
   /**
    * 启用账号
    */
-  async enableAccount(accountId: string): Promise<TResponse> {
+  async enableAccount(accountUuid: string): Promise<TResponse> {
     try {
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -350,9 +350,9 @@ export class MainAccountApplicationService {
   /**
    * 验证邮箱
    */
-  async verifyEmail(accountId: string): Promise<TResponse> {
+  async verifyEmail(accountUuid: string): Promise<TResponse> {
     try {
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -383,9 +383,9 @@ export class MainAccountApplicationService {
   /**
    * 验证手机号
    */
-  async verifyPhone(accountId: string): Promise<TResponse> {
+  async verifyPhone(accountUuid: string): Promise<TResponse> {
     try {
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -416,7 +416,7 @@ export class MainAccountApplicationService {
   /**
    * 通过 username 获取 account_uuid
    */
-  async getAccountIdByUsername(username: string): Promise<TResponse<Account>> {
+  async getAccountUuidByUsername(username: string): Promise<TResponse<Account>> {
     try {
       const account = await this.accountRepository.findByUsername(username);
 

@@ -4,18 +4,18 @@
         <Sidebar :current-repository="currentRepository?.path" />
         <ResizeHandleSiderbar :class="{ 'sidebar-hidden': !isSidebarVisible }"  />
         <div class="editor-groups" :class="{ 'sidebar-hidden': !isSidebarVisible }">
-            <template v-for="(group, index) in editorGroupStore.editorGroups" :key="`group-${group.id}`">
+            <template v-for="(group, index) in editorGroupStore.editorGroups" :key="`group-${group.uuid}`">
                 <EditorGroup 
                     
-                    :group-id="group.id"
-                    :class="{ 'active': group.id === editorGroupStore.activeGroupId }"
+                    :group-id="group.uuid"
+                    :class="{ 'active': group.uuid === editorGroupStore.activeGroupId }"
                 />
                 <!-- 在非最后一个编辑器组后添加 ResizeHandle -->
                 <ResizeHandle
                     v-if="index < editorGroupStore.editorGroups.length - 1"
-                    :key="`resize-${group.id}`"
+                    :key="`resize-${group.uuid}`"
                     type="editor-editor"
-                    :group-id="group.id"
+                    :group-id="group.uuid"
                     class="editor-resize-handle"
                 />
             </template>
@@ -48,8 +48,8 @@ const editorGroupStore = useEditorGroupStore()
 const editorLayoutStore = useEditorLayoutStore()
 
 const currentRepository = computed(() => {
-    const title = decodeURIComponent(route.params.title as string)
-    return repositoryStore.getRepositoryByTitle(title) || null
+    const name = decodeURIComponent(route.params.title as string)
+    return repositoryStore.getRepositoryByName(name) || null
 })
 
 const isSidebarVisible = computed(() => activityBarStore.isSidebarVisible)

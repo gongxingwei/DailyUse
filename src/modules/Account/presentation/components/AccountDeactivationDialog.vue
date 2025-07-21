@@ -105,7 +105,7 @@ import { ref, computed, watch } from 'vue';
 
 interface Props {
   visible: boolean;
-  accountId: string;
+  accountUuid: string;
   username: string;
   requestId: string;
   requestedBy: 'user' | 'admin' | 'system';

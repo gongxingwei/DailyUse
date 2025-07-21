@@ -17,14 +17,14 @@ export class SqliteUserRepository implements IUserRepository {
     return this.db;
   }
 
-  async findById(id: string): Promise<User | null> {
+  async findById(uuid: string): Promise<User | null> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         SELECT * FROM user_profiles WHERE uuid = ?
       `);
 
-      const row = stmt.get(id) as any;
+      const row = stmt.get(uuid) as any;
       if (!row) return null;
 
       return this.mapRowToUser(row);
@@ -50,14 +50,14 @@ export class SqliteUserRepository implements IUserRepository {
     }
   }
 
-  async findByAccountId(accountId: string): Promise<User | null> {
+  async findByAccountUuid(accountUuid: string): Promise<User | null> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         SELECT * FROM user_profiles WHERE account_uuid = ?
       `);
 
-      const row = stmt.get(accountId) as any;
+      const row = stmt.get(accountUuid) as any;
       if (!row) return null;
 
       return this.mapRowToUser(row);
@@ -93,7 +93,7 @@ export class SqliteUserRepository implements IUserRepository {
 
       const now = Date.now();
       stmt.run(
-        user.id,
+        user.uuid,
         account_uuid,
         user.firstName,
         user.lastName,
@@ -128,7 +128,7 @@ export class SqliteUserRepository implements IUserRepository {
         user.bio,
         JSON.stringify(Object.fromEntries(user.socialAccounts)),
         Date.now(),
-        user.id
+        user.uuid
       );
     } catch (error) {
       console.error("Error updating user:", error);
@@ -136,14 +136,14 @@ export class SqliteUserRepository implements IUserRepository {
     }
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(uuid: string): Promise<void> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         DELETE FROM user_profiles WHERE uuid = ?
       `);
 
-      stmt.run(id);
+      stmt.run(uuid);
     } catch (error) {
       console.error("Error deleting user:", error);
       throw error;
@@ -163,8 +163,8 @@ export class SqliteUserRepository implements IUserRepository {
     if (row.social_accounts) {
       try {
         const socialAccountsObj = JSON.parse(row.social_accounts);
-        for (const [platform, accountId] of Object.entries(socialAccountsObj)) {
-          user.addSocialAccount(platform, accountId as string);
+        for (const [platform, accountUuid] of Object.entries(socialAccountsObj)) {
+          user.addSocialAccount(platform, accountUuid as string);
         }
       } catch (error) {
         console.warn("Failed to parse social accounts:", error);

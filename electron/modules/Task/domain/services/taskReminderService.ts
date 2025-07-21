@@ -59,7 +59,7 @@ export class TaskReminderService {
           const response = await this.createSingleReminder(taskInstance, alert);
           if (!response) {
             console.warn(
-              `创建提醒失败: 任务实例 ${taskInstance.id} 的提醒 ${alert.id} 无效或已过期`
+              `创建提醒失败: 任务实例 ${taskInstance.uuid} 的提醒 ${alert.uuid} 无效或已过期`
             );
             continue;
           }
@@ -70,11 +70,11 @@ export class TaskReminderService {
         }
       }
 
-      this.activeReminders.set(taskInstance.id, reminderTimes);
+      this.activeReminders.set(taskInstance.uuid, reminderTimes);
 
       return {
         success: true,
-        message: `成功为任务实例 ${taskInstance.id} 创建 ${reminderTimes.length} 个提醒`,
+        message: `成功为任务实例 ${taskInstance.uuid} 创建 ${reminderTimes.length} 个提醒`,
       };
     } catch (error) {
       return {
@@ -104,7 +104,7 @@ export class TaskReminderService {
     reminderTime: DateTime;
   } | null> {
     try {
-      const reminderId = `task-reminder-${taskInstance.id}-${alert.id}`;
+      const reminderId = `task-reminder-${taskInstance.uuid}-${alert.uuid}`;
 
       const reminderTime = this.calculateReminderTime(
         alert.alertConfig,
@@ -118,13 +118,13 @@ export class TaskReminderService {
       }
 
       await scheduleService.createSchedule({
-        id: reminderId,
+        uuid: reminderId,
         dateTime: reminderTime,
         task: {
           type: "taskReminder",
           payload: {
-            taskId: taskInstance.id,
-            alertId: alert.id,
+            taskId: taskInstance.uuid,
+            alertId: alert.uuid,
             title: `任务提醒: ${taskInstance.title}`,
             body: this.generateReminderMessage(taskInstance, reminderTime),
             reminderTime: reminderTime.isoString,

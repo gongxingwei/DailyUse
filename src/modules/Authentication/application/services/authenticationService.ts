@@ -1,12 +1,14 @@
 import type {
   PasswordAuthenticationRequest,
   PasswordAuthenticationResponse,
+  AuthInfo,
 } from "../../domain/types";
 import { useAuthenticationStore } from "../../presentation/stores/authenticationStore";
 import { authenticationIpcClient } from "../../infrastructure/ipcs/authenticationIpcClient";
 // 事件系统
 import { eventBus } from "../../../../shared/events/eventBus";
-import type { UserLoggedInEvent, UserLoggedInEventPayload } from "../../domain/events/authenticationEvents";
+import type { UserLoggedInEvent, UserLoggedInEventPayload,  } from "../../domain/events/authenticationEvents";
+
 /**
  * 认证服务
  * 负责用户认证相关的业务逻辑
@@ -47,11 +49,11 @@ export class AuthenticationService {
       if (response.success && response.data) {
         this.authenticationStore.$patch({
           token: response.data.token,
-          accountId: response.data.accountId,
+          accountUuid: response.data.accountUuid,
         });
-        console.log("登录成功,开始发送用户登录事件")
+        console.log("登录成功")
         await authenticationIpcClient.loginSuccessEvent();
-        await this.publishUserLoggedInEvent(response.data);
+        
       }
       return response;
     } catch (error) {
@@ -62,8 +64,29 @@ export class AuthenticationService {
         data: {
           token: null,
           username: "",
-          accountId: "",
+          accountUuid: "",
         },
+      };
+    }
+  }
+
+  async getAuthInfo(): Promise<TResponse<AuthInfo>> {
+    try {
+      const response = await authenticationIpcClient.getLoginInfo();
+      if (response.success && response.data) {
+        this.authenticationStore.$patch({
+          token: response.data.token,
+          accountUuid: response.data.accountUuid,
+        });
+        await this.publishUserLoggedInEvent(response.data);
+      }
+      return response;
+    } catch (error) {
+      console.error("获取认证信息失败:", error);
+      return {
+        success: false,
+        message: "获取认证信息失败，请稍后重试",
+        data: undefined,
       };
     }
   }
@@ -71,10 +94,12 @@ export class AuthenticationService {
   private async publishUserLoggedInEvent(eventData: UserLoggedInEventPayload) {
    const event: UserLoggedInEvent = {
      eventType: "UserLoggedIn",
-     aggregateId: eventData.accountId,
+     aggregateId: eventData.accountUuid,
      occurredOn: new Date(),
      payload: eventData,
    };
    await eventBus.publish(event);
   }
 }
+
+export const authenticationService = AuthenticationService.getInstance();

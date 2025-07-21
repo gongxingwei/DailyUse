@@ -12,7 +12,7 @@ export function useCategoryManagement() {
      */
     function createCategory() {
         const newCategory = {
-            id: uuidv4(),
+            uuid: uuidv4(),
             name: 'New Category',
             items: []
         };

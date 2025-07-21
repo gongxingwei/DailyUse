@@ -14,5 +14,11 @@ export interface PasswordAuthenticationRequest {
 export interface PasswordAuthenticationResponse {
   token: string | null;
   username: string;
-  accountId: string;
+  accountUuid: string;
+}
+
+export interface AuthInfo {
+  token: string;
+  accountUuid: string;
+  // 其它需要的字段
 }

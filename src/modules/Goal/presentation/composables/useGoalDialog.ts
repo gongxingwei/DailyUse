@@ -1,5 +1,5 @@
 import { ref, computed } from "vue";
-import { createGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
+import { getGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
 import { useGoalStore } from "../stores/goalStore";
 import { Goal } from "../../domain/entities/goal";
 /**
@@ -8,13 +8,13 @@ import { Goal } from "../../domain/entities/goal";
  */
 export function useGoalDialog() {
   // 使用新的架构组件
-  const goalDomainService = createGoalDomainApplicationService();
+  const goalDomainService = getGoalDomainApplicationService();
   const goalStore = useGoalStore();
 
   // 对话框状态
   const showGoalDialog = ref(false);
   const isEditing = ref(false);
-  const editingGoalId = ref<string>("");
+  const editinggoalUuid = ref<string>("");
   const loading = ref(false);
   const goalDialogMode = ref<"create" | "edit">("create");
   const goalData = ref<Goal>(new Goal());
@@ -33,13 +33,13 @@ export function useGoalDialog() {
   });
 
   // 双向绑定的计算属性
-  const title = computed({
-    get: () => goalData.value.title,
+  const name = computed({
+    get: () => goalData.value.name,
     set: (value: string) => {
       goalData.value.updateTitle(value);
       // 清除相关错误
       const newErrors = { ...errors.value };
-      delete newErrors.title;
+      delete newErrors.name;
       errors.value = newErrors;
     },
   });
@@ -131,7 +131,7 @@ export function useGoalDialog() {
     goalData.value = new Goal();
     errors.value = {};
     isEditing.value = false;
-    editingGoalId.value = "";
+    editinggoalUuid.value = "";
   };
 
   const initGoalData = () => {
@@ -237,7 +237,7 @@ export function useGoalDialog() {
     dialogTitle,
 
     // 表单数据 - 使用计算属性进行双向绑定
-    title,
+    name,
     description,
     color,
     dirId,

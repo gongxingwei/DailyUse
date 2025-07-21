@@ -306,7 +306,7 @@ export class ValidationReportGenerator {
   ): object {
     return {
       template: {
-        id: template.id,
+        uuid: template.uuid,
         title: template.title,
         type: template.timeConfig?.type,
         category: template.metadata?.category,

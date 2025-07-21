@@ -10,7 +10,6 @@ import type { TResponse } from '@/shared/types/response';
  */
 export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   private db: Database | null = null;
-  private currentUsername: string | null = null;
 
   /**
    * 获取数据库实例
@@ -23,26 +22,9 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   }
 
   /**
-   * 设置当前用户
-   */
-  public setCurrentUser(username: string): void {
-    this.currentUsername = username;
-  }
-
-  /**
-   * 获取当前用户名
-   */
-  private getCurrentUsername(): string {
-    if (!this.currentUsername) {
-      throw new Error('Current username not set. Call setCurrentUser() first.');
-    }
-    return this.currentUsername;
-  }
-
-  /**
    * 将 TaskTemplate 实体转换为数据库记录
    */
-  private toDbRecord(template: TaskTemplate): any {
+  private toDbRecord(template: TaskTemplate, accountUuid: string): any {
     console.log('🔄 [数据库仓库] toDbRecord：开始转换TaskTemplate为数据库记录');
     console.log('🔍 [数据库仓库] 输入的template类型:', typeof template);
     console.log('🔍 [数据库仓库] 是否为TaskTemplate实例:', template instanceof TaskTemplate);
@@ -52,8 +34,8 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       console.log('✅ [数据库仓库] template.toDTO()调用成功');
       
       const record = {
-        id: json.id,
-        username: this.getCurrentUsername(),
+        uuid: json.uuid,
+        account_uuid: accountUuid,
         title: json.title,
         description: json.description,
         time_config: JSON.stringify(json.timeConfig),
@@ -98,11 +80,11 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   private fromDbRecord(record: any): TaskTemplate {
     console.log('🔄 [数据库仓库] fromDbRecord：开始转换数据库记录为TaskTemplate');
     console.log('🔍 [数据库仓库] 输入的record类型:', typeof record);
-    console.log('🔍 [数据库仓库] 记录ID:', record?.id);
+    console.log('🔍 [数据库仓库] 记录ID:', record?.uuid);
     
     try {
       const templateData = {
-        id: record.id,
+        uuid: record.uuid,
         title: record.title,
         description: record.description,
         timeConfig: JSON.parse(record.time_config),
@@ -154,23 +136,24 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
    * 保存 TaskTemplate
    * 流程第4步：数据库仓库 - 将领域实体保存到数据库
    */
-  async save(template: TaskTemplate): Promise<TResponse<TaskTemplate>> {
+  async save(accountUuid: string, template: TaskTemplate): Promise<TResponse<TaskTemplate>> {
     console.log('🔄 [主进程-步骤4] 数据库仓库：开始保存TaskTemplate');
+    console.log('🔍 [主进程-步骤4] accountUuid:', accountUuid);
     console.log('🔍 [主进程-步骤4] 输入的template类型:', typeof template);
     console.log('🔍 [主进程-步骤4] 是否为TaskTemplate实例:', template instanceof TaskTemplate);
-    console.log('🔍 [主进程-步骤4] Template ID:', template.id);
+    console.log('🔍 [主进程-步骤4] Template ID:', template.uuid);
     
     try {
       const db = await this.getDB();
       console.log('✅ [主进程-步骤4] 数据库连接获取成功');
       
       console.log('🔄 [主进程-步骤4] 开始转换实体为数据库记录');
-      const record = this.toDbRecord(template);
+      const record = this.toDbRecord(template, accountUuid);
       console.log('✅ [主进程-步骤4] 实体转换为数据库记录成功');
 
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO task_templates (
-          id, username, title, description, time_config, reminder_config,
+          uuid, account_uuid, title, description, time_config, reminder_config,
           scheduling_policy, metadata, lifecycle, analytics, key_result_links,
           version, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -178,7 +161,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       console.log('🔄 [主进程-步骤4] 执行数据库插入操作');
       stmt.run(
-        record.id, record.username, record.title, record.description,
+        record.uuid, record.account_uuid, record.title, record.description,
         record.time_config, record.reminder_config, record.scheduling_policy,
         record.metadata, record.lifecycle, record.analytics,
         record.key_result_links, record.version, record.created_at, record.updated_at
@@ -242,13 +225,13 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 批量保存 TaskTemplate
    */
-  async saveAll(templates: TaskTemplate[]): Promise<TResponse<TaskTemplate[]>> {
+  async saveAll(accountUuid: string, templates: TaskTemplate[]): Promise<TResponse<TaskTemplate[]>> {
     try {
       const db = await this.getDB();
       
       const stmt = db.prepare(`
         INSERT OR REPLACE INTO task_templates (
-          id, username, title, description, time_config, reminder_config,
+          uuid, account_uuid, title, description, time_config, reminder_config,
           scheduling_policy, metadata, lifecycle, analytics, key_result_links,
           version, created_at, updated_at
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -256,9 +239,9 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       const transaction = db.transaction(() => {
         for (const template of templates) {
-          const record = this.toDbRecord(template);
+          const record = this.toDbRecord(template, accountUuid);
           stmt.run(
-            record.id, record.username, record.title, record.description,
+            record.uuid, record.account_uuid, record.title, record.description,
             record.time_config, record.reminder_config, record.scheduling_policy,
             record.metadata, record.lifecycle, record.analytics,
             record.key_result_links, record.version, record.created_at, record.updated_at
@@ -286,15 +269,15 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 根据 ID 查找 TaskTemplate
    */
-  async findById(id: string): Promise<TResponse<TaskTemplate>> {
+  async findById(accountUuid: string, uuid: string): Promise<TResponse<TaskTemplate>> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         SELECT * FROM task_templates 
-        WHERE id = ? AND username = ?
+        WHERE uuid = ? AND account_uuid = ?
       `);
       
-      const record = stmt.get(id, this.getCurrentUsername());
+      const record = stmt.get(uuid, accountUuid);
       
       if (record) {
         const template = this.fromDbRecord(record);
@@ -307,7 +290,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         return {
           success: false,
           data: null as any,
-          message: `未找到 ID 为 ${id} 的 TaskTemplate`
+          message: `未找到 ID 为 ${uuid} 的 TaskTemplate`
         };
       }
     } catch (error) {
@@ -323,16 +306,16 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 获取所有 TaskTemplate
    */
-  async findAll(): Promise<TResponse<TaskTemplate[]>> {
+  async findAll(accountUuid: string): Promise<TResponse<TaskTemplate[]>> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         SELECT * FROM task_templates 
-        WHERE username = ?
+        WHERE account_uuid = ?
         ORDER BY created_at DESC
       `);
       
-      const records = stmt.all(this.getCurrentUsername());
+      const records = stmt.all(accountUuid);
       const templates = records.map(record => this.fromDbRecord(record));
 
       return {
@@ -353,24 +336,24 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 更新 TaskTemplate
    */
-  async update(template: TaskTemplate): Promise<TResponse<TaskTemplate>> {
+  async update(accountUuid: string, template: TaskTemplate): Promise<TResponse<TaskTemplate>> {
     try {
       const db = await this.getDB();
-      const record = this.toDbRecord(template);
+      const record = this.toDbRecord(template, accountUuid);
 
       const stmt = db.prepare(`
         UPDATE task_templates SET
           title = ?, description = ?, time_config = ?, reminder_config = ?,
           scheduling_policy = ?, metadata = ?, lifecycle = ?, analytics = ?,
           key_result_links = ?, version = ?, updated_at = ?
-        WHERE id = ? AND username = ?
+        WHERE uuid = ? AND account_uuid = ?
       `);
 
       const result = stmt.run(
         record.title, record.description, record.time_config, record.reminder_config,
         record.scheduling_policy, record.metadata, record.lifecycle, record.analytics,
         record.key_result_links, record.version, record.updated_at,
-        record.id, record.username
+        record.uuid, record.account_uuid
       );
 
       if (result.changes > 0) {
@@ -383,7 +366,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         return {
           success: false,
           data: template,
-          message: `未找到要更新的 TaskTemplate (ID: ${template.id})`
+          message: `未找到要更新的 TaskTemplate (ID: ${template.uuid})`
         };
       }
     } catch (error) {
@@ -399,20 +382,20 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 删除 TaskTemplate
    */
-  async delete(id: string): Promise<TResponse<boolean>> {
+  async delete(accountUuid: string, uuid: string): Promise<TResponse<boolean>> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         DELETE FROM task_templates 
-        WHERE id = ? AND username = ?
+        WHERE uuid = ? AND account_uuid = ?
       `);
       
-      const result = stmt.run(id, this.getCurrentUsername());
+      const result = stmt.run(uuid, accountUuid);
 
       return {
         success: result.changes > 0,
         data: result.changes > 0,
-        message: result.changes > 0 ? 'TaskTemplate 删除成功' : `未找到要删除的 TaskTemplate (ID: ${id})`
+        message: result.changes > 0 ? 'TaskTemplate 删除成功' : `未找到要删除的 TaskTemplate (ID: ${uuid})`
       };
     } catch (error) {
       console.error('删除 TaskTemplate 失败:', error);
@@ -427,18 +410,18 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 根据关键结果查找 TaskTemplate
    */
-  async findByKeyResult(goalId: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>> {
+  async findByKeyResult(accountUuid: string, goalUuid: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>> {
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
         SELECT * FROM task_templates 
-        WHERE username = ? AND key_result_links LIKE ? AND key_result_links LIKE ?
+        WHERE account_uuid = ? AND key_result_links LIKE ? AND key_result_links LIKE ?
         ORDER BY created_at DESC
       `);
       
       const records = stmt.all(
-        this.getCurrentUsername(),
-        `%"goalId":"${goalId}"%`,
+        accountUuid,
+        `%"goalUuid":"${goalUuid}"%`,
         `%"keyResultId":"${keyResultId}"%`
       );
       

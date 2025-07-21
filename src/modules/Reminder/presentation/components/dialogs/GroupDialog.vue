@@ -15,77 +15,13 @@
       <v-card-text class="pa-6">
         <v-form ref="formRef" v-model="isFormValid">
           <v-text-field
-            v-model="formData.name"
+            v-model="groupModelName"
             label="Group Name"
             :rules="nameRules"
             required
             class="mb-4"
           />
 
-          <v-textarea
-            v-model="formData.description"
-            label="Description"
-            rows="3"
-            class="mb-4"
-          />
-
-          <v-select
-            v-model="formData.icon"
-            :items="iconOptions"
-            label="Icon"
-            class="mb-4"
-          >
-            <template #selection="{ item }">
-              <v-icon class="mr-2">{{ item.value }}</v-icon>
-              {{ item.title }}
-            </template>
-            <template #item="{ item, props }">
-              <v-list-item v-bind="props">
-                <template #prepend>
-                  <v-icon>{{ item.value }}</v-icon>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
-
-          <v-switch
-            v-model="formData.isEnabled"
-            label="Enable Group"
-            color="primary"
-            class="mb-4"
-          />
-
-          <v-switch
-            v-model="formData.controlsChildren"
-            label="Control all child reminders"
-            color="primary"
-            hint="When enabled, this group will control the enable/disable state of all child reminder templates"
-            persistent-hint
-            class="mb-4"
-          />
-
-          <v-divider class="my-4" />
-
-          <div class="text-subtitle-2 mb-3">
-            Templates in this group ({{ formData.reminderTemplates.length }})
-          </div>
-
-          <div v-if="formData.reminderTemplates.length === 0" class="text-body-2 text-disabled">
-            No templates assigned to this group yet.
-          </div>
-
-          <div v-else class="template-list">
-            <v-chip
-              v-for="templateId in formData.reminderTemplates"
-              :key="templateId"
-              class="ma-1"
-              closable
-              @click:close="removeTemplate(templateId)"
-            >
-              <v-icon start>mdi-bell</v-icon>
-              {{ getTemplateName(templateId) }}
-            </v-chip>
-          </div>
         </v-form>
       </v-card-text>
 
@@ -111,16 +47,7 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { ReminderTemplateGroup } from '../../../domain/entities/ReminderTemplateGroup';
-
-interface GroupFormData {
-  name: string;
-  description: string;
-  icon: string;
-  isEnabled: boolean;
-  controlsChildren: boolean;
-  reminderTemplates: string[];
-}
+import { ReminderTemplateGroup } from '@/modules/Reminder/domain/aggregates/reminderTemplateGroup';
 
 interface Props {
   modelValue: boolean;
@@ -132,8 +59,8 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  'update:modelValue': [value: boolean];
-  submit: [data: GroupFormData];
+  (e: 'update:modelValue', value: boolean): void;
+  (e: 'submit', data: ReminderTemplateGroup): void;
 }>();
 
 const formRef = ref();
@@ -146,13 +73,24 @@ const isOpen = computed({
 
 const isEditing = computed(() => !!props.group);
 
-const formData = ref<GroupFormData>({
-  name: '',
-  description: '',
-  icon: 'mdi-folder',
-  isEnabled: true,
-  controlsChildren: false,
-  reminderTemplates: []
+// 1. 编辑时 clone，创建时 forCreate
+const groupModel = ref<ReminderTemplateGroup>(
+  props.group ? props.group.clone() : ReminderTemplateGroup.forCreate()
+);
+
+// 2. 响应 props.group 变化
+watch(
+  () => props.group,
+  (group) => {
+    groupModel.value = group ? group.clone() : ReminderTemplateGroup.forCreate();
+  },
+  { immediate: true }
+);
+
+// 3. computed get/set 绑定属性
+const groupModelName = computed({
+  get: () => groupModel.value.name,
+  set: (val: string) => (groupModel.value.name = val)
 });
 
 const nameRules = [
@@ -160,75 +98,14 @@ const nameRules = [
   (v: string) => v.length >= 2 || 'Name must be at least 2 characters'
 ];
 
-const iconOptions = [
-  { title: 'Folder', value: 'mdi-folder' },
-  { title: 'Category', value: 'mdi-shape' },
-  { title: 'Work', value: 'mdi-briefcase' },
-  { title: 'Health', value: 'mdi-heart' },
-  { title: 'Home', value: 'mdi-home' },
-  { title: 'Exercise', value: 'mdi-run' },
-  { title: 'Study', value: 'mdi-book' },
-  { title: 'Shopping', value: 'mdi-cart' },
-  { title: 'Travel', value: 'mdi-airplane' },
-  { title: 'Finance', value: 'mdi-cash' }
-];
-
 const closeDialog = () => {
   isOpen.value = false;
-  resetForm();
-};
-
-const resetForm = () => {
-  formData.value = {
-    name: '',
-    description: '',
-    icon: 'mdi-folder',
-    isEnabled: true,
-    controlsChildren: false,
-    reminderTemplates: []
-  };
-};
-
-const removeTemplate = (templateId: string) => {
-  const index = formData.value.reminderTemplates.indexOf(templateId);
-  if (index > -1) {
-    formData.value.reminderTemplates.splice(index, 1);
-  }
-};
-
-const getTemplateName = (templateId: string) => {
-  // This should be replaced with actual template lookup
-  return `Template ${templateId.slice(-4)}`;
 };
 
 const handleSubmit = () => {
   if (isFormValid.value) {
-    emit('submit', { ...formData.value });
+    emit('submit', groupModel.value as ReminderTemplateGroup);
     closeDialog();
   }
 };
-
-// Load group data when editing
-watch(() => props.group, (group) => {
-  if (group) {
-    formData.value = {
-      name: group.name || '',
-      description: group.description || '',
-      icon: group.icon || 'mdi-folder',
-      isEnabled: group.isEnabled ?? true,
-      controlsChildren: group.controlsChildren ?? false,
-      reminderTemplates: [...(group.reminderTemplates || [])]
-    };
-  }
-}, { immediate: true });
 </script>
-
-<style scoped>
-.template-list {
-  max-height: 200px;
-  overflow-y: auto;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 4px;
-  padding: 8px;
-}
-</style>

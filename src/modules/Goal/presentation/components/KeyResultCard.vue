@@ -46,7 +46,7 @@
 
         <!-- 添加记录按钮 -->
         <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="startAddRecord(keyResult.id)">
+          @click.stop="startAddRecord(keyResult.uuid)">
           <v-icon>mdi-plus</v-icon>
           <v-tooltip activator="parent" location="bottom">
             添加记录
@@ -74,7 +74,7 @@
     </div>
     <!-- 记录对话框 -->
     <RecordDialog :visible="showRecordDialog"
-      @save="(record) => handleSaveRecord(record, props.goalId, props.keyResult.id)" @cancel="handleCancelAddRecord" />
+      @save="(record) => handleSaveRecord(record, props.goalUuid, props.keyResult.uuid)" @cancel="handleCancelAddRecord" />
   </v-card>
 
 
@@ -94,10 +94,10 @@ const { showRecordDialog, startAddRecord, handleSaveRecord, handleCancelAddRecor
 
 const props = defineProps<{
   keyResult: KeyResult;
-  goalId: string;
+  goalUuid: string;
 }>();
 
-const goal = computed(() => goalStore.getGoalById(props.goalId));
+const goal = computed(() => goalStore.getGoalById(props.goalUuid));
 
 const progress = computed(() => {
   return Math.min((props.keyResult.currentValue / props.keyResult.targetValue) * 100, 100);
@@ -107,8 +107,8 @@ const navigateToKeyResultInfo = () => {
   router.push({
     name: 'key-result-info',
     params: {
-      goalId: props.goalId,
-      keyResultId: props.keyResult.id
+      goalUuid: props.goalUuid,
+      keyResultId: props.keyResult.uuid
     }
   });
 };

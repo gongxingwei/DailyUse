@@ -24,17 +24,17 @@ export class TokenService {
 
   /**
    * 验证 Token 是否合法
-   * @param accountId 用户ID
+   * @param accountUuid 用户ID
    * @param tokenValue Token字符串
    * @param tokenRepository Token仓库
    * @returns 合法返回 true，否则 false
    */
-  async isTokenValid(accountId: string, tokenValue: string, tokenRepository: ITokenRepository): Promise<boolean> {
+  async isTokenValid(accountUuid: string, tokenValue: string, tokenRepository: ITokenRepository): Promise<boolean> {
     try {
       const token = await tokenRepository.findByValue(tokenValue);
       if (!token) return false;
       // 检查 token 是否属于该用户、未撤销、未过期
-      if (token.accountId !== accountId) return false;
+      if (token.accountUuid !== accountUuid) return false;
       if (token.isRevoked) return false;
       if (token.isExpired()) return false;
       return true;

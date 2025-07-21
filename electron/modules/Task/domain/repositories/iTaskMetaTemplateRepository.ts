@@ -2,10 +2,9 @@ import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import type { TResponse } from '@/shared/types/response';
 
 export interface ITaskMetaTemplateRepository {
-  setCurrentUser(username: string): void;
-  save(metaTemplate: TaskMetaTemplate): Promise<TResponse<TaskMetaTemplate>>;
-  findById(id: string): Promise<TResponse<TaskMetaTemplate>>;
-  findAll(): Promise<TResponse<TaskMetaTemplate[]>>;
-  findByCategory(category: string): Promise<TResponse<TaskMetaTemplate[]>>;
-  delete(id: string): Promise<TResponse<boolean>>;
+  save(accountUuid: string, metaTemplate: TaskMetaTemplate): Promise<TResponse<TaskMetaTemplate>>;
+  findById(accountUuid: string, uuid: string): Promise<TResponse<TaskMetaTemplate>>;
+  findAll(accountUuid: string): Promise<TResponse<TaskMetaTemplate[]>>;
+  findByCategory(accountUuid: string, category: string): Promise<TResponse<TaskMetaTemplate[]>>;
+  delete(accountUuid: string, uuid: string): Promise<TResponse<boolean>>;
 }

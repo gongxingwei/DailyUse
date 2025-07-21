@@ -1,7 +1,6 @@
 import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
-import { TaskIpcHandler } from '../ipc/taskIpcHandler';
+import { TaskIpcHandler } from '../infrastructure/ipc/taskIpcHandler';
 import { MainTaskApplicationService } from '../application/mainTaskApplicationService';
-import { TaskContainer } from '../infrastructure/di/taskContainer';
 
 /**
  * 任务模块的初始化任务定义
@@ -25,24 +24,20 @@ const taskSystemTemplatesInitTask: InitializationTask = {
   name: 'task-system-templates',
   phase: InitializationPhase.USER_LOGIN,
   priority: 10,
-  initialize: async (context: { username: string }) => {
-    if (!context?.username) {
-      throw new Error('Username is required for task system templates initialization');
+  initialize: async (context: { accountUuid: string }) => {
+    if (!context?.accountUuid) {
+      throw new Error('Account ID is required for task system templates initialization');
     }
-
-    // 设置当前用户到任务容器
-    const taskContainer = TaskContainer.getInstance();
-    taskContainer.setCurrentUser(context.username);
 
     // 初始化系统模板
     const mainTaskAppService = new MainTaskApplicationService();
-    const result = await mainTaskAppService.initializeSystemTemplates();
-    
+    const result = await mainTaskAppService.initializeSystemTemplates(context.accountUuid);
+
     if (!result.success) {
       throw new Error(`Failed to initialize system templates: ${result.message}`);
     }
-    
-    console.log(`✓ Task system templates initialized for user: ${context.username}`);
+
+    console.log(`✓ Task system templates initialized for user: ${context.accountUuid}`);
   },
   cleanup: async () => {
     // 用户登出时清理

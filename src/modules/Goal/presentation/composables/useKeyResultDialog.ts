@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { createGoalDomainApplicationService } from '../../application/services/goalDomainApplicationService';
+import { getGoalDomainApplicationService } from '../../application/services/goalDomainApplicationService';
 import { KeyResultForm } from '../../domain/entities/keyResultForm';
 import type { IKeyResult } from '../../domain/types/goal';
 
@@ -9,13 +9,13 @@ import type { IKeyResult } from '../../domain/types/goal';
  */
 export function useKeyResultDialog() {
     // 使用新的架构组件
-    const goalService = createGoalDomainApplicationService();
+    const goalService = getGoalDomainApplicationService();
     
     // 对话框状态
     const showDialog = ref(false);
     const isEditing = ref(false);
     const editingKeyResultId = ref<string>('');
-    const currentGoalId = ref<string>('');
+    const currentgoalUuid = ref<string>('');
     const loading = ref(false);
     
     // 表单临时对象
@@ -113,18 +113,18 @@ export function useKeyResultDialog() {
     };
     
     // 开始创建关键结果
-    const startCreateKeyResult = (goalId: string) => {
+    const startCreateKeyResult = (goalUuid: string) => {
         resetForm();
-        currentGoalId.value = goalId;
+        currentgoalUuid.value = goalUuid;
         showDialog.value = true;
     };
     
     // 开始编辑关键结果
-    const startEditKeyResult = (goalId: string, keyResult: IKeyResult) => {
+    const startEditKeyResult = (goalUuid: string, keyResult: IKeyResult) => {
         resetForm();
         isEditing.value = true;
-        editingKeyResultId.value = keyResult.id;
-        currentGoalId.value = goalId;
+        editingKeyResultId.value = keyResult.uuid;
+        currentgoalUuid.value = goalUuid;
         
         // 从已有关键结果初始化表单
         keyResultForm.value = new KeyResultForm(keyResult);
@@ -133,7 +133,7 @@ export function useKeyResultDialog() {
     };
     
     // 保存关键结果
-    const saveKeyResult = async (goalId: string, keyResult?: IKeyResult): Promise<boolean> => {
+    const saveKeyResult = async (goalUuid: string, keyResult?: IKeyResult): Promise<boolean> => {
         if (!validateForm()) {
             return false;
         }
@@ -146,13 +146,13 @@ export function useKeyResultDialog() {
                 const updateData = keyResultForm.value.toCreateDTO();
                 
                 const result = await goalService.updateKeyResultOfGoal(
-                    goalId,
-                    keyResult.id,
+                    goalUuid,
+                    keyResult.uuid,
                     updateData
                 );
                 
                 if (result.success) {
-                    console.log('✅ 关键结果更新成功:', keyResult.id);
+                    console.log('✅ 关键结果更新成功:', keyResult.uuid);
                     showDialog.value = false;
                     resetForm();
                     return true;
@@ -163,7 +163,7 @@ export function useKeyResultDialog() {
                 }
             } else {
                 // 创建新关键结果
-                const result = await goalService.addKeyResultToGoal(goalId, keyResultForm.value.toCreateDTO());
+                const result = await goalService.addKeyResultToGoal(goalUuid, keyResultForm.value.toCreateDTO());
                 
                 if (result.success) {
                     console.log('✅ 关键结果创建成功:', result.data?.keyResultId);
@@ -192,11 +192,11 @@ export function useKeyResultDialog() {
     };
     
     // 删除关键结果
-    const deleteKeyResult = async (goalId: string, keyResultId: string): Promise<boolean> => {
+    const deleteKeyResult = async (goalUuid: string, keyResultId: string): Promise<boolean> => {
         loading.value = true;
         
         try {
-            const result = await goalService.removeKeyResultFromGoal(goalId, keyResultId);
+            const result = await goalService.removeKeyResultFromGoal(goalUuid, keyResultId);
             
             if (result.success) {
                 console.log('✅ 关键结果删除成功:', keyResultId);

@@ -17,7 +17,7 @@ export enum AccountType {
 
 // 账号接口
 export interface IAccount {
-  id: string;
+  uuid: string;
   username: string;
   status: AccountStatus;
   accountType: AccountType;
@@ -61,7 +61,7 @@ export interface AccountDeactivationRequest {
 }
 
 export interface AccountDTO {
-  id: string;
+  uuid: string;
   username: string;
   status: AccountStatus;
   accountType: AccountType;
@@ -79,7 +79,7 @@ export interface AccountDTO {
 }
 
 export interface UserDTO {
-  id: string;
+  uuid: string;
   firstName: string | null;
   lastName: string | null;
   sex: string | null;

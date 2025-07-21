@@ -1,6 +1,6 @@
 import { ImportanceLevel } from "../../../shared/types/importance";
 export type NotificationWindowOptions = {
-  id: string;
+  uuid: string;
   title: string;
   body: string;
   importance: ImportanceLevel;

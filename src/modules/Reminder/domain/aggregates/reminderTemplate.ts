@@ -1,7 +1,6 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import type { IReminderTemplate, TemplateFormData } from "../types";
-import type { RelativeTimeSchedule, ReminderSchedule, DurationRange } from "@electron/modules/Reminder";
-
+import type { IReminderTemplate, TemplateFormData } from "../../../../../common/modules/reminder/types/reminder";
+import { ImportanceLevel } from "@/shared/types/importance";
 
 /**
  * 渲染进程的 ReminderTemplate 聚合根类
@@ -12,7 +11,7 @@ export class ReminderTemplate
   extends AggregateRoot
   implements IReminderTemplate
 {
-  private _groupId: string;
+  private _groupUuid: string;
   private _name: string;
   private _description?: string;
   private _importanceLevel: IReminderTemplate["importanceLevel"];
@@ -36,11 +35,11 @@ export class ReminderTemplate
       popup: boolean;
     },
     timeConfig: IReminderTemplate["timeConfig"],
-    id?: string,
+    uuid?: string,
     description?: string
   ) {
-    super(id || ReminderTemplate.generateId());
-    this._groupId = groupId;
+    super(uuid || ReminderTemplate.generateId());
+    this._groupUuid = groupId;
     this._name = name;
     this._description = description;
     this._importanceLevel = importanceLevel;
@@ -50,40 +49,60 @@ export class ReminderTemplate
     this._timeConfig = timeConfig;
   }
 
-  get id(): string {
-    return this._id;
-  }
-
   get groupId(): string {
-    return this._groupId;
+    return this._groupUuid;
+  }
+  set groupId(val: string) {
+    this._groupUuid = val;
   }
 
   get name(): string {
     return this._name;
   }
+  set name(val: string) {
+    this._name = val;
+  }
 
   get description(): string | undefined {
     return this._description;
+  }
+  set description(val: string | undefined) {
+    this._description = val;
   }
 
   get importanceLevel(): IReminderTemplate["importanceLevel"] {
     return this._importanceLevel;
   }
+  set importanceLevel(val: IReminderTemplate["importanceLevel"]) {
+    this._importanceLevel = val;
+  }
 
   get selfEnabled(): boolean {
     return this._selfEnabled;
+  }
+  set selfEnabled(val: boolean) {
+    this._selfEnabled = val;
   }
 
   get enabled(): boolean {
     return this._enabled;
   }
+  set enabled(val: boolean) {
+    this._enabled = val;
+  }
 
   get notificationSettings() {
     return this._notificationSettings;
   }
+  set notificationSettings(val: { sound: boolean; vibration: boolean; popup: boolean }) {
+    this._notificationSettings = val;
+  }
 
   get timeConfig() {
     return this._timeConfig;
+  }
+  set timeConfig(val: IReminderTemplate["timeConfig"]) {
+    this._timeConfig = val;
   }
 
   /**
@@ -123,7 +142,7 @@ static fromFormData(formData: TemplateFormData): ReminderTemplate {
  * 使用 TemplateFormData 更新当前 ReminderTemplate 实例
  */
 updateFromFormData(formData: TemplateFormData): void {
-  this._groupId = formData.groupId || this._groupId;
+  this._groupUuid = formData.groupId || this._groupUuid;
   this._name = formData.name;
   this._description = formData.description || undefined;
   this._importanceLevel = formData.importanceLevel;
@@ -179,7 +198,7 @@ toFormData(): TemplateFormData {
 
   return {
     name: this._name,
-    groupId: this._groupId,
+    groupId: this._groupUuid,
     description: this._description || '',
     importanceLevel: this._importanceLevel,
     selfEnabled: this._selfEnabled,
@@ -244,7 +263,7 @@ toFormData(): TemplateFormData {
 
   toDTO(): IReminderTemplate {
     const reminderTemplateDTO: IReminderTemplate = {
-      id: this.id,
+      uuid: this.uuid,
       groupId: this.groupId,
       name: this.name,
       description: this.description,
@@ -265,7 +284,7 @@ toFormData(): TemplateFormData {
       dto.selfEnabled,
       dto.notificationSettings,
       dto.timeConfig,
-      dto.id,
+      dto.uuid,
       dto.description
     );
     // 设置计算出的 enabled 状态
@@ -281,5 +300,31 @@ toFormData(): TemplateFormData {
     } else {
       return null;
     }
+  }
+
+  clone(): ReminderTemplate {
+    return new ReminderTemplate(
+      this._groupUuid,
+      this._name,
+      this._importanceLevel,
+      this._selfEnabled,
+      { ...this._notificationSettings },
+      { ...this._timeConfig },
+      this.uuid, // 保持相同的 uuid
+      this._description
+    );
+  }
+
+  static forCreate(): ReminderTemplate {
+    return new ReminderTemplate(
+      "",
+      "",
+      ImportanceLevel.Important,
+      true,
+      { sound: true, vibration: true, popup: true },
+      { name: "", type: "absolute", schedule: {} } as IReminderTemplate["timeConfig"],
+      undefined, // 让构造函数生成 uuid
+      undefined // description 默认为 undefined
+    );
   }
 }

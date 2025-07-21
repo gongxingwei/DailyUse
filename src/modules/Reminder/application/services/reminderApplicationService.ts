@@ -145,9 +145,9 @@ export class ReminderDomainApplicationService {
    * }
    * ```
    */
-  async getReminderTemplateById(id: string): Promise<ReminderTemplate | null> {
+  async getReminderTemplateById(uuid: string): Promise<ReminderTemplate | null> {
     try {
-      const response = await reminderIpcClient.getReminderTemplateById(id);
+      const response = await reminderIpcClient.getReminderTemplateById(uuid);
       
       if (response.success && response.data) {
         // 更新本地状态中的特定模板
@@ -157,7 +157,7 @@ export class ReminderDomainApplicationService {
       
       return null;
     } catch (error) {
-      console.error(`获取模板失败 (ID: ${id}):`, error);
+      console.error(`获取模板失败 (ID: ${uuid}):`, error);
       return null;
     }
   }
@@ -229,13 +229,13 @@ export class ReminderDomainApplicationService {
    * }
    * ```
    */
-  async deleteReminderTemplate(id: string): Promise<TResponse<void>> {
+  async deleteReminderTemplate(uuid: string): Promise<TResponse<void>> {
     try {
-      const response = await reminderIpcClient.deleteReminderTemplate(id);
+      const response = await reminderIpcClient.deleteReminderTemplate(uuid);
       
       if (response.success) {
         // 从本地状态中移除
-        this.store.removeReminderTemplate(id);
+        this.store.removeReminderTemplate(uuid);
         return {
           success: true,
           message: response.message,
@@ -353,9 +353,9 @@ export class ReminderDomainApplicationService {
    * }
    * ```
    */
-  async getReminderGroupById(id: string): Promise<ReminderTemplateGroup | null> {
+  async getReminderGroupById(uuid: string): Promise<ReminderTemplateGroup | null> {
     try {
-      const response = await reminderIpcClient.getReminderGroupById(id);
+      const response = await reminderIpcClient.getReminderGroupById(uuid);
       
       if (response.success && response.data) {
         this.store.updateReminderGroup(response.data);
@@ -364,7 +364,7 @@ export class ReminderDomainApplicationService {
       
       return null;
     } catch (error) {
-      console.error(`获取组失败 (ID: ${id}):`, error);
+      console.error(`获取组失败 (ID: ${uuid}):`, error);
       return null;
     }
   }
@@ -435,12 +435,12 @@ export class ReminderDomainApplicationService {
    * }
    * ```
    */
-  async deleteReminderGroup(id: string): Promise<TResponse<void>> {
+  async deleteReminderGroup(uuid: string): Promise<TResponse<void>> {
     try {
-      const response = await reminderIpcClient.deleteReminderGroup(id);
+      const response = await reminderIpcClient.deleteReminderGroup(uuid);
       
       if (response.success) {
-        this.store.removeReminderGroup(id);
+        this.store.removeReminderGroup(uuid);
         return {
           success: true,
           message: response.message,

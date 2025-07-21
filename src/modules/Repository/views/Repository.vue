@@ -84,14 +84,14 @@
                               
                               <!-- 关联目标标签 -->
                               <v-chip
-                                  v-if="repo.relativeGoalId"
+                                  v-if="repo.relativegoalUuid"
                                   color="primary"
                                   variant="tonal"
                                   size="small"
                                   class="ml-2"
                               >
                                   <v-icon start size="small">mdi-target</v-icon>
-                                  {{ getGoalTitle(repo.relativeGoalId) }}
+                                  {{ getGoalTitle(repo.relativegoalUuid) }}
                               </v-chip>
                           </div>
                           
@@ -188,7 +188,7 @@ const recentReposCount = computed(() => {
 })
 
 const linkedGoalsCount = computed(() => {
-  return repositoryStore.repositories.filter(repo => repo.relativeGoalId).length
+  return repositoryStore.repositories.filter(repo => repo.relativegoalUuid).length
 })
 
 const lastUpdateTime = computed(() => {
@@ -215,8 +215,8 @@ const formatDateShort = (dateStr: string) => {
   })
 }
 
-const getGoalTitle = (goalId: string) => {
-  const goal = goalStore.goals.find(g => g.id === goalId)
+const getGoalTitle = (goalUuid: string) => {
+  const goal = goalStore.goals.find(g => g.uuid === goalUuid)
   return goal?.title || '未知目标'
 }
 

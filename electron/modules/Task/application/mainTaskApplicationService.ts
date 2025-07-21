@@ -55,7 +55,7 @@ export class MainTaskApplicationService {
     
     // 使用正确的构造函数参数
     return new TaskMetaTemplate(
-      json.id, 
+      json.uuid, 
       json.name, 
       json.category,
       {
@@ -105,9 +105,9 @@ export class MainTaskApplicationService {
   /**
    * 获取所有元模板
    */
-  async getAllMetaTemplates(): Promise<TaskResponse<ITaskMetaTemplate[]>> {
+  async getAllMetaTemplates(accountUuid: string): Promise<TaskResponse<ITaskMetaTemplate[]>> {
     try {
-      const response = await this.taskMetaTemplateRepo.findAll();
+      const response = await this.taskMetaTemplateRepo.findAll(accountUuid);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -125,11 +125,11 @@ export class MainTaskApplicationService {
   /**
    * 根据ID获取元模板
    */
-  async getMetaTemplate(id: string): Promise<TaskResponse<ITaskMetaTemplate>> {
+  async getMetaTemplate(accountUuid: string, uuid: string): Promise<TaskResponse<ITaskMetaTemplate>> {
     try {
-      const response = await this.taskMetaTemplateRepo.findById(id);
+      const response = await this.taskMetaTemplateRepo.findById(accountUuid, uuid);
       if (!response.success || !response.data) {
-        return { success: false, message: `Meta template with id ${id} not found` };
+        return { success: false, message: `Meta template with id ${uuid} not found` };
       }
       const adaptedTemplate = this.adaptTaskMetaTemplate(response.data);
       console.log(this.taskMetaTemplateToData(adaptedTemplate))
@@ -145,9 +145,9 @@ export class MainTaskApplicationService {
   /**
    * 根据分类获取元模板
    */
-  async getMetaTemplatesByCategory(category: string): Promise<TaskResponse<ITaskMetaTemplate[]>> {
+  async getMetaTemplatesByCategory(accountUuid: string, category: string): Promise<TaskResponse<ITaskMetaTemplate[]>> {
     try {
-      const response = await this.taskMetaTemplateRepo.findByCategory(category);
+      const response = await this.taskMetaTemplateRepo.findByCategory(accountUuid, category);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -167,9 +167,9 @@ export class MainTaskApplicationService {
   /**
    * 根据ID获取任务模板
    */
-  async getTaskTemplate(taskTemplateId: string): Promise<TaskResponse<ITaskTemplate>> {
+  async getTaskTemplate(accountUuid: string, taskTemplateId: string): Promise<TaskResponse<ITaskTemplate>> {
     try {
-      const response = await this.taskTemplateRepo.findById(taskTemplateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!response.success || !response.data) {
         return { success: false, message: `Task template with id ${taskTemplateId} not found` };
       }
@@ -185,9 +185,9 @@ export class MainTaskApplicationService {
   /**
    * 获取所有任务模板
    */
-  async getAllTaskTemplates(): Promise<TaskResponse<ITaskTemplate[]>> {
+  async getAllTaskTemplates(accountUuid: string): Promise<TaskResponse<ITaskTemplate[]>> {
     try {
-      const response = await this.taskTemplateRepo.findAll();
+      const response = await this.taskTemplateRepo.findAll(accountUuid);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -204,9 +204,9 @@ export class MainTaskApplicationService {
   /**
    * 根据关键结果获取任务模板
    */
-  async getTaskTemplateForKeyResult(goalId: string, keyResultId: string): Promise<TaskResponse<ITaskTemplate[]>> {
+  async getTaskTemplateForKeyResult(accountUuid: string, goalUuid: string, keyResultId: string): Promise<TaskResponse<ITaskTemplate[]>> {
     try {
-      const response = await this.taskTemplateRepo.findByKeyResult(goalId, keyResultId);
+      const response = await this.taskTemplateRepo.findByKeyResult(accountUuid, goalUuid, keyResultId);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -225,8 +225,9 @@ export class MainTaskApplicationService {
    * 流程第3步：主进程应用服务 - 将DTO转换为领域实体并保存
    * 自动激活模板，并创建任务实例和提醒
    */
-  async createTaskTemplate(dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+  async createTaskTemplate(accountUuid: string, dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
     console.log('🔄 [主进程-步骤3] 应用服务：开始创建任务模板');
+    console.log('📋 [主进程-步骤3] 接收到的账户ID:', accountUuid);
     console.log('📋 [主进程-步骤3] 接收到的DTO数据类型:', typeof dto);
     console.log('📋 [主进程-步骤3] 接收到的DTO数据:', dto);
     
@@ -252,7 +253,7 @@ export class MainTaskApplicationService {
 
       // 保存到数据库
       console.log('🔄 [主进程-步骤3] 开始保存到数据库');
-      const response = await this.taskTemplateRepo.save(template);
+      const response = await this.taskTemplateRepo.save(accountUuid, template);
       if (!response.success) {
         console.error('❌ [主进程-步骤3] 数据库保存失败:', response.message);
         return { success: false, message: response.message };
@@ -270,7 +271,7 @@ export class MainTaskApplicationService {
         
         // 保存生成的实例
         for (const instance of instances) {
-          const saveInstanceResponse = await this.taskInstanceRepo.save(instance);
+          const saveInstanceResponse = await this.taskInstanceRepo.save(accountUuid, instance);
           if (!saveInstanceResponse.success) {
             console.warn('⚠️ [主进程-步骤3] 保存任务实例失败:', saveInstanceResponse.message);
           }
@@ -299,18 +300,18 @@ export class MainTaskApplicationService {
   /**
    * 更新任务模板
    */
-  async updateTaskTemplate(dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+  async updateTaskTemplate(accountUuid: string, dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
     try {
-      const response = await this.taskTemplateRepo.findById(dto.id);
+      const response = await this.taskTemplateRepo.findById(accountUuid, dto.uuid);
       if (!response.success || !response.data) {
-        return { success: false, message: `Task template with id ${dto.id} not found` };
+        return { success: false, message: `Task template with id ${dto.uuid} not found` };
       }
 
       const template = response.data;
       // 更新模板属性（这里需要根据具体的更新逻辑来实现）
       if (dto.title) template.updateTitle(dto.title);
       if (dto.description !== undefined) template.updateDescription(dto.description);
-      // 其他属性的更新...
+
 
       const validation = TaskTemplateValidator.validate(template);
       if (!validation.isValid) {
@@ -320,7 +321,8 @@ export class MainTaskApplicationService {
       const updateResponse = await this.taskDomainService.updateTaskTemplate(
         template,
         this.taskTemplateRepo,
-        this.taskInstanceRepo
+        this.taskInstanceRepo,
+        accountUuid
       );
       
       if (!updateResponse.success) {
@@ -339,9 +341,9 @@ export class MainTaskApplicationService {
   /**
    * 删除任务模板
    */
-  async deleteTaskTemplate(templateId: string): Promise<TaskResponse<void>> {
+  async deleteTaskTemplate(accountUuid: string, templateId: string): Promise<TaskResponse<void>> {
     try {
-      const response = await this.taskTemplateRepo.findById(templateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, templateId);
       if (!response.success || !response.data) {
         return { success: false, message: `Task template with id ${templateId} not found` };
       }
@@ -350,7 +352,8 @@ export class MainTaskApplicationService {
         response.data,
         this.taskTemplateRepo,
         this.taskInstanceRepo,
-        true
+        true,
+        accountUuid
       );
       
       return { 
@@ -369,12 +372,12 @@ export class MainTaskApplicationService {
    * 删除所有任务模板
    * 批量删除所有任务模板及其关联的任务实例
    */
-  async deleteAllTaskTemplates(): Promise<TaskResponse<void>> {
+  async deleteAllTaskTemplates(accountUuid: string): Promise<TaskResponse<void>> {
     try {
       console.log('🔄 [主进程] 开始删除所有任务模板');
       
       // 获取所有任务模板
-      const allTemplatesResponse = await this.taskTemplateRepo.findAll();
+      const allTemplatesResponse = await this.taskTemplateRepo.findAll(accountUuid);
       if (!allTemplatesResponse.success) {
         return { success: false, message: allTemplatesResponse.message };
       }
@@ -397,7 +400,8 @@ export class MainTaskApplicationService {
             template,
             this.taskTemplateRepo,
             this.taskInstanceRepo,
-            true // 同时删除关联的任务实例
+            true, // 同时删除关联的任务实例
+            accountUuid
           );
           
           if (deleteResponse.success) {
@@ -449,9 +453,9 @@ export class MainTaskApplicationService {
   /**
    * 根据ID获取任务实例
    */
-  async getTaskInstance(taskInstanceId: string): Promise<TaskResponse<ITaskInstance>> {
+  async getTaskInstance(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<ITaskInstance>> {
     try {
-      const response = await this.taskInstanceRepo.findById(taskInstanceId);
+      const response = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!response.success || !response.data) {
         return { success: false, message: `Task instance with id ${taskInstanceId} not found` };
       }
@@ -467,9 +471,9 @@ export class MainTaskApplicationService {
   /**
    * 获取所有任务实例
    */
-  async getAllTaskInstances(): Promise<TaskResponse<ITaskInstance[]>> {
+  async getAllTaskInstances(accountUuid: string): Promise<TaskResponse<ITaskInstance[]>> {
     try {
-      const response = await this.taskInstanceRepo.findAll();
+      const response = await this.taskInstanceRepo.findAll(accountUuid);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -486,9 +490,9 @@ export class MainTaskApplicationService {
   /**
    * 获取今日任务实例
    */
-  async getTodayTasks(): Promise<TaskResponse<ITaskInstance[]>> {
+  async getTodayTasks(accountUuid: string): Promise<TaskResponse<ITaskInstance[]>> {
     try {
-      const response = await this.taskInstanceRepo.findTodayTasks();
+      const response = await this.taskInstanceRepo.findTodayTasks(accountUuid);
       if (!response.success) {
         return { success: false, message: response.message };
       }
@@ -505,9 +509,9 @@ export class MainTaskApplicationService {
   /**
    * 完成任务实例
    */
-  async completeTask(taskInstanceId: string): Promise<TaskResponse<void>> {
+  async completeTask(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<void>> {
     try {
-      const response = await this.taskInstanceRepo.findById(taskInstanceId);
+      const response = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!response.success || !response.data) {
         return { success: false, message: "Task instance not found" };
       }
@@ -515,7 +519,7 @@ export class MainTaskApplicationService {
       const taskInstance = response.data;
       taskInstance.complete();
       
-      const updateResponse = await this.taskInstanceRepo.update(taskInstance);
+      const updateResponse = await this.taskInstanceRepo.update(accountUuid, taskInstance);
       if (!updateResponse.success) {
         return { success: false, message: updateResponse.message };
       }
@@ -541,9 +545,9 @@ export class MainTaskApplicationService {
   /**
    * 撤销完成任务实例
    */
-  async undoCompleteTask(taskInstanceId: string): Promise<TaskResponse<void>> {
+  async undoCompleteTask(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<void>> {
     try {
-      const response = await this.taskInstanceRepo.findById(taskInstanceId);
+      const response = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!response.success || !response.data) {
         return { success: false, message: "Task instance not found" };
       }
@@ -556,7 +560,7 @@ export class MainTaskApplicationService {
 
       taskInstance.undoComplete();
       
-      const updateResponse = await this.taskInstanceRepo.update(taskInstance);
+      const updateResponse = await this.taskInstanceRepo.update(accountUuid, taskInstance);
       if (!updateResponse.success) {
         return { success: false, message: updateResponse.message };
       }
@@ -581,15 +585,15 @@ export class MainTaskApplicationService {
   /**
    * 开始任务实例
    */
-  async startTask(taskInstanceId: string): Promise<TaskResponse<void>> {
+  async startTask(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<void>> {
     try {
-      const response = await this.taskInstanceRepo.findById(taskInstanceId);
+      const response = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!response.success || !response.data) {
         return { success: false, message: "Task instance not found" };
       }
 
       response.data.start();
-      const updateResponse = await this.taskInstanceRepo.update(response.data);
+      const updateResponse = await this.taskInstanceRepo.update(accountUuid, response.data);
       
       return { 
         success: updateResponse.success, 
@@ -608,15 +612,15 @@ export class MainTaskApplicationService {
   /**
    * 取消任务实例
    */
-  async cancelTask(taskInstanceId: string): Promise<TaskResponse<void>> {
+  async cancelTask(accountUuid: string, taskInstanceId: string): Promise<TaskResponse<void>> {
     try {
-      const response = await this.taskInstanceRepo.findById(taskInstanceId);
+      const response = await this.taskInstanceRepo.findById(accountUuid, taskInstanceId);
       if (!response.success || !response.data) {
         return { success: false, message: "Task instance not found" };
       }
 
       response.data.cancel();
-      const updateResponse = await this.taskInstanceRepo.update(response.data);
+      const updateResponse = await this.taskInstanceRepo.update(accountUuid, response.data);
       
       return { 
         success: updateResponse.success, 
@@ -637,7 +641,7 @@ export class MainTaskApplicationService {
   /**
    * 获取目标相关的任务统计信息
    */
-  async getTaskStatsForGoal(_goalId: string): Promise<TaskResponse<TaskStats>> {
+  async getTaskStatsForGoal(accountUuid: string, _goalUuid: string): Promise<TaskResponse<TaskStats>> {
     try {
       // 这里需要实现统计逻辑，可能需要调用其他服务获取目标信息
       // 暂时返回空的统计数据
@@ -666,7 +670,7 @@ export class MainTaskApplicationService {
   /**
    * 获取任务完成时间线
    */
-  async getTaskCompletionTimeline(_goalId: string, _startDate: string, _endDate: string): Promise<TaskResponse<TaskTimeline[]>> {
+  async getTaskCompletionTimeline(accountUuid: string, _goalUuid: string, _startDate: string, _endDate: string): Promise<TaskResponse<TaskTimeline[]>> {
     try {
       // 这里需要实现时间线逻辑
       const timeline: TaskTimeline[] = [];
@@ -687,16 +691,16 @@ export class MainTaskApplicationService {
   /**
    * 激活任务模板
    */
-  async activateTemplate(taskTemplateId: string): Promise<boolean> {
+  async activateTemplate(accountUuid: string, taskTemplateId: string): Promise<boolean> {
     try {
-      const response = await this.taskTemplateRepo.findById(taskTemplateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!response.success || !response.data) {
         console.error("Task template not found:", taskTemplateId);
         return false;
       }
 
       response.data.activate();
-      const updateResponse = await this.taskTemplateRepo.update(response.data);
+      const updateResponse = await this.taskTemplateRepo.update(accountUuid, response.data);
       return updateResponse.success;
     } catch (error) {
       console.error(`✗ 激活任务模板 ${taskTemplateId} 失败:`, error);
@@ -707,9 +711,9 @@ export class MainTaskApplicationService {
   /**
    * 暂停任务模板
    */
-  async pauseTemplate(taskTemplateId: string): Promise<boolean> {
+  async pauseTemplate(accountUuid: string, taskTemplateId: string): Promise<boolean> {
     try {
-      const response = await this.taskTemplateRepo.findById(taskTemplateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!response.success || !response.data) {
         console.error("Task template not found:", taskTemplateId);
         return false;
@@ -718,7 +722,8 @@ export class MainTaskApplicationService {
       const pauseResponse = await this.taskDomainService.pauseTaskTemplate(
         response.data,
         this.taskTemplateRepo,
-        this.taskInstanceRepo
+        this.taskInstanceRepo,
+        accountUuid
       );
       return pauseResponse.success;
     } catch (error) {
@@ -730,9 +735,9 @@ export class MainTaskApplicationService {
   /**
    * 恢复任务模板
    */
-  async resumeTemplate(taskTemplateId: string): Promise<boolean> {
+  async resumeTemplate(accountUuid: string, taskTemplateId: string): Promise<boolean> {
     try {
-      const response = await this.taskTemplateRepo.findById(taskTemplateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!response.success || !response.data) {
         console.error("Task template not found:", taskTemplateId);
         return false;
@@ -741,7 +746,8 @@ export class MainTaskApplicationService {
       const resumeResponse = await this.taskDomainService.resumeTaskTemplate(
         response.data,
         this.taskTemplateRepo,
-        this.taskInstanceRepo
+        this.taskInstanceRepo,
+        accountUuid
       );
       return resumeResponse.success;
     } catch (error) {
@@ -753,16 +759,16 @@ export class MainTaskApplicationService {
   /**
    * 归档任务模板
    */
-  async archiveTemplate(taskTemplateId: string): Promise<boolean> {
+  async archiveTemplate(accountUuid: string, taskTemplateId: string): Promise<boolean> {
     try {
-      const response = await this.taskTemplateRepo.findById(taskTemplateId);
+      const response = await this.taskTemplateRepo.findById(accountUuid, taskTemplateId);
       if (!response.success || !response.data) {
         console.error("Task template not found:", taskTemplateId);
         return false;
       }
 
       response.data.archive();
-      const updateResponse = await this.taskTemplateRepo.update(response.data);
+      const updateResponse = await this.taskTemplateRepo.update(accountUuid, response.data);
       return updateResponse.success;
     } catch (error) {
       console.error(`✗ 归档任务模板 ${taskTemplateId} 失败:`, error);
@@ -775,6 +781,7 @@ export class MainTaskApplicationService {
    * 修复后架构：主进程只创建模板对象但不保存，等用户编辑完成后再保存
    */
   async createTaskTemplateFromMetaTemplate(
+    accountUuid: string,
     metaTemplateId: string, 
     title: string, 
     customOptions?: {
@@ -785,7 +792,7 @@ export class MainTaskApplicationService {
   ): Promise<TaskResponse<ITaskTemplate>> {
     try {
       // 获取元模板
-      const metaTemplateResponse = await this.taskMetaTemplateRepo.findById(metaTemplateId);
+      const metaTemplateResponse = await this.taskMetaTemplateRepo.findById(accountUuid, metaTemplateId);
       if (!metaTemplateResponse.success || !metaTemplateResponse.data) {
         return { success: false, message: `Meta template with id ${metaTemplateId} not found` };
       }
@@ -814,10 +821,11 @@ export class MainTaskApplicationService {
     }
   }
 
-  async initializeSystemTemplates(): Promise<TResponse<void>> {
+  async initializeSystemTemplates(accountUuid: string): Promise<TResponse<void>> {
       try {
         const result = await this.taskDomainService.initializeSystemTemplates(
           this.taskMetaTemplateRepo,
+          accountUuid
         );
         return result;
       } catch (error) {

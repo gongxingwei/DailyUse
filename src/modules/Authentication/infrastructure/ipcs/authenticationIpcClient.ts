@@ -1,4 +1,6 @@
-import type { PasswordAuthenticationRequest, PasswordAuthenticationResponse } from "@/modules/Authentication/domain/types";
+import type { AuthInfo, PasswordAuthenticationRequest, PasswordAuthenticationResponse } from "@/modules/Authentication/domain/types";
+
+
 export class AuthenticationIpcClient { 
     private static instance: AuthenticationIpcClient | null = null;
     private constructor() {}
@@ -17,6 +19,11 @@ export class AuthenticationIpcClient {
     async loginSuccessEvent(): Promise<void> {
         console.log('[AuthenticationIpcClient] 发送登录成功事件');
        return await window.shared.ipcRenderer.send('login:success');
+    }
+
+    async getLoginInfo(): Promise<TResponse<AuthInfo>> {
+        console.log('[AuthenticationIpcClient] 获取登录信息');
+        return await window.shared.ipcRenderer.invoke('authentication:get-login-info');
     }
 
     

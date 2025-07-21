@@ -63,8 +63,8 @@ export class ScheduleService {
     /**
      * 取消定时任务
      */
-    async cancelSchedule(id: string): Promise<boolean> {
-        return await scheduleIpcClient.cancelSchedule(id);
+    async cancelSchedule(uuid: string): Promise<boolean> {
+        return await scheduleIpcClient.cancelSchedule(uuid);
     }
 
     /**

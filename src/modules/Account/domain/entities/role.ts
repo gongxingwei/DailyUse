@@ -9,19 +9,19 @@ export class Role {
   private _permissions: Set<string>; // 权限ID集合
 
   constructor(
-    id: string,
+    uuid: string,
     name: string,
     description: string,
     permissions: string[] = []
   ) {
-    this._id = id;
+    this._uuid = id;
     this._name = name;
     this._description = description;
     this._permissions = new Set(permissions);
   }
 
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
   get name(): string {

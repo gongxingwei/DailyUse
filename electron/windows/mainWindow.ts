@@ -24,7 +24,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
         contextIsolation: true,
         webSecurity: true,
         preload: '',
-        additionalArguments: ['--enable-features=SharedArrayBuffer'],
+        additionalArguments: ['--enable-features=SharedArrayBuffer', '--window-type=main'],
         allowRunningInsecureContent: false,
       }
     };

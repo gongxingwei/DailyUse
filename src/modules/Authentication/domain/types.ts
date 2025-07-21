@@ -1,3 +1,7 @@
 export * from '@electron/modules/Authentication/domain/types'
 
-export { }
+export interface AuthInfo {
+    token: string;
+    accountUuid: string;
+    username: string;
+}

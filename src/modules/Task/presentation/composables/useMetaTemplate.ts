@@ -23,9 +23,9 @@ export function useMetaTemplate() {
   };
 
   // 根据ID获取元模板
-  const getMetaTemplate = async (id: string) => {
+  const getMetaTemplate = async (uuid: string) => {
     try { 
-      const metaTemplate = await getTaskDomainApplicationService().getMetaTemplate(id);
+      const metaTemplate = await getTaskDomainApplicationService().getMetaTemplate(uuid);
       return metaTemplate;
     } catch (error) {
       console.error('获取元模板失败:', error);

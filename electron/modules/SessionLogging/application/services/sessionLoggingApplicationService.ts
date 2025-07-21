@@ -26,7 +26,7 @@ export class SessionLoggingApplicationService {
    */
   async handleLoginAttemptEvent(event: any): Promise<void> {
     try {
-      const { username, accountId, result, failureReason, clientInfo } = event.payload;
+      const { username, accountUuid, result, failureReason, clientInfo } = event.payload;
 
       const deviceInfo = clientInfo?.deviceId || 'unknown-device';
       const userAgent = clientInfo?.userAgent;
@@ -37,7 +37,7 @@ export class SessionLoggingApplicationService {
 
       const sessionLog = new SessionLog(
         generateUUID(),
-        accountId || 'unknown',
+        accountUuid || 'unknown',
         operationType,
         deviceInfo,
         ipLocation,
@@ -63,7 +63,7 @@ export class SessionLoggingApplicationService {
    */
   async handleCredentialVerificationEvent(event: any): Promise<void> {
     try {
-      const { accountId, username, verificationResult, failureReason, clientInfo } = event.payload;
+      const { accountUuid, username, verificationResult, failureReason, clientInfo } = event.payload;
 
       const deviceInfo = clientInfo?.deviceId || 'unknown-device';
       const userAgent = clientInfo?.userAgent;
@@ -74,7 +74,7 @@ export class SessionLoggingApplicationService {
 
       const sessionLog = new SessionLog(
         generateUUID(),
-        accountId,
+        accountUuid,
         operationType,
         deviceInfo,
         ipLocation,
@@ -100,7 +100,7 @@ export class SessionLoggingApplicationService {
    */
   async handleUserLoggedInEvent(event: any): Promise<void> {
     try {
-      const { accountId, sessionId, clientInfo } = event.payload;
+      const { accountUuid, sessionId, clientInfo } = event.payload;
 
       const deviceInfo = clientInfo?.deviceId || 'unknown-device';
       const userAgent = clientInfo?.userAgent;
@@ -111,7 +111,7 @@ export class SessionLoggingApplicationService {
 
       const sessionLog = new SessionLog(
         generateUUID(),
-        accountId,
+        accountUuid,
         operationType,
         deviceInfo,
         ipLocation,

@@ -22,9 +22,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@electron/*": ["electron/*"]
+      "@electron/*": ["electron/*"],
+      "@common/*": ["common/*"],
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron", "common/modules/goal/types/goal.ts", "common/modules/reminder/types/reminder.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

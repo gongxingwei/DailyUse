@@ -16,16 +16,16 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
-        id, account_id, session_log_id, operation_type, description, risk_level,
+        uuid, account_uuid, session_log_Uuid, operation_type, description, risk_level,
         ip_address, ip_country, ip_region, ip_city, ip_latitude, ip_longitude,
         ip_timezone, ip_isp, user_agent, metadata, is_alert_triggered, alert_level, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      data.id,
-      data.account_id,
-      data.session_log_id,
+      data.uuid,
+      data.account_uuid,
+      data.session_log_Uuid,
       data.operation_type,
       data.description,
       data.risk_level,
@@ -50,21 +50,21 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async saveWithSessionLog(auditTrail: AuditTrail, sessionLogId: string): Promise<void> {
     const data = auditTrail.toDatabaseFormat();
-    // 设置关联的session_log_id
-    data.session_log_id = sessionLogId;
+    // 设置关联的session_log_Uuid
+    data.session_log_Uuid = sessionLogId;
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
-        id, account_id, session_log_id, operation_type, description, risk_level,
+        uuid, account_uuid, session_log_Uuid, operation_type, description, risk_level,
         ip_address, ip_country, ip_region, ip_city, ip_latitude, ip_longitude,
         ip_timezone, ip_isp, user_agent, metadata, is_alert_triggered, alert_level, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      data.id,
-      data.account_id,
-      data.session_log_id,
+      data.uuid,
+      data.account_uuid,
+      data.session_log_Uuid,
       data.operation_type,
       data.description,
       data.risk_level,
@@ -87,12 +87,12 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   /**
    * 根据ID查找审计轨迹
    */
-  async findById(id: string): Promise<AuditTrail | null> {
+  async findById(uuid: string): Promise<AuditTrail | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails WHERE id = ?
     `);
 
-    const row = stmt.get(id) as any;
+    const row = stmt.get(uuid) as any;
     if (!row) return null;
 
     return AuditTrail.fromDatabase(row);
@@ -101,14 +101,14 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   /**
    * 根据账户ID查找审计轨迹
    */
-  async findByAccountId(accountId: string): Promise<AuditTrail[]> {
+  async findByAccountUuid(accountUuid: string): Promise<AuditTrail[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
-      WHERE account_id = ?
+      WHERE account_uuid = ?
       ORDER BY timestamp DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map(row => AuditTrail.fromDatabase(row));
   }
 
@@ -118,7 +118,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   async findBySessionLogId(sessionLogId: string): Promise<AuditTrail[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
-      WHERE session_log_id = ?
+      WHERE session_log_Uuid = ?
       ORDER BY timestamp DESC
     `);
 
@@ -185,37 +185,37 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   /**
    * 根据账户ID和时间范围查找审计轨迹
    */
-  async findByAccountIdAndTimeRange(accountId: string, startTime: Date, endTime: Date): Promise<AuditTrail[]> {
+  async findByAccountUuidAndTimeRange(accountUuid: string, startTime: Date, endTime: Date): Promise<AuditTrail[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
-      WHERE account_id = ? AND timestamp BETWEEN ? AND ?
+      WHERE account_uuid = ? AND timestamp BETWEEN ? AND ?
       ORDER BY timestamp DESC
     `);
 
-    const rows = stmt.all(accountId, startTime.getTime(), endTime.getTime()) as any[];
+    const rows = stmt.all(accountUuid, startTime.getTime(), endTime.getTime()) as any[];
     return rows.map(row => AuditTrail.fromDatabase(row));
   }
 
   /**
    * 删除审计轨迹
    */
-  async delete(id: string): Promise<void> {
+  async delete(uuid: string): Promise<void> {
     const stmt = this.db.prepare(`
       DELETE FROM audit_trails WHERE id = ?
     `);
 
-    stmt.run(id);
+    stmt.run(uuid);
   }
 
   /**
    * 删除账户的所有审计轨迹
    */
-  async deleteByAccountId(accountId: string): Promise<void> {
+  async deleteByAccountUuid(accountUuid: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM audit_trails WHERE account_id = ?
+      DELETE FROM audit_trails WHERE account_uuid = ?
     `);
 
-    stmt.run(accountId);
+    stmt.run(accountUuid);
   }
 
   /**
@@ -223,7 +223,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async deleteBySessionLogId(sessionLogId: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM audit_trails WHERE session_log_id = ?
+      DELETE FROM audit_trails WHERE session_log_Uuid = ?
     `);
 
     stmt.run(sessionLogId);
@@ -256,7 +256,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     const stmt = this.db.prepare(`
       SELECT 
         COUNT(*) as total_events,
-        COUNT(DISTINCT account_id) as unique_accounts,
+        COUNT(DISTINCT account_uuid) as unique_accounts,
         SUM(CASE WHEN risk_level = 'critical' THEN 1 ELSE 0 END) as critical_events,
         SUM(CASE WHEN risk_level = 'high' THEN 1 ELSE 0 END) as high_risk_events,
         SUM(CASE WHEN is_alert_triggered = 1 THEN 1 ELSE 0 END) as alerts_triggered
@@ -278,18 +278,18 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   /**
    * 获取账户的安全事件
    */
-  async findSecurityEventsByAccount(accountId: string, days: number = 30): Promise<AuditTrail[]> {
+  async findSecurityEventsByAccount(accountUuid: string, days: number = 30): Promise<AuditTrail[]> {
     const startTime = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
 
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
-      WHERE account_id = ? 
+      WHERE account_uuid = ? 
         AND timestamp >= ? 
         AND risk_level IN ('high', 'critical')
       ORDER BY timestamp DESC
     `);
 
-    const rows = stmt.all(accountId, startTime.getTime()) as any[];
+    const rows = stmt.all(accountUuid, startTime.getTime()) as any[];
     return rows.map(row => AuditTrail.fromDatabase(row));
   }
 

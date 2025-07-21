@@ -22,8 +22,8 @@ export class BasicInfoValidator implements ITemplateValidator {
     results.push(this.validateVersion(template.version));
 
     // 验证ID（更新时）
-    if (template.id) {
-      results.push(this.validateId(template.id));
+    if (template.uuid) {
+      results.push(this.validateId(template.uuid));
     }
 
     return ValidationUtils.mergeResults(...results);
@@ -116,14 +116,14 @@ export class BasicInfoValidator implements ITemplateValidator {
   /**
    * 验证ID格式
    */
-  private validateId(id: string): ValidationResult {
-    const requiredResult = ValidationUtils.validateRequired(id, '任务模板ID');
+  private validateId(uuid: string): ValidationResult {
+    const requiredResult = ValidationUtils.validateRequired(uuid, '任务模板ID');
     if (!requiredResult.isValid) {
       return requiredResult;
     }
 
     // 使用统一的 UUID 验证函数
-    if (!isValidUUID(id)) {
+    if (!isValidUUID(uuid)) {
       return ValidationUtils.failure(['任务模板ID格式不正确']);
     }
 

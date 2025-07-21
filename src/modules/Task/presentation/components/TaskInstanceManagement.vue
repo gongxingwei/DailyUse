@@ -143,7 +143,7 @@
                             <v-list class="task-list">
                                 <v-list-item
                                     v-for="(task, index) in incompleteTasks" 
-                                    :key="task.id"
+                                    :key="task.uuid"
                                     class="task-item"
                                     :class="{ 'border-bottom': index < incompleteTasks.length - 1 }"
                                 >
@@ -152,7 +152,7 @@
                                             icon
                                             variant="text"
                                             color="success"
-                                            @click="handleCompleteTaskInstance(task.id)"
+                                            @click="handleCompleteTaskInstance(task.uuid)"
                                             class="complete-btn"
                                         >
                                             <v-icon>mdi-circle-outline</v-icon>
@@ -209,7 +209,7 @@
                             <v-list class="task-list">
                                 <v-list-item
                                     v-for="(task, index) in completedTasks" 
-                                    :key="task.id"
+                                    :key="task.uuid"
                                     class="task-item completed-task"
                                     :class="{ 'border-bottom': index < completedTasks.length - 1 }"
                                 >
@@ -235,7 +235,7 @@
                                             icon
                                             variant="text"
                                             size="small"
-                                            @click="handleUndoCompleteTaskInstance(task.id)"
+                                            @click="handleUndoCompleteTaskInstance(task.uuid)"
                                             class="undo-btn"
                                         >
                                             <v-icon>mdi-undo</v-icon>
@@ -328,8 +328,8 @@ const formatTime = (isoString: string) => {
 };
 
 const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalById(link.goalId);
-    const kr = goal?.keyResults.find(kr => kr.id === link.keyResultId);
+    const goal = goalStore.getGoalById(link.goalUuid);
+    const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
     return kr?.name || '';
 };
 

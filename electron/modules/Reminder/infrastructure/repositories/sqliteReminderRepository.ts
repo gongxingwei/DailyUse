@@ -1,6 +1,6 @@
 import type { Database } from "better-sqlite3";
 import type { IReminderTemplateRepository } from "../../domain/repositories/iReminderTemplateRepository";
-import type { IReminderTemplate } from "../../domain/types";
+import type { IReminderTemplate } from "@common/modules/reminder/types/reminder";
 import { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
 /**
  * reminder 模块数据库仓库实现
@@ -11,7 +11,6 @@ import { getDatabase } from "../../../../shared/database/index";
 
 export class SqliteReminderRepository implements IReminderTemplateRepository {
   private db: Database | null = null;
-  private accountUuid = "default_user_1752130481607";
   constructor() {}
 
   /**
@@ -25,17 +24,10 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
   }
 
   /**
-   * 设置当前用户
-   */
-  setCurrentAccountUuid(accountUuid: string): void {
-    this.accountUuid = accountUuid;
-  }
-
-  /**
    *
    */
 
-  async create(data: ReminderTemplate): Promise<boolean> {
+  async create(accountUuid: string, data: ReminderTemplate): Promise<boolean> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
@@ -45,8 +37,8 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       stmt.run(
-        this.accountUuid,
-        data.id,
+        accountUuid,
+        data.uuid,
         data.groupId || null,
         data.name,
         data.description || null,
@@ -68,7 +60,7 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
   }
 
 
-  async update(template: ReminderTemplate): Promise<boolean> {
+  async update(accountUuid: string, template: ReminderTemplate): Promise<boolean> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
@@ -98,8 +90,8 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
         template.notificationSettings.popup ? 1 : 0,
         JSON.stringify(template.timeConfig),
         Date.now(),
-        this.accountUuid,
-        template.id
+        accountUuid,
+        template.uuid
       );
       return true;
     } catch (error) {
@@ -109,13 +101,13 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
   }
 
 
-  async delete(id: string): Promise<void> {
+  async delete(accountUuid: string, uuid: string): Promise<void> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
         DELETE FROM reminders WHERE account_uuid = ? AND uuid = ?
       `);
-      stmt.run(this.accountUuid, id);
+      stmt.run(accountUuid, uuid);
     } catch (error) {
       console.error("Error deleting reminder template:", error);
       throw error;
@@ -123,13 +115,13 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
   }
 
 
-  async getAll(): Promise<ReminderTemplate[]> {
+  async getAll(accountUuid: string): Promise<ReminderTemplate[]> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
         SELECT * FROM reminders WHERE account_uuid = ?
       `);
-      const rows = stmt.all(this.accountUuid);
+      const rows = stmt.all(accountUuid);
       return rows.map((row: any) => this.mapRowToReminderTemplate(row));
     } catch (error) {
       console.error("Error getting all reminder templates:", error);
@@ -138,16 +130,16 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
   }
 
 
-  async getById(id: string): Promise<ReminderTemplate | null> {
+  async getById(accountUuid: string, uuid: string): Promise<ReminderTemplate | null> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
         SELECT * FROM reminders WHERE account_uuid = ? AND uuid = ?
       `);
-      const row = stmt.get(this.accountUuid, id);
+      const row = stmt.get(accountUuid, uuid);
       return row ? this.mapRowToReminderTemplate(row) : null;
     } catch (error) {
-      console.error("Error getting reminder template by id:", error);
+      console.error("Error getting reminder template by uuid:", error);
       throw error;
     }
   }
@@ -157,7 +149,7 @@ export class SqliteReminderRepository implements IReminderTemplateRepository {
    */
   private mapRowToReminderTemplate(row: any): ReminderTemplate {
     const reminderTemplateDTO: IReminderTemplate = {
-      id: row.uuid,
+      uuid: row.uuid,
       groupId: row.group_uuid,
       name: row.name,
       description: row.description,

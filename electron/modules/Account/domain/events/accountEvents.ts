@@ -4,7 +4,7 @@ import { DomainEvent } from "@/shared/domain/domainEvent";
  * 账号注册事件载荷
  */
 export interface AccountRegisteredEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   password?: string;
   email?: string;
@@ -34,7 +34,7 @@ export interface AccountRegisteredEvent extends DomainEvent<AccountRegisteredEve
  * 账号创建事件载荷（用于非注册场景，如系统创建）
  */
 export interface AccountCreatedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   email?: string;
   phone?: string;
@@ -55,7 +55,7 @@ export interface AccountCreatedEvent extends DomainEvent<AccountCreatedEventPayl
  * 账号状态变更事件载荷
  */
 export interface AccountStatusChangedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   oldStatus: string;
   newStatus: string;
@@ -74,7 +74,7 @@ export interface AccountStatusChangedEvent extends DomainEvent<AccountStatusChan
  * 账号信息更新事件载荷
  */
 export interface AccountUpdatedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   updatedFields: string[];
   updatedAt: Date;
@@ -92,7 +92,7 @@ export interface AccountUpdatedEvent extends DomainEvent<AccountUpdatedEventPayl
  * 账号状态验证响应事件载荷
  */
 export interface AccountStatusVerificationResponseEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   requestId: string; // 关联原始请求
   accountStatus: 'active' | 'inactive' | 'locked' | 'suspended' | 'not_found';
@@ -112,13 +112,13 @@ export interface AccountStatusVerificationResponseEvent extends DomainEvent<Acco
 /**
  * 
  */
-export interface AccountIdGetterResponseEventPayload {
-  accountId: string | null;
+export interface AccountUuidGetterResponseEventPayload {
+  accountUuid: string | null;
   username: string;
   requestId: string; // 关联原始请求
 }
 
-export interface AccountIdGetterResponseEvent extends DomainEvent<AccountIdGetterResponseEventPayload> {
-  eventType: 'AccountIdGetterResponse';
-  payload: AccountIdGetterResponseEventPayload;
+export interface AccountUuidGetterResponseEvent extends DomainEvent<AccountUuidGetterResponseEventPayload> {
+  eventType: 'AccountUuidGetterResponse';
+  payload: AccountUuidGetterResponseEventPayload;
 }

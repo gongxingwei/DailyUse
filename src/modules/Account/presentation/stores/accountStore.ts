@@ -12,7 +12,7 @@ export const useAccountStore = defineStore('auth', {
     getters: {
         isAuthenticated: (state) => !!state.account,
         currentAccount: (state) => state.account,
-        getAccountUuid: (state) => state.account ? state.account.id : null,
+        getAccountUuid: (state) => state.account ? state.account.uuid : null,
         getAllSavedAccounts: (state) => {
             return state.savedAccounts;
         },

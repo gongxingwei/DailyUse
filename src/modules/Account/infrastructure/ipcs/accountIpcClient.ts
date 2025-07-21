@@ -1,4 +1,5 @@
 import type { AccountRegistrationRequest, AccountDTO } from '@electron/modules/Account';
+import { ipcInvokeWithAuth } from '@/shared/utils/ipcInvokeWithAuth';
 
 export class AccountIpcClient {
     async accountRegistration(
@@ -10,9 +11,9 @@ export class AccountIpcClient {
         return window.shared.ipcRenderer.invoke('account:register', serializedDto);
     }
 
-    async getAccountByAccountId(accountId: string): Promise<TResponse<AccountDTO>> {
-        console.log('📝 [AccountIpcClient] 获取账号信息', accountId);
-        return window.shared.ipcRenderer.invoke('account:get-by-id', accountId);
+    async getAccountByAccountUuid(accountUuid: string): Promise<TResponse<AccountDTO>> {
+        console.log('📝 [AccountIpcClient] 获取账号信息', accountUuid);
+        return ipcInvokeWithAuth('account:get-by-id', accountUuid);
     }
 }
 

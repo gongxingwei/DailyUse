@@ -1,14 +1,14 @@
 <template>
   <div class="editor-header">
     <div class="editor-tabs">
-      <div v-for="tab in props.tabs" :key="tab.id" :class="{ 'active': tab.id === props.activeTabId }"
-        @click="handleTabClick(tab.id)" class="tab">
+      <div v-for="tab in props.tabs" :key="tab.uuid" :class="{ 'active': tab.uuid === props.activeTabId }"
+        @click="handleTabClick(tab.uuid)" class="tab">
         <span class="tab-title">{{ tab.title }}</span>
-        <button class="function-icon" @click.stop="handleTabClose(tab.id)">×</button>
+        <button class="function-icon" @click.stop="handleTabClose(tab.uuid)">×</button>
       </div>
     </div>
     <div class="editor-actions function-group">
-      <button v-for="icon in editorFunctionIconStore.editorFunctionIcons" :key="icon.id" class="function-icon"
+      <button v-for="icon in editorFunctionIconStore.editorFunctionIcons" :key="icon.uuid" class="function-icon"
         :title="icon.title" @click="icon.action">
         <v-icon>{{ icon.icon }}</v-icon>
       </button>

@@ -63,15 +63,15 @@ export const useTaskStore = defineStore("task", {
 
     getTaskTemplateById:
       (state) =>
-      (id: string): TaskTemplate | undefined => {
-        const template = state.taskTemplates.find((t) => t.id === id);
+      (uuid: string): TaskTemplate | undefined => {
+        const template = state.taskTemplates.find((t) => t.uuid === uuid);
         return template ? ensureTaskTemplate(template) : undefined;
       },
 
     getTaskInstanceById:
       (state) =>
-      (id: string): TaskInstance | undefined => {
-        const instance = state.taskInstances.find((t) => t.id === id);
+      (uuid: string): TaskInstance | undefined => {
+        const instance = state.taskInstances.find((t) => t.uuid === uuid);
         return instance ? ensureTaskInstance(instance) : undefined;
       },
 
@@ -109,8 +109,8 @@ export const useTaskStore = defineStore("task", {
       return state.metaTemplates.map((t) => ensureTaskMetaTemplate(t));
     },
 
-    getMetaTemplateById: (state) => (id: string): TaskMetaTemplate | undefined => {
-      const template = state.metaTemplates.find((t) => t.id === id);
+    getMetaTemplateById: (state) => (uuid: string): TaskMetaTemplate | undefined => {
+      const template = state.metaTemplates.find((t) => t.uuid === uuid);
       return template ? ensureTaskMetaTemplate(template) : undefined;
     },
 
@@ -152,7 +152,7 @@ export const useTaskStore = defineStore("task", {
 
     async removeTaskTemplateById(templateId: string): Promise<TResponse<void>> {
       try {
-        const index = this.taskTemplates.findIndex((t) => t.id === templateId);
+        const index = this.taskTemplates.findIndex((t) => t.uuid === templateId);
         if (index !== -1) {
           this.taskTemplates.splice(index, 1);
           return {
@@ -177,7 +177,7 @@ export const useTaskStore = defineStore("task", {
       try {
         const safeTemplate = ensureTaskTemplate(template);
         const index = this.taskTemplates.findIndex(
-          (t) => t.id === safeTemplate.id
+          (t) => t.uuid === safeTemplate.uuid
         );
         if (index !== -1) {
           this.taskTemplates[index] = safeTemplate;
@@ -189,7 +189,7 @@ export const useTaskStore = defineStore("task", {
         }
         return {
           success: false,
-          message: `未找到ID为 ${safeTemplate.id} 的任务模板`,
+          message: `未找到ID为 ${safeTemplate.uuid} 的任务模板`,
         };
       } catch (error) {
         return {
@@ -240,7 +240,7 @@ export const useTaskStore = defineStore("task", {
       try {
         const safeInstance = ensureTaskInstance(instance);
         const index = this.taskInstances.findIndex(
-          (t) => t.id === safeInstance.id
+          (t) => t.uuid === safeInstance.uuid
         );
         if (index !== -1) {
           this.taskInstances[index] = safeInstance;
@@ -252,7 +252,7 @@ export const useTaskStore = defineStore("task", {
         }
         return {
           success: false,
-          message: `未找到ID为 ${safeInstance.id} 的任务实例`,
+          message: `未找到ID为 ${safeInstance.uuid} 的任务实例`,
         };
       } catch (error) {
         return {
@@ -270,7 +270,7 @@ export const useTaskStore = defineStore("task", {
         
         safeInstances.forEach((instance) => {
           const index = this.taskInstances.findIndex(
-            (t) => t.id === instance.id
+            (t) => t.uuid === instance.uuid
           );
           if (index !== -1) {
             this.taskInstances[index] = instance;
@@ -295,7 +295,7 @@ export const useTaskStore = defineStore("task", {
     // ✅ 新增：删除单个任务实例
     async removeTaskInstanceById(instanceId: string): Promise<TResponse<void>> {
       try {
-        const index = this.taskInstances.findIndex((t) => t.id === instanceId);
+        const index = this.taskInstances.findIndex((t) => t.uuid === instanceId);
         if (index !== -1) {
           this.taskInstances.splice(index, 1);
           return {
@@ -323,7 +323,7 @@ export const useTaskStore = defineStore("task", {
         
         // 从后往前删除，避免索引变化问题
         for (let i = this.taskInstances.length - 1; i >= 0; i--) {
-          if (instanceIds.includes(this.taskInstances[i].id)) {
+          if (instanceIds.includes(this.taskInstances[i].uuid)) {
             this.taskInstances.splice(i, 1);
             removedCount++;
           }
@@ -416,7 +416,7 @@ export const useTaskStore = defineStore("task", {
     async updateMetaTemplate(metaTemplate: TaskMetaTemplate): Promise<TResponse<TaskMetaTemplate>> {
       try {
         const safeMetaTemplate = ensureTaskMetaTemplate(metaTemplate);
-        const index = this.metaTemplates.findIndex(t => t.id === safeMetaTemplate.id);
+        const index = this.metaTemplates.findIndex(t => t.uuid === safeMetaTemplate.uuid);
         if (index !== -1) {
           this.metaTemplates[index] = safeMetaTemplate;
           return {
@@ -427,7 +427,7 @@ export const useTaskStore = defineStore("task", {
         }
         return {
           success: false,
-          message: `未找到ID为 ${safeMetaTemplate.id} 的元模板`,
+          message: `未找到ID为 ${safeMetaTemplate.uuid} 的元模板`,
         };
       } catch (error) {
         return {
@@ -440,7 +440,7 @@ export const useTaskStore = defineStore("task", {
 
     async deleteMetaTemplateById(metaTemplateId: string): Promise<TResponse<void>> {
       try {
-        const index = this.metaTemplates.findIndex(t => t.id === metaTemplateId);
+        const index = this.metaTemplates.findIndex(t => t.uuid === metaTemplateId);
         if (index !== -1) {
           this.metaTemplates.splice(index, 1);
           return {
@@ -464,8 +464,8 @@ export const useTaskStore = defineStore("task", {
     /**
      * 删除元模板（别名方法）
      */
-    removeMetaTemplateById(id: string): Promise<TResponse<void>> {
-      return this.deleteMetaTemplateById(id);
+    removeMetaTemplateById(uuid: string): Promise<TResponse<void>> {
+      return this.deleteMetaTemplateById(uuid);
     },
 
     // === 批量数据同步方法 ===

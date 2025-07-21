@@ -14,6 +14,7 @@ import { registerGoalInitializationTasks } from '../../modules/goal/initializati
 import { registerAuthenticationInitializationTasks } from '../../modules/Authentication/initialization/authenticationInitialization';
 import { registerRepositoryInitializationTasks } from '../../modules/Repository/initialization/repositoryInitialization';
 import { registerReminderInitializationTasks } from '../../modules/Reminder/initialization/reminderInitialization';
+import { registerInitializationEventsTask } from './application/events/initializationEventHandlers';
 
 /**
  * 基础设施模块的初始化任务
@@ -110,6 +111,7 @@ export function registerAllInitializationTasks(): void {
   registerSessionLoggingInitializationTasks();
   registerRepositoryInitializationTasks();
   registerReminderInitializationTasks();
+  registerInitializationEventsTask();
 
   console.log('All initialization tasks registered');
 }
@@ -134,16 +136,16 @@ export async function initializeApp(): Promise<void> {
 /**
  * 用户登录时的初始化
  */
-export async function initializeUserSession(username: string): Promise<void> {
-  console.log(`Initializing user session for: ${username}`);
-  
+export async function initializeUserSession(accountUuid: string): Promise<void> {
+  console.log(`Initializing user session for: ${accountUuid}`);
+
   const manager = InitializationManager.getInstance();
-  manager.setCurrentUser(username);
-  
+  manager.setCurrentUser(accountUuid);
+
   // 执行用户登录阶段的初始化
-  await manager.executePhase(InitializationPhase.USER_LOGIN, { username });
-  
-  console.log(`✓ User session initialized for: ${username}`);
+  await manager.executePhase(InitializationPhase.USER_LOGIN, { accountUuid });
+
+  console.log(`✓ User session initialized for: ${accountUuid}`);
 }
 
 /**

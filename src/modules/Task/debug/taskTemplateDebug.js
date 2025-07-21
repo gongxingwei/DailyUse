@@ -9,7 +9,7 @@
  * 测试用的任务模板数据
  */
 const testTaskTemplateData = {
-  id: 'test-template-' + Date.now(),
+  uuid: 'test-template-' + Date.now(),
   title: '测试任务模板',
   description: '这是一个用于调试的测试任务模板',
   timeConfig: {

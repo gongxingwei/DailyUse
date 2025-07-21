@@ -1,8 +1,9 @@
 import { DomainEvent } from "@/shared/domain/domainEvent";
 
 export interface UserLoggedInEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
+  token: string | null;
 }
 
 export interface UserLoggedInEvent extends DomainEvent<UserLoggedInEventPayload> {
@@ -11,7 +12,8 @@ export interface UserLoggedInEvent extends DomainEvent<UserLoggedInEventPayload>
 }
 
 export interface UserLoggedOutEventPayload {
-  accountId: string;
+  accountUuid: string;
+  token: string;
   username: string;
   sessionId: string;
   logoutType: "manual" | "forced" | "expired" | "system";
@@ -26,14 +28,14 @@ export interface UserLoggedOutEventPayload {
 
 export interface SessionTerminatedEventPayload {
   sessionId: string;
-  accountId: string;
+  accountUuid: string;
   terminationType: "logout" | "timeout" | "forced" | "concurrent_login";
   terminatedAt: Date;
   remainingActiveSessions: number;
 }
 
 export interface LoginCredentialVerificationEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   credentialId: string;
   verificationResult: "success" | "failed" | "account_locked" | "credential_expired";

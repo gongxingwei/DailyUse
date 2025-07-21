@@ -42,14 +42,14 @@
             </template>
 
             <v-list density="compact" min-width="120">
-              <v-list-item @click="handleEdit(record.id)">
+              <v-list-item @click="handleEdit(record.uuid)">
                 <template v-slot:prepend>
                   <v-icon size="16">mdi-pencil</v-icon>
                 </template>
                 <v-list-item-title>编辑</v-list-item-title>
               </v-list-item>
 
-              <v-list-item @click="handleDelete(record.id)" class="text-error">
+              <v-list-item @click="handleDelete(record.uuid)" class="text-error">
                 <template v-slot:prepend>
                   <v-icon size="16">mdi-delete</v-icon>
                 </template>

@@ -58,7 +58,7 @@
           <div v-else class="review-list">
             <v-card
               v-for="review in displayReviews"
-              :key="review.id"
+              :key="review.uuid"
               class="review-item mb-4"
               variant="outlined"
               elevation="0"
@@ -112,7 +112,7 @@
                         size="small"
                         prepend-icon="mdi-eye"
                         class="mr-2"
-                        @click="handleView(review.id)"
+                        @click="handleView(review.uuid)"
                       >
                         查看
                       </v-btn>
@@ -123,7 +123,7 @@
                         size="small"
                         prepend-icon="mdi-pencil"
                         class="mr-2"
-                        @click="handleEdit(review.id)"
+                        @click="handleEdit(review.uuid)"
                       >
                         编辑
                       </v-btn>
@@ -133,7 +133,7 @@
                         variant="text"
                         size="small"
                         icon="mdi-delete"
-                        @click="handleDelete(review.id)"
+                        @click="handleDelete(review.uuid)"
                       >
                         <v-icon>mdi-delete</v-icon>
                         <v-tooltip activator="parent" location="bottom">
@@ -159,7 +159,7 @@
   
   const props = defineProps<{
     visible: boolean;
-    goalId?: string;
+    goalUuid?: string;
   }>();
   
   const emit = defineEmits<{
@@ -174,8 +174,8 @@
   
   // 计算属性 - 根据目标ID筛选复盘记录
   const displayReviews = computed(() => {
-    if (props.goalId) {
-      return allReviews.value.filter(review => review.goalId === props.goalId);
+    if (props.goalUuid) {
+      return allReviews.value.filter(review => review.goalUuid === props.goalUuid);
     }
     return allReviews.value;
   });

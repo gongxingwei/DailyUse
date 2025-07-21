@@ -9,7 +9,7 @@
         
         <!-- 关键结果卡片 -->
         <div class="flex-shrink-0">
-            <KeyResultCard :keyResult="keyResult" :goalId="goalId" />
+            <KeyResultCard :keyResult="keyResult" :goalUuid="goalUuid" />
         </div>
         
         <!-- 计算方式、起始值、权重 -->
@@ -54,7 +54,7 @@
                                 暂无关联任务
                             </div>
                             <div v-else class="pa-4">
-                                <div v-for="task in taskTemplates" :key="task.id" class="mb-4">
+                                <div v-for="task in taskTemplates" :key="task.uuid" class="mb-4">
                                     {{ task.name }}
                                 </div>
                             </div>
@@ -67,7 +67,7 @@
                                 暂无记录
                             </div>
                             <div v-else class="pa-4">
-                                <div v-for="record in records" :key="record.id" class="mb-4">
+                                <div v-for="record in records" :key="record.uuid" class="mb-4">
                                     <RecordCard :record="record" />
                                 </div>
                             </div>
@@ -109,7 +109,7 @@ import RecordCard from '../components/RecordCard.vue';
 
 const router = useRouter();
 const route = useRoute();
-const goalId = route.params.goalId as string; // 从路由参数中获取目标ID
+const goalUuid = route.params.goalUuid as string; // 从路由参数中获取目标ID
 const keyResultId = route.params.keyResultId as string; // 从路由参数中获取关键结果ID
 
 const goalStore = useGoalStore();
@@ -118,7 +118,7 @@ const taskStore = useTaskStore();
 const taskTemplates = ref<any>([]);
 // 目标的颜色
 const goalColor = computed(() => {
-    const goal = goalStore.getGoalById(goalId);
+    const goal = goalStore.getGoalById(goalUuid);
     if (!goal) {
         throw new Error('Goal not found');
     }
@@ -126,7 +126,7 @@ const goalColor = computed(() => {
 });
 // 关键结果
 const keyResult = computed(() => {
-    const keyResult = goalStore.getKeyResultById(goalId, keyResultId);
+    const keyResult = goalStore.getKeyResultById(goalUuid, keyResultId);
     if (!keyResult) {
         throw new Error('Key result not found');
     }
@@ -140,13 +140,13 @@ const tabs = [
 ];
 
 onMounted(async() => {
-    taskTemplates.value = await taskStore.getTaskTemplateForKeyResult(goalId, keyResultId);
+    taskTemplates.value = await taskStore.getTaskTemplateForKeyResult(goalUuid, keyResultId);
 
 })
 
 // 计算所有记录
 const records = computed(() => {
-    const records = goalStore.getRecordsByKeyResultId(goalId, keyResultId);
+    const records = goalStore.getRecordsByKeyResultId(goalUuid, keyResultId);
     if (!records) {
         throw new Error('Records not found');
     }

@@ -1,12 +1,9 @@
-
-import type { IReminderTemplateGroup } from "../types";
 import type { ReminderTemplateGroup } from "../aggregates/reminderTemplateGroup";
 
 export interface IReminderTemplateGroupRepository {
-  setCurrentAccountUuid(accountUuid: string): void;
-  create(group: ReminderTemplateGroup): Promise<boolean>;
-  update(group: ReminderTemplateGroup): Promise<boolean>;
-  delete(id: string): Promise<void>;
-  getAll(): Promise<ReminderTemplateGroup[]>;
-  getById(id: string): Promise<ReminderTemplateGroup | null>;
+  create(accountUuid: string, group: ReminderTemplateGroup): Promise<boolean>;
+  update(accountUuid: string, group: ReminderTemplateGroup): Promise<boolean>;
+  delete(accountUuid: string, uuid: string): Promise<void>;
+  getAll(accountUuid: string): Promise<ReminderTemplateGroup[]>;
+  getById(accountUuid: string, uuid: string): Promise<ReminderTemplateGroup | null>;
 }

@@ -73,7 +73,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { GoalDir } from '@/modules/Goal/domain/entities/goalDir';
-import type { IGoalDir } from '@/modules/Goal/domain/types/goal';
+import type { IGoalDir } from '@common/modules/goal/types/goal';
 const props = defineProps<{
     modelValue: boolean;
     goalDirDialogMode: 'create' | 'edit'; // 创建或编辑模式

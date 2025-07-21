@@ -4,8 +4,8 @@ import { DomainEvent } from './domainEvent';
 export abstract class AggregateRoot extends Entity {
   private _domainEvents: DomainEvent[] = [];
 
-  protected constructor(id: string) {
-    super(id);
+  protected constructor(uuid: string) {
+    super(uuid);
   }
 
   get domainEvents(): ReadonlyArray<DomainEvent> {

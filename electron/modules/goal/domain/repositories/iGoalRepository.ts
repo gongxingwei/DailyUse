@@ -1,66 +1,61 @@
-import type { Goal } from '../entities/goal';
-import type { GoalDir } from '../entities/goalDir';
+import type { Goal } from '../aggregates/goal';
+import type { GoalDir } from '../aggregates/goalDir';
 import type { Record } from '../entities/record';
-import type { IGoalCreateDTO, IGoalDir, IRecordCreateDTO, IKeyResult } from '@/modules/Goal/domain/types/goal';
+import type { IGoalCreateDTO, IGoalDir, IRecordCreateDTO, IKeyResult } from '@common/modules/goal/types/goal';
 
 /**
  * Goal 仓库接口
  * 定义目标聚合根的持久化操作
  */
 export interface IGoalRepository {
-  /**
-   * 设置当前用户
-   */
-  setCurrentUser(username: string): void;
-
   // ========== Goal 操作 ==========
   
   /**
    * 创建目标
    */
-  createGoal(data: IGoalCreateDTO): Promise<Goal>;
+  createGoal(accountUuid: string, data: IGoalCreateDTO): Promise<Goal>;
   
   /**
    * 根据ID获取目标
    */
-  getGoalById(id: string): Promise<Goal | null>;
+  getGoalById(uuid: string): Promise<Goal | null>;
   
   /**
    * 获取所有目标
    */
-  getAllGoals(): Promise<Goal[]>;
+  getAllGoals(accountUuid: string): Promise<Goal[]>;
   
   /**
    * 根据目录获取目标
    */
-  getGoalsByDirectory(directoryId: string): Promise<Goal[]>;
+  getGoalsByDirectory(accountUuid: string, directoryId: string): Promise<Goal[]>;
   
   /**
    * 更新目标
    */
-  updateGoal(id: string, updates: Partial<IGoalCreateDTO>): Promise<Goal>;
+  updateGoal(uuid: string, updates: Partial<IGoalCreateDTO>): Promise<Goal>;
   
   /**
    * 删除目标
    */
-  deleteGoal(id: string): Promise<void>;
+  deleteGoal(uuid: string): Promise<void>;
 
   // ========== Goal Directory 操作 ==========
   
   /**
    * 创建目标目录
    */
-  createGoalDirectory(accountId: string, data: IGoalDir): Promise<GoalDir>;
+  createGoalDirectory(accountUuid: string, data: IGoalDir): Promise<GoalDir>;
   
   /**
    * 根据ID获取目标目录
    */
-  getGoalDirectoryById(id: string): Promise<GoalDir | null>;
+  getGoalDirectoryById(uuid: string): Promise<GoalDir | null>;
   
   /**
    * 获取所有目标目录
    */
-  getAllGoalDirectories(): Promise<GoalDir[]>;
+  getAllGoalDirectories(accountUuid: string): Promise<GoalDir[]>;
   
   /**
    * 更新目标目录
@@ -70,46 +65,39 @@ export interface IGoalRepository {
   /**
    * 删除目标目录
    */
-  deleteGoalDirectory(id: string): Promise<void>;
+  deleteGoalDirectory(uuid: string): Promise<void>;
 
   // ========== Record 操作 ==========
   
   /**
    * 创建记录
    */
-  createRecord(data: IRecordCreateDTO): Promise<Record>;
+  createRecord(accountUuid: string, data: IRecordCreateDTO): Promise<Record>;
   
   /**
    * 根据ID获取记录
    */
-  getRecordById(id: string): Promise<Record | null>;
+  getRecordById(uuid: string): Promise<Record | null>;
   
   /**
    * 获取目标的所有记录
    */
-  getRecordsByGoal(goalId: string): Promise<Record[]>;
+  getRecordsByGoal(goalUuid: string): Promise<Record[]>;
   
   /**
    * 更新记录
    */
-  updateRecord(id: string, updates: Partial<IRecordCreateDTO>): Promise<Record>;
+  updateRecord(uuid: string, updates: Partial<IRecordCreateDTO>): Promise<Record>;
   
   /**
    * 删除记录
    */
-  deleteRecord(id: string): Promise<void>;
+  deleteRecord(uuid: string): Promise<void>;
 
   // ========== Key Result 操作 ==========
   
-  /**
-   * 更新目标的关键结果
-   */
-  updateKeyResults(goalId: string, keyResults: IKeyResult[]): Promise<void>;
   
-  /**
-   * 获取目标的关键结果
-   */
-  getKeyResults(goalId: string): Promise<IKeyResult[]>;
+
 
   // ========== 批量操作 ==========
   

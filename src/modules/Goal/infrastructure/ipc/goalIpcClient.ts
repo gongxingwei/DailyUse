@@ -7,9 +7,9 @@ import type {
   IGoalDir, 
   IGoalReview,
   IGoalReviewCreateDTO 
-} from "../../domain/types/goal";
+} from "@common/modules/goal/types/goal";
 import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
-
+import { ipcInvokeWithAuth } from "@/shared/utils/ipcInvokeWithAuth";
 /**
  * 目标模块 IPC 客户端
  * 处理渲染进程与主进程之间的目标相关通信
@@ -22,13 +22,13 @@ export class GoalIpcClient {
    */
   async createGoal(goalData: IGoalCreateDTO): Promise<TResponse<IGoal>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 创建目标:', goalData.title);
-      
+      console.log('🔄 [渲染进程-IPC] 创建目标:', goalData.name);
+
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(goalData);
-      
-      const response = await window.shared.ipcRenderer.invoke('goal:create', serializedData);
-      
+
+      const response = await ipcInvokeWithAuth('goal:create', serializedData);
+
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 目标创建成功:', response.data?.id);
       } else {
@@ -52,7 +52,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 获取所有目标');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:get-all');
+      const response = await ipcInvokeWithAuth('goal:get-all');
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取目标成功，数量: ${response.data?.length || 0}`);
@@ -73,14 +73,14 @@ export class GoalIpcClient {
   /**
    * 根据ID获取目标
    */
-  async getGoalById(goalId: string): Promise<TResponse<IGoal>> {
+  async getGoalById(goalUuid: string): Promise<TResponse<IGoal>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 获取目标:', goalId);
+      console.log('🔄 [渲染进程-IPC] 获取目标:', goalUuid);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:get-by-id', goalId);
+      const response = await ipcInvokeWithAuth('goal:get-by-id', goalUuid);
       
       if (response.success) {
-        console.log('✅ [渲染进程-IPC] 获取目标成功:', goalId);
+        console.log('✅ [渲染进程-IPC] 获取目标成功:', goalUuid);
       } else {
         console.error('❌ [渲染进程-IPC] 获取目标失败:', response.message);
       }
@@ -100,15 +100,15 @@ export class GoalIpcClient {
    */
   async updateGoal(goalData: IGoal): Promise<TResponse<IGoal>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 更新目标:', goalData.id);
+      console.log('🔄 [渲染进程-IPC] 更新目标:', goalData.uuid);
       
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(goalData);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:update', serializedData);
+      const response = await ipcInvokeWithAuth('goal:update', serializedData);
       
       if (response.success) {
-        console.log('✅ [渲染进程-IPC] 目标更新成功:', goalData.id);
+        console.log('✅ [渲染进程-IPC] 目标更新成功:', goalData.uuid);
       } else {
         console.error('❌ [渲染进程-IPC] 目标更新失败:', response.message);
       }
@@ -126,14 +126,14 @@ export class GoalIpcClient {
   /**
    * 删除目标
    */
-  async deleteGoal(goalId: string): Promise<TResponse<void>> {
+  async deleteGoal(goalUuid: string): Promise<TResponse<void>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 删除目标:', goalId);
+      console.log('🔄 [渲染进程-IPC] 删除目标:', goalUuid);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:delete', goalId);
+      const response = await ipcInvokeWithAuth('goal:delete', goalUuid);
       
       if (response.success) {
-        console.log('✅ [渲染进程-IPC] 目标删除成功:', goalId);
+        console.log('✅ [渲染进程-IPC] 目标删除成功:', goalUuid);
       } else {
         console.error('❌ [渲染进程-IPC] 目标删除失败:', response.message);
       }
@@ -155,7 +155,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 删除所有目标');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:delete-all');
+      const response = await ipcInvokeWithAuth('goal:delete-all');
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 所有目标删除成功');
@@ -179,7 +179,7 @@ export class GoalIpcClient {
    * 为目标添加关键结果（聚合根驱动）
    */
   async addKeyResultToGoal(
-    goalId: string,
+    goalUuid: string,
     keyResultData: {
       name: string;
       startValue: number;
@@ -190,9 +190,9 @@ export class GoalIpcClient {
     }
   ): Promise<TResponse<{ goal: IGoal; keyResultId: string }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 为目标添加关键结果:', { goalId, ...keyResultData });
+      console.log('🔄 [渲染进程-IPC] 为目标添加关键结果:', { goalUuid, ...keyResultData });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:addKeyResult', goalId, keyResultData);
+      const response = await ipcInvokeWithAuth('goal:addKeyResult', goalUuid, keyResultData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 关键结果添加成功:', response.data?.keyResultId);
@@ -213,11 +213,11 @@ export class GoalIpcClient {
   /**
    * 删除目标的关键结果（聚合根驱动）
    */
-  async removeKeyResultFromGoal(goalId: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
+  async removeKeyResultFromGoal(goalUuid: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 删除目标关键结果:', { goalId, keyResultId });
+      console.log('🔄 [渲染进程-IPC] 删除目标关键结果:', { goalUuid, keyResultId });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:removeKeyResult', goalId, keyResultId);
+      const response = await ipcInvokeWithAuth('goal:removeKeyResult', goalUuid, keyResultId);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 关键结果删除成功:', keyResultId);
@@ -239,7 +239,7 @@ export class GoalIpcClient {
    * 更新目标的关键结果（聚合根驱动）
    */
   async updateKeyResultOfGoal(
-    goalId: string,
+    goalUuid: string,
     keyResultId: string,
     updates: {
       name?: string;
@@ -249,9 +249,9 @@ export class GoalIpcClient {
     }
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 更新目标关键结果:', { goalId, keyResultId, updates });
+      console.log('🔄 [渲染进程-IPC] 更新目标关键结果:', { goalUuid, keyResultId, updates });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:updateKeyResult', goalId, keyResultId, updates);
+      const response = await ipcInvokeWithAuth('goal:updateKeyResult', goalUuid, keyResultId, updates);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 关键结果更新成功:', keyResultId);
@@ -273,16 +273,16 @@ export class GoalIpcClient {
    * 更新关键结果当前值
    */
   async updateKeyResultCurrentValue(
-    goalId: string, 
+    goalUuid: string, 
     keyResultId: string, 
     currentValue: number
   ): Promise<TResponse<IGoal>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 更新关键结果当前值:', { goalId, keyResultId, currentValue });
+      console.log('🔄 [渲染进程-IPC] 更新关键结果当前值:', { goalUuid, keyResultId, currentValue });
       
-      const response = await window.shared.ipcRenderer.invoke(
+      const response = await ipcInvokeWithAuth(
         'goal:updateKeyResultCurrentValue', 
-        goalId, 
+        goalUuid, 
         keyResultId, 
         currentValue
       );
@@ -315,7 +315,7 @@ export class GoalIpcClient {
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(recordData);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:createRecord', serializedData);
+      const response = await ipcInvokeWithAuth('goal:createRecord', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录创建成功:', response.data?.id);
@@ -340,7 +340,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 获取所有记录');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:getAllRecords');
+      const response = await ipcInvokeWithAuth('goal:getAllRecords');
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取记录成功，数量: ${response.data?.length || 0}`);
@@ -361,11 +361,11 @@ export class GoalIpcClient {
   /**
    * 根据目标ID获取记录
    */
-  async getRecordsByGoalId(goalId: string): Promise<TResponse<IRecord[]>> {
+  async getRecordsBygoalUuid(goalUuid: string): Promise<TResponse<IRecord[]>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 获取目标记录:', goalId);
+      console.log('🔄 [渲染进程-IPC] 获取目标记录:', goalUuid);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:getRecordsByGoal', goalId);
+      const response = await ipcInvokeWithAuth('goal:getRecordsByGoal', goalUuid);
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取目标记录成功，数量: ${response.data?.length || 0}`);
@@ -390,7 +390,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 删除记录:', recordId);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:deleteRecord', recordId);
+      const response = await ipcInvokeWithAuth('goal:deleteRecord', recordId);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录删除成功:', recordId);
@@ -412,17 +412,17 @@ export class GoalIpcClient {
    * 为目标的关键结果添加记录（聚合根驱动）
    */
   async addRecordToGoal(
-    goalId: string, 
+    goalUuid: string, 
     keyResultId: string, 
     value: number, 
     note?: string
   ): Promise<TResponse<{ goal: IGoal; record: IRecord }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 为目标关键结果添加记录:', { goalId, keyResultId, value, note });
+      console.log('🔄 [渲染进程-IPC] 为目标关键结果添加记录:', { goalUuid, keyResultId, value, note });
       
-      const response = await window.shared.ipcRenderer.invoke(
+      const response = await ipcInvokeWithAuth(
         'goal:addRecordToGoal', 
-        goalId, 
+        goalUuid, 
         keyResultId, 
         value, 
         note
@@ -448,12 +448,12 @@ export class GoalIpcClient {
    * 创建记录（兼容性方法，推荐使用 addRecordToGoal）
    */
   async createRecordCompat(
-    goalId: string, 
+    goalUuid: string, 
     keyResultId: string, 
     value: number, 
     note?: string
   ): Promise<TResponse<IRecord>> {
-    const result = await this.addRecordToGoal(goalId, keyResultId, value, note);
+    const result = await this.addRecordToGoal(goalUuid, keyResultId, value, note);
     
     if (result.success && result.data) {
       return {
@@ -472,11 +472,11 @@ export class GoalIpcClient {
   /**
    * 从目标中删除记录（聚合根驱动）
    */
-  async removeRecordFromGoal(goalId: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
+  async removeRecordFromGoal(goalUuid: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 从目标删除记录:', { goalId, recordId });
+      console.log('🔄 [渲染进程-IPC] 从目标删除记录:', { goalUuid, recordId });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:removeRecord', goalId, recordId);
+      const response = await ipcInvokeWithAuth('goal:removeRecord', goalUuid, recordId);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录删除成功:', recordId);
@@ -500,16 +500,16 @@ export class GoalIpcClient {
    * 为目标添加复盘
    */
   async addReviewToGoal(
-    goalId: string,
+    goalUuid: string,
     reviewData: IGoalReviewCreateDTO
   ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 为目标添加复盘:', goalId);
+      console.log('🔄 [渲染进程-IPC] 为目标添加复盘:', goalUuid);
       
       // 使用深度序列化确保数据可以安全传输
-      const serializedData = deepSerializeForIpc({ goalId, reviewData });
+      const serializedData = deepSerializeForIpc({ goalUuid, reviewData });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:addReview', serializedData);
+      const response = await ipcInvokeWithAuth('goal:addReview', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 复盘添加成功:', response.data?.review?.id);
@@ -531,17 +531,17 @@ export class GoalIpcClient {
    * 更新目标的复盘
    */
   async updateReviewInGoal(
-    goalId: string,
+    goalUuid: string,
     reviewId: string,
     updateData: Partial<IGoalReviewCreateDTO>
   ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 更新目标复盘:', { goalId, reviewId });
+      console.log('🔄 [渲染进程-IPC] 更新目标复盘:', { goalUuid, reviewId });
       
       // 使用深度序列化确保数据可以安全传输
-      const serializedData = deepSerializeForIpc({ goalId, reviewId, updateData });
+      const serializedData = deepSerializeForIpc({ goalUuid, reviewId, updateData });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:updateReview', serializedData);
+      const response = await ipcInvokeWithAuth('goal:updateReview', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 复盘更新成功:', response.data?.review?.id);
@@ -563,16 +563,16 @@ export class GoalIpcClient {
    * 从目标中移除复盘
    */
   async removeReviewFromGoal(
-    goalId: string,
+    goalUuid: string,
     reviewId: string
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 从目标移除复盘:', { goalId, reviewId });
+      console.log('🔄 [渲染进程-IPC] 从目标移除复盘:', { goalUuid, reviewId });
       
       // 使用深度序列化确保数据可以安全传输
-      const serializedData = deepSerializeForIpc({ goalId, reviewId });
+      const serializedData = deepSerializeForIpc({ goalUuid, reviewId });
       
-      const response = await window.shared.ipcRenderer.invoke('goal:removeReview', serializedData);
+      const response = await ipcInvokeWithAuth('goal:removeReview', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 复盘移除成功');
@@ -593,11 +593,11 @@ export class GoalIpcClient {
   /**
    * 获取目标的所有复盘
    */
-  async getGoalReviews(goalId: string): Promise<TResponse<IGoalReview[]>> {
+  async getGoalReviews(goalUuid: string): Promise<TResponse<IGoalReview[]>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 获取目标复盘:', goalId);
+      console.log('🔄 [渲染进程-IPC] 获取目标复盘:', goalUuid);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:getReviews', goalId);
+      const response = await ipcInvokeWithAuth('goal:getReviews', goalUuid);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 获取目标复盘成功:', response.data?.length);
@@ -618,11 +618,11 @@ export class GoalIpcClient {
   /**
    * 为目标创建复盘快照
    */
-  async createGoalReviewSnapshot(goalId: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
+  async createGoalReviewSnapshot(goalUuid: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 为目标创建复盘快照:', goalId);
+      console.log('🔄 [渲染进程-IPC] 为目标创建复盘快照:', goalUuid);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:createReviewSnapshot', goalId);
+      const response = await ipcInvokeWithAuth('goal:createReviewSnapshot', goalUuid);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 复盘快照创建成功');
@@ -652,10 +652,10 @@ export class GoalIpcClient {
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(goalDirData);
       console.log('🔄 [渲染进程-IPC] 序列化目标目录数据:', serializedData);
-      const response = await window.shared.ipcRenderer.invoke('goal:dir:create', serializedData);
+      const response = await ipcInvokeWithAuth('goal:dir:create', serializedData);
       
       if (response.success) {
-        console.log('✅ [渲染进程-IPC] 目标目录创建成功:', response.data?.id);
+        console.log('✅ [渲染进程-IPC] 目标目录创建成功:', response.data);
       } else {
         console.error('❌ [渲染进程-IPC] 目标目录创建失败:', response.message);
       }
@@ -677,7 +677,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 获取所有目标目录');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:dir:get-all');
+      const response = await ipcInvokeWithAuth('goal:dir:get-all');
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取目标目录成功，数量: ${response.data?.length || 0}`);
@@ -702,7 +702,7 @@ export class GoalIpcClient {
     try {
       console.log('🔄 [渲染进程-IPC] 删除目标目录:', goalDirId);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:dir:delete', goalDirId);
+      const response = await ipcInvokeWithAuth('goal:dir:delete', goalDirId);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 目标目录删除成功:', goalDirId);
@@ -730,7 +730,7 @@ export class GoalIpcClient {
       // 使用深度序列化确保数据可以安全传输
       const serializedData = deepSerializeForIpc(goalDirData);
       
-      const response = await window.shared.ipcRenderer.invoke('goal:dir:update', serializedData);
+      const response = await ipcInvokeWithAuth('goal:dir:update', serializedData);
       
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 目标目录更新成功:', goalDirData);

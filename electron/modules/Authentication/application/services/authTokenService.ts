@@ -1,22 +1,10 @@
-import { AuthCredential } from "../../domain/aggregates/authCredential";
+
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
 import { IAuthCredentialRepository, ITokenRepository } from "../../domain/repositories/authenticationRepository";
-import { SqliteAuthCredentialRepository, SqliteTokenRepository } from "../../index";
-import {
-  AccountIdGetterRequestedEvent,
-  AccountStatusVerificationRequestedEvent,
-  LoginCredentialVerificationEvent,
-  LoginAttemptEvent,
-  UserLoggedInEvent,
-} from "../../domain/events/authenticationEvents";
-import { AccountStatusVerificationResponseEvent } from "../../../Account/domain/events/accountEvents";
-import { eventBus } from "../../../../shared/events/eventBus";
-import { generateUUID } from "@/shared/utils/uuid";
-import { AccountIdGetterResponseEvent } from "../../../Account/index"
+
 // domainServices
 import { tokenService } from "../../domain/services/tokenService";
-// types
-import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } from "../../domain/types";
+
 
 
 export class AuthTokenService {
@@ -50,8 +38,9 @@ export class AuthTokenService {
      * @param tokenValue Token 字符串
      * @returns 如果有效返回 true，否则 false
      */
-    public static async validateToken(accountId: string, tokenValue: string): Promise<boolean> {
-        const result = tokenService.isTokenValid(accountId, tokenValue, this.instance.tokenRepository);
+    public static async validateToken(accountUuid: string, tokenValue: string): Promise<boolean> {
+        const instance = await AuthTokenService.getInstance();
+        const result = await tokenService.isTokenValid(accountUuid, tokenValue, instance.tokenRepository);
         if (!result) {
             return false;
         }
@@ -62,7 +51,7 @@ export class AuthTokenService {
 }
 
 export function withAuth(
-  handler: (event: Electron.IpcMainInvokeEvent, args: any[], auth: { token?: string; account_uuid?: string }) => Promise<any>
+  handler: (event: Electron.IpcMainInvokeEvent, args: any[], auth: { token?: string; accountUuid?: string }) => Promise<any>
 ) {
   return async (event: Electron.IpcMainInvokeEvent, ...args: any[]) => {
     const lastArg = args[args.length - 1];
@@ -73,8 +62,9 @@ export function withAuth(
       realArgs = args.slice(0, -1);
     }
     // 统一鉴权
-    const { token, account_uuid } = auth as { token?: string; account_uuid?: string };
-    if (!token || !account_uuid || !(await AuthTokenService.validateToken(account_uuid, token))) {
+    const { token, accountUuid } = auth as { token?: string; accountUuid?: string };
+    if (!token || !accountUuid || !(await AuthTokenService.validateToken(accountUuid, token))) {
+      console.log('Auth failed:', { token, accountUuid });
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
     // 通过鉴权，继续执行业务

@@ -5,18 +5,18 @@ export interface ScheduleTask {
 }
 
 export interface ScheduleOptions {
-    id: string;
+    uuid: string;
     cron: string;
     task: ScheduleTask;
 }
 
 export class ScheduleService {
     // 定时任务ID和任务对象的映射
-    private listeners: Set<(data: { id: string, task: ScheduleTask }) => void> = new Set();
+    private listeners: Set<(data: { uuid: string, task: ScheduleTask }) => void> = new Set();
     
     constructor() {
         // 监听定时任务触发事件
-        window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { id: string, task: ScheduleTask }) => {
+        window.shared.ipcRenderer.on('schedule-triggered', (_event: Event, data: { uuid: string, task: ScheduleTask }) => {
             this.handleScheduleTriggered(data);
         });
     }
@@ -25,13 +25,13 @@ export class ScheduleService {
      * 触发函数，用来处理定时任务触发事件
      * @param data 
      */
-    private handleScheduleTriggered(data: { id: string, task: ScheduleTask }) {
+    private handleScheduleTriggered(data: { uuid: string, task: ScheduleTask }) {
         // 触发自定义事件
         window.dispatchEvent(new CustomEvent('schedule-triggered', { detail: data }));
         // 触发所有监听器
         this.notifyListeners(data);
     }
-    private notifyListeners(data: { id: string, task: ScheduleTask }) {
+    private notifyListeners(data: { uuid: string, task: ScheduleTask }) {
         this.listeners.forEach(listener => {
             try {
                 listener(data);
@@ -49,7 +49,7 @@ export class ScheduleService {
         return await window.shared.ipcRenderer.invoke('update-schedule', options);
     }
 
-    async cancelSchedule(id: string): Promise<boolean> {
+    async cancelSchedule(uuid: string): Promise<boolean> {
         return await window.shared.ipcRenderer.invoke('cancel-schedule', id);
     }
 
@@ -57,7 +57,7 @@ export class ScheduleService {
         return await window.shared.ipcRenderer.invoke('get-schedules');
     }
 
-    public onScheduleTriggered(callback: (data: { id: string, task: ScheduleTask }) => void) {
+    public onScheduleTriggered(callback: (data: { uuid: string, task: ScheduleTask }) => void) {
         this.listeners.add(callback);
         
         // 返回清理函数

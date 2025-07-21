@@ -35,11 +35,11 @@ export enum RiskLevel {
  * - 记录用户登录/登出行为
  * - 审计异常登录（如异地登录）
  * - 提供会话历史查询
- * - 通过AccountId弱关联账号模块，避免直接依赖
+ * - 通过AccountUuid弱关联账号模块，避免直接依赖
  */
 export class SessionLog extends AggregateRoot {
-  private _accountId: string; // 关联账号ID
-  private _sessionId?: string; // 关联会话ID（可选）
+  private _accountUuUuid: string; // 关联账号ID
+  private _sessionUuid?: string; // 关联会话ID（可选）
   private _operationType: OperationType;
   private _deviceInfo: string;
   private _ipLocation: IPLocation;
@@ -55,17 +55,17 @@ export class SessionLog extends AggregateRoot {
   private _updatedAt: DateTime;
 
   constructor(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     operationType: OperationType,
     deviceInfo: string,
     ipLocation: IPLocation,
     userAgent?: string,
     sessionId?: string
   ) {
-    super(id);
-    this._accountId = accountId;
-    this._sessionId = sessionId;
+    super(uuid);
+    this._accountUuUuid = accountUuid;
+    this._sessionUuid = sessionId;
     this._operationType = operationType;
     this._deviceInfo = deviceInfo;
     this._ipLocation = ipLocation;
@@ -89,12 +89,12 @@ export class SessionLog extends AggregateRoot {
   }
 
   // Getters
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get sessionId(): string | undefined {
-    return this._sessionId;
+    return this._sessionUuid;
   }
 
   get operationType(): OperationType {
@@ -167,12 +167,12 @@ export class SessionLog extends AggregateRoot {
     }
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'SessionLogoutRecorded',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId,
-        sessionId: this._sessionId,
+        accountUuid: this._accountUuUuid,
+        sessionId: this._sessionUuid,
         duration: this._duration,
         timestamp: this._logoutTime 
       }
@@ -194,12 +194,12 @@ export class SessionLog extends AggregateRoot {
     this.addAuditTrail('anomaly_detected', reason, RiskLevel.HIGH);
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'AnomalousSessionDetected',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId,
-        sessionId: this._sessionId,
+        accountUuid: this._accountUuUuid,
+        sessionId: this._sessionUuid,
         reason: reason,
         riskLevel: this._riskLevel,
         timestamp: this._updatedAt 
@@ -225,7 +225,7 @@ export class SessionLog extends AggregateRoot {
     const auditId = `audit_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
     const audit = new AuditTrail(
       auditId,
-      this._accountId,
+      this._accountUuUuid,
       operationType,
       description,
       riskLevel,
@@ -238,11 +238,11 @@ export class SessionLog extends AggregateRoot {
     // 如果是高风险操作，发出告警事件
     if (riskLevel === RiskLevel.HIGH || riskLevel === RiskLevel.CRITICAL) {
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'HighRiskActivityDetected',
         occurredOn: new Date(),
         payload: { 
-          accountId: this._accountId,
+          accountUuid: this._accountUuUuid,
           auditId: auditId,
           operationType: operationType,
           description: description,
@@ -347,8 +347,8 @@ export class SessionLog extends AggregateRoot {
    * 转换为DTO对象
    */
   toDTO(): {
-    id: string;
-    accountId: string;
+    uuid: string;
+    accountUuid: string;
     sessionId?: string;
     operationType: OperationType;
     deviceInfo: string;
@@ -364,9 +364,9 @@ export class SessionLog extends AggregateRoot {
     updatedAt: string;
   } {
     return {
-      id: this.id,
-      accountId: this._accountId,
-      sessionId: this._sessionId,
+      uuid: this.uuid,
+      accountUuid: this._accountUuUuid,
+      sessionId: this._sessionUuid,
       operationType: this._operationType,
       deviceInfo: this._deviceInfo,
       ipLocation: this._ipLocation.toDTO(),
@@ -386,9 +386,9 @@ export class SessionLog extends AggregateRoot {
    * 从数据库行创建 SessionLog 对象
    */
   static fromDatabase(row: {
-    id: string;
-    account_id: string;
-    session_id?: string;
+    uuid: string;
+    account_uuid: string;
+    session_uuid?: string;
     operation_type: string;
     device_info: string;
     ip_address: string;
@@ -421,8 +421,8 @@ export class SessionLog extends AggregateRoot {
     );
 
     const sessionLog = new SessionLog(
-      row.id,
-      row.account_id,
+      row.uuid,
+      row.account_uuid,
       row.operation_type as OperationType,
       row.device_info,
       ipLocation,
@@ -430,8 +430,8 @@ export class SessionLog extends AggregateRoot {
     );
 
     // 设置从数据库读取的属性
-    (sessionLog as any)._id = row.id;
-    (sessionLog as any)._sessionId = row.session_id;
+    (sessionLog as any)._id = row.uuid;
+    (sessionLog as any)._sessionUuid = row.session_id;
     (sessionLog as any)._loginTime = row.login_time ? new Date(row.login_time) : undefined;
     (sessionLog as any)._logoutTime = row.logout_time ? new Date(row.logout_time) : undefined;
     (sessionLog as any)._duration = row.duration;
@@ -448,9 +448,9 @@ export class SessionLog extends AggregateRoot {
    * 转换为数据库格式
    */
   toDatabaseFormat(): {
-    id: string;
-    account_id: string;
-    session_id?: string;
+    uuid: string;
+    account_uuid: string;
+    session_uuid?: string;
     operation_type: string;
     device_info: string;
     ip_address: string;
@@ -472,9 +472,9 @@ export class SessionLog extends AggregateRoot {
     updated_at: number;
   } {
     return {
-      id: this.id,
-      account_id: this._accountId,
-      session_id: this._sessionId,
+      uuid: this.uuid,
+      account_uuid: this._accountUuUuid,
+      session_id: this._sessionUuid,
       operation_type: this._operationType,
       device_info: this._deviceInfo,
       ip_address: this._ipLocation.ipAddress,

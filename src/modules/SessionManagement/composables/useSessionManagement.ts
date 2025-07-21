@@ -56,7 +56,7 @@ export function useSessionManagement() {
     }
     
     // 从活动会话列表中移除
-    activeSessions.value = activeSessions.value.filter(s => s.id !== sessionId);
+    activeSessions.value = activeSessions.value.filter(s => s.uuid !== sessionId);
     
     // 可以在这里添加用户通知逻辑
     error.value = '会话已过期，请重新登录';
@@ -66,12 +66,12 @@ export function useSessionManagement() {
     console.log('会话已刷新:', session);
     
     // 更新当前会话
-    if (currentSession.value?.id === session.id) {
+    if (currentSession.value?.id === session.uuid) {
       currentSession.value = session;
     }
     
     // 更新活动会话列表中的对应项
-    const index = activeSessions.value.findIndex(s => s.id === session.id);
+    const index = activeSessions.value.findIndex(s => s.uuid === session.uuid);
     if (index !== -1) {
       activeSessions.value[index] = session;
     }
@@ -431,7 +431,7 @@ export function useSessionManagement() {
     }
     
     // 从活动会话列表中移除
-    activeSessions.value = activeSessions.value.filter(s => s.id !== sessionId);
+    activeSessions.value = activeSessions.value.filter(s => s.uuid !== sessionId);
     
     // 可以在这里添加用户通知逻辑
     error.value = '会话已过期，请重新登录';
@@ -441,12 +441,12 @@ export function useSessionManagement() {
     console.log('会话已刷新:', session);
     
     // 更新当前会话
-    if (currentSession.value?.id === session.id) {
+    if (currentSession.value?.id === session.uuid) {
       currentSession.value = session;
     }
     
     // 更新活动会话列表中的对应项
-    const index = activeSessions.value.findIndex(s => s.id === session.id);
+    const index = activeSessions.value.findIndex(s => s.uuid === session.uuid);
     if (index !== -1) {
       activeSessions.value[index] = session;
     }

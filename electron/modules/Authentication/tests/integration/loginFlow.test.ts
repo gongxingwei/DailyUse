@@ -36,7 +36,7 @@ const createTestDatabase = (): Database => {
   db.exec(`
     CREATE TABLE auth_credentials (
       id TEXT PRIMARY KEY,
-      account_id TEXT NOT NULL UNIQUE,
+      account_uuid TEXT NOT NULL UNIQUE,
       password_hash TEXT NOT NULL,
       password_salt TEXT NOT NULL,
       password_algorithm TEXT NOT NULL DEFAULT 'bcrypt',
@@ -44,14 +44,14 @@ const createTestDatabase = (): Database => {
       last_auth_at INTEGER,
       created_at INTEGER NOT NULL,
       updated_at INTEGER NOT NULL,
-      FOREIGN KEY (account_id) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (account_uuid) REFERENCES users(uuid) ON DELETE CASCADE
     )
   `);
 
   db.exec(`
     CREATE TABLE session_logs (
       id TEXT PRIMARY KEY,
-      account_id TEXT NOT NULL,
+      account_uuid TEXT NOT NULL,
       session_id TEXT,
       operation_type TEXT NOT NULL,
       device_info TEXT NOT NULL,
@@ -87,7 +87,7 @@ describe('Authentication Login Integration Tests', () => {
   let sessionLoggingHandler: SessionLoggingEventHandler;
 
   const testUser = {
-    id: 'test-user-1',
+    uuid: 'test-user-1',
     username: 'testuser',
     email: 'test@example.com',
     password: 'TestPassword123!'
@@ -127,15 +127,15 @@ describe('Authentication Login Integration Tests', () => {
     const mockSessionLoggingRepository = {
       save: jest.fn(),
       findById: jest.fn(),
-      findByAccountId: jest.fn(),
+      findByAccountUuid: jest.fn(),
       findBySessionId: jest.fn(),
       findByOperationType: jest.fn(),
       findAnomalous: jest.fn(),
       findByRiskLevel: jest.fn(),
       findByTimeRange: jest.fn(),
-      findByAccountIdAndTimeRange: jest.fn(),
+      findByAccountUuidAndTimeRange: jest.fn(),
       delete: jest.fn(),
-      deleteByAccountId: jest.fn(),
+      deleteByAccountUuid: jest.fn(),
       deleteOlderThan: jest.fn()
     };
 
@@ -157,12 +157,12 @@ describe('Authentication Login Integration Tests', () => {
   const setupTestData = () => {
     // Insert test user
     const userStmt = db.prepare(`
-      INSERT INTO users (id, username, email, accountType, status, createdAt, updatedAt)
+      INSERT INTO users (uuid, username, email, accountType, status, createdAt, updatedAt)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
     
     userStmt.run(
-      testUser.id,
+      testUser.uuid,
       testUser.username,
       testUser.email,
       'local',
@@ -175,22 +175,22 @@ describe('Authentication Login Integration Tests', () => {
     const password = new Password(testUser.password);
     const authCredential = new AuthCredential(
       'auth-cred-1',
-      testUser.id,
+      testUser.uuid,
       password
     );
 
     // Use synchronous version for test setup
     const credStmt = db.prepare(`
       INSERT INTO auth_credentials (
-        id, account_id, password_hash, password_salt, password_algorithm,
+        uuid, account_uuid, password_hash, password_salt, password_algorithm,
         password_created_at, created_at, updated_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const passwordInfo = authCredential.getPasswordInfo();
     credStmt.run(
-      authCredential.id,
-      authCredential.accountId,
+      authCredential.uuid,
+      authCredential.accountUuid,
       passwordInfo.hashedValue,
       passwordInfo.salt,
       passwordInfo.algorithm,
@@ -201,7 +201,7 @@ describe('Authentication Login Integration Tests', () => {
 
     // Setup mock account status response
     const mockAccount = new Account(
-      testUser.id,
+      testUser.uuid,
       new User('user-1', 'Test', 'User'),
       testUser.username,
       testUser.email
@@ -234,7 +234,7 @@ describe('Authentication Login Integration Tests', () => {
 
       // Assert
       expect(result.success).toBe(true);
-      expect(result.accountId).toBe(testUser.id);
+      expect(result.accountUuid).toBe(testUser.uuid);
       expect(result.sessionId).toBeDefined();
 
       // Verify events were published
@@ -281,7 +281,7 @@ describe('Authentication Login Integration Tests', () => {
     it('should fail login with inactive account', async () => {
       // Arrange - setup inactive account
       const inactiveAccount = new Account(
-        testUser.id,
+        testUser.uuid,
         new User('user-1', 'Test', 'User'),
         testUser.username,
         testUser.email

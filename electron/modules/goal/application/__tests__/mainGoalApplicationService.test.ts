@@ -92,13 +92,13 @@ describe('MainGoalApplicationService', () => {
       }
 
       // Act
-      const result = await mainGoalService.deleteGoal(createResult.data.id);
+      const result = await mainGoalService.deleteGoal(createResult.data.uuid);
 
       // Assert
       expect(result.success).toBe(true);
 
       // 验证目标已被删除
-      const getResult = await mainGoalService.getGoalById(createResult.data.id);
+      const getResult = await mainGoalService.getGoalById(createResult.data.uuid);
       expect(getResult.success).toBe(false);
     });
   });
@@ -107,7 +107,7 @@ describe('MainGoalApplicationService', () => {
     it('应能创建目录', async () => {
       // Arrange
       const dirData: IGoalDir = {
-        id: 'dir-test',
+        uuid: 'dir-test',
         name: '测试目录',
         icon: '📁',
         parentId: undefined,
@@ -138,7 +138,7 @@ describe('MainGoalApplicationService', () => {
     it('应能删除目录', async () => {
       // Arrange - 先创建一个目录
       const dirData: IGoalDir = {
-        id: 'dir-delete-test',
+        uuid: 'dir-delete-test',
         name: '待删除目录',
         icon: '📁',
         parentId: undefined,
@@ -153,7 +153,7 @@ describe('MainGoalApplicationService', () => {
       expect(createResult.success).toBe(true);
 
       // Act
-      const result = await mainGoalService.deleteGoalDir(dirData.id);
+      const result = await mainGoalService.deleteGoalDir(dirData.uuid);
 
       // Assert
       expect(result.success).toBe(true);

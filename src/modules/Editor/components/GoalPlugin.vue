@@ -65,7 +65,7 @@ const repo = computed(() => {
 
 // 获取关联的目标信息
 const associatedGoal = computed(() => {
-    const relativeGoal = repo.value.relativeGoalId;
+    const relativeGoal = repo.value.relativegoalUuid;
     if (!relativeGoal) {
         return null
     }

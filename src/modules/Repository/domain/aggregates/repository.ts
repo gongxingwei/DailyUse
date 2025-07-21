@@ -13,11 +13,11 @@ export class Repository extends AggregateRoot implements IRepository {
     constructor(
         name: string,
         path: string,
-        id?: string,
+        uuid?: string,
         description?: string,
         relatedGoals?: string[],
     ) {
-        super(id || Repository.generateId());
+        super(uuid || Repository.generateId());
         this._name = name;
         this._path = path;
         this._description = description;
@@ -28,7 +28,7 @@ export class Repository extends AggregateRoot implements IRepository {
     }
 
     get id(): string {
-        return this._id;
+        return this._uuid;
     }
     get name(): string {
         return this._name;
@@ -66,13 +66,13 @@ export class Repository extends AggregateRoot implements IRepository {
     }
 
     static isRepository(obj: any): obj is Repository {
-        return obj instanceof Repository || (obj && typeof obj.id === 'string' && typeof obj
+        return obj instanceof Repository || (obj && typeof obj.uuid === 'string' && typeof obj
             .name === 'string' && typeof obj.path === 'string');
     }
 
     toDTO(): IRepository {
         return {
-            id: this._id,
+            uuid: this._uuid,
             name: this._name,
             path: this._path,
             description: this._description,
@@ -85,7 +85,7 @@ export class Repository extends AggregateRoot implements IRepository {
         const repository = new Repository(
             dto.name,
             dto.path,
-            dto.id,
+            dto.uuid,
             dto.description,
             dto.relatedGoals
         );

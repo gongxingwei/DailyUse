@@ -9,13 +9,13 @@ export const useRepositoryStore = defineStore("Repository", {
   }),
 
   getters: {
-    getRepositoryByname: (state) => (name: string) => {
+    getRepositoryByName: (state) => (name: string) => {
       return state.repositories.find((repo) => repo.name === name);
     },
     // 获取关联指定目标的仓库
-    getRelativeRepoByGoalId: (state) => (goalId: string) => {
+    getRelativeRepoBygoalUuid: (state) => (goalUuid: string) => {
       let repos = state.repositories.filter((repo) => {
-        repo.relatedGoals?.includes(goalId);
+        repo.relatedGoals?.includes(goalUuid);
       });
       if (!repos || repos.length === 0) {
         return [];
@@ -43,7 +43,7 @@ export const useRepositoryStore = defineStore("Repository", {
 
     async removeRepositoryById(repositoryId: string) {
       const index = this.repositories.findIndex(
-        (repo) => repo.id === repositoryId
+        (repo) => repo.uuid === repositoryId
       );
       if (index > -1) {
         this.repositories.splice(index, 1);
@@ -54,7 +54,7 @@ export const useRepositoryStore = defineStore("Repository", {
 
     async getRepositoryById(repositoryId: string): Promise<Repository | null> {
       const repository = this.repositories.find(
-        (repo) => repo.id === repositoryId
+        (repo) => repo.uuid === repositoryId
       );
       if (repository) {
         return this.ensureRepositoryObject(repository);

@@ -94,7 +94,7 @@ src/
 ```typescript
 // electron/shared/types/dtos.ts
 export interface AccountDTO {
-  id: string;
+  uuid: string;
   username: string;
   email?: string;
   phone?: string;
@@ -105,8 +105,8 @@ export interface AccountDTO {
 }
 
 export interface SessionLogDTO {
-  id: string;
-  accountId: string;
+  uuid: string;
+  accountUuid: string;
   sessionId: string;
   operationType: string;
   ipLocation: IPLocationDTO;
@@ -133,8 +133,8 @@ export class AccountApi {
     return await window.electronAPI.invoke('account:get-all-users');
   }
 
-  static async updateAccount(id: string, data: any): Promise<AccountDTO> {
-    return await window.electronAPI.invoke('account:update', { id, data });
+  static async updateAccount(uuid: string, data: any): Promise<AccountDTO> {
+    return await window.electronAPI.invoke('account:update', { uuid, data });
   }
 }
 ```
@@ -164,7 +164,7 @@ export class Account extends AggregateRoot {
 
   toDTO(): AccountDTO {
     return {
-      id: this.id,
+      uuid: this.uuid,
       username: this.username,
       email: this.email?.value,
       phone: this.phoneNumber?.number,

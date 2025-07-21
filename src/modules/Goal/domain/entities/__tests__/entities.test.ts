@@ -8,7 +8,7 @@ import type { IGoal, IKeyResult, IRecord, IGoalDir } from '@/modules/Goal/domain
 describe('Goal Domain Entities', () => {
   describe('Goal Entity', () => {
     const mockGoalData: IGoal = {
-      id: 'goal-1',
+      uuid: 'goal-1',
       title: '测试目标',
       description: '目标描述',
       startTime: '2024-01-01',
@@ -20,8 +20,8 @@ describe('Goal Domain Entities', () => {
       tags: ['test', 'sample'],
       keyResults: [
         {
-          id: 'kr-1',
-          goalId: 'goal-1',
+          uuid: 'kr-1',
+          goalUuid: 'goal-1',
           title: 'KR1',
           description: 'KR描述',
           targetValue: 100,
@@ -100,8 +100,8 @@ describe('Goal Domain Entities', () => {
     it('应正确管理关键结果', () => {
       const goal = new Goal(mockGoalData);
       const newKR: IKeyResult = {
-        id: 'kr-2',
-        goalId: 'goal-1',
+        uuid: 'kr-2',
+        goalUuid: 'goal-1',
         title: 'KR2',
         description: 'KR2描述',
         targetValue: 50,
@@ -152,8 +152,8 @@ describe('Goal Domain Entities', () => {
 
   describe('KeyResult Entity', () => {
     const mockKeyResultData: IKeyResult = {
-      id: 'kr-1',
-      goalId: 'goal-1',
+      uuid: 'kr-1',
+      goalUuid: 'goal-1',
       title: '关键结果1',
       description: 'KR描述',
       targetValue: 100,
@@ -168,7 +168,7 @@ describe('Goal Domain Entities', () => {
       const kr = new KeyResult(mockKeyResultData);
       
       expect(kr.getId()).toBe('kr-1');
-      expect(kr.getGoalId()).toBe('goal-1');
+      expect(kr.getgoalUuid()).toBe('goal-1');
       expect(kr.getTitle()).toBe('关键结果1');
       expect(kr.getTargetValue()).toBe(100);
       expect(kr.getCurrentValue()).toBe(30);
@@ -210,8 +210,8 @@ describe('Goal Domain Entities', () => {
 
   describe('Record Entity', () => {
     const mockRecordData: IRecord = {
-      id: 'record-1',
-      goalId: 'goal-1',
+      uuid: 'record-1',
+      goalUuid: 'goal-1',
       keyResultId: 'kr-1',
       value: 10,
       description: '测试记录',
@@ -224,7 +224,7 @@ describe('Goal Domain Entities', () => {
       const record = new Record(mockRecordData);
       
       expect(record.getId()).toBe('record-1');
-      expect(record.getGoalId()).toBe('goal-1');
+      expect(record.getgoalUuid()).toBe('goal-1');
       expect(record.getKeyResultId()).toBe('kr-1');
       expect(record.getValue()).toBe(10);
       expect(record.getDescription()).toBe('测试记录');
@@ -249,7 +249,7 @@ describe('Goal Domain Entities', () => {
 
   describe('GoalDir Entity', () => {
     const mockGoalDirData: IGoalDir = {
-      id: 'dir-1',
+      uuid: 'dir-1',
       name: '测试目录',
       description: '目录描述',
       parentId: null,
@@ -293,7 +293,7 @@ describe('Goal Domain Entities', () => {
   describe('Entity Serialization', () => {
     it('所有实体应支持JSON序列化', () => {
       const goalData: IGoal = {
-        id: 'goal-1',
+        uuid: 'goal-1',
         title: '测试',
         description: '描述',
         startTime: '2024-01-01',
@@ -312,7 +312,7 @@ describe('Goal Domain Entities', () => {
       const serialized = JSON.stringify(goal.toDTO());
       const parsed = JSON.parse(serialized);
       
-      expect(parsed.id).toBe('goal-1');
+      expect(parsed.uuid).toBe('goal-1');
       expect(parsed.title).toBe('测试');
     });
   });

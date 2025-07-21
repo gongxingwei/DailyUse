@@ -6,8 +6,8 @@ import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
  * 管理用户登录会话的生命周期
  */
 export class Session {
-  private _id: string;
-  private _accountId: string;
+  private _uuid: string;
+  private _accountUuUuid: string;
   private _deviceInfo: string;
   private _ipAddress: string;
   private _userAgent?: string;
@@ -19,15 +19,15 @@ export class Session {
   private _terminationReason?: string;
 
   constructor(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     deviceInfo: string,
     ipAddress: string,
     userAgent?: string,
     sessionDurationInMinutes: number = 60 * 24 // 默认24小时
   ) {
-    this._id = id;
-    this._accountId = accountId;
+    this._uuid = uuid;
+    this._accountUuUuid = accountUuid;
     this._deviceInfo = deviceInfo;
     this._ipAddress = ipAddress;
     this._userAgent = userAgent;
@@ -38,12 +38,12 @@ export class Session {
   }
 
   // Getters
-  get id(): string {
-    return this._id;
+  get uuid(): string {
+    return this._uuid;
   }
 
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get deviceInfo(): string {
@@ -173,8 +173,8 @@ export class Session {
    * 转换为DTO对象
    */
   toDTO(): {
-    id: string;
-    accountId: string;
+    uuid: string;
+    accountUuid: string;
     deviceInfo: string;
     ipAddress: string;
     userAgent?: string;
@@ -186,8 +186,8 @@ export class Session {
     terminationReason?: string;
   } {
     return {
-      id: this._id,
-      accountId: this._accountId,
+      uuid: this._uuid,
+      accountUuid: this._accountUuUuid,
       deviceInfo: this._deviceInfo,
       ipAddress: this._ipAddress,
       userAgent: this._userAgent,
@@ -204,8 +204,8 @@ export class Session {
    * 从数据库数据创建会话实例
    */
   static fromDatabase(data: {
-    id: string;
-    account_id: string;
+    uuid: string;
+    account_uuid: string;
     device_info: string;
     ip_address: string;
     user_agent?: string;
@@ -215,8 +215,8 @@ export class Session {
     is_active: boolean;
   }): Session {
     const session = Object.create(Session.prototype);
-    session._id = data.id;
-    session._accountId = data.account_id;
+    session._uuid = data.uuid;
+    session._accountUuUuid = data.account_uuid;
     session._deviceInfo = data.device_info;
     session._ipAddress = data.ip_address;
     session._userAgent = data.user_agent;
@@ -232,8 +232,8 @@ export class Session {
    * 转换为数据库格式
    */
   toDatabaseFormat(): {
-    id: string;
-    account_id: string;
+    uuid: string;
+    account_uuid: string;
     device_info: string;
     ip_address: string;
     user_agent?: string;
@@ -243,8 +243,8 @@ export class Session {
     is_active: boolean;
   } {
     return {
-      id: this._id,
-      account_id: this._accountId,
+      uuid: this._uuid,
+      account_uuid: this._accountUuUuid,
       device_info: this._deviceInfo,
       ip_address: this._ipAddress,
       user_agent: this._userAgent,

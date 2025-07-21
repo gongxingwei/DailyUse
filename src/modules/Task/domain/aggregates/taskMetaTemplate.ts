@@ -49,7 +49,7 @@ export class TaskMetaTemplate extends AggregateRoot {
 
 
   constructor(
-    id: string,
+    uuid: string,
     name: string,
     category: string,
     options?: {
@@ -59,7 +59,7 @@ export class TaskMetaTemplate extends AggregateRoot {
       defaultMetadata?: TaskTemplate['metadata'];
     }
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
     this._name = name;
@@ -90,7 +90,7 @@ export class TaskMetaTemplate extends AggregateRoot {
    * 保留所有原始状态信息
    */
   static fromCompleteData(data: {
-    id: string;
+    uuid: string;
     name: string;
     description?: string;
     category: string;
@@ -104,7 +104,7 @@ export class TaskMetaTemplate extends AggregateRoot {
     };
   }): TaskMetaTemplate {
     const instance = new TaskMetaTemplate(
-      data.id,
+      data.uuid,
       data.name,
       data.category,
       {
@@ -127,7 +127,7 @@ export class TaskMetaTemplate extends AggregateRoot {
 
   clone(): TaskMetaTemplate {
     return new TaskMetaTemplate(
-      this.id,
+      this.uuid,
       this._name,
       this._category,
       {
@@ -144,7 +144,7 @@ export class TaskMetaTemplate extends AggregateRoot {
    */
   toDTO(): ITaskMetaTemplate {
     return {
-      id: this.id,
+      uuid: this.uuid,
       name: this._name,
       description: this._description,
       category: this._category,

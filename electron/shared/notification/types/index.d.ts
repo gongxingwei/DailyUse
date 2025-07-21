@@ -1,7 +1,7 @@
 import { ImportanceLevel } from "@/shared/types/importance";
 
 export interface NotificationWindow {
-  id: string;
+  uuid: string;
   title: string;
   body: string;
   importance: ImportanceLevel;

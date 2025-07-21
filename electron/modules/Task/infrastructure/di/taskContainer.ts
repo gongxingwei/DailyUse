@@ -24,15 +24,6 @@ export class TaskContainer {
     return TaskContainer.instance;
   }
 
-  /**
-   * 设置当前用户到所有仓库
-   */
-  public setCurrentUser(username: string): void {
-    this.taskTemplateRepository.setCurrentUser(username);
-    this.taskInstanceRepository.setCurrentUser(username);
-    this.taskMetaTemplateRepository.setCurrentUser(username);
-  }
-
   getTaskTemplateRepository(): ITaskTemplateRepository {
     return this.taskTemplateRepository;
   }

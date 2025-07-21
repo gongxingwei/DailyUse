@@ -12,11 +12,11 @@ export function useRecordDialog() {
         showRecordDialog.value = true;
     };
 
-    const handleSaveRecord = async (record: IRecordCreate, goalId: string, keyResultId: string) => {
+    const handleSaveRecord = async (record: IRecordCreate, goalUuid: string, keyResultId: string) => {
         try {
             // 使用聚合根驱动的业务方法
             const response = await goalService.addRecordToGoal(
-                goalId,
+                goalUuid,
                 keyResultId,
                 record.value,
                 record.note

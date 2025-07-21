@@ -48,12 +48,12 @@ class NotificationService {
     }
   }
 
-  public closeNotification(id: string): TResponse {
+  public closeNotification(uuid: string): TResponse {
     try {
-      const response = this.windowManagementService.closeWindow(id);
+      const response = this.windowManagementService.closeWindow(uuid);
       if (!response) {
         throw new Error(
-          `Notification with ID ${id} not found or already closed`
+          `Notification with ID ${uuid} not found or already closed`
         );
       }
       return {
@@ -70,17 +70,17 @@ class NotificationService {
   }
 
   public handleNotificationAction(
-    id: string,
+    uuid: string,
     action: { text: string; type: string }
   ): void {
-    const window = this.windowManagementService.getWindow(id);
+    const window = this.windowManagementService.getWindow(uuid);
     if (window) {
       if (action.type === "cancel" || action.type === "confirm") {
         window.close();
       }
-      window.webContents.send("notification-action", { id, action });
+      window.webContents.send("notification-action", { uuid, action });
     } else {
-      console.warn(`Notification with ID ${id} not found.`);
+      console.warn(`Notification with ID ${uuid} not found.`);
     }
   }
 }

@@ -1,5 +1,5 @@
 export interface ShortcutItem {
-  id: string;
+  uuid: string;
   name: string;
   path: string;  // 标题项不需要路径
   description?: string;
@@ -11,7 +11,7 @@ export interface ShortcutItem {
 }
 
 export interface ShortcutCategory {
-  id: string;
+  uuid: string;
   name: string;
   icon?: string;
   description?: string;

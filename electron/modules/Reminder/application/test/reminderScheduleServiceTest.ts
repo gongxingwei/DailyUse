@@ -5,7 +5,7 @@ function test() {
     const reminderInstance = reminderScheduleService.createReminderScheduleByCron(
         "* /1 * * * *", // 每1m
         {
-            id: "reminder1",
+            uuid: "reminder1",
             title: "Daily Reminder",
             body: "This is your daily reminder.",
             importanceLevel: ImportanceLevel.Important // 假设有一个高重要级别

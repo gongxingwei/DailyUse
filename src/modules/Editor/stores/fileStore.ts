@@ -3,7 +3,7 @@ import { defineStore } from 'pinia'
 interface FileState {
   currentFilePath: string | null
   openedFiles: Array<{
-    id: string
+    uuid: string
     path: string
     title: string
   }>
@@ -24,14 +24,14 @@ export const useFileStore = defineStore('file', {
       const title = window.shared.path.basename(path)
       const id = path // 使用路径作为唯一标识
 
-      if (!this.openedFiles.find(f => f.id === id)) {
-        this.openedFiles.push({ id, path, title })
+      if (!this.openedFiles.find(f => f.uuid === id)) {
+        this.openedFiles.push({ uuid, path, title })
       }
       this.setCurrentFile(path)
     },
 
-    closeFile(id: string) {
-      const index = this.openedFiles.findIndex(f => f.id === id)
+    closeFile(uuid: string) {
+      const index = this.openedFiles.findIndex(f => f.uuid === id)
       if (index > -1) {
         this.openedFiles.splice(index, 1)
         

@@ -7,7 +7,7 @@ import SourceControl from "../components/SourceControl.vue";
 import GoalPlugin from "../components/GoalPlugin.vue";
 
 interface ActivityBarItem {
-    id: string;
+    uuid: string;
     label: string;
     title: string;
     icon: string;
@@ -17,24 +17,24 @@ interface ActivityBarItem {
 export const useActivityBarStore = defineStore("activityBar", {
     state: () => ({
         activityBarItems: [
-            { id: 'explorer', label: 'Explorer', title: 'Folders', icon: 'mdi-file-multiple', component: markRaw(FileExplorer) },
-            // { id: 'search', label: 'Search', title: 'Search', icon: 'mdi-file-search', component: markRaw(Search) },
-            { id: 'git', label: 'Git', title: 'Source Control', icon: 'mdi-source-branch', component: markRaw(SourceControl) },
-            { id: 'goal', label: 'Goal', title: 'Goal', icon: 'mdi-flag', component: markRaw(GoalPlugin) },
+            { uuid: 'explorer', label: 'Explorer', title: 'Folders', icon: 'mdi-file-multiple', component: markRaw(FileExplorer) },
+            // { uuid: 'search', label: 'Search', title: 'Search', icon: 'mdi-file-search', component: markRaw(Search) },
+            { uuid: 'git', label: 'Git', title: 'Source Control', icon: 'mdi-source-branch', component: markRaw(SourceControl) },
+            { uuid: 'goal', label: 'Goal', title: 'Goal', icon: 'mdi-flag', component: markRaw(GoalPlugin) },
         ] as ActivityBarItem[],
         activeActivityBarItemId: 'explorer',
     }),
 
     getters: {
         activeActivityBarItem: (state) => {
-            const activeActivityBarItem = state.activityBarItems.find(item => item.id === state.activeActivityBarItemId);
+            const activeActivityBarItem = state.activityBarItems.find(item => item.uuid === state.activeActivityBarItemId);
             return activeActivityBarItem;
         },
         isSidebarVisible: (state) => !!state.activeActivityBarItemId
     },
 
     actions: {
-        setActiveActivityBarItemId(id: string) {
+        setActiveActivityBarItemId(uuid: string) {
             // Toggle if clicking the same item
             this.activeActivityBarItemId = 
                 this.activeActivityBarItemId === id ? '' : id;

@@ -1,7 +1,7 @@
 import { computed, ref } from 'vue';
 import { useGoalStore } from '../stores/goalStore';
+import { useAuthenticationStore } from '@/modules/Authentication/presentation/stores/authenticationStore';
 import { getGoalDomainApplicationService } from '../../application/services/goalDomainApplicationService';
-import type { IGoalDir } from '../../domain/types/goal';
 import { GoalDir } from '../../domain/entities/goalDir';
 export function useGoalDirDialog() {
     const showGoalDirDialog = ref(false);
@@ -10,6 +10,8 @@ export function useGoalDirDialog() {
     const selectedDirId = ref<string>('all');
 
     const goalStore = useGoalStore();
+
+    const authStore = useAuthenticationStore();
     
     // 目录相关
     const goalDirs = computed(() => goalStore.getAllGoalDirs);
@@ -23,6 +25,10 @@ export function useGoalDirDialog() {
         goalDirDialogMode.value = 'create';
         initGoalDirData();
         showGoalDirDialog.value = true;
+        console.log('获取的用户信息:', {
+            token: authStore.getToken,
+            accountUuid: authStore.getAccountUuid
+        });
     };
 
     // 开始编辑目标节点

@@ -9,22 +9,22 @@ export class NotificationIpc {
         return window.shared.ipcRenderer.invoke('show-notification', serializeForIpc(options));
     }
 
-    public static closeNotification(id: string): Promise<TResponse<void>> {
+    public static closeNotification(uuid: string): Promise<TResponse<void>> {
         return window.shared.ipcRenderer.invoke('close-notification', id);
     }
 
     public static notificationAction(
-        id: string,
+        uuid: string,
         action: { text: string; type: string }
     ): Promise<TResponse<void>> {
-        return window.shared.ipcRenderer.invoke('notification-action', id, serializeForIpc(action));
+        return window.shared.ipcRenderer.invoke('notification-action', uuid, serializeForIpc(action));
     } 
 
     public static onNotificationAction(
-        callback: (id: string, action: { text: string; type: string }) => void
+        callback: (uuid: string, action: { text: string; type: string }) => void
     ): () => void {
-        const handler = (_event: any, id: string, action: { text: string; type: string}) => {
-            callback(id, action);
+        const handler = (_event: any, uuid: string, action: { text: string; type: string}) => {
+            callback(uuid, action);
         };
         window.shared.ipcRenderer.on('notification-action-received', handler);
         return () => window.shared.ipcRenderer.removeListener('notification-action-received', handler);

@@ -35,7 +35,7 @@ export class SqliteSessionLoggingRepository
 
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO session_logs (
-        id, account_id, session_id, operation_type, device_info, ip_address,
+        uuid, account_uuid, session_id, operation_type, device_info, ip_address,
         ip_country, ip_region, ip_city, ip_latitude, ip_longitude, ip_timezone, ip_isp,
         user_agent, login_time, logout_time, duration, risk_level, risk_factors,
         is_anomalous, created_at, updated_at
@@ -43,8 +43,8 @@ export class SqliteSessionLoggingRepository
     `);
 
     stmt.run(
-      data.id,
-      data.account_id,
+      data.uuid,
+      data.account_uuid,
       data.session_id,
       data.operation_type,
       data.device_info,
@@ -71,7 +71,7 @@ export class SqliteSessionLoggingRepository
   /**
    * 根据ID查找会话日志
    */
-  async findById(id: string): Promise<SessionLog | null> {
+  async findById(uuid: string): Promise<SessionLog | null> {
     await this.getDb();
     if (!this.db) {
       console.error("Database not initialized");
@@ -82,7 +82,7 @@ export class SqliteSessionLoggingRepository
       SELECT * FROM session_logs WHERE id = ?
     `);
 
-    const row = stmt.get(id) as any;
+    const row = stmt.get(uuid) as any;
     if (!row) return null;
 
     return SessionLog.fromDatabase(row);
@@ -91,7 +91,7 @@ export class SqliteSessionLoggingRepository
   /**
    * 根据账户ID查找会话日志
    */
-  async findByAccountId(accountId: string): Promise<SessionLog[]> {
+  async findByAccountUuid(accountUuid: string): Promise<SessionLog[]> {
     await this.getDb();
     if (!this.db) {
       console.error("Database not initialized");
@@ -100,11 +100,11 @@ export class SqliteSessionLoggingRepository
 
     const stmt = this.db.prepare(`
       SELECT * FROM session_logs 
-      WHERE account_id = ?
+      WHERE account_uuid = ?
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map((row) => SessionLog.fromDatabase(row));
   }
 
@@ -211,8 +211,8 @@ export class SqliteSessionLoggingRepository
   /**
    * 根据账户ID和时间范围查找会话日志
    */
-  async findByAccountIdAndTimeRange(
-    accountId: string,
+  async findByAccountUuidAndTimeRange(
+    accountUuid: string,
     startTime: Date,
     endTime: Date
   ): Promise<SessionLog[]> {
@@ -224,12 +224,12 @@ export class SqliteSessionLoggingRepository
 
     const stmt = this.db.prepare(`
       SELECT * FROM session_logs 
-      WHERE account_id = ? AND created_at BETWEEN ? AND ?
+      WHERE account_uuid = ? AND created_at BETWEEN ? AND ?
       ORDER BY created_at DESC
     `);
 
     const rows = stmt.all(
-      accountId,
+      accountUuid,
       startTime.getTime(),
       endTime.getTime()
     ) as any[];
@@ -239,7 +239,7 @@ export class SqliteSessionLoggingRepository
   /**
    * 删除会话日志
    */
-  async delete(id: string): Promise<void> {
+  async delete(uuid: string): Promise<void> {
     await this.getDb();
     if (!this.db) {
       console.error("Database not initialized");
@@ -250,13 +250,13 @@ export class SqliteSessionLoggingRepository
       DELETE FROM session_logs WHERE id = ?
     `);
 
-    stmt.run(id);
+    stmt.run(uuid);
   }
 
   /**
    * 删除账户的所有会话日志
    */
-  async deleteByAccountId(accountId: string): Promise<void> {
+  async deleteByAccountUuid(accountUuid: string): Promise<void> {
     await this.getDb();
     if (!this.db) {
       console.error("Database not initialized");
@@ -264,10 +264,10 @@ export class SqliteSessionLoggingRepository
     }
 
     const stmt = this.db.prepare(`
-      DELETE FROM session_logs WHERE account_id = ?
+      DELETE FROM session_logs WHERE account_uuid = ?
     `);
 
-    stmt.run(accountId);
+    stmt.run(accountUuid);
   }
 
   /**
@@ -292,7 +292,7 @@ export class SqliteSessionLoggingRepository
    * 获取账户的登录统计
    */
   async getLoginStats(
-    accountId: string,
+    accountUuid: string,
     days: number = 30
   ): Promise<{
     totalLogins: number;
@@ -323,10 +323,10 @@ export class SqliteSessionLoggingRepository
         SUM(CASE WHEN operation_type = 'login' THEN 1 ELSE 0 END) as successful_logins,
         SUM(CASE WHEN operation_type = 'suspicious_activity' THEN 1 ELSE 0 END) as failed_logins
       FROM session_logs 
-      WHERE account_id = ? AND created_at >= ?
+      WHERE account_uuid = ? AND created_at >= ?
     `);
 
-    const result = stmt.get(accountId, startTime.getTime()) as any;
+    const result = stmt.get(accountUuid, startTime.getTime()) as any;
 
     return {
       totalLogins: result.total_logins || 0,

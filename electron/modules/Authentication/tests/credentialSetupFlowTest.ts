@@ -20,7 +20,7 @@ export class CredentialSetupFlowTest {
         aggregateId: 'test-account-123',
         occurredOn: new Date(),
         payload: {
-          accountId: 'test-account-123',
+          accountUuid: 'test-account-123',
           username: 'testuser',
           email: 'test@example.com',
           accountType: 'regular',
@@ -69,7 +69,7 @@ export class CredentialSetupFlowTest {
         aggregateId: 'test-account-cancel-123',
         occurredOn: new Date(),
         payload: {
-          accountId: 'test-account-cancel-123',
+          accountUuid: 'test-account-cancel-123',
           username: 'canceluser',
           email: 'cancel@example.com',
           accountType: 'regular',
@@ -108,7 +108,7 @@ export class CredentialSetupFlowTest {
         aggregateId: 'test-account-noauth-123',
         occurredOn: new Date(),
         payload: {
-          accountId: 'test-account-noauth-123',
+          accountUuid: 'test-account-noauth-123',
           username: 'noauthuser',
           email: 'noauth@example.com',
           accountType: 'guest',

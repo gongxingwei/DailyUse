@@ -76,7 +76,7 @@ export class TaskMetaTemplateFactory {
         defaultReminderConfig: {
           enabled: true,
           alerts: [{
-            id: uuidv4(),
+            uuid: uuidv4(),
             timing: {
               type: 'relative',
               minutesBefore: 15
@@ -125,7 +125,7 @@ export class TaskMetaTemplateFactory {
           enabled: true,
           alerts: [
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 60
@@ -134,7 +134,7 @@ export class TaskMetaTemplateFactory {
               message: '1小时后有重要事件'
             },
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 15
@@ -185,7 +185,7 @@ export class TaskMetaTemplateFactory {
           enabled: true,
           alerts: [
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 1440 // 1天前
@@ -194,7 +194,7 @@ export class TaskMetaTemplateFactory {
               message: '任务截止日期临近！'
             },
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 120 // 2小时前
@@ -247,7 +247,7 @@ export class TaskMetaTemplateFactory {
           enabled: true,
           alerts: [
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 15
@@ -256,7 +256,7 @@ export class TaskMetaTemplateFactory {
               message: '会议即将开始，请准备相关材料'
             },
             {
-              id: uuidv4(),
+              uuid: uuidv4(),
               timing: {
                 type: 'relative',
                 minutesBefore: 5

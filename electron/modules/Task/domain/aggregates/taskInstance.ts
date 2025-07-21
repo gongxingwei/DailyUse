@@ -16,7 +16,7 @@ import type {
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 
 export class TaskInstance extends AggregateRoot implements ITaskInstance {
-  private _templateId: string;
+  private _templateUuid: string;
   private _title: string;
   private _description?: string;
   private _timeConfig: TaskInstanceTimeConfig; // 新增
@@ -51,7 +51,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   private _version: number;
 
   constructor(
-    id: string,
+    uuid: string,
     templateId: string,
     title: string,
     scheduledTime: DateTime,
@@ -68,10 +68,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       difficulty?: 1 | 2 | 3 | 4 | 5;
     }
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
-    this._templateId = templateId;
+    this._templateUuid = templateId;
     this._title = title;
     this._description = options?.description;
 
@@ -94,7 +94,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       enabled: true,
       alerts:
         options?.reminderAlerts?.map((alert) => ({
-          id: alert.id,
+          uuid: alert.uuid,
           alertConfig: alert,
           status: "pending" as const,
           scheduledTime: this.calculateReminderTime(alert, scheduledTime),
@@ -125,7 +125,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         this._lifecycle.events.push({
           type: "reminder_scheduled",
           timestamp: now,
-          alertId: alert.id,
+          alertId: alert.uuid,
           details: {
             scheduledFor: this.calculateReminderTime(alert, scheduledTime)
               .isoString,
@@ -152,7 +152,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   // Getters
   get templateId(): string {
-    return this._templateId;
+    return this._templateUuid;
   }
 
   get title(): string {
@@ -318,7 +318,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     if (alerts) {
       this._reminderStatus.alerts = alerts.map((alert) => ({
-        id: alert.id,
+        uuid: alert.uuid,
         alertConfig: alert,
         status: "pending",
         scheduledTime: this.calculateReminderTime(alert, this.scheduledTime),
@@ -381,10 +381,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (this._keyResultLinks?.length) {
       const event: TaskCompletedEvent = {
         eventType: "TaskCompleted",
-        aggregateId: this._id,
+        aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
-          taskId: this._id,
+          taskId: this._uuid,
           keyResultLinks: this._keyResultLinks,
           completedAt: new Date(),
         },
@@ -489,7 +489,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   // 提醒相关方法
   triggerReminder(alertId: string): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
+    const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
     if (alert && alert.status === "pending") {
       const now = TimeUtils.now();
       alert.status = "triggered";
@@ -512,7 +512,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     snoozeUntil: DateTime,
     reason?: string
   ): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
+    const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
     if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
       const now = TimeUtils.now();
 
@@ -538,7 +538,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   dismissReminder(alertId: string): void {
-    const alert = this._reminderStatus.alerts.find((a) => a.id === alertId);
+    const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
     if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
       const now = TimeUtils.now();
       alert.status = "dismissed";
@@ -564,7 +564,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         this._lifecycle.events.push({
           type: "reminder_cancelled",
           timestamp: now,
-          alertId: alert.id,
+          alertId: alert.uuid,
         });
       }
     });
@@ -589,7 +589,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
     if (pendingAlerts.length > 0) {
       return {
-        alertId: pendingAlerts[0].id,
+        alertId: pendingAlerts[0].uuid,
         scheduledTime: pendingAlerts[0].scheduledTime,
       };
     }
@@ -644,10 +644,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (this._keyResultLinks?.length) {
       const event: TaskUndoCompletedEvent = {
         eventType: "TaskUndoCompleted",
-        aggregateId: this._id,
+        aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
-          taskId: this._id,
+          taskId: this._uuid,
           keyResultLinks: this._keyResultLinks,
           undoAt: new Date(),
         }
@@ -689,7 +689,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   static fromTemplate(
     instanceId: string,
     template: {
-      id: string;
+      uuid: string;
       title: string;
       description?: string;
       timeConfig: TaskTimeConfig;
@@ -710,7 +710,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   ): TaskInstance {
     return new TaskInstance(
       instanceId,
-      template.id,
+      template.uuid,
       template.title,
       scheduledTime,
       (template.metadata.priority || 3) as 1 | 2 | 3 | 4 | 5,
@@ -743,8 +743,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   static fromCompleteData(data: any): TaskInstance {
     // 创建基础实例
     const instance = new TaskInstance(
-      data.id || data._id,
-      data.templateId || data._templateId,
+      data.uuid || data._id,
+      data.templateId || data._templateUuid,
       data.title || data._title,
       data.scheduledTime || data._timeConfig?.scheduledTime || data.timeConfig?.scheduledTime,
       data.priority || data._priority || 3,
@@ -806,7 +806,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       instance._reminderStatus = {
         enabled: reminderStatus.enabled ?? true,
         alerts: reminderStatus.alerts?.map((alert: any) => ({
-          id: alert.id,
+          uuid: alert.uuid,
           alertConfig: alert.alertConfig,
           status: alert.status || "pending",
           scheduledTime: alert.scheduledTime ? TimeUtils.ensureDateTime(alert.scheduledTime) : TimeUtils.now(),
@@ -861,8 +861,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
    */
   toDTO(): ITaskInstance {
     return {
-      id: this.id,
-      templateId: this._templateId,
+      uuid: this.uuid,
+      templateId: this._templateUuid,
       title: this._title,
       description: this._description,
       timeConfig: this._timeConfig,

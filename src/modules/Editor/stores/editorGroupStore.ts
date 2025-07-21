@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import { useEditorLayoutStore } from './editorLayoutStore'
 
 export interface EditorTab {
-    id: string
+    uuid: string
     title: string
     path: string
     active: boolean
@@ -10,7 +10,7 @@ export interface EditorTab {
 }
 
 export interface EditorGroup {
-    id: string
+    uuid: string
     active: boolean
     width: number
     tabs: EditorTab[]
@@ -39,23 +39,23 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             if (!targetGroupId) {
                 const newGroup = this.addEditorGroup()
                 if (!newGroup) return
-                this.openFile(path, newGroup.id)
+                this.openFile(path, newGroup.uuid)
                 return
             }
 
-            const group = this.editorGroups.find(g => g.id === targetGroupId)
+            const group = this.editorGroups.find(g => g.uuid === targetGroupId)
             if (!group) return
 
             // 检查文件是否已在此组中打开
             const existingTab = group.tabs.find(t => t.path === path)
             if (existingTab) {
-                this.setActiveTab(targetGroupId, existingTab.id)
+                this.setActiveTab(targetGroupId, existingTab.uuid)
                 return
             }
 
             // 创建新标签页
             const newTab: EditorTab = {
-                id: path, // 使用路径作为唯一标识
+                uuid: path, // 使用路径作为唯一标识
                 title,
                 path,
                 active: true,
@@ -64,7 +64,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             // 取消其他标签页的活动状态
             group.tabs.forEach(t => t.active = false)
             group.tabs.push(newTab)
-            group.activeTabId = newTab.id
+            group.activeTabId = newTab.uuid
 
             // 激活当前组
             this.setActiveGroup(targetGroupId)
@@ -72,19 +72,19 @@ export const useEditorGroupStore = defineStore('editorGroup', {
 
         openFilePreview(path: string, groupId: string) {
             const title = `Preview: ${window.shared.path.basename(path)}`
-            const group = this.editorGroups.find(g => g.id === groupId)
+            const group = this.editorGroups.find(g => g.uuid === groupId)
             if (!group) return
 
             // 检查是否已有预览标签页
             const existingPreview = group.tabs.find(t => t.path === path && t.isPreview)
             if (existingPreview) {
-                this.setActiveTab(groupId, existingPreview.id)
+                this.setActiveTab(groupId, existingPreview.uuid)
                 return
             }
 
             // 创建新的预览标签页
             const previewTab: EditorTab = {
-                id: `preview-${path}`,
+                uuid: `preview-${path}`,
                 title,
                 path,
                 active: true,
@@ -93,15 +93,15 @@ export const useEditorGroupStore = defineStore('editorGroup', {
 
             group.tabs.forEach(t => t.active = false)
             group.tabs.push(previewTab)
-            group.activeTabId = previewTab.id
+            group.activeTabId = previewTab.uuid
         },
 
         // 关闭标签页
         closeTab(groupId: string, tabId: string) {
-            const group = this.editorGroups.find(g => g.id === groupId)
+            const group = this.editorGroups.find(g => g.uuid === groupId)
             if (!group) return
 
-            const tabIndex = group.tabs.findIndex(t => t.id === tabId)
+            const tabIndex = group.tabs.findIndex(t => t.uuid === tabId)
             if (tabIndex === -1) return
 
             group.tabs.splice(tabIndex, 1)
@@ -130,10 +130,10 @@ export const useEditorGroupStore = defineStore('editorGroup', {
 
         // 设置活动标签页
         setActiveTab(groupId: string, tabId: string) {
-            const group = this.editorGroups.find(g => g.id === groupId)
+            const group = this.editorGroups.find(g => g.uuid === groupId)
             if (!group) return
 
-            group.tabs.forEach(t => t.active = t.id === tabId)
+            group.tabs.forEach(t => t.active = t.uuid === tabId)
             group.activeTabId = tabId
         },
 
@@ -142,18 +142,18 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             if (this.editorGroups.length === 0) {
                 const layoutStore = useEditorLayoutStore()
                 const initialGroup: EditorGroup = {
-                    id: `group-${Date.now()}`,
+                    uuid: `group-${Date.now()}`,
                     active: true,
                     width: layoutStore.editorGroupsWidth,
                     tabs: [],
                     activeTabId: null
                 }
                 this.editorGroups.push(initialGroup)
-                this.activeGroupId = initialGroup.id
+                this.activeGroupId = initialGroup.uuid
                 return initialGroup
             }
 
-            const currentGroup = this.editorGroups.find(g => g.id === this.activeGroupId)
+            const currentGroup = this.editorGroups.find(g => g.uuid === this.activeGroupId)
             if (!currentGroup) return
 
             const currentWidth = currentGroup.width
@@ -163,29 +163,29 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             currentGroup.active = false
 
             const newGroup: EditorGroup = {
-                id: `group-${Date.now()}`,
+                uuid: `group-${Date.now()}`,
                 active: true,
                 width: halfWidth,
                 tabs: [],
                 activeTabId: null
             }
 
-            const activeTab = currentGroup.tabs.find(t => t.id === currentGroup.activeTabId)
+            const activeTab = currentGroup.tabs.find(t => t.uuid === currentGroup.activeTabId)
             if (activeTab) {
                 const newTab = { ...activeTab }
                 newGroup.tabs = [newTab]
-                newGroup.activeTabId = newTab.id
+                newGroup.activeTabId = newTab.uuid
             }
 
             const currentIndex = this.editorGroups.indexOf(currentGroup)
             this.editorGroups.splice(currentIndex + 1, 0, newGroup)
-            this.activeGroupId = newGroup.id
+            this.activeGroupId = newGroup.uuid
 
             return newGroup
         },
         // 添加预览编辑器组
         addEditorGroupPreview() {
-            const currentGroup = this.editorGroups.find(g => g.id === this.activeGroupId)
+            const currentGroup = this.editorGroups.find(g => g.uuid === this.activeGroupId)
             if (!currentGroup) return
 
             const currentWidth = currentGroup.width
@@ -194,7 +194,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             currentGroup.width = halfWidth
             currentGroup.active = false
             const newGroup: EditorGroup = {
-                id: `group-${Date.now()}`,
+                uuid: `group-${Date.now()}`,
                 active: true,
                 width: halfWidth,
                 tabs: [],
@@ -202,13 +202,13 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             }
             const currentIndex = this.editorGroups.indexOf(currentGroup)
             this.editorGroups.splice(currentIndex + 1, 0, newGroup)
-            this.activeGroupId = newGroup.id
+            this.activeGroupId = newGroup.uuid
 
             return newGroup
         },
         // 删除编辑器组
         removeEditorGroup(groupId: string) {
-            const index = this.editorGroups.findIndex(g => g.id === groupId)
+            const index = this.editorGroups.findIndex(g => g.uuid === groupId)
             if (index === -1) return
 
             const removedGroup = this.editorGroups[index]
@@ -227,7 +227,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
                 const previousGroup = this.editorGroups[index - 1] || this.editorGroups[0]
                 if (previousGroup) {
                     previousGroup.active = true
-                    this.activeGroupId = previousGroup.id
+                    this.activeGroupId = previousGroup.uuid
                 } else {
                     this.activeGroupId = null
                 }
@@ -236,12 +236,12 @@ export const useEditorGroupStore = defineStore('editorGroup', {
 
         setActiveGroup(groupId: string) {
             if (this.activeGroupId !== groupId) {
-                const currentActive = this.editorGroups.find(g => g.id === this.activeGroupId)
+                const currentActive = this.editorGroups.find(g => g.uuid === this.activeGroupId)
                 if (currentActive) {
                     currentActive.active = false
                 }
 
-                const newActive = this.editorGroups.find(g => g.id === groupId)
+                const newActive = this.editorGroups.find(g => g.uuid === groupId)
                 if (newActive) {
                     newActive.active = true
                     this.activeGroupId = groupId
@@ -250,7 +250,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
         },
 
         getGroupWidth(groupId: string) {
-            const group = this.editorGroups.find(g => g.id === groupId)
+            const group = this.editorGroups.find(g => g.uuid === groupId)
             return group?.width || 300
         },
 
@@ -277,7 +277,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
         },
 
         setGroupWidth(groupId: string, width: number) {
-            const group = this.editorGroups.find(g => g.id === groupId)
+            const group = this.editorGroups.find(g => g.uuid === groupId)
             if (group) {
                 group.width = Math.max(200, width) // 确保最小宽度
             }

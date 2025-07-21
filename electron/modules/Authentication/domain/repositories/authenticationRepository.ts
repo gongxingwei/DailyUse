@@ -9,13 +9,13 @@ import { Token } from "../valueObjects/token";
 export interface IAuthCredentialRepository {
   // 认证凭证基本操作
   save(credential: AuthCredential): Promise<void>;
-  findById(id: string): Promise<AuthCredential | null>;
-  findByAccountId(accountId: string): Promise<AuthCredential | null>;
-  delete(id: string): Promise<void>;
+  findById(uuid: string): Promise<AuthCredential | null>;
+  findByAccountUuid(accountUuid: string): Promise<AuthCredential | null>;
+  delete(uuid: string): Promise<void>;
   
   // 查询操作
   findAll(): Promise<AuthCredential[]>;
-  existsByAccountId(accountId: string): Promise<boolean>;
+  existsByAccountUuid(accountUuid: string): Promise<boolean>;
 
   /**
    * 根据用户名查找认证凭证
@@ -29,10 +29,10 @@ export interface IAuthCredentialRepository {
 export interface ISessionRepository {
   save(session: Session): Promise<void>;
   findById(sessionId: string): Promise<Session | null>;
-  findByAccountId(accountId: string): Promise<Session[]>;
-  findActiveByAccountId(accountId: string): Promise<Session[]>;
+  findByAccountUuid(accountUuid: string): Promise<Session[]>;
+  findActiveByAccountUuid(accountUuid: string): Promise<Session[]>;
   delete(sessionId: string): Promise<void>;
-  deleteByAccountId(accountId: string): Promise<void>;
+  deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredSessions(): Promise<number>;
 }
 
@@ -42,10 +42,10 @@ export interface ISessionRepository {
 export interface ITokenRepository {
   save(token: Token): Promise<void>;
   findByValue(tokenValue: string): Promise<Token | null>;
-  findByAccountId(accountId: string): Promise<Token[]>;
+  findByAccountUuid(accountUuid: string): Promise<Token[]>;
   findByType(type: string): Promise<Token[]>;
   delete(tokenValue: string): Promise<void>;
-  deleteByAccountId(accountId: string): Promise<void>;
+  deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredTokens(): Promise<number>;
 }
 
@@ -55,10 +55,10 @@ export interface ITokenRepository {
 export interface IMFADeviceRepository {
   save(device: MFADevice): Promise<void>;
   findById(deviceId: string): Promise<MFADevice | null>;
-  findByAccountId(accountId: string): Promise<MFADevice[]>;
-  findEnabledByAccountId(accountId: string): Promise<MFADevice[]>;
-  findByAccountIdAndType(accountId: string, type: string): Promise<MFADevice[]>;
+  findByAccountUuid(accountUuid: string): Promise<MFADevice[]>;
+  findEnabledByAccountUuid(accountUuid: string): Promise<MFADevice[]>;
+  findByAccountUuidAndType(accountUuid: string, type: string): Promise<MFADevice[]>;
   delete(deviceId: string): Promise<void>;
-  deleteByAccountId(accountId: string): Promise<void>;
-  existsEnabledByAccountId(accountId: string): Promise<boolean>;
+  deleteByAccountUuid(accountUuid: string): Promise<void>;
+  existsEnabledByAccountUuid(accountUuid: string): Promise<boolean>;
 }

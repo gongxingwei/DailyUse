@@ -42,10 +42,10 @@ export function useGoalReview() {
     /**
      * 获取目标的所有复盘记录
      */
-    const loadGoalReviews = async (goalId: string): Promise<void> => {
+    const loadGoalReviews = async (goalUuid: string): Promise<void> => {
         try {
             loading.value = true;
-            const reviewList = await goalService.getGoalReviews(goalId);
+            const reviewList = await goalService.getGoalReviews(goalUuid);
             reviews.value = reviewList;
         } catch (error) {
             console.error('加载复盘记录失败:', error);
@@ -58,15 +58,15 @@ export function useGoalReview() {
     /**
      * 添加复盘记录
      */
-    const addReview = async (goalId: string, reviewData: IGoalReviewCreateDTO): Promise<boolean> => {
+    const addReview = async (goalUuid: string, reviewData: IGoalReviewCreateDTO): Promise<boolean> => {
         try {
             loading.value = true;
-            const response = await goalService.addReviewToGoal(goalId, reviewData);
+            const response = await goalService.addReviewToGoal(goalUuid, reviewData);
             
             if (response.success && response.data) {
                 // 更新本地复盘列表
                 reviews.value.push(response.data.review);
-                console.log('复盘添加成功:', response.data.review.id);
+                console.log('复盘添加成功:', response.data.review.uuid);
                 return true;
             } else {
                 console.error('复盘添加失败:', response.message);
@@ -84,21 +84,21 @@ export function useGoalReview() {
      * 更新复盘记录
      */
     const updateReview = async (
-        goalId: string, 
+        goalUuid: string, 
         reviewId: string, 
         updateData: Partial<IGoalReviewCreateDTO>
     ): Promise<boolean> => {
         try {
             loading.value = true;
-            const response = await goalService.updateReviewInGoal(goalId, reviewId, updateData);
+            const response = await goalService.updateReviewInGoal(goalUuid, reviewId, updateData);
             
             if (response.success && response.data) {
                 // 更新本地复盘列表
-                const index = reviews.value.findIndex(r => r.id === reviewId);
+                const index = reviews.value.findIndex(r => r.uuid === reviewId);
                 if (index !== -1) {
                     reviews.value[index] = response.data.review;
                 }
-                console.log('复盘更新成功:', response.data.review.id);
+                console.log('复盘更新成功:', response.data.review.uuid);
                 return true;
             } else {
                 console.error('复盘更新失败:', response.message);
@@ -115,14 +115,14 @@ export function useGoalReview() {
     /**
      * 删除复盘记录
      */
-    const removeReview = async (goalId: string, reviewId: string): Promise<boolean> => {
+    const removeReview = async (goalUuid: string, reviewId: string): Promise<boolean> => {
         try {
             loading.value = true;
-            const response = await goalService.removeReviewFromGoal(goalId, reviewId);
+            const response = await goalService.removeReviewFromGoal(goalUuid, reviewId);
             
             if (response.success) {
                 // 从本地复盘列表中移除
-                reviews.value = reviews.value.filter(r => r.id !== reviewId);
+                reviews.value = reviews.value.filter(r => r.uuid !== reviewId);
                 console.log('复盘删除成功');
                 return true;
             } else {
@@ -140,9 +140,9 @@ export function useGoalReview() {
     /**
      * 创建目标快照
      */
-    const createSnapshot = async (goalId: string): Promise<any> => {
+    const createSnapshot = async (goalUuid: string): Promise<any> => {
         try {
-            const response = await goalService.createGoalReviewSnapshot(goalId);
+            const response = await goalService.createGoalReviewSnapshot(goalUuid);
             
             if (response.success && response.data) {
                 console.log('快照创建成功');
@@ -160,11 +160,11 @@ export function useGoalReview() {
     /**
      * 开始期中复盘
      */
-    const startMidtermReview = (goalId: string) => {
+    const startMidtermReview = (goalUuid: string) => {
         router.push({
             name: 'goal-review',
             params: {
-                goalId: goalId
+                goalUuid: goalUuid
             }
         });
     };
@@ -173,13 +173,13 @@ export function useGoalReview() {
      * 保存复盘
      */
     const saveReview = async (
-        goalId: string,
+        goalUuid: string,
         title: string,
         content: IGoalReview['content'],
         rating?: IGoalReview['rating']
     ): Promise<boolean> => {
         const reviewData: IGoalReviewCreateDTO = {
-            goalId,
+            goalUuid,
             title,
             type: 'midterm', // 默认为期中复盘
             reviewDate: TimeUtils.now(),
@@ -187,7 +187,7 @@ export function useGoalReview() {
             rating
         };
         
-        const success = await addReview(goalId, reviewData);
+        const success = await addReview(goalUuid, reviewData);
         if (success) {
             router.back();
         }

@@ -17,7 +17,7 @@ export class KeyResult extends Entity implements IKeyResult {
   private _lifecycle: IKeyResult['lifecycle'];
 
   constructor(
-    id: string,
+    uuid: string,
     name: string,
     startValue: number,
     targetValue: number,
@@ -25,7 +25,7 @@ export class KeyResult extends Entity implements IKeyResult {
     calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom',
     weight: number
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
     this._name = name;
@@ -170,7 +170,7 @@ export class KeyResult extends Entity implements IKeyResult {
    */
   toDTO(): IKeyResult {
     const rawData = {
-      id: this.id,
+      uuid: this.uuid,
       name: this._name,
       startValue: this._startValue,
       targetValue: this._targetValue,
@@ -187,7 +187,7 @@ export class KeyResult extends Entity implements IKeyResult {
       console.error('❌ [KeyResult.toDTO] 序列化失败:', error);
       // 如果序列化失败，返回基本信息
       return {
-        id: this.id,
+        uuid: this.uuid,
         name: this._name,
         startValue: this._startValue,
         targetValue: this._targetValue,
@@ -211,7 +211,7 @@ export class KeyResult extends Entity implements IKeyResult {
    */
   static fromDTO(data: IKeyResult): KeyResult {
     const keyResult = new KeyResult(
-      data.id,
+      data.uuid,
       data.name,
       data.startValue,
       data.targetValue,
@@ -227,9 +227,9 @@ export class KeyResult extends Entity implements IKeyResult {
   /**
    * 从创建数据传输对象创建关键结果
    */
-  static fromCreateDTO(id: string, data: IKeyResultCreateDTO): KeyResult {
+  static fromCreateDTO(uuid: string, data: IKeyResultCreateDTO): KeyResult {
     return new KeyResult(
-      id,
+      uuid,
       data.name,
       data.startValue,
       data.targetValue,
@@ -241,7 +241,7 @@ export class KeyResult extends Entity implements IKeyResult {
 
   clone(): KeyResult {
     const clone = new KeyResult(
-      this.id,
+      this.uuid,
       this._name,
       this._startValue,
       this._targetValue,

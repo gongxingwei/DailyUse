@@ -78,7 +78,7 @@ import { rendererAuthService } from '../services/rendererAuthenticationService';
 
 // 事件定义
 const emit = defineEmits<{
-  'login-success': [result: { accountId: string; username: string; sessionId: string }];
+  'login-success': [result: { accountUuid: string; username: string; sessionId: string }];
   'forgot-password': [];
   'register': [];
 }>();
@@ -161,7 +161,7 @@ const handleLogin = async () => {
 
       // 触发登录成功事件
       emit('login-success', {
-        accountId: result.accountId!,
+        accountUuid: result.accountUuid!,
         username: result.username,
         sessionId: result.sessionId!
       });

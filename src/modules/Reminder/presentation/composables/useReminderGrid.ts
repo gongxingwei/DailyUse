@@ -1,5 +1,5 @@
 import { ref, computed } from "vue";
-import { GridItem } from "../../domain//types";
+import { GridItem } from "../../../../../common/modules/reminder/types/reminder";
 import { useReminderStore } from "../stores/reminderStore";
 
 export function useReminderGrid() {

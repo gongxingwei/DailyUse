@@ -29,6 +29,7 @@ export class TaskTables {
     `);
 
     // 任务元模板表 - 预定义的任务类型
+    // FOREIGN KEY (category_uuid) REFERENCES task_categories(uuid) ON DELETE SET NULL
     db.exec(`
       CREATE TABLE IF NOT EXISTS task_meta_templates (
         uuid TEXT PRIMARY KEY,
@@ -51,8 +52,7 @@ export class TaskTables {
         version INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
-        FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (category_uuid) REFERENCES task_categories(uuid) ON DELETE SET NULL
+        FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
       )
     `);
 
@@ -245,4 +245,5 @@ export class TaskTables {
       CREATE INDEX IF NOT EXISTS idx_task_dependencies_is_critical ON task_dependencies(is_critical);
     `);
   }
+
 }

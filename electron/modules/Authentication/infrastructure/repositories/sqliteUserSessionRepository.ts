@@ -17,14 +17,14 @@ export class SqliteUserSessionRepository implements ISessionRepository {
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO auth_sessions (
-        id, account_id, device_info, ip_address, user_agent,
+        uuid, account_uuid, device_info, ip_address, user_agent,
         created_at, last_active_at, expires_at, is_active
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      data.id,
-      data.account_id,
+      data.uuid,
+      data.account_uuid,
       data.device_info,
       data.ip_address,
       data.user_agent,
@@ -52,28 +52,28 @@ export class SqliteUserSessionRepository implements ISessionRepository {
   /**
    * 根据账户ID查找所有会话
    */
-  async findByAccountId(accountId: string): Promise<Session[]> {
+  async findByAccountUuid(accountUuid: string): Promise<Session[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM auth_sessions 
-      WHERE account_id = ?
+      WHERE account_uuid = ?
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map(row => Session.fromDatabase(row));
   }
 
   /**
    * 根据账户ID查找活跃会话
    */
-  async findActiveByAccountId(accountId: string): Promise<Session[]> {
+  async findActiveByAccountUuid(accountUuid: string): Promise<Session[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM auth_sessions 
-      WHERE account_id = ? AND is_active = 1 AND expires_at > ?
+      WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?
       ORDER BY last_active_at DESC
     `);
 
-    const rows = stmt.all(accountId, Date.now()) as any[];
+    const rows = stmt.all(accountUuid, Date.now()) as any[];
     return rows.map(row => Session.fromDatabase(row));
   }
 
@@ -91,12 +91,12 @@ export class SqliteUserSessionRepository implements ISessionRepository {
   /**
    * 删除账户的所有会话
    */
-  async deleteByAccountId(accountId: string): Promise<void> {
+  async deleteByAccountUuid(accountUuid: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM auth_sessions WHERE account_id = ?
+      DELETE FROM auth_sessions WHERE account_uuid = ?
     `);
 
-    stmt.run(accountId);
+    stmt.run(accountUuid);
   }
 
   /**
@@ -140,27 +140,27 @@ export class SqliteUserSessionRepository implements ISessionRepository {
   /**
    * 终止账户的所有其他会话（除了指定的会话）
    */
-  async terminateOtherSessions(accountId: string, currentSessionId: string): Promise<void> {
+  async terminateOtherSessions(accountUuid: string, currentSessionId: string): Promise<void> {
     const stmt = this.db.prepare(`
       UPDATE auth_sessions 
       SET is_active = 0 
-      WHERE account_id = ? AND id != ?
+      WHERE account_uuid = ? AND id != ?
     `);
 
-    stmt.run(accountId, currentSessionId);
+    stmt.run(accountUuid, currentSessionId);
   }
 
   /**
    * 获取账户的活跃会话数量
    */
-  async countActiveSessionsByAccountId(accountId: string): Promise<number> {
+  async countActiveSessionsByAccountUuid(accountUuid: string): Promise<number> {
     const stmt = this.db.prepare(`
       SELECT COUNT(*) as count 
       FROM auth_sessions 
-      WHERE account_id = ? AND is_active = 1 AND expires_at > ?
+      WHERE account_uuid = ? AND is_active = 1 AND expires_at > ?
     `);
 
-    const result = stmt.get(accountId, Date.now()) as any;
+    const result = stmt.get(accountUuid, Date.now()) as any;
     return result.count;
   }
 }

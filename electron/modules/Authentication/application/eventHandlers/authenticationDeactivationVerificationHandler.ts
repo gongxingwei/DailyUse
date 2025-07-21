@@ -12,7 +12,7 @@ import { ipcMain } from "electron";
  */
 export interface DeactivationVerificationRequest {
   requestId: string;
-  accountId: string;
+  accountUuid: string;
   username: string;
   requestedBy: 'user' | 'admin' | 'system';
   reason?: string;
@@ -50,22 +50,22 @@ export class AuthenticationDeactivationVerificationHandler {
   private async handleDeactivationVerificationRequest(
     event: AccountDeactivationVerificationRequestedEvent
   ): Promise<void> {
-    const { requestId, accountId, username, requestedBy, reason } = event.payload;
+    const { requestId, accountUuid, username, requestedBy, reason } = event.payload;
 
     console.log('🔐 [AuthDeactivation] 收到账号注销验证请求:', {
       requestId,
-      accountId,
+      accountUuid,
       username,
       requestedBy
     });
 
     try {
       // 1. 验证账号是否存在认证凭证
-      const authCredential = await this.authCredentialRepository.findByAccountId(accountId);
+      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
       if (!authCredential) {
         await this.sendVerificationResponse({
           requestId,
-          accountId,
+          accountUuid,
           username,
           verificationResult: 'failed',
           verificationMethod: 'password',
@@ -77,14 +77,14 @@ export class AuthenticationDeactivationVerificationHandler {
 
       // 2. 如果是管理员或系统请求，可以跳过用户验证
       if (requestedBy === 'admin' || requestedBy === 'system') {
-        await this.processDirectDeactivation(requestId, accountId, username, requestedBy);
+        await this.processDirectDeactivation(requestId, accountUuid, username, requestedBy);
         return;
       }
 
       // 3. 向渲染进程发送验证请求
       const verificationRequest: DeactivationVerificationRequest = {
         requestId,
-        accountId,
+        accountUuid,
         username,
         requestedBy,
         reason
@@ -98,7 +98,7 @@ export class AuthenticationDeactivationVerificationHandler {
       
       await this.sendVerificationResponse({
         requestId,
-        accountId,
+        accountUuid,
         username,
         verificationResult: 'failed',
         verificationMethod: 'password',
@@ -141,7 +141,7 @@ export class AuthenticationDeactivationVerificationHandler {
       // 发送验证响应事件
       await this.sendVerificationResponse({
         requestId,
-        accountId: '', // 需要从请求中获取
+        accountUuid: '', // 需要从请求中获取
         username: '', // 需要从请求中获取
         verificationResult,
         verificationMethod,
@@ -165,7 +165,7 @@ export class AuthenticationDeactivationVerificationHandler {
    */
   private async verifyPassword(requestId: string, password: string): Promise<boolean> {
     try {
-      // 这里需要根据requestId获取accountId，然后验证密码
+      // 这里需要根据requestId获取accountUuid，然后验证密码
       // 为简化，这里返回true，实际应该实现完整的密码验证逻辑
       return true;
     } catch (error) {
@@ -179,22 +179,22 @@ export class AuthenticationDeactivationVerificationHandler {
    */
   private async processDirectDeactivation(
     requestId: string,
-    accountId: string,
+    accountUuid: string,
     username: string,
     requestedBy: 'admin' | 'system'
   ): Promise<void> {
     // 直接发送验证成功响应
     await this.sendVerificationResponse({
       requestId,
-      accountId,
+      accountUuid,
       username,
       verificationResult: 'success',
-      verificationMethod: 'admin_override',
+      verificationMethod: 'admin_overrUuide',
       verifiedAt: new Date()
     });
 
     // 处理注销确认
-    await this.processDeactivationConfirmation(requestId, accountId, username, requestedBy);
+    await this.processDeactivationConfirmation(requestId, accountUuid, username, requestedBy);
   }
 
   /**
@@ -202,23 +202,23 @@ export class AuthenticationDeactivationVerificationHandler {
    */
   private async processDeactivationConfirmation(
     requestId: string,
-    accountId?: string,
+    accountUuid?: string,
     username?: string,
     deactivatedBy: 'user' | 'admin' | 'system' = 'user'
   ): Promise<void> {
     try {
       // 1. 清理认证凭证
-      if (accountId) {
-        await this.authCredentialRepository.delete(accountId);
+      if (accountUuid) {
+        await this.authCredentialRepository.delete(accountUuid);
       }
 
       // 2. 发布账号注销确认事件
       await eventBus.publish({
-        aggregateId: accountId || '',
+        aggregateId: accountUuid || '',
         eventType: 'AccountDeactivationConfirmed',
         occurredOn: new Date(),
         payload: {
-          accountId: accountId || '',
+          accountUuid: accountUuid || '',
           username: username || '',
           deactivatedBy,
           deactivatedAt: new Date(),
@@ -229,7 +229,7 @@ export class AuthenticationDeactivationVerificationHandler {
 
       console.log('✅ [AuthDeactivation] 账号注销确认完成:', {
         requestId,
-        accountId,
+        accountUuid,
         deactivatedBy
       });
 
@@ -243,10 +243,10 @@ export class AuthenticationDeactivationVerificationHandler {
    */
   private async sendVerificationResponse(payload: {
     requestId: string;
-    accountId: string;
+    accountUuid: string;
     username: string;
     verificationResult: 'success' | 'failed' | 'cancelled' | 'timeout';
-    verificationMethod: 'password' | 'mfa' | 'admin_override';
+    verificationMethod: 'password' | 'mfa' | 'admin_overrUuide';
     verifiedAt: Date;
     failureReason?: string;
     clientInfo?: {
@@ -256,7 +256,7 @@ export class AuthenticationDeactivationVerificationHandler {
     };
   }): Promise<void> {
     await eventBus.publish({
-      aggregateId: payload.accountId,
+      aggregateId: payload.accountUuid,
       eventType: 'AccountDeactivationVerificationResponse',
       occurredOn: new Date(),
       payload

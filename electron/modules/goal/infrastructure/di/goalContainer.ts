@@ -1,6 +1,7 @@
 import type { IGoalRepository } from '../../domain/repositories/iGoalRepository';
 import { GoalDatabaseRepository } from '../repositories/goalDatabaseRepository';
 import { getDatabase } from "../../../../shared/database/index";
+
 export class GoalContainer {
   private static instance: GoalContainer;
   private goalRepository: IGoalRepository | null = null;
@@ -23,14 +24,6 @@ export class GoalContainer {
       this.goalRepository = new GoalDatabaseRepository(db);
     }
     return this.goalRepository;
-  }
-
-  /**
-   * 设置当前用户到所有仓库
-   */
-  async setCurrentUser(username: string): Promise<void> {
-    const goalRepo = await this.getGoalRepository();
-    goalRepo.setCurrentUser(username);
   }
 
   // 用于测试时替换实现

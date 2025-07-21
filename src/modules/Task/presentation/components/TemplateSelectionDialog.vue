@@ -31,12 +31,12 @@
                 <v-card 
                     v-else
                     v-for="metaTemplate in metaTemplates" 
-                    :key="metaTemplate.id" 
+                    :key="metaTemplate.uuid" 
                     class="template-type-card"
-                    :class="{ 'selected': selectedMetaTemplateId === metaTemplate.id }" 
+                    :class="{ 'selected': selectedMetaTemplateId === metaTemplate.uuid }" 
                     elevation="2" 
                     hover
-                    @click="selectMetaTemplate(metaTemplate.id)"
+                    @click="selectMetaTemplate(metaTemplate.uuid)"
                 >
                     <v-card-text class="text-center pa-4">
                         <v-avatar :color="getMetaTemplateColor(metaTemplate.category)" size="64" class="mb-3">

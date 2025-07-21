@@ -21,7 +21,7 @@ export type {
 // Authentication 模块事件导出
 export type { 
   LoginCredentialVerificationEvent, 
-  AccountIdGetterRequestedEvent, 
+  AccountUuidGetterRequestedEvent, 
   UserLoggedOutEvent, 
   AccountDeactivationVerificationResponseEvent, 
   AccountDeactivationVerificationRequestedEvent, 

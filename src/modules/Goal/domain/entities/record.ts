@@ -9,26 +9,26 @@ import type { IRecord, IRecordCreateDTO } from "../types/goal";
  * 注意：Record 不是聚合根，它的生命周期由 Goal 聚合根管理
  */
 export class Record extends Entity implements IRecord {
-  private _goalId: string;
-  private _keyResultId: string;
+  private _goalUuid: string;
+  private _keyResultUuid: string;
   private _value: number;
   private _date: DateTime;
   private _note?: string;
   private _lifecycle: IRecord['lifecycle'];
 
   constructor(
-    id: string,
-    goalId: string,
+    uuid: string,
+    goalUuid: string,
     keyResultId: string,
     value: number,
     date: DateTime,
     note?: string
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
-    this._goalId = goalId;
-    this._keyResultId = keyResultId;
+    this._goalUuid = goalUuid;
+    this._keyResultUuid = keyResultId;
     this._value = value;
     this._date = date;
     this._note = note;
@@ -40,12 +40,12 @@ export class Record extends Entity implements IRecord {
   }
 
   // Getters
-  get goalId(): string {
-    return this._goalId;
+  get goalUuid(): string {
+    return this._goalUuid;
   }
 
   get keyResultId(): string {
-    return this._keyResultId;
+    return this._keyResultUuid;
   }
 
   get value(): number {
@@ -95,9 +95,9 @@ export class Record extends Entity implements IRecord {
    */
   toDTO(): IRecord {
     const rawData = {
-      id: this.id,
-      goalId: this._goalId,
-      keyResultId: this._keyResultId,
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      keyResultId: this._keyResultUuid,
       value: this._value,
       date: this._date,
       note: this._note,
@@ -111,9 +111,9 @@ export class Record extends Entity implements IRecord {
       console.error('❌ [Record.toDTO] 序列化失败:', error);
       // 如果序列化失败，返回基本信息
       return {
-        id: this.id,
-        goalId: this._goalId,
-        keyResultId: this._keyResultId,
+        uuid: this.uuid,
+        goalUuid: this._goalUuid,
+        keyResultId: this._keyResultUuid,
         value: this._value,
         date: JSON.parse(JSON.stringify(this._date)),
         note: this._note,
@@ -134,8 +134,8 @@ export class Record extends Entity implements IRecord {
    */
   static fromDTO(data: IRecord): Record {
     const record = new Record(
-      data.id,
-      data.goalId,
+      data.uuid,
+      data.goalUuid,
       data.keyResultId,
       data.value,
       data.date,
@@ -149,10 +149,10 @@ export class Record extends Entity implements IRecord {
   /**
    * 从创建数据传输对象创建记录
    */
-  static fromCreateDTO(id: string, data: IRecordCreateDTO): Record {
+  static fromCreateDTO(uuid: string, data: IRecordCreateDTO): Record {
     return new Record(
-      id,
-      data.goalId,
+      uuid,
+      data.goalUuid,
       data.keyResultId,
       data.value,
       data.date,
@@ -162,9 +162,9 @@ export class Record extends Entity implements IRecord {
 
   clone(): Record {
     const clone = new Record(
-      this.id,
-      this._goalId,
-      this._keyResultId,
+      this.uuid,
+      this._goalUuid,
+      this._keyResultUuid,
       this._value,
       this._date,
       this._note
@@ -182,7 +182,7 @@ export class Record extends Entity implements IRecord {
   } {
     const errors: string[] = [];
 
-    if (!data.goalId?.trim()) {
+    if (!data.goalUuid?.trim()) {
       errors.push("目标ID不能为空");
     }
 

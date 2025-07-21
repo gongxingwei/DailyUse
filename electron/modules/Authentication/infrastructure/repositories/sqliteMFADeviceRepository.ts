@@ -16,15 +16,15 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO mfa_devices (
-        id, account_id, type, name, secret_key, phone_number, email_address,
+        uuid, account_uuid, type, name, secret_key, phone_number, email_address,
         backup_codes, is_verified, is_enabled, verification_attempts, max_attempts,
         created_at, last_used_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
-      data.id,
-      data.account_id,
+      data.uuid,
+      data.account_uuid,
       data.type,
       data.name,
       data.secret_key,
@@ -57,42 +57,42 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
   /**
    * 根据账户ID查找所有MFA设备
    */
-  async findByAccountId(accountId: string): Promise<MFADevice[]> {
+  async findByAccountUuid(accountUuid: string): Promise<MFADevice[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM mfa_devices 
-      WHERE account_id = ?
+      WHERE account_uuid = ?
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map(row => MFADevice.fromDatabase(row));
   }
 
   /**
    * 根据账户ID查找启用的MFA设备
    */
-  async findEnabledByAccountId(accountId: string): Promise<MFADevice[]> {
+  async findEnabledByAccountUuid(accountUuid: string): Promise<MFADevice[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM mfa_devices 
-      WHERE account_id = ? AND is_enabled = 1
+      WHERE account_uuid = ? AND is_enabled = 1
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map(row => MFADevice.fromDatabase(row));
   }
 
   /**
    * 根据账户ID和类型查找MFA设备
    */
-  async findByAccountIdAndType(accountId: string, type: string): Promise<MFADevice[]> {
+  async findByAccountUuidAndType(accountUuid: string, type: string): Promise<MFADevice[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM mfa_devices 
-      WHERE account_id = ? AND type = ?
+      WHERE account_uuid = ? AND type = ?
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId, type) as any[];
+    const rows = stmt.all(accountUuid, type) as any[];
     return rows.map(row => MFADevice.fromDatabase(row));
   }
 
@@ -110,38 +110,38 @@ export class SqliteMFADeviceRepository implements IMFADeviceRepository {
   /**
    * 删除账户的所有MFA设备
    */
-  async deleteByAccountId(accountId: string): Promise<void> {
+  async deleteByAccountUuid(accountUuid: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM mfa_devices WHERE account_id = ?
+      DELETE FROM mfa_devices WHERE account_uuid = ?
     `);
 
-    stmt.run(accountId);
+    stmt.run(accountUuid);
   }
 
   /**
    * 检查账户是否有启用的MFA设备
    */
-  async existsEnabledByAccountId(accountId: string): Promise<boolean> {
+  async existsEnabledByAccountUuid(accountUuid: string): Promise<boolean> {
     const stmt = this.db.prepare(`
       SELECT COUNT(*) as count FROM mfa_devices 
-      WHERE account_id = ? AND is_enabled = 1
+      WHERE account_uuid = ? AND is_enabled = 1
     `);
 
-    const result = stmt.get(accountId) as any;
+    const result = stmt.get(accountUuid) as any;
     return result.count > 0;
   }
 
   /**
    * 获取账户已验证的MFA设备
    */
-  async findVerifiedByAccountId(accountId: string): Promise<MFADevice[]> {
+  async findVerifiedByAccountUuid(accountUuid: string): Promise<MFADevice[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM mfa_devices 
-      WHERE account_id = ? AND is_verified = 1
+      WHERE account_uuid = ? AND is_verified = 1
       ORDER BY created_at DESC
     `);
 
-    const rows = stmt.all(accountId) as any[];
+    const rows = stmt.all(accountUuid) as any[];
     return rows.map(row => MFADevice.fromDatabase(row));
   }
 

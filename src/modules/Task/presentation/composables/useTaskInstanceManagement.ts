@@ -51,7 +51,7 @@ export function useTaskInstanceManagement() {
   const completeTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await getTaskService().completeTaskInstance(task.id);
+      const result = await getTaskService().completeTaskInstance(task.uuid);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已完成`);
@@ -70,7 +70,7 @@ export function useTaskInstanceManagement() {
   const undoCompleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await getTaskService().undoCompleteTaskInstance(task.id);
+      const result = await getTaskService().undoCompleteTaskInstance(task.uuid);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 撤销完成成功`);
@@ -89,7 +89,7 @@ export function useTaskInstanceManagement() {
   const deleteTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await getTaskService().deleteTaskInstance(task.id);
+      const result = await getTaskService().deleteTaskInstance(task.uuid);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已删除`);
@@ -108,7 +108,7 @@ export function useTaskInstanceManagement() {
   const startTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await getTaskService().startTaskInstance(task.id);
+      const result = await getTaskService().startTaskInstance(task.uuid);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已开始`);
@@ -127,7 +127,7 @@ export function useTaskInstanceManagement() {
   const cancelTask = async (task: TaskInstance) => {
     loading.value = true;
     try {
-      const result = await getTaskService().cancelTaskInstance(task.id);
+      const result = await getTaskService().cancelTaskInstance(task.uuid);
       
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已取消`);
@@ -150,7 +150,7 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => getTaskService().completeTaskInstance(task.id))
+        tasks.map(task => getTaskService().completeTaskInstance(task.uuid))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
@@ -177,7 +177,7 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => getTaskService().deleteTaskInstance(task.id))
+        tasks.map(task => getTaskService().deleteTaskInstance(task.uuid))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;

@@ -14,9 +14,9 @@ export class RepositoryStoreRepository implements IRepositoryRepository {
     async addRepository(repository: Repository): Promise<void> {
         try {
             await this.repositoryStore.addRepository(repository);
-            console.log(`✅ [RepoStore] 添加仓库到状态: ${repository.id}`);
+            console.log(`✅ [RepoStore] 添加仓库到状态: ${repository.uuid}`);
         } catch (error) {
-            console.error(`❌ [RepoStore] 添加仓库失败: ${repository.id}`, error);
+            console.error(`❌ [RepoStore] 添加仓库失败: ${repository.uuid}`, error);
             throw error;
         }
     }
@@ -24,9 +24,9 @@ export class RepositoryStoreRepository implements IRepositoryRepository {
     async updateRepository(repository: Repository): Promise<void> {
         try {
             await this.repositoryStore.updateRepository(repository);
-            console.log(`✅ [RepoStore] 更新仓库状态: ${repository.id}`);
+            console.log(`✅ [RepoStore] 更新仓库状态: ${repository.uuid}`);
         } catch (error) {
-            console.error(`❌ [RepoStore] 更新仓库失败: ${repository.id}`, error);
+            console.error(`❌ [RepoStore] 更新仓库失败: ${repository.uuid}`, error);
             throw error;
         }
     }

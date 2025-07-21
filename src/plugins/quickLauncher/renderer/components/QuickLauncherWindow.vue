@@ -16,11 +16,11 @@
             <v-list density="compact" class="h-100" @contextmenu.stop.prevent="showCategoryListAreaContextMenu($event, categoryListAreaContextMenuItems)">
               <Draggable v-model="store.categories" group="categories" item-key="id" @end="handleDragEnd">
                 <template #item="{ element: category }">
-                  <v-list-item :value="category.id" :title="category.name"
-                    :class="{ 'focused': selectedCategoryId === category.id }" tabindex="0"
-                    @click="store.state.selectedCategoryId = category.id"
+                  <v-list-item :value="category.uuid" :title="category.name"
+                    :class="{ 'focused': selectedCategoryId === category.uuid }" tabindex="0"
+                    @click="store.state.selectedCategoryId = category.uuid"
                     @keydown="handleKeydown($event, category)"
-                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category.id, categoryListItemContextMenuItems)">
+                    @contextmenu.stop.prevent="showCategoryListItemContextMenu($event, category.uuid, categoryListItemContextMenuItems)">
                     <template #title>
                       {{ category.name }}
                     </template>
@@ -39,7 +39,7 @@
                 <template #item="{ element }">
                   <v-card class="shortcut-item ma-2" elevation="2" @click="launchItem(element)"
                     tabindex="0"
-                    @contextmenu.stop.prevent="showShortcutListItemContextMenu($event, element.id, shortcutListItemContextMenuItems)" draggable="true">
+                    @contextmenu.stop.prevent="showShortcutListItemContextMenu($event, element.uuid, shortcutListItemContextMenuItems)" draggable="true">
                     <v-card-text class="text-center shortcut-content">
                       <img v-if="element.icon.startsWith('data:image')" :src="element.icon"
                         class="shortcut-icon mb-2" />
@@ -164,7 +164,7 @@ const selectedCategoryId = computed(() => store.state.selectedCategoryId);
 
 // Watch for store changes
 watch(() => store.categories, (newCategories) => {
-  if (newCategories.length > 0 && !newCategories.find(c => c.id === store.state.selectedCategoryId)) {
+  if (newCategories.length > 0 && !newCategories.find(c => c.uuid === store.state.selectedCategoryId)) {
     store.state.selectedCategoryId = newCategories[0].id;
   }
 }, { deep: true });
@@ -172,13 +172,13 @@ watch(() => store.categories, (newCategories) => {
 // 获取当前选中的类别的快捷方式
 const currentCategoryItems = computed({
   get: () => {
-    const category = store.categories.find(c => c.id === store.state.selectedCategoryId);
+    const category = store.categories.find(c => c.uuid === store.state.selectedCategoryId);
     return category?.items || [];
   },
   set: (items) => {
-    const category = store.categories.find(c => c.id === store.state.selectedCategoryId);
+    const category = store.categories.find(c => c.uuid === store.state.selectedCategoryId);
     if (category) {
-      store.updateCategory(category.id, { ...category, items });
+      store.updateCategory(category.uuid, { ...category, items });
     }
   }
 });
@@ -198,7 +198,7 @@ function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutIt
       } else {
         editingShortcut.value = item;
         shortcutForEdit.value = {
-          id: item.id,
+          uuid: item.uuid,
           name: item.name,
           path: item.path ||'',
           icon: item.icon || '',
@@ -211,9 +211,9 @@ function handleKeydown(event: KeyboardEvent, item: ShortcutCategory | ShortcutIt
     case 'Delete':
       event.preventDefault();
       if ('items' in item) {
-        store.removeCategory(item.id);
+        store.removeCategory(item.uuid);
       } else {
-        store.removeShortcut(store.state.selectedCategoryId, item.id);
+        store.removeShortcut(store.state.selectedCategoryId, item.uuid);
       }
       break;
 

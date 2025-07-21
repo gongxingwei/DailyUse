@@ -62,7 +62,7 @@
             <!-- 使用 TaskTemplateCard 组件 -->
             <TaskTemplateCard 
                 v-for="template in filteredTemplates" 
-                :key="template.id"
+                :key="template.uuid"
                 :template="template"
                 :status-filters="statusFilters"
                 @edit="startEditTaskTemplate"
@@ -224,7 +224,7 @@ watchEffect(() => {
     // 详细检查每个模板的状态结构
     const templates = taskStore.getAllTaskTemplates;
     console.log('📋 模板详情:', templates.map(t => ({ 
-        id: t.id, 
+        uuid: t.uuid, 
         title: t.title, 
         status: t.lifecycle?.status,
         lifecycleObj: t.lifecycle
@@ -241,7 +241,7 @@ watchEffect(() => {
     console.log('📊 状态分布:', statusDistribution);
     
     console.log('📈 筛选后模板数:', filteredTemplates.value.length);
-    console.log('🔍 筛选后的模板:', filteredTemplates.value.map(t => ({ id: t.id, title: t.title, status: t.lifecycle?.status })));
+    console.log('🔍 筛选后的模板:', filteredTemplates.value.map(t => ({ uuid: t.uuid, title: t.title, status: t.lifecycle?.status })));
 });
 
 // 工具方法
@@ -346,7 +346,7 @@ const confirmDeleteAll = async () => {
 };
 
 const pauseTemplate = (template: TaskTemplate) => {
-    handlePauseTaskTemplate(template.id)
+    handlePauseTaskTemplate(template.uuid)
         .then(() => {
             console.log('模板已暂停:', template.title);
         })
@@ -356,7 +356,7 @@ const pauseTemplate = (template: TaskTemplate) => {
 }
 
 const resumeTemplate = (template: TaskTemplate) => {
-    handleResumeTaskTemplate(template.id)
+    handleResumeTaskTemplate(template.uuid)
         .then(() => {
             console.log('模板已恢复:', template.title);
         })

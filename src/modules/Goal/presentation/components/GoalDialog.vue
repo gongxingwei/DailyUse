@@ -17,7 +17,7 @@
           <v-tooltip activator="parent" location="bottom">
             <div>
               <div>表单有效性: {{ isFormValid }}</div>
-              <div>标题: {{ !!title?.trim() }}</div>
+              <div>标题: {{ !!name?.trim() }}</div>
               <div>目录: {{ !!dirId?.trim() }}</div>
               <div>时间: {{ endTime > startTime }}</div>
               <div>加载中: {{ loading }}</div>
@@ -47,9 +47,9 @@
               <v-row>
                 <v-col cols="11">
                   <v-text-field 
-                    v-model="title" 
-                    :rules="titleRules" 
-                    :error-messages="errors.title"
+                    v-model="name" 
+                    :rules="nameRules" 
+                    :error-messages="errors.name"
                     label="目标" 
                     placeholder="一段话来描述自己的目标" 
                     required 
@@ -79,7 +79,7 @@
               <v-select 
                 v-model="dirId" 
                 :items="directoryOptions" 
-                item-title="title" 
+                item-name="name" 
                 item-value="value" 
                 label="目标文件夹"
                 :error-messages="errors.dirId"
@@ -289,7 +289,7 @@
   <KeyResultDialog 
     :visible="keyResultDialogState.showDialog"
     :mode="keyResultDialogState.mode"
-    :goal-id="keyResultDialogState.goalId"
+    :goal-uuid="keyResultDialogState.goalUuid"
     :key-result-data="keyResultDialogState.keyResultData"
     @save="handleSaveKeyResult"
     @cancel="handleCancelKeyResult"
@@ -301,7 +301,7 @@ import { computed, ref, watch } from 'vue';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import { useGoalDialog } from '../composables/useGoalDialog';
 import KeyResultDialog from './KeyResultDialog.vue';
-import type { IGoal } from '@/modules/Goal/domain/types/goal';
+import type { IGoal } from '@common/modules/goal/types/goal';
 
 // 定义 props
 const props = defineProps<{
@@ -319,7 +319,7 @@ const emit = defineEmits<{
 // 使用 useGoalDialog composable
 const {
   // 表单数据 - 使用计算属性进行双向绑定
-  title,
+  name,
   description,
   color,
   dirId,
@@ -345,14 +345,14 @@ const {
 // 添加调试计算属性
 const debugInfo = computed(() => {
   const validation = {
-    title: !!title.value?.trim(),
+    name: !!name.value?.trim(),
     dirId: !!dirId.value?.trim(),
     timeValid: endTime.value > startTime.value,
     isFormValid: isFormValid.value
   };
   console.log('🔍 [GoalDialog] 表单验证状态:', validation);
   console.log('🔍 [GoalDialog] 详细数据:', {
-    title: title.value,
+    name: name.value,
     dirId: dirId.value,
     startTime: startTime.value,
     endTime: endTime.value
@@ -361,7 +361,7 @@ const debugInfo = computed(() => {
 });
 
 // 触发调试信息更新
-watch([title, dirId, startTime, endTime], () => {
+watch([name, dirId, startTime, endTime], () => {
   debugInfo.value; // 触发计算属性执行
 }, { immediate: true });
 
@@ -379,7 +379,7 @@ const showGoalDialog = computed({
 const keyResultDialogState = ref({
   showDialog: false,
   mode: 'create' as 'create' | 'edit',
-  goalId: '',
+  goalUuid: '',
   keyResultData: null as any
 });
 
@@ -404,7 +404,7 @@ watch(() => props.goalData, (newGoalData) => {
 
 // 加载目标数据到表单
 const loadGoalData = (goal: IGoal) => {
-  title.value = goal.title;
+  name.value = goal.name;
   description.value = goal.description || '';
   color.value = goal.color;
   dirId.value = goal.dirId;
@@ -423,7 +423,7 @@ const openKeyResultDialog = () => {
   keyResultDialogState.value = {
     showDialog: true,
     mode: 'create',
-    goalId: props.goalData?.id || '', // 传递当前目标的ID
+    goalUuid: props.goalData?.uuid || '', // 传递当前目标的ID
     keyResultData: null
   };
 };
@@ -434,7 +434,7 @@ const editKeyResultAtIndex = (index: number) => {
     keyResultDialogState.value = {
       showDialog: true,
       mode: 'edit',
-      goalId: props.goalData?.id || '', // 传递当前目标的ID
+      goalUuid: props.goalData?.uuid || '', // 传递当前目标的ID
       keyResultData: { ...keyResult, index } // 添加索引以便后续更新
     };
   }
@@ -471,7 +471,7 @@ const saveGoal = () => {
   
   // 构建目标数据，直接使用 composable 中的计算属性值
   const goalData = {
-    title: title.value,
+    name: name.value,
     description: description.value,
     color: color.value,
     dirId: dirId.value,
@@ -515,7 +515,7 @@ const predefinedColors = [
 ];
 
 // 验证规则
-const titleRules = [
+const nameRules = [
   (value: string) => !!value || '目标标题不能为空'
 ];
 
@@ -543,8 +543,8 @@ const directoryOptions = computed(() => {
   
   // 将用户自定义目录转换为选项格式
   const userOptions = userDirs.map((dir: any) => ({
-    title: dir.name,
-    value: dir.id,
+    name: dir.name,
+    value: dir.uuid,
     prepend: dir.icon || 'mdi-folder',
     disabled: false
   }));
@@ -553,7 +553,7 @@ const directoryOptions = computed(() => {
   if (userOptions.length === 0) {
     return [
       { 
-        title: '暂无可用文件夹', 
+        name: '暂无可用文件夹', 
         subtitle: '请先在目录管理中创建文件夹',
         value: '', 
         disabled: true,
@@ -563,7 +563,7 @@ const directoryOptions = computed(() => {
   }
   
   // 按名称排序
-  return userOptions.sort((a, b) => a.title.localeCompare(b.title));
+  return userOptions.sort((a, b) => a.name.localeCompare(b.name));
 });
 
 // 时间格式化处理

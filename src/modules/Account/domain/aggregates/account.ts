@@ -26,7 +26,7 @@ export class Account extends AggregateRoot implements IAccount {
   private _status: AccountStatus;
   private _accountType: AccountType;
   private _user: User;
-  private _roleIds: Set<string>; // 角色ID集合
+  private _roleUuids: Set<string>; // 角色ID集合
   private _createdAt: Date;
   private _updatedAt: Date;
   private _lastLoginAt?: Date;
@@ -40,7 +40,7 @@ export class Account extends AggregateRoot implements IAccount {
     accountType: AccountType,
     user: User,
     _password?: string,
-    id?: string,
+    uuid?: string,
     email?: Email,
 
     phoneNumber?: PhoneNumber,
@@ -49,14 +49,14 @@ export class Account extends AggregateRoot implements IAccount {
     lastLoginAt?: Date,
     _isRegistration: boolean = false
   ) {
-    super(id || Account.generateId());
+    super(uuid || Account.generateId());
     this._username = username;
     this._email = email;
     this._phoneNumber = phoneNumber;
     this._status = AccountStatus.PENDING_VERIFICATION;
     this._accountType = accountType;
     this._user = user;
-    this._roleIds = new Set();
+    this._roleUuids = new Set();
     this._createdAt = createdAt || new Date();
     this._updatedAt = updatedAt || new Date();
     this._lastLoginAt = lastLoginAt;
@@ -107,7 +107,7 @@ export class Account extends AggregateRoot implements IAccount {
   }
 
   get roleIds(): Set<string> {
-    return new Set(this._roleIds);
+    return new Set(this._roleUuids);
   }
 
   get createdAt(): Date {
@@ -142,7 +142,7 @@ export class Account extends AggregateRoot implements IAccount {
     this._isPhoneVerified = isVerified;
   }
   set roleIds(roleIds: Set<string>) {
-    this._roleIds = roleIds;
+    this._roleUuids = roleIds;
   }
 
   set user(user: User) {
@@ -225,7 +225,7 @@ export class Account extends AggregateRoot implements IAccount {
   toDTO(): AccountDTO {
     let user = this.user.toDTO();
     let accountDTO = {
-      id: this.id,
+      uuid: this.uuid,
       username: this.username,
       status: this.status,
       accountType: this.accountType,
@@ -251,7 +251,7 @@ export class Account extends AggregateRoot implements IAccount {
       dto.accountType,
       User.fromDTO(dto.user),
       undefined,
-      dto.id,
+      dto.uuid,
       dto.email ? new Email(dto.email) : undefined,
       dto.phone ? new PhoneNumber(dto.phone) : undefined,
       dto.createdAt,

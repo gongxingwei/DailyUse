@@ -2,14 +2,14 @@ import { defineStore } from "pinia";
 import { useEditorGroupStore } from "./editorGroupStore";
 
 interface EditorFunctionIcon {
-    id: string;
+    uuid: string;
     title: string;
     icon: string;
     action: () => void;
 }
 
 interface MoreFunction {
-    id: string;
+    uuid: string;
     label: string;
     title: string;
     action: () => void;
@@ -19,20 +19,20 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
     state: () => ({
         editorFunctionIcons: [
             {
-                id: 'preview',
+                uuid: 'preview',
                 title: 'Open Preview to The Side',
                 icon: 'mdi-eye',
                 action: function () { useEditorFunctionIconStore().handlePreview(); }
             },
             {
-                id: 'split-editor',
+                uuid: 'split-editor',
                 title: 'Split Editor Right',
                 icon: 'mdi-view-split-vertical',
                 action: function () { useEditorFunctionIconStore().handleSplitEditor(); }
             },
         ] as EditorFunctionIcon[],
         moreFunctions: [
-            {   id: 'close-all-tabs',
+            {   uuid: 'close-all-tabs',
                 label: 'Close All Tabs',
                 title: 'Close All Tabs',
                 action: function () { useEditorFunctionIconStore().closeAllEditors(); } 
@@ -46,8 +46,8 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
     actions: {
         handlePreview() {
             const editorGroupStore = useEditorGroupStore();
-            const currentGroup = editorGroupStore.editorGroups.find(g => g.id === editorGroupStore.activeGroupId);
-            const activeTab = currentGroup?.tabs.find(t => t.id === currentGroup.activeTabId);
+            const currentGroup = editorGroupStore.editorGroups.find(g => g.uuid === editorGroupStore.activeGroupId);
+            const activeTab = currentGroup?.tabs.find(t => t.uuid === currentGroup.activeTabId);
 
             if (!activeTab) return;
 
@@ -61,7 +61,7 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
             if (!previewGroup) return;
 
             // 创建预览标签页
-            editorGroupStore.openFilePreview(activeTab.path, previewGroup.id);
+            editorGroupStore.openFilePreview(activeTab.path, previewGroup.uuid);
         },
 
         handleSplitEditor() {
@@ -72,11 +72,11 @@ export const useEditorFunctionIconStore = defineStore("editorFunctionIcon", {
 
         closeAllEditors() {
             const editorGroupStore = useEditorGroupStore();
-            const currentGroup = editorGroupStore.editorGroups.find(g => g.id === editorGroupStore.activeGroupId);
+            const currentGroup = editorGroupStore.editorGroups.find(g => g.uuid === editorGroupStore.activeGroupId);
             if (currentGroup) {
                 currentGroup.tabs = [];
                 currentGroup.activeTabId = '';
-                editorGroupStore.removeEditorGroup(currentGroup.id);
+                editorGroupStore.removeEditorGroup(currentGroup.uuid);
             }
             this.showMenu = false;
         },

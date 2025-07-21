@@ -6,15 +6,23 @@ import {
 // 渲染进程各个模块的初始化任务
 import { registerAccountInitializationTasks } from "@/modules/Account/initialization/accountInitialization";
 import { registerTaskInitializationTasks } from "@/modules/Task/initialization/taskInitialization";
-import { registerPatchIpcRendererInvokeWithAuthTask } from "@/shared/initialization/patchIpcRenderer";
+// import { registerPatchIpcRendererInvokeWithAuthTask } from "@/shared/initialization/patchIpcRenderer";
+import { registerInitializationEventsTask } from "@/shared/initialization/application/events/initializationEventHandlers";
+import { registerMainWindowInitTask } from "./mainWindowInit/mainWindowInit";
+import { registerGoalInitializationTasks } from "@/modules/Goal";
+
+
 export function registerAllInitializationTasks(): void {
-  const manager = InitializationManager.getInstance();
 
   registerAccountInitializationTasks();
   registerTaskInitializationTasks();
-  registerPatchIpcRendererInvokeWithAuthTask();
+  registerGoalInitializationTasks();
+  registerMainWindowInitTask();
+
+  registerInitializationEventsTask();
+  
   console.log(
-    "渲染进程：Authentication module initialization tasks registered"
+    "成功注册所有模块任务"
   );
 }
 
@@ -37,12 +45,12 @@ export async function initializeApp(): Promise<void> {
 /**
  * 用户登录时的初始化
  */
-export async function initializeUserSession(username: string): Promise<void> {
+export async function initializeUserSession(accountUuid: string): Promise<void> {
   console.log("{渲染进程} 启动用户会话初始化...");
   const manager = InitializationManager.getInstance();
-  manager.setCurrentUser(username);
-  await manager.executePhase(InitializationPhase.USER_LOGIN, { username });
-  console.log(`✓ User session initialized for: ${username}`);
+  manager.setCurrentUser(accountUuid);
+  await manager.executePhase(InitializationPhase.USER_LOGIN, { accountUuid });
+  console.log(`✓ User session initialized for: ${accountUuid}`);
 }
 
 /**

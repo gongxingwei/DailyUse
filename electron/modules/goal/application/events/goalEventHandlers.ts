@@ -57,17 +57,17 @@ export class GoalEventHandlers {
 
     for (const link of event.payload.keyResultLinks!) {
       try {
-        console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalId} 的关键结果 ${link.keyResultId} 添加记录 +${link.incrementValue}`);
+        console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加记录 +${link.incrementValue}`);
         
         const result = await goalApplicationService.addRecordToGoal(
-          link.goalId,
+          link.goalUuid,
           link.keyResultId,
           link.incrementValue,
           `任务完成自动记录: ${event.payload.taskId}`
         );
 
         if (result.success) {
-          console.log(`✅ [Goal事件处理器] 成功添加记录: ${result.data?.record.id}`);
+          console.log(`✅ [Goal事件处理器] 成功添加记录: ${result.data?.record.uuid}`);
         } else {
           console.error(`❌ [Goal事件处理器] 添加记录失败: ${result.message}`);
         }
@@ -84,17 +84,17 @@ export class GoalEventHandlers {
 
     for (const link of event.payload.keyResultLinks!) {
       try {
-        console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalId} 的关键结果 ${link.keyResultId} 添加回退记录 -${link.incrementValue}`);
+        console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加回退记录 -${link.incrementValue}`);
         
         const result = await goalApplicationService.addRecordToGoal(
-          link.goalId,
+          link.goalUuid,
           link.keyResultId,
           -link.incrementValue, // 负值表示回退
           `任务撤销完成自动记录: ${event.payload.taskId}`
         );
 
         if (result.success) {
-          console.log(`✅ [Goal事件处理器] 成功添加回退记录: ${result.data?.record.id}`);
+          console.log(`✅ [Goal事件处理器] 成功添加回退记录: ${result.data?.record.uuid}`);
         } else {
           console.error(`❌ [Goal事件处理器] 添加回退记录失败: ${result.message}`);
         }

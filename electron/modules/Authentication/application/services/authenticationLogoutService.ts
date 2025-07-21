@@ -16,7 +16,7 @@ import { AuthenticationContainer } from "../../infrastructure/di/authenticationC
  */
 export interface LogoutRequest {
   sessionId?: string;
-  accountId?: string;
+  accountUuid?: string;
   username?: string;
   logoutType: 'manual' | 'forced' | 'expired' | 'system';
   reason?: string;
@@ -33,7 +33,7 @@ export interface LogoutRequest {
 export interface LogoutResult {
   success: boolean;
   sessionId?: string;
-  accountId?: string;
+  accountUuid?: string;
   username?: string;
   message: string;
   terminatedSessionsCount?: number;
@@ -66,12 +66,12 @@ export class AuthenticationLogoutService {
    * 处理用户注销请求
    */
   async logout(request: LogoutRequest): Promise<LogoutResult> {
-    const { sessionId, accountId, username, logoutType, reason, clientInfo } = request;
+    const { sessionId, accountUuid, username, logoutType, reason, clientInfo } = request;
 
     try {
       // 1. 查找会话
       let session: UserSession | null = null;
-      let targetAccountId = accountId;
+      let targetAccountUuid = accountUuid;
       let targetUsername = username;
 
       if (sessionId) {
@@ -83,11 +83,11 @@ export class AuthenticationLogoutService {
             errorCode: 'SESSION_NOT_FOUND'
           };
         }
-        targetAccountId = session.accountId;
-      } else if (accountId) {
-        // 如果只提供了 accountId，终止该用户的所有会话
+        targetAccountUuid = session.accountUuid;
+      } else if (accountUuid) {
+        // 如果只提供了 accountUuid，终止该用户的所有会话
         return await this.logoutAllSessions({
-          accountId,
+          accountUuid,
           username: targetUsername || '',
           logoutType,
           reason,
@@ -96,7 +96,7 @@ export class AuthenticationLogoutService {
       } else {
         return {
           success: false,
-          message: '必须提供 sessionId 或 accountId',
+          message: '必须提供 sessionId 或 accountUuid',
           errorCode: 'INVALID_REQUEST'
         };
       }
@@ -111,30 +111,30 @@ export class AuthenticationLogoutService {
       }
 
       // 3. 获取用户名（如果没有提供）
-      if (!targetUsername && targetAccountId) {
-        const credential = await this.authCredentialRepository.findByAccountId(targetAccountId);
+      if (!targetUsername && targetAccountUuid) {
+        const credential = await this.authCredentialRepository.findByAccountUuid(targetAccountUuid);
         if (credential) {
-          // 这里需要通过其他方式获取username，暂时使用accountId
-          targetUsername = targetAccountId;
+          // 这里需要通过其他方式获取username，暂时使用accountUuid
+          targetUsername = targetAccountUuid;
         }
       }
 
       // 4. 终止会话
       if (session) {
-        await this.sessionRepository.delete(session.id);
+        await this.sessionRepository.delete(session.uuid);
       }
 
       // 5. 发布会话终止事件
       if (session) {
-        const remainingActiveSessions = await this.getRemainingActiveSessionsCount(targetAccountId!);
+        const remainingActiveSessions = await this.getRemainingActiveSessionsCount(targetAccountUuid!);
         
         await eventBus.publish<SessionTerminatedEvent>({
-          aggregateId: targetAccountId!,
+          aggregateId: targetAccountUuid!,
           eventType: 'SessionTerminated',
           occurredOn: new Date(),
           payload: {
-            sessionId: session.id,
-            accountId: targetAccountId!,
+            sessionId: session.uuid,
+            accountUuid: targetAccountUuid!,
             terminationType: this.mapLogoutTypeToTerminationType(logoutType),
             terminatedAt: new Date(),
             remainingActiveSessions
@@ -144,11 +144,11 @@ export class AuthenticationLogoutService {
 
       // 6. 发布用户注销事件
       await eventBus.publish<UserLoggedOutEvent>({
-        aggregateId: targetAccountId!,
+        aggregateId: targetAccountUuid!,
         eventType: 'UserLoggedOut',
         occurredOn: new Date(),
         payload: {
-          accountId: targetAccountId!,
+          accountUuid: targetAccountUuid!,
           username: targetUsername || '',
           sessionId: session?.id || '',
           logoutType,
@@ -160,8 +160,8 @@ export class AuthenticationLogoutService {
 
       return {
         success: true,
-        sessionId: session?.id,
-        accountId: targetAccountId,
+        sessionId: session?.uuid,
+        accountUuid: targetAccountUuid,
         username: targetUsername,
         message: '注销成功',
         terminatedSessionsCount: 1
@@ -181,7 +181,7 @@ export class AuthenticationLogoutService {
    * 注销用户的所有会话
    */
   async logoutAllSessions(request: {
-    accountId: string;
+    accountUuid: string;
     username: string;
     logoutType: 'manual' | 'forced' | 'expired' | 'system';
     reason?: string;
@@ -191,23 +191,23 @@ export class AuthenticationLogoutService {
       deviceId?: string;
     };
   }): Promise<LogoutResult> {
-    const { accountId, username, logoutType, reason, clientInfo } = request;
+    const { accountUuid, username, logoutType, reason, clientInfo } = request;
 
     try {
       // 1. 获取用户的所有活跃会话
-      const activeSessions = await this.sessionRepository.findByAccountId(accountId);
+      const activeSessions = await this.sessionRepository.findByAccountUuid(accountUuid);
       const activeSessionsCount = activeSessions.filter(s => this.isSessionActive(s)).length;
 
       // 2. 删除所有会话
-      await this.sessionRepository.deleteByAccountId(accountId);
+      await this.sessionRepository.deleteByAccountUuid(accountUuid);
 
       // 3. 发布全部会话终止事件
       await eventBus.publish<AllSessionsTerminatedEvent>({
-        aggregateId: accountId,
+        aggregateId: accountUuid,
         eventType: 'AllSessionsTerminated',
         occurredOn: new Date(),
         payload: {
-          accountId,
+          accountUuid,
           username,
           terminationType: this.mapLogoutTypeToTerminationType(logoutType) as any,
           terminatedSessionCount: activeSessionsCount,
@@ -219,13 +219,13 @@ export class AuthenticationLogoutService {
       for (const session of activeSessions) {
         if (this.isSessionActive(session)) {
           await eventBus.publish<UserLoggedOutEvent>({
-            aggregateId: accountId,
+            aggregateId: accountUuid,
             eventType: 'UserLoggedOut',
             occurredOn: new Date(),
             payload: {
-              accountId,
+              accountUuid,
               username,
-              sessionId: session.id,
+              sessionId: session.uuid,
               logoutType,
               logoutReason: reason,
               loggedOutAt: new Date(),
@@ -237,7 +237,7 @@ export class AuthenticationLogoutService {
 
       return {
         success: true,
-        accountId,
+        accountUuid,
         username,
         message: `成功注销 ${activeSessionsCount} 个活跃会话`,
         terminatedSessionsCount: activeSessionsCount
@@ -247,7 +247,7 @@ export class AuthenticationLogoutService {
       console.error('批量注销处理失败:', error);
       return {
         success: false,
-        accountId,
+        accountUuid,
         username,
         message: '批量注销处理失败',
         errorCode: 'INVALID_REQUEST'
@@ -258,23 +258,23 @@ export class AuthenticationLogoutService {
   /**
    * 强制注销指定用户（管理员操作）
    */
-  async forceLogout(accountId: string, reason: string, adminInfo?: {
+  async forceLogout(accountUuid: string, reason: string, adminInfo?: {
     adminId: string;
     adminUsername: string;
   }): Promise<LogoutResult> {
     // 获取用户名
     let username = '';
     try {
-      const credential = await this.authCredentialRepository.findByAccountId(accountId);
+      const credential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
       if (credential) {
-        username = accountId; // 暂时使用accountId作为username
+        username = accountUuid; // 暂时使用accountUuid作为username
       }
     } catch (error) {
       console.error('获取用户信息失败:', error);
     }
 
     return await this.logoutAllSessions({
-      accountId,
+      accountUuid,
       username,
       logoutType: 'forced',
       reason: `管理员强制注销: ${reason}${adminInfo ? ` (操作员: ${adminInfo.adminUsername})` : ''}`,
@@ -297,7 +297,7 @@ export class AuthenticationLogoutService {
       for (const session of allSessions) {
         if (!this.isSessionActive(session)) {
           await this.logout({
-            sessionId: session.id,
+            sessionId: session.uuid,
             logoutType: 'expired',
             reason: '会话过期自动清理'
           });
@@ -328,9 +328,9 @@ export class AuthenticationLogoutService {
   /**
    * 获取用户剩余的活跃会话数量
    */
-  private async getRemainingActiveSessionsCount(accountId: string): Promise<number> {
+  private async getRemainingActiveSessionsCount(accountUuid: string): Promise<number> {
     try {
-      const sessions = await this.sessionRepository.findByAccountId(accountId);
+      const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
       return sessions.filter(s => this.isSessionActive(s)).length;
     } catch (error) {
       console.error('获取活跃会话数量失败:', error);

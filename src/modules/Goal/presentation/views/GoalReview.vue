@@ -40,7 +40,7 @@
                     </div>
                     <!-- 关键结果执行情况 -->
                     <div class="card-content">
-                        <div v-for="kr in currentReview.keyResultProgress || []" :key="kr.id" class="card-content-item">
+                        <div v-for="kr in currentReview.keyResultProgress || []" :key="kr.uuid" class="card-content-item">
                             <span class="item-name">{{ kr.name }}</span>
                             <span class="item-value">{{ kr.currentValue }} -> {{ kr.targetValue }}</span>
                         </div>
@@ -161,11 +161,11 @@ const taskStore = useTaskStore();
 
 const { saveReview } = useGoalReview();
 // 当前目标
-const goalId = route.params.goalId as string;
+const goalUuid = route.params.goalUuid as string;
 // 将 store 中的数据映射到组件中
 const { tempReview: currentReview } = storeToRefs(goalReviewStore);
 const goal = computed(() => {
-    const foundGoal = goalStore.getGoalById(goalId);
+    const foundGoal = goalStore.getGoalById(goalUuid);
     if (!foundGoal) {
         router.push('/404');
         throw new Error('Goal not found');
@@ -179,14 +179,14 @@ const taskStatus = ref({
 });
 
 onMounted(async () => {
-    if (!goalStore.getGoalById(goalId)) {
+    if (!goalStore.getGoalById(goalUuid)) {
         router.push('/404');
         return;
     }
-    goalReviewStore.initTempReview(goalId);
+    goalReviewStore.initTempReview(goalUuid);
     
     // 获取任务状态
-    taskStatus.value = await taskStore.getTaskStatsForGoal(goalId);
+    taskStatus.value = await taskStore.getTaskStatsForGoal(goalUuid);
     
     loading.value = false;
 });

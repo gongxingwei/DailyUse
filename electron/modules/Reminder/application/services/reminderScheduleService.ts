@@ -3,7 +3,7 @@ import { notificationService } from "@electron/shared/notification";
 import { ImportanceLevel } from "@/shared/types/importance";
 import type { RecurrenceRule } from "node-schedule";
 export interface ReminderPayload {
-    id: string;
+    uuid: string;
   title: string;
   body: string;
   importanceLevel: ImportanceLevel;
@@ -31,15 +31,15 @@ export class ReminderScheduleService {
   ): Promise<void> {
     try {
       // 如果已存在相同ID的任务，先删除
-      if (this.scheduleJobs.has(payload.id)) {
-        this.cancelReminderSchedule(payload.id);
+      if (this.scheduleJobs.has(payload.uuid)) {
+        this.cancelReminderSchedule(payload.uuid);
       }
 
       let job: nodeSchedule.Job;
       job = nodeSchedule.scheduleJob(date, () => {
         // 执行提醒任务
         notificationService.showNotification({
-          id: payload.id,
+          uuid: payload.uuid,
           title: payload.title,
           body: payload.body,
           importance: payload.importanceLevel,
@@ -57,8 +57,8 @@ export class ReminderScheduleService {
   ): Promise<void> {
     try {
       // 如果已存在相同ID的任务，先删除
-      if (this.scheduleJobs.has(payload.id)) {
-        this.cancelReminderSchedule(payload.id);
+      if (this.scheduleJobs.has(payload.uuid)) {
+        this.cancelReminderSchedule(payload.uuid);
       }
 
       let job: nodeSchedule.Job;
@@ -66,7 +66,7 @@ export class ReminderScheduleService {
         // 执行提醒任务
         console.log("【ReminderScheduleService】触发提醒任务:", payload);
         notificationService.showNotification({
-          id: payload.id,
+          uuid: payload.uuid,
           title: payload.title,
           body: payload.body,
           importance: payload.importanceLevel,
@@ -91,15 +91,15 @@ export class ReminderScheduleService {
   ): Promise<void> {
     try {
       // 如果已存在相同ID的任务，先删除
-      if (this.scheduleJobs.has(payload.id)) {
-        this.cancelReminderSchedule(payload.id);
+      if (this.scheduleJobs.has(payload.uuid)) {
+        this.cancelReminderSchedule(payload.uuid);
       }
 
       let job: nodeSchedule.Job;
-      job = nodeSchedule.scheduleJob(payload.id, rule, () => {
+      job = nodeSchedule.scheduleJob(payload.uuid, rule, () => {
         // 执行提醒任务
         notificationService.showNotification({
-          id: payload.id,
+          uuid: payload.uuid,
           title: payload.title,
           body: payload.body,
           importance: payload.importanceLevel,
@@ -114,12 +114,12 @@ export class ReminderScheduleService {
   /**
    * 取消定时任务
    */
-  cancelReminderSchedule(id: string): void {
+  cancelReminderSchedule(uuid: string): void {
     try {
-      const job = this.scheduleJobs.get(id);
+      const job = this.scheduleJobs.get(uuid);
       if (job) {
         job.cancel();
-        this.scheduleJobs.delete(id);
+        this.scheduleJobs.delete(uuid);
 
       }
 
@@ -138,11 +138,11 @@ export class ReminderScheduleService {
   /**
    * 获取调度任务信息
    */
-  getScheduleInfo(id: string): {
+  getScheduleInfo(uuid: string): {
     exists: boolean;
     nextInvocation: Date | null;
   } {
-    const job = this.scheduleJobs.get(id);
+    const job = this.scheduleJobs.get(uuid);
     if (!job) {
       return { exists: false, nextInvocation: null };
     }

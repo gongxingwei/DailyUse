@@ -10,7 +10,7 @@ import { generateUUID } from "@/shared/utils/uuid";
  * 账号注销请求数据
  */
 export interface AccountDeactivationRequest {
-  accountId: string;
+  accountUuid: string;
   username?: string;
   requestedBy: 'user' | 'admin' | 'system';
   reason?: string;
@@ -27,7 +27,7 @@ export interface AccountDeactivationRequest {
 export interface AccountDeactivationResult {
   success: boolean;
   requestId?: string;
-  accountId?: string;
+  accountUuid?: string;
   username?: string;
   message: string;
   requiresVerification: boolean;
@@ -56,11 +56,11 @@ export class AccountDeactivationService {
    * 处理账号注销请求
    */
   async requestAccountDeactivation(request: AccountDeactivationRequest): Promise<AccountDeactivationResult> {
-    const { accountId, username, requestedBy, reason, clientInfo } = request;
+    const { accountUuid, username, requestedBy, reason, clientInfo } = request;
 
     try {
       // 1. 验证账号是否存在
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
         return {
           success: false,
@@ -74,7 +74,7 @@ export class AccountDeactivationService {
       if (account.status === 'disabled') {
         return {
           success: false,
-          accountId,
+          accountUuid,
           username: account.username,
           message: '账号已经被注销',
           requiresVerification: false,
@@ -83,7 +83,7 @@ export class AccountDeactivationService {
       }
 
       // 3. 权限检查（用户只能注销自己的账号）
-      if (requestedBy === 'user' && accountId !== account.id) {
+      if (requestedBy === 'user' && accountUuid !== account.uuid) {
         return {
           success: false,
           message: '没有权限注销此账号',
@@ -97,11 +97,11 @@ export class AccountDeactivationService {
 
       // 5. 发布账号注销验证请求事件
       const verificationEvent: AccountDeactivationVerificationRequestedEvent = {
-        aggregateId: accountId,
+        aggregateId: accountUuid,
         eventType: 'AccountDeactivationVerificationRequested',
         occurredOn: new Date(),
         payload: {
-          accountId,
+          accountUuid,
           username: account.username,
           requestId,
           requestedBy,
@@ -120,7 +120,7 @@ export class AccountDeactivationService {
       console.error('账号注销请求处理失败:', error);
       return {
         success: false,
-        accountId,
+        accountUuid,
         username,
         message: '账号注销请求处理失败',
         requiresVerification: false,
@@ -143,7 +143,7 @@ export class AccountDeactivationService {
         resolve({
           success: false,
           requestId,
-          accountId: request.accountId,
+          accountUuid: request.accountUuid,
           message: '验证超时，请重试',
           requiresVerification: false,
           errorCode: 'SYSTEM_ERROR'
@@ -161,11 +161,11 @@ export class AccountDeactivationService {
 
       // 发布验证请求事件
       eventBus.publish<AccountDeactivationVerificationRequestedEvent>({
-        aggregateId: request.accountId,
+        aggregateId: request.accountUuid,
         eventType: 'AccountDeactivationVerificationRequested',
         occurredOn: new Date(),
         payload: {
-          accountId: request.accountId,
+          accountUuid: request.accountUuid,
           username: request.username || '',
           requestId,
           requestedBy: request.requestedBy,
@@ -181,13 +181,13 @@ export class AccountDeactivationService {
    * 处理账号注销确认事件
    */
   private async handleAccountDeactivationConfirmed(event: AccountDeactivationConfirmedEvent): Promise<void> {
-    const { accountId, username, deactivatedBy, reason, deactivatedAt } = event.payload;
+    const { accountUuid, username, deactivatedBy, reason, deactivatedAt } = event.payload;
 
     try {
       // 1. 查找账号
-      const account = await this.accountRepository.findById(accountId);
+      const account = await this.accountRepository.findById(accountUuid);
       if (!account) {
-        console.error('账号注销确认处理失败: 账号不存在', accountId);
+        console.error('账号注销确认处理失败: 账号不存在', accountUuid);
         return;
       }
 
@@ -198,7 +198,7 @@ export class AccountDeactivationService {
       await this.accountRepository.save(account);
 
       console.log('✅ [AccountDeactivation] 账号注销完成:', {
-        accountId,
+        accountUuid,
         username,
         deactivatedBy,
         reason,
@@ -227,12 +227,12 @@ export class AccountDeactivationService {
    * 管理员强制注销账号
    */
   async forceDeactivateAccount(
-    accountId: string, 
+    accountUuid: string, 
     adminId: string, 
     reason: string
   ): Promise<AccountDeactivationResult> {
     return await this.requestAccountDeactivation({
-      accountId,
+      accountUuid,
       requestedBy: 'admin',
       reason: `管理员强制注销: ${reason} (操作员: ${adminId})`,
       clientInfo: {
@@ -246,11 +246,11 @@ export class AccountDeactivationService {
    * 系统自动注销账号（如违规行为）
    */
   async systemDeactivateAccount(
-    accountId: string, 
+    accountUuid: string, 
     reason: string
   ): Promise<AccountDeactivationResult> {
     return await this.requestAccountDeactivation({
-      accountId,
+      accountUuid,
       requestedBy: 'system',
       reason: `系统自动注销: ${reason}`,
       clientInfo: {

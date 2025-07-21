@@ -46,7 +46,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _version: number;
 
   constructor(
-    id: string,
+    uuid: string,
     title: string,
     timeConfig: TaskTimeConfig,
     reminderConfig: TaskReminderConfig,
@@ -68,7 +68,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       };
     }
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
     this._title = title;
@@ -195,10 +195,10 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     this._lifecycle.updatedAt = TimeUtils.now();
   }
 
-  removeKeyResultLink(goalId: string, keyResultId: string): void {
+  removeKeyResultLink(goalUuid: string, keyResultId: string): void {
     if (this._keyResultLinks) {
       this._keyResultLinks = this._keyResultLinks.filter(
-        (link) => !(link.goalId === goalId && link.keyResultId === keyResultId)
+        (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId)
       );
       this._lifecycle.updatedAt = TimeUtils.now();
     }
@@ -275,7 +275,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   static fromCompleteData(data: any): TaskTemplate {
     // 创建基础实例
     const instance = new TaskTemplate(
-      data.id || data._id,
+      data.uuid || data._id,
       data.title || data._title,
       data.timeConfig || data._timeConfig,
       data.reminderConfig || data._reminderConfig,
@@ -355,7 +355,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     
     try {
       const dto = {
-        id: this.id,
+        uuid: this.uuid,
         title: this._title,
         description: this._description,
         timeConfig: this._timeConfig,
@@ -393,7 +393,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
         
         // 尝试创建一个更安全的版本
         const safeDto = {
-          id: String(this.id || ''),
+          uuid: String(this.uuid || ''),
           title: String(this._title || ''),
           description: String(this._description || ''),
           timeConfig: this._timeConfig ? JSON.parse(JSON.stringify(this._timeConfig)) : null,

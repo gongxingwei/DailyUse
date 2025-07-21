@@ -184,7 +184,7 @@ export class SessionLoggingTables {
       CREATE INDEX IF NOT EXISTS idx_anomaly_detections_session_log_uuid ON anomaly_detections(session_log_uuid);
       CREATE INDEX IF NOT EXISTS idx_anomaly_detections_type ON anomaly_detections(detection_type);
       CREATE INDEX IF NOT EXISTS idx_anomaly_detections_severity ON anomaly_detections(severity_level);
-      CREATE INDEX IF NOT EXISTS idx_anomaly_detections_confidence ON anomaly_detections(confidence_score);
+      CREATE INDEX IF NOT EXISTS idx_anomaly_detections_confUuidence ON anomaly_detections(confidence_score);
       CREATE INDEX IF NOT EXISTS idx_anomaly_detections_false_positive ON anomaly_detections(is_false_positive);
       CREATE INDEX IF NOT EXISTS idx_anomaly_detections_created_at ON anomaly_detections(created_at);
     `);

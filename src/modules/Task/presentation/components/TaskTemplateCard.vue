@@ -238,8 +238,8 @@ const getPriorityColor = (priority: number) => {
 };
 
 const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalById(link.goalId);
-    const kr = goal?.keyResults.find(kr => kr.id === link.keyResultId);
+    const goal = goalStore.getGoalById(link.goalUuid);
+    const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
     return kr?.name || '未知关键结果';
 };
 
@@ -255,7 +255,7 @@ const formatCompletionTime = (minutes: number): string => {
 
 // 事件处理方法
 const handleEdit = () => {
-    emit('edit', props.template.id);
+    emit('edit', props.template.uuid);
 };
 
 const handleDelete = () => {

@@ -76,7 +76,7 @@ export function useTaskTemplate() {
 
   // 更新任务模板
   const updateTaskTemplate = async (templateData: any) => {
-    if (!templateData || !templateData.id) {
+    if (!templateData || !templateData.uuid) {
       showError('模板数据不完整，缺少 ID');
       return { success: false };
     }
@@ -101,13 +101,13 @@ export function useTaskTemplate() {
 
   // 删除任务模板
   const deleteTaskTemplate = async (template: TaskTemplate) => {
-    if (!template || !template.id) {
+    if (!template || !template.uuid) {
       showError('模板信息不完整');
       return { success: false };
     }
 
     try {
-      const result = await getTaskService().deleteTaskTemplate(template.id);
+      const result = await getTaskService().deleteTaskTemplate(template.uuid);
       
       if (result.success) {
         showSuccess(`任务模板 "${template.title}" 删除成功`);

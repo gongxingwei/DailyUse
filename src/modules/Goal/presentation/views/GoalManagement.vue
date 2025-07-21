@@ -81,7 +81,7 @@
                   <v-row>
                     <v-col
                       v-for="goal in goalsInCurStatus"
-                      :key="goal.id"
+                      :key="goal.uuid"
                       cols="12"
                       lg="6"
                       xl="4"
@@ -145,7 +145,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { createGoalDomainApplicationService } from '@/modules/Goal/application/services/goalDomainApplicationService';
+import { getGoalDomainApplicationService } from '@/modules/Goal/application/services/goalDomainApplicationService';
 import { useGoalManagement } from '../composables/useGoalManagement';
 import GoalCard from '../components/GoalCard.vue';
 import GoalDir from '../components/GoalDir.vue';
@@ -157,7 +157,7 @@ import type { IGoal } from '@/modules/Goal/domain/types/goal';
 const { t } = useI18n();
 
 // Services
-const goalService = createGoalDomainApplicationService();
+const goalService = getGoalDomainApplicationService();
 
 // 使用 useGoalManagement composable
 const { 
@@ -213,7 +213,7 @@ const handleSaveGoal = async (goalData: any) => {
       // 编辑现有目标
       const goalUpdateData = {
         ...goalData,
-        id: goalDialog.value.goalData.id
+        uuid: goalDialog.value.goalData.uuid
       };
       result = await goalService.updateGoal(goalUpdateData);
     } else {
@@ -255,21 +255,21 @@ const handleCancelGoal = () => {
 };
 
 // 关键结果对话框相关方法 - 现在由 GoalDialog 内部处理
-const handleAddKeyResult = (goalId: string) => {
-  console.log('🎯 添加关键结果事件已转移到 GoalDialog 内部处理:', goalId);
+const handleAddKeyResult = (goalUuid: string) => {
+  console.log('🎯 添加关键结果事件已转移到 GoalDialog 内部处理:', goalUuid);
   // 这个方法现在只是为了兼容 GoalCard 的事件，实际处理在 GoalDialog 内部
 };
 
-const handleEditKeyResult = (goalId: string, keyResult: any) => {
-  console.log('✏️ 编辑关键结果事件已转移到 GoalDialog 内部处理:', goalId, keyResult);
+const handleEditKeyResult = (goalUuid: string, keyResult: any) => {
+  console.log('✏️ 编辑关键结果事件已转移到 GoalDialog 内部处理:', goalUuid, keyResult);
   // 这个方法现在只是为了兼容 GoalCard 的事件，实际处理在 GoalDialog 内部
 };
 
-const handleDeleteGoal = async (goalId: string) => {
+const handleDeleteGoal = async (goalUuid: string) => {
   // 使用更友好的确认对话框
   if (confirm('⚠️ 确定要删除这个目标吗？\n\n删除后将无法恢复，包括所有关联的关键结果和记录。')) {
     try {
-      const result = await goalService.deleteGoal(goalId);
+      const result = await goalService.deleteGoal(goalUuid);
       if (result.success) {
         console.log('✅ 目标删除成功');
         // 刷新数据
@@ -285,9 +285,9 @@ const handleDeleteGoal = async (goalId: string) => {
   }
 };
 
-const handleReviewGoal = (goalId: string) => {
+const handleReviewGoal = (goalUuid: string) => {
   showReviewDialog.value = true;
-  console.log('🔍 开始目标复盘:', goalId);
+  console.log('🔍 开始目标复盘:', goalUuid);
 };
 
 const closeReviewDialog = () => {

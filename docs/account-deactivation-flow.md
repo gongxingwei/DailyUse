@@ -94,7 +94,7 @@
 import { rendererAccountService } from '@/modules/Account/services/rendererAccountService';
 
 const result = await rendererAccountService.requestAccountDeactivation({
-  accountId: 'user-123',
+  accountUuid: 'user-123',
   requestedBy: 'user',
   reason: '用户主动注销',
   clientInfo: {

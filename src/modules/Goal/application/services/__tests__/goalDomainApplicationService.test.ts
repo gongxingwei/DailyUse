@@ -1,5 +1,5 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
-import { GoalDomainApplicationService, createGoalDomainApplicationService } from '@/modules/Goal/application/services/goalDomainApplicationService';
+import { GoalDomainApplicationService, getGoalDomainApplicationService } from '@/modules/Goal/application/services/goalDomainApplicationService';
 import type { IGoalStateRepository } from '@/modules/Goal/domain/repositories/IGoalStateRepository';
 import type { IGoal, IKeyResult, IRecord, IGoalDir } from '@/modules/Goal/domain/types/goal';
 
@@ -23,7 +23,7 @@ describe('GoalDomainApplicationService', () => {
       updateRecord: jest.fn(),
       removeRecord: jest.fn(),
       setRecords: jest.fn(),
-      removeRecordsByGoalId: jest.fn(),
+      removeRecordsBygoalUuid: jest.fn(),
       removeRecordsByKeyResultId: jest.fn(),
       clearAllRecords: jest.fn(),
       addGoalDir: jest.fn(),
@@ -36,14 +36,14 @@ describe('GoalDomainApplicationService', () => {
     };
 
     // 使用 mock 仓库创建服务实例
-    goalService = createGoalDomainApplicationService(mockStateRepository);
+    goalService = getGoalDomainApplicationService(mockStateRepository);
   });
 
   describe('创建目标', () => {
     it('成功创建时应同步状态', async () => {
       // Arrange
       const mockGoal: IGoal = {
-        id: 'test-goal-1',
+        uuid: 'test-goal-1',
         title: '测试目标',
         description: '测试描述',
         startTime: '2024-01-01',
@@ -80,7 +80,7 @@ describe('GoalDomainApplicationService', () => {
     it('创建失败时不应同步状态', async () => {
       // Arrange
       const mockGoal: IGoal = {
-        id: 'test-goal-1',
+        uuid: 'test-goal-1',
         title: '测试目标',
       } as IGoal;
 
@@ -105,10 +105,10 @@ describe('GoalDomainApplicationService', () => {
   describe('更新目标', () => {
     it('成功更新时应同步状态', async () => {
       // Arrange
-      const goalId = 'test-goal-1';
+      const goalUuid = 'test-goal-1';
       const updateData = { title: '更新后的目标' };
       const updatedGoal: IGoal = {
-        id: goalId,
+        uuid: goalUuid,
         title: '更新后的目标',
         description: '测试描述',
         startTime: '2024-01-01',
@@ -133,7 +133,7 @@ describe('GoalDomainApplicationService', () => {
         });
 
       // Act
-      const result = await goalService.updateGoal(goalId, updateData);
+      const result = await goalService.updateGoal(goalUuid, updateData);
 
       // Assert
       expect(result.success).toBe(true);
@@ -145,7 +145,7 @@ describe('GoalDomainApplicationService', () => {
   describe('删除目标', () => {
     it('成功删除时应同步状态', async () => {
       // Arrange
-      const goalId = 'test-goal-1';
+      const goalUuid = 'test-goal-1';
 
       // Mock IPC 响应
       jest.spyOn(require('@/modules/Goal/infrastructure/ipc/goalIpcClient'), 'goalIpcClient', 'get')
@@ -157,12 +157,12 @@ describe('GoalDomainApplicationService', () => {
         });
 
       // Act
-      const result = await goalService.deleteGoal(goalId);
+      const result = await goalService.deleteGoal(goalUuid);
 
       // Assert
       expect(result.success).toBe(true);
-      expect(mockStateRepository.removeGoal).toHaveBeenCalledWith(goalId);
-      expect(mockStateRepository.removeRecordsByGoalId).toHaveBeenCalledWith(goalId);
+      expect(mockStateRepository.removeGoal).toHaveBeenCalledWith(goalUuid);
+      expect(mockStateRepository.removeRecordsBygoalUuid).toHaveBeenCalledWith(goalUuid);
     });
   });
 
@@ -170,8 +170,8 @@ describe('GoalDomainApplicationService', () => {
     it('创建关键结果应成功', async () => {
       // Arrange
       const mockKeyResult: IKeyResult = {
-        id: 'kr-1',
-        goalId: 'goal-1',
+        uuid: 'kr-1',
+        goalUuid: 'goal-1',
         title: '测试关键结果',
         description: '描述',
         targetValue: 100,
@@ -209,7 +209,7 @@ describe('GoalDomainApplicationService', () => {
         .mockReturnValue({
           updateKeyResult: jest.fn().mockResolvedValue({
             success: true,
-            data: { ...updateData, id: keyResultId }
+            data: { ...updateData, uuid: keyResultId }
           })
         });
 
@@ -226,8 +226,8 @@ describe('GoalDomainApplicationService', () => {
     it('创建记录应成功', async () => {
       // Arrange
       const mockRecord: IRecord = {
-        id: 'record-1',
-        goalId: 'goal-1',
+        uuid: 'record-1',
+        goalUuid: 'goal-1',
         keyResultId: 'kr-1',
         value: 10,
         description: '测试记录',
@@ -280,7 +280,7 @@ describe('GoalDomainApplicationService', () => {
     it('创建目录应成功', async () => {
       // Arrange
       const mockGoalDir: IGoalDir = {
-        id: 'dir-1',
+        uuid: 'dir-1',
         name: '测试目录',
         description: '目录描述',
         parentId: null,
@@ -312,9 +312,9 @@ describe('GoalDomainApplicationService', () => {
     it('同步所有数据应成功', async () => {
       // Arrange
       const mockAllData = {
-        goals: [{ id: 'goal-1', title: '目标1' }] as IGoal[],
-        records: [{ id: 'record-1', goalId: 'goal-1' }] as IRecord[],
-        goalDirs: [{ id: 'dir-1', name: '目录1' }] as IGoalDir[]
+        goals: [{ uuid: 'goal-1', title: '目标1' }] as IGoal[],
+        records: [{ uuid: 'record-1', goalUuid: 'goal-1' }] as IRecord[],
+        goalDirs: [{ uuid: 'dir-1', name: '目录1' }] as IGoalDir[]
       };
 
       // Mock IPC 响应
@@ -358,7 +358,7 @@ describe('GoalDomainApplicationService', () => {
   describe('工厂方法', () => {
     it('应支持依赖注入', () => {
       // Act
-      const serviceWithInjection = createGoalDomainApplicationService(mockStateRepository);
+      const serviceWithInjection = getGoalDomainApplicationService(mockStateRepository);
 
       // Assert
       expect(serviceWithInjection).toBeInstanceOf(GoalDomainApplicationService);
@@ -366,7 +366,7 @@ describe('GoalDomainApplicationService', () => {
 
     it('应支持默认创建', () => {
       // Act
-      const serviceWithDefaults = createGoalDomainApplicationService();
+      const serviceWithDefaults = getGoalDomainApplicationService();
 
       // Assert
       expect(serviceWithDefaults).toBeInstanceOf(GoalDomainApplicationService);

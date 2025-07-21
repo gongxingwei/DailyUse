@@ -7,11 +7,10 @@ import type {
   IGoalDir, 
   IGoalReview,
   IGoalReviewCreateDTO 
-} from "../../domain/types/goal";
-import type { IGoalStateRepository } from "../../domain/repositories/IGoalStateRepository";
+} from "@common/modules/goal/types/goal";
 import { goalIpcClient } from "../../infrastructure/ipc/goalIpcClient";
-import { PiniaGoalStateRepository } from "../../infrastructure/repositories/piniaGoalStateRepository";
 import { GoalDir } from "../../domain/entities/goalDir";
+import { useGoalStore } from "../../presentation/stores/goalStore";
 
 /**
  * 目标领域应用服务
@@ -24,9 +23,8 @@ import { GoalDir } from "../../domain/entities/goalDir";
  * 4. 提供统一的业务接口
  */
 export class GoalDomainApplicationService {
-  private stateRepository: IGoalStateRepository;
-  constructor(stateRepository?: IGoalStateRepository) {
-    this.stateRepository = stateRepository || new PiniaGoalStateRepository();
+  private get goalStore() {
+    return useGoalStore();
   }
 
   // ========== 目标管理 ==========
@@ -36,7 +34,7 @@ export class GoalDomainApplicationService {
    */
   async createGoal(goalData: IGoalCreateDTO): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 创建目标:', goalData.title);
+      console.log('🔄 [目标应用服务] 创建目标:', goalData.name);
 
       // 调用主进程创建目标
       const response = await goalIpcClient.createGoal(goalData);
@@ -45,7 +43,7 @@ export class GoalDomainApplicationService {
         // 同步到前端状态
         await this.syncGoalToState(response.data);
 
-        console.log('✅ [目标应用服务] 目标创建并同步成功:', response.data.id);
+        console.log('✅ [目标应用服务] 目标创建并同步成功:', response.data.uuid);
         return {
           success: true,
           message: response.message,
@@ -92,14 +90,14 @@ export class GoalDomainApplicationService {
   /**
    * 根据ID获取目标
    */
-  async getGoalById(goalId: string): Promise<IGoal | null> {
+  async getGoalById(goalUuid: string): Promise<IGoal | null> {
     try {
-      console.log('🔄 [目标应用服务] 获取目标:', goalId);
+      console.log('🔄 [目标应用服务] 获取目标:', goalUuid);
 
-      const response = await goalIpcClient.getGoalById(goalId);
+      const response = await goalIpcClient.getGoalById(goalUuid);
 
       if (response.success && response.data) {
-        console.log('✅ [目标应用服务] 获取目标成功:', goalId);
+        console.log('✅ [目标应用服务] 获取目标成功:', goalUuid);
         return response.data;
       }
 
@@ -116,7 +114,7 @@ export class GoalDomainApplicationService {
    */
   async updateGoal(goalData: IGoal): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 更新目标:', goalData.id);
+      console.log('🔄 [目标应用服务] 更新目标:', goalData.uuid);
 
       // 调用主进程更新目标
       const response = await goalIpcClient.updateGoal(goalData);
@@ -125,7 +123,7 @@ export class GoalDomainApplicationService {
         // 同步到前端状态
         await this.syncGoalToState(response.data);
 
-        console.log('✅ [目标应用服务] 目标更新并同步成功:', response.data.id);
+        console.log('✅ [目标应用服务] 目标更新并同步成功:', response.data.uuid);
         return {
           success: true,
           message: response.message,
@@ -150,18 +148,18 @@ export class GoalDomainApplicationService {
   /**
    * 删除目标
    */
-  async deleteGoal(goalId: string): Promise<TResponse<void>> {
+  async deleteGoal(goalUuid: string): Promise<TResponse<void>> {
     try {
-      console.log('🔄 [目标应用服务] 删除目标:', goalId);
+      console.log('🔄 [目标应用服务] 删除目标:', goalUuid);
 
       // 调用主进程删除目标
-      const response = await goalIpcClient.deleteGoal(goalId);
+      const response = await goalIpcClient.deleteGoal(goalUuid);
 
       if (response.success) {
         // 从前端状态移除
-        await this.removeGoalFromState(goalId);
+        await this.removeGoalFromState(goalUuid);
 
-        console.log('✅ [目标应用服务] 目标删除并同步成功:', goalId);
+        console.log('✅ [目标应用服务] 目标删除并同步成功:', goalUuid);
         return {
           success: true,
           message: response.message,
@@ -219,11 +217,8 @@ export class GoalDomainApplicationService {
 
   // ========== 关键结果管理（聚合根驱动）==========
 
-  /**
-   * 为目标添加关键结果（聚合根驱动）
-   */
   async addKeyResultToGoal(
-    goalId: string,
+    goalUuid: string,
     keyResultData: {
       name: string;
       startValue: number;
@@ -234,10 +229,10 @@ export class GoalDomainApplicationService {
     }
   ): Promise<TResponse<{ goal: IGoal; keyResultId: string }>> {
     try {
-      console.log('🔄 [目标应用服务] 为目标添加关键结果:', { goalId, ...keyResultData });
+      console.log('🔄 [目标应用服务] 为目标添加关键结果:', { goalUuid, ...keyResultData });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.addKeyResultToGoal(goalId, keyResultData);
+      const response = await goalIpcClient.addKeyResultToGoal(goalUuid, keyResultData);
 
       if (response.success && response.data) {
         // 同步目标到前端状态
@@ -265,15 +260,12 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 删除目标的关键结果（聚合根驱动）
-   */
-  async removeKeyResultFromGoal(goalId: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
+  async removeKeyResultFromGoal(goalUuid: string, keyResultId: string): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 删除目标关键结果:', { goalId, keyResultId });
+      console.log('🔄 [目标应用服务] 删除目标关键结果:', { goalUuid, keyResultId });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.removeKeyResultFromGoal(goalId, keyResultId);
+      const response = await goalIpcClient.removeKeyResultFromGoal(goalUuid, keyResultId);
 
       if (response.success && response.data) {
         // 同步目标到前端状态
@@ -301,11 +293,8 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 更新目标的关键结果（聚合根驱动）
-   */
   async updateKeyResultOfGoal(
-    goalId: string,
+    goalUuid: string,
     keyResultId: string,
     updates: {
       name?: string;
@@ -315,10 +304,10 @@ export class GoalDomainApplicationService {
     }
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 更新目标关键结果:', { goalId, keyResultId, updates });
+      console.log('🔄 [目标应用服务] 更新目标关键结果:', { goalUuid, keyResultId, updates });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.updateKeyResultOfGoal(goalId, keyResultId, updates);
+      const response = await goalIpcClient.updateKeyResultOfGoal(goalUuid, keyResultId, updates);
 
       if (response.success && response.data) {
         // 同步目标到前端状态
@@ -346,19 +335,16 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 更新关键结果当前值
-   */
   async updateKeyResultCurrentValue(
-    goalId: string, 
+    goalUuid: string, 
     keyResultId: string, 
     currentValue: number
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 更新关键结果当前值:', { goalId, keyResultId, currentValue });
+      console.log('🔄 [目标应用服务] 更新关键结果当前值:', { goalUuid, keyResultId, currentValue });
 
       // 调用主进程更新关键结果
-      const response = await goalIpcClient.updateKeyResultCurrentValue(goalId, keyResultId, currentValue);
+      const response = await goalIpcClient.updateKeyResultCurrentValue(goalUuid, keyResultId, currentValue);
 
       if (response.success && response.data) {
         // 同步到前端状态
@@ -388,21 +374,17 @@ export class GoalDomainApplicationService {
 
   // ========== 记录管理（聚合根驱动）==========
 
-  /**
-   * 为目标的关键结果添加记录（聚合根驱动）
-   * 这是推荐的业务方法，确保通过 Goal 聚合根来控制记录添加
-   */
   async addRecordToGoal(
-    goalId: string,
+    goalUuid: string,
     keyResultId: string,
     value: number,
     note?: string
   ): Promise<TResponse<{ goal: IGoal; record: IRecord }>> {
     try {
-      console.log('🔄 [目标应用服务] 为目标关键结果添加记录:', { goalId, keyResultId, value, note });
+      console.log('🔄 [目标应用服务] 为目标关键结果添加记录:', { goalUuid, keyResultId, value, note });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.addRecordToGoal(goalId, keyResultId, value, note);
+      const response = await goalIpcClient.addRecordToGoal(goalUuid, keyResultId, value, note);
 
       if (response.success && response.data) {
         // 同步目标到前端状态（包含新记录）
@@ -411,7 +393,7 @@ export class GoalDomainApplicationService {
         // 同步记录到前端状态
         await this.syncRecordToState(response.data.record);
 
-        console.log('✅ [目标应用服务] 记录添加并同步成功:', response.data.record.id);
+        console.log('✅ [目标应用服务] 记录添加并同步成功:', response.data.record.uuid);
         return {
           success: true,
           message: response.message,
@@ -433,15 +415,12 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 从目标中删除记录（聚合根驱动）
-   */
-  async removeRecordFromGoal(goalId: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
+  async removeRecordFromGoal(goalUuid: string, recordId: string): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 从目标删除记录:', { goalId, recordId });
+      console.log('🔄 [目标应用服务] 从目标删除记录:', { goalUuid, recordId });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.removeRecordFromGoal(goalId, recordId);
+      const response = await goalIpcClient.removeRecordFromGoal(goalUuid, recordId);
 
       if (response.success && response.data) {
         // 同步目标到前端状态
@@ -472,9 +451,6 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 创建记录（兼容性方法，推荐使用 addRecordToGoal）
-   */
   async createRecord(recordData: IRecordCreateDTO): Promise<TResponse<{ record: IRecord }>> {
     try {
       console.log('🔄 [目标应用服务] 创建记录:', recordData);
@@ -486,7 +462,7 @@ export class GoalDomainApplicationService {
         // 同步到前端状态
         await this.syncRecordToState(response.data);
 
-        console.log('✅ [目标应用服务] 记录创建并同步成功:', response.data.id);
+        console.log('✅ [目标应用服务] 记录创建并同步成功:', response.data.uuid);
         return {
           success: true,
           message: response.message,
@@ -508,9 +484,6 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 获取所有记录
-   */
   async getAllRecords(): Promise<IRecord[]> {
     try {
       console.log('🔄 [目标应用服务] 获取所有记录');
@@ -530,14 +503,11 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 根据目标ID获取记录
-   */
-  async getRecordsByGoalId(goalId: string): Promise<IRecord[]> {
+  async getRecordsBygoalUuid(goalUuid: string): Promise<IRecord[]> {
     try {
-      console.log('🔄 [目标应用服务] 获取目标记录:', goalId);
+      console.log('🔄 [目标应用服务] 获取目标记录:', goalUuid);
 
-      const response = await goalIpcClient.getRecordsByGoalId(goalId);
+      const response = await goalIpcClient.getRecordsBygoalUuid(goalUuid);
 
       if (response.success && response.data) {
         console.log(`✅ [目标应用服务] 获取目标记录成功，数量: ${response.data.length}`);
@@ -554,24 +524,21 @@ export class GoalDomainApplicationService {
 
   // ========== 目标复盘管理（聚合根驱动）==========
 
-  /**
-   * 为目标添加复盘（聚合根驱动）
-   */
   async addReviewToGoal(
-    goalId: string,
+    goalUuid: string,
     reviewData: IGoalReviewCreateDTO
   ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
     try {
-      console.log('🔄 [目标应用服务] 为目标添加复盘:', { goalId, reviewData });
+      console.log('🔄 [目标应用服务] 为目标添加复盘:', { goalUuid, reviewData });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.addReviewToGoal(goalId, reviewData);
+      const response = await goalIpcClient.addReviewToGoal(goalUuid, reviewData);
 
       if (response.success && response.data) {
         // 同步目标到前端状态（包含新复盘）
         await this.syncGoalToState(response.data.goal);
 
-        console.log('✅ [目标应用服务] 复盘添加并同步成功:', response.data.review.id);
+        console.log('✅ [目标应用服务] 复盘添加并同步成功:', response.data.review.uuid);
         return {
           success: true,
           message: response.message,
@@ -593,25 +560,22 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 更新目标的复盘（聚合根驱动）
-   */
   async updateReviewInGoal(
-    goalId: string,
+    goalUuid: string,
     reviewId: string,
     updateData: Partial<IGoalReviewCreateDTO>
   ): Promise<TResponse<{ goal: IGoal; review: IGoalReview }>> {
     try {
-      console.log('🔄 [目标应用服务] 更新目标复盘:', { goalId, reviewId, updateData });
+      console.log('🔄 [目标应用服务] 更新目标复盘:', { goalUuid, reviewId, updateData });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.updateReviewInGoal(goalId, reviewId, updateData);
+      const response = await goalIpcClient.updateReviewInGoal(goalUuid, reviewId, updateData);
 
       if (response.success && response.data) {
         // 同步目标到前端状态（包含更新的复盘）
         await this.syncGoalToState(response.data.goal);
 
-        console.log('✅ [目标应用服务] 复盘更新并同步成功:', response.data.review.id);
+        console.log('✅ [目标应用服务] 复盘更新并同步成功:', response.data.review.uuid);
         return {
           success: true,
           message: response.message,
@@ -633,18 +597,15 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 从目标中移除复盘（聚合根驱动）
-   */
   async removeReviewFromGoal(
-    goalId: string,
+    goalUuid: string,
     reviewId: string
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
-      console.log('🔄 [目标应用服务] 从目标移除复盘:', { goalId, reviewId });
+      console.log('🔄 [目标应用服务] 从目标移除复盘:', { goalUuid, reviewId });
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.removeReviewFromGoal(goalId, reviewId);
+      const response = await goalIpcClient.removeReviewFromGoal(goalUuid, reviewId);
 
       if (response.success && response.data) {
         // 同步目标到前端状态（移除复盘后）
@@ -672,15 +633,12 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 获取目标的所有复盘
-   */
-  async getGoalReviews(goalId: string): Promise<IGoalReview[]> {
+  async getGoalReviews(goalUuid: string): Promise<IGoalReview[]> {
     try {
-      console.log('🔄 [目标应用服务] 获取目标复盘:', goalId);
+      console.log('🔄 [目标应用服务] 获取目标复盘:', goalUuid);
 
       // 调用主进程获取目标复盘
-      const response = await goalIpcClient.getGoalReviews(goalId);
+      const response = await goalIpcClient.getGoalReviews(goalUuid);
 
       if (response.success && response.data) {
         console.log('✅ [目标应用服务] 获取目标复盘成功:', response.data.length);
@@ -695,15 +653,12 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 为目标创建复盘快照（聚合根驱动）
-   */
-  async createGoalReviewSnapshot(goalId: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
+  async createGoalReviewSnapshot(goalUuid: string): Promise<TResponse<{ goal: IGoal; snapshot: any }>> {
     try {
-      console.log('🔄 [目标应用服务] 为目标创建复盘快照:', goalId);
+      console.log('🔄 [目标应用服务] 为目标创建复盘快照:', goalUuid);
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.createGoalReviewSnapshot(goalId);
+      const response = await goalIpcClient.createGoalReviewSnapshot(goalUuid);
 
       if (response.success && response.data) {
         console.log('✅ [目标应用服务] 复盘快照创建成功');
@@ -730,42 +685,16 @@ export class GoalDomainApplicationService {
 
   // ========== 目标目录管理 ==========
 
-  /**
-   * 创建目标目录
-   */
-  async createGoalDir(goalDirData: GoalDir | IGoalDir): Promise<TResponse<{ goalDir: IGoalDir }>> {
+  async createGoalDir(goalDirData: IGoalDir): Promise<TResponse<{ goalDir: IGoalDir }>> {
     try {
-      console.log('🔄 [目标应用服务] 创建目标目录:', goalDirData.name);
       console.log('🔍 [目标应用服务] 目录创建数据:', goalDirData);
-
-
-      const currentUser = {
-        username: 'text'
-      };
-      
-      // 确定使用的用户名：优先使用登录用户，否则使用默认用户
-      let username: string;
-      if (currentUser?.username) {
-        username = currentUser.username;
-        console.log('🔍 [目标应用服务] 使用登录用户:', username);
-      } else {
-        username = 'default';
-        console.log('🔍 [目标应用服务] 用户未登录，使用默认用户:', username);
-      }
-      if (goalDirData instanceof GoalDir) {
-        // 如果是 GoalDir 实例，转换为 IGoalDir
-        goalDirData = goalDirData.toDTO();
-      }
-      
-
       // 调用主进程创建目标目录
       const response = await goalIpcClient.createGoalDir(goalDirData);
-
+      console.log('[目标应用服务] 接口响应:', response);
       if (response.success && response.data) {
         // 同步到前端状态
         await this.syncGoalDirToState(response.data);
 
-        console.log('✅ [目标应用服务] 目标目录创建并同步成功:', response.data.id);
         return {
           success: true,
           message: response.message,
@@ -778,21 +707,6 @@ export class GoalDomainApplicationService {
       };
     } catch (error) {
       console.error('❌ [目标应用服务] 创建目标目录异常:', error);
-      
-      // 检查是否是外键约束错误
-      if (error instanceof Error && error.message.includes('FOREIGN KEY constraint failed')) {
-        console.error('🔍 [目标应用服务] 外键约束异常详情:', {
-          error: error.message,
-          stack: error.stack,
-          data: goalDirData
-        });
-        
-        return {
-          success: false,
-          message: '创建目录失败：数据库外键约束错误。请确保用户数据完整，建议重启应用或联系技术支持。',
-        };
-      }
-      
       return {
         success: false,
         message: `创建目标目录失败: ${error instanceof Error ? error.message : '未知错误'}`,
@@ -800,9 +714,6 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 获取所有目标目录
-   */
   async getAllGoalDirs(): Promise<IGoalDir[]> {
     try {
       console.log('🔄 [目标应用服务] 获取所有目标目录');
@@ -822,9 +733,6 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 删除目标目录
-   */
   async deleteGoalDir(goalDirId: string): Promise<TResponse<void>> {
     try {
       console.log('🔄 [目标应用服务] 删除目标目录:', goalDirId);
@@ -857,9 +765,6 @@ export class GoalDomainApplicationService {
     }
   }
 
-  /**
-   * 更新目标目录
-   */
   async updateGoalDir(goalDirData: GoalDir | IGoalDir): Promise<TResponse<{ goalDir: IGoalDir }>> {
     try {
       console.log('🔄 [目标应用服务] 更新目标目录:', goalDirData.name);
@@ -900,17 +805,9 @@ export class GoalDomainApplicationService {
 
   // ========== 数据同步 ==========
 
-  /**
-   * 同步所有数据
-   */
   async syncAllData(): Promise<void> {
     try {
       console.log('🔄 [目标应用服务] 开始同步所有目标数据');
-
-      if (!this.stateRepository?.isAvailable()) {
-        console.warn('⚠️ 状态仓库不可用，跳过同步');
-        return;
-      }
 
       // 获取所有数据
       const [goals, records, goalDirs] = await Promise.all([
@@ -920,7 +817,7 @@ export class GoalDomainApplicationService {
       ]);
 
       // 同步到状态仓库
-      await this.stateRepository.syncAllGoalData({
+      await this.goalStore.syncAllGoalData({
         goals,
         records,
         goalDirs,
@@ -935,89 +832,66 @@ export class GoalDomainApplicationService {
   // ========== 私有方法：状态同步 ==========
 
   private async syncGoalToState(goal: IGoal): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.updateGoal(goal);
-      } catch (error) {
-        console.warn('⚠️ 同步目标到状态失败:', error);
-      }
+    try {
+      await this.goalStore.updateGoal(goal);
+    } catch (error) {
+      console.warn('⚠️ 同步目标到状态失败:', error);
     }
   }
 
-  private async removeGoalFromState(goalId: string): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.removeGoal(goalId);
-        await this.stateRepository.removeRecordsByGoalId(goalId);
-      } catch (error) {
-        console.warn('⚠️ 从状态移除目标失败:', error);
-      }
+  private async removeGoalFromState(goalUuid: string): Promise<void> {
+    try {
+      await this.goalStore.removeGoal(goalUuid);
+      await this.goalStore.removeRecordsBygoalUuid(goalUuid);
+    } catch (error) {
+      console.warn('⚠️ 从状态移除目标失败:', error);
     }
   }
 
   private async clearAllGoalsFromState(): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.clearAllGoals();
-        await this.stateRepository.clearAllRecords();
-      } catch (error) {
-        console.warn('⚠️ 清空目标状态失败:', error);
-      }
+    try {
+      await this.goalStore.clearAllGoals();
+      await this.goalStore.clearAllRecords();
+    } catch (error) {
+      console.warn('⚠️ 清空目标状态失败:', error);
     }
   }
 
   private async syncRecordToState(record: IRecord): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.addRecord(record);
-      } catch (error) {
-        console.warn('⚠️ 同步记录到状态失败:', error);
-      }
+    try {
+      await this.goalStore.addRecord(record);
+    } catch (error) {
+      console.warn('⚠️ 同步记录到状态失败:', error);
     }
   }
 
   private async removeRecordFromState(recordId: string): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.removeRecord(recordId);
-      } catch (error) {
-        console.warn('⚠️ 从状态移除记录失败:', error);
-      }
+    try {
+      await this.goalStore.removeRecord(recordId);
+    } catch (error) {
+      console.warn('⚠️ 从状态移除记录失败:', error);
     }
   }
 
   private async syncGoalDirToState(goalDir: IGoalDir): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.addGoalDir(goalDir);
-      } catch (error) {
-        console.warn('⚠️ 同步目标目录到状态失败:', error);
-      }
+    try {
+      console.log('[目标应用服务] 同步目标目录到状态:', goalDir);
+      await this.goalStore.addGoalDir(goalDir);
+    } catch (error) {
+      console.warn('⚠️ 同步目标目录到状态失败:', error);
     }
   }
 
   private async removeGoalDirFromState(goalDirId: string): Promise<void> {
-    if (this.stateRepository?.isAvailable()) {
-      try {
-        await this.stateRepository.removeGoalDir(goalDirId);
-      } catch (error) {
-        console.warn('⚠️ 从状态移除目标目录失败:', error);
-      }
+    try {
+      await this.goalStore.removeGoalDir(goalDirId);
+    } catch (error) {
+      console.warn('⚠️ 从状态移除目标目录失败:', error);
     }
   }
 }
 
 // ========== 工厂方法 ==========
-
-/**
- * 创建目标领域应用服务
- * 支持依赖注入和默认创建
- */
-export function createGoalDomainApplicationService(
-  stateRepository?: IGoalStateRepository
-): GoalDomainApplicationService {
-  return new GoalDomainApplicationService(stateRepository);
-}
 
 /**
  * 获取目标领域应用服务的默认实例
@@ -1026,7 +900,6 @@ let _goalDomainApplicationServiceInstance: GoalDomainApplicationService | null =
 
 export function getGoalDomainApplicationService(): GoalDomainApplicationService {
   if (!_goalDomainApplicationServiceInstance) {
-
     _goalDomainApplicationServiceInstance = new GoalDomainApplicationService();
   }
   return _goalDomainApplicationServiceInstance;

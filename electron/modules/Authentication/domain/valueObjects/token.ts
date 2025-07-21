@@ -19,7 +19,7 @@ export enum TokenType {
 export class Token {
   private readonly _value: string;
   private readonly _type: TokenType;
-  private readonly _accountId: string;
+  private readonly _accountUuUuid: string;
   private readonly _issuedAt: DateTime;
   private readonly _expiresAt: DateTime;
   private readonly _deviceInfo?: string;
@@ -28,13 +28,13 @@ export class Token {
   constructor(
     value: string,
     type: TokenType,
-    accountId: string,
+    accountUuid: string,
     expiresAt: DateTime,
     deviceInfo?: string
   ) {
     this._value = value;
     this._type = type;
-    this._accountId = accountId;
+    this._accountUuUuid = accountUuid;
     this._issuedAt = TimeUtils.now();
     this._expiresAt = expiresAt;
     this._deviceInfo = deviceInfo;
@@ -44,51 +44,51 @@ export class Token {
   /**
    * 创建记住我令牌
    */
-  static createRememberToken(accountId: string, deviceInfo: string, daysToExpire: number = 30): Token {
+  static createRememberToken(accountUuid: string, deviceInfo: string, daysToExpire: number = 30): Token {
     const value = Token.generateTokenValue();
     const expiresAt = TimeUtils.add(TimeUtils.now(), daysToExpire, 'days');
     
-    return new Token(value, TokenType.REMEMBER_ME, accountId, expiresAt, deviceInfo);
+    return new Token(value, TokenType.REMEMBER_ME, accountUuid, expiresAt, deviceInfo);
   }
 
   /**
    * 创建访问令牌
    */
-  static createAccessToken(accountId: string, minutesToExpire: number = 60): Token {
+  static createAccessToken(accountUuid: string, minutesToExpire: number = 60): Token {
     const value = Token.generateTokenValue();
     const expiresAt = TimeUtils.add(TimeUtils.now(), minutesToExpire, 'minutes');
     
-    return new Token(value, TokenType.ACCESS_TOKEN, accountId, expiresAt);
+    return new Token(value, TokenType.ACCESS_TOKEN, accountUuid, expiresAt);
   }
 
   /**
    * 创建刷新令牌
    */
-  static createRefreshToken(accountId: string, daysToExpire: number = 7): Token {
+  static createRefreshToken(accountUuid: string, daysToExpire: number = 7): Token {
     const value = Token.generateTokenValue();
     const expiresAt = TimeUtils.add(TimeUtils.now(), daysToExpire, 'days');
     
-    return new Token(value, TokenType.REFRESH_TOKEN, accountId, expiresAt);
+    return new Token(value, TokenType.REFRESH_TOKEN, accountUuid, expiresAt);
   }
 
   /**
    * 创建邮箱验证令牌
    */
-  static createEmailVerificationToken(accountId: string, hoursToExpire: number = 24): Token {
+  static createEmailVerificationToken(accountUuid: string, hoursToExpire: number = 24): Token {
     const value = Token.generateTokenValue();
     const expiresAt = TimeUtils.add(TimeUtils.now(), hoursToExpire, 'hours');
     
-    return new Token(value, TokenType.EMAIL_VERIFICATION, accountId, expiresAt);
+    return new Token(value, TokenType.EMAIL_VERIFICATION, accountUuid, expiresAt);
   }
 
   /**
    * 创建密码重置令牌
    */
-  static createPasswordResetToken(accountId: string, hoursToExpire: number = 2): Token {
+  static createPasswordResetToken(accountUuid: string, hoursToExpire: number = 2): Token {
     const value = Token.generateTokenValue();
     const expiresAt = TimeUtils.add(TimeUtils.now(), hoursToExpire, 'hours');
     
-    return new Token(value, TokenType.PASSWORD_RESET, accountId, expiresAt);
+    return new Token(value, TokenType.PASSWORD_RESET, accountUuid, expiresAt);
   }
 
   /**
@@ -146,8 +146,8 @@ export class Token {
     return this._type;
   }
 
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get issuedAt(): DateTime {
@@ -187,7 +187,7 @@ export class Token {
   toDTO(): {
     value: string;
     type: TokenType;
-    accountId: string;
+    accountUuid: string;
     issuedAt: string;
     expiresAt: string;
     deviceInfo?: string;
@@ -196,7 +196,7 @@ export class Token {
     return {
       value: this._value,
       type: this._type,
-      accountId: this._accountId,
+      accountUuid: this._accountUuUuid,
       issuedAt: this._issuedAt.toISOString(),
       expiresAt: this._expiresAt.toISOString(),
       deviceInfo: this._deviceInfo,
@@ -210,13 +210,13 @@ export class Token {
   static fromDatabase(
     value: string,
     type: TokenType,
-    accountId: string,
+    accountUuid: string,
     issuedAt: DateTime,
     expiresAt: DateTime,
     deviceInfo?: string,
     isRevoked: boolean = false
   ): Token {
-    const token = new Token(value, type, accountId, expiresAt, deviceInfo);
+    const token = new Token(value, type, accountUuid, expiresAt, deviceInfo);
     // 设置从数据库读取的签发时间和撤销状态
     (token as any)._issuedAt = issuedAt;
     (token as any)._isRevoked = isRevoked;

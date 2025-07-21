@@ -3,7 +3,7 @@
     <draggable v-bind:model-value="items" item-key="id" :animation="200" :disabled="false" ghost-class="ghost"
       chosen-class="chosen" drag-class="drag" tag="div" class="reminder-grid" @start="onDragStart" @end="onDragEnd">
       <template #item="{ element }">
-        <div :key="element.id" class="grid-item" @contextmenu.prevent="onItemContextMenu($event, element)">
+        <div :key="element.uuid" class="grid-item" @contextmenu.prevent="onItemContextMenu($event, element)">
           <component :is="getItemComponent(element)" :item="element" />
         </div>
       </template>
@@ -25,7 +25,7 @@ import GridGroupItem from './/GridGroupItem.vue';
 import ContextMenu from '..//context-menu/ContextMenu.vue';
 import { ImportanceLevel } from '@/shared/types/importance';
 import { useContextMenu } from '../..//composables/useContextMenu';
-import { GridItem } from '../../../domain/types';
+import { GridItem } from '../../../../../../common/modules/reminder/types/reminder';
 
 import { ReminderTemplate } from '../../../domain/aggregates/reminderTemplate';
 import { ReminderTemplateGroup } from '../../../domain/aggregates/reminderTemplateGroup';

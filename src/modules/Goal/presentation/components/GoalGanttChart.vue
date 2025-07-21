@@ -69,7 +69,7 @@
           <div class="goals-container">
             <div
               v-for="(goal, index) in sortedGoals"
-              :key="goal.id"
+              :key="goal.uuid"
               class="gantt-row"
               :style="{ '--goal-index': index }"
             >
@@ -88,7 +88,7 @@
                     <div class="goal-text">
                       <span class="goal-title">{{ goal.title }}</span>
                       <div class="goal-progress">
-                        {{ goalStore.getGoalProgress(goal.id) }}%
+                        {{ goalStore.getGoalProgress(goal.uuid) }}%
                       </div>
                     </div>
                   </div>
@@ -119,7 +119,7 @@
                       variant="elevated"
                       class="goal-chip"
                     >
-                      {{ goalStore.getGoalProgress(goal.id) }}%
+                      {{ goalStore.getGoalProgress(goal.uuid) }}%
                     </v-chip>
                   </div>
                 </div>
@@ -231,7 +231,7 @@
     ) + 1;
     
     const width = isFill ? 
-      (duration * dayWidth * (goalStore.getGoalProgress(goal.id) / 100)) : 
+      (duration * dayWidth * (goalStore.getGoalProgress(goal.uuid) / 100)) : 
       (duration * dayWidth);
   
     return {

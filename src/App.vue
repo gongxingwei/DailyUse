@@ -26,7 +26,7 @@ const isLoading = ref(false);
 
 onMounted(() => {
 
-  init();
+  // init();
 });
 
 

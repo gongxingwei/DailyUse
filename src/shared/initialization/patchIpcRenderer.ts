@@ -18,16 +18,17 @@ export function patchIpcRendererInvokeWithAuth() {
     if (lastArg && typeof lastArg === 'object' && lastArg.auth) {
       return originalInvoke.call(this, channel, ...args);
     }
+    console.log('Patching ipcRenderer.invoke with auth:', { token, account_uuid });
     return originalInvoke.call(this, channel, ...args, { auth: { token, account_uuid } });
   };
 }
 
 const patchIpcRendererInvokeWithAuthTask: InitializationTask = {
   name: "PatchIpcRendererInvokeWithAuth",
-  phase: InitializationPhase.USER_LOGIN,
+  phase: InitializationPhase.APP_STARTUP,
   priority: 100,
   initialize: async () => {
-    console.log("Patching ipcRenderer.invoke with authentication data...");
+    console.log("【PatchIpcRendererInvokeWithAuth 开始初始化】");
     patchIpcRendererInvokeWithAuth();
     console.log("ipcRenderer.invoke patched successfully.");
   },

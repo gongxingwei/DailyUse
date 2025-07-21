@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { IGoal, IRecord, IGoalDir } from "../../domain/types/goal";
+import type { IGoal, IRecord, IGoalDir } from "@common/modules/goal/types/goal";
 import { Goal } from "../../domain/entities/goal";
 import { GoalDir } from "../../domain/entities/goalDir";
 
@@ -7,9 +7,9 @@ import { GoalDir } from "../../domain/entities/goalDir";
  * 系统默认文件夹配置
  */
 const SYSTEM_GOAL_DIRS = {
-  ALL: 'system_all',
-  DELETED: 'system_deleted', 
-  ARCHIVED: 'system_archived'
+  ALL: "system_all",
+  DELETED: "system_deleted",
+  ARCHIVED: "system_archived",
 } as const;
 
 /**
@@ -21,43 +21,43 @@ function createSystemGoalDirs(): IGoalDir[] {
     date: {
       year: now.getFullYear(),
       month: now.getMonth() + 1,
-      day: now.getDate()
+      day: now.getDate(),
     },
     timestamp: now.getTime(),
-    isoString: now.toISOString()
+    isoString: now.toISOString(),
   };
 
   return [
     {
-      id: SYSTEM_GOAL_DIRS.ALL,
-      name: '全部',
-      icon: 'mdi-view-dashboard',
+      uuid: SYSTEM_GOAL_DIRS.ALL,
+      name: "全部",
+      icon: "mdi-view-dashboard",
       lifecycle: {
         createdAt: timestamp,
         updatedAt: timestamp,
-        status: 'active'
-      }
+        status: "active",
+      },
     },
     {
-      id: SYSTEM_GOAL_DIRS.DELETED,
-      name: '已删除',
-      icon: 'mdi-delete',
+      uuid: SYSTEM_GOAL_DIRS.DELETED,
+      name: "已删除",
+      icon: "mdi-delete",
       lifecycle: {
         createdAt: timestamp,
         updatedAt: timestamp,
-        status: 'active'
-      }
+        status: "active",
+      },
     },
     {
-      id: SYSTEM_GOAL_DIRS.ARCHIVED,
-      name: '已归档',
-      icon: 'mdi-archive',
+      uuid: SYSTEM_GOAL_DIRS.ARCHIVED,
+      name: "已归档",
+      icon: "mdi-archive",
       lifecycle: {
         createdAt: timestamp,
         updatedAt: timestamp,
-        status: 'active'
-      }
-    }
+        status: "active",
+      },
+    },
   ];
 }
 
@@ -84,7 +84,7 @@ export const useGoalStore = defineStore("goal", {
 
   getters: {
     // ========== 目标查询 ==========
-    
+
     /**
      * 获取所有目标
      */
@@ -96,21 +96,21 @@ export const useGoalStore = defineStore("goal", {
      * 获取所有目标作为领域对象
      */
     getAllGoalEntities(): Goal[] {
-      return this.goals.map(goal => Goal.fromDTO(goal));
+      return this.goals.map((goal) => Goal.fromDTO(goal));
     },
 
     /**
      * 根据ID获取目标
      */
-    getGoalById: (state) => (id: string) => {
-      return state.goals.find((g) => g.id === id);
+    getGoalById: (state) => (uuid: string) => {
+      return state.goals.find((g) => g.uuid === uuid);
     },
 
     /**
      * 根据ID获取目标领域对象
      */
-    getGoalEntityById: (state) => (id: string) => {
-      const goal = state.goals.find((g) => g.id === id);
+    getGoalEntityById: (state) => (uuid: string) => {
+      const goal = state.goals.find((g) => g.uuid === uuid);
       return goal ? Goal.fromDTO(goal) : null;
     },
 
@@ -120,28 +120,28 @@ export const useGoalStore = defineStore("goal", {
     getGoalsByDirId: (state) => (dirId: string) => {
       if (dirId === SYSTEM_GOAL_DIRS.ALL || dirId === "all") {
         // "全部" 文件夹显示所有活跃和完成的目标，排除已归档的
-        return state.goals.filter((g) => 
-          g.lifecycle.status === "active" || 
-          g.lifecycle.status === "completed" || 
-          g.lifecycle.status === "paused"
+        return state.goals.filter(
+          (g) =>
+            g.lifecycle.status === "active" ||
+            g.lifecycle.status === "completed" ||
+            g.lifecycle.status === "paused"
         );
       }
-      
+
       if (dirId === SYSTEM_GOAL_DIRS.ARCHIVED) {
         // "已归档" 文件夹只显示已归档的目标
         return state.goals.filter((g) => g.lifecycle.status === "archived");
       }
-      
+
       if (dirId === SYSTEM_GOAL_DIRS.DELETED) {
         // "已删除" 文件夹 - 预留功能，当前返回空数组
         // 当类型支持 'deleted' 状态时，可以返回已删除的目标
         return [];
       }
-      
+
       // 用户自定义文件夹，显示该文件夹下的非归档目标
-      return state.goals.filter((g) => 
-        g.dirId === dirId && 
-        g.lifecycle.status !== "archived"
+      return state.goals.filter(
+        (g) => g.dirId === dirId && g.lifecycle.status !== "archived"
       );
     },
 
@@ -156,8 +156,9 @@ export const useGoalStore = defineStore("goal", {
      * 获取进行中的目标（活跃且未完成）
      */
     getInProgressGoals: (state) => {
-      return state.goals.filter((g) => 
-        g.lifecycle.status === "active" || g.lifecycle.status === "paused"
+      return state.goals.filter(
+        (g) =>
+          g.lifecycle.status === "active" || g.lifecycle.status === "paused"
       );
     },
 
@@ -166,13 +167,20 @@ export const useGoalStore = defineStore("goal", {
      */
     getTodayRecordCount: (state) => {
       const today = new Date();
-      const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+      const todayStart = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
+      ).getTime();
       const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1; // 23:59:59.999
 
       let todayRecordCount = 0;
       for (const goal of state.goals) {
         for (const record of goal.records) {
-          if (record.date.timestamp >= todayStart && record.date.timestamp <= todayEnd) {
+          if (
+            record.date.timestamp >= todayStart &&
+            record.date.timestamp <= todayEnd
+          ) {
             todayRecordCount++;
           }
         }
@@ -181,19 +189,19 @@ export const useGoalStore = defineStore("goal", {
     },
 
     // ========== 记录查询（通过目标获取）==========
-    
+
     /**
      * 获取所有记录
      */
     getAllRecords(): IRecord[] {
-      return this.goals.flatMap(g => g.records);
+      return this.goals.flatMap((g) => g.records);
     },
 
     /**
      * 根据目标ID获取记录
      */
-    getRecordsByGoalId: (state) => (goalId: string) => {
-      const goal = state.goals.find(g => g.id === goalId);
+    getRecordsBygoalUuid: (state) => (goalUuid: string) => {
+      const goal = state.goals.find((g) => g.uuid === goalUuid);
       return goal?.records || [];
     },
 
@@ -202,12 +210,12 @@ export const useGoalStore = defineStore("goal", {
      */
     getRecordsByKeyResultId: (state) => (keyResultId: string) => {
       return state.goals
-        .flatMap(g => g.records)
-        .filter(r => r.keyResultId === keyResultId);
+        .flatMap((g) => g.records)
+        .filter((r) => r.keyResultId === keyResultId);
     },
 
     // ========== 目标目录查询 ==========
-    
+
     /**
      * 获取所有目标目录（按显示规则排序）
      * - "全部" 文件夹始终显示在最上方
@@ -215,52 +223,66 @@ export const useGoalStore = defineStore("goal", {
      * - "已删除" 和 "已归档" 文件夹在有数据时显示在最下方
      */
     getAllGoalDirs(): IGoalDir[] {
-      const systemDirs = this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+      const systemDirs = this.goalDirs.filter(
+        (dir) =>
+          dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+          dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+          dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
-      
-      const userDirs = this.goalDirs.filter(dir => 
-        dir.id !== SYSTEM_GOAL_DIRS.ALL &&
-        dir.id !== SYSTEM_GOAL_DIRS.DELETED &&
-        dir.id !== SYSTEM_GOAL_DIRS.ARCHIVED
+
+      const userDirs = this.goalDirs.filter(
+        (dir) =>
+          dir.uuid !== SYSTEM_GOAL_DIRS.ALL &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.DELETED &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.ARCHIVED
       );
 
       // 检查是否有已归档的目标
       // 注意：根据类型定义，目标状态包括 "active" | "completed" | "paused" | "archived"
       // 暂时没有 "deleted" 状态，可能需要在未来扩展
-      const hasArchivedGoals = this.goals.some(goal => goal.lifecycle.status === 'archived');
+      const hasArchivedGoals = this.goals.some(
+        (goal) => goal.lifecycle.status === "archived"
+      );
       // 预留：检查已删除目标的逻辑，当类型支持时可以启用
       // const hasDeletedGoals = this.goals.some(goal => goal.lifecycle.status === 'deleted');
 
       const result: IGoalDir[] = [];
-      
+
       // 1. 添加 "全部" 文件夹（始终显示在最上方）
-      const allDir = systemDirs.find(dir => dir.id === SYSTEM_GOAL_DIRS.ALL);
+      const allDir = systemDirs.find(
+        (dir) => dir.uuid === SYSTEM_GOAL_DIRS.ALL
+      );
       if (allDir) {
         result.push(allDir);
       }
-      
+
       // 2. 添加用户自定义文件夹（按名称排序）
-      result.push(...userDirs.sort((a, b) => a.name.localeCompare(b.name)));
-      
+      result.push(
+        ...userDirs.sort((a, b) => {
+          const nameA = a.name || "";
+          const nameB = b.name || "";
+          return nameA.localeCompare(nameB);
+        })
+      );
+
       // 3. 添加系统文件夹（仅在有数据时显示，显示在最下方）
       if (hasArchivedGoals) {
-        const archivedDir = systemDirs.find(dir => dir.id === SYSTEM_GOAL_DIRS.ARCHIVED);
+        const archivedDir = systemDirs.find(
+          (dir) => dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
+        );
         if (archivedDir) {
           result.push(archivedDir);
         }
       }
-      
+
       // 预留：当支持删除状态时启用
       // if (hasDeletedGoals) {
-      //   const deletedDir = systemDirs.find(dir => dir.id === SYSTEM_GOAL_DIRS.DELETED);
+      //   const deletedDir = systemDirs.find(dir => dir.uuid === SYSTEM_GOAL_DIRS.DELETED);
       //   if (deletedDir) {
       //     result.push(deletedDir);
       //   }
       // }
-      
+
       return result;
     },
 
@@ -268,43 +290,46 @@ export const useGoalStore = defineStore("goal", {
      * 获取所有目标目录作为领域对象
      */
     getAllGoalDirEntities(): GoalDir[] {
-      return this.goalDirs.map(dir => GoalDir.fromDTO(dir));
+      return this.goalDirs.map((dir) => GoalDir.fromDTO(dir));
     },
 
     /**
      * 根据ID获取目标目录
      */
-    getGoalDirById: (state) => (id: string) => {
-      return state.goalDirs.find((d) => d.id === id);
+    getGoalDirById: (state) => (uuid: string) => {
+      return state.goalDirs.find((d) => d.uuid === uuid);
     },
 
     /**
      * 根据ID获取目标目录领域对象
      */
-    getGoalDirEntityById: (state) => (id: string) => {
-      const dir = state.goalDirs.find((d) => d.id === id);
+    getGoalDirEntityById: (state) => (uuid: string) => {
+      const dir = state.goalDirs.find((d) => d.uuid === uuid);
       return dir ? GoalDir.fromDTO(dir) : null;
     },
 
     // ========== 系统文件夹相关 ==========
-    
+
     /**
      * 判断是否为系统文件夹
      */
     isSystemGoalDir: () => (dirId: string) => {
-      return dirId === SYSTEM_GOAL_DIRS.ALL ||
-             dirId === SYSTEM_GOAL_DIRS.DELETED ||
-             dirId === SYSTEM_GOAL_DIRS.ARCHIVED;
+      return (
+        dirId === SYSTEM_GOAL_DIRS.ALL ||
+        dirId === SYSTEM_GOAL_DIRS.DELETED ||
+        dirId === SYSTEM_GOAL_DIRS.ARCHIVED
+      );
     },
 
     /**
      * 获取系统文件夹列表
      */
     getSystemGoalDirs(): IGoalDir[] {
-      return this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+      return this.goalDirs.filter(
+        (dir) =>
+          dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+          dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+          dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
     },
 
@@ -312,22 +337,23 @@ export const useGoalStore = defineStore("goal", {
      * 获取用户自定义文件夹列表
      */
     getUserGoalDirs(): IGoalDir[] {
-      return this.goalDirs.filter(dir => 
-        dir.id !== SYSTEM_GOAL_DIRS.ALL &&
-        dir.id !== SYSTEM_GOAL_DIRS.DELETED &&
-        dir.id !== SYSTEM_GOAL_DIRS.ARCHIVED
+      return this.goalDirs.filter(
+        (dir) =>
+          dir.uuid !== SYSTEM_GOAL_DIRS.ALL &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.DELETED &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.ARCHIVED
       );
     },
   },
 
   actions: {
     // ========== 状态同步方法（用于仓库接口实现）==========
-    
+
     /**
      * 添加目标到状态
      */
     async addGoal(goal: IGoal): Promise<void> {
-      const existingIndex = this.goals.findIndex(g => g.id === goal.id);
+      const existingIndex = this.goals.findIndex((g) => g.uuid === goal.uuid);
       if (existingIndex >= 0) {
         this.goals[existingIndex] = goal;
       } else {
@@ -339,7 +365,7 @@ export const useGoalStore = defineStore("goal", {
      * 更新目标状态
      */
     async updateGoal(goal: IGoal): Promise<void> {
-      const index = this.goals.findIndex(g => g.id === goal.id);
+      const index = this.goals.findIndex((g) => g.uuid === goal.uuid);
       if (index >= 0) {
         this.goals[index] = goal;
       }
@@ -348,8 +374,8 @@ export const useGoalStore = defineStore("goal", {
     /**
      * 移除目标状态
      */
-    async removeGoal(goalId: string): Promise<void> {
-      const index = this.goals.findIndex(g => g.id === goalId);
+    async removeGoal(goalUuid: string): Promise<void> {
+      const index = this.goals.findIndex((g) => g.uuid === goalUuid);
       if (index >= 0) {
         this.goals.splice(index, 1);
       }
@@ -370,15 +396,15 @@ export const useGoalStore = defineStore("goal", {
     },
 
     // ========== 记录状态管理 ==========
-    
-    /** 
+
+    /**
      * 添加记录（通过更新目标实现）
      */
     async addRecord(record: IRecord): Promise<void> {
-      const goalIndex = this.goals.findIndex(g => g.id === record.goalId);
+      const goalIndex = this.goals.findIndex((g) => g.uuid === record.goalUuid);
       if (goalIndex >= 0) {
         const goal = this.goals[goalIndex];
-        const recordExists = goal.records.some(r => r.id === record.id);
+        const recordExists = goal.records.some((r) => r.uuid === record.uuid);
         if (!recordExists) {
           goal.records.push(record);
         }
@@ -389,10 +415,12 @@ export const useGoalStore = defineStore("goal", {
      * 更新记录（通过更新目标实现）
      */
     async updateRecord(record: IRecord): Promise<void> {
-      const goalIndex = this.goals.findIndex(g => g.id === record.goalId);
+      const goalIndex = this.goals.findIndex((g) => g.uuid === record.goalUuid);
       if (goalIndex >= 0) {
         const goal = this.goals[goalIndex];
-        const recordIndex = goal.records.findIndex(r => r.id === record.id);
+        const recordIndex = goal.records.findIndex(
+          (r) => r.uuid === record.uuid
+        );
         if (recordIndex >= 0) {
           goal.records[recordIndex] = record;
         }
@@ -404,7 +432,7 @@ export const useGoalStore = defineStore("goal", {
      */
     async removeRecord(recordId: string): Promise<void> {
       for (const goal of this.goals) {
-        const recordIndex = goal.records.findIndex(r => r.id === recordId);
+        const recordIndex = goal.records.findIndex((r) => r.uuid === recordId);
         if (recordIndex >= 0) {
           goal.records.splice(recordIndex, 1);
           break;
@@ -420,7 +448,7 @@ export const useGoalStore = defineStore("goal", {
       for (const goal of this.goals) {
         goal.records = [];
       }
-      
+
       // 重新分配记录到对应目标
       for (const record of records) {
         await this.addRecord(record);
@@ -430,8 +458,8 @@ export const useGoalStore = defineStore("goal", {
     /**
      * 根据目标ID移除记录
      */
-    async removeRecordsByGoalId(goalId: string): Promise<void> {
-      const goalIndex = this.goals.findIndex(g => g.id === goalId);
+    async removeRecordsBygoalUuid(goalUuid: string): Promise<void> {
+      const goalIndex = this.goals.findIndex((g) => g.uuid === goalUuid);
       if (goalIndex >= 0) {
         this.goals[goalIndex].records = [];
       }
@@ -442,7 +470,9 @@ export const useGoalStore = defineStore("goal", {
      */
     async removeRecordsByKeyResultId(keyResultId: string): Promise<void> {
       for (const goal of this.goals) {
-        goal.records = goal.records.filter(r => r.keyResultId !== keyResultId);
+        goal.records = goal.records.filter(
+          (r) => r.keyResultId !== keyResultId
+        );
       }
     },
 
@@ -456,12 +486,15 @@ export const useGoalStore = defineStore("goal", {
     },
 
     // ========== 目标目录状态管理 ==========
-    
+
     /**
      * 添加目标目录
      */
     async addGoalDir(goalDir: IGoalDir): Promise<void> {
-      const existingIndex = this.goalDirs.findIndex(d => d.id === goalDir.id);
+      console.log("[目标目录状态管理] 添加目标目录:", goalDir);
+      const existingIndex = this.goalDirs.findIndex(
+        (d) => d.uuid === goalDir.uuid
+      );
       if (existingIndex >= 0) {
         this.goalDirs[existingIndex] = goalDir;
       } else {
@@ -473,7 +506,7 @@ export const useGoalStore = defineStore("goal", {
      * 更新目标目录
      */
     async updateGoalDir(goalDir: IGoalDir): Promise<void> {
-      const index = this.goalDirs.findIndex(d => d.id === goalDir.id);
+      const index = this.goalDirs.findIndex((d) => d.uuid === goalDir.uuid);
       if (index >= 0) {
         this.goalDirs[index] = goalDir;
       }
@@ -484,14 +517,16 @@ export const useGoalStore = defineStore("goal", {
      */
     async removeGoalDir(goalDirId: string): Promise<void> {
       // 防止删除系统文件夹
-      if (goalDirId === SYSTEM_GOAL_DIRS.ALL ||
-          goalDirId === SYSTEM_GOAL_DIRS.DELETED ||
-          goalDirId === SYSTEM_GOAL_DIRS.ARCHIVED) {
+      if (
+        goalDirId === SYSTEM_GOAL_DIRS.ALL ||
+        goalDirId === SYSTEM_GOAL_DIRS.DELETED ||
+        goalDirId === SYSTEM_GOAL_DIRS.ARCHIVED
+      ) {
         console.warn(`不能删除系统文件夹: ${goalDirId}`);
         return;
       }
-      
-      const index = this.goalDirs.findIndex(d => d.id === goalDirId);
+
+      const index = this.goalDirs.findIndex((d) => d.uuid === goalDirId);
       if (index >= 0) {
         this.goalDirs.splice(index, 1);
       }
@@ -502,19 +537,21 @@ export const useGoalStore = defineStore("goal", {
      */
     async setGoalDirs(goalDirs: IGoalDir[]): Promise<void> {
       // 保留系统文件夹
-      const systemDirs = this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+      const systemDirs = this.goalDirs.filter(
+        (dir) =>
+          dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+          dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+          dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
-      
+
       // 过滤掉传入数据中的系统文件夹，避免重复
-      const userDirs = goalDirs.filter(dir => 
-        dir.id !== SYSTEM_GOAL_DIRS.ALL &&
-        dir.id !== SYSTEM_GOAL_DIRS.DELETED &&
-        dir.id !== SYSTEM_GOAL_DIRS.ARCHIVED
+      const userDirs = goalDirs.filter(
+        (dir) =>
+          dir.uuid !== SYSTEM_GOAL_DIRS.ALL &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.DELETED &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.ARCHIVED
       );
-      
+
       // 合并系统文件夹和用户文件夹
       this.goalDirs = [...systemDirs, ...userDirs];
     },
@@ -524,22 +561,23 @@ export const useGoalStore = defineStore("goal", {
      */
     async clearAllGoalDirs(): Promise<void> {
       // 只保留系统文件夹
-      this.goalDirs = this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+      this.goalDirs = this.goalDirs.filter(
+        (dir) =>
+          dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+          dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+          dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
     },
 
     // ========== 临时目录编辑管理 ==========
-    
+
     /**
      * 初始化新的临时目录
      */
     initTempDir(): IGoalDir {
       const now = new Date();
       const tempDir: IGoalDir = {
-        id: "", // 新目录暂时无ID
+        uuid: "", // 新目录暂时无ID
         name: "",
         icon: "mdi-folder",
         parentId: undefined, // 明确设置为 undefined，表示没有父目录
@@ -548,22 +586,22 @@ export const useGoalStore = defineStore("goal", {
             date: {
               year: now.getFullYear(),
               month: now.getMonth() + 1,
-              day: now.getDate()
+              day: now.getDate(),
             },
             timestamp: now.getTime(),
-            isoString: now.toISOString()
+            isoString: now.toISOString(),
           },
           updatedAt: {
             date: {
               year: now.getFullYear(),
               month: now.getMonth() + 1,
-              day: now.getDate()
+              day: now.getDate(),
             },
             timestamp: now.getTime(),
-            isoString: now.toISOString()
+            isoString: now.toISOString(),
           },
-          status: "active"
-        }
+          status: "active",
+        },
       };
       this.tempGoalDir = tempDir;
       return tempDir;
@@ -573,7 +611,7 @@ export const useGoalStore = defineStore("goal", {
      * 根据目录ID初始化临时目录（编辑模式）
      */
     initTempDirByDirId(dirId: string): IGoalDir | null {
-      const existingDir = this.goalDirs.find(d => d.id === dirId);
+      const existingDir = this.goalDirs.find((d) => d.uuid === dirId);
       if (existingDir) {
         const now = new Date();
         // 创建深拷贝作为临时目录
@@ -585,12 +623,12 @@ export const useGoalStore = defineStore("goal", {
               date: {
                 year: now.getFullYear(),
                 month: now.getMonth() + 1,
-                day: now.getDate()
+                day: now.getDate(),
               },
               timestamp: now.getTime(),
-              isoString: now.toISOString()
-            }
-          }
+              isoString: now.toISOString(),
+            },
+          },
         };
         return this.tempGoalDir;
       }
@@ -607,20 +645,20 @@ export const useGoalStore = defineStore("goal", {
       }
 
       const tempDir = { ...this.tempGoalDir };
-      
-      if (tempDir.id) {
+
+      if (tempDir.uuid) {
         // 更新现有目录
-        const index = this.goalDirs.findIndex(d => d.id === tempDir.id);
+        const index = this.goalDirs.findIndex((d) => d.uuid === tempDir.uuid);
         if (index >= 0) {
           this.goalDirs[index] = tempDir;
         }
       } else {
         // 新增目录 - 需要通过应用服务分配ID
         // 这里只是临时处理，实际需要通过应用服务
-        tempDir.id = `temp_${Date.now()}`;
+        tempDir.uuid = `temp_${Date.now()}`;
         this.goalDirs.push(tempDir);
       }
-      
+
       this.tempGoalDir = null;
       return tempDir;
     },
@@ -640,7 +678,7 @@ export const useGoalStore = defineStore("goal", {
     },
 
     // ========== 批量同步 ==========
-    
+
     /**
      * 同步所有目标数据（保持系统文件夹）
      */
@@ -650,26 +688,28 @@ export const useGoalStore = defineStore("goal", {
       goalDirs: IGoalDir[];
     }): Promise<void> {
       this.goals = data.goals;
-      
+
       // 保留系统文件夹，只同步用户文件夹
-      const systemDirs = this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+      const systemDirs = this.goalDirs.filter(
+        (dir) =>
+          dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+          dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+          dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
-      
-      const userDirs = data.goalDirs.filter(dir => 
-        dir.id !== SYSTEM_GOAL_DIRS.ALL &&
-        dir.id !== SYSTEM_GOAL_DIRS.DELETED &&
-        dir.id !== SYSTEM_GOAL_DIRS.ARCHIVED
+
+      const userDirs = data.goalDirs.filter(
+        (dir) =>
+          dir.uuid !== SYSTEM_GOAL_DIRS.ALL &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.DELETED &&
+          dir.uuid !== SYSTEM_GOAL_DIRS.ARCHIVED
       );
-      
+
       this.goalDirs = [...systemDirs, ...userDirs];
       // records 已经包含在 goals 中，无需单独处理
     },
 
     // ========== 领域对象业务方法 ==========
-    
+
     /**
      * 使用领域对象更新目标
      */

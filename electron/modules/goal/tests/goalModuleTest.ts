@@ -75,7 +75,7 @@ export async function testGoalModule(): Promise<void> {
       title: '测试目标',
       description: '这是一个测试目标',
       color: '#FF6B6B',
-      dirId: dirResult.data!.id,
+      dirId: dirResult.data!.uuid,
       startTime: {
         date: {
           year: now.getFullYear(),
@@ -136,12 +136,12 @@ export async function testGoalModule(): Promise<void> {
     
     // 清理测试数据
     if (goalResult.data?.id) {
-      await goalService.deleteGoal(goalResult.data.id);
+      await goalService.deleteGoal(goalResult.data.uuid);
       console.log('✅ 测试目标已清理');
     }
     
     if (dirResult.data?.id) {
-      await goalService.deleteGoalDir(dirResult.data.id);
+      await goalService.deleteGoalDir(dirResult.data.uuid);
       console.log('✅ 测试目录已清理');
     }
     

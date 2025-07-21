@@ -17,8 +17,8 @@ export enum MFADeviceType {
  * 管理多因素认证设备的绑定、验证和管理
  */
 export class MFADevice {
-  private _id: string;
-  private _accountId: string;
+  private _uuid: string;
+  private _accountUuUuid: string;
   private _type: MFADeviceType;
   private _name: string;
   private _secretKey?: string; // TOTP密钥
@@ -33,14 +33,14 @@ export class MFADevice {
   private _maxAttempts: number;
 
   constructor(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     type: MFADeviceType,
     name: string,
     maxAttempts: number = 3
   ) {
-    this._id = id;
-    this._accountId = accountId;
+    this._uuid = uuid;
+    this._accountUuUuid = accountUuid;
     this._type = type;
     this._name = name;
     this._isVerified = false;
@@ -51,12 +51,12 @@ export class MFADevice {
   }
 
   // Getters
-  get id(): string {
-    return this._id;
+  get uuid(): string {
+    return this._uuid;
   }
 
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get type(): MFADeviceType {
@@ -320,8 +320,8 @@ export class MFADevice {
    * 转换为DTO对象
    */
   toDTO(): {
-    id: string;
-    accountId: string;
+    uuid: string;
+    accountUuid: string;
     type: MFADeviceType;
     name: string;
     isVerified: boolean;
@@ -332,8 +332,8 @@ export class MFADevice {
     isLocked: boolean;
   } {
     return {
-      id: this._id,
-      accountId: this._accountId,
+      uuid: this._uuid,
+      accountUuid: this._accountUuUuid,
       type: this._type,
       name: this._name,
       isVerified: this._isVerified,
@@ -349,8 +349,8 @@ export class MFADevice {
    * 从数据库行创建 MFADevice 对象
    */
   static fromDatabase(row: {
-    id: string;
-    account_id: string;
+    uuid: string;
+    account_uuid: string;
     type: string;
     name: string;
     secret_key?: string;
@@ -365,8 +365,8 @@ export class MFADevice {
     last_used_at?: number;
   }): MFADevice {
     const device = new MFADevice(
-      row.id,
-      row.account_id,
+      row.uuid,
+      row.account_uuid,
       row.type as MFADeviceType,
       row.name,
       row.max_attempts
@@ -390,8 +390,8 @@ export class MFADevice {
    * 转换为数据库格式
    */
   toDatabaseFormat(): {
-    id: string;
-    account_id: string;
+    uuid: string;
+    account_uuid: string;
     type: string;
     name: string;
     secret_key?: string;
@@ -406,8 +406,8 @@ export class MFADevice {
     last_used_at?: number;
   } {
     return {
-      id: this._id,
-      account_id: this._accountId,
+      uuid: this._uuid,
+      account_uuid: this._accountUuUuid,
       type: this._type,
       name: this._name,
       secret_key: this._secretKey,

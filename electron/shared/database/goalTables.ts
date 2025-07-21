@@ -64,7 +64,7 @@ export class GoalTables {
         directory_uuid TEXT NOT NULL,
         category_uuid TEXT,
         -- 基本信息
-        title TEXT NOT NULL,
+        name TEXT NOT NULL,
         description TEXT,
         color TEXT NOT NULL,
         icon TEXT,

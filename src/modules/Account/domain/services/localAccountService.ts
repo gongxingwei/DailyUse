@@ -106,7 +106,7 @@ class LocalAccountService {
   //     if (usersResult.success && usersResult.data) {
   //       const user = usersResult.data.find((u: any) => u.username === username);
   //       if (user) {
-  //         const response = await accountIpcClient.deregisterAccount(user.id);
+  //         const response = await accountIpcClient.deregisterAccount(user.uuid);
   //         console.log(response.success ? '✅ [渲染进程-用户服务] 注销成功' : '❌ [渲染进程-用户服务] 注销失败:', response.message);
   //         return response;
   //       }
@@ -167,7 +167,7 @@ class LocalAccountService {
   //     if (usersResult.success && usersResult.data) {
   //       const user = usersResult.data.find((u: any) => u.username === username);
   //       if (user) {
-  //         const response = await accountIpcClient.updateUserInfo(user.id, updateData);
+  //         const response = await accountIpcClient.updateUserInfo(user.uuid, updateData);
   //         console.log(response.success ? '✅ [渲染进程-用户服务] 更新成功' : '❌ [渲染进程-用户服务] 更新失败:', response.message);
   //         return response;
   //       }
@@ -243,17 +243,17 @@ class LocalAccountService {
 
   // /**
   //  * 修改密码
-  //  * @param accountId - 账号ID
+  //  * @param accountUuid - 账号ID
   //  * @param oldPassword - 旧密码
   //  * @param newPassword - 新密码
   //  * @returns {Promise<TResponse>} 返回一个包含以下结构的 Promise
   //  */
-  // async changePassword(accountId: string, oldPassword: string, newPassword: string): Promise<TResponse> {
+  // async changePassword(accountUuid: string, oldPassword: string, newPassword: string): Promise<TResponse> {
   //   try {
   //     console.log('🔄 [渲染进程-用户服务] 修改密码');
 
   //     // 调用 API 客户端
-  //     const response = await accountIpcClient.changePassword(accountId, oldPassword, newPassword);
+  //     const response = await accountIpcClient.changePassword(accountUuid, oldPassword, newPassword);
       
   //     console.log(response.success ? '✅ [渲染进程-用户服务] 修改密码成功' : '❌ [渲染进程-用户服务] 修改密码失败:', response.message);
   //     return response;

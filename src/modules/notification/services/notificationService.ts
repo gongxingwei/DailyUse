@@ -37,7 +37,7 @@ export class NotificationService {
    * @param id 通知ID
    * @returns Promise<TResponse>
    */
-  public async closeNotification(id: string): Promise<TResponse> {
+  public async closeNotification(uuid: string): Promise<TResponse> {
     try {
       const response = await window.shared.ipcRenderer.invoke(
         "close-notification",
@@ -57,11 +57,11 @@ export class NotificationService {
    * 发送通知操作
    */
   public notificationAction(
-    id: string,
+    uuid: string,
     action: { text: string; type: string }
   ): TResponse {
     try {
-      window.shared.ipcRenderer.send('notification-action', id, action);
+      window.shared.ipcRenderer.send('notification-action', uuid, action);
       return {
         success: true,
         message: 'Action sent successfully',
@@ -78,10 +78,10 @@ export class NotificationService {
    * 监听通知操作
    */
   public onNotificationAction(
-    callback: (id: string, action: { text: string; type: string }) => void
+    callback: (uuid: string, action: { text: string; type: string }) => void
   ): () => void {
-    const handler = (_event: any, id: string, action: { text: string; type: string }) => {
-      callback(id, action);
+    const handler = (_event: any, uuid: string, action: { text: string; type: string }) => {
+      callback(uuid, action);
     };
 
     window.shared.ipcRenderer.on('notification-action-received', handler);

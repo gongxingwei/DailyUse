@@ -35,8 +35,8 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const passwordInfo = this.extractPasswordInfo(credential);
 
     stmt.run(
-      credential.id,
-      credential.accountId,
+      credential.uuid,
+      credential.accountUuid,
       passwordInfo.hash,
       passwordInfo.salt,
       passwordInfo.algorithm,
@@ -51,25 +51,25 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     );
   }
 
-  async findById(id: string): Promise<AuthCredential | null> {
+  async findById(uuid: string): Promise<AuthCredential | null> {
     const db = await this.getDb();
     const stmt = db.prepare(`
       SELECT * FROM auth_credentials WHERE id = ?
     `);
     
-    const row = stmt.get(id) as any;
+    const row = stmt.get(uuid) as any;
     if (!row) return null;
 
     return this.mapRowToAuthCredential(row);
   }
 
-  async findByAccountId(accountId: string): Promise<AuthCredential | null> {
+  async findByAccountUuid(accountUuid: string): Promise<AuthCredential | null> {
     const db = await this.getDb();
     const stmt = db.prepare(`
       SELECT * FROM auth_credentials WHERE account_uuid = ?
     `);
     
-    const row = stmt.get(accountId) as any;
+    const row = stmt.get(accountUuid) as any;
     if (!row) return null;
 
     return this.mapRowToAuthCredential(row);
@@ -80,7 +80,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     const db = await this.getDb();
     const stmt = db.prepare(`
       SELECT ac.* FROM auth_credentials ac
-      INNER JOIN users u ON ac.account_id = u.id
+      INNER JOIN users u ON ac.account_uuid = u.uuid
       WHERE u.username = ?
     `);
     
@@ -90,13 +90,13 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     return this.mapRowToAuthCredential(row);
   }
 
-  async delete(id: string): Promise<void> {
+  async delete(uuid: string): Promise<void> {
     const db = await this.getDb();
     const stmt = db.prepare(`
       DELETE FROM auth_credentials WHERE id = ?
     `);
     
-    stmt.run(id);
+    stmt.run(uuid);
   }
 
   async findAll(): Promise<AuthCredential[]> {
@@ -109,13 +109,13 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     return rows.map(row => this.mapRowToAuthCredential(row));
   }
 
-  async existsByAccountId(accountId: string): Promise<boolean> {
+  async existsByAccountUuid(accountUuid: string): Promise<boolean> {
     const db = await this.getDb();
     const stmt = db.prepare(`
-      SELECT 1 FROM auth_credentials WHERE account_id = ? LIMIT 1
+      SELECT 1 FROM auth_credentials WHERE account_uuid = ? LIMIT 1
     `);
     
-    const result = stmt.get(accountId);
+    const result = stmt.get(accountUuid);
     return !!result;
   }
 

@@ -29,7 +29,7 @@
       </div>
 
       <div v-else>
-        <v-row v-for="(link, index) in keyResultLinks" :key="`${link.goalId}-${link.keyResultId}`" class="mb-3">
+        <v-row v-for="(link, index) in keyResultLinks" :key="`${link.goalUuid}-${link.keyResultId}`" class="mb-3">
           <v-col cols="12">
             <v-card variant="tonal" class="pa-3">
               <div class="d-flex align-center">
@@ -38,8 +38,8 @@
                     <!-- 目标选择 -->
                     <v-col cols="12" md="4">
                       <v-select
-                        :model-value="link.goalId"
-                        @update:model-value="(value) => updateGoalId(index, value)"
+                        :model-value="link.goalUuid"
+                        @update:model-value="(value) => updategoalUuid(index, value)"
                         :items="goalOptions"
                         item-title="title"
                         item-value="id"
@@ -66,13 +66,13 @@
                       <v-select
                         :model-value="link.keyResultId"
                         @update:model-value="(value) => updateKeyResultId(index, value)"
-                        :items="getKeyResultOptions(link.goalId)"
+                        :items="getKeyResultOptions(link.goalUuid)"
                         item-title="name"
                         item-value="id"
                         label="选择关键结果"
                         variant="outlined"
                         density="compact"
-                        :disabled="!link.goalId"
+                        :disabled="!link.goalUuid"
                         :rules="[rules.required]"
                       >
                         <!-- <template #item="{ props, item }">
@@ -89,7 +89,7 @@
                   </v-row>
 
                   <!-- 链接信息显示 -->
-                  <div v-if="link.goalId && link.keyResultId" class="mt-2">
+                  <div v-if="link.goalUuid && link.keyResultId" class="mt-2">
                     <v-chip
                       size="small"
                       variant="tonal"
@@ -97,7 +97,7 @@
                       class="me-2"
                     >
                       <v-icon start>mdi-flag</v-icon>
-                      {{ getGoalTitle(link.goalId) }}
+                      {{ getGoalTitle(link.goalUuid) }}
                     </v-chip>
                     <v-chip
                       size="small"
@@ -105,7 +105,7 @@
                       color="secondary"
                     >
                       <v-icon start>mdi-target</v-icon>
-                      {{ getKeyResultTitle(link.goalId, link.keyResultId) }}
+                      {{ getKeyResultTitle(link.goalUuid, link.keyResultId) }}
                     </v-chip>
                   </div>
                 </div>
@@ -181,12 +181,12 @@ const goalOptions = computed(() => {
 });
 
 const availableKeyResults = computed(() => {
-  const results: Array<{ goalId: string; keyResultId: string; title: string; }> = [];
+  const results: Array<{ goalUuid: string; keyResultId: string; title: string; }> = [];
   goalOptions.value.forEach(goal => {
     goal.keyResults?.forEach(kr => {
       results.push({
-        goalId: goal.id,
-        keyResultId: kr.id,
+        goalUuid: goal.uuid,
+        keyResultId: kr.uuid,
         title: `${goal.title} - ${kr.name}`
       });
     });
@@ -204,25 +204,25 @@ const rules = {
 };
 
 // 辅助方法
-const getGoalTitle = (goalId: string) => {
-  const goal = goalStore.getGoalById(goalId);
+const getGoalTitle = (goalUuid: string) => {
+  const goal = goalStore.getGoalById(goalUuid);
   return goal?.title || '未知目标';
 };
 
-const getKeyResultTitle = (goalId: string, keyResultId: string) => {
-  const goal = goalStore.getGoalById(goalId);
-  const keyResult = goal?.keyResults?.find(kr => kr.id === keyResultId);
+const getKeyResultTitle = (goalUuid: string, keyResultId: string) => {
+  const goal = goalStore.getGoalById(goalUuid);
+  const keyResult = goal?.keyResults?.find(kr => kr.uuid === keyResultId);
   return keyResult?.name || '未知关键结果';
 };
 
-// const getKeyResultUnit = (goalId: string, keyResultId: string) => {
-//   const goal = goalStore.getGoalById(goalId);
-//   const keyResult = goal?.keyResults?.find(kr => kr.id === keyResultId);
+// const getKeyResultUnit = (goalUuid: string, keyResultId: string) => {
+//   const goal = goalStore.getGoalById(goalUuid);
+//   const keyResult = goal?.keyResults?.find(kr => kr.uuid === keyResultId);
 //   return keyResult?.unit || '';
 // };
 
-const getKeyResultOptions = (goalId: string) => {
-  const goal = goalStore.getGoalById(goalId);
+const getKeyResultOptions = (goalUuid: string) => {
+  const goal = goalStore.getGoalById(goalUuid);
   return goal?.keyResults || [];
 };
 
@@ -244,7 +244,7 @@ const navigateToGoals = () => {
 // 方法
 const addKeyResultLink = () => {
   const newLink: KeyResultLink = {
-    goalId: '',
+    goalUuid: '',
     keyResultId: '',
     incrementValue: 1
   };
@@ -258,19 +258,19 @@ const removeKeyResultLink = (index: number) => {
   const link = keyResultLinks.value[index];
   if (link) {
     const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.removeKeyResultLink(link.goalId, link.keyResultId);
+    updatedTemplate.removeKeyResultLink(link.goalUuid, link.keyResultId);
     emit('update:modelValue', updatedTemplate);
   }
 };
 
-const updateGoalId = (index: number, goalId: string) => {
+const updategoalUuid = (index: number, goalUuid: string) => {
   const updatedTemplate = props.modelValue.clone();
   const links = updatedTemplate.keyResultLinks || [];
   if (links[index]) {
     // 更新目标ID时，重置关键结果ID
     links[index] = {
       ...links[index],
-      goalId,
+      goalUuid,
       keyResultId: ''
     };
     emit('update:modelValue', updatedTemplate);
@@ -296,7 +296,7 @@ const validateKeyResultLinks = () => {
   }
   
   return keyResultLinks.value.every(link => {
-    return link.goalId && 
+    return link.goalUuid && 
            link.keyResultId && 
            link.incrementValue > 0;
   });

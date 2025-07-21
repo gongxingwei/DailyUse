@@ -9,25 +9,25 @@ class RepositoryApplicationService {
         this.repositoryRepository = repositoryRepository || new SqliteRepositoryRepository();
     }
 
-    async add(repository: Repository): Promise<void> {
-        await this.repositoryRepository.addRepository(repository);
+    async add(accountUuid: string, repository: Repository): Promise<void> {
+        await this.repositoryRepository.addRepository(accountUuid, repository);
     }
 
-    async update(repository: Repository): Promise<void> {
-        await this.repositoryRepository.updateRepository(repository);
+    async update(accountUuid: string, repository: Repository): Promise<void> {
+        await this.repositoryRepository.updateRepository(accountUuid, repository);
     }
 
-    async remove(id: string): Promise<void> {
-        await this.repositoryRepository.removeRepository(id);
+    async remove(accountUuid: string, repositoryId: string): Promise<void> {
+        await this.repositoryRepository.removeRepository(accountUuid, repositoryId);
     }
 
-    async findById(id: string): Promise<Repository | null> {
-        return await this.repositoryRepository.getRepositoryById(id);
+    async findById(accountUuid: string, repositoryId: string): Promise<Repository | null> {
+        return await this.repositoryRepository.getRepositoryById(accountUuid, repositoryId);
     }
 
-    async findAll(): Promise<Repository[]> {
+    async findAll(accountUuid: string): Promise<Repository[]> {
         // Assuming the repository repository has a method to find all repositories
-        return await this.repositoryRepository.findAllRepositories();
+        return await this.repositoryRepository.findAllRepositories(accountUuid);
     }
 }
 

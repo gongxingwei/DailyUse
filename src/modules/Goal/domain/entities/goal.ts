@@ -1,7 +1,7 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import type { DateTime } from "@/shared/types/myDateTime";
-import type { IGoal, IGoalCreateDTO, IKeyResult, IRecord, IGoalReview } from "../types/goal";
+import type { IGoal, IGoalCreateDTO, IKeyResult, IRecord, IGoalReview } from "@common/modules/goal/types/goal";
 import { KeyResult } from "./keyResult";
 import { Record } from "./record";
 import { GoalReview } from "./goalReview";
@@ -12,10 +12,10 @@ import { v4 as uuidv4 } from 'uuid';
  * 负责目标的业务逻辑和数据管理
  */
 export class Goal extends AggregateRoot implements IGoal {
-  private _title: string;
+  private _name: string;
   private _description?: string;
   private _color: string;
-  private _dirId: string;
+  private _dirUuid: string;
   private _startTime: DateTime;
   private _endTime: DateTime;
   private _note?: string;
@@ -28,8 +28,8 @@ export class Goal extends AggregateRoot implements IGoal {
   private _version: number;
 
   constructor(
-    id?: string,
-    title?: string,
+    uuid?: string,
+    name?: string,
     options?: {
       description?: string;
       color?: string;
@@ -43,13 +43,13 @@ export class Goal extends AggregateRoot implements IGoal {
       };
     }
   ) {
-    super(id || Goal.generateId());
+    super(uuid || Goal.generateId());
     const now = TimeUtils.now();
 
-    this._title = title || '';
+    this._name = name || '';
     this._description = options?.description || undefined;
     this._color = options?.color || "#FF5733";
-    this._dirId = options?.dirId || "";
+    this._dirUuid = options?.dirId || "";
     this._startTime = options?.startTime || now;
     this._endTime = options?.endTime || TimeUtils.addDays(now, 30);
     this._note = options?.note;
@@ -78,57 +78,127 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version = 1;
   }
 
-  // Getters
-  get title(): string {
-    return this._title;
+  get name(): string {
+    return this._name;
+  }
+  set name(value: string) {
+    if (!value.trim()) throw new Error("目标标题不能为空");
+    this._name = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
   get description(): string | undefined {
     return this._description;
   }
+  set description(value: string | undefined) {
+    this._description = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
+  }
 
   get color(): string {
     return this._color;
   }
+  set color(value: string) {
+    this._color = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
+  }
 
   get dirId(): string {
-    return this._dirId;
+    return this._dirUuid;
+  }
+  set dirId(value: string) {
+    this._dirUuid = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
   get startTime(): DateTime {
     return this._startTime;
   }
+  set startTime(value: DateTime) {
+    if (value.timestamp >= this._endTime.timestamp) {
+      throw new Error("开始时间必须早于结束时间");
+    }
+    this._startTime = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
+  }
 
   get endTime(): DateTime {
     return this._endTime;
+  }
+  set endTime(value: DateTime) {
+    if (value.timestamp <= this._startTime.timestamp) {
+      throw new Error("结束时间必须晚于开始时间");
+    }
+    this._endTime = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
   get note(): string | undefined {
     return this._note;
   }
-
-  get keyResults(): IKeyResult[] {
-    return this._keyResults.map(kr => kr.toDTO());
+  set note(value: string | undefined) {
+    this._note = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
-  get records(): IRecord[] {
-    return this._records.map(r => r.toDTO());
+  get keyResults(): KeyResult[] {
+    return this._keyResults;
+  }
+  set keyResults(value: KeyResult[]) {
+    this._keyResults = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
-  get reviews(): IGoalReview[] {
-    return this._reviews.map(r => r.toDTO());
+  get records(): Record[] {
+    return this._records;
+  }
+  set records(value: Record[]) {
+    this._records = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
+  }
+
+  get reviews(): GoalReview[] {
+    return this._reviews;
+  }
+  set reviews(value: GoalReview[]) {
+    this._reviews = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
   get analysis(): IGoal['analysis'] {
     return this._analysis;
   }
+  set analysis(value: IGoal['analysis']) {
+    this._analysis = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
+  }
 
   get lifecycle(): IGoal['lifecycle'] {
     return this._lifecycle;
   }
+  set lifecycle(value: IGoal['lifecycle']) {
+    this._lifecycle = value;
+    this._version++;
+  }
 
   get analytics(): IGoal['analytics'] {
     return this._analytics;
+  }
+  set analytics(value: IGoal['analytics']) {
+    this._analytics = value;
+    this._lifecycle.updatedAt = TimeUtils.now();
+    this._version++;
   }
 
   get version(): number {
@@ -161,7 +231,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 更新基本信息
    */
   updateBasicInfo(updates: {
-    title?: string;
+    name?: string;
     description?: string;
     color?: string;
     dirId?: string;
@@ -169,11 +239,11 @@ export class Goal extends AggregateRoot implements IGoal {
     endTime?: DateTime;
     note?: string;
   }): void {
-    if (updates.title !== undefined) {
-      if (!updates.title.trim()) {
+    if (updates.name !== undefined) {
+      if (!updates.name.trim()) {
         throw new Error("目标标题不能为空");
       }
-      this._title = updates.title;
+      this._name = updates.name;
     }
 
     if (updates.description !== undefined) {
@@ -185,7 +255,7 @@ export class Goal extends AggregateRoot implements IGoal {
     }
 
     if (updates.dirId !== undefined) {
-      this._dirId = updates.dirId;
+      this._dirUuid = updates.dirId;
     }
 
     if (updates.startTime !== undefined) {
@@ -212,11 +282,11 @@ export class Goal extends AggregateRoot implements IGoal {
   /**
    * 更新标题
    */
-  updateTitle(title: string): void {
-    if (!title.trim()) {
+  updateTitle(name: string): void {
+    if (!name.trim()) {
       throw new Error("目标标题不能为空");
     }
-    this._title = title;
+    this._name = name;
     this._lifecycle.updatedAt = TimeUtils.now();
     this._version++;
   }
@@ -243,7 +313,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 更新目录ID
    */
   updateDirId(dirId: string): void {
-    this._dirId = dirId;
+    this._dirUuid = dirId;
     this._lifecycle.updatedAt = TimeUtils.now();
     this._version++;
   }
@@ -356,7 +426,7 @@ export class Goal extends AggregateRoot implements IGoal {
     weight?: number;
     calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
   }): void {
-    const keyResult = this._keyResults.find(kr => kr.id === keyResultId);
+    const keyResult = this._keyResults.find(kr => kr.uuid === keyResultId);
     if (!keyResult) {
       throw new Error(`关键结果不存在: ${keyResultId}`);
     }
@@ -372,7 +442,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 更新关键结果当前值
    */
   updateKeyResultCurrentValue(keyResultId: string, currentValue: number): void {
-    const keyResult = this._keyResults.find(kr => kr.id === keyResultId);
+    const keyResult = this._keyResults.find(kr => kr.uuid === keyResultId);
     if (!keyResult) {
       throw new Error(`关键结果不存在: ${keyResultId}`);
     }
@@ -388,7 +458,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 删除关键结果
    */
   removeKeyResult(keyResultId: string): void {
-    const index = this._keyResults.findIndex(kr => kr.id === keyResultId);
+    const index = this._keyResults.findIndex(kr => kr.uuid === keyResultId);
     if (index === -1) {
       throw new Error(`关键结果不存在: ${keyResultId}`);
     }
@@ -407,7 +477,7 @@ export class Goal extends AggregateRoot implements IGoal {
    */
   addRecord(keyResultId: string, value: number, note?: string): Record {
     // 验证关键结果存在
-    const keyResult = this._keyResults.find(kr => kr.id === keyResultId);
+    const keyResult = this._keyResults.find(kr => kr.uuid === keyResultId);
     if (!keyResult) {
       throw new Error(`关键结果不存在: ${keyResultId}`);
     }
@@ -419,7 +489,7 @@ export class Goal extends AggregateRoot implements IGoal {
     // 创建记录
     const record = new Record(
       uuidv4(),
-      this.id,
+      this.uuid,
       keyResultId,
       value,
       TimeUtils.now(),
@@ -447,12 +517,12 @@ export class Goal extends AggregateRoot implements IGoal {
     value?: number;
     note?: string;
   }): void {
-    const record = this._records.find(r => r.id === recordId);
+    const record = this._records.find(r => r.uuid === recordId);
     if (!record) {
       throw new Error(`记录不存在: ${recordId}`);
     }
 
-    const keyResult = this._keyResults.find(kr => kr.id === record.keyResultId);
+    const keyResult = this._keyResults.find(kr => kr.uuid === record.keyResultId);
     if (!keyResult) {
       throw new Error(`关键结果不存在: ${record.keyResultId}`);
     }
@@ -484,13 +554,13 @@ export class Goal extends AggregateRoot implements IGoal {
    * 移除记录并调整关键结果
    */
   removeRecord(recordId: string): void {
-    const recordIndex = this._records.findIndex(r => r.id === recordId);
+    const recordIndex = this._records.findIndex(r => r.uuid === recordId);
     if (recordIndex === -1) {
       throw new Error(`记录不存在: ${recordId}`);
     }
 
     const record = this._records[recordIndex];
-    const keyResult = this._keyResults.find(kr => kr.id === record.keyResultId);
+    const keyResult = this._keyResults.find(kr => kr.uuid === record.keyResultId);
     if (keyResult) {
       // 减去记录的值
       keyResult.addValue(-record.value);
@@ -538,14 +608,14 @@ export class Goal extends AggregateRoot implements IGoal {
    */
   addReview(review: GoalReview): void {
     // 验证复盘是否属于当前目标
-    if (review.goalId !== this.id) {
+    if (review.goalUuid !== this.uuid) {
       throw new Error("复盘不属于当前目标");
     }
 
     // 检查是否已存在相同ID的复盘
-    const existingReview = this._reviews.find(r => r.id === review.id);
+    const existingReview = this._reviews.find(r => r.uuid === review.uuid);
     if (existingReview) {
-      throw new Error(`复盘 ${review.id} 已存在`);
+      throw new Error(`复盘 ${review.uuid} 已存在`);
     }
 
     this._reviews.push(review);
@@ -557,11 +627,11 @@ export class Goal extends AggregateRoot implements IGoal {
    * 更新复盘
    */
   updateReview(reviewId: string, updates: {
-    title?: string;
+    name?: string;
     content?: Partial<IGoalReview['content']>;
     rating?: IGoalReview['rating'];
   }): void {
-    const review = this._reviews.find(r => r.id === reviewId);
+    const review = this._reviews.find(r => r.uuid === reviewId);
     if (!review) {
       throw new Error(`复盘 ${reviewId} 不存在`);
     }
@@ -575,7 +645,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 移除复盘
    */
   removeReview(reviewId: string): void {
-    const index = this._reviews.findIndex(r => r.id === reviewId);
+    const index = this._reviews.findIndex(r => r.uuid === reviewId);
     if (index === -1) {
       throw new Error(`复盘 ${reviewId} 不存在`);
     }
@@ -589,7 +659,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 获取复盘
    */
   getReview(reviewId: string): GoalReview | null {
-    return this._reviews.find(r => r.id === reviewId) || null;
+    return this._reviews.find(r => r.uuid === reviewId) || null;
   }
 
   /**
@@ -621,7 +691,7 @@ export class Goal extends AggregateRoot implements IGoal {
       completedKeyResults: this._analytics.completedKeyResults,
       totalKeyResults: this._analytics.totalKeyResults,
       keyResultsSnapshot: this._keyResults.map(kr => ({
-        id: kr.id,
+        uuid: kr.uuid,
         name: kr.name,
         progress: kr.progress,
         currentValue: kr.currentValue,
@@ -722,7 +792,7 @@ export class Goal extends AggregateRoot implements IGoal {
     let ratedReviews = 0;
 
     reviews.forEach(review => {
-      reviewsByType[review.type]++;
+      reviewsByType[review.type as keyof typeof reviewsByType]++;
       
       if (review.rating) {
         totalRating += review.overallRating || 0;
@@ -812,11 +882,11 @@ export class Goal extends AggregateRoot implements IGoal {
    */
   toDTO(): IGoal {
     const rawData = {
-      id: this.id,
-      title: this._title,
+      uuid: this.uuid,
+      name: this._name,
       description: this._description,
       color: this._color,
-      dirId: this._dirId,
+      dirId: this._dirUuid,
       startTime: this._startTime,
       endTime: this._endTime,
       note: this._note,
@@ -836,11 +906,11 @@ export class Goal extends AggregateRoot implements IGoal {
       console.error('❌ [Goal.toDTO] 序列化失败:', error);
       // 如果序列化失败，返回基本信息
       return {
-        id: this.id,
-        title: this._title,
+        uuid: this.uuid,
+        name: this._name,
         description: this._description,
         color: this._color,
-        dirId: this._dirId,
+        dirId: this._dirUuid,
         startTime: JSON.parse(JSON.stringify(this._startTime)),
         endTime: JSON.parse(JSON.stringify(this._endTime)),
         note: this._note,
@@ -866,7 +936,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 从数据传输对象创建目标
    */
   static fromDTO(data: IGoal): Goal {
-    const goal = new Goal(data.id, data.title, {
+    const goal = new Goal(data.uuid, data.name, {
       description: data.description,
       color: data.color,
       dirId: data.dirId,
@@ -896,8 +966,8 @@ export class Goal extends AggregateRoot implements IGoal {
   /**
    * 从创建数据传输对象创建目标
    */
-  static fromCreateDTO(id: string, data: IGoalCreateDTO): Goal {
-    const goal = new Goal(id, data.title, {
+  static fromCreateDTO(uuid: string, data: IGoalCreateDTO): Goal {
+    const goal = new Goal(uuid, data.name, {
       description: data.description,
       color: data.color,
       dirId: data.dirId,
@@ -917,12 +987,12 @@ export class Goal extends AggregateRoot implements IGoal {
 
   clone(): Goal {
     const clonedGoal = new Goal(
-      this.id,
-      this._title,
+      this.uuid,
+      this._name,
       {
         description: this._description,
         color: this._color,
-        dirId: this._dirId,
+        dirId: this._dirUuid,
         startTime: this._startTime,
         endTime: this._endTime,
         note: this._note,
@@ -960,7 +1030,7 @@ export class Goal extends AggregateRoot implements IGoal {
   } {
     const errors: string[] = [];
 
-    if (!data.title?.trim()) {
+    if (!data.name?.trim()) {
       errors.push("目标标题不能为空");
     }
 
@@ -1006,8 +1076,8 @@ export class Goal extends AggregateRoot implements IGoal {
   getValidationErrors(): { [key: string]: string } {
     const errors: { [key: string]: string } = {};
 
-    if (!this._title?.trim()) {
-      errors.title = "目标标题不能为空";
+    if (!this._name?.trim()) {
+      errors.name = "目标标题不能为空";
     }
 
     if (this._endTime.timestamp <= this._startTime.timestamp) {
@@ -1015,7 +1085,7 @@ export class Goal extends AggregateRoot implements IGoal {
     }
 
     // 验证目录ID不能为空
-    if (!this._dirId?.trim()) {
+    if (!this._dirUuid?.trim()) {
       errors.dirId = "请选择目标文件夹";
     }
 

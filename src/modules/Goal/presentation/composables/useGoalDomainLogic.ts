@@ -35,7 +35,7 @@ export function useGoalDomainLogic() {
     );
     
     return activeGoals.map(goal => ({
-      id: goal.id,
+      uuid: goal.uuid,
       title: goal.title,
       remainingDays: goal.remainingDays,
       isUrgent: goal.remainingDays <= 7 && goal.remainingDays > 0
@@ -46,7 +46,7 @@ export function useGoalDomainLogic() {
    * 更新目标基本信息（使用领域对象）
    */
   const updateGoalBasicInfo = async (
-    goalId: string, 
+    goalUuid: string, 
     updates: {
       title?: string;
       description?: string;
@@ -54,9 +54,9 @@ export function useGoalDomainLogic() {
       note?: string;
     }
   ) => {
-    const goalEntity = goalStore.getGoalEntityById(goalId);
+    const goalEntity = goalStore.getGoalEntityById(goalUuid);
     if (!goalEntity) {
-      throw new Error(`目标 ${goalId} 不存在`);
+      throw new Error(`目标 ${goalUuid} 不存在`);
     }
 
     // 使用领域对象的业务方法

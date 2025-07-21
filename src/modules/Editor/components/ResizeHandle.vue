@@ -24,14 +24,14 @@ const startResize = (e: MouseEvent) => {
     e.preventDefault()
     
     // 获取当前组和下一个组
-    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.id === props.groupId)
+    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.uuid === props.groupId)
     const nextGroup = editorGroupStore.editorGroups[currentIndex + 1]
     if (!nextGroup) return
 
     isResizing.value = true
     startX.value = e.clientX
     initialLeftWidth.value = editorGroupStore.getGroupWidth(props.groupId)
-    initialRightWidth.value = editorGroupStore.getGroupWidth(nextGroup.id)
+    initialRightWidth.value = editorGroupStore.getGroupWidth(nextGroup.uuid)
     console.log('startResize', initialLeftWidth.value, initialRightWidth.value)
     document.body.style.cursor = 'col-resize'
     document.addEventListener('mousemove', handleMouseMove)
@@ -42,7 +42,7 @@ const handleMouseMove = (e: MouseEvent) => {
     if (!isResizing.value) return
     
     const deltaX = e.clientX - startX.value
-    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.id === props.groupId)
+    const currentIndex = editorGroupStore.editorGroups.findIndex(g => g.uuid === props.groupId)
     const nextGroup = editorGroupStore.editorGroups[currentIndex + 1]
     if (!nextGroup) return
 
@@ -54,7 +54,7 @@ const handleMouseMove = (e: MouseEvent) => {
     // 检查总宽度约束
     if (newLeftWidth + newRightWidth === initialLeftWidth.value + initialRightWidth.value) {
         editorGroupStore.setGroupWidth(props.groupId, newLeftWidth)
-        editorGroupStore.setGroupWidth(nextGroup.id, newRightWidth)
+        editorGroupStore.setGroupWidth(nextGroup.uuid, newRightWidth)
     }
 }
 

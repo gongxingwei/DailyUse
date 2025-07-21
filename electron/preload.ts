@@ -70,3 +70,6 @@ contextBridge.exposeInMainWorld('git', {
   
 })
 
+contextBridge.exposeInMainWorld('env', {
+  argv: process.argv
+});

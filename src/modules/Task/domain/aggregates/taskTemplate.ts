@@ -46,7 +46,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _version: number;
 
   constructor(
-    id: string,
+    uuid: string,
     title: string,
     timeConfig: TaskTimeConfig,
     reminderConfig: TaskReminderConfig,
@@ -62,7 +62,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       schedulingPolicy?: Partial<ITaskTemplate['schedulingPolicy']>;
     }
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
     this._title = title;
@@ -190,10 +190,10 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     this._lifecycle.updatedAt = TimeUtils.now();
   }
 
-  removeKeyResultLink(goalId: string, keyResultId: string): void {
+  removeKeyResultLink(goalUuid: string, keyResultId: string): void {
     if (this._keyResultLinks) {
       this._keyResultLinks = this._keyResultLinks.filter(
-        (link) => !(link.goalId === goalId && link.keyResultId === keyResultId)
+        (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId)
       );
       this._lifecycle.updatedAt = TimeUtils.now();
     }
@@ -403,7 +403,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   static fromCompleteData(data: any): TaskTemplate {
     // 创建基础实例
     const instance = new TaskTemplate(
-      data.id || data._id,
+      data.uuid || data._id,
       data.title || data._title,
       data.timeConfig || data._timeConfig,
       data.reminderConfig || data._reminderConfig,
@@ -487,7 +487,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    */
   toDTO(): ITaskTemplate {
     const rawData = {
-      id: this.id,
+      uuid: this.uuid,
       title: this._title,
       description: this._description,
       timeConfig: this._timeConfig,
@@ -507,7 +507,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       console.error('❌ [TaskTemplate.toDTO] 序列化失败:', error);
       // 如果序列化失败，返回基本信息
       return {
-        id: this.id,
+        uuid: this.uuid,
         title: this._title,
         description: this._description,
         timeConfig: JSON.parse(JSON.stringify(this._timeConfig)),
@@ -530,7 +530,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     return this.toDTO();
   }
 
-  static fromJSON(data: { id: string; title: string; description?: string; timeConfig: TaskTimeConfig; reminderConfig: TaskReminderConfig; schedulingPolicy: ITaskTemplate["schedulingPolicy"]; metadata: ITaskTemplate["metadata"]; lifecycle: ITaskTemplate["lifecycle"]; analytics: ITaskTemplate["analytics"]; keyResultLinks?: KeyResultLink[]; version: number; }): ITaskTemplate {
+  static fromJSON(data: { uuid: string; title: string; description?: string; timeConfig: TaskTimeConfig; reminderConfig: TaskReminderConfig; schedulingPolicy: ITaskTemplate["schedulingPolicy"]; metadata: ITaskTemplate["metadata"]; lifecycle: ITaskTemplate["lifecycle"]; analytics: ITaskTemplate["analytics"]; keyResultLinks?: KeyResultLink[]; version: number; }): ITaskTemplate {
     return TaskTemplate.fromCompleteData(data);
   }
 }
@@ -580,7 +580,7 @@ export class TaskTemplateMapper {
   static toPartialDTO(template: TaskTemplate): Partial<ITaskTemplate> {
     const data = template.toDTO();
     return {
-      id: data.id,
+      uuid: data.uuid,
       lifecycle: data.lifecycle,
       analytics: data.analytics,
       version: data.version,

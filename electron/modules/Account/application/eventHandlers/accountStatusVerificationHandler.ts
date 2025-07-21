@@ -17,10 +17,10 @@ export class AccountStatusVerificationHandler {
         try {
       console.log('🔍 [Account] 处理账号状态验证请求:', event.payload.username);
 
-      const { accountId, username, requestId } = event.payload;
+      const { accountUuid, username, requestId } = event.payload;
 
       // 查找账号
-      const response = await mainAccountApplicationService.getAccountIdByUsername(username);
+      const response = await mainAccountApplicationService.getAccountUuidByUsername(username);
       const account = response.data;
       let accountStatus: AccountStatusVerificationResponseEvent['payload']['accountStatus'];
       let isLoginAllowed = false;
@@ -31,7 +31,7 @@ export class AccountStatusVerificationHandler {
         accountStatus = 'not_found';
         isLoginAllowed = false;
         statusMessage = '账号不存在';
-        console.log('❌ [Account] 账号不存在:', accountId);
+        console.log('❌ [Account] 账号不存在:', accountUuid);
       } else {
         // 检查账号状态
         switch (account.status) {
@@ -62,7 +62,7 @@ export class AccountStatusVerificationHandler {
         }
 
         console.log('✓ [Account] 账号状态检查完成:', {
-          accountId,
+          accountUuid,
           username,
           status: accountStatus,
           loginAllowed: isLoginAllowed
@@ -72,10 +72,10 @@ export class AccountStatusVerificationHandler {
       // 发布状态验证响应事件
       const responseEvent: AccountStatusVerificationResponseEvent = {
         eventType: 'AccountStatusVerificationResponse',
-        aggregateId: accountId,
+        aggregateId: accountUuid,
         occurredOn: new Date(),
         payload: {
-          accountId,
+          accountUuid,
           username,
           requestId,
           accountStatus,
@@ -94,10 +94,10 @@ export class AccountStatusVerificationHandler {
       // 发送错误响应
       const errorResponseEvent: AccountStatusVerificationResponseEvent = {
         eventType: 'AccountStatusVerificationResponse',
-        aggregateId: event.payload.accountId,
+        aggregateId: event.payload.accountUuid,
         occurredOn: new Date(),
         payload: {
-          accountId: event.payload.accountId,
+          accountUuid: event.payload.accountUuid,
           username: event.payload.username,
           requestId: event.payload.requestId,
           accountStatus: 'not_found',

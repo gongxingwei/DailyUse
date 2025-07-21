@@ -66,9 +66,9 @@ export class TaskInstanceStoreRepository implements ITaskInstanceRepository {
    * @param id - TaskInstance的唯一标识符
    * @returns 查找操作的响应结果
    */
-  async findById(id: string): Promise<TResponse<TaskInstance>> {
+  async findById(uuid: string): Promise<TResponse<TaskInstance>> {
     try {
-      const instance = this.store.getTaskInstanceById(id);
+      const instance = this.store.getTaskInstanceById(uuid);
       
       if (instance) {
         return {
@@ -79,7 +79,7 @@ export class TaskInstanceStoreRepository implements ITaskInstanceRepository {
       } else {
         return {
           success: false,
-          message: `未找到ID为 ${id} 的TaskInstance`
+          message: `未找到ID为 ${uuid} 的TaskInstance`
         };
       }
     } catch (error) {
@@ -177,19 +177,19 @@ export class TaskInstanceStoreRepository implements ITaskInstanceRepository {
    * 
    * 查找与指定目标关联的所有TaskInstance，用于目标进度跟踪。
    * 
-   * @param goalId - 目标ID
+   * @param goalUuid - 目标ID
    * @returns 与目标相关的TaskInstance响应结果
    */
-  async findByGoal(goalId: string): Promise<TResponse<TaskInstance[]>> {
+  async findByGoal(goalUuid: string): Promise<TResponse<TaskInstance[]>> {
     try {
       const instances = this.store.getAllTaskInstances
         .filter(instance => {
-          return instance.keyResultLinks?.some(link => link.goalId === goalId);
+          return instance.keyResultLinks?.some(link => link.goalUuid === goalUuid);
         });
       
       return {
         success: true,
-        message: `找到目标 ${goalId} 相关的 ${instances.length} 个TaskInstance`,
+        message: `找到目标 ${goalUuid} 相关的 ${instances.length} 个TaskInstance`,
         data: instances
       };
     } catch (error) {
@@ -208,8 +208,8 @@ export class TaskInstanceStoreRepository implements ITaskInstanceRepository {
    * @param id - 要删除的TaskInstance的ID
    * @returns 删除操作的响应结果
    */
-  async delete(id: string): Promise<TResponse<boolean>> {
-    const response = await this.store.removeTaskInstanceById(id);
+  async delete(uuid: string): Promise<TResponse<boolean>> {
+    const response = await this.store.removeTaskInstanceById(uuid);
     if (response.success) {
       await this.store.saveTaskInstances();
       return {

@@ -9,7 +9,7 @@ export interface ScheduleTask {
 }
 
 export interface ScheduleOptions {
-  id: string;
+  uuid: string;
   cron?: string;
   dateTime?: DateTime;
   task: ScheduleTask;
@@ -49,8 +49,8 @@ export class ScheduleService {
   async createSchedule(options: ScheduleOptions): Promise<ScheduleResult> {
     try {
       // 如果已存在相同ID的任务，先删除
-      if (this.scheduleJobs.has(options.id)) {
-        this.cancelSchedule(options.id);
+      if (this.scheduleJobs.has(options.uuid)) {
+        this.cancelSchedule(options.uuid);
       }
 
       let job: nodeSchedule.Job;
@@ -58,13 +58,13 @@ export class ScheduleService {
       if (options.cron) {
         // 使用 cron 表达式
         job = nodeSchedule.scheduleJob(options.cron, () => {
-          this.executeTask(options.id, options.task);
+          this.executeTask(options.uuid, options.task);
         });
       } else if (options.dateTime) {
         // 使用具体时间
         const date = this.dateTimeToDate(options.dateTime);
         job = nodeSchedule.scheduleJob(date, () => {
-          this.executeTask(options.id, options.task);
+          this.executeTask(options.uuid, options.task);
         });
       } else {
         return {
@@ -80,10 +80,10 @@ export class ScheduleService {
         };
       }
 
-      this.scheduleJobs.set(options.id, job);
+      this.scheduleJobs.set(options.uuid, job);
       return {
         success: true,
-        message: `调度任务 ${options.id} 创建成功`
+        message: `调度任务 ${options.uuid} 创建成功`
       };
     } catch (error) {
       console.error('Failed to create schedule:', error);
@@ -97,20 +97,20 @@ export class ScheduleService {
   /**
    * 取消定时任务
    */
-  cancelSchedule(id: string): ScheduleResult {
+  cancelSchedule(uuid: string): ScheduleResult {
     try {
-      const job = this.scheduleJobs.get(id);
+      const job = this.scheduleJobs.get(uuid);
       if (job) {
         job.cancel();
-        this.scheduleJobs.delete(id);
+        this.scheduleJobs.delete(uuid);
         return {
           success: true,
-          message: `调度任务 ${id} 已取消`
+          message: `调度任务 ${uuid} 已取消`
         };
       }
       return {
         success: false,
-        message: `调度任务 ${id} 不存在`
+        message: `调度任务 ${uuid} 不存在`
       };
     } catch (error) {
       return {
@@ -125,7 +125,7 @@ export class ScheduleService {
    */
   async updateSchedule(options: ScheduleOptions): Promise<ScheduleResult> {
     // 先取消现有任务，再创建新任务
-    this.cancelSchedule(options.id);
+    this.cancelSchedule(options.uuid);
     return this.createSchedule(options);
   }
 
@@ -139,11 +139,11 @@ export class ScheduleService {
   /**
    * 获取调度任务信息
    */
-  getScheduleInfo(id: string): {
+  getScheduleInfo(uuid: string): {
     exists: boolean;
     nextInvocation: Date | null;
   } {
-    const job = this.scheduleJobs.get(id);
+    const job = this.scheduleJobs.get(uuid);
     if (!job) {
       return { exists: false, nextInvocation: null };
     }
@@ -157,12 +157,12 @@ export class ScheduleService {
   /**
    * 执行任务并通知渲染进程
    */
-  private executeTask(id: string, task: ScheduleTask): void {
+  private executeTask(uuid: string, task: ScheduleTask): void {
     const win = this.getValidWindow();
     if (win) {
       try {
         win.webContents.send('schedule-triggered', {
-          id,
+          uuid,
           task
         });
       } catch (error) {
@@ -171,10 +171,10 @@ export class ScheduleService {
     }
 
     // 如果是一次性任务，执行后清理
-    if (this.scheduleJobs.has(id)) {
-      const job = this.scheduleJobs.get(id);
+    if (this.scheduleJobs.has(uuid)) {
+      const job = this.scheduleJobs.get(uuid);
       if (job && !job.nextInvocation()) {
-        this.scheduleJobs.delete(id);
+        this.scheduleJobs.delete(uuid);
       }
     }
   }
@@ -206,7 +206,7 @@ export class ScheduleService {
    * 清理所有调度任务
    */
   cleanup(): void {
-    for (const [id, job] of this.scheduleJobs) {
+    for (const [uuid, job] of this.scheduleJobs) {
       job.cancel();
     }
     this.scheduleJobs.clear();

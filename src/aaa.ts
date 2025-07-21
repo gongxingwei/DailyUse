@@ -3,19 +3,19 @@ import { useAccountStore } from "./modules/Account"
 import { Account } from "./modules/Account/domain/aggregates/account"
 import { AccountStatus } from "./modules/Account/domain/types/account"
 import { AccountType } from "@electron/modules/Account/domain/types/account"
-
+import { useAuthenticationStore } from "./modules/Authentication/presentation/stores/authenticationStore"
 
 
 
 const accountDTO: AccountDTO = {
-  id: 'c7ccdd87-7611-4258-b517-136bd0c1b198',
+  uuid: 'c7ccdd87-7611-4258-b517-136bd0c1b198',
   username: 'Test1',
   status: AccountStatus.ACTIVE,
   accountType: AccountType.LOCAL,
   email: '',
   phone: '',
   user: {
-    id: '880e4f77-6b92-4919-8c43-1a6869a9b265',
+    uuid: '880e4f77-6b92-4919-8c43-1a6869a9b265',
     firstName: '',
     lastName: '',
     sex: '2',
@@ -39,6 +39,7 @@ export const init = async () => {
   try {
     // 初始化账号信息
     const accountStore = useAccountStore()
+    const authStore = useAuthenticationStore();
     if (accountStore.account) {
       console.warn('账号信息已存在，可能是重复初始化。')
       return

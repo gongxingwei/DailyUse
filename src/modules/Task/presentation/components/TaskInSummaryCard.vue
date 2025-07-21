@@ -26,7 +26,7 @@
     <v-card-text class="task-content pa-0">
       <!-- 有任务时显示 -->
       <v-list v-if="todayTasks.length > 0" class="py-0">
-        <v-list-item v-for="(task, index) in todayTasks" :key="task.id"
+        <v-list-item v-for="(task, index) in todayTasks" :key="task.uuid"
           :class="{ 'task-completed': task.status === 'completed' }" class="task-item pa-4"
           :style="{ '--task-index': index }">
           <template v-slot:prepend>
@@ -125,13 +125,13 @@ const completionPercentage = computed(() => {
 
 // ✅ 切换任务完成状态
 const toggleTaskComplete = async (task: TaskInstance) => {
-  console.log('切换任务状态:', task.id);
+  console.log('切换任务状态:', task.uuid);
 };
 
 // 获取关键结果名称的方法
 const getKeyResultName = (link: KeyResultLink) => {
-  const goal = goalStore.getGoalById(link.goalId);
-  const kr = goal?.keyResults.find(kr => kr.id === link.keyResultId);
+  const goal = goalStore.getGoalById(link.goalUuid);
+  const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
   return kr?.name || '未知关键结果';
 };
 </script>

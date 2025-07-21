@@ -23,7 +23,7 @@ export class SessionManagementService {
    * 创建用户会话
    */
   async createSession(
-    accountId: string,
+    accountUuid: string,
     username: string,
     accountType: string,
     options: {
@@ -48,8 +48,8 @@ export class SessionManagementService {
       }
 
       const session: UserSession = {
-        id: sessionId,
-        accountId,
+        uuid: sessionId,
+        accountUuid,
         username,
         accountType,
         token: this.generateToken(),
@@ -222,9 +222,9 @@ export class SessionManagementService {
   /**
    * 销毁用户的所有会话
    */
-  async destroyAllUserSessions(accountId: string): Promise<TResponse> {
+  async destroyAllUserSessions(accountUuid: string): Promise<TResponse> {
     try {
-      const sessions = await this.sessionRepository.findByAccountId(accountId);
+      const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
       
       for (const session of sessions) {
         session.status = SessionStatus.REVOKED;
@@ -250,9 +250,9 @@ export class SessionManagementService {
   /**
    * 获取用户活动会话
    */
-  async getUserActiveSessions(accountId: string): Promise<TResponse<UserSession[]>> {
+  async getUserActiveSessions(accountUuid: string): Promise<TResponse<UserSession[]>> {
     try {
-      const sessions = await this.sessionRepository.findByAccountId(accountId);
+      const sessions = await this.sessionRepository.findByAccountUuid(accountUuid);
       const activeSessions = sessions.filter(s => s.status === SessionStatus.ACTIVE);
 
       return {
@@ -290,8 +290,8 @@ export class SessionManagementService {
     const lastLoginTime = TimeUtils.fromTimestamp(sessionData.lastLoginTime);
     
     return {
-      id: this.generateSessionId(),
-      accountId: sessionData.username, // 临时使用用户名作为ID
+      uuid: this.generateSessionId(),
+      accountUuid: sessionData.username, // 临时使用用户名作为ID
       username: sessionData.username,
       accountType: sessionData.accountType,
       token: sessionData.token,

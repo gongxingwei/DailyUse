@@ -13,18 +13,18 @@ export function setupNotificationHandler() {
   });
 
   // 关闭通知
-  ipcMain.on('close-notification', (_event, id: string) => {
+  ipcMain.on('close-notification', (_event, uuid: string) => {
     try {
-      return notificationService.closeNotification(id);
+      return notificationService.closeNotification(uuid);
     } catch (error) {
       console.error('IPC Error - close-notification:', error);
     }
   });
 
   // 通知操作
-  ipcMain.on('notification-action', (_event, id: string, action: { text: string; type: string }) => {
+  ipcMain.on('notification-action', (_event, uuid: string, action: { text: string; type: string }) => {
     try {
-      return notificationService.handleNotificationAction(id, action);
+      return notificationService.handleNotificationAction(uuid, action);
     } catch (error) {
       console.error('IPC Error - notification-action:', error);
     }

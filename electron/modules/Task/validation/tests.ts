@@ -24,7 +24,7 @@ function createTestDateTime(year: number, month: number, day: number, timePoint?
  */
 function createValidTemplate(): ITaskTemplate {
   return {
-    id: '550e8400-e29b-41d4-a716-446655440000',
+    uuid: '550e8400-e29b-41d4-a716-446655440000',
     title: '学习TypeScript',
     description: '深入学习TypeScript高级特性',
     timeConfig: {
@@ -53,7 +53,7 @@ function createValidTemplate(): ITaskTemplate {
     reminderConfig: {
         enabled: true,
         alerts: [{
-          id: 'alert-1',
+          uuid: 'alert-1',
           timing: {
             type: 'relative',
             minutesBefore: 15
@@ -234,7 +234,7 @@ export function testReminderValidator() {
     reminder: {
         ...template.reminderConfig,
         alerts: [{
-          id: 'alert-1',
+          uuid: 'alert-1',
           timing: {
             type: 'relative' as const,
             minutesBefore: -5 // 负数无效

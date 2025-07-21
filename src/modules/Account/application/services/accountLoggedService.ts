@@ -13,9 +13,10 @@ export class AccountLoggedService {
     return this._accountStore;
   }
 
-  async initAccountInfo(accountId: string): Promise<TResponse<AccountDTO>> {
+  async initAccountInfo(accountUuid: string): Promise<TResponse<AccountDTO>> {
     try {
-      const response = await accountIpcClient.getAccountByAccountId(accountId);
+      const response = await accountIpcClient.getAccountByAccountUuid(accountUuid);
+      console.log('获取账户信息响应:', response);
       if (response.success && response.data) {
         let account = Account.fromDTO(response.data);
         this.accountStore.setAccount(account);

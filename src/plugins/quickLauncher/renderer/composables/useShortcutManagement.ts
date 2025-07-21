@@ -9,7 +9,7 @@ export function useShortcutManagement() {
   const editingShortcut = ref<ShortcutItem | null>(null);
   const showEditShortcutDialog = ref(false);
   const shortcutForEdit = ref({
-    id: '',
+    uuid: '',
     name: '',
     path: '',
     icon: '',
@@ -31,7 +31,7 @@ export function useShortcutManagement() {
       const icon = await getShortcutIcon(filePath);
 
       const shortcut: ShortcutItem = {
-        id: uuidv4(),
+        uuid: uuidv4(),
         name: fileName,
         path: filePath,
         description: '',
@@ -58,7 +58,7 @@ export function useShortcutManagement() {
     try {
       hideWindow();
       await window.shared.ipcRenderer.invoke('launch-application', item.path);
-      store.recordItemUsage(item.id);
+      store.recordItemUsage(item.uuid);
     } catch (error) {
       console.error('Failed to launch application:', error);
     }
@@ -85,7 +85,7 @@ export function useShortcutManagement() {
           const base64Icon = await getFileIcon(targetPath);
 
           const shortcut: ShortcutItem = {
-            id: uuidv4(),
+            uuid: uuidv4(),
             name: file.name.replace(/\.[^/.]+$/, ""),
             path: targetPath,
             description: '',
@@ -124,8 +124,8 @@ export function useShortcutManagement() {
 
     editingShortcut.value = item;
 
-    const { id, name, path, icon, description, } = editingShortcut.value;
-    shortcutForEdit.value = { id, name, path, icon, description: description || '' };
+    const { uuid, name, path, icon, description, } = editingShortcut.value;
+    shortcutForEdit.value = { uuid, name, path, icon, description: description || '' };
     showEditShortcutDialog.value = true;
   }
 
@@ -137,7 +137,7 @@ export function useShortcutManagement() {
         description: data.description
       };
 
-      store.updateShortcut(store.state.selectedCategoryId, updatedShortcut.id, updatedShortcut);
+      store.updateShortcut(store.state.selectedCategoryId, updatedShortcut.uuid, updatedShortcut);
       editingShortcut.value = null;
     }
   }

@@ -4,7 +4,7 @@ import { DomainEvent } from "@/shared/domain/domainEvent";
 /**
  * username对应account_uuid请求事件载荷
  */
-export interface AccountIdGetterRequestedEventPayload {
+export interface AccountUuidGetterRequestedEventPayload {
   username: string;
   requestedAt: Date;
   requestId: string; // 用于关联响应
@@ -13,16 +13,16 @@ export interface AccountIdGetterRequestedEventPayload {
 /**
  * username对应account_uuid请求事件
  */
-export interface AccountIdGetterRequestedEvent extends DomainEvent<AccountIdGetterRequestedEventPayload> {
-  eventType: 'AccountIdGetterRequested';
-  payload: AccountIdGetterRequestedEventPayload;
+export interface AccountUuidGetterRequestedEvent extends DomainEvent<AccountUuidGetterRequestedEventPayload> {
+  eventType: 'AccountUuidGetterRequested';
+  payload: AccountUuidGetterRequestedEventPayload;
 }
 
 /**
  * 账号状态验证请求事件载荷
  */
 export interface AccountStatusVerificationRequestedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   requestedAt: Date;
   requestId: string; // 用于关联响应
@@ -40,7 +40,7 @@ export interface AccountStatusVerificationRequestedEvent extends DomainEvent<Acc
  * 登录凭证验证事件载荷
  */
 export interface LoginCredentialVerificationEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   credentialId: string;
   verificationResult: 'success' | 'failed' | 'account_locked' | 'credential_expired';
@@ -66,7 +66,7 @@ export interface LoginCredentialVerificationEvent extends DomainEvent<LoginCrede
  */
 export interface LoginAttemptEventPayload {
   username: string;
-  accountId?: string;
+  accountUuid?: string;
   result: 'success' | 'failed' | 'account_not_found' | 'invalid_credentials' | 'account_locked' | 'account_inactive';
   failureReason?: string;
   attemptedAt: Date;
@@ -89,7 +89,7 @@ export interface LoginAttemptEvent extends DomainEvent<LoginAttemptEventPayload>
  * 用户登录成功事件载荷
  */
 export interface UserLoggedInEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   credentialId: string;
   sessionId: string;
@@ -113,7 +113,7 @@ export interface UserLoggedInEvent extends DomainEvent<UserLoggedInEventPayload>
  * 账号注销验证请求事件载荷
  */
 export interface AccountDeactivationVerificationRequestedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   requestId: string;
   requestedBy: 'user' | 'admin' | 'system';
@@ -139,10 +139,10 @@ export interface AccountDeactivationVerificationRequestedEvent extends DomainEve
  */
 export interface AccountDeactivationVerificationResponseEventPayload {
   requestId: string;
-  accountId: string;
+  accountUuid: string;
   username: string;
   verificationResult: 'success' | 'failed' | 'cancelled' | 'timeout';
-  verificationMethod: 'password' | 'mfa' | 'admin_override';
+  verificationMethod: 'password' | 'mfa' | 'admin_overrUuide';
   verifiedAt: Date;
   failureReason?: string;
   clientInfo?: {
@@ -164,7 +164,7 @@ export interface AccountDeactivationVerificationResponseEvent extends DomainEven
  * 账号注销确认事件载荷
  */
 export interface AccountDeactivationConfirmedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   deactivatedBy: 'user' | 'admin' | 'system';
   reason?: string;
@@ -185,7 +185,7 @@ export interface AccountDeactivationConfirmedEvent extends DomainEvent<AccountDe
  * 用户注销事件载荷
  */
 export interface UserLoggedOutEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   sessionId: string;
   logoutType: 'manual' | 'forced' | 'expired' | 'system';
@@ -211,7 +211,7 @@ export interface UserLoggedOutEvent extends DomainEvent<UserLoggedOutEventPayloa
  */
 export interface SessionTerminatedEventPayload {
   sessionId: string;
-  accountId: string;
+  accountUuid: string;
   terminationType: 'logout' | 'timeout' | 'forced' | 'concurrent_login';
   terminatedAt: Date;
   remainingActiveSessions: number;
@@ -229,7 +229,7 @@ export interface SessionTerminatedEvent extends DomainEvent<SessionTerminatedEve
  * 全部会话终止事件载荷
  */
 export interface AllSessionsTerminatedEventPayload {
-  accountId: string;
+  accountUuid: string;
   username: string;
   terminationType: 'password_change' | 'security_breach' | 'admin_action';
   terminatedSessionCount: number;

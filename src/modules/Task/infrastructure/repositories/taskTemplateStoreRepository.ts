@@ -84,9 +84,9 @@ export class TaskTemplateStoreRepository implements ITaskTemplateRepository {
    * @param id - TaskTemplate的唯一标识符
    * @returns 查找操作的响应结果
    */
-  async findById(id: string): Promise<TResponse<TaskTemplate>> {
+  async findById(uuid: string): Promise<TResponse<TaskTemplate>> {
     try {
-      const template = this.store.getTaskTemplateById(id);
+      const template = this.store.getTaskTemplateById(uuid);
       
       if (template) {
         return {
@@ -97,7 +97,7 @@ export class TaskTemplateStoreRepository implements ITaskTemplateRepository {
       } else {
         return {
           success: false,
-          message: `未找到ID为 ${id} 的TaskTemplate`
+          message: `未找到ID为 ${uuid} 的TaskTemplate`
         };
       }
     } catch (error) {
@@ -139,8 +139,8 @@ export class TaskTemplateStoreRepository implements ITaskTemplateRepository {
    * @param id - 要删除的TaskTemplate的ID
    * @returns 删除操作的响应结果
    */
-  async delete(id: string): Promise<TResponse<boolean>> {
-    const response = await this.store.removeTaskTemplateById(id);
+  async delete(uuid: string): Promise<TResponse<boolean>> {
+    const response = await this.store.removeTaskTemplateById(uuid);
     if (response.success) {
       await this.store.saveTaskTemplates();
       return {
@@ -177,16 +177,16 @@ export class TaskTemplateStoreRepository implements ITaskTemplateRepository {
    * 查找与指定目标和关键结果关联的TaskTemplate。
    * 这些TaskTemplate将用于生成支持特定目标达成的TaskInstance。
    * 
-   * @param goalId - 目标ID
+   * @param goalUuid - 目标ID
    * @param keyResultId - 关键结果ID
    * @returns 相关TaskTemplate的响应结果
    */
-  async findByKeyResult(goalId: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>> {
+  async findByKeyResult(goalUuid: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>> {
     try {
       const templates = this.store.getAllTaskTemplates
         .filter(template => {
           return template.keyResultLinks?.some(
-            link => link.goalId === goalId && link.keyResultId === keyResultId
+            link => link.goalUuid === goalUuid && link.keyResultId === keyResultId
           );
         });
       

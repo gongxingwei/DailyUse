@@ -29,7 +29,7 @@ describe('Goal IPC Client', () => {
     it('应能通过IPC创建目标', async () => {
       // Arrange
       const goalData: IGoal = {
-        id: 'goal-1',
+        uuid: 'goal-1',
         title: '测试目标',
         description: '目标描述',
         startTime: '2024-01-01',
@@ -63,7 +63,7 @@ describe('Goal IPC Client', () => {
       // Arrange
       const goals: IGoal[] = [
         {
-          id: 'goal-1',
+          uuid: 'goal-1',
           title: '目标1',
           description: '描述1',
           startTime: '2024-01-01',
@@ -96,10 +96,10 @@ describe('Goal IPC Client', () => {
 
     it('应能通过IPC更新目标', async () => {
       // Arrange
-      const goalId = 'goal-1';
+      const goalUuid = 'goal-1';
       const updateData = { title: '新标题', progress: 50 };
       const updatedGoal: IGoal = {
-        id: goalId,
+        uuid: goalUuid,
         title: '新标题',
         description: '描述',
         startTime: '2024-01-01',
@@ -122,16 +122,16 @@ describe('Goal IPC Client', () => {
       mockIpcRenderer.invoke.mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await goalIpcClient.updateGoal(goalId, updateData);
+      const result = await goalIpcClient.updateGoal(goalUuid, updateData);
 
       // Assert
-      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:update', goalId, updateData);
+      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:update', goalUuid, updateData);
       expect(result).toEqual(expectedResponse);
     });
 
     it('应能通过IPC删除目标', async () => {
       // Arrange
-      const goalId = 'goal-1';
+      const goalUuid = 'goal-1';
       const expectedResponse = {
         success: true,
         message: '目标删除成功'
@@ -140,18 +140,18 @@ describe('Goal IPC Client', () => {
       mockIpcRenderer.invoke.mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await goalIpcClient.deleteGoal(goalId);
+      const result = await goalIpcClient.deleteGoal(goalUuid);
 
       // Assert
-      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:delete', goalId);
+      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:delete', goalUuid);
       expect(result).toEqual(expectedResponse);
     });
 
     it('应能通过IPC根据ID获取目标', async () => {
       // Arrange
-      const goalId = 'goal-1';
+      const goalUuid = 'goal-1';
       const goal: IGoal = {
-        id: goalId,
+        uuid: goalUuid,
         title: '测试目标',
         description: '描述',
         startTime: '2024-01-01',
@@ -174,10 +174,10 @@ describe('Goal IPC Client', () => {
       mockIpcRenderer.invoke.mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await goalIpcClient.getGoalById(goalId);
+      const result = await goalIpcClient.getGoalById(goalUuid);
 
       // Assert
-      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:getById', goalId);
+      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('goal:getById', goalUuid);
       expect(result).toEqual(expectedResponse);
     });
   });
@@ -186,8 +186,8 @@ describe('Goal IPC Client', () => {
     it('应能通过IPC创建关键结果', async () => {
       // Arrange
       const keyResultData: IKeyResult = {
-        id: 'kr-1',
-        goalId: 'goal-1',
+        uuid: 'kr-1',
+        goalUuid: 'goal-1',
         title: '关键结果1',
         description: 'KR描述',
         targetValue: 100,
@@ -220,7 +220,7 @@ describe('Goal IPC Client', () => {
 
       const expectedResponse = {
         success: true,
-        data: { ...updateData, id: keyResultId }
+        data: { ...updateData, uuid: keyResultId }
       };
 
       mockIpcRenderer.invoke.mockResolvedValue(expectedResponse);
@@ -256,8 +256,8 @@ describe('Goal IPC Client', () => {
     it('应能通过IPC创建记录', async () => {
       // Arrange
       const recordData: IRecord = {
-        id: 'record-1',
-        goalId: 'goal-1',
+        uuid: 'record-1',
+        goalUuid: 'goal-1',
         keyResultId: 'kr-1',
         value: 10,
         description: '测试记录',
@@ -283,11 +283,11 @@ describe('Goal IPC Client', () => {
 
     it('应能通过IPC获取目标的记录', async () => {
       // Arrange
-      const goalId = 'goal-1';
+      const goalUuid = 'goal-1';
       const records: IRecord[] = [
         {
-          id: 'record-1',
-          goalId: goalId,
+          uuid: 'record-1',
+          goalUuid: goalUuid,
           keyResultId: 'kr-1',
           value: 10,
           description: '记录1',
@@ -305,10 +305,10 @@ describe('Goal IPC Client', () => {
       mockIpcRenderer.invoke.mockResolvedValue(expectedResponse);
 
       // Act
-      const result = await goalIpcClient.getRecordsByGoalId(goalId);
+      const result = await goalIpcClient.getRecordsBygoalUuid(goalUuid);
 
       // Assert
-      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('record:getByGoalId', goalId);
+      expect(mockIpcRenderer.invoke).toHaveBeenCalledWith('record:getBygoalUuid', goalUuid);
       expect(result).toEqual(expectedResponse);
     });
 
@@ -335,7 +335,7 @@ describe('Goal IPC Client', () => {
     it('应能通过IPC创建目录', async () => {
       // Arrange
       const dirData: IGoalDir = {
-        id: 'dir-1',
+        uuid: 'dir-1',
         name: '测试目录',
         description: '目录描述',
         parentId: null,
@@ -363,7 +363,7 @@ describe('Goal IPC Client', () => {
       // Arrange
       const dirs: IGoalDir[] = [
         {
-          id: 'dir-1',
+          uuid: 'dir-1',
           name: '目录1',
           description: '描述1',
           parentId: null,
@@ -393,9 +393,9 @@ describe('Goal IPC Client', () => {
     it('应能通过IPC获取所有目标数据', async () => {
       // Arrange
       const allData = {
-        goals: [{ id: 'goal-1', title: '目标1' }] as IGoal[],
-        records: [{ id: 'record-1', goalId: 'goal-1' }] as IRecord[],
-        goalDirs: [{ id: 'dir-1', name: '目录1' }] as IGoalDir[]
+        goals: [{ uuid: 'goal-1', title: '目标1' }] as IGoal[],
+        records: [{ uuid: 'record-1', goalUuid: 'goal-1' }] as IRecord[],
+        goalDirs: [{ uuid: 'dir-1', name: '目录1' }] as IGoalDir[]
       };
 
       const expectedResponse = {
@@ -417,7 +417,7 @@ describe('Goal IPC Client', () => {
       // Arrange
       const goals: IGoal[] = [
         {
-          id: 'goal-1',
+          uuid: 'goal-1',
           title: '目标1',
           description: '描述1',
           startTime: '2024-01-01',
@@ -475,7 +475,7 @@ describe('Goal IPC Client', () => {
     it('应正确序列化复杂对象', async () => {
       // Arrange
       const complexGoal: IGoal = {
-        id: 'complex-goal',
+        uuid: 'complex-goal',
         title: '复杂目标',
         description: '包含关键结果的目标',
         startTime: '2024-01-01',
@@ -487,8 +487,8 @@ describe('Goal IPC Client', () => {
         tags: ['tag1', 'tag2'],
         keyResults: [
           {
-            id: 'kr-1',
-            goalId: 'complex-goal',
+            uuid: 'kr-1',
+            goalUuid: 'complex-goal',
             title: '关键结果1',
             description: '描述',
             targetValue: 100,

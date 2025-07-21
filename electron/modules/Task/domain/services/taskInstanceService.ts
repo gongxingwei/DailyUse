@@ -35,7 +35,7 @@ export class TaskInstanceService {
     return TaskInstance.fromTemplate(
       instanceId,
       {
-        id: taskTemplate.id,
+        uuid: taskTemplate.uuid,
         title: customOptions?.title || taskTemplate.title,
         description: customOptions?.description || taskTemplate.description,
         timeConfig: taskTemplate.timeConfig,
@@ -176,7 +176,7 @@ export class TaskInstanceService {
     newTaskInstance: TaskInstance
   ): TaskInstance[] {
     return taskInstances.filter(taskInstance => {
-      if (taskInstance.id === newTaskInstance.id) return false;
+      if (taskInstance.uuid === newTaskInstance.uuid) return false;
       if (taskInstance.status === 'completed' || taskInstance.status === 'cancelled') return false;
 
       return this.hasTimeOverlap(taskInstance, newTaskInstance);

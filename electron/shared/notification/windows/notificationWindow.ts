@@ -18,22 +18,22 @@ export class NotificationWindowManager {
    */
   createWindow(options: NotificationWindow): BrowserWindow {
     // 如果窗口已存在，先关闭
-    this.closeWindow(options.id);
+    this.closeWindow(options.uuid);
 
     const position = this.calculatePosition();
     const window = this.buildWindow(position);
     
-    this.setupWindowEvents(window, options.id);
-    this.windows.set(options.id, window);
-    console.log('NotificationWindowManager - Window created:', options.id);
+    this.setupWindowEvents(window, options.uuid);
+    this.windows.set(options.uuid, window);
+    console.log('NotificationWindowManager - Window created:', options.uuid);
     return window;
   }
 
   /**
    * 关闭指定窗口
    */
-  closeWindow(id: string): boolean {
-    const window = this.windows.get(id);
+  closeWindow(uuid: string): boolean {
+    const window = this.windows.get(uuid);
     if (window && !window.isDestroyed()) {
       window.close();
       return true;
@@ -44,8 +44,8 @@ export class NotificationWindowManager {
   /**
    * 获取窗口
    */
-  getWindow(id: string): BrowserWindow | undefined {
-    return this.windows.get(id);
+  getWindow(uuid: string): BrowserWindow | undefined {
+    return this.windows.get(uuid);
   }
 
   /**
@@ -97,7 +97,7 @@ export class NotificationWindowManager {
   /**
    * 设置窗口事件
    */
-  private setupWindowEvents(window: BrowserWindow, id: string): void {
+  private setupWindowEvents(window: BrowserWindow, uuid: string): void {
     // CSP 设置
     window.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       callback({
@@ -112,7 +112,7 @@ export class NotificationWindowManager {
 
     // 窗口关闭事件
     window.on('closed', () => {
-      this.windows.delete(id);
+      this.windows.delete(uuid);
       this.reorderWindows();
     });
   }
@@ -137,7 +137,7 @@ export class NotificationWindowManager {
    */
   buildNotificationUrl(options: NotificationWindow): string {
     const queryParams = new URLSearchParams({
-      id: options.id,
+      uuid: options.uuid,
       title: options.title,
       body: options.body,
       importance: options.importance

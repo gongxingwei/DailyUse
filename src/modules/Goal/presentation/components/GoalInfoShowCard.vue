@@ -81,9 +81,9 @@
           <div class="key-results-horizontal">
             <KeyResultCard 
               v-for="keyResult in goal.keyResults" 
-              :key="keyResult.id"
+              :key="keyResult.uuid"
               :keyResult="keyResult" 
-              :goalId="goal.id"
+              :goalUuid="goal.uuid"
               class="key-result-item"
             />
           </div>
@@ -108,15 +108,15 @@ const router = useRouter();
 const goalStore = useGoalStore();
 
 const goalProgress = computed(() => {
-  return goalStore.getGoalProgress(props.goal.id) || 0;
+  return goalStore.getGoalProgress(props.goal.uuid) || 0;
 });
 
 const todayProgress = computed(() => {
-  return goalStore.getTodayGoalProgress(props.goal.id) || 0;
+  return goalStore.getTodayGoalProgress(props.goal.uuid) || 0;
 });
 
 const navigateToGoalInfo = () => {
-  router.push({ name: 'goal-info', params: { goalId: props.goal.id } });
+  router.push({ name: 'goal-info', params: { goalUuid: props.goal.uuid } });
 };
 </script>
 

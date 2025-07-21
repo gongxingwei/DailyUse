@@ -3,6 +3,3 @@ export { reminderScheduleService } from "./application/services/reminderSchedule
 
 // tests
 export { test as reminderScheduleServiceTest } from "./application/test/reminderScheduleServiceTest";
-
-// types
-export * from "./domain/types";

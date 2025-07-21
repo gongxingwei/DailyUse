@@ -1,7 +1,7 @@
 
 
 export interface IRepository {
-    id: string;
+    uuid: string;
     name: string;
     path: string;
     description?: string;

@@ -36,7 +36,7 @@ describe('TaskDomainApplicationService', () => {
     it('成功创建时应同步状态', async () => {
       // Arrange
       const mockTemplate: ITaskTemplate = {
-        id: 'test-template-1',
+        uuid: 'test-template-1',
         title: '测试模板',
         description: '测试描述',
         // ... 其他必要字段
@@ -64,7 +64,7 @@ describe('TaskDomainApplicationService', () => {
     it('创建失败时不应同步状态', async () => {
       // Arrange
       const mockTemplate: ITaskTemplate = {
-        id: 'test-template-1',
+        uuid: 'test-template-1',
         title: '测试模板',
       } as ITaskTemplate;
 

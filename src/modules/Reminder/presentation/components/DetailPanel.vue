@@ -251,19 +251,19 @@ const getTemplateName = (templateId: string) => {
 
 const onTemplateToggle = () => {
   if (props.selectedItem?.type === 'template') {
-    emit('update:template', props.selectedItem.id, templateEnabled.value);
+    emit('update:template', props.selectedItem.uuid, templateEnabled.value);
   }
 };
 
 const onGroupToggle = () => {
   if (props.selectedItem?.type === 'group') {
-    emit('update:group', props.selectedItem.id, groupEnabled.value, groupControlsChildren.value);
+    emit('update:group', props.selectedItem.uuid, groupEnabled.value, groupControlsChildren.value);
   }
 };
 
 const onGroupControlToggle = () => {
   if (props.selectedItem?.type === 'group') {
-    emit('update:group', props.selectedItem.id, groupEnabled.value, groupControlsChildren.value);
+    emit('update:group', props.selectedItem.uuid, groupEnabled.value, groupControlsChildren.value);
   }
 };
 

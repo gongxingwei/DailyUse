@@ -11,7 +11,7 @@
 
     <v-card 
       v-for="(alert, index) in localAlerts" 
-      :key="alert.id"
+      :key="alert.uuid"
       class="mb-2" 
       variant="outlined"
     >
@@ -243,7 +243,7 @@ const handleAbsoluteTimeChange = (timeValue: string, alertIndex: number) => {
 
 const addAlert = () => {
   const newAlert: ReminderAlert = {
-    id: uuidv4(),
+    uuid: uuidv4(),
     timing: {
       type: 'relative' as const,
       minutesBefore: 15,

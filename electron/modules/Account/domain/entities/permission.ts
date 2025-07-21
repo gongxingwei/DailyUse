@@ -10,13 +10,13 @@ export class Permission {
   private _module: string; // 所属模块
 
   constructor(
-    id: string,
+    uuid: string,
     code: string,
     name: string,
     description: string,
     module: string
   ) {
-    this._id = id;
+    this._uuid = id;
     this._code = code;
     this._name = name;
     this._description = description;
@@ -24,7 +24,7 @@ export class Permission {
   }
 
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
   get code(): string {

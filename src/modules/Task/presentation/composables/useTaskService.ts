@@ -126,7 +126,7 @@ export function useTaskService() {
       }
       
       let result;
-      if (isEditMode.value && taskTemplateBeingEdited.id) {
+      if (isEditMode.value && taskTemplateBeingEdited.uuid) {
         // 更新现有模板 - 使用深度序列化确保数据可传输
         const templateDto = JSON.parse(JSON.stringify(taskTemplateBeingEdited.toDTO()));
         result = await getTaskService().updateTaskTemplate(templateDto);
@@ -170,7 +170,7 @@ export function useTaskService() {
   // 删除任务模板
   const handleDeleteTaskTemplate = async (template: TaskTemplate) => {
     try {
-      const result = await getTaskService().deleteTaskTemplate(template.id);
+      const result = await getTaskService().deleteTaskTemplate(template.uuid);
       
       if (result.success) {
         showSnackbar(result.message || '删除任务模板成功', 'success', 5000);
@@ -351,7 +351,7 @@ export function useTaskService() {
   };
 
   // 创建任务实例（从模板创建）
-  const createTaskInstanceFromTemplate = async (_templateId: string, _scheduleDate?: Date) => {
+  const createTaskInstanceFromTemplate = async (_templateUuid: string, _scheduleDate?: Date) => {
     try {
       showSnackbar('暂不支持直接创建任务实例，请联系开发者完善此功能', 'warning');
       return null;
@@ -369,7 +369,7 @@ export function useTaskService() {
   const batchCompleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => getTaskService().completeTaskInstance(id))
+        taskIds.map(id => getTaskService().completeTaskInstance(uuid))
       );
       
       const successCount = results.filter(r => r.success).length;
@@ -402,7 +402,7 @@ export function useTaskService() {
   const batchDeleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => getTaskService().deleteTaskInstance(id))
+        taskIds.map(id => getTaskService().deleteTaskInstance(uuid))
       );
       
       const successCount = results.filter((r: any) => r.success).length;

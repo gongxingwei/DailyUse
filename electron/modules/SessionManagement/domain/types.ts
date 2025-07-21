@@ -7,8 +7,8 @@ export enum SessionStatus {
 }
 
 export interface UserSession {
-  id: string;
-  accountId: string;
+  uuid: string;
+  accountUuid: string;
   username: string;
   accountType: string;
   token?: string;

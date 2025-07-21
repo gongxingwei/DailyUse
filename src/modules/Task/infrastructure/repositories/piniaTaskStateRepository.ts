@@ -26,9 +26,9 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   async addTaskTemplate(template: ITaskTemplate): Promise<void> {
     try {
       await this.taskStore.addTaskTemplate(template);
-      console.log(`✅ [StateRepo] 添加任务模板到状态: ${template.id}`);
+      console.log(`✅ [StateRepo] 添加任务模板到状态: ${template.uuid}`);
     } catch (error) {
-      console.error(`❌ [StateRepo] 添加任务模板失败: ${template.id}`, error);
+      console.error(`❌ [StateRepo] 添加任务模板失败: ${template.uuid}`, error);
       throw error;
     }
   }
@@ -36,9 +36,9 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   async updateTaskTemplate(template: ITaskTemplate): Promise<void> {
     try {
       await this.taskStore.updateTaskTemplate(template);
-      console.log(`✅ [StateRepo] 更新任务模板状态: ${template.id}`);
+      console.log(`✅ [StateRepo] 更新任务模板状态: ${template.uuid}`);
     } catch (error) {
-      console.error(`❌ [StateRepo] 更新任务模板失败: ${template.id}`, error);
+      console.error(`❌ [StateRepo] 更新任务模板失败: ${template.uuid}`, error);
       throw error;
     }
   }
@@ -88,9 +88,9 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   async addTaskInstance(instance: ITaskInstance): Promise<void> {
     try {
       await this.taskStore.addTaskInstance(instance);
-      console.log(`✅ [StateRepo] 添加任务实例到状态: ${instance.id}`);
+      console.log(`✅ [StateRepo] 添加任务实例到状态: ${instance.uuid}`);
     } catch (error) {
-      console.error(`❌ [StateRepo] 添加任务实例失败: ${instance.id}`, error);
+      console.error(`❌ [StateRepo] 添加任务实例失败: ${instance.uuid}`, error);
       throw error;
     }
   }
@@ -98,9 +98,9 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
   async updateTaskInstance(instance: ITaskInstance): Promise<void> {
     try {
       await this.taskStore.updateTaskInstance(instance);
-      console.log(`✅ [StateRepo] 更新任务实例状态: ${instance.id}`);
+      console.log(`✅ [StateRepo] 更新任务实例状态: ${instance.uuid}`);
     } catch (error) {
-      console.error(`❌ [StateRepo] 更新任务实例失败: ${instance.id}`, error);
+      console.error(`❌ [StateRepo] 更新任务实例失败: ${instance.uuid}`, error);
       throw error;
     }
   }

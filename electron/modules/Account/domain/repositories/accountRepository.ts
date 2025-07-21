@@ -9,11 +9,11 @@ import { Permission } from "../entities/permission";
 export interface IAccountRepository {
   // 账号基本操作
   save(account: Account): Promise<void>;
-  findById(id: string): Promise<Account | null>;
+  findById(uuid: string): Promise<Account | null>;
   findByUsername(username: string): Promise<Account | null>;
   findByEmail(email: string): Promise<Account | null>;
   findByPhone(phone: string): Promise<Account | null>;
-  delete(id: string): Promise<void>;
+  delete(uuid: string): Promise<void>;
   
   // 查询操作
   findAll(): Promise<Account[]>;
@@ -31,9 +31,9 @@ export interface IAccountRepository {
  */
 export interface IUserRepository {
   save(user: User, account_uuid: string): Promise<void>;
-  findById(id: string): Promise<User | null>;
-  findByAccountId(accountId: string): Promise<User | null>;
-  delete(id: string): Promise<void>;
+  findById(uuid: string): Promise<User | null>;
+  findByAccountUuid(accountUuid: string): Promise<User | null>;
+  delete(uuid: string): Promise<void>;
   findAll(): Promise<User[]>;
   update(user: User): Promise<void>;
 }
@@ -43,9 +43,9 @@ export interface IUserRepository {
  */
 export interface IRoleRepository {
   save(role: Role): Promise<void>;
-  findById(id: string): Promise<Role | null>;
+  findById(uuid: string): Promise<Role | null>;
   findByName(name: string): Promise<Role | null>;
-  delete(id: string): Promise<void>;
+  delete(uuid: string): Promise<void>;
   findAll(): Promise<Role[]>;
   findByPermission(permissionId: string): Promise<Role[]>;
 }
@@ -55,9 +55,9 @@ export interface IRoleRepository {
  */
 export interface IPermissionRepository {
   save(permission: Permission): Promise<void>;
-  findById(id: string): Promise<Permission | null>;
+  findById(uuid: string): Promise<Permission | null>;
   findByCode(code: string): Promise<Permission | null>;
-  delete(id: string): Promise<void>;
+  delete(uuid: string): Promise<void>;
   findAll(): Promise<Permission[]>;
   findByModule(module: string): Promise<Permission[]>;
 }

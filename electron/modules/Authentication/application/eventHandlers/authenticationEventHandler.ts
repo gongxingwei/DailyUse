@@ -33,7 +33,7 @@ export class AuthenticationEventHandler {
       console.log('🔐 [Authentication] 处理账号注册事件:', event.payload.username);
 
       // 从事件中获取注册信息
-      const { accountId, username, password, requiresAuthentication } = event.payload;
+      const { accountUuid, username, password, requiresAuthentication } = event.payload;
 
       if (!requiresAuthentication) {
         console.log('⏭️ [Authentication] 账号不需要认证凭证，跳过处理');
@@ -43,7 +43,7 @@ export class AuthenticationEventHandler {
         throw new Error('密码不能为空');
       }
       // 检查是否已存在认证凭证
-      const existingCredential = await this.authCredentialRepository.findByAccountId(accountId);
+      const existingCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
       if (existingCredential) {
         console.log('⚠️ [Authentication] 认证凭证已存在，跳过创建');
         return;
@@ -62,7 +62,7 @@ export class AuthenticationEventHandler {
       // 创建认证凭证聚合根
       const authCredential = new AuthCredential(
         generateUUID(),
-        accountId,
+        accountUuid,
         hashedPassword
       );
 
@@ -70,9 +70,9 @@ export class AuthenticationEventHandler {
       await this.authCredentialRepository.save(authCredential);
 
       console.log('✅ [Authentication] 认证凭证创建成功:', {
-        accountId,
+        accountUuid,
         username,
-        credentialId: authCredential.id
+        credentialId: authCredential.uuid
       });
 
       // 发布认证凭证创建事件

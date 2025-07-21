@@ -27,7 +27,7 @@
 ```typescript
 // electron/shared/types/dtos.ts
 export interface AccountDTO {
-  id: string;
+  uuid: string;
   username: string;
   email?: string;
   phone?: string;
@@ -39,8 +39,8 @@ export interface AccountDTO {
 }
 
 export interface SessionLogDTO {
-  id: string;
-  accountId: string;
+  uuid: string;
+  accountUuid: string;
   sessionId: string;
   operationType: string;
   ipLocation: IPLocationDTO;
@@ -67,16 +67,16 @@ export interface IPLocationDTO {
 }
 
 export interface AuthCredentialDTO {
-  id: string;
-  accountId: string;
+  uuid: string;
+  accountUuid: string;
   algorithm: string;
   createdAt: number;
   lastAuthAt?: number;
 }
 
 export interface SessionDTO {
-  id: string;
-  accountId: string;
+  uuid: string;
+  accountUuid: string;
   token: string;
   isActive: boolean;
   expiresAt: number;
@@ -151,8 +151,8 @@ export class AccountApi {
     throw new Error(response.message);
   }
 
-  static async updateAccount(id: string, data: any): Promise<AccountDTO> {
-    const response = await window.electronAPI.invoke('account:update', { id, data });
+  static async updateAccount(uuid: string, data: any): Promise<AccountDTO> {
+    const response = await window.electronAPI.invoke('account:update', { uuid, data });
     if (response.success) {
       return response.data;
     }

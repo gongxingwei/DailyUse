@@ -13,14 +13,14 @@ export class User extends Entity {
   private _socialAccounts: Map<string, string>; // 社交账号映射
 
   constructor(
-    id: string,
+    uuid: string,
     firstName: string | null,
     lastName: string | null,
     sex: string | null,
     avatar: string | null,
     bio: string | null
   ) {
-    super(id);
+    super(uuid);
     this._firstName = firstName;
     this._lastName = lastName;
     this._sex = sex;
@@ -30,7 +30,7 @@ export class User extends Entity {
   }
 
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
   get firstName(): string | null {
@@ -87,8 +87,8 @@ export class User extends Entity {
   /**
    * 绑定社交账号
    */
-  addSocialAccount(platform: string, accountId: string): void {
-    this._socialAccounts.set(platform, accountId);
+  addSocialAccount(platform: string, accountUuid: string): void {
+    this._socialAccounts.set(platform, accountUuid);
   }
 
   /**
@@ -107,7 +107,7 @@ export class User extends Entity {
 
   toDTO(): UserDTO {
     return {
-      id: this.id,
+      uuid: this.uuid,
       firstName: this.firstName || null,
       lastName: this.lastName || null,
       sex: this.sex ||  null,
@@ -119,7 +119,7 @@ export class User extends Entity {
 
   static fromDTO(dto: UserDTO): User { 
     const user = new User(
-      dto.id,
+      dto.uuid,
       dto.firstName || null,
       dto.lastName || null,
       dto.sex || null,

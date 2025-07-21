@@ -2,12 +2,11 @@ import type { TaskTemplate } from '../aggregates/taskTemplate';
 import type { TResponse } from '@/shared/types/response';
 
 export interface ITaskTemplateRepository {
-  setCurrentUser(username: string): void;
-  save(template: TaskTemplate): Promise<TResponse<TaskTemplate>>;
-  saveAll(templates: TaskTemplate[]): Promise<TResponse<TaskTemplate[]>>;
-  findById(id: string): Promise<TResponse<TaskTemplate>>;
-  findAll(): Promise<TResponse<TaskTemplate[]>>;
-  delete(id: string): Promise<TResponse<boolean>>;
-  update(template: TaskTemplate): Promise<TResponse<TaskTemplate>>;
-  findByKeyResult(goalId: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>>;
+  save(accountUuid: string, template: TaskTemplate): Promise<TResponse<TaskTemplate>>;
+  saveAll(accountUuid: string, templates: TaskTemplate[]): Promise<TResponse<TaskTemplate[]>>;
+  findById(accountUuid: string, uuid: string): Promise<TResponse<TaskTemplate>>;
+  findAll(accountUuid: string): Promise<TResponse<TaskTemplate[]>>;
+  delete(accountUuid: string, uuid: string): Promise<TResponse<boolean>>;
+  update(accountUuid: string, template: TaskTemplate): Promise<TResponse<TaskTemplate>>;
+  findByKeyResult(accountUuid: string, goalUuid: string, keyResultId: string): Promise<TResponse<TaskTemplate[]>>;
 }

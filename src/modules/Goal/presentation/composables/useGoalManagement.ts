@@ -1,6 +1,6 @@
 import { ref, computed } from "vue";
 import { useRouter } from "vue-router";
-import { createGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
+import { getGoalDomainApplicationService } from "../../application/services/goalDomainApplicationService";
 import { useGoalStore } from "../stores/goalStore";
 import type { IGoal } from "../../domain/types/goal";
 import { Goal } from "../../domain/entities/goal";
@@ -16,7 +16,7 @@ export function useGoalManagement() {
   const goalStore = useGoalStore();
 
   // 使用领域应用服务
-  const goalDomainService = createGoalDomainApplicationService();
+  const goalDomainService = getGoalDomainApplicationService();
 
   // 选择的目标文件夹下的目标
   const selectedDirId = ref<string>("all");
@@ -194,8 +194,8 @@ export function useGoalManagement() {
   const showDeleteConfirmDialog = ref(false);
   const goalToDelete = ref<string>("");
 
-  const startDeleteGoal = (goalId: string) => {
-    goalToDelete.value = goalId;
+  const startDeleteGoal = (goalUuid: string) => {
+    goalToDelete.value = goalUuid;
     showDeleteConfirmDialog.value = true;
   };
 

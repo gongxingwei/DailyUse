@@ -3,10 +3,10 @@
     <button 
       v-for="item in store.activityBarItems" 
       class="function-icon"
-      :class="{ 'active': store.activeActivityBarItemId === item.id }"
-      :key="item.id"
+      :class="{ 'active': store.activeActivityBarItemId === item.uuid }"
+      :key="item.uuid"
       :title="item.title"
-      @click="store.setActiveActivityBarItemId(item.id)"
+      @click="store.setActiveActivityBarItemId(item.uuid)"
     >
       <v-icon>{{ item.icon }}</v-icon>
     </button>

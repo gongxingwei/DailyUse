@@ -9,7 +9,7 @@ import { RiskLevel } from "../aggregates/sessionLog";
  */
 export class AuditTrail {
   private _id: string;
-  private _accountId: string;
+  private _accountUuUuid: string;
   private _operationType: string;
   private _description: string;
   private _riskLevel: RiskLevel;
@@ -21,8 +21,8 @@ export class AuditTrail {
   private _alertLevel?: 'info' | 'warning' | 'error' | 'critical';
 
   constructor(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     operationType: string,
     description: string,
     riskLevel: RiskLevel,
@@ -30,8 +30,8 @@ export class AuditTrail {
     userAgent?: string,
     metadata: Record<string, any> = {}
   ) {
-    this._id = id;
-    this._accountId = accountId;
+    this._uuid = id;
+    this._accountUuUuid = accountUuid;
     this._operationType = operationType;
     this._description = description;
     this._riskLevel = riskLevel;
@@ -47,11 +47,11 @@ export class AuditTrail {
 
   // Getters
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get operationType(): string {
@@ -145,7 +145,7 @@ export class AuditTrail {
     const location = this._ipLocation.getLocationDescription();
     const time = TimeUtils.format(this._timestamp, 'YYYY-MM-DD HH:mm:ss');
     
-    return `[${this._riskLevel.toUpperCase()}] ${this._description} - Account: ${this._accountId}, Location: ${location}, Time: ${time}`;
+    return `[${this._riskLevel.toUpperCase()}] ${this._description} - Account: ${this._accountUuUuid}, Location: ${location}, Time: ${time}`;
   }
 
   /**
@@ -243,8 +243,8 @@ export class AuditTrail {
    * 转换为DTO对象
    */
   toDTO(): {
-    id: string;
-    accountId: string;
+    uuid: string;
+    accountUuid: string;
     operationType: string;
     description: string;
     riskLevel: RiskLevel;
@@ -259,8 +259,8 @@ export class AuditTrail {
     isComplianceEvent: boolean;
   } {
     return {
-      id: this._id,
-      accountId: this._accountId,
+      uuid: this._uuid,
+      accountUuid: this._accountUuUuid,
       operationType: this._operationType,
       description: this._description,
       riskLevel: this._riskLevel,
@@ -280,9 +280,9 @@ export class AuditTrail {
    * 从数据库行创建 AuditTrail 对象
    */
   static fromDatabase(row: {
-    id: string;
-    account_id: string;
-    session_log_id?: string;
+    uuid: string;
+    account_uuid: string;
+    session_log_Uuid?: string;
     operation_type: string;
     description: string;
     risk_level: string;
@@ -314,8 +314,8 @@ export class AuditTrail {
     const metadata = row.metadata ? JSON.parse(row.metadata) : {};
     
     const auditTrail = new AuditTrail(
-      row.id,
-      row.account_id,
+      row.uuid,
+      row.account_uuid,
       row.operation_type,
       row.description,
       row.risk_level as RiskLevel,
@@ -336,9 +336,9 @@ export class AuditTrail {
    * 转换为数据库格式
    */
   toDatabaseFormat(): {
-    id: string;
-    account_id: string;
-    session_log_id?: string;
+    uuid: string;
+    account_uuid: string;
+    session_log_Uuid?: string;
     operation_type: string;
     description: string;
     risk_level: string;
@@ -357,9 +357,9 @@ export class AuditTrail {
     timestamp: number;
   } {
     return {
-      id: this._id,
-      account_id: this._accountId,
-      session_log_id: undefined, // 需要在保存时设置关联的session_log_id
+      uuid: this._uuid,
+      account_uuid: this._accountUuUuid,
+      session_log_Uuid: undefined, // 需要在保存时设置关联的session_log_Uuid
       operation_type: this._operationType,
       description: this._description,
       risk_level: this._riskLevel,

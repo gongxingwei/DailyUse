@@ -22,7 +22,7 @@ onMounted(() => {
 });
 
 const handleAction = (action: any) => {
-  window.shared.send('notification-action', notificationData.value?.id, action);
+  window.shared.send('notification-action', notificationData.value?.uuid, action);
 };
 
 const handleClose = () => {

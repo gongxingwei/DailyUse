@@ -16,8 +16,8 @@ class MockDatabase {
         // Mock get implementation
         if (sql.includes('WHERE username = ?') && param === 'testuser') {
           return {
-            id: 'auth-cred-1',
-            account_id: 'test-user-1',
+            uuid: 'auth-cred-1',
+            account_uuid: 'test-user-1',
             password_hash: 'mock-hash',
             password_salt: 'mock-salt',
             password_algorithm: 'bcrypt',
@@ -68,8 +68,8 @@ describe('Authentication Login Integration', () => {
     );
     
     expect(authCredential).toBeDefined();
-    expect(authCredential.id).toBe('auth-cred-1');
-    expect(authCredential.accountId).toBe('test-user-1');
+    expect(authCredential.uuid).toBe('auth-cred-1');
+    expect(authCredential.accountUuid).toBe('test-user-1');
     expect(authCredential.verifyPassword('TestPassword123!')).toBe(true);
   });
 
@@ -103,8 +103,8 @@ describe('Authentication Login Integration', () => {
     );
     
     expect(authCredential).toBeDefined();
-    expect(authCredential.id).toBe('auth-cred-1');
-    expect(authCredential.accountId).toBe('test-user-1');
+    expect(authCredential.uuid).toBe('auth-cred-1');
+    expect(authCredential.accountUuid).toBe('test-user-1');
   });
 
   test('should handle repository save operation', async () => {
@@ -123,7 +123,7 @@ describe('Authentication Login Integration', () => {
     const credential = await authCredentialRepository.findByUsername('testuser');
     expect(credential).toBeDefined();
     if (credential) {
-      expect(credential.accountId).toBe('test-user-1');
+      expect(credential.accountUuid).toBe('test-user-1');
     }
   });
 });

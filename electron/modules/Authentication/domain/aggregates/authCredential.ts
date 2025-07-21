@@ -13,10 +13,10 @@ import { MFADevice } from "../entities/mfaDevice";
  * - 验证用户身份（登录、OAuth、MFA）
  * - 管理会话（Session）和凭证（Token、密码）
  * - 实现"记住我"等快速登录功能
- * - 不直接引用Account对象，通过AccountId关联
+ * - 不直接引用Account对象，通过accountUuid关联
  */
 export class AuthCredential extends AggregateRoot {
-  private _accountId: string; // 关联的账号ID
+  private _accountUuUuid: string; // 关联的账号ID
   private _password: Password;
   private _sessions: Map<string, Session>; // 活跃会话
   private _mfaDevices: Map<string, MFADevice>; // MFA设备
@@ -31,12 +31,12 @@ export class AuthCredential extends AggregateRoot {
 
 
   constructor(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     password: Password
   ) {
-    super(id);
-    this._accountId = accountId;
+    super(uuid);
+    this._accountUuUuid = accountUuid;
     this._password = password;
     this._sessions = new Map();
     this._mfaDevices = new Map();
@@ -50,8 +50,8 @@ export class AuthCredential extends AggregateRoot {
   }
 
   // Getters
-  get accountId(): string {
-    return this._accountId;
+  get accountUuid(): string {
+    return this._accountUuUuid;
   }
 
   get createdAt(): DateTime {
@@ -112,31 +112,31 @@ export class AuthCredential extends AggregateRoot {
       this._failedAttempts = 0;
       this._lastAuthAt = TimeUtils.now();
       this._updatedAt = this._lastAuthAt;
-      const accessToken = Token.createAccessToken(this.id, 9999);
+      const accessToken = Token.createAccessToken(this.accountUuid, 9999);
       token = accessToken;
       this._tokens.set('access_token', accessToken)
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'PasswordVerified',
         occurredOn: new Date(),
-        payload: { accountId: this._accountId, timestamp: this._lastAuthAt }
+        payload: { accountUuid: this._accountUuUuid, timestamp: this._lastAuthAt }
       });
     } else {
       this._failedAttempts++;
       if (this._failedAttempts >= this._maxAttempts) {
         this._lockedUntil = TimeUtils.add(TimeUtils.now(), 5, "minutes");
         this.addDomainEvent({
-          aggregateId: this.id,
+          aggregateId: this.uuid,
           eventType: 'AccountLocked',
           occurredOn: new Date(),
-          payload: { accountId: this._accountId, timestamp: TimeUtils.now() }
+          payload: { accountUuid: this._accountUuUuid, timestamp: TimeUtils.now() }
         })
       }
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'PasswordVerificationFailed',
         occurredOn: new Date(),
-        payload: { accountId: this._accountId, timestamp: TimeUtils.now() }
+        payload: { accountUuid: this._accountUuUuid, timestamp: TimeUtils.now() }
       });
     }
     
@@ -165,10 +165,10 @@ export class AuthCredential extends AggregateRoot {
     this.terminateAllSessions();
     
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'PasswordChanged',
       occurredOn: new Date(),
-      payload: { accountId: this._accountId, timestamp: this._updatedAt }
+      payload: { accountUuid: this._accountUuUuid, timestamp: this._updatedAt }
     });
   }
 
@@ -178,23 +178,23 @@ export class AuthCredential extends AggregateRoot {
   createSession(deviceInfo: string, ipAddress: string, userAgent?: string): Session {
     const session = new Session(
       this.generateSessionId(),
-      this._accountId,
+      this._accountUuUuid,
       deviceInfo,
       ipAddress,
       userAgent
     );
     
-    this._sessions.set(session.id, session);
+    this._sessions.set(session.uuid, session);
     this._lastAuthAt = TimeUtils.now();
     this._updatedAt = this._lastAuthAt;
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'SessionCreated',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId, 
-        sessionId: session.id,
+        accountUuid: this._accountUuUuid, 
+        sessionId: session.uuid,
         deviceInfo,
         ipAddress,
         timestamp: this._lastAuthAt 
@@ -214,11 +214,11 @@ export class AuthCredential extends AggregateRoot {
       this._updatedAt = TimeUtils.now();
 
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'SessionTerminated',
         occurredOn: new Date(),
         payload: { 
-          accountId: this._accountId, 
+          accountUuid: this._accountUuUuid, 
           sessionId: sessionId,
           timestamp: this._updatedAt 
         }
@@ -239,11 +239,11 @@ export class AuthCredential extends AggregateRoot {
     this._updatedAt = TimeUtils.now();
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'AllSessionsTerminated',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId, 
+        accountUuid: this._accountUuUuid, 
         timestamp: this._updatedAt 
       }
     });
@@ -266,16 +266,16 @@ export class AuthCredential extends AggregateRoot {
    * 绑定MFA设备
    */
   bindMFADevice(device: MFADevice): void {
-    this._mfaDevices.set(device.id, device);
+    this._mfaDevices.set(device.uuid, device);
     this._updatedAt = TimeUtils.now();
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'MFADeviceBound',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId, 
-        deviceId: device.id,
+        accountUuid: this._accountUuUuid, 
+        deviceId: device.uuid,
         deviceType: device.type,
         timestamp: this._updatedAt 
       }
@@ -292,11 +292,11 @@ export class AuthCredential extends AggregateRoot {
       this._updatedAt = TimeUtils.now();
 
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'MFADeviceUnbound',
         occurredOn: new Date(),
         payload: { 
-          accountId: this._accountId, 
+          accountUuid: this._accountUuUuid, 
           deviceId: deviceId,
           timestamp: this._updatedAt 
         }
@@ -314,11 +314,11 @@ export class AuthCredential extends AggregateRoot {
       this._updatedAt = this._lastAuthAt;
 
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'MFAVerified',
         occurredOn: new Date(),
         payload: { 
-          accountId: this._accountId, 
+          accountUuid: this._accountUuUuid, 
           deviceId: deviceId,
           timestamp: this._lastAuthAt 
         }
@@ -334,16 +334,16 @@ export class AuthCredential extends AggregateRoot {
    * 创建记住我令牌
    */
   createRememberToken(deviceInfo: string): Token {
-    const token = Token.createRememberToken(this._accountId, deviceInfo);
+    const token = Token.createRememberToken(this._accountUuUuid, deviceInfo);
     this._rememberTokens.set(token.value, token);
     this._updatedAt = TimeUtils.now();
 
     this.addDomainEvent({
-      aggregateId: this.id,
+      aggregateId: this.uuid,
       eventType: 'RememberTokenCreated',
       occurredOn: new Date(),
       payload: { 
-        accountId: this._accountId, 
+        accountUuid: this._accountUuUuid, 
         tokenId: token.value,
         deviceInfo,
         timestamp: this._updatedAt 
@@ -377,11 +377,11 @@ export class AuthCredential extends AggregateRoot {
       this._updatedAt = TimeUtils.now();
 
       this.addDomainEvent({
-        aggregateId: this.id,
+        aggregateId: this.uuid,
         eventType: 'RememberTokenRevoked',
         occurredOn: new Date(),
         payload: { 
-          accountId: this._accountId, 
+          accountUuid: this._accountUuUuid, 
           tokenId: tokenValue,
           timestamp: this._updatedAt 
         }
@@ -447,8 +447,8 @@ export class AuthCredential extends AggregateRoot {
    * 用于仓库层重建对象时设置私有属性
    */
   static restoreFromPersistence(
-    id: string,
-    accountId: string,
+    uuid: string,
+    accountUuid: string,
     passwordHash: string,
     passwordSalt: string,
     passwordAlgorithm: string,
@@ -468,7 +468,7 @@ export class AuthCredential extends AggregateRoot {
       passwordCreatedAt,
       passwordExpiresAt
     );
-    const credential = new AuthCredential(id, accountId, password);
+    const credential = new AuthCredential(uuid, accountUuid, password);
     
     // 设置私有属性
     (credential as any)._createdAt = createdAt;

@@ -35,7 +35,7 @@ export type {
   AccountUpdatedEvent,
   AccountStatusChangedEvent,
   AccountStatusVerificationResponseEvent,
-  AccountIdGetterResponseEvent,
+  AccountUuidGetterResponseEvent,
 } from "./domain/events/accountEvents";
 
 // Account 模块事件处理器

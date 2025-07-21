@@ -20,7 +20,7 @@ const editorGroupStore = useEditorGroupStore()
 
 
 const group = computed(() =>
-    editorGroupStore.editorGroups.find(g => g.id === props.groupId)
+    editorGroupStore.editorGroups.find(g => g.uuid === props.groupId)
 )
 const groupWidth = computed(() => group.value?.width ?? 300)
 
@@ -33,7 +33,7 @@ const editorTabs = computed(() => group.value?.tabs || [])
 const activeTabId = computed(() => group.value?.activeTabId)
 const isPreview = computed(() => activeTab.value?.isPreview || false)
 const activeTab = computed(() =>
-    editorTabs.value.find(t => t.id === activeTabId.value)
+    editorTabs.value.find(t => t.uuid === activeTabId.value)
 )
 
 const closeTab = (tabId: string) => {

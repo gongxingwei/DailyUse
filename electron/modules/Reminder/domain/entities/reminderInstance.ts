@@ -1,12 +1,12 @@
 import { Entity } from "@/shared/domain/entity";
-import type { IReminderInstance } from "../types/index.d.ts";
+import type { IReminderInstance } from "@common/modules/reminder";
 
 import { CronUtils } from "@electron/shared/utils/cronUtils";
 import { ImportanceLevel } from "@/shared/types/importance";
 import { reminderScheduleService } from "../../application/services/reminderScheduleService.ts";
-import { s } from "node_modules/vite/dist/node/types.d-aGj9QkWt";
+
 export class ReminderInstance extends Entity implements IReminderInstance {
-  private _templateId: string;
+  private _templateUuid: string;
   private _templateName: string;
   private _description?: string;
   private _importanceLevel: ImportanceLevel;
@@ -35,11 +35,11 @@ export class ReminderInstance extends Entity implements IReminderInstance {
       popup: boolean;
     },
     reminderSchedules: IReminderInstance["reminderSchedules"],
-    id?: string,
+    uuid?: string,
     description?: string
   ) {
-    super(id || ReminderInstance.generateId());
-    this._templateId = templateId;
+    super(uuid || ReminderInstance.generateId());
+    this._templateUuid = templateId;
     this._templateName = templateName;
     this._description = description;
     this._importanceLevel = importantanceLevel;
@@ -55,11 +55,11 @@ export class ReminderInstance extends Entity implements IReminderInstance {
   }
 
   get id(): string {
-    return this._id;
+    return this._uuid;
   }
 
   get templateId(): string {
-    return this._templateId;
+    return this._templateUuid;
   }
 
   get templateName(): string {
@@ -102,7 +102,7 @@ export class ReminderInstance extends Entity implements IReminderInstance {
         await reminderScheduleService.createReminderScheduleByCron(
           cron,
           {
-            id: this.id,
+            uuid: this.uuid,
             title: this._templateName,
             body: this._description || "无说明",
             importanceLevel: this._importanceLevel,
@@ -113,7 +113,7 @@ export class ReminderInstance extends Entity implements IReminderInstance {
       await reminderScheduleService.createReminderScheduleByRule(
         schedule.time,
         {
-          id: this.id,
+          uuid: this.uuid,
           title: this._templateName,
           body: this._description || "无说明",
           importanceLevel: this._importanceLevel,

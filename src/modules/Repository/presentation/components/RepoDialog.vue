@@ -78,7 +78,7 @@
               关联设置
             </h3>
             <v-select
-              v-model="repoData.relativeGoalId"
+              v-model="repoData.relativegoalUuid"
               :items="availableGoals"
               item-title="title"
               item-value="id"
@@ -150,7 +150,7 @@ const dialogVisible = computed({
 
 const availableGoals = computed(() => {
   return goalStore.goals.map(goal => ({
-    id: goal.id,
+    uuid: goal.uuid,
     title: goal.title,
   }))
 })
@@ -159,7 +159,7 @@ const repoData = ref({
   title: '',
   path: '',
   description: '',
-  relativeGoalId: '',
+  relativegoalUuid: '',
 })
 
 const selectFolder = async () => {
@@ -202,7 +202,7 @@ const closeDialog = () => {
     title: '',
     path: '',
     description: '',
-    relativeGoalId: '',
+    relativegoalUuid: '',
   }
 }
 </script>

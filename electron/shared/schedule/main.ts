@@ -12,7 +12,7 @@ function getValidWindow(): BrowserWindow | null {
 export function setupScheduleHandlers() {
     // 创建定时任务
     ipcMain.handle('create-schedule', async (_event, options: {
-        id: string
+        uuid: string
         cron: string
         task: {
             type: string
@@ -22,8 +22,8 @@ export function setupScheduleHandlers() {
     }) => {
         try {
             // 如果已存在相同ID的任务，先删除
-            if (scheduleJobs.has(options.id)) {
-                scheduleJobs.get(options.id)?.cancel();
+            if (scheduleJobs.has(options.uuid)) {
+                scheduleJobs.get(options.uuid)?.cancel();
             }
 
             // 创建新的定时任务
@@ -33,7 +33,7 @@ export function setupScheduleHandlers() {
                 if (win) {
                     try {
                         win.webContents.send('schedule-triggered', {
-                            id: options.id,
+                            uuid: options.uuid,
                             task: options.task
                         });
                     } catch (error) {
@@ -42,7 +42,7 @@ export function setupScheduleHandlers() {
                 }
             });
 
-            scheduleJobs.set(options.id, job);
+            scheduleJobs.set(options.uuid, job);
             return true;
         } catch (error) {
             console.error('Failed to create schedule:', error);
@@ -51,11 +51,11 @@ export function setupScheduleHandlers() {
     });
 
     // 删除定时任务
-    ipcMain.handle('cancel-schedule', (_event, id: string) => {
-        const job = scheduleJobs.get(id);
+    ipcMain.handle('cancel-schedule', (_event, uuid: string) => {
+        const job = scheduleJobs.get(uuid);
         if (job) {
             job.cancel();
-            scheduleJobs.delete(id);
+            scheduleJobs.delete(uuid);
             return true;
         }
         return false;
@@ -63,7 +63,7 @@ export function setupScheduleHandlers() {
 
     // 修改定时任务
     ipcMain.handle('update-schedule', async (_event, options: {
-        id: string
+        uuid: string
         cron: string
         task: {
             type: string
@@ -73,8 +73,8 @@ export function setupScheduleHandlers() {
     }) => {
         try {
             // 如果已存在相同ID的任务，先删除
-            if (scheduleJobs.has(options.id)) {
-                scheduleJobs.get(options.id)?.cancel();
+            if (scheduleJobs.has(options.uuid)) {
+                scheduleJobs.get(options.uuid)?.cancel();
             }
 
             // 创建新的定时任务
@@ -83,7 +83,7 @@ export function setupScheduleHandlers() {
                 if (win) {
                     try {
                         win.webContents.send('schedule-triggered', {
-                            id: options.id,
+                            uuid: options.uuid,
                             task: options.task
                         });
                     } catch (error) {
@@ -92,7 +92,7 @@ export function setupScheduleHandlers() {
                 }
             });
 
-            scheduleJobs.set(options.id, job);
+            scheduleJobs.set(options.uuid, job);
             return true;
         } catch (error) {
             console.error('Failed to create schedule:', error);

@@ -91,7 +91,7 @@ export class ReminderValidator implements ITemplateValidator {
     const alertName = `第 ${index + 1} 个提醒`;
 
     // 验证ID
-    results.push(ValidationUtils.validateRequired(alert.id, `${alertName}ID`));
+    results.push(ValidationUtils.validateRequired(alert.uuid, `${alertName}ID`));
 
     // 验证提醒类型
     results.push(ValidationUtils.validateEnum(

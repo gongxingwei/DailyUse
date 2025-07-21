@@ -19,13 +19,6 @@ export class ReminderContainer {
     return ReminderContainer.instance;
   }
 
-  setCurrentAccountUuid(accountUuid: string): void {
-    // 设置当前账号 UUID 的逻辑
-    // 这里可以调用相关的仓库方法来设置当前账号
-    this.ReminderTemplateRepository.setCurrentAccountUuid(accountUuid);
-    this.ReminderTemplateGroupRepository.setCurrentAccountUuid(accountUuid);
-  }
-
   getReminderTemplateRepository(): IReminderTemplateRepository {
     return this.ReminderTemplateRepository;
   }

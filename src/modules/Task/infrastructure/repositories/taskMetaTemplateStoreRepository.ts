@@ -43,9 +43,9 @@ export class TaskMetaTemplateStoreRepository implements ITaskMetaTemplateReposit
    * @param id - TaskMetaTemplate的唯一标识符
    * @returns 查找操作的响应结果
    */
-  async findById(id: string): Promise<TResponse<TaskMetaTemplate>> {
+  async findById(uuid: string): Promise<TResponse<TaskMetaTemplate>> {
     try {
-      const metaTemplate = this.store.getMetaTemplateById(id);
+      const metaTemplate = this.store.getMetaTemplateById(uuid);
       
       if (metaTemplate) {
         return {
@@ -56,7 +56,7 @@ export class TaskMetaTemplateStoreRepository implements ITaskMetaTemplateReposit
       } else {
         return {
           success: false,
-          message: `未找到ID为 ${id} 的TaskMetaTemplate`
+          message: `未找到ID为 ${uuid} 的TaskMetaTemplate`
         };
       }
     } catch (error) {
@@ -125,8 +125,8 @@ export class TaskMetaTemplateStoreRepository implements ITaskMetaTemplateReposit
    * @param id - 要删除的TaskMetaTemplate的ID
    * @returns 删除操作的响应结果
    */
-  async delete(id: string): Promise<TResponse<boolean>> {
-    const response = await this.store.deleteMetaTemplateById(id);
+  async delete(uuid: string): Promise<TResponse<boolean>> {
+    const response = await this.store.deleteMetaTemplateById(uuid);
     return {
       success: response.success,
       message: response.message,

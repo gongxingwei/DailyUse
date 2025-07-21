@@ -5,6 +5,7 @@ import {
 } from "../../application/services/accountDeactivationService";
 import { MainAccountApplicationService } from "../../application/services/mainAccountApplicationService";
 import type { AccountRegistrationRequest, AccountDTO } from '../../domain/types/account';
+import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
 
 /**
  * Account 模块的 IPC 处理器
@@ -88,11 +89,18 @@ export class AccountIpcHandler {
     );
     ipcMain.handle(
       'account:get-by-id',
-      async (_event, accountId: string): Promise<TResponse<AccountDTO>> => {
+      withAuth(async (_event, [accountUuid], auth): Promise<TResponse<AccountDTO>> => {
         try {
           await this.ensureInitialized();
           
-          const response = await this.accountApplicationService!.getAccountById(accountId);
+          if (!auth.accountUuid) {
+            return {
+              success: false,
+              message: '未登录或登录已过期，请重新登录',
+            };
+          }
+          
+          const response = await this.accountApplicationService!.getAccountById(accountUuid);
           if (response.success && response.data) {
             console.log('📝 [AccountIpc] 获取账号信息成功');
             const accountDTO = response.data.toDTO();
@@ -115,24 +123,34 @@ export class AccountIpcHandler {
             message: '获取账号信息失败，请稍后重试',
           };
         }
-      }
-    )
+      })
+    );
     // 处理账号注销请求
     ipcMain.handle(
       'account:request-deactivation', 
-      async (_event, request: any): Promise<AccountDeactivationResult> => {
+      withAuth(async (_event, [request], auth): Promise<AccountDeactivationResult> => {
         try {
           await this.ensureInitialized();
+
+          if (!auth.accountUuid) {
+            return {
+              success: false,
+              accountUuid: request.accountUuid,
+              message: '未登录或登录已过期，请重新登录',
+              requiresVerification: false,
+              errorCode: 'PERMISSION_DENIED'
+            };
+          }
           
           console.log('🏠 [AccountIpc] 收到账号注销请求:', {
-            accountId: request.accountId,
+            accountUuid: request.accountUuid,
             requestedBy: request.requestedBy
           });
           
           const result = await this.deactivationService!.requestAccountDeactivation(request);
           
           console.log('📤 [AccountIpc] 账号注销请求处理完成:', {
-            accountId: request.accountId,
+            accountUuid: request.accountUuid,
             success: result.success,
             requiresVerification: result.requiresVerification
           });
@@ -143,13 +161,13 @@ export class AccountIpcHandler {
           
           return {
             success: false,
-            accountId: request.accountId,
+            accountUuid: request.accountUuid,
             message: '账号注销请求处理异常，请稍后重试',
             requiresVerification: false,
             errorCode: 'SYSTEM_ERROR'
           };
         }
-      }
+      })
     );
 
     console.log('✅ [AccountIpc] Account IPC handlers registered');

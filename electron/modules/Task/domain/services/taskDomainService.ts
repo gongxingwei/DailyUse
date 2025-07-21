@@ -18,15 +18,12 @@ import type { ITaskMetaTemplateRepository } from "../repositories/iTaskMetaTempl
 export class TaskDomainService {
   /**
    * 创建任务模板
-   * @param {TaskTemplate} taskTemplate - 任务模板实体
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<TResponse<TaskTemplate>>} 创建响应
    */
   async createTaskTemplate(
     taskTemplate: TaskTemplate,
     taskTemplateRepository: ITaskTemplateRepository,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
     const validation = TaskTemplateValidator.validate(taskTemplate);
     if (!validation.isValid) {
@@ -37,8 +34,8 @@ export class TaskDomainService {
     }
 
     taskTemplate.activate();
-    const response = await taskTemplateRepository.save(taskTemplate);
-    
+    const response = await taskTemplateRepository.save(accountUuid, taskTemplate);
+
     if (!response.success) {
       return {
         success: false,
@@ -48,7 +45,7 @@ export class TaskDomainService {
 
     const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
 
-    const instanceResponses = await taskInstanceRepository.saveAll(initialInstances);
+    const instanceResponses = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
     if (!instanceResponses.success) {
       return {
         success: false,
@@ -61,7 +58,7 @@ export class TaskDomainService {
       if (!reminderResponse.success) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.id} 的提醒创建失败: ${reminderResponse.message}`,
+          message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
         };
       }
     }
@@ -75,15 +72,12 @@ export class TaskDomainService {
 
   /**
    * 更新任务模板
-   * @param {TaskTemplate} taskTemplate - 任务模板实体
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<TResponse<TaskTemplate>>} 更新响应
    */
   async updateTaskTemplate(
     taskTemplate: TaskTemplate,
     taskTemplateRepository: ITaskTemplateRepository,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
     const validation = TaskTemplateValidator.validate(taskTemplate);
     if (!validation.isValid) {
@@ -93,15 +87,15 @@ export class TaskDomainService {
       };
     }
 
-    const oldTemplate = await taskTemplateRepository.findById(taskTemplate.id);
+    const oldTemplate = await taskTemplateRepository.findById(accountUuid, taskTemplate.uuid);
     if (!oldTemplate.success || !oldTemplate.data) {
       return {
         success: false,
-        message: `任务模板 ${taskTemplate.id} 不存在`,
+        message: `任务模板 ${taskTemplate.uuid} 不存在`,
       };
     }
 
-    const response = await taskTemplateRepository.update(taskTemplate);
+    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
     if (!response.success) {
       return {
         success: false,
@@ -109,11 +103,11 @@ export class TaskDomainService {
       };
     }
 
-    const impact = await this.handleTemplateUpdateImpact(taskTemplate, oldTemplate.data, taskInstanceRepository);
+    const impact = await this.handleTemplateUpdateImpact(taskTemplate, oldTemplate.data, taskInstanceRepository, accountUuid);
     if (impact.affectedCount > 0) {
       let failedCount = 0;
       for (const taskInstance of impact.updatedInstances) {
-        const response = await taskInstanceRepository.update(taskInstance);
+        const response = await taskInstanceRepository.update(accountUuid, taskInstance);
         if (!response.success) {
           failedCount++;
         }
@@ -130,18 +124,18 @@ export class TaskDomainService {
 
     const { updatedInstances } = impact;
     for (const taskInstance of updatedInstances) {
-      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.id);
+      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
       if (!reminderResponse.success) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.id} 的提醒更新失败: ${reminderResponse.message}`,
+          message: `任务实例 ${taskInstance.uuid} 的提醒更新失败: ${reminderResponse.message}`,
         };
       }
       const reReminderResponse = await taskReminderService.createTaskReminders(taskInstance);
       if (!reReminderResponse.success) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.id} 的提醒重新创建失败: ${reReminderResponse.message}`,
+          message: `任务实例 ${taskInstance.uuid} 的提醒重新创建失败: ${reReminderResponse.message}`,
         };
       }
     }
@@ -155,19 +149,15 @@ export class TaskDomainService {
 
   /**
    * 删除任务模板
-   * @param {TaskTemplate} taskTemplate - 任务模板实体
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @param {boolean} force - 是否强制删除
-   * @returns {Promise<TResponse<string>>} 删除响应
    */
   async deleteTaskTemplate(
     taskTemplate: TaskTemplate,
     taskTemplateRepository: ITaskTemplateRepository,
     taskInstanceRepository: ITaskInstanceRepository,
-    force: boolean = false
+    force: boolean = false,
+    accountUuid: string
   ): Promise<TResponse<void>> {
-    const dependencies = await this.validateTemplateDependencies(taskTemplate, taskInstanceRepository);
+    const dependencies = await this.validateTemplateDependencies(taskTemplate, taskInstanceRepository, accountUuid);
     if (!dependencies.canDelete && !force) {
       return {
         success: false,
@@ -176,7 +166,7 @@ export class TaskDomainService {
     }
 
     if (force) {
-      const relatedInstances = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
       if (!relatedInstances.success || !relatedInstances.data) {
         return {
           success: false,
@@ -185,25 +175,25 @@ export class TaskDomainService {
       }
 
       for (const taskInstance of relatedInstances.data) {
-        const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.id);
+        const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
         if (!reminderResponse.success) {
           return {
             success: false,
-            message: `取消任务实例 ${taskInstance.id} 的提醒失败: ${reminderResponse.message}`,
+            message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
           };
         }
 
-        const response = await taskInstanceRepository.delete(taskInstance.id);
+        const response = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
         if (!response.success) {
           return {
             success: false,
-            message: `删除实例 ${taskInstance.id} 失败: ${response.message}`,
+            message: `删除实例 ${taskInstance.uuid} 失败: ${response.message}`,
           };
         }
       }
     }
 
-    const response = await taskTemplateRepository.delete(taskTemplate.id);
+    const response = await taskTemplateRepository.delete(accountUuid, taskTemplate.uuid);
     if (!response.success) {
       return {
         success: false,
@@ -219,15 +209,13 @@ export class TaskDomainService {
 
   /**
    * 获取任务模板
-   * @param {string} taskTemplateId - 任务模板ID
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @returns {Promise<TResponse<TaskTemplate>>} 获取响应
    */
   async getTaskTemplate(
+    accountUuid: string,
     taskTemplateId: string,
     taskTemplateRepository: ITaskTemplateRepository
   ): Promise<TResponse<TaskTemplate>> {
-    const response = await taskTemplateRepository.findById(taskTemplateId);
+    const response = await taskTemplateRepository.findById(accountUuid, taskTemplateId);
     if (!response.success || !response.data) {
       return {
         success: false,
@@ -252,17 +240,14 @@ export class TaskDomainService {
 
   /**
    * 删除任务实例
-   * @param {string} taskInstanceId - 任务实例ID
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @param {boolean} force - 是否强制删除
-   * @returns {Promise<TResponse<string>>} 删除响应
    */
   async deleteTaskInstance(
+    accountUuid: string,
     taskInstanceId: string,
     taskInstanceRepository: ITaskInstanceRepository,
     force: boolean = false
   ): Promise<TResponse<string>> {
-    const response = await taskInstanceRepository.findById(taskInstanceId);
+    const response = await taskInstanceRepository.findById(accountUuid, taskInstanceId);
     if (!response.success || !response.data) {
       return {
         success: false,
@@ -278,15 +263,15 @@ export class TaskDomainService {
       };
     }
 
-    const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.id);
+    const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
     if (!reminderResponse.success) {
       return {
         success: false,
-        message: `取消任务实例 ${taskInstance.id} 的提醒失败: ${reminderResponse.message}`,
+        message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
       };
     }
 
-    const deleteResponse = await taskInstanceRepository.delete(taskInstance.id);
+    const deleteResponse = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
     if (!deleteResponse.success) {
       return {
         success: false,
@@ -297,15 +282,12 @@ export class TaskDomainService {
     return {
       success: true,
       message: `任务实例 ${taskInstance.title} 删除成功`,
-      data: taskInstance.id,
+      data: taskInstance.uuid,
     };
   }
 
   /**
    * 从元模板创建任务模板
-   * @param {TaskMetaTemplate} metaTemplate - 元模板实体
-   * @returns {TaskTemplate} 创建的任务模板
-   * @throws {Error} 当元模板配置无效时抛出错误
    */
   createTemplateFromMetaTemplate(metaTemplate: TaskMetaTemplate): TaskTemplate {
     const validation = taskMetaTemplateService.validateConfiguration(metaTemplate);
@@ -320,11 +302,6 @@ export class TaskDomainService {
 
   /**
    * 批量生成任务实例并验证业务规则
-   * @param {TaskTemplate} taskTemplate - 任务模板
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @param {object} options - 生成选项
-   * @returns {Promise<TaskInstance[]>} 生成的任务实例数组
-   * @throws {Error} 当模板状态不符合要求时抛出错误
    */
   async generateInstancesWithBusinessRules(
     taskTemplate: TaskTemplate,
@@ -333,6 +310,7 @@ export class TaskDomainService {
       maxInstances?: number;
       dateRange?: { start: DateTime; end: DateTime };
       skipConflicts?: boolean;
+      accountUuid?: string;
     } = {}
   ): Promise<TaskInstance[]> {
     if (!taskTemplate.isActive()) {
@@ -350,8 +328,8 @@ export class TaskDomainService {
           options.maxInstances
         );
 
-    if (options.skipConflicts) {
-      return await this.filterConflictingInstances(instances, taskInstanceRepository);
+    if (options.skipConflicts && options.accountUuid) {
+      return await this.filterConflictingInstances(instances, taskInstanceRepository, options.accountUuid);
     }
 
     return instances;
@@ -359,19 +337,17 @@ export class TaskDomainService {
 
   /**
    * 检查任务模板的依赖关系
-   * @param {TaskTemplate} taskTemplate - 任务模板
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<object>} 依赖关系检查结果
    */
   async validateTemplateDependencies(
     taskTemplate: TaskTemplate,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<{
     canDelete: boolean;
     activeInstances: number;
     warnings: string[];
   }> {
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
     if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
       return {
         canDelete: true,
@@ -397,16 +373,12 @@ export class TaskDomainService {
 
   /**
    * 执行任务模板状态变更业务流程
-   * @param {TaskTemplate} taskTemplate - 任务模板
-   * @param {string} newStatus - 新状态
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<object>} 状态变更结果
-   * @throws {Error} 当状态转换不被允许时抛出错误
    */
   async changeTemplateStatus(
     taskTemplate: TaskTemplate,
     newStatus: string,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<{
     success: boolean;
     affectedInstances: TaskInstance[];
@@ -418,7 +390,7 @@ export class TaskDomainService {
       );
     }
 
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
     if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
       throw new Error(`获取相关任务实例失败: ${relatedInstancesResponse.message}`);
     }
@@ -461,10 +433,6 @@ export class TaskDomainService {
 
   /**
    * 执行任务实例状态变更业务流程
-   * @param {TaskInstance} taskInstance - 任务实例
-   * @param {string} newStatus - 新状态
-   * @returns {object} 状态变更结果
-   * @throws {Error} 当状态转换不被允许时抛出错误
    */
   changeInstanceStatus(
     taskInstance: TaskInstance,
@@ -508,21 +476,18 @@ export class TaskDomainService {
 
   /**
    * 处理任务模板更新对任务实例的影响
-   * @param {TaskTemplate} updatedTemplate - 更新后的任务模板
-   * @param {TaskTemplate | null} oldTemplate - 更新前的任务模板
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<object>} 影响分析结果
    */
   async handleTemplateUpdateImpact(
     updatedTemplate: TaskTemplate,
     oldTemplate: TaskTemplate | null,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<{
     affectedCount: number;
     updatedInstances: TaskInstance[];
     warnings: string[];
   }> {
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(updatedTemplate.id);
+    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, updatedTemplate.uuid);
     if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
       return {
         affectedCount: 0,
@@ -595,15 +560,12 @@ export class TaskDomainService {
 
   /**
    * 暂停任务模板
-   * @param {TaskTemplate} taskTemplate - 任务模板
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<TResponse<TaskTemplate>>} 暂停响应
    */
   async pauseTaskTemplate(
     taskTemplate: TaskTemplate,
     taskTemplateRepository: ITaskTemplateRepository,
     taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
     if (taskTemplate.isPaused()) {
       return {
@@ -612,7 +574,7 @@ export class TaskDomainService {
       };
     }
 
-    const relatedInstances = await taskInstanceRepository.findByTemplateId(taskTemplate.id);
+    const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
     if (!relatedInstances.success || !relatedInstances.data) {
       return {
         success: false,
@@ -621,25 +583,25 @@ export class TaskDomainService {
     }
 
     for (const taskInstance of relatedInstances.data) {
-      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.id);
+      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
       if (!reminderResponse.success) {
         return {
           success: false,
-          message: `取消任务实例 ${taskInstance.id} 的提醒失败: ${reminderResponse.message}`,
+          message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
         };
       }
 
-      const response = await taskInstanceRepository.delete(taskInstance.id);
+      const response = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
       if (!response.success) {
         return {
           success: false,
-          message: `删除实例 ${taskInstance.id} 失败: ${response.message}`,
+          message: `删除实例 ${taskInstance.uuid} 失败: ${response.message}`,
         };
       }
     }
 
     taskTemplate.pause();
-    const response = await taskTemplateRepository.update(taskTemplate);
+    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
     if (!response.success) {
       return {
         success: false,
@@ -656,15 +618,12 @@ export class TaskDomainService {
 
   /**
    * 恢复任务模板
-   * @param {TaskTemplate} taskTemplate - 任务模板
-   * @param {ITaskTemplateRepository} taskTemplateRepository - 任务模板仓储
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<TResponse<TaskTemplate>>} 恢复响应
    */
   async resumeTaskTemplate(
     taskTemplate: TaskTemplate,
     taskTemplateRepository: ITaskTemplateRepository,
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
     if (!taskTemplate.isPaused()) {
       return {
@@ -675,7 +634,7 @@ export class TaskDomainService {
 
     const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
 
-    const instanceResponses = await taskInstanceRepository.saveAll(initialInstances);
+    const instanceResponses = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
     if (!instanceResponses.success) {
       return {
         success: false,
@@ -688,13 +647,13 @@ export class TaskDomainService {
       if (!reminderResponse.success) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.id} 的提醒创建失败: ${reminderResponse.message}`,
+          message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
         };
       }
     }
 
     taskTemplate.activate();
-    const response = await taskTemplateRepository.update(taskTemplate);
+    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
     if (!response.success) {
       return {
         success: false,
@@ -711,15 +670,13 @@ export class TaskDomainService {
 
   /**
    * 过滤冲突的任务实例
-   * @param {TaskInstance[]} taskInstances - 任务实例数组
-   * @param {ITaskInstanceRepository} taskInstanceRepository - 任务实例仓储
-   * @returns {Promise<TaskInstance[]>} 过滤后的任务实例数组
    */
   private async filterConflictingInstances(
     taskInstances: TaskInstance[],
-    taskInstanceRepository: ITaskInstanceRepository
+    taskInstanceRepository: ITaskInstanceRepository,
+    accountUuid: string
   ): Promise<TaskInstance[]> {
-    const allInstancesResponse = await taskInstanceRepository.findAll();
+    const allInstancesResponse = await taskInstanceRepository.findAll(accountUuid);
     if (!allInstancesResponse.success || !allInstancesResponse.data) {
       return taskInstances;
     }
@@ -738,23 +695,27 @@ export class TaskDomainService {
     });
   }
 
-  async initializeSystemTemplates(taskMetaTemplateRepository: ITaskMetaTemplateRepository): Promise<TResponse<void>> {
-      try {
-        const response = await taskMetaTemplateService.initializeSystemTemplates(
-          taskMetaTemplateRepository
-        );
-        if (!response.success) {
-          return {
-            success: false,
-            message: `初始化系统模板失败: ${response.message}`,
-          };
-        }
-        return { success: true, message: "System templates initialized successfully" };
-      } catch (error) {
+  async initializeSystemTemplates(
+    taskMetaTemplateRepository: ITaskMetaTemplateRepository,
+    accountUuid: string
+  ): Promise<TResponse<void>> {
+    try {
+      const response = await taskMetaTemplateService.initializeSystemTemplates(
+        taskMetaTemplateRepository,
+        accountUuid
+      );
+      if (!response.success) {
         return {
           success: false,
-          message: `Failed to initialize system templates: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `初始化系统模板失败: ${response.message}`,
         };
       }
+      return { success: true, message: "System templates initialized successfully" };
+    } catch (error) {
+      return {
+        success: false,
+        message: `Failed to initialize system templates: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
     }
+  }
 }

@@ -33,14 +33,14 @@ export class SqliteAccountRepository implements IAccountRepository {
   /**
    * 根据ID查找账号
    */
-  async findById(id: string): Promise<Account | null> {
+  async findById(uuid: string): Promise<Account | null> {
     try {
       const db = await this.getDb();
       const query = `
         SELECT * FROM accounts 
         WHERE uuid = ?
       `;
-      const row = db.prepare(query).get(id) as any;
+      const row = db.prepare(query).get(uuid) as any;
 
       if (!row) {
         return null;
@@ -208,7 +208,7 @@ export class SqliteAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
     try {
       // 检查账号是否已存在
-      const existing = await this.findById(account.id);
+      const existing = await this.findById(account.uuid);
 
       if (existing) {
         await this.updateAccount(account);
@@ -216,7 +216,7 @@ export class SqliteAccountRepository implements IAccountRepository {
         await this.insertAccount(account);
       }
 
-      await this.userRepository.save(account.user, account.id);
+      await this.userRepository.save(account.user, account.uuid);
     } catch (error) {
       console.error("保存账号失败:", error);
       throw error;
@@ -226,22 +226,22 @@ export class SqliteAccountRepository implements IAccountRepository {
   /**
    * 删除账号
    */
-  async delete(id: string): Promise<void> {
+  async delete(uuid: string): Promise<void> {
     try {
       const db = await this.getDb();
 
       // 先删除用户资料
-      await this.userRepository.delete(id);
+      await this.userRepository.delete(uuid);
 
       // 再删除账号
       const query = `DELETE FROM accounts WHERE uuid = ?`;
-      const result = db.prepare(query).run(id);
+      const result = db.prepare(query).run(uuid);
 
       if (result.changes === 0) {
         throw new Error("账号不存在或删除失败");
       }
 
-      console.log(`账号 ${id} 删除成功`);
+      console.log(`账号 ${uuid} 删除成功`);
     } catch (error) {
       console.error("删除账号失败:", error);
       throw error;
@@ -294,7 +294,7 @@ export class SqliteAccountRepository implements IAccountRepository {
     const stmt = db.prepare(query);
     const now = Date.now();
     stmt.run(
-      account.id,
+      account.uuid,
       account.username,
       account.email?.value,
       account.phoneNumber?.number,
@@ -339,7 +339,7 @@ export class SqliteAccountRepository implements IAccountRepository {
       account.lastLoginAt?.getTime() || null,
       null, // emailVerificationToken - 需要通过getter获取
       null, // phoneVerificationCode - 需要通过getter获取
-      account.id
+      account.uuid
     );
 
     if (result.changes === 0) {
@@ -354,7 +354,7 @@ export class SqliteAccountRepository implements IAccountRepository {
    */
   private async mapRowToAccount(row: any): Promise<Account> {
     // 从 user_profiles 表获取 User 实体信息
-    const user = await this.userRepository.findByAccountId(row.uuid);
+    const user = await this.userRepository.findByAccountUuid(row.uuid);
     if (!user) {
       throw new Error(`User profile not found for account: ${row.uuid}`);
     }
@@ -371,7 +371,7 @@ export class SqliteAccountRepository implements IAccountRepository {
     //   }
     // }
     const { uuid, ...rest} = row;
-    const accountDTO = {...rest, user:UserDTO, id: uuid}
+    const accountDTO = {...rest, user:UserDTO, uuid: uuid}
     console.log(accountDTO)
     // 创建账号聚合根
     const account = Account.fromDTO(accountDTO);

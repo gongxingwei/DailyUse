@@ -1,17 +1,17 @@
 import { generateUUID } from "../utils/uuid";
 
 export abstract class Entity {
-  protected constructor(protected readonly _id: string) {}
+  protected constructor(protected readonly _uuid: string) {}
 
-  get id(): string {
-    return this._id;
+  get uuid(): string {
+    return this._uuid;
   }
 
   equals(other: Entity): boolean {
     if (!(other instanceof Entity)) {
       return false;
     }
-    return this._id === other._id;
+    return this._uuid === other._uuid;
   }
 
   protected static generateId(): string {

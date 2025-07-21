@@ -44,14 +44,14 @@
         <v-list class="py-0" density="compact">
           <v-list-item
             v-for="item in goalDirs"
-            :key="item.id"
-            :class="{ 'goal-dir-item--active': selectedDirId === item.id }"
+            :key="item.uuid"
+            :class="{ 'goal-dir-item--active': selectedDirId === item.uuid }"
             class="goal-dir-item mx-2 my-1"
-            @click="selectDir(item.id)"
+            @click="selectDir(item.uuid)"
             rounded="lg"
           >
             <template v-slot:prepend>
-              <v-icon :color="selectedDirId === item.id ? 'primary' : 'medium-emphasis'">
+              <v-icon :color="selectedDirId === item.uuid ? 'primary' : 'medium-emphasis'">
                 {{ item.icon }}
               </v-icon>
             </template>
@@ -62,13 +62,13 @@
             
             <template v-slot:append>
               <v-chip
-                :color="selectedDirId === item.id ? 'primary' : 'surface-bright'"
-                :text-color="selectedDirId === item.id ? 'on-primary' : 'on-surface-variant'"
+                :color="selectedDirId === item.uuid ? 'primary' : 'surface-bright'"
+                :text-color="selectedDirId === item.uuid ? 'on-primary' : 'on-surface-variant'"
                 size="small"
                 variant="flat"
                 class="font-weight-bold"
               >
-                {{ getGoalsCountByDirId(item.id) }}
+                {{ getGoalsCountByDirId(item.uuid) }}
               </v-chip>
             </template>
           </v-list-item>
@@ -102,8 +102,12 @@
   }>();
   
   const goalStore = useGoalStore();
-  const goalDirs = computed(() => goalStore.getAllGoalDirs);
-  
+  const goalDirs = computed(() => {
+    const allGoalDirs = goalStore.getAllGoalDirs;
+    console.log("🔍 [目标目录组件] 获取所有目标目录:", JSON.stringify(allGoalDirs, null, 2));
+    return allGoalDirs;
+  });
+
   const selectDir = (dirId: string) => {
     selectedDirId.value = dirId;
     emit('selected-goal-dir-id', dirId);

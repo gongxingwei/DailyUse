@@ -34,7 +34,7 @@ export class AccountApplicationService {
   //     // 1. 认证用户
   //     const response = await this.authService.login(credentials);
       
-  //     if (!response.success || !response.accountId) {
+  //     if (!response.success || !response.accountUuid) {
   //       return {
   //         success: false,
   //         message: response.message,
@@ -43,7 +43,7 @@ export class AccountApplicationService {
   //     }
 
   //     // 2. 获取账号信息
-  //     const account = await this.accountRepository.findById(response.accountId);
+  //     const account = await this.accountRepository.findById(response.accountUuid);
   //     if (!account) {
   //       return {
   //         success: false,
@@ -54,7 +54,7 @@ export class AccountApplicationService {
 
   //     // 3. 创建会话
   //     const sessionResult = await this.sessionService.createSession(
-  //       response.accountId,
+  //       response.accountUuid,
   //       response.username!,
   //       account.accountType,
   //       {
@@ -128,7 +128,7 @@ export class AccountApplicationService {
   //  * 更新账号信息
   //  */
   // async updateAccountInfo(
-  //   accountId: string,
+  //   accountUuid: string,
   //   updateData: {
   //     email?: string;
   //     phone?: string;
@@ -140,7 +140,7 @@ export class AccountApplicationService {
   // ): Promise<TResponse<Account>> {
   //   try {
   //     // 1. 获取账号
-  //     const account = await this.accountRepository.findById(accountId);
+  //     const account = await this.accountRepository.findById(accountUuid);
   //     if (!account) {
   //       return {
   //         success: false,
@@ -206,7 +206,7 @@ export class AccountApplicationService {
   //     }
 
   //     // 2. 获取账号信息
-  //     const account = await this.accountRepository.findById(sessionResult.data.accountId);
+  //     const account = await this.accountRepository.findById(sessionResult.data.accountUuid);
   //     if (!account) {
   //       return {
   //         success: false,

@@ -86,7 +86,7 @@
         </div>
 
         <div class="goals-grid">
-          <GoalInfoShowCard v-for="goal in goals" :key="goal.id" :goal="goal" class="goal-card-item" />
+          <GoalInfoShowCard v-for="goal in goals" :key="goal.uuid" :goal="goal" class="goal-card-item" />
         </div>
       </section>
 

@@ -194,13 +194,13 @@ const dialogVisible = computed({
 
 const availableGoals = computed(() => {
   return goalStore.goals.map(goal => ({
-    id: goal.id,
+    uuid: goal.uuid,
     title: goal.title,
   }))
 })
 
 const repoData = ref({
-  id: '',
+  uuid: '',
   name: '',
   path: '',
   description: '',

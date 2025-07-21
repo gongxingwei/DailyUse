@@ -324,7 +324,7 @@ export class PiniaGoalStateRepository implements IGoalStateRepository {
   // 其他增删改查方法...
   async addGoal(goal: IGoal): Promise<void> { /* ... */ }
   async updateGoal(goal: IGoal): Promise<void> { /* ... */ }
-  async removeGoal(goalId: string): Promise<void> { /* ... */ }
+  async removeGoal(goalUuid: string): Promise<void> { /* ... */ }
   // ...
 }
 ```
@@ -381,15 +381,15 @@ export const useGoalStore = defineStore('goal', {
       
       // 保留系统文件夹，只同步用户文件夹
       const systemDirs = this.goalDirs.filter(dir => 
-        dir.id === SYSTEM_GOAL_DIRS.ALL ||
-        dir.id === SYSTEM_GOAL_DIRS.DELETED ||
-        dir.id === SYSTEM_GOAL_DIRS.ARCHIVED
+        dir.uuid === SYSTEM_GOAL_DIRS.ALL ||
+        dir.uuid === SYSTEM_GOAL_DIRS.DELETED ||
+        dir.uuid === SYSTEM_GOAL_DIRS.ARCHIVED
       );
       
       const userDirs = data.goalDirs.filter(dir => 
-        dir.id !== SYSTEM_GOAL_DIRS.ALL &&
-        dir.id !== SYSTEM_GOAL_DIRS.DELETED &&
-        dir.id !== SYSTEM_GOAL_DIRS.ARCHIVED
+        dir.uuid !== SYSTEM_GOAL_DIRS.ALL &&
+        dir.uuid !== SYSTEM_GOAL_DIRS.DELETED &&
+        dir.uuid !== SYSTEM_GOAL_DIRS.ARCHIVED
       );
       
       this.goalDirs = [...systemDirs, ...userDirs];
@@ -597,7 +597,7 @@ private get goalStore() {
 
 ```typescript
 // 支持依赖注入和默认创建
-export function createGoalDomainApplicationService(
+export function getGoalDomainApplicationService(
   stateRepository?: IGoalStateRepository
 ): GoalDomainApplicationService {
   return new GoalDomainApplicationService(
@@ -608,7 +608,7 @@ export function createGoalDomainApplicationService(
 // 获取默认实例
 export function getGoalDomainApplicationService(): GoalDomainApplicationService {
   if (!defaultGoalService) {
-    defaultGoalService = createGoalDomainApplicationService();
+    defaultGoalService = getGoalDomainApplicationService();
   }
   return defaultGoalService;
 }
@@ -622,7 +622,7 @@ export interface IGoalStateRepository {
   syncAllGoalData(data: { goals: IGoal[]; records: IRecord[]; goalDirs: IGoalDir[]; }): Promise<void>;
   addGoal(goal: IGoal): Promise<void>;
   updateGoal(goal: IGoal): Promise<void>;
-  removeGoal(goalId: string): Promise<void>;
+  removeGoal(goalUuid: string): Promise<void>;
   isAvailable(): boolean;
 }
 ```

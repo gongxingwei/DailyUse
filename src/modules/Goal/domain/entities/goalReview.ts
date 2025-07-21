@@ -8,7 +8,7 @@ import type { IGoalReview, IGoalReviewCreateDTO } from "../types/goal";
  * 负责目标复盘的业务逻辑和数据管理
  */
 export class GoalReview extends Entity implements IGoalReview {
-  private _goalId: string;
+  private _goalUuid: string;
   private _title: string;
   private _type: IGoalReview['type'];
   private _reviewDate: DateTime;
@@ -18,8 +18,8 @@ export class GoalReview extends Entity implements IGoalReview {
   private _lifecycle: IGoalReview['lifecycle'];
 
   constructor(
-    id: string,
-    goalId: string,
+    uuid: string,
+    goalUuid: string,
     title: string,
     type: IGoalReview['type'],
     reviewDate: DateTime,
@@ -27,10 +27,10 @@ export class GoalReview extends Entity implements IGoalReview {
     snapshot: IGoalReview['snapshot'],
     rating?: IGoalReview['rating']
   ) {
-    super(id);
+    super(uuid);
     const now = TimeUtils.now();
 
-    this._goalId = goalId;
+    this._goalUuid = goalUuid;
     this._title = title;
     this._type = type;
     this._reviewDate = reviewDate;
@@ -45,8 +45,8 @@ export class GoalReview extends Entity implements IGoalReview {
   }
 
   // Getters
-  get goalId(): string {
-    return this._goalId;
+  get goalUuid(): string {
+    return this._goalUuid;
   }
 
   get title(): string {
@@ -161,7 +161,7 @@ export class GoalReview extends Entity implements IGoalReview {
   } {
     const errors: string[] = [];
 
-    if (!data.goalId?.trim()) {
+    if (!data.goalUuid?.trim()) {
       errors.push("目标ID不能为空");
     }
 
@@ -209,8 +209,8 @@ export class GoalReview extends Entity implements IGoalReview {
    */
   static fromDTO(data: IGoalReview): GoalReview {
     const review = new GoalReview(
-      data.id,
-      data.goalId,
+      data.uuid,
+      data.goalUuid,
       data.title,
       data.type,
       data.reviewDate,
@@ -228,8 +228,8 @@ export class GoalReview extends Entity implements IGoalReview {
    */
   toDTO(): IGoalReview {
     return {
-      id: this.id,
-      goalId: this._goalId,
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
       title: this._title,
       type: this._type,
       reviewDate: this._reviewDate,
@@ -249,8 +249,8 @@ export class GoalReview extends Entity implements IGoalReview {
 
   clone(): GoalReview {
     const clone = new GoalReview(
-      this.id,
-      this._goalId,
+      this.uuid,
+      this._goalUuid,
       this._title,
       this._type,
       this._reviewDate,

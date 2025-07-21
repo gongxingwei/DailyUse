@@ -9,21 +9,21 @@ import type { IGoalDir } from "../types/goal";
 export class GoalDir extends AggregateRoot implements IGoalDir {
   private _name: string;
   private _icon: string;
-  private _parentId?: string;
+  private _parentUuid?: string;
   private _lifecycle: IGoalDir['lifecycle'];
 
   constructor(
-    id?: string,
+    uuid?: string,
     name?: string,
     icon?: string,
     parentId?: string
   ) {
-    super(id || GoalDir.generateId());
+    super(uuid || GoalDir.generateId());
     const now = TimeUtils.now();
 
     this._name = name || '';
     this._icon = icon || 'default-icon'; // 默认图标
-    this._parentId = parentId;
+    this._parentUuid = parentId;
 
     this._lifecycle = {
       createdAt: now,
@@ -42,7 +42,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   }
 
   get parentId(): string | undefined {
-    return this._parentId;
+    return this._parentUuid;
   }
 
   get lifecycle(): IGoalDir['lifecycle'] {
@@ -70,10 +70,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
 
     if (updates.parentId !== undefined) {
       // 防止循环引用
-      if (updates.parentId === this.id) {
+      if (updates.parentId === this.uuid) {
         throw new Error("目录不能设置自己为父目录");
       }
-      this._parentId = updates.parentId;
+      this._parentUuid = updates.parentId;
     }
 
     this._lifecycle.updatedAt = TimeUtils.now();
@@ -91,10 +91,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
 
   updateParentId(parentId?: string): void {
     // 防止循环引用
-    if (parentId === this.id) {
+    if (parentId === this.uuid) {
       throw new Error("目录不能设置自己为父目录");
     }
-    this._parentId = parentId;
+    this._parentUuid = parentId;
     this._lifecycle.updatedAt = TimeUtils.now();
   }
 
@@ -111,10 +111,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
    */
   toDTO(): IGoalDir {
     const rawData = {
-      id: this.id,
+      uuid: this.uuid,
       name: this._name,
       icon: this._icon,
-      parentId: this._parentId,
+      parentId: this._parentUuid,
       lifecycle: this._lifecycle,
     };
 
@@ -125,10 +125,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
       console.error('❌ [GoalDir.toDTO] 序列化失败:', error);
       // 如果序列化失败，返回基本信息
       return {
-        id: this.id,
+        uuid: this.uuid,
         name: this._name,
         icon: this._icon,
-        parentId: this._parentId,
+        parentId: this._parentUuid,
         lifecycle: JSON.parse(JSON.stringify(this._lifecycle)),
       };
     }
@@ -145,7 +145,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
    * 从数据传输对象创建目录实例
    */
   static fromDTO(data: IGoalDir): GoalDir {
-    const goalDir = new GoalDir(data.id, data.name, data.icon, data.parentId);
+    const goalDir = new GoalDir(data.uuid, data.name, data.icon, data.parentId);
     goalDir._lifecycle = data.lifecycle;
     return goalDir;
   }
@@ -153,9 +153,9 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   /**
    * 从创建数据传输对象创建目录
    */
-  static fromCreateDTO(id: string, data: IGoalDir): GoalDir {
+  static fromCreateDTO(uuid: string, data: IGoalDir): GoalDir {
     return new GoalDir(
-      id,
+      uuid,
       data.name,
       data.icon,
       data.parentId
@@ -164,10 +164,10 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
 
   clone(): GoalDir {
     const clone = new GoalDir(
-      this.id,
+      this.uuid,
       this._name,
       this._icon,
-      this._parentId
+      this._parentUuid
     );
     clone._lifecycle = { ...this._lifecycle }; // 浅拷贝生命周期数据
     return clone;

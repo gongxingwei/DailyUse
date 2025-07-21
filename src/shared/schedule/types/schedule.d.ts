@@ -4,12 +4,12 @@ export type ScheduleTask = {
 }
 
 export type ScheduleOptions = {
-    id: string;
+    uuid: string;
     cron: string;
     task: ScheduleTask;
 }
 
 export type ScheduleEventData = {
-    id: string;
+    uuid: string;
     task: ScheduleTask;
 }

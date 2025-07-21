@@ -129,7 +129,7 @@ onMounted(() => {
     console.log('accountStore.account:', accountStore.account);
     if (accountStore.account) {
         userBasicInfo.avatarUrl = accountStore.account.user.avatar || '';
-        userBasicInfo.uuid = accountStore.account.id || '';
+        userBasicInfo.uuid = accountStore.account.uuid || '';
         userBasicInfo.username = accountStore.account.username || '';
         userBasicInfo.bio = accountStore.account.user.bio || '';
         userBasicInfo.email = accountStore.account.email?.value || '';

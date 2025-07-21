@@ -173,8 +173,8 @@
                             <v-window-item value="keyResults" class="h-100">
                                 <div class="scrollable-content">
                                     <v-row v-if="keyResults.length > 0">
-                                        <v-col v-for="keyResult in keyResults" :key="keyResult.id" cols="12" lg="6">
-                                            <KeyResultCard :keyResult="keyResult" :goalId="goalId" />
+                                        <v-col v-for="keyResult in keyResults" :key="keyResult.uuid" cols="12" lg="6">
+                                            <KeyResultCard :keyResult="keyResult" :goalUuid="goalUuid" />
                                         </v-col>
                                     </v-row>
                                     <v-empty-state v-else icon="mdi-target" title="暂无关键结果" text="添加关键结果来跟踪目标进度" />
@@ -233,33 +233,33 @@ const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, star
 const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
 
 const goal = computed(() => {
-    const goalId = route.params.goalId as string;
-    if (!goalId) return null;
-    return goalStore.getGoalById(goalId);
+    const goalUuid = route.params.goalUuid as string;
+    if (!goalUuid) return null;
+    return goalStore.getGoalById(goalUuid);
 });
 
-const goalId = computed(() => route.params.goalId as string);
+const goalUuid = computed(() => route.params.goalUuid as string);
 const goalColor = computed(() => goal.value?.color || '#FF5733');
 const keyResults = computed(() => {
-    const goalId = route.params.goalId as string;
-    return goalStore.getAllKeyResultsByGoalId(goalId);
+    const goalUuid = route.params.goalUuid as string;
+    return goalStore.getAllKeyResultsBygoalUuid(goalUuid);
 });
 
 const isArchived = computed(() => goal.value?.dirId === 'archive');
-const toggleArchiveGoal = (goalId: string) => {
+const toggleArchiveGoal = (goalUuid: string) => {
     if (!isArchived.value) {
-        goalStore.archiveGoalById(goalId);
+        goalStore.archiveGoalById(goalUuid);
     } else {
-        goalStore.unarchiveGoalById(goalId);
+        goalStore.unarchiveGoalById(goalUuid);
     }
 };
 
 const isDeleted = computed(() => goal.value?.dirId === 'trash');
-const toggleDeleteGoal = (goalId: string) => {
+const toggleDeleteGoal = (goalUuid: string) => {
     if (!isDeleted.value) {
-        goalStore.deleteGoalById(goalId);
+        goalStore.deleteGoalById(goalUuid);
     } else {
-        goalStore.restoreGoalById(goalId);
+        goalStore.restoreGoalById(goalUuid);
     }
 };
 
@@ -287,13 +287,13 @@ const timeProgress = computed(() => {
 });
 
 const goalProgress = computed(() => {
-    const goalId = route.params.goalId as string;
-    return goalStore.getGoalProgress(goalId) || 0;
+    const goalUuid = route.params.goalUuid as string;
+    return goalStore.getGoalProgress(goalUuid) || 0;
 });
 
 const remainingDays = computed(() => {
-    const goalId = route.params.goalId as string;
-    const goal = goalStore.getGoalById(goalId);
+    const goalUuid = route.params.goalUuid as string;
+    const goal = goalStore.getGoalById(goalUuid);
     if (!goal) return 0;
     const endDate = new Date(goal.endTime);
     const today = new Date();
@@ -314,7 +314,7 @@ function formatDate(dateString: any) {
 
 const activeTab = ref('keyResults');
 const relativeRepos = computed(() => {
-    const repos = repositoryStore.getRelativeRepoByGoalId(goal.value?.id as string);
+    const repos = repositoryStore.getRelativeRepoBygoalUuid(goal.value?.id as string);
     return repos;
 });
 </script>
