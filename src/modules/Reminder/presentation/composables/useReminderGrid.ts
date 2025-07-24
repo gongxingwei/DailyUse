@@ -1,6 +1,7 @@
 import { ref, computed } from "vue";
 import { GridItem } from "../../../../../common/modules/reminder/types/reminder";
 import { useReminderStore } from "../stores/reminderStore";
+import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
 
 export function useReminderGrid() {
   const reminderStore = useReminderStore();
@@ -9,9 +10,10 @@ export function useReminderGrid() {
   const isDetailPanelOpen = ref(false);
 
   const allGridItems = computed<GridItem[]>(() => {
-    const templateItems: GridItem[] = reminderStore.getReminderTemplates;
-    const groupItems: GridItem[] = reminderStore.getReminderGroups;
-    const allGridItems: GridItem[] = [...templateItems, ...groupItems];
+    const groupItems: ReminderTemplateGroup[] = reminderStore.getAllReminderGroupExceptSystemGroup;
+    const systemGroup = reminderStore.getSystemGroup;
+
+    const allGridItems: GridItem[] = [...(systemGroup?.templates ?? []), ...groupItems];
     console.log("所有网格项:", allGridItems);
     return allGridItems;
   });

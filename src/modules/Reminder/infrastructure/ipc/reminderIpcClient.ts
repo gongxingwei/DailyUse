@@ -1,6 +1,6 @@
 import type { TResponse } from "@/shared/types/response";
 import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
-import { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
+import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
 import { ipcInvokeWithAuth } from "@/shared/utils/ipcInvokeWithAuth";
 
@@ -219,21 +219,75 @@ export class ReminderIpcClient {
     }
   }
 
-  /**
-   * 设置当前账号 UUID
-   */
-  async setCurrentAccountUuid(accountUuid: string): Promise<TResponse<void>> {
+  async moveTemplateToGroup(templateId: string, toGroupId: string): Promise<TResponse<void>> {
     try {
-      console.log('🔄 [渲染进程-IPC] 设置当前账号 UUID:', accountUuid);
-      const response = await ipcInvokeWithAuth('reminder:setCurrentAccountUuid', accountUuid);
-      if (response.success) {
-        console.log('✅ [渲染进程-IPC] 当前账号 UUID 设置成功');
-      } else {
-        console.error('❌ [渲染进程-IPC] 当前账号 UUID 设置失败:', response.message);
-      }
+      const response = await ipcInvokeWithAuth('reminder:moveTemplateToGroup', templateId, toGroupId);
       return response;
     } catch (error) {
-      console.error('❌ [渲染进程-IPC] 设置当前账号 UUID 通信错误:', error);
+      console.error('❌ [渲染进程-IPC] 移动提醒模板到组通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 设置提醒组启用模式（group/individual）
+   * @param groupId string 分组ID
+   * @param mode "group" | "individual"
+   * @returns TResponse<void>
+   * @example
+   * await reminderIpcClient.setGroupEnableMode(groupId, "group");
+   */
+  async setGroupEnableMode(groupId: string, mode: "group" | "individual"): Promise<TResponse<void>> {
+    try {
+      const response = await ipcInvokeWithAuth('reminderGroup:setEnableMode', groupId, mode);
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 设置分组启用模式通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 设置提醒组启用/禁用
+   * @param groupId string 分组ID
+   * @param enabled boolean 是否启用
+   * @returns TResponse<void>
+   * @example
+   * await reminderIpcClient.setGroupEnabled(groupId, true);
+   */
+  async setGroupEnabled(groupId: string, enabled: boolean): Promise<TResponse<void>> {
+    try {
+      const response = await ipcInvokeWithAuth('reminderGroup:setEnabled', groupId, enabled);
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 设置分组启用状态通信错误:', error);
+      return {
+        success: false,
+        message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,
+      };
+    }
+  }
+
+  /**
+   * 设置提醒模板启用/禁用
+   * @param templateId string 模板ID
+   * @param enabled boolean 是否启用
+   * @returns TResponse<void>
+   * @example
+   * await reminderIpcClient.setTemplateEnabled(templateId, true);
+   */
+  async setTemplateEnabled(templateId: string, enabled: boolean): Promise<TResponse<void>> {
+    try {
+      const response = await ipcInvokeWithAuth('reminder:setEnabled', templateId, enabled);
+      return response;
+    } catch (error) {
+      console.error('❌ [渲染进程-IPC] 设置模板启用状态通信错误:', error);
       return {
         success: false,
         message: `IPC通信失败: ${error instanceof Error ? error.message : '未知错误'}`,

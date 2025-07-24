@@ -10,7 +10,7 @@ import { registerTaskInitializationTasks } from "@/modules/Task/initialization/t
 import { registerInitializationEventsTask } from "@/shared/initialization/application/events/initializationEventHandlers";
 import { registerMainWindowInitTask } from "./mainWindowInit/mainWindowInit";
 import { registerGoalInitializationTasks } from "@/modules/Goal";
-
+import { registerRenderReminderInitializationTasks } from "@/modules/Reminder/initialization/RenderReminderInitialization";
 
 export function registerAllInitializationTasks(): void {
 
@@ -20,6 +20,7 @@ export function registerAllInitializationTasks(): void {
   registerMainWindowInitTask();
 
   registerInitializationEventsTask();
+  registerRenderReminderInitializationTasks();
   
   console.log(
     "成功注册所有模块任务"

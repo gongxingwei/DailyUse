@@ -1,4 +1,4 @@
-import { ReminderTemplate } from "../aggregates/reminderTemplate";
+import { ReminderTemplate } from "../entities/reminderTemplate";
 
 export interface IReminderTemplateRepository {
     /**
@@ -31,4 +31,6 @@ export interface IReminderTemplateRepository {
      * @param id 提醒模板 ID
      */
     getById(accountUuid: string, uuid: string): Promise<ReminderTemplate | null>;
+
+    
 }

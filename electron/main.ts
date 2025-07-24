@@ -5,6 +5,12 @@ import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { initializeApp, cleanupApp } from './shared/initialization/appInitializer';
 import { WindowManager } from './windows/windowManager';
+import { logToFile } from './shared/utils/logger';
+
+
+// console.log = (...args) => { logToFile("info", ...args); };
+// console.error = (...args) => { logToFile("error", ...args); };
+// console.warn = (...args) => { logToFile("warn", ...args); };
 
 console.log('🎯 [Main] 主进程脚本开始执行');
 
@@ -89,7 +95,6 @@ function registerProtocols(): void {
     }
   });
   
-  console.log('✅ [Main] 协议处理器注册完成');
 }
 
 /**

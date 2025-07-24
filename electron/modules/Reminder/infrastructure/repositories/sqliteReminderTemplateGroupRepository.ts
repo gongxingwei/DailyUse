@@ -1,12 +1,12 @@
-
-
-
 import type { Database } from "better-sqlite3";
 import { getDatabase } from "../../../../shared/database/index";
 import type { IReminderTemplateGroupRepository } from "../../domain/repositories/iReminderTemplateGroupRepository";
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
+import {SqliteReminderRepository} from "./sqliteReminderRepository";
 
-export class SqliteReminderTemplateGroupRepository implements IReminderTemplateGroupRepository {
+export class SqliteReminderTemplateGroupRepository
+  implements IReminderTemplateGroupRepository
+{
   private db: Database | null = null;
   constructor() {}
 
@@ -20,7 +20,10 @@ export class SqliteReminderTemplateGroupRepository implements IReminderTemplateG
     return this.db;
   }
 
-  async create(accountUuid: string, group: ReminderTemplateGroup): Promise<boolean> {
+  async create(
+    accountUuid: string,
+    group: ReminderTemplateGroup
+  ): Promise<boolean> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
@@ -42,7 +45,10 @@ export class SqliteReminderTemplateGroupRepository implements IReminderTemplateG
     }
   }
 
-  async update(accountUuid: string, group: ReminderTemplateGroup): Promise<boolean> {
+  async update(
+    accountUuid: string,
+    group: ReminderTemplateGroup
+  ): Promise<boolean> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
@@ -79,21 +85,28 @@ export class SqliteReminderTemplateGroupRepository implements IReminderTemplateG
     }
   }
 
-  async getAll(accountUuid: string,): Promise<ReminderTemplateGroup[]> {
+  async getAll(accountUuid: string): Promise<ReminderTemplateGroup[]> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
         SELECT * FROM reminder_groups WHERE account_uuid = ?
       `);
       const rows = stmt.all(accountUuid);
-      return await Promise.all(rows.map(async (row: any) => await this.mapRowToReminderTemplateGroup(row)));
+      return await Promise.all(
+        rows.map(
+          async (row: any) => await this.mapRowToReminderTemplateGroup(row)
+        )
+      );
     } catch (error) {
       console.error("Error getting all reminder groups:", error);
       throw error;
     }
   }
 
-  async getById(accountUuid: string, uuid: string): Promise<ReminderTemplateGroup | null> {
+  async getById(
+    accountUuid: string,
+    uuid: string
+  ): Promise<ReminderTemplateGroup | null> {
     try {
       const db = await this.getDb();
       const stmt = db.prepare(`
@@ -110,12 +123,17 @@ export class SqliteReminderTemplateGroupRepository implements IReminderTemplateG
   /**
    * 将数据库行映射为 ReminderTemplateGroup 实体，并查询组内模板
    */
-  private async mapRowToReminderTemplateGroup(row: any): Promise<ReminderTemplateGroup> {
-    const templateGroup = ReminderTemplateGroup.fromDTO({
+  private async mapRowToReminderTemplateGroup(
+    row: any
+  ): Promise<ReminderTemplateGroup> {
+    const reminderRepo = new SqliteReminderRepository();
+    const templates = await reminderRepo.getByGroupUuid(row.account_uuid, row.uuid);
+    const templateGroup = ReminderTemplateGroup.fromDTOForRepository({
       uuid: row.uuid,
       name: row.name,
       enabled: !!row.enabled,
       enableMode: row.enable_mode,
+      templates: templates
     });
     return templateGroup;
   }

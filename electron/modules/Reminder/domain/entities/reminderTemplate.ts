@@ -1,107 +1,129 @@
+import { Entity } from "@/shared/domain/entity";
+import type {
+  IReminderTemplate,
+  RelativeTimeSchedule,
+  ReminderSchedule,
+} from "@common/modules/reminder";
 
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { ReminderInstance } from "../entities/reminderInstance";
-import type { IReminderTemplate, RelativeTimeSchedule, ReminderSchedule } from "@common/modules/reminder";
-
-export class ReminderTemplate 
-  extends AggregateRoot
-  implements IReminderTemplate
-{
+export class ReminderTemplate extends Entity implements IReminderTemplate {
   private _groupUuid: string;
   private _name: string;
   private _description?: string;
   private _importanceLevel: IReminderTemplate["importanceLevel"];
   private _selfEnabled: boolean = true; // 默认自身启用
-  private _enabled: boolean;
   private _notificationSettings: {
     sound: boolean;
     vibration: boolean;
     popup: boolean;
   };
   private _timeConfig: IReminderTemplate["timeConfig"];
-  private _reminderInstances: ReminderInstance[] = [];
 
-  constructor(
-    groupId: string,
-    name: string,
-    importanceLevel: IReminderTemplate["importanceLevel"],
-    selfEnabled: boolean,
+  /**
+   * 构造函数（对象参数方式）
+   * @param params 参数对象，包含所有属性
+   * @example
+   * new ReminderTemplate({
+   *   groupUuid: 'xxx',
+   *   name: '模板名',
+   *   importanceLevel: 1,
+   *   selfEnabled: true,
+   *   notificationSettings: { sound: true, vibration: false, popup: true },
+   *   timeConfig: {...},
+   *   uuid: 'xxx', // 可选
+   *   description: '描述' // 可选
+   * })
+   */
+  constructor(params: {
+    groupUuid: string;
+    name: string;
+    importanceLevel: IReminderTemplate["importanceLevel"];
+    selfEnabled: boolean;
     notificationSettings: {
       sound: boolean;
       vibration: boolean;
       popup: boolean;
-    },
-    timeConfig: IReminderTemplate["timeConfig"],
-    uuid?: string,
-    description?: string
-  ) {
-    super(uuid || ReminderTemplate.generateId());
-    this._groupUuid = groupId;
-    this._name = name;
-    this._description = description;
-    this._importanceLevel = importanceLevel;
-    this._selfEnabled = selfEnabled;
-    this._notificationSettings = notificationSettings;
-    this._timeConfig = timeConfig;
-    
-    // 初始化时，enabled 等于 selfEnabled（后续会根据组模式计算）
-    this._enabled = selfEnabled;
+    };
+    timeConfig: IReminderTemplate["timeConfig"];
+    uuid?: string;
+    description?: string;
+  }) {
+    super(params.uuid || ReminderTemplate.generateId());
+    this._groupUuid = params.groupUuid;
+    this._name = params.name;
+    this._description = params.description;
+    this._importanceLevel = params.importanceLevel;
+    this._selfEnabled = params.selfEnabled;
+    this._notificationSettings = params.notificationSettings;
+    this._timeConfig = params.timeConfig;
   }
-  get id(): string {
+
+  get uuid(): string {
     return this._uuid;
   }
 
-  get groupId(): string {
+  get groupUuid(): string {
     return this._groupUuid;
+  }
+  set groupUuid(val: string) {
+    this._groupUuid = val;
   }
 
   get name(): string {
     return this._name;
   }
+  set name(val: string) {
+    this._name = val;
+  }
 
   get description(): string | undefined {
     return this._description;
+  }
+  set description(val: string | undefined) {
+    this._description = val;
   }
 
   get importanceLevel(): IReminderTemplate["importanceLevel"] {
     return this._importanceLevel;
   }
+  set importanceLevel(val: IReminderTemplate["importanceLevel"]) {
+    this._importanceLevel = val;
+  }
 
   get selfEnabled(): boolean {
     return this._selfEnabled;
   }
-
-  get enabled(): boolean {
-    return this._enabled;
+  set selfEnabled(val: boolean) {
+    this._selfEnabled = val;
   }
 
   get notificationSettings() {
     return this._notificationSettings;
   }
+  set notificationSettings(val: {
+    sound: boolean;
+    vibration: boolean;
+    popup: boolean;
+  }) {
+    this._notificationSettings = val;
+  }
 
   get timeConfig() {
     return this._timeConfig;
   }
-
-  /**
-   * 设置模板自身的启用状态
-   */
-  setSelfEnabled(selfEnabled: boolean) {
-    this._selfEnabled = selfEnabled;
+  set timeConfig(val: IReminderTemplate["timeConfig"]) {
+    this._timeConfig = val;
   }
 
-  /**
-   * 根据组的控制模式计算并设置实际的启用状态
-   * @param groupEnabled 组的启用状态
-   * @param groupMode 组的控制模式
-   */
-  calculateAndSetEnabled(groupEnabled: boolean, groupMode: "group" | "individual") {
+  addToGroup(groupUuid: string) {
+    this._groupUuid = groupUuid;
+    // 这里可以添加逻辑来将模板添加到指定的组中
+  }
+
+  isEnabled(groupEnabled: boolean, groupMode: "group" | "individual"): boolean {
     if (groupMode === "group") {
-      // 组模式：模板的启用状态完全由组决定
-      this._enabled = groupEnabled;
+      return groupEnabled;
     } else {
-      // 个体模式：模板的启用状态由自身的 selfEnabled 和组的启用状态共同决定
-      this._enabled = groupEnabled && this._selfEnabled;
+      return groupEnabled && this._selfEnabled;
     }
   }
 
@@ -110,7 +132,10 @@ export class ReminderTemplate
    * @param groupEnabled 组的启用状态
    * @param groupMode 组的控制模式
    */
-  getCalculatedEnabled(groupEnabled: boolean, groupMode: "group" | "individual"): boolean {
+  getCalculatedEnabled(
+    groupEnabled: boolean,
+    groupMode: "group" | "individual"
+  ): boolean {
     if (groupMode === "group") {
       return groupEnabled;
     } else {
@@ -136,7 +161,9 @@ export class ReminderTemplate
           duration = item.duration;
         } else {
           // 随机取区间
-          duration = item.duration.min + Math.random() * (item.duration.max - item.duration.min);
+          duration =
+            item.duration.min +
+            Math.random() * (item.duration.max - item.duration.min);
         }
         const nextTime = new Date(currentTime.getTime() + duration * 1000);
         schedules.push({
@@ -152,43 +179,25 @@ export class ReminderTemplate
     if (this._timeConfig.type === "absolute") {
       // 绝对时间配置，直接使用 ISO8601 字符串
       const { name, description, schedule } = this._timeConfig;
-        schedules.push({
-          name: name,
-          description: description,
-          time: schedule,
-        });
-
+      schedules.push({
+        name: name,
+        description: description,
+        time: schedule,
+      });
     } else if (this._timeConfig.type === "relative") {
-      console.log('Calculating relative reminder schedules...');
+      console.log("Calculating relative reminder schedules...");
     }
     return schedules;
-  }
-
-  /**
-   * 创建任务实例，自动生成提醒计划
-   */
-  createInstance(baseTime: string): ReminderInstance {
-    const reminderSchedules = this.calculateReminderSchedules(baseTime);
-    return new ReminderInstance(
-      this.uuid,
-      this.name,
-      this.importanceLevel,
-      this.enabled,
-      this.notificationSettings,
-      reminderSchedules,
-      this.description
-    );
   }
 
   toDTO(): IReminderTemplate {
     const reminderTemplateDTO: IReminderTemplate = {
       uuid: this.uuid,
-      groupId: this.groupId,
+      groupUuid: this.groupUuid,
       name: this.name,
       description: this.description,
       importanceLevel: this.importanceLevel,
       selfEnabled: this.selfEnabled,
-      enabled: this.enabled,
       notificationSettings: this.notificationSettings,
       timeConfig: this.timeConfig,
     };
@@ -196,19 +205,16 @@ export class ReminderTemplate
   }
 
   static fromDTO(dto: IReminderTemplate): ReminderTemplate {
-    const template = new ReminderTemplate(
-      dto.groupId,
-      dto.name,
-      dto.importanceLevel,
-      dto.selfEnabled,
-      dto.notificationSettings,
-      dto.timeConfig,
-      dto.uuid,
-      dto.description
-    );
-    // 设置计算出的 enabled 状态
-    template._enabled = dto.enabled;
-    return template;
+    const reminderTemplate = new ReminderTemplate({
+      groupUuid: dto.groupUuid,
+      name: dto.name,
+      importanceLevel: dto.importanceLevel,
+      selfEnabled: dto.selfEnabled,
+      notificationSettings: dto.notificationSettings,
+      timeConfig: dto.timeConfig,
+      uuid: dto.uuid,
+      description: dto.description
+    });
+    return reminderTemplate;
   }
 }
-

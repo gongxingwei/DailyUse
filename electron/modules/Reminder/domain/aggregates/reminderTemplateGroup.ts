@@ -1,65 +1,110 @@
-import { ReminderTemplate } from "./reminderTemplate";
+import { ReminderTemplate } from "../entities/reminderTemplate";
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from "@common/modules/reminder";
+import type {
+  IReminderTemplateGroup,
+  ReminderTemplateEnableMode,
+} from "@common/modules/reminder";
+export const SYSTEM_GROUP_ID = "system-root";
 
-export class ReminderTemplateGroup extends AggregateRoot implements IReminderTemplateGroup {
+export function createSystemGroup(): ReminderTemplateGroup {
+  return new ReminderTemplateGroup(
+    "系统分组",
+    true,
+    [],
+    "group",
+    SYSTEM_GROUP_ID, // 使用系统分组ID
+    undefined // 没有 parent
+  );
+}
 
+export class ReminderTemplateGroup
+  extends AggregateRoot
+  implements IReminderTemplateGroup
+{
   private _name: string;
   private _enabled: boolean;
   private _templates: ReminderTemplate[] = [];
   private _enableMode: ReminderTemplateEnableMode = "group"; // 新增属性
+  private _parentUuid?: string; // 父分组ID，可选
 
   constructor(
-    uuid: string,
     name: string,
     enabled = true,
     templates: ReminderTemplate[] = [],
-    enableMode: ReminderTemplateEnableMode = "group"
+    enableMode: ReminderTemplateEnableMode = "group",
+    uuid?: string,
+    parentUuid?: string // 父分组ID
   ) {
     super(uuid || ReminderTemplateGroup.generateId());
     this._name = name;
     this._enabled = enabled;
     this._templates = templates;
     this._enableMode = enableMode;
+    this._parentUuid = parentUuid;
   }
 
-  get id() { return this._uuid; }
-  get name() { return this._name; }
-  set name(val: string) { this._name = val; }
-  get enabled() { return this._enabled; }
-  set enabled(val: boolean) { this._enabled = val; }
-  get enableMode() { return this._enableMode; }
-  set enableMode(val: ReminderTemplateEnableMode) { this._enableMode = val; }
-  get templates() { return this._templates; }
+  get uuid() {
+    return this._uuid;
+  }
+  get name() {
+    return this._name;
+  }
+  set name(val: string) {
+    this._name = val;
+  }
+  get enabled() {
+    return this._enabled;
+  }
+  set enabled(val: boolean) {
+    this._enabled = val;
+  }
+  get enableMode() {
+    return this._enableMode;
+  }
+  set enableMode(val: ReminderTemplateEnableMode) {
+    this._enableMode = val;
+  }
+  get templates() {
+    return this._templates;
+  }
+  get parentUuid() {
+    return this._parentUuid;
+  }
+  set parentUuid(val: string | undefined) {
+    this._parentUuid = val;
+  }
 
-  /**
-   * 判断某个模板是否实际启用
-   */
-  isTemplateEnabled(template: ReminderTemplate) {
-    // 将 enableMode 映射到 template 期望的类型
-    const mode = this._enableMode === "individual" ? "individual" : "group";
-    return template.getCalculatedEnabled(this._enabled, mode);
+  get allEnabledReminderTemplates(): ReminderTemplate[] {
+    const enabledTemplates = this._templates.filter((t) => this.isTemplateEnabled(t.uuid));
+    return enabledTemplates;
+  }
+
+  isTemplateEnabled(templateUuid: string): boolean {
+    if (this._enableMode === "group") return this._enabled;
+    const template = this._templates.find((t) => t.uuid === templateUuid);
+    return template ? template.selfEnabled : false;
+  }
+
+  switchEnableModeToGroup() {
+    if (this._enableMode === 'group') return;
+    this._enableMode = 'group';
+    this._enabled = this._templates.every((t) => t.selfEnabled);
+  }
+
+  switchEnableModeToIndividual() {
+    if (this._enableMode === 'individual') return;
+    this._enableMode = 'individual';
+    this._enabled = this._templates.some((t) => t.selfEnabled);
   }
 
   /**
-   * 获取分组内所有“实际启用”的模板
-   */
-  get enabledTemplates() {
-    const mode = this._enableMode === "individual" ? "individual" : "group";
-    return this._templates.filter(template => 
-      template.getCalculatedEnabled(this._enabled, mode)
-    );
-  }
-
-  /**
-   * 添加模板到分组
+   * 添加存在的模板到分组
    */
   addTemplate(template: ReminderTemplate) {
-    if (!this._templates.find(t => t.uuid === template.uuid)) {
+    // 确保模板不重复添加
+    if (!this._templates.find((t) => t.uuid === template.uuid)) {
       this._templates.push(template);
-      // 计算并设置模板的启用状态
-      const mode = this._enableMode === "individual" ? "individual" : "group";
-      template.calculateAndSetEnabled(this._enabled, mode);
+      template.groupUuid = this._uuid; // 保证 groupUuid 一致
     }
   }
 
@@ -67,44 +112,19 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    * 从分组移除模板
    */
   removeTemplate(templateId: string) {
-    this._templates = this._templates.filter(t => t.uuid !== templateId);
+    this._templates = this._templates.filter((t) => t.uuid !== templateId);
   }
 
   /**
-   * 设置组的启用状态，并更新所有模板的启用状态
+   * 判断对象是否为 ReminderTemplateGroup 实例或符合其结构
+   * @param obj 对象
+   * @returns
    */
-  setEnabled(enabled: boolean) {
-    this._enabled = enabled;
-    this.updateAllTemplatesEnabled();
-  }
-
-  /**
-   * 设置组的控制模式，并更新所有模板的启用状态
-   */
-  setEnableMode(mode: ReminderTemplateEnableMode) {
-    this._enableMode = mode;
-    this.updateAllTemplatesEnabled();
-  }
-
-  /**
-   * 更新组内所有模板的启用状态
-   */
-  private updateAllTemplatesEnabled() {
-    const mode = this._enableMode === "individual" ? "individual" : "group";
-    this._templates.forEach(template => {
-      template.calculateAndSetEnabled(this._enabled, mode);
-    });
-  }
-
-  /**
-   * 判断组是否有启用的模板
-   */
-  get hasEnabledTemplate() {
-    return this._templates.some(t => t.enabled);
-  }
-
   static isReminderTemplateGroup(obj: any): obj is ReminderTemplateGroup {
-    return obj instanceof ReminderTemplateGroup || (obj && obj.uuid && obj.name && Array.isArray(obj.templates));
+    return (
+      obj instanceof ReminderTemplateGroup ||
+      (obj && obj.uuid && obj.name && Array.isArray(obj.templates))
+    );
   }
 
   /**
@@ -112,11 +132,11 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    */
   toDTO() {
     return {
-      uuid: this._uuid,
       name: this._name,
       enabled: this._enabled,
-      templates: this._templates.map(t => t.toDTO()),
-        enableMode: this._enableMode, // 确保包含此字段
+      templates: this._templates.map((t) => t.toDTO()),
+      enableMode: this._enableMode, // 确保包含此字段
+      uuid: this._uuid,
     };
   }
 
@@ -125,11 +145,28 @@ export class ReminderTemplateGroup extends AggregateRoot implements IReminderTem
    */
   static fromDTO(dto: any) {
     return new ReminderTemplateGroup(
-      dto.uuid,
+      
       dto.name,
       dto.enabled,
       (dto.templates || []).map((t: any) => ReminderTemplate.fromDTO(t)),
-      dto.enableMode || "group" // 确保enableMode有默认值
+      dto.enableMode || "group", // 确保enableMode有默认值
+      dto.uuid,
+    );
+  }
+
+  /**
+   * 从DTO对象创建ReminderTemplateGroup实例
+   * @param dto DTO对象，仓储的的 templates 会直接提供已经转换好的 ReminderTemplate 实例
+   * @description 用于仓储层，直接使用原始数据而不是实体方法
+   * @returns 
+   */
+  static fromDTOForRepository(dto: any) {
+    return new ReminderTemplateGroup(
+      dto.name,
+      dto.enabled,
+      dto.templates,
+      dto.enableMode || "group", // 确保enableMode有默认值
+      dto.uuid,
     );
   }
 

@@ -2,16 +2,17 @@ import type { Database } from "better-sqlite3";
 
 export class ReminderTables {
   static createTables(db: Database) {
-    db.exec(`DROP TABLE IF EXISTS reminders;`);
-    db.exec(`DROP TABLE IF EXISTS reminder_groups;`);
+    // db.exec(`DROP TABLE IF EXISTS reminders;`);
+    // db.exec(`DROP TABLE IF EXISTS reminder_groups;`);
     db.exec(`
             CREATE TABLE IF NOT EXISTS reminder_groups (
-                account_uuid TEXT NOT NULL,
-                uuid TEXT PRIMARY KEY,
-                name TEXT NOT NULL,
-                enabled INTEGER DEFAULT 1,
-                enable_mode TEXT NOT NULL DEFAULT 'group',
-                FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
+            account_uuid TEXT NOT NULL,
+            uuid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            enabled INTEGER DEFAULT 1,
+            enable_mode TEXT NOT NULL DEFAULT 'group',
+            PRIMARY KEY (account_uuid, uuid),
+            FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
             );
         `);
 

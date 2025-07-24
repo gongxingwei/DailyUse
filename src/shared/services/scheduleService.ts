@@ -50,7 +50,7 @@ export class ScheduleService {
     }
 
     async cancelSchedule(uuid: string): Promise<boolean> {
-        return await window.shared.ipcRenderer.invoke('cancel-schedule', id);
+        return await window.shared.ipcRenderer.invoke('cancel-schedule', uuid);
     }
 
     async getSchedules(): Promise<string[]> {

@@ -18,7 +18,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, inject } from 'vue';
 import draggable from 'vuedraggable';
 import GridTemplateItem from './/GridTemplateItem.vue';
 import GridGroupItem from './/GridGroupItem.vue';
@@ -27,7 +27,7 @@ import { ImportanceLevel } from '@/shared/types/importance';
 import { useContextMenu } from '../..//composables/useContextMenu';
 import { GridItem } from '../../../../../../common/modules/reminder/types/reminder';
 
-import { ReminderTemplate } from '../../../domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
 import { ReminderTemplateGroup } from '../../../domain/aggregates/reminderTemplateGroup';
 import ReminderTemplateCard from '../ReminderTemplateCard.vue';
 
@@ -36,22 +36,16 @@ interface Props {
   gridSize: number;
 }
 
-const emit = defineEmits<{
-  (e: 'click-template', item: ReminderTemplate): void;
-  (e: 'start-create-template'): void;
-  (e: 'start-create-group'): void;
-  (e: 'start-edit-item', item: GridItem): void;
-  (e: 'start-delete-item', item: GridItem): void;
-  (e: 'start-create-template'): void;
-}>();
-
-
+// 事件处理函数全部用 inject 获取
+const onStartCreateTemplate = inject<(() => void) | undefined>('onStartCreateTemplate');
+const onStartCreateGroup = inject<(() => void) | undefined>('onStartCreateGroup');
+const onStartEditItem = inject<((item: GridItem) => void) | undefined>('onStartEditItem');
+const onStartDeleteItem = inject<((item: GridItem) => void) | undefined>('onStartDeleteItem');
+const onStartMoveTemplate = inject<((item: ReminderTemplate) => void) | undefined>('onStartMoveTemplate');
 
 const props = withDefaults(defineProps<Props>(), {
   gridSize: 80
 });
-
-
 
 const gridContainer = ref<HTMLElement>();
 
@@ -65,21 +59,19 @@ const getItemComponent = (item: GridItem) => {
   }
 };
 
-
 const onGridContextMenu = (event: MouseEvent) => {
   showContextMenu(event, [
     {
       label: '添加提醒',
       icon: 'mdi-bell-plus',
-      action: () => emit('start-create-template')
+      action: () => onStartCreateTemplate && onStartCreateTemplate()
     },
     {
       label: '添加提醒分组',
       icon: 'mdi-folder-plus',
-      action: () => emit('start-create-group')
+      action: () => onStartCreateGroup && onStartCreateGroup()
     }
   ]);
-
 };
 
 const onItemContextMenu = (event: MouseEvent, item: GridItem) => {
@@ -89,20 +81,20 @@ const onItemContextMenu = (event: MouseEvent, item: GridItem) => {
     {
       label: '编辑',
       icon: 'mdi-pencil',
-      action: () => emit('start-edit-item', item)
+      action: () => onStartEditItem && onStartEditItem(item)
     },
     {
       label: '删除',
       icon: 'mdi-delete',
-      action: () => emit('start-delete-item', item)
+      action: () => onStartDeleteItem && onStartDeleteItem(item)
     }
   ];
 
-  if (ReminderTemplateGroup.isReminderTemplateGroup(item)) {
+  if (ReminderTemplate.isReminderTemplate(item)) {
     menuItems.splice(1, 0, {
-      label: 'Add Template to Group',
+      label: '移动到组中',
       icon: 'mdi-bell-plus',
-      action: () => emit('start-create-template')
+      action: () => onStartMoveTemplate && onStartMoveTemplate(item)
     });
   }
 
@@ -119,20 +111,7 @@ const onDragStart = () => {
 };
 
 const onDragEnd = (event: any) => {
-
-};
-
-const handleOpenFolder = () => {
-  console.log('Folder opened');
-};
-
-const onCloseFolder = () => {
-  // Handle folder close
-};
-
-const handleClickTemplate = (item: ReminderTemplate) => {
-  console.log('Template clicked:', item);
-  emit('click-template', item);
+  // Handle drag end
 };
 
 </script>
@@ -140,8 +119,8 @@ const handleClickTemplate = (item: ReminderTemplate) => {
 <style scoped>
 .reminder-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  grid-template-rows: repeat(auto-fill, minmax(80px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  grid-template-rows: repeat(auto-fill, minmax(100px, 1fr));
   gap: 16px;
   /* 可选，元素间距 */
   width: 100%;

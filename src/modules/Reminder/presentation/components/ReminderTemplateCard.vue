@@ -3,16 +3,44 @@
     <v-card class="mb-2">
       <v-card-title class="d-flex align-center">
         <v-icon class="mr-2" color="primary">mdi-bell</v-icon>
-        <span>{{ template?.name }}</span>
+        <span>{{ template?.name || '未命名模板' }}</span>
         <v-spacer />
-        <v-switch v-if="template" v-model="template.enabled" inset hide-details color="primary"  @change="toggleEnabled" />
+        <v-switch
+          v-if="template"
+          v-model="isTemplateEnabled"
+          inset
+          hide-details
+          color="primary"
+        />
       </v-card-title>
       <v-card-text>
-        <div class="mb-2">
-          {{ template?.description }}
+        <div class="mb-2" v-if="template?.description">
+          {{ template.description }}
         </div>
         <div class="mb-2">
-          <v-chip>{{ template?.importanceLevel }}</v-chip>
+          <v-chip :color="getImportanceColor(template?.importanceLevel)">
+            {{ getImportanceText(template?.importanceLevel) }}
+          </v-chip>
+        </div>
+        <div class="mb-2">
+          <span class="label">分组：</span>
+          <span>{{ groupName }}</span>
+        </div>
+        <div class="mb-2">
+          <span class="label">启用：</span>
+          <span>{{ template?.selfEnabled ? '是' : '否' }}</span>
+        </div>
+        <div class="mb-2">
+          <span class="label">通知：</span>
+          <span>
+            <span v-if="template?.notificationSettings?.sound">🔔</span>
+            <span v-if="template?.notificationSettings?.vibration">📳</span>
+            <span v-if="template?.notificationSettings?.popup">💬</span>
+          </span>
+        </div>
+        <div class="mb-2">
+          <span class="label">时间配置：</span>
+          <span>{{ timeConfigText }}</span>
         </div>
       </v-card-text>
       <v-card-actions>
@@ -23,8 +51,14 @@
 </template>
 
 <script setup lang="ts">
-import type { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
-import { ref, computed, watch } from "vue";
+import type { ReminderTemplate } from "../../domain/entities/reminderTemplate";
+import { ref, computed, watch, inject } from "vue";
+import { useReminderStore } from "../stores/reminderStore";
+import { ImportanceLevel } from "@/shared/types/importance";
+import { recurrenceRuleToText } from "@common/shared/utils/recurrenceRuleUtils";
+const reminderStore = useReminderStore();
+
+const onSetTemplateEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>('onSetTemplateEnabled');
 
 const props = defineProps<{
   show: boolean;
@@ -35,50 +69,70 @@ const emit = defineEmits<{
   (e: 'back'): void;
 }>();
 
-const expanded = ref(false);
-const editing = ref(false);
-const localTemplate = ref<ReminderTemplate | null>(props.template ? JSON.parse(JSON.stringify(props.template)) : null);
-
-watch(() => props.template, (val) => {
-  if (val) {
-    localTemplate.value = JSON.parse(JSON.stringify(val));
-  } else {
-    localTemplate.value = null;
+const isTemplateEnabled = computed({
+  get: () => reminderStore.getReminderTemplateEnabledStatus(props.template?.uuid || ''),
+  set: (value: boolean) => {
+    if (props.template) {
+      try {
+        onSetTemplateEnabled?.(props.template.uuid, value);
+      } catch (error) {
+        console.error("Failed to update template enabled status:", error);
+      }
+    }
   }
 });
 
-const toggleExpand = () => {
-  expanded.value = !expanded.value;
-};
-const toggleEdit = () => {
-  if (editing.value) {
-    // 保存逻辑，可 emit('update', localTemplate.value) 或调用 API
-  }
-  editing.value = !editing.value;
-};
-const toggleEnabled = () => {
+const groupName = computed(() => {
+  const group = reminderStore.getReminderGroupById(props.template?.groupUuid || '');
+  return group ? group.name : '未分组';
+});
 
-
-  // 可 emit('update', localTemplate.value) 或调用 API
-  // emit('update', localTemplate.value);
-};
-
-const getImportanceText = (level: string) => {
+const getImportanceText = (level?: string) => {
   switch (level) {
-    case "critical": return "重要";
-    case "low": return "低";
+    case ImportanceLevel.Vital: return "极其重要";
+    case ImportanceLevel.Important: return "非常重要";
+    case ImportanceLevel.Moderate: return "中等重要";
+    case ImportanceLevel.Minor: return "不太重要";
+    case ImportanceLevel.Trivial: return "无关紧要";
     default: return "普通";
   }
 };
-const getImportanceColor = (level: string) => {
+const getImportanceColor = (level?: string) => {
   switch (level) {
-    case "critical": return "error";
-    case "low": return "success";
-    default: return "info";
+    case ImportanceLevel.Vital: return "error";
+    case ImportanceLevel.Important: return "warning";
+    case ImportanceLevel.Moderate: return "info";
+    case ImportanceLevel.Minor: return "success";
+    case ImportanceLevel.Trivial: return "default";
+    default: return "primary";
   }
 };
+
+const timeConfigText = computed(() => {
+  console.log("Recurrence Rule:", props.template?.timeConfig);
+  const text = recurrenceRuleToText(props.template?.timeConfig.schedule ?? {} as RecurrenceRule);
+  return text;
+});
 
 const handleBack = () => {
   emit('back');
 };
 </script>
+{
+    "name": "",
+    "type": "absolute",
+    "schedule": {
+        "second": 0,
+        "minute": 0,
+        "hour": 9,
+        "dayOfWeek": [
+            4
+        ]
+    }
+}
+<style scoped>
+.label {
+  color: #888;
+  margin-right: 4px;
+}
+</style>

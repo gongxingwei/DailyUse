@@ -1,6 +1,6 @@
 import { ipcMain } from 'electron';
 import { MainReminderApplicationService } from '../../application/services/reminderApplicationService';
-import { ReminderTemplate } from '../../domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '../../domain/entities/reminderTemplate';
 import { ReminderTemplateGroup } from '../../domain/aggregates/reminderTemplateGroup';
 import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
 /**
@@ -53,7 +53,9 @@ export function registerReminderIpcHandlers() {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
     const group = ReminderTemplateGroup.fromDTO(groupData);
-    return await service.createReminderGroup(auth.accountUuid, group);
+    const response = await service.createReminderGroup(auth.accountUuid, group);
+    console.log('🔄 [主进程-IPC] 创建提醒组:', response);
+    return response;
   }));
 
   ipcMain.handle('reminderGroup:getAll', withAuth(async (_event, [], auth) => {
@@ -85,6 +87,77 @@ export function registerReminderIpcHandlers() {
   }));
 
   console.log('✅ Reminder IPC handlers registered');
+
+  // 业务逻辑相关的 IPC 处理器
+  ipcMain.handle('reminder:moveTemplateToGroup', withAuth(async (_event, [templateId, toGroupId], auth) => {
+    if (!auth.accountUuid) {
+      return { success: false, message: '未登录或登录已过期，请重新登录' };
+    }
+    await service.moveTemplateToGroup(auth.accountUuid, templateId, toGroupId);
+    return { success: true, message: '模板移动成功' };
+  }));
+
+  // ========== 新增业务服务相关 IPC ==========
+
+  /**
+   * 设置提醒组启用模式（group/individual）
+   * @param groupId string 分组ID
+   * @param mode "group" | "individual"
+   * @returns { success: boolean, message?: string }
+   * @example
+   * ipcRenderer.invoke('reminderGroup:setEnableMode', groupId, "group")
+   */
+  ipcMain.handle('reminderGroup:setEnableMode', withAuth(async (_event, [groupId, mode], auth) => {
+    if (!auth.accountUuid) {
+      return { success: false, message: '未登录或登录已过期，请重新登录' };
+    }
+    try {
+      await service.setGroupEnableMode(auth.accountUuid, groupId, mode);
+      return { success: true, message: '分组启用模式设置成功' };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : String(error) };
+    }
+  }));
+
+  /**
+   * 设置提醒组启用/禁用
+   * @param groupId string 分组ID
+   * @param enabled boolean 是否启用
+   * @returns { success: boolean, message?: string }
+   * @example
+   * ipcRenderer.invoke('reminderGroup:setEnabled', groupId, true)
+   */
+  ipcMain.handle('reminderGroup:setEnabled', withAuth(async (_event, [groupId, enabled], auth) => {
+    if (!auth.accountUuid) {
+      return { success: false, message: '未登录或登录已过期，请重新登录' };
+    }
+    try {
+      await service.setGroupEnabled(auth.accountUuid, groupId, enabled);
+      return { success: true, message: '分组启用状态设置成功' };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : String(error) };
+    }
+  }));
+
+  /**
+   * 设置提醒模板启用/禁用
+   * @param templateId string 模板ID
+   * @param enabled boolean 是否启用
+   * @returns { success: boolean, message?: string }
+   * @example
+   * ipcRenderer.invoke('reminder:setEnabled', templateId, true)
+   */
+  ipcMain.handle('reminder:setEnabled', withAuth(async (_event, [templateId, enabled], auth) => {
+    if (!auth.accountUuid) {
+      return { success: false, message: '未登录或登录已过期，请重新登录' };
+    }
+    try {
+      await service.setTemplateEnabled(auth.accountUuid, templateId, enabled);
+      return { success: true, message: '模板启用状态设置成功' };
+    } catch (error) {
+      return { success: false, message: error instanceof Error ? error.message : String(error) };
+    }
+  }));
 }
 
 /**

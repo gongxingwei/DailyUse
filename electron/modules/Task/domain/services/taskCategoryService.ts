@@ -5,15 +5,24 @@ import { TaskMetaTemplateFactory } from '../utils/taskMetaTemplateFactory';
 
 /**
  * 任务元模板领域服务
- * 处理TaskMetaTemplate实体的业务逻辑
+ * 负责 TaskMetaTemplate 相关的业务逻辑，如配置合并、校验、统计、系统模板初始化等。
  */
 export class TaskMetaTemplateService {
   /**
-   * 合并元模板配置
-   * @param {TaskMetaTemplate} metaTemplate - 元模板
-   * @param {Partial<TaskTimeConfig>} customTimeConfig - 自定义时间配置（可选）
-   * @param {Partial<TaskReminderConfig>} customReminderConfig - 自定义提醒配置（可选）
-   * @returns {object} 合并后的配置对象
+   * 合并元模板的默认配置与自定义配置
+   * @param metaTemplate 元模板对象
+   * @param customTimeConfig 可选，自定义时间配置（部分字段覆盖）
+   * @param customReminderConfig 可选，自定义提醒配置（部分字段覆盖）
+   * @returns 合并后的配置对象
+   * @example
+   * ```ts
+   * const { timeConfig, reminderConfig } = service.mergeWithCustomConfig(meta, { startTime: '08:00' });
+   * ```
+   * 返回示例：
+   * {
+   *   timeConfig: { ... },
+   *   reminderConfig: { ... }
+   * }
    */
   mergeWithCustomConfig(
     metaTemplate: TaskMetaTemplate,
@@ -43,13 +52,28 @@ export class TaskMetaTemplateService {
   }
 
   /**
-   * 获取元模板使用统计
-   * @param {TaskMetaTemplate} metaTemplate - 元模板
-   * @param {number} taskTemplateCount - 任务模板数量
-   * @param {number} taskInstanceCount - 任务实例数量
-   * @returns {object} 使用统计信息
+   * 获取元模板的使用统计信息
+   * @param metaTemplate 元模板对象
+   * @param taskTemplateCount 该元模板下的任务模板数量
+   * @param taskInstanceCount 该元模板下的任务实例数量
+   * @returns 统计信息对象
+   * @example
+   * ```ts
+   * const stats = service.getUsageStats(meta, 5, 20);
+   * ```
+   * 返回示例：
+   * {
+   *   templatesCreated: 5,
+   *   instancesGenerated: 20,
+   *   lastUsed: '2024-07-23T12:00:00.000Z',
+   *   category: 'habit'
+   * }
    */
-  getUsageStats(metaTemplate: TaskMetaTemplate, taskTemplateCount: number, taskInstanceCount: number) {
+  getUsageStats(
+    metaTemplate: TaskMetaTemplate,
+    taskTemplateCount: number,
+    taskInstanceCount: number
+  ) {
     return {
       templatesCreated: taskTemplateCount,
       instancesGenerated: taskInstanceCount,
@@ -59,9 +83,19 @@ export class TaskMetaTemplateService {
   }
 
   /**
-   * 验证元模板配置
-   * @param {TaskMetaTemplate} metaTemplate - 元模板
-   * @returns {object} 验证结果，包含是否有效和错误信息
+   * 校验元模板配置的有效性
+   * @param metaTemplate 元模板对象
+   * @returns 校验结果对象，包含 valid（是否有效）和 errors（错误信息数组）
+   * @example
+   * ```ts
+   * const result = service.validateConfiguration(meta);
+   * if (!result.valid) { alert(result.errors.join('\n')); }
+   * ```
+   * 返回示例：
+   * {
+   *   valid: false,
+   *   errors: ['元模板标题不能为空', '元模板必须指定分类']
+   * }
    */
   validateConfiguration(metaTemplate: TaskMetaTemplate): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
@@ -69,11 +103,9 @@ export class TaskMetaTemplateService {
     if (!metaTemplate.name.trim()) {
       errors.push('元模板标题不能为空');
     }
-
     if (!metaTemplate.category.trim()) {
       errors.push('元模板必须指定分类');
     }
-
     if (!metaTemplate.defaultTimeConfig) {
       errors.push('元模板必须包含默认时间配置');
     }
@@ -85,10 +117,17 @@ export class TaskMetaTemplateService {
   }
 
   /**
-   * 初始化系统元模板
-   * @param {ITaskMetaTemplateRepository} metaTemplateRepository
-   * @param {string} accountUuid
-   * @returns {Promise<TResponse<void>>}
+   * 初始化系统内置元模板（如首次启动时调用）
+   * @param metaTemplateRepository 元模板仓库实例
+   * @param accountUuid 用户账号ID
+   * @returns Promise<{ success: boolean, message: string }>
+   * @example
+   * ```ts
+   * const result = await service.initializeSystemTemplates(repo, accountUuid);
+   * if (result.success) { ... }
+   * ```
+   * 返回示例：
+   * { success: true, message: "成功初始化 5 个系统模板" }
    */
   async initializeSystemTemplates(
     metaTemplateRepository: ITaskMetaTemplateRepository,
@@ -134,4 +173,10 @@ export class TaskMetaTemplateService {
   }
 }
 
+/**
+ * 单例导出，方便直接使用
+ * @example
+ * import { taskMetaTemplateService } from '.../taskCategoryService'
+ * taskMetaTemplateService.mergeWithCustomConfig(...)
+ */
 export const taskMetaTemplateService = new TaskMetaTemplateService();

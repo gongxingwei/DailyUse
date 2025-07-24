@@ -1,5 +1,5 @@
 import { Entity } from "@/shared/domain/entity";
-import type { IReminderInstance } from "@electron/modules/Reminder";
+import type { IReminderInstance } from "@common/modules/reminder";
 import { ImportanceLevel } from "@/shared/types/importance";
 
 /**

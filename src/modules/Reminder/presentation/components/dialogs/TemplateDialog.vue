@@ -14,12 +14,16 @@
 
       <v-card-text class="pa-6">
         <v-form ref="formRef" v-model="isFormValid">
+          <!-- 模板名称 -->
           <v-text-field v-model="templateName" label="Template Name" :rules="nameRules" required class="mb-4" />
 
+          <!-- 描述 -->
           <v-textarea v-model="templateDescription" label="Description" rows="3" class="mb-4" />
 
+          <!-- 优先级选择 -->
           <v-select v-model="templateImportanceLevel" :items="priorityOptions" label="Priority" class="mb-4" />
 
+          <!-- 启用开关 -->
           <v-switch v-model="templateSelfEnabled" label="Enable Template" color="primary" class="mb-4" />
 
           <!-- 通知设置 -->
@@ -71,39 +75,45 @@
 
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
-import { ReminderTemplate } from '@/modules/Reminder/domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '@/modules/Reminder/domain/entities/reminderTemplate';
 import { ImportanceLevel } from '@/shared/types/importance';
 import { RecurrenceRuleHelper } from '@/shared/utils/recurrenceRuleHelpre';
 
+// =====================
+// Props & Emits
+// =====================
 interface Props {
   modelValue: boolean;
   template?: ReminderTemplate | null;
 }
-
 const props = withDefaults(defineProps<Props>(), {
   template: null
 });
-
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
   (e: 'create-template', template: ReminderTemplate): void;
   (e: 'update-template', template: ReminderTemplate): void;
 }>();
 
+// =====================
+// Dialog 控制
+// =====================
 const isOpen = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 });
-
 const isEditing = computed(() => !!props.template);
 
-// 1. 编辑时 clone，创建时 forCreate
+// =====================
+// 表单数据与绑定
+// =====================
+
+// 当前编辑的模板数据（编辑时 clone，新增时 forCreate）
 const templateModel = ref<ReminderTemplate>(
   props.template ? props.template.clone() : ReminderTemplate.forCreate()
 );
 
-
-// 3. computed get/set 绑定属性
+// 表单字段的 computed 绑定
 const templateName = computed({
   get: () => templateModel.value.name,
   set: (val: string) => (templateModel.value.name = val)
@@ -133,7 +143,11 @@ const templateNotificationPopup = computed({
   set: (val: boolean) => (templateModel.value.notificationSettings.popup = val)
 });
 
-// 时间配置相关
+// =====================
+// 时间与星期相关
+// =====================
+
+// 小时、分钟、星期选项
 const hourOptions = Array.from({ length: 24 }, (_, i) => ({
   title: `${i.toString().padStart(2, '0')} 时`,
   value: i
@@ -152,10 +166,12 @@ const weekDayOptions = [
   { title: '周六', value: 6 }
 ];
 
+// 选中的时间和星期
 const timeHour = ref(9);
 const timeMinute = ref(0);
 const timeDaysOfWeek = ref<number[]>([]);
 
+// 选中时间和星期的展示文本
 const selectedTime = computed(() => {
   return `${timeHour.value.toString().padStart(2, '0')}:${timeMinute.value.toString().padStart(2, '0')}`;
 });
@@ -167,7 +183,12 @@ const selectedDaysText = computed(() => {
     .map(day => weekDayOptions.find(opt => opt.value === day)?.title)
     .join(', ');
 });
-// 从 RecurrenceRule 解析时间和星期
+
+// =====================
+// RecurrenceRule 相关转换
+// =====================
+
+// 从 RecurrenceRule 解析时间和星期到 UI
 const parseFromRecurrenceRule = (rule: any) => {
   const { hour, minute, daysOfWeek } = RecurrenceRuleHelper.toUISelectors(rule);
   timeHour.value = hour;
@@ -175,7 +196,7 @@ const parseFromRecurrenceRule = (rule: any) => {
   timeDaysOfWeek.value = daysOfWeek;
 };
 
-// 将时间和星期转换为 RecurrenceRule
+// 将 UI 选择的时间和星期转换为 RecurrenceRule
 const convertToRecurrenceRule = () => {
   return RecurrenceRuleHelper.fromUISelectors(
     timeHour.value,
@@ -191,11 +212,13 @@ watch([timeHour, timeMinute, timeDaysOfWeek], () => {
   }
 }, { deep: true });
 
+// =====================
+// 校验规则与选项
+// =====================
 const nameRules = [
   (v: string) => !!v || 'Name is required',
   (v: string) => v.length >= 2 || 'Name must be at least 2 characters'
 ];
-
 const priorityOptions = [
   { title: 'Trivial', value: ImportanceLevel.Trivial },
   { title: 'Minor', value: ImportanceLevel.Minor },
@@ -204,13 +227,36 @@ const priorityOptions = [
   { title: 'Vital', value: ImportanceLevel.Vital }
 ];
 
+// =====================
+// 表单引用与校验
+// =====================
 const formRef = ref();
 const isFormValid = ref(false);
 
+// =====================
+// 事件处理
+// =====================
+
+/**
+ * 关闭弹窗并重置表单
+ */
 const closeDialog = () => {
   isOpen.value = false;
+  // 重置表单校验和内容
+  formRef.value?.resetValidation?.();
+  templateModel.value = props.template ? props.template.clone() : ReminderTemplate.forCreate();
+  if (templateModel.value.timeConfig?.schedule) {
+    parseFromRecurrenceRule(templateModel.value.timeConfig.schedule);
+  } else {
+    timeHour.value = 9;
+    timeMinute.value = 0;
+    timeDaysOfWeek.value = [];
+  }
 };
 
+/**
+ * 提交表单（创建或更新模板）
+ */
 const handleSubmit = () => {
   if (isFormValid.value) {
     if (props.template) {
@@ -222,14 +268,25 @@ const handleSubmit = () => {
   }
 };
 
-// 2. 响应 props.template 变化
+// =====================
+// 弹窗打开时重置表单内容
+// =====================
 watch(
-  () => props.template,
-  (tpl) => {
-    templateModel.value = tpl ? tpl.clone() : ReminderTemplate.forCreate();
-    // 解析时间配置到 UI
-    if (templateModel.value.timeConfig?.schedule) {
-      parseFromRecurrenceRule(templateModel.value.timeConfig.schedule);
+  [() => props.template, () => props.modelValue],
+  ([tpl, modelValue]) => {
+    if (modelValue) {
+      // 只在弹窗打开时重置
+      templateModel.value = tpl ? tpl.clone() : ReminderTemplate.forCreate();
+      // 解析时间配置到 UI
+      if (templateModel.value.timeConfig?.schedule) {
+        parseFromRecurrenceRule(templateModel.value.timeConfig.schedule);
+      } else {
+        timeHour.value = 9;
+        timeMinute.value = 0;
+        timeDaysOfWeek.value = [];
+      }
+      // 重置表单校验
+      formRef.value?.resetValidation?.();
     }
   },
   { immediate: true }

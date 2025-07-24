@@ -1,7 +1,9 @@
-import { RecurrenceRule } from "@/shared/types/recurrenceRule";
+import { RecurrenceRule } from "@common/shared/types/recurrenceRule";
 // import { RecurrenceRule } from "node-schedule";
-import { ReminderTemplate } from "../../../../src/modules/Reminder/domain/aggregates/reminderTemplate"
+import { ReminderTemplate } from "../../../../src/modules/Reminder/domain/entities/reminderTemplate"
 import { ReminderTemplateGroup } from "../../../../src/modules/Reminder/domain/aggregates/reminderTemplateGroup"
+
+export const SYSTEM_GROUP_ID = "system-root";
 
 export type GridItem = ReminderTemplate | ReminderTemplateGroup;
 
@@ -20,37 +22,14 @@ interface DurationRange {
   max: number;
 }
 
-export interface TemplateFormData {
-  name: string;
-  groupId?: string | null;
-  description: string;
-  importanceLevel: ImportanceLevel;
-  selfEnabled: boolean;
-  enabled: boolean;
-  notificationSettings: {
-    sound: boolean;
-    vibration: boolean;
-    popup: boolean;
-  };
-  timeConfig: {
-    name: string;
-    type: 'absolute' | 'relative';
-    duration?: number | undefined; // For relative time
-    schedule: RecurrenceRule; // For absolute time, can be ISO8601 strings
-  };
-}
-
-
 export interface IReminderTemplate {
-  groupId: string;
+  groupUuid: string;
   uuid: string;
   name: string;
   description?: string;
   importanceLevel: ImportanceLevel;
   /** 模板自身的启用状态 */
   selfEnabled: boolean;
-  /** 模板实际的启用状态（根据组模式和selfEnabled计算得出） */
-  enabled: boolean;
   notificationSettings: {
     sound: boolean;
     vibration: boolean;
@@ -108,28 +87,3 @@ export interface IReminderTemplateGroup {
   enableMode: ReminderTemplateEnableMode;
   templates: IReminderTemplate[];
 }
-
-
-// ------ Reminder Instance Types ------
-
-export interface IReminderInstance {
-  uuid: string;
-  templateId: string;
-  templateName: string;
-  description?: string;
-  importanceLevel: ImportanceLevel;
-  enabled: boolean;
-  notificationSettings: {
-    sound: boolean;
-    vibration: boolean;
-    popup: boolean;
-  };
-  reminderSchedules: ReminderSchedule[];
-
-  lifecycle: {
-    status: "pending" | "triggered" | "completed" | "cancelled";
-    createdAt: string;
-    updatedAt: string;
-  };
-}
-

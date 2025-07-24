@@ -98,7 +98,7 @@
 import { ref, reactive, watch } from "vue";
 import type { IReminderTemplate } from "@electron/modules/Reminder";
 import { ImportanceLevel } from "@/shared/types/importance";
-import { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
+import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 
 const emit = defineEmits<{
   (e: "submit", template: ReminderTemplate): void

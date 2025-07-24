@@ -27,7 +27,7 @@ import { ImportanceLevel } from '@/shared/types/importance';
 import { useContextMenu } from '../..//composables/useContextMenu';
 import { GridItem } from '../../../../../../common/modules/reminder/types/reminder';
 
-import { ReminderTemplate } from '../../../domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
 import { ReminderTemplateGroup } from '../../../domain/aggregates/reminderTemplateGroup';
 import ReminderTemplateCard from '../ReminderTemplateCard.vue';
 

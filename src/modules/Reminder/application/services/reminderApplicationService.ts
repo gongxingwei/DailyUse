@@ -1,7 +1,7 @@
 import type { TResponse } from "@/shared/types/response";
 import { reminderIpcClient } from "../../infrastructure/ipc/reminderIpcClient";
 import { useReminderStore } from "../../presentation/stores/reminderStore";
-import { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
+import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup"; 
 
 /**
@@ -33,7 +33,9 @@ export class ReminderDomainApplicationService {
    * Pinia 状态管理存储实例
    * 用于管理提醒模板和组的本地状态
    */
-  private store = useReminderStore();
+  private get store() {
+    return useReminderStore();
+  }
 
   // ========== 提醒模板相关操作 ==========
 
@@ -67,7 +69,7 @@ export class ReminderDomainApplicationService {
       
       if (response.success && response.data) {
         // 成功后同步到本地状态
-        this.store.addReminderTemplate(response.data);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -111,7 +113,7 @@ export class ReminderDomainApplicationService {
       
       if (response.success && response.data) {
         // 批量更新本地状态
-        this.store.setReminderTemplates(response.data);
+        this.syncAllReminderGroups();
         return response.data;
       }
       
@@ -151,7 +153,7 @@ export class ReminderDomainApplicationService {
       
       if (response.success && response.data) {
         // 更新本地状态中的特定模板
-        this.store.updateReminderTemplate(response.data);
+        this.syncAllReminderGroups();
         return response.data;
       }
       
@@ -189,7 +191,7 @@ export class ReminderDomainApplicationService {
       
       if (response.success && response.data) {
         // 同步更新本地状态
-        this.store.updateReminderTemplate(response.data);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -235,7 +237,7 @@ export class ReminderDomainApplicationService {
       
       if (response.success) {
         // 从本地状态中移除
-        this.store.removeReminderTemplate(uuid);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -282,7 +284,8 @@ export class ReminderDomainApplicationService {
       const response = await reminderIpcClient.createReminderGroup(group);
       
       if (response.success && response.data) {
-        this.store.addReminderGroup(response.data);
+        console.log('创建组成功:', response.data);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -323,7 +326,8 @@ export class ReminderDomainApplicationService {
       const response = await reminderIpcClient.getAllReminderGroups();
       
       if (response.success && response.data) {
-        this.store.setReminderGroups(response.data);
+        console.log('获取所有提醒组成功:', response.data);
+        this.store.setReminderGroups(response.data); // 更新 Pinia store
         return response.data;
       }
       
@@ -358,7 +362,7 @@ export class ReminderDomainApplicationService {
       const response = await reminderIpcClient.getReminderGroupById(uuid);
       
       if (response.success && response.data) {
-        this.store.updateReminderGroup(response.data);
+        this.syncAllReminderGroups();
         return response.data;
       }
       
@@ -395,7 +399,7 @@ export class ReminderDomainApplicationService {
       const response = await reminderIpcClient.updateReminderGroup(group);
       
       if (response.success && response.data) {
-        this.store.updateReminderGroup(response.data);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -440,7 +444,7 @@ export class ReminderDomainApplicationService {
       const response = await reminderIpcClient.deleteReminderGroup(uuid);
       
       if (response.success) {
-        this.store.removeReminderGroup(uuid);
+        this.syncAllReminderGroups();
         return {
           success: true,
           message: response.message,
@@ -455,6 +459,124 @@ export class ReminderDomainApplicationService {
       return {
         success: false,
         message: `删除提醒组失败: ${error instanceof Error ? error.message : "未知错误"}`,
+      };
+    }
+  }
+
+   /**
+   * 设置提醒组启用模式（group/individual）
+   * @param groupId string 分组ID
+   * @param mode "group" | "individual"
+   * @returns Promise<TResponse<void>>
+   * @example
+   * await service.setGroupEnableMode('group-123', 'group');
+   */
+  async setGroupEnableMode(groupId: string, mode: "group" | "individual"): Promise<TResponse<void>> {
+    try {
+      const response = await reminderIpcClient.setGroupEnableMode(groupId, mode);
+      if (response.success) {
+        await this.syncAllReminderGroups();
+      }
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: `设置分组启用模式失败: ${error instanceof Error ? error.message : "未知错误"}`,
+      };
+    }
+  }
+
+  /**
+   * 设置提醒组启用/禁用
+   * @param groupId string 分组ID
+   * @param enabled boolean 是否启用
+   * @returns Promise<TResponse<void>>
+   * @example
+   * await service.setGroupEnabled('group-123', true);
+   */
+  async setGroupEnabled(groupId: string, enabled: boolean): Promise<TResponse<void>> {
+    try {
+      const response = await reminderIpcClient.setGroupEnabled(groupId, enabled);
+      if (response.success) {
+        await this.syncAllReminderGroups();
+      }
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: `设置分组启用状态失败: ${error instanceof Error ? error.message : "未知错误"}`,
+      };
+    }
+  }
+
+  /**
+   * 设置提醒模板启用/禁用
+   * @param templateId string 模板ID
+   * @param enabled boolean 是否启用
+   * @returns Promise<TResponse<void>>
+   * @example
+   * await service.setTemplateEnabled('template-123', true);
+   */
+  async setTemplateEnabled(templateId: string, enabled: boolean): Promise<TResponse<void>> {
+    try {
+      const response = await reminderIpcClient.setTemplateEnabled(templateId, enabled);
+      if (response.success) {
+        await this.syncAllReminderGroups();
+      }
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        message: `设置模板启用状态失败: ${error instanceof Error ? error.message : "未知错误"}`,
+      };
+    }
+  }
+
+  // ========== 提醒模板移动操作 ==========
+  /**
+   * 将提醒模板移动到指定组
+   * 
+   * 业务流程：
+   * 1. 通过 IPC 向主进程发送移动请求
+   * 2. 主进程执行数据更新和持久化
+   * 3. 成功后更新本地状态存储
+   * 4. 返回统一的响应格式
+   * 
+   * @param templateId - 要移动的模板ID
+   * @param toGroupId - 目标组ID
+   * @returns Promise<TResponse<void>> 移动结果，成功时不返回数据
+   * 
+   * @example
+   * ```typescript
+   * const result = await service.moveTemplateToGroup('template-123', 'group-456');
+   * if (result.success) {
+   *   console.log('移动成功');
+   * }
+   * ```
+   */
+  async moveTemplateToGroup(
+    templateId: string,
+    toGroupId: string
+  ): Promise<TResponse<void>> {
+    try {
+      const response = await reminderIpcClient.moveTemplateToGroup(templateId, toGroupId);
+      console.log('移动模板到组响应:', response);
+      if (response.success) {
+        // // 更新本地状态
+        // this.store.moveTemplateToGroup(templateId, toGroupId);
+        // return {
+        //   success: true,
+        //   message: response.message,
+        // };
+        this.getAllReminderGroups();
+      }
+      
+      return response;
+    } catch (error) {
+      console.error(`移动模板到组失败 (Template ID: ${templateId}, Group ID: ${toGroupId}):`, error);
+      return {
+        success: false,
+        message: `移动提醒模板到组失败: ${error instanceof Error ? error.message : "未知错误"}`,
       };
     }
   }
@@ -495,38 +617,6 @@ export class ReminderDomainApplicationService {
     await this.getAllReminderTemplates();
   }
 
-  // ========== 账号相关操作 ==========
-
-  /**
-   * 设置当前账号 UUID
-   * 
-   * 用于多账号系统中切换账号时，通知主进程更新数据隔离上下文
-   * 
-   * @param accountUuid - 账号的唯一标识符
-   * @returns Promise<TResponse<void>> 设置结果
-   * 
-   * @example
-   * ```typescript
-   * const result = await service.setCurrentAccountUuid('user-123');
-   * if (result.success) {
-   *   console.log('账号切换成功');
-   *   // 重新同步数据
-   *   await service.syncAllReminderGroups();
-   *   await service.syncAllReminderTemplates();
-   * }
-   * ```
-   */
-  async setCurrentAccountUuid(accountUuid: string): Promise<TResponse<void>> {
-    try {
-      const response = await reminderIpcClient.setCurrentAccountUuid(accountUuid);
-      return response;
-    } catch (error) {
-      return {
-        success: false,
-        message: `设置账号失败: ${error instanceof Error ? error.message : "未知错误"}`,
-      };
-    }
-  }
 }
 
 // ========== 工厂方法和单例管理 ==========

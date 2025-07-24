@@ -18,10 +18,10 @@ export class DatabaseManager {
     console.log('🔄 [数据库管理器] 开始创建所有数据表...');
 
     // 按照依赖顺序创建表
-    console.log('📋 [数据库管理器] 创建账户模块表...');
+
     AccountTables.createTables(db);
 
-    console.log('🔐 [数据库管理器] 创建认证模块表...');
+
     AuthenticationTables.createTables(db);
 
     console.log('📊 [数据库管理器] 创建会话记录模块表...');

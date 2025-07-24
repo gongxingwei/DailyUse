@@ -11,32 +11,49 @@ import {
 import { AccountStatusVerificationResponseEvent } from "../../../Account/domain/events/accountEvents";
 import { eventBus } from "../../../../shared/events/eventBus";
 import { generateUUID } from "@/shared/utils/uuid";
-import { AccountUuidGetterResponseEvent } from "../../../Account/index"
-// domainServices
+import { AccountUuidGetterResponseEvent } from "../../../Account/index";
 import { tokenService } from "../../domain/services/tokenService";
 import { authSession } from "../../application/services/authSessionStore";
-// types
 import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } from "../../domain/types";
 
 
 /**
- * Authentication 模块的登录服务
+ * AuthenticationLoginService
+ * 
+ * 负责处理用户登录流程、凭证验证、账号状态校验、事件发布等。
+ * 支持依赖注入、事件驱动、异步处理，保证登录流程的解耦与可扩展性。
  */
-export class AuthenticationLoginService{
+export class AuthenticationLoginService {
+  /**
+   * 单例实例
+   */
   private static instance: AuthenticationLoginService | null = null;
+
+  /**
+   * 认证凭证仓库
+   */
   private authCredentialRepository: IAuthCredentialRepository;
+
+  /**
+   * 令牌仓库
+   */
   private tokenRepository: ITokenRepository;
+
+  /**
+   * 待处理的账号ID请求（requestId -> Promise控制器）
+   */
   private pendingAccountUuidRequests = new Map<
     string,
     {
-      resolve: (response: {
-        accountUuid?: string;
-      }) => void;
+      resolve: (response: { accountUuid?: string }) => void;
       reject: (error: Error) => void;
       timeout: NodeJS.Timeout;
     }
   >();
 
+  /**
+   * 待处理的账号状态验证请求（requestId -> Promise控制器）
+   */
   private pendingStatusVerifications = new Map<
     string,
     {
@@ -46,28 +63,40 @@ export class AuthenticationLoginService{
     }
   >();
 
+  /**
+   * 构造函数
+   * @param authCredentialRepository 认证凭证仓库
+   * @param tokenRepository 令牌仓库
+   * 构造时自动注册事件监听器
+   */
   constructor(authCredentialRepository: IAuthCredentialRepository, tokenRepository: ITokenRepository) {
-    // 监听账号状态验证响应
     this.authCredentialRepository = authCredentialRepository;
     this.tokenRepository = tokenRepository;
     this.setupEventListeners();
   }
 
+  // ===================== 静态方法（单例/工厂） =====================
+
   /**
-   * 创建服务实例
+   * 创建服务实例（支持依赖注入）
    * @param authCredentialRepository 可选的认证凭证仓库
    * @param tokenRepository 可选的令牌仓库
-   * @return 返回一个新的 AuthenticationLoginService 实例
-   * 可以通过依赖注入的方式传入自定义的仓库实现，默认为容器中的实现
+   * @returns AuthenticationLoginService 实例
    */
-  static async createInstance(authCredentialRepository?: IAuthCredentialRepository, tokenRepository?: ITokenRepository): Promise<AuthenticationLoginService> {
+  static async createInstance(
+    authCredentialRepository?: IAuthCredentialRepository,
+    tokenRepository?: ITokenRepository
+  ): Promise<AuthenticationLoginService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
     authCredentialRepository = authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
     tokenRepository = tokenRepository || authenticationContainer.getTokenRepository();
-    console.log('[AuthLoginService] 创建实例', { authCredentialRepository, tokenRepository })
+    console.log('[AuthLoginService] 创建实例', { authCredentialRepository, tokenRepository });
     return new AuthenticationLoginService(authCredentialRepository, tokenRepository);
   }
 
+  /**
+   * 获取单例实例（全局唯一）
+   */
   static async getInstance(): Promise<AuthenticationLoginService> {
     if (!AuthenticationLoginService.instance) {
       AuthenticationLoginService.instance = await AuthenticationLoginService.createInstance();
@@ -75,19 +104,19 @@ export class AuthenticationLoginService{
     return AuthenticationLoginService.instance;
   }
 
+  // ===================== 实例方法（业务主流程） =====================
+
   /**
-   * 处理用户登录请求
+   * 处理用户登录请求（主入口）
+   * @param request 登录请求参数
+   * @returns 登录响应（成功/失败）
    */
   async PasswordAuthentication(request: PasswordAuthenticationRequest): Promise<TResponse<PasswordAuthenticationResponse>> {
     const { username, password, clientInfo } = request;
-
     console.log("🔐 [AuthLogin] 开始处理登录请求:", username);
-
     try {
-      const { accountUuid } = await this.getAccountUuidByUsername(
-        username
-      );
-
+      // 1. 获取账号UUID（异步事件驱动）
+      const { accountUuid } = await this.getAccountUuidByUsername(username);
       if (!accountUuid) {
         console.log("❌ [AuthLogin] 账号不存在:", username);
         return {
@@ -95,16 +124,12 @@ export class AuthenticationLoginService{
           message: "账号不存在",
           data: undefined
         };
-        
       }
 
-      const authCredential = await this.authCredentialRepository.findByAccountUuid(
-        accountUuid
-      );
-
+      // 2. 查询认证凭证
+      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
       if (!authCredential) {
         console.log("❌ [AuthLogin] 找不到用户认证凭证:", username);
-
         // 发布登录尝试失败事件
         await this.publishLoginAttemptEvent({
           username,
@@ -113,7 +138,6 @@ export class AuthenticationLoginService{
           attemptedAt: new Date(),
           clientInfo,
         });
-
         return {
           success: false,
           message: "账号不存在",
@@ -121,47 +145,30 @@ export class AuthenticationLoginService{
         };
       }
 
-      // 2. 验证账号状态
-      const accountStatusResponse = await this.verifyAccountStatus(
-        accountUuid,
-        username
-      );
-
+      // 3. 验证账号状态（异步事件驱动）
+      const accountStatusResponse = await this.verifyAccountStatus(accountUuid, username);
       if (!accountStatusResponse.payload.isLoginAllowed) {
-        console.log(
-          "❌ [AuthLogin] 账号状态不允许登录:",
-          accountStatusResponse.payload.accountStatus
-        );
-
+        console.log("❌ [AuthLogin] 账号状态不允许登录:", accountStatusResponse.payload.accountStatus);
         // 发布登录尝试失败事件
         await this.publishLoginAttemptEvent({
           username,
           accountUuid,
           result: accountStatusResponse.payload.accountStatus as any,
-          failureReason:
-            accountStatusResponse.payload.statusMessage || "账号状态异常",
+          failureReason: accountStatusResponse.payload.statusMessage || "账号状态异常",
           attemptedAt: new Date(),
           clientInfo,
         });
-
         return {
           success: false,
-          message:
-            accountStatusResponse.payload.statusMessage ||
-            "账号状态异常，无法登录",
+          message: accountStatusResponse.payload.statusMessage || "账号状态异常，无法登录",
         };
       }
-
       console.log("✓ [AuthLogin] 账号状态验证通过");
 
-      // 3. 验证登录凭证（密码）
-      const {success: credentialValid, token: accessToken} = authCredential.verifyPassword(password);
-
-      
-      // 如果凭证验证失败
+      // 4. 验证登录凭证（密码）
+      const { success: credentialValid, token: accessToken } = authCredential.verifyPassword(password);
       if (!credentialValid || !accessToken) {
         console.log("❌ [AuthLogin] 密码验证失败");
-
         // 发布凭证验证失败事件
         await this.publishCredentialVerificationEvent({
           accountUuid,
@@ -172,7 +179,6 @@ export class AuthenticationLoginService{
           verifiedAt: new Date(),
           clientInfo,
         });
-
         // 发布登录尝试失败事件
         await this.publishLoginAttemptEvent({
           username,
@@ -182,24 +188,23 @@ export class AuthenticationLoginService{
           attemptedAt: new Date(),
           clientInfo,
         });
-
         return {
           success: false,
           message: "用户名或密码错误",
         };
       }
       console.log("✓ [AuthLogin] 密码验证通过，生成访问令牌");
-      await tokenService.saveToken(accessToken,this.tokenRepository);
+      // 5. 保存令牌
+      await tokenService.saveToken(accessToken, this.tokenRepository);
       console.log("✓ [AuthLogin] 密码验证通过，访问令牌已保存");
-      // 3. 保存登录信息到会话存储
+      // 6. 保存登录信息到会话存储
       authSession.setAuthInfo({
         token: accessToken.value,
         accountUuid: accountUuid,
       });
-      // 4. 生成会话ID
+      // 7. 生成会话ID
       const sessionId = generateUUID();
-
-      // 5. 发布凭证验证成功事件
+      // 8. 发布凭证验证成功事件
       await this.publishCredentialVerificationEvent({
         accountUuid,
         username,
@@ -208,8 +213,7 @@ export class AuthenticationLoginService{
         verifiedAt: new Date(),
         clientInfo,
       });
-
-      // 6. 发布登录成功事件
+      // 9. 发布登录成功事件
       await this.publishUserLoggedInEvent({
         accountUuid,
         username,
@@ -218,8 +222,7 @@ export class AuthenticationLoginService{
         loginAt: new Date(),
         clientInfo,
       });
-
-      // 7. 发布登录尝试成功事件
+      // 10. 发布登录尝试成功事件
       await this.publishLoginAttemptEvent({
         username,
         accountUuid,
@@ -227,12 +230,7 @@ export class AuthenticationLoginService{
         attemptedAt: new Date(),
         clientInfo,
       });
-
-      console.log("✅ [AuthLogin] 用户登录成功:", {
-        username,
-        accountUuid,
-        sessionId,
-      });
+      console.log("✅ [AuthLogin] 用户登录成功:", { username, accountUuid, sessionId });
       return {
         success: true,
         message: "登录成功",
@@ -242,10 +240,8 @@ export class AuthenticationLoginService{
           token: accessToken.value || null
         },
       };
-      
     } catch (error) {
       console.error("❌ [AuthLogin] 登录处理异常:", error);
-
       // 发布登录尝试失败事件
       await this.publishLoginAttemptEvent({
         username,
@@ -254,7 +250,6 @@ export class AuthenticationLoginService{
         attemptedAt: new Date(),
         clientInfo,
       });
-
       return {
         success: false,
         message: "登录失败，请稍后重试",
@@ -262,23 +257,34 @@ export class AuthenticationLoginService{
     }
   }
 
-  private async getAccountUuidByUsername(
-    username: string
-  ): Promise<{ accountUuid?: string }> {
-    const requestId = generateUUID();
+  /**
+   * 销毁服务，清理资源
+   * 用于关闭服务时释放所有pending请求
+   */
+  destroy(): void {
+    // 清理所有pending账号状态验证请求
+    for (const [, pending] of this.pendingStatusVerifications.entries()) {
+      clearTimeout(pending.timeout);
+      pending.reject(new Error("服务正在关闭"));
+    }
+    this.pendingStatusVerifications.clear();
+  }
 
+  // ===================== 私有方法（事件/异步/内部工具） =====================
+
+  /**
+   * 通过用户名异步获取账号UUID（事件驱动，带超时）
+   * @param username 用户名
+   * @returns Promise<{ accountUuid?: string }>
+   */
+  private async getAccountUuidByUsername(username: string): Promise<{ accountUuid?: string }> {
+    const requestId = generateUUID();
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingAccountUuidRequests.delete(requestId);
         reject(new Error("获取账号ID超时"));
       }, 10000); // 10秒超时
-
-      this.pendingAccountUuidRequests.set(requestId, {
-        resolve,
-        reject,
-        timeout,
-      });
-
+      this.pendingAccountUuidRequests.set(requestId, { resolve, reject, timeout });
       const event: AccountUuidGetterRequestedEvent = {
         eventType: "AccountUuidGetterRequested",
         aggregateId: username,
@@ -289,52 +295,45 @@ export class AuthenticationLoginService{
           requestId,
         },
       };
-
       eventBus.publish(event);
     });
   }
+
   /**
-   * 验证账号状态
+   * 异步验证账号状态（事件驱动，带超时）
+   * @param accountUuid 账号UUID
+   * @param username 用户名
+   * @returns Promise<AccountStatusVerificationResponseEvent>
    */
-  private async verifyAccountStatus(
-    accountUuid: string,
-    username: string
-  ): Promise<AccountStatusVerificationResponseEvent> {
+  private async verifyAccountStatus(accountUuid: string, username: string): Promise<AccountStatusVerificationResponseEvent> {
     return new Promise((resolve, reject) => {
       const requestId = generateUUID();
       const timeout = setTimeout(() => {
         this.pendingStatusVerifications.delete(requestId);
         reject(new Error("账号状态验证超时"));
       }, 10000); // 10秒超时
-
       // 保存pending请求
-      this.pendingStatusVerifications.set(requestId, {
-        resolve,
-        reject,
-        timeout,
-      });
-
+      this.pendingStatusVerifications.set(requestId, { resolve, reject, timeout });
       // 发布账号状态验证请求事件
-      const verificationRequestEvent: AccountStatusVerificationRequestedEvent =
-        {
-          eventType: "AccountStatusVerificationRequested",
-          aggregateId: accountUuid,
-          occurredOn: new Date(),
-          payload: {
-            accountUuid,
-            username,
-            requestedAt: new Date(),
-            requestId,
-          },
-        };
-
+      const verificationRequestEvent: AccountStatusVerificationRequestedEvent = {
+        eventType: "AccountStatusVerificationRequested",
+        aggregateId: accountUuid,
+        occurredOn: new Date(),
+        payload: {
+          accountUuid,
+          username,
+          requestedAt: new Date(),
+          requestId,
+        },
+      };
       eventBus.publish(verificationRequestEvent);
       console.log("📤 [AuthLogin] 已发送账号状态验证请求:", requestId);
     });
   }
 
   /**
-   * 设置事件监听器
+   * 注册事件监听器（账号状态验证响应、账号ID获取响应）
+   * 负责异步Promise的resolve/reject
    */
   private setupEventListeners(): void {
     // 监听账号状态验证响应
@@ -343,7 +342,6 @@ export class AuthenticationLoginService{
       async (event: AccountStatusVerificationResponseEvent) => {
         const requestId = event.payload.requestId;
         const pending = this.pendingStatusVerifications.get(requestId);
-
         if (pending) {
           clearTimeout(pending.timeout);
           this.pendingStatusVerifications.delete(requestId);
@@ -352,82 +350,61 @@ export class AuthenticationLoginService{
         }
       }
     );
-
     // 监听账号ID获取响应
     eventBus.subscribe('AccountUuidGetterResponse', async (event: AccountUuidGetterResponseEvent) => {
-    const { requestId, accountUuid } = event.payload;
-    const pending = this.pendingAccountUuidRequests.get(requestId);
-
-    if (pending) {
-      clearTimeout(pending.timeout);
-      this.pendingAccountUuidRequests.delete(requestId);
-      if (!accountUuid) {
-        pending.reject(new Error("账号不存在"));
-
-      } else {
-        pending.resolve({ accountUuid });
+      const { requestId, accountUuid } = event.payload;
+      const pending = this.pendingAccountUuidRequests.get(requestId);
+      if (pending) {
+        clearTimeout(pending.timeout);
+        this.pendingAccountUuidRequests.delete(requestId);
+        if (!accountUuid) {
+          pending.reject(new Error("账号不存在"));
+        } else {
+          pending.resolve({ accountUuid });
+        }
       }
-    }
-  });
+    });
   }
+
   /**
    * 发布登录凭证验证事件
+   * @param payload 事件负载
    */
-  private async publishCredentialVerificationEvent(
-    payload: LoginCredentialVerificationEvent["payload"]
-  ): Promise<void> {
+  private async publishCredentialVerificationEvent(payload: LoginCredentialVerificationEvent["payload"]): Promise<void> {
     const event: LoginCredentialVerificationEvent = {
       eventType: "LoginCredentialVerification",
       aggregateId: payload.accountUuid,
       occurredOn: new Date(),
       payload,
     };
-
     await eventBus.publish(event);
   }
 
   /**
    * 发布登录尝试事件
+   * @param payload 事件负载
    */
-  private async publishLoginAttemptEvent(
-    payload: LoginAttemptEvent["payload"]
-  ): Promise<void> {
+  private async publishLoginAttemptEvent(payload: LoginAttemptEvent["payload"]): Promise<void> {
     const event: LoginAttemptEvent = {
       eventType: "LoginAttempt",
       aggregateId: payload.accountUuid || "unknown",
       occurredOn: new Date(),
       payload,
     };
-
     await eventBus.publish(event);
   }
 
   /**
    * 发布用户登录成功事件
+   * @param payload 事件负载
    */
-  private async publishUserLoggedInEvent(
-    payload: UserLoggedInEvent["payload"]
-  ): Promise<void> {
+  private async publishUserLoggedInEvent(payload: UserLoggedInEvent["payload"]): Promise<void> {
     const event: UserLoggedInEvent = {
       eventType: "UserLoggedIn",
       aggregateId: payload.accountUuid,
       occurredOn: new Date(),
       payload,
     };
-
     await eventBus.publish(event);
-  }
-
-
-  /**
-   * 清理资源
-   */
-  destroy(): void {
-    // 清理所有pending请求
-    for (const [, pending] of this.pendingStatusVerifications.entries()) {
-      clearTimeout(pending.timeout);
-      pending.reject(new Error("服务正在关闭"));
-    }
-    this.pendingStatusVerifications.clear();
   }
 }

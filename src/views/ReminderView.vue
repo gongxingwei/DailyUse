@@ -1,10 +1,9 @@
 <template>
   <div class="reminder-view">
+    
     <!-- Grid Container -->
     <div class="grid-container">
-      <ReminderGrid :items="allGridItems" :grid-size="gridSize" @click-template="handleClickTemplate"
-        @start-create-template="startCreateTemplate" @start-create-group="startCreateGroup"
-        @start-edit-item="handleEditGridItem" @start-delete-item="handleDeleteGridItem" />
+      <ReminderGrid :items="allGridItems" :grid-size="gridSize" />
     </div>
 
 
@@ -33,8 +32,14 @@
       @update:modelValue="groupDialog.show = $event" @create-group="handleCreateReminderGroup"
       @update-group="handleUpdateReminderGroup" />
 
+    <!-- TemplateMoveDialog -->
+    <template-move-dialog :model-value="moveTemplateDialog.show"
+      :template="ReminderTemplate.ensureReminderTemplateNeverNull(moveTemplateDialog.template)"
+      @update:modelValue="moveTemplateDialog.show = $event" @move="handleMoveTemplateToGroup" />
+
     <!-- snackbar -->
-    <v-snackbar v-model="snackbar.show" :message="snackbar.message" :color="snackbar.color" :timeout="snackbar.timeout">
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
+      {{ snackbar.message }}
     </v-snackbar>
   </div>
 </template>
@@ -47,7 +52,7 @@ import { useReminderGrid } from '../modules/Reminder/presentation/composables/us
 import { GridItem } from '../../common/modules/reminder/types/reminder';
 // domains
 import { ReminderTemplateGroup } from '@/modules/Reminder/domain/aggregates/reminderTemplateGroup';
-import { ReminderTemplate } from '@/modules/Reminder/domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '@/modules/Reminder/domain/entities/reminderTemplate';
 // components
 import ReminderGrid from '../modules/Reminder/presentation/components/grid/ReminderGrid.vue';
 import DetailPanel from '../modules/Reminder/presentation/components/DetailPanel.vue';
@@ -56,19 +61,63 @@ import ReminderTemplateGroupCard from '@/modules/Reminder/presentation/component
 import TemplateDialog from '../modules/Reminder/presentation/components/dialogs/TemplateDialog.vue';
 import GroupDialog from '../modules/Reminder/presentation/components/dialogs/GroupDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
+import TemplateMoveDialog from '@/modules/Reminder/presentation/components/dialogs/TemplateMoveDialog.vue';
 // composables
 import { useReminderServices } from '@/modules/Reminder/presentation/composables/useReminderServices';
 
 // Grid settings
-const gridSize = ref(80);
+const gridSize = ref(100);
 
 provide('onGroupOpen', (group: any) => {
   handleOpenGroup(group);
 });
 
 provide('onClickTemplate', (item: ReminderTemplate) => {
+  console.log('祖先组件收到点击:', item);
   handleClickTemplate(item);
 
+});
+
+// 新建提醒模板
+provide('onStartCreateTemplate', () => {
+  // 打开新建提醒模板对话框
+  startCreateTemplate();
+});
+
+// 新建分组
+provide('onStartCreateGroup', () => {
+  // 打开新建分组对话框
+  startCreateGroup();
+});
+
+// 编辑网格项（模板或分组）
+provide('onStartEditItem', (item: GridItem) => {
+  // 打开编辑对话框
+  handleEditGridItem(item);
+});
+
+// 删除网格项（模板或分组）
+provide('onStartDeleteItem', (item: GridItem) => {
+  // 打开删除确认对话框
+  handleDeleteGridItem(item);
+});
+
+// 移动模板到分组
+provide('onStartMoveTemplate', (template: ReminderTemplate) => {
+  // 打开移动模板对话框
+  startMoveTemplate(template);
+});
+
+provide('onSetGroupEnableMode', (groupUuid: string, enableMode: ReminderTemplateGroup['enableMode']) => {
+  handleSetGroupEnableMode(groupUuid, enableMode);
+});
+
+provide('onSetGroupEnabled', (groupUuid: string, enabled: boolean) => {
+  handleSetGroupEnabled(groupUuid, enabled);
+});
+
+provide('onSetTemplateEnabled', (templateUuid: string, enabled: boolean) => {
+  handleSetTemplateEnabled(templateUuid, enabled);
 });
 
 // Use the reminder grid composable
@@ -87,6 +136,12 @@ const {
   handleUpdateReminderTemplate,
   handleCreateReminderGroup,
   handleUpdateReminderGroup,
+  handleMoveTemplateToGroup,
+  handleDeleteReminderGroup,
+  handleDeleteReminderTemplate,
+  handleSetGroupEnableMode,
+  handleSetGroupEnabled,
+  handleSetTemplateEnabled,
 } = useReminderServices();
 
 
@@ -157,6 +212,17 @@ const startCreateGroup = () => {
   groupDialog.value.group = null; // Reset for new group
 };
 
+// mmove template dialog
+const moveTemplateDialog = ref({
+  show: false,
+  template: null as ReminderTemplate | null
+});
+
+const startMoveTemplate = (template: ReminderTemplate) => {
+  moveTemplateDialog.value.show = true;
+  moveTemplateDialog.value.template = template; // Set the template to be moved
+};
+
 const handleEditGridItem = (item: GridItem) => {
   if (ReminderTemplate.isReminderTemplate(item)) {
     // 编辑提醒模板
@@ -188,10 +254,13 @@ const handleDeleteGridItem = (item: GridItem) => {
 const confirmDelete = () => {
   if (deleteDialog.value.item) {
     if (deleteDialog.value.type === 'template') {
-      deleteDialog.value.item = null;
+      // 调用删除提醒模板的方法
+      handleDeleteReminderTemplate(deleteDialog.value.item.uuid);
     } else if (deleteDialog.value.type === 'group') {
-      deleteDialog.value.item = null;
+      // 调用删除分组的方法
+      handleDeleteReminderGroup(deleteDialog.value.item.uuid);
     }
+    deleteDialog.value.item = null;
   }
   deleteDialog.value.show = false;
   closeDetailPanel();

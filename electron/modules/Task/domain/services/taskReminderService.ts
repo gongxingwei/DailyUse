@@ -9,19 +9,22 @@ import type { TaskReminderConfig } from "../types/task";
  * 任务提醒服务
  * 
  * 职责：
- * - 为TaskInstance创建和管理提醒调度
+ * - 为 TaskInstance 创建和管理提醒调度
  * - 计算具体的提醒时间
  * - 处理提醒的取消和重新创建
  * 
  * 设计说明：
  * - TaskTemplate：定义提醒的配置模板（如：提前15分钟提醒）
  * - TaskInstance：使用模板配置为具体时间创建实际的提醒（如：2025-07-01 09:45 提醒）
- * - 此服务专门处理TaskInstance的具体提醒，因为只有实例才有确切的执行时间
+ * - 此服务专门处理 TaskInstance 的具体提醒，因为只有实例才有确切的执行时间
  */
 export class TaskReminderService {
   private static instance: TaskReminderService;
   private activeReminders = new Map<string, DateTime[]>();
 
+  /**
+   * 获取单例实例
+   */
   static getInstance(): TaskReminderService {
     if (!this.instance) {
       this.instance = new TaskReminderService();
@@ -30,13 +33,18 @@ export class TaskReminderService {
   }
 
   /**
-   * 为TaskInstance创建所有提醒
+   * 为 TaskInstance 创建所有提醒
    * 
-   * 根据TaskInstance的提醒配置，为每个启用的alert创建具体的提醒调度。
-   * TaskInstance包含从TaskTemplate继承的提醒配置，但具有确切的执行时间。
+   * 根据 TaskInstance 的提醒配置，为每个启用的 alert 创建具体的提醒调度。
+   * TaskInstance 包含从 TaskTemplate 继承的提醒配置，但具有确切的执行时间。
    * 
-   * @param taskInstance - 任务实例，包含具体的执行时间和提醒配置
-   * @returns 操作结果响应
+   * @param taskInstance 任务实例，包含具体的执行时间和提醒配置
+   * @returns Promise<TResponse<void>> 操作结果响应
+   * @example
+   * ```ts
+   * const result = await taskReminderService.createTaskReminders(instance);
+   * // result: { success: true, message: "...", data?: void }
+   * ```
    */
   async createTaskReminders(
     taskInstance: TaskInstance
@@ -89,12 +97,17 @@ export class TaskReminderService {
   /**
    * 创建单个提醒调度
    * 
-   * 为TaskInstance的单个alert配置创建具体的提醒调度。
-   * 将alert配置（相对时间或绝对时间）转换为具体的cron表达式。
+   * 为 TaskInstance 的单个 alert 配置创建具体的提醒调度。
+   * 将 alert 配置（相对时间或绝对时间）转换为具体的调度任务。
    * 
-   * @param taskInstance - 任务实例
-   * @param alert - 提醒alert配置
-   * @returns 创建的提醒信息或null（如果提醒时间已过期）
+   * @param taskInstance 任务实例
+   * @param alert 提醒 alert 配置
+   * @returns 创建的提醒信息或 null（如果提醒时间已过期）
+   * @example
+   * ```ts
+   * const info = await service.createSingleReminder(instance, alert);
+   * // info: { reminderId, reminderTime } | null
+   * ```
    */
   private async createSingleReminder(
     taskInstance: TaskInstance,
@@ -148,13 +161,17 @@ export class TaskReminderService {
   /**
    * 计算提醒的具体时间
    * 
-   * 根据alert配置计算实际的提醒时间：
+   * 根据 alert 配置计算实际的提醒时间：
    * - 绝对时间：使用配置中指定的具体时间点
-   * - 相对时间：基于TaskInstance的执行时间前推指定分钟数
+   * - 相对时间：基于 TaskInstance 的执行时间前推指定分钟数
    * 
-   * @param alertConfig - 提醒配置
-   * @param taskScheduledTime - TaskInstance的计划执行时间
+   * @param alertConfig 提醒配置
+   * @param taskScheduledTime TaskInstance 的计划执行时间
    * @returns 计算出的具体提醒时间
+   * @example
+   * ```ts
+   * const time = service.calculateReminderTime(alertConfig, scheduledTime);
+   * ```
    */
   private calculateReminderTime(
     alertConfig: TaskReminderConfig["alerts"][number],
@@ -181,11 +198,15 @@ export class TaskReminderService {
   /**
    * 生成提醒消息内容
    * 
-   * 基于TaskInstance的信息生成用户友好的提醒消息。
+   * 基于 TaskInstance 的信息生成用户友好的提醒消息。
    * 
-   * @param task - 任务实例
-   * @param reminderTime - 提醒时间
+   * @param task 任务实例
+   * @param reminderTime 提醒时间
    * @returns 格式化的提醒消息
+   * @example
+   * ```ts
+   * const msg = service.generateReminderMessage(instance, reminderTime);
+   * ```
    */
   private generateReminderMessage(
     task: TaskInstance,
@@ -217,12 +238,17 @@ export class TaskReminderService {
   }
 
   /**
-   * 取消指定TaskInstance的所有提醒
+   * 取消指定 TaskInstance 的所有提醒
    * 
-   * 当TaskInstance被删除、取消或重新调度时，需要取消其相关的所有提醒。
+   * 当 TaskInstance 被删除、取消或重新调度时，需要取消其相关的所有提醒。
    * 
-   * @param taskInstanceId - 任务实例ID
-   * @returns 操作结果响应
+   * @param taskInstanceId 任务实例ID
+   * @returns Promise<TResponse<void>> 操作结果响应
+   * @example
+   * ```ts
+   * const result = await service.cancelTaskInstanceReminders(instanceId);
+   * // result: { success: true, message: "...", data?: void }
+   * ```
    */
   async cancelTaskInstanceReminders(
     taskInstanceId: string
@@ -261,12 +287,17 @@ export class TaskReminderService {
   }
 
   /**
-   * 重新初始化所有TaskInstance的提醒
+   * 重新初始化所有 TaskInstance 的提醒
    * 
    * 用于系统重启或批量更新时重新创建所有提醒调度。
-   * 会先清除所有现有提醒，然后为每个TaskInstance重新创建。
+   * 会先清除所有现有提醒，然后为每个 TaskInstance 重新创建。
    * 
-   * @param instances - 需要重新初始化提醒的TaskInstance列表
+   * @param instances 需要重新初始化提醒的 TaskInstance 列表
+   * @returns Promise<void>
+   * @example
+   * ```ts
+   * await service.reinitializeAllReminders(instances);
+   * ```
    */
   async reinitializeAllReminders(
     instances: TaskInstance[]
@@ -283,11 +314,16 @@ export class TaskReminderService {
   /**
    * 获取即将到来的提醒列表
    * 
-   * 查找指定时间范围内即将触发的TaskInstance提醒。
+   * 查找指定时间范围内即将触发的 TaskInstance 提醒。
    * 用于预览功能或提前通知用户。
    * 
-   * @param withinMinutes - 时间范围（分钟），默认60分钟
+   * @param withinMinutes 时间范围（分钟），默认60分钟
    * @returns 即将到来的提醒列表，按时间排序
+   * @example
+   * ```ts
+   * const list = service.getUpcomingReminders(30);
+   * // list: [{ taskId, reminderTime, minutesUntil }, ...]
+   * ```
    */
   getUpcomingReminders(withinMinutes: number = 60): Array<{
     taskId: string;
@@ -325,4 +361,10 @@ export class TaskReminderService {
   }
 }
 
+/**
+ * 单例导出，方便直接使用
+ * @example
+ * import { taskReminderService } from '.../taskReminderService'
+ * taskReminderService.createTaskReminders(...)
+ */
 export const taskReminderService = TaskReminderService.getInstance();

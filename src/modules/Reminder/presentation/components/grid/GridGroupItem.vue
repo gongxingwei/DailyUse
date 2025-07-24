@@ -3,6 +3,8 @@
     class="grid-group-item" 
     :class="{ open: isOpen, disabled: !item.enabled }"
     @click="handleOpenFolder"
+    @dragover.prevent="onDragOver"
+    @drop="onDrop"
   >
     <!-- Folder icon and name when closed -->
     <div class="folder-closed">
@@ -25,17 +27,16 @@
 <script setup lang="ts">
 import { ref, inject } from 'vue';
 import { GridItem } from '../../../../../../common/modules/reminder/types/reminder';
-import { ReminderTemplate } from '../../../domain/aggregates/reminderTemplate';
+import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
 import { ReminderTemplateGroup } from '../../../domain/aggregates/reminderTemplateGroup';
 
 interface Props {
   item: ReminderTemplateGroup;
 }
-
 const props = defineProps<Props>();
 
+const onStartMoveTemplate = inject<((template: ReminderTemplate, group: ReminderTemplateGroup) => void) | undefined>('onStartMoveTemplate');
 
-const onClickTemplate = inject<(item: ReminderTemplate) => void>('onClickTemplate');
 const onGroupOpen = inject<(group: ReminderTemplateGroup) => void>('onGroupOpen');
 
 const isOpen = ref(false);
@@ -47,18 +48,19 @@ const handleOpenFolder = () => {
   
 };
 
-
-// These functions should be replaced with actual data fetching
-const getTemplateName = (templateId: string) => {
-  return `Template ${templateId.slice(-4)}`;
+const onDragOver = (event: DragEvent) => {
+  event.preventDefault();
 };
 
-const getTemplateIcon = () => {
-  return 'mdi-bell';
-};
-
-const getTemplateColor = () => {
-  return 'primary';
+const onDrop = (event: DragEvent) => {
+  // 解析拖拽数据
+  const templateData = event.dataTransfer?.getData('application/json');
+  if (templateData) {
+    const template = JSON.parse(templateData);
+    if (onStartMoveTemplate) {
+      onStartMoveTemplate(template, props.item);
+    }
+  }
 };
 </script>
 

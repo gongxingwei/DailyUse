@@ -1,23 +1,37 @@
 <template>
-  <div class="grid-template-item" :class="{ disabled: !item.enabled }" @click="handleClick">
+  <div class="grid-template-item" :class="{ disabled: !isTemplateEnabled }" @click="handleClick"
+  draggable="true"
+    @dragstart="onDragStart"
+  >
     <div class="template-icon">
-      <v-icon size="32" :color="item.enabled ? 'primary' : 'grey'">
+      <v-icon size="32" :color="isTemplateEnabled ? 'primary' : 'grey'">
         {{ 'mdi-bell' }}
       </v-icon>
     </div>
     <div class="template-name">
       {{ item.name }}
     </div>
+    <div></div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { inject } from 'vue';
-import { ReminderTemplate } from '../../../domain/aggregates/reminderTemplate';
+import { inject, computed } from 'vue';
+import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
+import { useReminderStore } from "../../stores/reminderStore";
+
+const reminderStore = useReminderStore();
 
 const props = defineProps<{
   item: ReminderTemplate;
 }>();
+
+const isTemplateEnabled = computed(() => reminderStore.getReminderTemplateEnabledStatus(props.item?.uuid || ''));
+
+const onDragStart = (event: DragEvent) => {
+  // 传递 template 信息
+  event.dataTransfer?.setData('application/json', JSON.stringify(props.item));
+};
 
 const onClickTemplate = inject<(item: ReminderTemplate) => void>('onClickTemplate');
 

@@ -7,12 +7,11 @@
                 <v-spacer />
                 <v-switch v-model="enableMode" :label="enableMode ? '整组控制' : '个体控制'" inset hide-details color="primary"
                     class="mr-2" />
-                <v-switch v-model="enabled" :label="enabled ? '启用' : '禁用'" :disabled="!enableMode" inset hide-details color="primary"
-                    />
+                <v-switch v-model="enabled" :label="enabled ? '启用' : '禁用'" :disabled="!enableMode" inset hide-details
+                    color="primary" />
             </v-card-title>
             <v-card-text>
-                <reminder-grid-for-group :items="templates"
-                    :grid-size="80" />
+                <reminder-grid :items="templates" :grid-size="100" />
             </v-card-text>
             <v-card-actions>
                 <v-btn color="primary" @click="handleBack">返回</v-btn>
@@ -24,24 +23,23 @@
 
 <script setup lang="ts">
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
-import type { ReminderTemplate } from "../../domain/aggregates/reminderTemplate";
-import type { IReminderTemplateGroup } from "@electron/modules/Reminder";
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, inject } from "vue";
 // components
-import ReminderGridForGroup from './grid/ReminderGridForGroup.vue';
+
+import ReminderGrid from "./grid/ReminderGrid.vue";
 
 const props = defineProps<{
     show: boolean;
     templateGroup: ReminderTemplateGroup | null;
 }>();
 
-    const emit = defineEmits<{
-        (e: 'back'): void;
-    (e: 'click-template', template: ReminderTemplate): void;
-}>();
+const onSetGroupEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>('onSetGroupEnabled');
+const onSetGroupEnableMode = inject<((uuid: string, mode: 'group' | 'individual') => void) | undefined>('onSetGroupEnableMode');
 
-const expanded = ref(false);
-const editing = ref(false);
+const emit = defineEmits<{
+    (e: 'back'): void;
+
+}>();
 
 const name = computed({
     get: () => props.templateGroup?.name ?? '',
@@ -58,6 +56,7 @@ const enableMode = computed({
     },
     set: (val) => {
         if (props.templateGroup) {
+            onSetGroupEnableMode?.(props.templateGroup.uuid, val ? 'group' : 'individual');
             props.templateGroup.enableMode = val ? 'group' : 'individual';
         }
     }
@@ -67,6 +66,7 @@ const enabled = computed({
     get: () => props.templateGroup?.enabled ?? false,
     set: (val) => {
         if (props.templateGroup) {
+            onSetGroupEnabled?.(props.templateGroup.uuid, val);
             props.templateGroup.enabled = val;
         }
     }
@@ -77,42 +77,8 @@ const templates = computed(() => {
 });
 
 
-const toggleExpand = () => {
-    expanded.value = !expanded.value;
-};
-const toggleEdit = () => {
-    if (editing.value) {
-        // 保存逻辑，可 emit('update', localTemplate.value) 或调用 API
-    }
-    editing.value = !editing.value;
-};
-const toggleEnabled = () => {
-
-
-    // 可 emit('update', localTemplate.value) 或调用 API
-    // emit('update', localTemplate.value);
-};
-
-const getImportanceText = (level: string) => {
-    switch (level) {
-        case "critical": return "重要";
-        case "low": return "低";
-        default: return "普通";
-    }
-};
-const getImportanceColor = (level: string) => {
-    switch (level) {
-        case "critical": return "error";
-        case "low": return "success";
-        default: return "info";
-    }
-};
-
 const handleBack = () => {
     emit('back');
 };
 
-const handleClickTemplate = (template: ReminderTemplate) => {
-    emit('click-template', template);
-};
 </script>

@@ -14,6 +14,7 @@
 
       <v-card-text class="pa-6">
         <v-form ref="formRef" v-model="isFormValid">
+          <!-- 分组名称输入框 -->
           <v-text-field
             v-model="groupModelName"
             label="Group Name"
@@ -21,23 +22,15 @@
             required
             class="mb-4"
           />
-
         </v-form>
       </v-card-text>
 
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
-        <v-btn
-          variant="text"
-          @click="closeDialog"
-        >
+        <v-btn variant="text" @click="closeDialog">
           Cancel
         </v-btn>
-        <v-btn
-          color="primary"
-          :disabled="!isFormValid"
-          @click="handleSubmit"
-        >
+        <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
           {{ isEditing ? 'Update' : 'Create' }}
         </v-btn>
       </v-card-actions>
@@ -49,62 +42,93 @@
 import { ref, watch, computed } from 'vue';
 import { ReminderTemplateGroup } from '@/modules/Reminder/domain/aggregates/reminderTemplateGroup';
 
+// =====================
+// Props & Emits
+// =====================
 interface Props {
-  modelValue: boolean;
-  group?: ReminderTemplateGroup | null;
+  modelValue: boolean; // 控制弹窗显示
+  group?: ReminderTemplateGroup | null; // 编辑时传入的分组对象
 }
-
 const props = withDefaults(defineProps<Props>(), {
   group: null
 });
-
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
-  (e: 'submit', data: ReminderTemplateGroup): void;
+  (e: 'update-group', group: ReminderTemplateGroup): void;
+  (e: 'create-group', group: ReminderTemplateGroup): void;
 }>();
 
-const formRef = ref();
-const isFormValid = ref(false);
-
+// =====================
+// Dialog 控制
+// =====================
 const isOpen = computed({
   get: () => props.modelValue,
   set: (value) => emit('update:modelValue', value)
 });
-
 const isEditing = computed(() => !!props.group);
 
-// 1. 编辑时 clone，创建时 forCreate
+// =====================
+// 表单数据与绑定
+// =====================
+
+// 当前编辑的分组数据（编辑时 clone，新增时 forCreate）
 const groupModel = ref<ReminderTemplateGroup>(
   props.group ? props.group.clone() : ReminderTemplateGroup.forCreate()
 );
 
-// 2. 响应 props.group 变化
+// 监听弹窗和 group 变化，弹窗打开时重置表单内容和校验
 watch(
-  () => props.group,
-  (group) => {
-    groupModel.value = group ? group.clone() : ReminderTemplateGroup.forCreate();
+  [() => props.modelValue, () => props.group],
+  ([modelValue, group]) => {
+    if (modelValue) {
+      groupModel.value = group ? group.clone() : ReminderTemplateGroup.forCreate();
+      formRef.value?.resetValidation?.();
+    }
   },
   { immediate: true }
 );
 
-// 3. computed get/set 绑定属性
+// 分组名称的双向绑定
 const groupModelName = computed({
   get: () => groupModel.value.name,
   set: (val: string) => (groupModel.value.name = val)
 });
 
+// =====================
+// 校验规则
+// =====================
 const nameRules = [
   (v: string) => !!v || 'Name is required',
   (v: string) => v.length >= 2 || 'Name must be at least 2 characters'
 ];
 
+// =====================
+// 表单引用与校验
+// =====================
+const formRef = ref();
+const isFormValid = ref(false);
+
+// =====================
+// 事件处理
+// =====================
+
+/**
+ * 关闭弹窗
+ */
 const closeDialog = () => {
   isOpen.value = false;
 };
 
+/**
+ * 提交表单（创建或更新分组）
+ */
 const handleSubmit = () => {
   if (isFormValid.value) {
-    emit('submit', groupModel.value as ReminderTemplateGroup);
+    if (props.group) {
+      emit('update-group', groupModel.value as ReminderTemplateGroup);
+    } else {
+      emit('create-group', groupModel.value as ReminderTemplateGroup);
+    }
     closeDialog();
   }
 };
