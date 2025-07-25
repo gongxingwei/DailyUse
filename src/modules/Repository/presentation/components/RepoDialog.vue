@@ -1,5 +1,5 @@
 <template>
-  <v-dialog v-model="dialogVisible" max-width="600px" persistent>
+  <v-dialog :model-value="props.modelValue" max-width="600px" persistent>
     <v-card class="create-dialog">
       <v-card-title class="dialog-header">
         <div class="header-content">
@@ -10,9 +10,9 @@
           </div>
         </div>
       </v-card-title>
-      
+
       <v-divider />
-      
+
       <v-card-text class="dialog-content">
         <v-form ref="form" class="repo-form">
           <!-- 路径选择 -->
@@ -21,37 +21,17 @@
               <v-icon class="mr-2" color="primary">mdi-folder-outline</v-icon>
               仓库位置
             </h3>
-            <v-text-field
-              v-model="repoData.path"
-              label="仓库路径"
-              placeholder="点击右侧按钮选择文件夹"
-              readonly
-              :rules="[v => !!v || '请选择仓库路径']"
-              required
-              variant="outlined"
-              prepend-inner-icon="mdi-folder"
-            >
+            <v-text-field v-model="localRepo.path" label="仓库路径" placeholder="点击右侧按钮选择文件夹" readonly
+              :rules="[v => !!v || '请选择仓库路径']" required variant="outlined" prepend-inner-icon="mdi-folder">
               <template v-slot:append>
-                <v-btn
-                  color="primary"
-                  variant="tonal"
-                  @click="selectFolder"
-                  class="select-btn"
-                >
+                <v-btn color="primary" variant="tonal" @click="selectFolder" class="select-btn">
                   选择文件夹
                 </v-btn>
               </template>
             </v-text-field>
-            
-            <v-text-field
-              v-model="repoData.title"
-              label="仓库名称"
-              placeholder="自动从文件夹名称获取"
-              variant="outlined"
-              prepend-inner-icon="mdi-format-title"
-              :rules="[v => !!v || '请输入仓库名称']"
-              required
-            />
+
+            <v-text-field v-model="localRepo.name" label="仓库名称" placeholder="自动从文件夹名称获取" variant="outlined"
+              prepend-inner-icon="mdi-format-title" :rules="[v => !!v || '请输入仓库名称']" required />
           </div>
 
           <!-- 基本信息 -->
@@ -60,64 +40,23 @@
               <v-icon class="mr-2" color="success">mdi-information</v-icon>
               基本信息
             </h3>
-            <v-textarea
-              v-model="repoData.description"
-              label="仓库描述"
-              placeholder="描述这个仓库的用途和内容（可选）"
-              rows="3"
-              variant="outlined"
-              prepend-inner-icon="mdi-text"
-              counter="200"
-            />
+            <v-textarea v-model="localRepo.description" label="仓库描述" placeholder="描述这个仓库的用途和内容（可选）" rows="3"
+              variant="outlined" prepend-inner-icon="mdi-text" counter="200" />
           </div>
 
-          <!-- 关联设置 -->
-          <div class="form-section">
-            <h3 class="section-title">
-              <v-icon class="mr-2" color="warning">mdi-target</v-icon>
-              关联设置
-            </h3>
-            <v-select
-              v-model="repoData.relativegoalUuid"
-              :items="availableGoals"
-              item-title="title"
-              item-value="id"
-              label="关联目标"
-              placeholder="选择要关联的目标（可选）"
-              clearable
-              variant="outlined"
-              prepend-inner-icon="mdi-bullseye-arrow"
-            >
-              <template v-slot:no-data>
-                <v-list-item>
-                  <v-list-item-title>暂无可关联的目标</v-list-item-title>
-                </v-list-item>
-              </template>
-            </v-select>
-          </div>
         </v-form>
       </v-card-text>
-      
+
       <v-divider />
-      
+
       <v-card-actions class="dialog-actions">
         <v-spacer />
-        <v-btn 
-          variant="text" 
-          @click="closeDialog"
-          class="cancel-btn"
-        >
+        <v-btn variant="text" @click="closeDialog" class="cancel-btn">
           取消
         </v-btn>
-        <v-btn 
-          color="primary" 
-          variant="elevated"
-          @click="createRepo"
-          :loading="creating"
-          class="create-btn"
-        >
+        <v-btn color="primary" variant="elevated" @click="handleSubmit" :loading="creating" class="create-btn">
           <v-icon start>mdi-plus</v-icon>
-          创建仓库
+          {{ isEditing ? '更新仓库' : '创建仓库' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -125,42 +64,31 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { fileSystem } from '@/shared/utils/fileUtils';
 import { useRepositoryStore } from '../stores/repositoryStore'
-import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
+import { Repository } from '@/modules/Repository/domain/aggregates/repository'
+
 
 const props = defineProps<{
   modelValue: boolean
+  repository: Repository | null
 }>()
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
+  (e: 'create-repo', repo: Repository): void
+  (e: 'edit-repo', repo: Repository): void
 }>()
 
+
+
 const repoStore = useRepositoryStore()
-const goalStore = useGoalStore()
 const form = ref()
 const creating = ref(false)
+const localRepo = ref<Repository>(props.repository ? props.repository.clone() : Repository.forCreate())
 
-const dialogVisible = computed({
-  get: () => props.modelValue,
-  set: (value) => emit('update:modelValue', value)
-})
-
-const availableGoals = computed(() => {
-  return goalStore.goals.map(goal => ({
-    uuid: goal.uuid,
-    title: goal.title,
-  }))
-})
-
-const repoData = ref({
-  title: '',
-  path: '',
-  description: '',
-  relativegoalUuid: '',
-})
+const isEditing = computed(() => !!props.repository)
 
 const selectFolder = async () => {
   try {
@@ -169,42 +97,40 @@ const selectFolder = async () => {
       if (!response.data) {
         throw new Error('未选择文件夹')
       }
-      repoData.value.path = response.data.folderPath
-      repoData.value.title = window.shared.path.basename(response.data.folderPath)
+      localRepo.value.path = response.data.folderPath
     }
   } catch (error) {
     console.error('选择文件夹失败:', error)
   }
 }
 
-const createRepo = async () => {
-  const { valid } = await form.value.validate()
-  if (valid) {
-    if (repoStore.repositories.some(r => r.name === repoData.value.title)) {
-      alert('该文件夹已被添加为仓库')
-      return
-    }
-    
-    creating.value = true
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500)) // 模拟创建延迟
-      // repoStore.addRepository(repoData.value)
-      closeDialog()
-    } finally {
-      creating.value = false
-    }
-  }
+const closeDialog = () => {
+  emit('update:modelValue', false)
+  localRepo.value = Repository.forCreate() // 重置为新仓库
+
 }
 
-const closeDialog = () => {
-  dialogVisible.value = false
-  repoData.value = {
-    title: '',
-    path: '',
-    description: '',
-    relativegoalUuid: '',
+const handleSubmit = () => {
+  if (localRepo.value) {
+    if (props.repository) {
+      emit('edit-repo', Repository.ensureRepositoryNeverNull(localRepo.value));
+    } else {
+      emit('create-repo', Repository.ensureRepositoryNeverNull(localRepo.value));
+    }
   }
+
+  closeDialog()
 }
+
+watch(
+  [() => props.repository, () => props.modelValue],
+  ([repository, modelValue]) => {
+    if (modelValue) {
+      localRepo.value = repository ? repository.clone() : Repository.forCreate()
+    }
+  }
+)
+
 </script>
 
 <style scoped>
@@ -279,11 +205,11 @@ const closeDialog = () => {
   .dialog-header {
     padding: 1rem;
   }
-  
+
   .dialog-content {
     padding: 1rem;
   }
-  
+
   .form-section {
     padding: 1rem;
   }

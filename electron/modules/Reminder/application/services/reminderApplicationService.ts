@@ -621,6 +621,25 @@ export class MainReminderApplicationService {
   }
 
   /**
+   * 根据任务模板 uuid 获取调度信息（如下一次提醒时间）
+   * @param uuid string 任务模板唯一ID
+   * @returns { exists: boolean, nextInvocation: Date | null }
+   * @example
+   * const info = reminderScheduleService.getReminderScheduleInfoByUuid(uuid);
+   * // info = { exists: true, nextInvocation: Date }
+   */
+  getReminderScheduleInfoByUuid(uuid: string): {
+    exists: boolean;
+    nextInvocation: Date | null;
+  } {
+    const response = reminderScheduleService.getScheduleInfo(uuid);
+    if (!response.exists) {
+      return { exists: false, nextInvocation: null };
+    }
+    return { exists: true, nextInvocation: response.nextInvocation };
+  }
+
+  /**
    * 初始化分组下所有提醒任务（内部方法）
    * @param accountUuid 用户账号ID
    * @param groupUuid 分组ID

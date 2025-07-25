@@ -118,18 +118,7 @@ const handleBack = () => {
   emit('back');
 };
 </script>
-{
-    "name": "",
-    "type": "absolute",
-    "schedule": {
-        "second": 0,
-        "minute": 0,
-        "hour": 9,
-        "dayOfWeek": [
-            4
-        ]
-    }
-}
+
 <style scoped>
 .label {
   color: #888;

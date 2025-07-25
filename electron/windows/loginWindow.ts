@@ -1,7 +1,7 @@
-import path from 'path';
-import { BaseWindow } from './baseWindow';
-import { WindowConfig, ILoginWindow, LoginWindowEvents } from './types';
-
+import path from "path";
+import { BaseWindow } from "./baseWindow";
+import { WindowConfig, ILoginWindow, LoginWindowEvents } from "./types";
+import { globalShortcut } from "electron";
 /**
  * 登录窗口类
  * 负责处理用户登录界面
@@ -9,22 +9,22 @@ import { WindowConfig, ILoginWindow, LoginWindowEvents } from './types';
 export class LoginWindow extends BaseWindow implements ILoginWindow {
   constructor() {
     const config: WindowConfig = {
-      width: 1400,
-      height: 1600,
+      width: 400,
+      height: 700,
       resizable: false,
       maximizable: false,
       minimizable: true,
       frame: false,
       show: false,
-      title: 'DailyUse - 登录',
+      title: "DailyUse - 登录",
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: true,
         webSecurity: true,
-        preload: '',
-        additionalArguments: ['--enable-features=SharedArrayBuffer'],
+        preload: "",
+        additionalArguments: ["--enable-features=SharedArrayBuffer"],
         allowRunningInsecureContent: false,
-      }
+      },
     };
 
     super(config);
@@ -34,7 +34,7 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    * 获取预加载脚本路径
    */
   protected getPreloadPath(): string {
-    return path.join(this.getMainDistPath(), 'login_preload.mjs');
+    return path.join(this.getMainDistPath(), "login_preload.mjs");
   }
 
   /**
@@ -42,12 +42,12 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    */
   protected getPageUrl(): string {
     const devServerUrl = this.getDevServerUrl();
-    
+
     if (devServerUrl) {
       return `${devServerUrl}#/login`;
     }
-    
-    return path.join(this.getRendererDistPath(), 'index.html#/login');
+
+    return path.join(this.getRendererDistPath(), "index.html#/login");
   }
 
   /**
@@ -55,10 +55,20 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    */
   protected async onInitialized(): Promise<void> {
     this.setupLoginWindowEvents();
-    
-    // 开发环境下打开开发者工具
-    if (this.getDevServerUrl()) {
-      this.window?.webContents.openDevTools();
+
+    // 注册 F12 快捷键切换开发者工具
+    this.window?.webContents.openDevTools();
+  }
+  /**
+   * 切换开发者工具
+   */
+  public toggleDevTools(): void {
+    if (this.window) {
+      if (this.window.webContents.isDevToolsOpened()) {
+        this.window.webContents.closeDevTools();
+      } else {
+        this.window.webContents.openDevTools();
+      }
     }
   }
 
@@ -69,27 +79,27 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
     if (!this.window) return;
 
     // 监听登录成功事件
-    this.window.webContents.on('ipc-message', (_event, channel, ...args) => {
+    this.window.webContents.on("ipc-message", (_event, channel, ...args) => {
       console.log(`[LoginWindow] 接收到IPC消息: ${channel}`, args);
       switch (channel) {
-        case 'login:success':
-          console.log('✅ [LoginWindow] 登录成功');
-          this.emit('login-success', args[0]);
+        case "login:success":
+          console.log("✅ [LoginWindow] 登录成功");
+          this.emit("login-success", args[0]);
           break;
-        case 'login:failed':
-          console.log('❌ [LoginWindow] 登录失败');
-          this.emit('login-failed', args[0]);
+        case "login:failed":
+          console.log("❌ [LoginWindow] 登录失败");
+          this.emit("login-failed", args[0]);
           break;
-        case 'login:cancelled':
-          console.log('🚫 [LoginWindow] 登录取消');
-          this.emit('login-cancelled');
+        case "login:cancelled":
+          console.log("🚫 [LoginWindow] 登录取消");
+          this.emit("login-cancelled");
           break;
       }
     });
 
     // 监听窗口控制事件
-    this.window.webContents.on('ipc-message', (_event, channel, command) => {
-      if (channel === 'window-control') {
+    this.window.webContents.on("ipc-message", (_event, channel, command) => {
+      if (channel === "window-control") {
         this.handleWindowControl(command);
       }
     });
@@ -100,10 +110,10 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    */
   private handleWindowControl(command: string): void {
     switch (command) {
-      case 'minimize':
+      case "minimize":
         this.window?.minimize();
         break;
-      case 'close':
+      case "close":
         this.close();
         break;
     }
@@ -113,14 +123,14 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    * 重置登录表单
    */
   public resetForm(): void {
-    this.sendToRenderer('login:reset-form');
+    this.sendToRenderer("login:reset-form");
   }
 
   /**
    * 显示错误消息
    */
   public showError(message: string): void {
-    this.sendToRenderer('login:show-error', message);
+    this.sendToRenderer("login:show-error", message);
   }
 
   /**
@@ -128,7 +138,7 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
    */
   public show(): void {
     super.show();
-    
+
     // 窗口居中显示
     this.centerWindow();
   }
@@ -145,20 +155,30 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
   /**
    * 设置登录状态
    */
-  public setLoginState(state: 'idle' | 'loading' | 'success' | 'error'): void {
-    this.sendToRenderer('login:set-state', state);
+  public setLoginState(state: "idle" | "loading" | "success" | "error"): void {
+    this.sendToRenderer("login:set-state", state);
   }
 
   /**
    * 发送登录结果
    */
-  public sendLoginResult(result: { success: boolean; message?: string; userData?: any }): void {
-    this.sendToRenderer('login:result', result);
+  public sendLoginResult(result: {
+    success: boolean;
+    message?: string;
+    userData?: any;
+  }): void {
+    this.sendToRenderer("login:result", result);
   }
 }
 
 // 为了TypeScript类型检查，扩展EventEmitter的类型
 export declare interface LoginWindow {
-  on<U extends keyof LoginWindowEvents>(event: U, listener: LoginWindowEvents[U]): this;
-  emit<U extends keyof LoginWindowEvents>(event: U, ...args: Parameters<LoginWindowEvents[U]>): boolean;
+  on<U extends keyof LoginWindowEvents>(
+    event: U,
+    listener: LoginWindowEvents[U]
+  ): this;
+  emit<U extends keyof LoginWindowEvents>(
+    event: U,
+    ...args: Parameters<LoginWindowEvents[U]>
+  ): boolean;
 }

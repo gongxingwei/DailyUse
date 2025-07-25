@@ -196,7 +196,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
-import { GridItem } from '../../domain/entities/ReminderTemplateGroup';
+import { GridItem } from '@common/modules/reminder';
 
 interface Props {
   modelValue: boolean;

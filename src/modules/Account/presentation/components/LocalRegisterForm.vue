@@ -12,10 +12,10 @@
                 </v-col>
             </v-row>
             <v-row>
-                <v-col>
-                    <v-text-field v-model="registrationData.username" label="账号名" :rules="usernameRules" :counter="20"
-                        prepend-inner-icon="mdi-account" clearable required />
-                </v-col>
+
+                <v-text-field v-model="registrationData.username" label="账号名" :rules="usernameRules" :counter="20"
+                    prepend-inner-icon="mdi-account" clearable required />
+
             </v-row>
             <v-row>
                 <!-- 密码输入 -->
@@ -69,7 +69,8 @@
                     </v-btn>
                 </v-col>
                 <v-col class="text-center">
-                    <v-btn color="primary" type="submit" :loading="accountStore.loading" size="large">
+                    <v-btn color="primary" type="submit" :loading="accountStore.loading"
+                        :disabled="!!accountStore.loading || !isCurrentFormValid" size="large">
                         <v-icon start>mdi-account-plus</v-icon>
                         注册
                     </v-btn>
@@ -142,6 +143,10 @@ const confirmPasswordRules = [
     (v: string) => !!v || '请确认密码',
     (v: string) => v === registrationData.password || '两次输入的密码不一致'
 ];
+
+const isCurrentFormValid = computed(() => {
+    return formRef.value ? formRef.value.checkValidity() : false;
+});
 
 // 密码强度计算
 const passwordStrength = computed(() => {

@@ -6,7 +6,7 @@ const repositorySyncStatusRask: InitializationTask = {
   name: 'repository-sync-status',
   phase: InitializationPhase.USER_LOGIN,
   priority: 20,
-  dependencies: ['repository-ipc-handlers'],
+  dependencies: [],
   initialize: async () => {
     // 初始化仓库同步状态处理器
     const repositoryService = getRepositoryApplicationService();
@@ -14,6 +14,7 @@ const repositorySyncStatusRask: InitializationTask = {
     console.log('✓ Repository sync status handlers registered');
   }
 };
+
 
 export function registerRepositoryInitializationTasks(): void {
   const manager = InitializationManager.getInstance();

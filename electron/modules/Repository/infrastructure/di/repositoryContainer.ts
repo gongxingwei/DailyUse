@@ -29,3 +29,5 @@ export class RepositoryContainer {
         RepositoryContainer.instance = undefined as any;
     }
 }
+
+export const repositoryContainer = RepositoryContainer.getInstance();

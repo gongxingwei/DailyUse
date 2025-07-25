@@ -1,7 +1,7 @@
 <!-- filepath: /d:/myPrograms/DailyUse/src/modules/Account/components/LocalLoginForm.vue -->
 <template>
-    <v-form @submit.prevent="handleLocalLogin" :loading="loading">
-        <v-card class="pa-4">
+    <v-form @submit.prevent="handleLocalLogin" :loading="loading" ref="formRef">
+        <v-card class="pa-4" style="background: transparent;">
             <!-- <v-card-title class="text-center">登录</v-card-title> -->
 
             <v-card-text>
@@ -54,7 +54,7 @@
             </v-card-text>
 
             <v-card-actions class="px-4 pb-4">
-                <v-btn color="primary" type="submit" :loading="loading" :disabled="!!loading" block size="large">
+                <v-btn color="primary" type="submit" variant="elevated" :loading="loading" :disabled="!!loading || !isCurrentFormValid" block size="large">
                     登录
                 </v-btn>
             </v-card-actions>
@@ -81,29 +81,23 @@ const authenticationService = AuthenticationService.getInstance();
 const { snackbar, showError, showSuccess } = useSnackbar();
 const router = useRouter();
 const loading = ref(false);
+const formRef = ref();
+const isCurrentFormValid = computed(() => {
+    return formRef.value?.isValid ?? false;
+});
+
 const passwordAuthenticationForm = ref<PasswordAuthenticationRequest>({
     username: "Test1",
     password: "Llh123123",
     remember: false,
 });
 
-const formValid = ref(false);
+
 const showPassword = ref(false);
 
-/**
- * 重置表单
- */
-const resetForm = (): void => {
-    passwordAuthenticationForm.value = {
-        username: "",
-        password: "",
-        remember: false,
-    };
-    formValid.value = false;
-    showPassword.value = false;
-};
-
 const handleAccountSelect = (selectedUsername: string | null): void => {
+    console.log("Selected username:", selectedUsername);
+    console.log("Form valid:", formRef.value?.isValid);
     if (selectedUsername) {
         passwordAuthenticationForm.value.username = selectedUsername;
         // const savedPassword = getSavedPasswordForUser(selectedUsername);

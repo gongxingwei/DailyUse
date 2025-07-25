@@ -11,6 +11,7 @@ import { registerInitializationEventsTask } from "@/shared/initialization/applic
 import { registerMainWindowInitTask } from "./mainWindowInit/mainWindowInit";
 import { registerGoalInitializationTasks } from "@/modules/Goal";
 import { registerRenderReminderInitializationTasks } from "@/modules/Reminder/initialization/RenderReminderInitialization";
+import { registerRepositoryInitializationTasks } from "@/modules/Repository/initialization/repositoryInitialization";
 
 export function registerAllInitializationTasks(): void {
 
@@ -21,6 +22,7 @@ export function registerAllInitializationTasks(): void {
 
   registerInitializationEventsTask();
   registerRenderReminderInitializationTasks();
+  registerRepositoryInitializationTasks();
   
   console.log(
     "成功注册所有模块任务"

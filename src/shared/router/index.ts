@@ -77,7 +77,7 @@ const routes: RouteRecordRaw[] = [
             {
                 path: '/repository',
                 name: 'repository',
-                component: () => import('@/modules/Repository/views/Repository.vue'),
+                component: () => import('@/modules/Repository/presentation/views/RepositoryView.vue'),
             }, {
                 path: '/reminder',
                 name: 'reminder',

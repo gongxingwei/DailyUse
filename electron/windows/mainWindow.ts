@@ -1,7 +1,7 @@
-import path from 'path';
-import { BaseWindow } from './baseWindow';
-import { WindowConfig, IMainWindow, MainWindowEvents, UserData } from './types';
-
+import path from "path";
+import { BaseWindow } from "./baseWindow";
+import { WindowConfig, IMainWindow, MainWindowEvents, UserData } from "./types";
+import { globalShortcut } from "electron";
 /**
  * 主窗口类
  * 负责处理主应用界面
@@ -18,15 +18,18 @@ export class MainWindow extends BaseWindow implements IMainWindow {
       minimizable: true,
       frame: false,
       show: false,
-      title: 'DailyUse',
+      title: "DailyUse",
       webPreferences: {
         nodeIntegration: true,
         contextIsolation: true,
         webSecurity: true,
-        preload: '',
-        additionalArguments: ['--enable-features=SharedArrayBuffer', '--window-type=main'],
+        preload: "",
+        additionalArguments: [
+          "--enable-features=SharedArrayBuffer",
+          "--window-type=main",
+        ],
         allowRunningInsecureContent: false,
-      }
+      },
     };
 
     super(config);
@@ -36,7 +39,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    * 获取预加载脚本路径
    */
   protected getPreloadPath(): string {
-    return path.join(this.getMainDistPath(), 'main_preload.mjs');
+    return path.join(this.getMainDistPath(), "main_preload.mjs");
   }
 
   /**
@@ -44,12 +47,12 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   protected getPageUrl(): string {
     const devServerUrl = this.getDevServerUrl();
-    
+
     if (devServerUrl) {
       return devServerUrl;
     }
-    
-    return path.join(this.getRendererDistPath(), 'index.html#/');
+
+    return path.join(this.getRendererDistPath(), "index.html#/");
   }
 
   /**
@@ -57,14 +60,11 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   protected async onInitialized(): Promise<void> {
     this.setupMainWindowEvents();
-    
+
     // 设置最小尺寸
     this.window?.setMinimumSize(800, 600);
-    
-    // 开发环境下打开开发者工具
-    if (this.getDevServerUrl()) {
-      this.window?.webContents.openDevTools();
-    }
+
+    this.window?.webContents.openDevTools();
   }
 
   /**
@@ -74,33 +74,33 @@ export class MainWindow extends BaseWindow implements IMainWindow {
     if (!this.window) return;
 
     // 监听注销请求
-    this.window.webContents.on('ipc-message', (_event, channel, ...args) => {
+    this.window.webContents.on("ipc-message", (_event, channel, ...args) => {
       switch (channel) {
-        case 'logout:request':
-          console.log('🔐 [MainWindow] 注销请求');
-          this.emit('logout-requested');
+        case "logout:request":
+          console.log("🔐 [MainWindow] 注销请求");
+          this.emit("logout-requested");
           break;
-        case 'user:data-updated':
-          console.log('👤 [MainWindow] 用户数据更新');
+        case "user:data-updated":
+          console.log("👤 [MainWindow] 用户数据更新");
           this.userData = args[0];
-          this.emit('user-data-updated', args[0]);
+          this.emit("user-data-updated", args[0]);
           break;
-        case 'navigation:request':
-          console.log('🧭 [MainWindow] 导航请求');
-          this.emit('navigation-requested', args[0]);
+        case "navigation:request":
+          console.log("🧭 [MainWindow] 导航请求");
+          this.emit("navigation-requested", args[0]);
           break;
       }
     });
 
     // 监听窗口控制事件
-    this.window.webContents.on('ipc-message', (_event, channel, command) => {
-      if (channel === 'window-control') {
+    this.window.webContents.on("ipc-message", (_event, channel, command) => {
+      if (channel === "window-control") {
         this.handleWindowControl(command);
       }
     });
 
     // 监听窗口关闭事件
-    this.window.on('close', (event) => {
+    this.window.on("close", (event) => {
       // 如果应用不是正在退出，隐藏窗口而不是关闭
       if (!this.isAppQuitting()) {
         event.preventDefault();
@@ -114,17 +114,17 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   private handleWindowControl(command: string): void {
     switch (command) {
-      case 'minimize':
+      case "minimize":
         this.window?.minimize();
         break;
-      case 'maximize':
+      case "maximize":
         if (this.window?.isMaximized()) {
           this.window?.unmaximize();
         } else {
           this.window?.maximize();
         }
         break;
-      case 'close':
+      case "close":
         this.hide(); // 主窗口关闭时隐藏而不是真正关闭
         break;
     }
@@ -143,14 +143,14 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   public sendUserData(userData: UserData): void {
     this.userData = userData;
-    this.sendToRenderer('user:data', userData);
+    this.sendToRenderer("user:data", userData);
   }
 
   /**
    * 导航到指定路径
    */
   public navigateTo(path: string): void {
-    this.sendToRenderer('navigation:navigate', path);
+    this.sendToRenderer("navigation:navigate", path);
   }
 
   /**
@@ -178,7 +178,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   public clearUserData(): void {
     this.userData = null;
-    this.sendToRenderer('user:clear');
+    this.sendToRenderer("user:clear");
   }
 
   /**
@@ -194,9 +194,9 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    * 设置窗口徽章（macOS 支持）
    */
   public setBadge(count: number): void {
-    if (this.window && process.platform === 'darwin') {
+    if (this.window && process.platform === "darwin") {
       // macOS 支持应用图标徽章
-      const { app } = require('electron');
+      const { app } = require("electron");
       app.setBadgeCount(count);
     }
   }
@@ -205,7 +205,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    * 显示通知
    */
   public showNotification(title: string, body: string): void {
-    this.sendToRenderer('notification:show', { title, body });
+    this.sendToRenderer("notification:show", { title, body });
   }
 
   /**
@@ -213,7 +213,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   public hide(): void {
     // 发送窗口即将隐藏的事件
-    this.sendToRenderer('window:will-hide');
+    this.sendToRenderer("window:will-hide");
     super.hide();
   }
 
@@ -222,10 +222,10 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   public show(): void {
     super.show();
-    
+
     // 发送窗口显示的事件
-    this.sendToRenderer('window:shown');
-    
+    this.sendToRenderer("window:shown");
+
     // 如果有用户数据，重新发送
     if (this.userData) {
       this.sendUserData(this.userData);
@@ -235,6 +235,12 @@ export class MainWindow extends BaseWindow implements IMainWindow {
 
 // 为了TypeScript类型检查，扩展EventEmitter的类型
 export declare interface MainWindow {
-  on<U extends keyof MainWindowEvents>(event: U, listener: MainWindowEvents[U]): this;
-  emit<U extends keyof MainWindowEvents>(event: U, ...args: Parameters<MainWindowEvents[U]>): boolean;
+  on<U extends keyof MainWindowEvents>(
+    event: U,
+    listener: MainWindowEvents[U]
+  ): this;
+  emit<U extends keyof MainWindowEvents>(
+    event: U,
+    ...args: Parameters<MainWindowEvents[U]>
+  ): boolean;
 }
