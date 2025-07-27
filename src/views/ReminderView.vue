@@ -38,7 +38,7 @@
       @update:modelValue="moveTemplateDialog.show = $event" @move="handleMoveTemplateToGroup" />
 
     <!-- snackbar -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right">
       {{ snackbar.message }}
     </v-snackbar>
   </div>

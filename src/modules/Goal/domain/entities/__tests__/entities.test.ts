@@ -1,8 +1,8 @@
 import { describe, it, expect } from '@jest/globals';
-import { Goal } from '@/modules/Goal/domain/entities/goal';
+import { Goal } from '@/modules/Goal/domain/aggregates/goal';
 import { KeyResult } from '@/modules/Goal/domain/entities/keyResult';
 import { Record } from '@/modules/Goal/domain/entities/record';
-import { GoalDir } from '@/modules/Goal/domain/entities/goalDir';
+import { GoalDir } from '@/modules/Goal/domain/aggregates/goalDir';
 import type { IGoal, IKeyResult, IRecord, IGoalDir } from '@/modules/Goal/domain/types/goal';
 
 describe('Goal Domain Entities', () => {

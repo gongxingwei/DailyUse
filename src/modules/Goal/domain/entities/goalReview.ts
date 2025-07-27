@@ -1,7 +1,7 @@
 import { Entity } from "@/shared/domain/entity";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-import type { DateTime } from "@/shared/types/myDateTime";
-import type { IGoalReview, IGoalReviewCreateDTO } from "../types/goal";
+import type { IGoalReview } from "@common/modules/goal";
+import { isValid } from "date-fns";
+import { Goal } from "../aggregates/goal";
 
 /**
  * 目标复盘领域实体
@@ -11,32 +11,32 @@ export class GoalReview extends Entity implements IGoalReview {
   private _goalUuid: string;
   private _title: string;
   private _type: IGoalReview['type'];
-  private _reviewDate: DateTime;
+  private _reviewDate: Date;
   private _content: IGoalReview['content'];
   private _snapshot: IGoalReview['snapshot'];
-  private _rating?: IGoalReview['rating'];
+  private _rating: IGoalReview['rating'];
   private _lifecycle: IGoalReview['lifecycle'];
 
-  constructor(
-    uuid: string,
-    goalUuid: string,
-    title: string,
-    type: IGoalReview['type'],
-    reviewDate: DateTime,
-    content: IGoalReview['content'],
-    snapshot: IGoalReview['snapshot'],
-    rating?: IGoalReview['rating']
-  ) {
-    super(uuid);
-    const now = TimeUtils.now();
+  constructor(params: {
+    uuid?: string;
+    goalUuid: string;
+    title: string;
+    type: IGoalReview['type'];
+    reviewDate: Date;
+    content: IGoalReview['content'];
+    snapshot: IGoalReview['snapshot'];
+    rating: IGoalReview['rating'];
+  }) {
+    super(params.uuid || GoalReview.generateId());
+    const now = new Date();
 
-    this._goalUuid = goalUuid;
-    this._title = title;
-    this._type = type;
-    this._reviewDate = reviewDate;
-    this._content = content;
-    this._snapshot = snapshot;
-    this._rating = rating;
+    this._goalUuid = params.goalUuid;
+    this._title = params.title;
+    this._type = params.type;
+    this._reviewDate = isValid(params.reviewDate) ? params.reviewDate : now;
+    this._content = params.content;
+    this._snapshot = params.snapshot;
+    this._rating = params.rating;
 
     this._lifecycle = {
       createdAt: now,
@@ -44,33 +44,74 @@ export class GoalReview extends Entity implements IGoalReview {
     };
   }
 
-  // Getters
+  // Getters & Setters
   get goalUuid(): string {
     return this._goalUuid;
+  }
+  set goalUuid(value: string) {
+    if (!value.trim()) throw new Error("目标ID不能为空");
+    this._goalUuid = value;
+    this._lifecycle.updatedAt = new Date();
   }
 
   get title(): string {
     return this._title;
   }
+  set title(value: string) {
+    if (!value.trim()) throw new Error("复盘标题不能为空");
+    this._title = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
   get type(): IGoalReview['type'] {
     return this._type;
   }
+  set type(value: IGoalReview['type']) {
+    this._type = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
-  get reviewDate(): DateTime {
+  get reviewDate(): Date {
     return this._reviewDate;
+  }
+  set reviewDate(value: Date) {
+    if (!isValid(value)) throw new Error("复盘日期无效");
+    this._reviewDate = value;
+    this._lifecycle.updatedAt = new Date();
   }
 
   get content(): IGoalReview['content'] {
     return this._content;
   }
+  set content(value: IGoalReview['content']) {
+    this._content = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
   get snapshot(): IGoalReview['snapshot'] {
     return this._snapshot;
   }
+  set snapshot(value: IGoalReview['snapshot']) {
+    this._snapshot = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
-  get rating(): IGoalReview['rating'] | undefined {
+  get rating(): IGoalReview['rating'] {
     return this._rating;
+  }
+  set rating(value: IGoalReview['rating']) {
+    if (value) {
+      const validateRating = (score: number, name: string) => {
+        if (score < 1 || score > 10) {
+          throw new Error(`${name}评分必须在1-10之间`);
+        }
+      };
+      validateRating(value.progressSatisfaction, "进度满意度");
+      validateRating(value.executionEfficiency, "执行效率");
+      validateRating(value.goalReasonableness, "目标合理性");
+    }
+    this._rating = value;
+    this._lifecycle.updatedAt = new Date();
   }
 
   get lifecycle(): IGoalReview['lifecycle'] {
@@ -78,51 +119,10 @@ export class GoalReview extends Entity implements IGoalReview {
   }
 
   /**
-   * 更新复盘内容
-   */
-  updateContent(updates: {
-    title?: string;
-    content?: Partial<IGoalReview['content']>;
-    rating?: IGoalReview['rating'];
-  }): void {
-    if (updates.title !== undefined) {
-      if (!updates.title.trim()) {
-        throw new Error("复盘标题不能为空");
-      }
-      this._title = updates.title;
-    }
-
-    if (updates.content) {
-      this._content = {
-        ...this._content,
-        ...updates.content,
-      };
-    }
-
-    if (updates.rating !== undefined) {
-      // 验证评分范围
-      const validateRating = (score: number, name: string) => {
-        if (score < 1 || score > 10) {
-          throw new Error(`${name}评分必须在1-10之间`);
-        }
-      };
-
-      validateRating(updates.rating.progressSatisfaction, "进度满意度");
-      validateRating(updates.rating.executionEfficiency, "执行效率");
-      validateRating(updates.rating.goalReasonableness, "目标合理性");
-
-      this._rating = updates.rating;
-    }
-
-    this._lifecycle.updatedAt = TimeUtils.now();
-  }
-
-  /**
    * 获取复盘的综合评分
    */
   get overallRating(): number | null {
     if (!this._rating) return null;
-
     return (
       this._rating.progressSatisfaction +
       this._rating.executionEfficiency +
@@ -145,7 +145,6 @@ export class GoalReview extends Entity implements IGoalReview {
     completedKeyResultsChange: number;
   } | null {
     if (!previousSnapshot) return null;
-
     return {
       progressChange: this._snapshot.overallProgress - previousSnapshot.overallProgress,
       completedKeyResultsChange: this._snapshot.completedKeyResults - previousSnapshot.completedKeyResults,
@@ -153,74 +152,75 @@ export class GoalReview extends Entity implements IGoalReview {
   }
 
   /**
-   * 验证复盘数据
+   * 判断对象是否为 GoalReview 或 IGoalReview
    */
-  static validate(data: IGoalReviewCreateDTO): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-
-    if (!data.goalUuid?.trim()) {
-      errors.push("目标ID不能为空");
-    }
-
-    if (!data.title?.trim()) {
-      errors.push("复盘标题不能为空");
-    }
-
-    if (!data.content.achievements?.trim()) {
-      errors.push("成就与收获不能为空");
-    }
-
-    if (!data.content.challenges?.trim()) {
-      errors.push("遇到的挑战不能为空");
-    }
-
-    if (!data.content.learnings?.trim()) {
-      errors.push("学到的经验教训不能为空");
-    }
-
-    if (!data.content.nextSteps?.trim()) {
-      errors.push("下一步行动计划不能为空");
-    }
-
-    // 验证评分
-    if (data.rating) {
-      const validateRating = (score: number, name: string) => {
-        if (score < 1 || score > 10) {
-          errors.push(`${name}评分必须在1-10之间`);
-        }
-      };
-
-      validateRating(data.rating.progressSatisfaction, "进度满意度");
-      validateRating(data.rating.executionEfficiency, "执行效率");
-      validateRating(data.rating.goalReasonableness, "目标合理性");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-    };
+  static isGoalReview(obj: any): obj is GoalReview | IGoalReview {
+    return obj instanceof GoalReview || (obj && typeof obj === 'object' && 'uuid' in obj && 'goalUuid' in obj && 'title' in obj && 'type' in obj);
   }
+
+  /**
+   * 保证返回 GoalReview 实例或 null
+   * @param review 可能为 DTO、实体或 null
+   */
+  static ensureGoalReview(review: IGoalReview | GoalReview | null): GoalReview | null {
+    if (GoalReview.isGoalReview(review)) {
+      return review instanceof GoalReview ? review : GoalReview.fromDTO(review);
+    } else {
+      return null;
+    }
+  }
+
+  // /**
+  //  * 保证返回 GoalReview 实例，永不为 null
+  //  * @param review 可能为 DTO、实体或 null
+  //  */
+  // static ensureGoalReviewNeverNull(review: IGoalReview | GoalReview | null): GoalReview {
+  //   if (GoalReview.isGoalReview(review)) {
+  //     return review instanceof GoalReview ? review : GoalReview.fromDTO(review);
+  //   } else {
+  //     // 这里需要传入必要参数，建议调用 forCreate 并传入默认值
+  //     return GoalReview.forCreate('', 'final', { overallProgress: 0, completedKeyResults: 0 });
+  //   }
+  // }
 
   /**
    * 从数据传输对象创建复盘实例
    */
   static fromDTO(data: IGoalReview): GoalReview {
-    const review = new GoalReview(
-      data.uuid,
-      data.goalUuid,
-      data.title,
-      data.type,
-      data.reviewDate,
-      data.content,
-      data.snapshot,
-      data.rating
-    );
+    const goalReview = new GoalReview({
+      uuid: data.uuid,
+      goalUuid: data.goalUuid,
+      title: data.title,
+      type: data.type,
+      reviewDate: data.reviewDate,
+      content: data.content,
+      snapshot: data.snapshot,
+      rating: data.rating,
+    });
+    goalReview._lifecycle = {
+      createdAt: data.lifecycle.createdAt,
+      updatedAt: data.lifecycle.updatedAt,
+    };
+    return goalReview;
+  }
 
-    review._lifecycle = data.lifecycle;
-    return review;
+  static forCreate(goal: Goal, type: GoalReview['type']): GoalReview {
+    const snapshot = goal.createSnapShot();
+    const goalReview = new GoalReview({
+      goalUuid: goal.uuid,
+      title: '',
+      type: type,
+      reviewDate: new Date(),
+      snapshot: snapshot,
+      content: {
+        achievements: '',
+        challenges: '',
+        learnings: '',
+        nextSteps: '',
+      },
+      rating: { progressSatisfaction: 0, executionEfficiency: 0, goalReasonableness: 0 },
+    });
+    return goalReview;
   }
 
   /**
@@ -240,25 +240,18 @@ export class GoalReview extends Entity implements IGoalReview {
     };
   }
 
-  /**
-   * 转换为 JSON 字符串
-   */
-  toJSON(): string {
-    return JSON.stringify(this.toDTO());
-  }
-
   clone(): GoalReview {
-    const clone = new GoalReview(
-      this.uuid,
-      this._goalUuid,
-      this._title,
-      this._type,
-      this._reviewDate,
-      this._content,
-      this._snapshot,
-      this._rating
-    );
-    clone._lifecycle = { ...this._lifecycle };
-    return clone;
+    const goalReview = new GoalReview({
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      title: this._title,
+      type: this._type,
+      reviewDate: this._reviewDate,
+      content: this._content,
+      snapshot: this._snapshot,
+      rating: this._rating,
+    });
+    goalReview._lifecycle = { ...this._lifecycle };
+    return goalReview;
   }
 }

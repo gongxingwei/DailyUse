@@ -474,6 +474,14 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   isTaskTemplate(): this is TaskTemplate {
     return this instanceof TaskTemplate;
   }
+
+  static ensureTaskTemplate(data: any): TaskTemplate {
+    if (data instanceof TaskTemplate) {
+      return TaskTemplate.fromCompleteData(data);
+    }
+    return TaskTemplate.fromCompleteData(data);
+  }
+
   /**
    * 克隆实例（用于创建副本）
    */

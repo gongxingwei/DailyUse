@@ -198,14 +198,15 @@ const openInExplorer = (repo: Repository) => {
 
 <style scoped>
 .repository-page {
-  min-height: 100vh;
+  min-height: 100%;
   background: linear-gradient(135deg, rgba(var(--v-theme-surface), 0.8), rgba(var(--v-theme-background), 0.95));
-  padding: 2rem;
+  padding: 1rem;
 }
 
 /* 头部样式 */
 .page-header {
   margin-bottom: 2rem;
+  height: 80px;
 }
 
 .header-content {

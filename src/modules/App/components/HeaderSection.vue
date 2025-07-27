@@ -40,12 +40,13 @@ const closeWindow = () => {
   justify-content: flex-start;
   align-items: center;
   height: 100%;
-  padding-right: 12px;
+  width: 100%;
 
   -webkit-app-region: drag;
 }
 
 .window-controls {
+margin-left: auto;
   display: flex;
   -webkit-app-region: no-drag;
 }
@@ -53,7 +54,7 @@ const closeWindow = () => {
 .window-controls .v-btn {
   border-radius: 0;
   width: 46px;
-  height: 32px;
+  height: 30px;
 }
 
 .close-button:hover {

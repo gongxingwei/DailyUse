@@ -1,7 +1,6 @@
 import { Entity } from "@/shared/domain/entity";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-import type { DateTime } from "@/shared/types/myDateTime";
-import type { IRecord, IRecordCreateDTO } from "../../../../../common/modules/goal/types/goal";
+import type { IRecord } from "@common/modules/goal";
+import { isValid } from "date-fns";
 
 /**
  * 记录领域实体
@@ -12,198 +11,174 @@ export class Record extends Entity implements IRecord {
   private _goalUuid: string;
   private _keyResultUuid: string;
   private _value: number;
-  private _date: DateTime;
+
   private _note?: string;
-  private _lifecycle: IRecord['lifecycle'];
+  private _lifecycle: IRecord["lifecycle"];
 
-  constructor(
-    
-    goalUuid: string,
-    keyResultId: string,
-    value: number,
-    date: DateTime,
-    uuid?: string,
-    note?: string
-  ) {
-    super(uuid || Record.generateId());
-    const now = TimeUtils.now();
+  constructor(params: {
+    uuid?: string;
+    goalUuid: string;
+    keyResultUuid: string;
+    value: number;
+    note?: string;
+  }) {
+    super(params.uuid || Record.generateId());
+    const now = new Date();
 
-    this._goalUuid = goalUuid;
-    this._keyResultUuid = keyResultId;
-    this._value = value;
-    this._date = date;
-    this._note = note;
-
+    this._goalUuid = params.goalUuid;
+    this._keyResultUuid = params.keyResultUuid;
+    this._value = params.value;
+    this._note = params.note;
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
     };
   }
 
-  // Getters
+  // Getters & Setters
   get goalUuid(): string {
     return this._goalUuid;
   }
+  set goalUuid(value: string) {
+    if (!value.trim()) throw new Error("目标ID不能为空");
+    this._goalUuid = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
-  get keyResultId(): string {
+  get keyResultUuid(): string {
     return this._keyResultUuid;
+  }
+  set keyResultUuid(value: string) {
+    if (!value.trim()) throw new Error("关键结果ID不能为空");
+    this._keyResultUuid = value;
+    this._lifecycle.updatedAt = new Date();
   }
 
   get value(): number {
     return this._value;
   }
-
-  get date(): DateTime {
-    return this._date;
+  set value(val: number) {
+    if (val < 0) throw new Error("记录值不能为负数");
+    this._value = val;
+    this._lifecycle.updatedAt = new Date();
   }
 
   get note(): string | undefined {
     return this._note;
   }
+  set note(value: string | undefined) {
+    this._note = value;
+    this._lifecycle.updatedAt = new Date();
+  }
 
-  get lifecycle(): IRecord['lifecycle'] {
+  get lifecycle(): IRecord["lifecycle"] {
     return this._lifecycle;
   }
 
   /**
    * 更新记录信息
    */
-  updateRecord(updates: {
-    value?: number;
-    date?: DateTime;
-    note?: string;
-  }): void {
+  updateRecord(updates: { value?: number; date?: Date; note?: string }): void {
     if (updates.value !== undefined) {
-      if (updates.value < 0) {
-        throw new Error("记录值不能为负数");
-      }
-      this._value = updates.value;
+      this.value = updates.value;
     }
-
-    if (updates.date !== undefined) {
-      this._date = updates.date;
-    }
-
     if (updates.note !== undefined) {
-      this._note = updates.note;
+      this.note = updates.note;
     }
+  }
+  /**
+   * 判断对象是否为 Record 或 IRecord
+   */
+  static isRecord(obj: any): obj is Record | IRecord {
+    return (
+      obj instanceof Record ||
+      (obj &&
+        typeof obj === "object" &&
+        "uuid" in obj &&
+        "goalUuid" in obj &&
+        "keyResultUuid" in obj &&
+        "value" in obj)
+    );
+  }
 
-    this._lifecycle.updatedAt = TimeUtils.now();
+  /**
+   * 保证返回 Record 实例或 null
+   * @param rec 可能为 DTO、实体或 null
+   */
+  static ensureRecord(rec: IRecord | Record | null): Record | null {
+    if (Record.isRecord(rec)) {
+      return rec instanceof Record ? rec : Record.fromDTO(rec);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * 保证返回 Record 实例，永不为 null
+   * @param rec 可能为 DTO、实体或 null
+   */
+  static ensureRecordNeverNull(rec: IRecord | Record | null): Record {
+    if (Record.isRecord(rec)) {
+      return rec instanceof Record ? rec : Record.fromDTO(rec);
+    } else {
+      // 默认创建一个空记录
+      return Record.forCreate("", "");
+    }
   }
 
   /**
    * 转换为数据传输对象
    */
   toDTO(): IRecord {
-    const rawData = {
+    return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
-      keyResultId: this._keyResultUuid,
+      keyResultUuid: this._keyResultUuid,
       value: this._value,
-      date: this._date,
       note: this._note,
-      lifecycle: this._lifecycle,
+      lifecycle: { ...this._lifecycle },
     };
-
-    // 使用深度序列化确保返回纯净的 JSON 对象
-    try {
-      return JSON.parse(JSON.stringify(rawData));
-    } catch (error) {
-      console.error('❌ [Record.toDTO] 序列化失败:', error);
-      // 如果序列化失败，返回基本信息
-      return {
-        uuid: this.uuid,
-        goalUuid: this._goalUuid,
-        keyResultId: this._keyResultUuid,
-        value: this._value,
-        date: JSON.parse(JSON.stringify(this._date)),
-        note: this._note,
-        lifecycle: JSON.parse(JSON.stringify(this._lifecycle)),
-      };
-    }
-  }
-
-  /**
-   * 导出完整数据（用于序列化）
-   */
-  toJSON(): IRecord {
-    return this.toDTO();
   }
 
   /**
    * 从数据传输对象创建记录
    */
   static fromDTO(data: IRecord): Record {
-    const record = new Record(
-      
-      data.goalUuid,
-      data.keyResultId,
-      data.value,
-      data.date,
-      data.uuid,
-      data.note
-    );
-
-    record._lifecycle = data.lifecycle;
+    const record = new Record({
+      uuid: data.uuid,
+      goalUuid: data.goalUuid,
+      keyResultUuid: data.keyResultUuid,
+      value: data.value,
+      note: data.note,
+    });
+    record._lifecycle = {
+      createdAt: data.lifecycle.createdAt,
+      updatedAt: data.lifecycle.updatedAt,
+    };
     return record;
   }
 
-  /**
-   * 从创建数据传输对象创建记录
-   */
-  static fromCreateDTO(data: IRecordCreateDTO): Record {
-    return new Record(
-      data.goalUuid,
-      data.keyResultId,
-      data.value,
-      data.date,
-      undefined, // uuid will be generated
-      data.note
-    );
+  static forCreate(goalUuid: string, keyResultUuid: string): Record {
+    const record = new Record({
+      goalUuid,
+      keyResultUuid,
+      value: 0,
+    });
+    return record;
   }
 
   clone(): Record {
-    const clone = new Record(
-      
-      this._goalUuid,
-      this._keyResultUuid,
-      this._value,
-      this._date,
-      this.uuid, // 保留原有 UUID
-      this._note
-    );
-    clone._lifecycle = { ...this._lifecycle };
-    return clone;
-  }
-
-  /**
-   * 验证记录数据
-   */
-  static validate(data: IRecordCreateDTO): {
-    isValid: boolean;
-    errors: string[];
-  } {
-    const errors: string[] = [];
-
-    if (!data.goalUuid?.trim()) {
-      errors.push("目标ID不能为空");
-    }
-
-    if (!data.keyResultId?.trim()) {
-      errors.push("关键结果ID不能为空");
-    }
-
-    if (data.value < 0) {
-      errors.push("记录值不能为负数");
-    }
-
-    if (!data.date) {
-      errors.push("记录日期不能为空");
-    }
-
-    return {
-      isValid: errors.length === 0,
-      errors,
+    const record = new Record({
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      keyResultUuid: this._keyResultUuid,
+      value: this._value,
+      note: this._note,
+    });
+    record._lifecycle = {
+      createdAt: new Date(this._lifecycle.createdAt),
+      updatedAt: new Date(this._lifecycle.updatedAt),
     };
+    return record;
   }
 }

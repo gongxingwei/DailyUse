@@ -9,7 +9,7 @@
     <v-card-title class="goal-card-header pa-4 pb-2">
       <div class="d-flex align-center justify-space-between">
         <div class="goal-title-section">
-          <h3 class="goal-title text-h6 font-weight-bold mb-1">{{ goal.title }}</h3>
+          <h3 class="goal-title text-h6 font-weight-bold mb-1">{{ goal.name }}</h3>
           <v-chip
             :color="goal.color || 'primary'"
             variant="tonal"
@@ -22,7 +22,7 @@
         </div>
         
         <!-- 今日进度提示 -->
-        <div v-if="todayProgress > 0" class="today-progress-badge">
+        <div v-if="goal.todayProgress > 0" class="today-progress-badge">
           <v-chip
             color="success"
             variant="elevated"
@@ -30,7 +30,7 @@
             prepend-icon="mdi-trending-up"
             class="today-progress-chip"
           >
-            +{{ todayProgress }}%
+            +{{ goal.todayProgress }}%
           </v-chip>
         </div>
       </div>
@@ -43,12 +43,12 @@
         <div class="d-flex align-center justify-space-between mb-1">
           <span class="text-caption text-medium-emphasis">完成度</span>
           <span class="text-subtitle-2 font-weight-bold" :style="{ color: goal.color }">
-            {{ goalProgress }}%
+            {{ goal.progress }}%
           </span>
         </div>
         
         <v-progress-linear
-          :model-value="goalProgress"
+          :model-value="goal.progress"
           :color="goal.color || 'primary'"
           height="8"
           rounded
@@ -83,7 +83,7 @@
               v-for="keyResult in goal.keyResults" 
               :key="keyResult.uuid"
               :keyResult="keyResult" 
-              :goalUuid="goal.uuid"
+              :goal="goal"
               class="key-result-item"
             />
           </div>
@@ -94,10 +94,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import type { Goal } from '../types/goal';
-import { useGoalStore } from '../stores/goalStore';
+import { Goal } from '../../domain/aggregates/goal';
 import KeyResultCard from './KeyResultCard.vue';
 
 const props = defineProps<{
@@ -105,15 +103,6 @@ const props = defineProps<{
 }>();
 
 const router = useRouter();
-const goalStore = useGoalStore();
-
-const goalProgress = computed(() => {
-  return goalStore.getGoalProgress(props.goal.uuid) || 0;
-});
-
-const todayProgress = computed(() => {
-  return goalStore.getTodayGoalProgress(props.goal.uuid) || 0;
-});
 
 const navigateToGoalInfo = () => {
   router.push({ name: 'goal-info', params: { goalUuid: props.goal.uuid } });

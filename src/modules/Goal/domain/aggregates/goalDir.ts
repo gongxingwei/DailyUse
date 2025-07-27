@@ -1,6 +1,6 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import type { IGoalDir } from "@common/modules/goal";
-import { isValid, parseISO } from "date-fns";
+import { isValid } from "date-fns";
 
 /**
  * 目标目录领域实体
@@ -33,7 +33,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
     const now = new Date();
 
     this._name = params.name || '';
-    this._icon = params.icon || 'default-icon'; // 默认图标
+    this._icon = params.icon || 'mdi-folder'; // 默认图标
     this._parentUuid = params.parentUuid;
     this._color = params.color || 'default-color';
     this._description = params.description || '';
@@ -49,6 +49,9 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   }
 
   // Getters
+  get uuid(): string {
+    return this._uuid;
+  }
   get name(): string {
     return this._name;
   }
@@ -183,7 +186,7 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
   static forCreate(): GoalDir {
     return new GoalDir({
       name: '',
-      icon: 'default-icon',
+      icon: 'mdi-folder',
       parentUuid: undefined,
     });
   }

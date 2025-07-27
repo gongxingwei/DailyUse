@@ -4,6 +4,7 @@ import { IGoal } from "@common/modules/goal";
 import { KeyResult } from "../entities/keyResult";
 import { Record } from "../entities/record";
 import { GoalReview } from "../entities/goalReview";
+import { differenceInDays, isSameDay } from "date-fns";
 
 export class Goal extends AggregateRoot implements IGoal {
   private _name: string;
@@ -181,177 +182,97 @@ export class Goal extends AggregateRoot implements IGoal {
     return this._version;
   }
 
-  /**
-   * 添加关键结果
-   */
+  get totalWeight(): number {
+    return this._keyResults.reduce((acc, kr) => acc + kr.weight, 0);
+  }
+
+  get progress(): number {
+    if (this._keyResults.length === 0) return 0;
+    const totalWeight = this.totalWeight;
+    const weightedProgress = this._keyResults.reduce(
+      (sum, kr) => sum + (kr.progress * kr.weight) / totalWeight,
+      0
+    );
+    return Math.round(weightedProgress * 100);
+  }
+
+  get todayProgress(): number {
+    if (this._keyResults.length === 0) return 0;
+
+    // 获取今天的所有记录
+    const today = new Date();
+    const todayRecords = this._records.filter((r) =>
+      isSameDay(r.lifecycle.createdAt, today)
+    );
+
+    if (todayRecords.length === 0) return 0;
+
+    let todayWeight = 0;
+    for (const kr of this._keyResults) {
+      // 找到该关键结果今天的所有记录
+      const krRecords = todayRecords.filter((r) => r.keyResultUuid === kr.uuid);
+      if (krRecords.length > 0) {
+        const sumValue = krRecords.reduce((sum, r) => sum + r.value, 0);
+        todayWeight += sumValue * kr.weight;
+      }
+    }
+
+    return Math.round((todayWeight / this.totalWeight) * 100);
+  }
+
+  get remainingDays(): number {
+    return differenceInDays(this.endTime, this.startTime);
+  }
+
   addKeyResult(keyResult: KeyResult): void {
+    if (this._keyResults.some((kr) => kr.uuid === keyResult.uuid)) {
+      throw new Error("Key result already exists");
+    }
     this._keyResults.push(keyResult);
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  /**
-   * 移除关键结果
-   */
-  removeKeyResult(uuid: string): void {
-    this._keyResults = this._keyResults.filter((kr) => kr.uuid !== uuid);
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 更新关键结果
-   */
-  updateKeyResult(updated: KeyResult): void {
-    const idx = this._keyResults.findIndex((kr) => kr.uuid === updated.uuid);
-    if (idx !== -1) {
-      this._keyResults[idx] = updated;
-      this._lifecycle.updatedAt = new Date();
-      this._version++;
+  removeKeyResult(keyResultUuid: string): void {
+    const index = this._keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
+    if (index === -1) {
+      throw new Error("Key result not found");
     }
-  }
-
-  /**
-   * 增加关键结果进度（通过 uuid）
-   */
-  increaseKeyResultProgress(keyResultUuid: string, increment: number): void {
-    const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
-    if (keyResult) {
-      this.increaseKeyResultProgressByKR(keyResult, increment);
-    }
-  }
-
-  /**
-   * 增加关键结果进度（通过对象）
-   */
-  increaseKeyResultProgressByKR(keyResult: KeyResult, increment: number): void {
-    keyResult.currentValue += increment;
+    this._keyResults.splice(index, 1);
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  /**
-   * 添加记录
-   */
-  addRecord(record: Record): void {
-    const { keyResultUuid, value } = record;
-    const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
-    if (!keyResult) {
-      throw new Error("关键结果不存在，无法添加记录");
-    }
-    this.increaseKeyResultProgressByKR(keyResult, value);
-    this._records.push(record);
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 移除记录
-   */
-  removeRecord(uuid: string): void {
-    this._records = this._records.filter((r) => r.uuid !== uuid);
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 添加目标复盘
-   */
-  addReview(review: GoalReview): void {
-    this._reviews.push(review);
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 移除目标复盘
-   */
-  removeReview(uuid: string): void {
-    this._reviews = this._reviews.filter((rv) => rv.uuid !== uuid);
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 归档目标
-   */
-  archive(): void {
-    this._lifecycle.status = "archived";
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 完成目标
-   */
-  complete(): void {
-    this._lifecycle.status = "completed";
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 暂停目标
-   */
-  pause(): void {
-    this._lifecycle.status = "paused";
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 激活目标
-   */
-  activate(): void {
-    this._lifecycle.status = "active";
-    this._lifecycle.updatedAt = new Date();
-    this._version++;
-  }
-
-  /**
-   * 计算整体进度
-   */
-  calculateProgress(): void {
-    if (this._keyResults.length === 0) {
-      this._analytics.overallProgress = 0;
-      this._analytics.weightedProgress = 0;
-      this._analytics.completedKeyResults = 0;
-      this._analytics.totalKeyResults = 0;
-      return;
-    }
-    let totalProgress = 0;
-    let weightedProgress = 0;
-    let completed = 0;
-    let totalWeight = 0;
-    this._keyResults.forEach((kr) => {
-      totalProgress += kr.progress;
-      weightedProgress += kr.weightedProgress;
-      totalWeight += kr.weight;
-      if (kr.isCompleted) completed++;
-    });
-    this._analytics.overallProgress = Math.round(
-      totalProgress / this._keyResults.length
+  updateKeyResult(keyResult: KeyResult): void {
+    const index = this._keyResults.findIndex(
+      (kr) => kr.uuid === keyResult.uuid
     );
-    this._analytics.weightedProgress = Math.round(weightedProgress);
-    this._analytics.completedKeyResults = completed;
-    this._analytics.totalKeyResults = this._keyResults.length;
+    if (index === -1) {
+      throw new Error("Key result not found");
+    }
+    this._keyResults[index] = keyResult;
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
   }
 
   /**
-   * 获取某个关键结果的所有记录
+   * 创建当前目标快照
    */
-  getRecordsByKeyResult(keyResultUuid: string): Record[] {
-    return this._records.filter((r) => r.keyResultUuid === keyResultUuid);
-  }
-
-  /**
-   * 获取最新一次复盘
-   */
-  getLatestReview(): GoalReview | undefined {
-    if (this._reviews.length === 0) return undefined;
-    return this._reviews.reduce((latest, curr) =>
-      curr.reviewDate > latest.reviewDate ? curr : latest
-    );
+  createSnapShot(): GoalReview["snapshot"] {
+    return {
+      snapshotDate: new Date(),
+      overallProgress: this.analytics.overallProgress,
+      weightedProgress: this.analytics.weightedProgress,
+      completedKeyResults: this.analytics.completedKeyResults,
+      totalKeyResults: this.analytics.totalKeyResults,
+      keyResultsSnapshot: this._keyResults.map((kr) => ({
+        uuid: kr.uuid,
+        name: kr.name,
+        progress: kr.progress,
+        currentValue: kr.currentValue,
+        targetValue: kr.targetValue,
+      })),
+    };
   }
 
   static isGoal(obj: any): obj is Goal {
@@ -402,7 +323,9 @@ export class Goal extends AggregateRoot implements IGoal {
       startTime: this._startTime,
       endTime: this._endTime,
       note: this._note,
-      keyResults: this._keyResults.map((kr) => kr.toDTO()),
+      keyResults: this._keyResults.map((kr) => {
+        return KeyResult.isKeyResult(kr) ? kr.toDTO() : kr;
+      }),
       records: this._records.map((r) => r.toDTO()),
       reviews: this._reviews.map((rv) => rv.toDTO()),
       analysis: { ...this._analysis },
@@ -423,17 +346,15 @@ export class Goal extends AggregateRoot implements IGoal {
       dirUuid: dto.dirUuid,
       note: dto.note,
       analysis: { ...dto.analysis },
-      startTime: typeof dto.startTime === 'string' ? new Date(dto.startTime) : dto.startTime,
-      endTime: typeof dto.endTime === 'string' ? new Date(dto.endTime) : dto.endTime,
+      startTime: dto.startTime,
+      endTime: dto.endTime,
     });
-    goal._keyResults = dto.keyResults.map((kr) => KeyResult.fromDTO(kr));
-    goal._records = dto.records.map((r) => Record.fromDTO(r));
-    goal._reviews = dto.reviews.map((rv) => GoalReview.fromDTO(rv));
-    goal._lifecycle = { 
-      createdAt: new Date(dto.lifecycle.createdAt),
-      updatedAt: new Date(dto.lifecycle.updatedAt),
-      status: dto.lifecycle.status,
-     };
+    goal._keyResults = (dto.keyResults ?? []).map((kr) =>
+      KeyResult.fromDTO(kr)
+    );
+    goal._records = (dto.records ?? []).map((r) => Record.fromDTO(r));
+    goal._reviews = (dto.reviews ?? []).map((rv) => GoalReview.fromDTO(rv));
+    goal._lifecycle = { ...dto.lifecycle };
     goal._version = dto.version;
     return goal;
   }

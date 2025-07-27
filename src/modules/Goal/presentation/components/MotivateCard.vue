@@ -86,10 +86,7 @@
   
   const getRandomContent = async () => {
     isRefreshing.value = true;
-    
-    // 模拟加载时间
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
+  
     const goals = goalStore.getAllGoals;
     if (!goals.length) {
       currentContent.value = '';

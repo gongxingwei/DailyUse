@@ -29,7 +29,7 @@ import HeaderSection from './components/HeaderSection.vue';
 .app-layout {
   display: grid;
   grid-template-columns: 60px 1fr;
-  grid-template-rows: 60px 1fr;
+  grid-template-rows: 30px 1fr;
   height: 100vh;
 }
 

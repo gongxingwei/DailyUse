@@ -17,7 +17,7 @@ export async function registerGoalIpcHandlers() {
       if (!auth.accountUuid) {
         return { success: false, message: '未登录或登录已过期，请重新登录' };
       }
-      const dir = await goalApplicationService.createGoalDir(goalDirData, auth.accountUuid);
+      const dir = await goalApplicationService.createGoalDir(auth.accountUuid, goalDirData);
       const dirDTO = dir.toDTO();
       return { success: true, data: dirDTO, message: '创建成功' };
     } catch (error) {
@@ -47,7 +47,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const dir = await goalApplicationService.updateGoalDir(goalDirData);
+    const dir = await goalApplicationService.updateGoalDir(auth.accountUuid, goalDirData);
     const dirDTO = dir.toDTO();
     return { success: true, data: dirDTO, message: '更新成功' };
   }));
@@ -76,7 +76,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const goal = await goalApplicationService.getGoalById(uuid);
+    const goal = await goalApplicationService.getGoalById(auth.accountUuid, uuid);
     if (!goal) {
       return { success: false, message: '目标不存在' };
     }
@@ -88,7 +88,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const updatedGoal = await goalApplicationService.updateGoal(goalData);
+    const updatedGoal = await goalApplicationService.updateGoal(auth.accountUuid, goalData);
     const goalDTO = updatedGoal.toDTO();
     return { success: true, data: goalDTO, message: '更新成功' };
   }));
@@ -97,7 +97,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    await goalApplicationService.deleteGoal(uuid);
+    await goalApplicationService.deleteGoal(auth.accountUuid, uuid);
     return { success: true, message: '删除成功' };
   }));
 
@@ -111,53 +111,22 @@ export async function registerGoalIpcHandlers() {
 
   // ========== 关键结果 IPC ==========
 
-  ipcMain.handle('goal:addKeyResult', withAuth(async (_event, [goalUuid, keyResultData], auth) => {
-    if (!auth.accountUuid) {
-      return { success: false, message: '未登录或登录已过期，请重新登录' };
-    }
-    const result = await goalApplicationService.addKeyResultToGoal(goalUuid, keyResultData);
-    // result 结构: { goal, keyResultId }
-    const resultDTO = {
-      ...result,
-      goal: result.goal?.toDTO ? result.goal.toDTO() : result.goal,
-    };
-    return { success: true, data: resultDTO, message: '添加成功' };
-  }));
-
   ipcMain.handle('goal:removeKeyResult', withAuth(async (_event, [goalUuid, keyResultId], auth) => {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const goal = await goalApplicationService.removeKeyResultFromGoal(goalUuid, keyResultId);
+    const goal = await goalApplicationService.removeKeyResultFromGoal(auth.accountUuid, goalUuid, keyResultId);
     const goalDTO = goal.toDTO();
     return { success: true, data: goalDTO, message: '删除成功' };
   }));
 
-  ipcMain.handle('goal:updateKeyResult', withAuth(async (_event, [goalUuid, keyResultId, updates], auth) => {
-    if (!auth.accountUuid) {
-      return { success: false, message: '未登录或登录已过期，请重新登录' };
-    }
-    const goal = await goalApplicationService.updateKeyResultOfGoal(goalUuid, keyResultId, updates);
-    const goalDTO = goal.toDTO();
-    return { success: true, data: goalDTO, message: '更新成功' };
-  }));
-
-  ipcMain.handle('goal:updateKeyResultCurrentValue', withAuth(async (_event, [goalUuid, keyResultId, currentValue], auth) => {
-    if (!auth.accountUuid) {
-      return { success: false, message: '未登录或登录已过期，请重新登录' };
-    }
-    const goal = await goalApplicationService.updateKeyResultCurrentValue(goalUuid, keyResultId, currentValue);
-    const goalDTO = goal.toDTO();
-    return { success: true, data: goalDTO, message: '更新成功' };
-  }));
-
   // ========== 记录 IPC ==========
 
-  ipcMain.handle('goal:addRecordToGoal', withAuth(async (_event, [recordCreateDTO], auth) => {
+  ipcMain.handle('goal:addRecordToGoal', withAuth(async (_event, [recordDTO], auth) => {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const result = await goalApplicationService.addRecordToGoal(recordCreateDTO);
+    const result = await goalApplicationService.addRecordToGoal(auth.accountUuid, recordDTO);
     // result 结构: { goal, record }
     const resultDTO = {
       ...result,
@@ -171,7 +140,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const goal = await goalApplicationService.removeRecordFromGoal(goalUuid, recordId);
+    const goal = await goalApplicationService.removeRecordFromGoal(auth.accountUuid, goalUuid, recordId);
     const goalDTO = goal.toDTO();
     return { success: true, data: goalDTO, message: '删除成功' };
   }));
@@ -189,7 +158,7 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const records = await goalApplicationService.getRecordsBygoalUuid(goalUuid);
+    const records = await goalApplicationService.getRecordsByGoalUuid(auth.accountUuid, goalUuid);
     const recordDTOs = records.map(r => r.toDTO ? r.toDTO() : r);
     return { success: true, data: recordDTOs };
   }));
@@ -198,19 +167,18 @@ export async function registerGoalIpcHandlers() {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    await goalApplicationService.deleteRecord(recordId);
+    await goalApplicationService.deleteRecord(auth.accountUuid, recordId);
     return { success: true, message: '删除成功' };
   }));
 
   // ========== 复盘 IPC ==========
 
-  ipcMain.handle('goal:addReview', withAuth(async (_event, [data], auth) => {
+  ipcMain.handle('goal:addReview', withAuth(async (_event, [reviewData], auth) => {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const { goalUuid, reviewData } = data;
-    const result = await goalApplicationService.addReviewToGoal(goalUuid, reviewData);
-    // result 结构: { goal, review }
+    console.log('addReview', reviewData);
+    const result = await goalApplicationService.addReviewToGoal(auth.accountUuid, reviewData);
     const resultDTO = {
       ...result,
       goal: result.goal?.toDTO ? result.goal.toDTO() : result.goal,
@@ -219,12 +187,11 @@ export async function registerGoalIpcHandlers() {
     return { success: true, data: resultDTO, message: '添加成功' };
   }));
 
-  ipcMain.handle('goal:updateReview', withAuth(async (_event, [data], auth) => {
+  ipcMain.handle('goal:updateReview', withAuth(async (_event, [reviewData], auth) => {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const { goalUuid, reviewId, updateData } = data;
-    const result = await goalApplicationService.updateReviewInGoal(goalUuid, reviewId, updateData);
+    const result = await goalApplicationService.updateReviewInGoal(auth.accountUuid, reviewData);
     // result 结构: { goal, review }
     const resultDTO = {
       ...result,
@@ -234,38 +201,16 @@ export async function registerGoalIpcHandlers() {
     return { success: true, data: resultDTO, message: '更新成功' };
   }));
 
-  ipcMain.handle('goal:removeReview', withAuth(async (_event, [data], auth) => {
+  ipcMain.handle('goal:removeReview', withAuth(async (_event, [reviewData], auth) => {
     if (!auth.accountUuid) {
       return { success: false, message: '未登录或登录已过期，请重新登录' };
     }
-    const { goalUuid, reviewId } = data;
-    const goal = await goalApplicationService.removeReviewFromGoal(goalUuid, reviewId);
+
+    const goal = await goalApplicationService.removeReviewFromGoal(auth.accountUuid, reviewData);
     const goalDTO = goal?.toDTO ? goal.toDTO() : goal;
     return { success: true, data: goalDTO, message: '删除成功' };
   }));
 
-  ipcMain.handle('goal:getReviews', withAuth(async (_event, [goalUuid], auth) => {
-    if (!auth.accountUuid) {
-      return { success: false, message: '未登录或登录已过期，请重新登录' };
-    }
-    const reviews = await goalApplicationService.getGoalReviews(goalUuid);
-    const reviewDTOs = reviews.map(r => r.toDTO ? r.toDTO() : r);
-    return { success: true, data: reviewDTOs };
-  }));
-
-  ipcMain.handle('goal:createReviewSnapshot', withAuth(async (_event, [goalUuid], auth) => {
-    if (!auth.accountUuid) {
-      return { success: false, message: '未登录或登录已过期，请重新登录' };
-    }
-    const result = await goalApplicationService.createGoalReviewSnapshot(goalUuid);
-    // result 结构: { goal, snapshot }
-    const resultDTO = {
-      ...result,
-      goal: result.goal?.toDTO ? result.goal.toDTO() : result.goal,
-      snapshot: result.snapshot, // 假设 snapshot 已经是纯数据
-    };
-    return { success: true, data: resultDTO, message: '快照创建成功' };
-  }));
 
   console.log('✅ Goal IPC handlers registered');
 }
@@ -275,31 +220,29 @@ export async function registerGoalIpcHandlers() {
  */
 export function unregisterGoalIpcHandlers() {
   const channels = [
-    'goal:setUsername',
     'goal:dir:create',
     'goal:dir:get-all', 
     'goal:dir:delete',
+    'goal:dir:update',
     'goal:create',
     'goal:get-all',
     'goal:get-by-id',
     'goal:update',
     'goal:delete',
     'goal:delete-all',
-    'goal:addKeyResult',
+
     'goal:removeKeyResult',
-    'goal:updateKeyResult',
-    'goal:updateKeyResultCurrentValue',
+
     'goal:addRecordToGoal',
     'goal:removeRecord',
-    'goal:createRecord',
     'goal:getAllRecords',
     'goal:getRecordsByGoal',
     'goal:deleteRecord',
     'goal:addReview',
     'goal:updateReview',
     'goal:removeReview',
-    'goal:getReviews',
-    'goal:createReviewSnapshot'
+
+
   ];
 
   channels.forEach(channel => {

@@ -86,9 +86,9 @@
                       <v-icon color="white" size="12">mdi-target</v-icon>
                     </v-avatar>
                     <div class="goal-text">
-                      <span class="goal-title">{{ goal.title }}</span>
+                      <span class="goal-title">{{ goal.name }}</span>
                       <div class="goal-progress">
-                        {{ goalStore.getGoalProgress(goal.uuid) }}%
+                        {{ goal.progress }}%
                       </div>
                     </div>
                   </div>
@@ -119,7 +119,7 @@
                       variant="elevated"
                       class="goal-chip"
                     >
-                      {{ goalStore.getGoalProgress(goal.uuid) }}%
+                      {{ goal.progress }}%
                     </v-chip>
                   </div>
                 </div>
@@ -201,7 +201,7 @@
     const today = new Date();
     return [...goalStore.getAllGoals]
       .filter(goal => {
-        if (goal.dirId === 'delete' || goal.dirId === 'archive') return false;
+        if (goal.dirUuid === 'delete' || goal.dirUuid === 'archive') return false;
         const endDate = new Date(goal.endTime);
         return endDate >= today;
       })
@@ -231,7 +231,7 @@
     ) + 1;
     
     const width = isFill ? 
-      (duration * dayWidth * (goalStore.getGoalProgress(goal.uuid) / 100)) : 
+      (duration * dayWidth * (goal.progress / 100)) : 
       (duration * dayWidth);
   
     return {

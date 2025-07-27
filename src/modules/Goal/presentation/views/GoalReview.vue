@@ -2,7 +2,7 @@
     <div v-if="loading" class="loading">
         <span>加载中...</span>
     </div>
-    <div v-else-if="!currentReview" class="loading">
+    <div v-else-if="!localGoalReview" class="loading">
         <span>加载失败,未获取目标信息</span>
     </div>
     <div v-else id="goal-review">
@@ -15,8 +15,8 @@
             </div>
             <div class="goal-review-header-content">
                 <span style="font-weight: 700;font-size: 2rem;">目标复盘</span>
-                <span style="font-weight: 500;">{{ goal.title }}</span>
-                <span style="font-weight: 300;">{{ goal.startTime }} 到 {{ goal.endTime }}</span>
+                <span style="font-weight: 500;">{{ goal.name }}</span>
+                <span style="font-weight: 300;">{{ format(goal.startTime, 'yyyy-MM-dd') }} 到 {{ format(goal.endTime, 'yyyy-MM-dd') }}</span>
             </div>
             <div></div>
         </header>
@@ -31,16 +31,16 @@
                         <div>
                             <span style="font-weight: 300;">进度</span>
                             <span style="font-weight: 700;font-size: 2rem;">{{
-                                currentReview.goalProgress.currentProgress }}</span>
+                                localGoalReview.snapshot.weightedProgress }}</span>
                             <span style="font-weight: 300;">%</span>
                         </div>
                         <div>
-                            <span>{{ goal.title }}</span>
+                            <span>{{ goal.name }}</span>
                         </div>
                     </div>
                     <!-- 关键结果执行情况 -->
                     <div class="card-content">
-                        <div v-for="kr in currentReview.keyResultProgress || []" :key="kr.uuid" class="card-content-item">
+                        <div v-for="kr in localGoalReview.snapshot.keyResultsSnapshot || []" :key="kr.uuid" class="card-content-item">
                             <span class="item-name">{{ kr.name }}</span>
                             <span class="item-value">{{ kr.currentValue }} -> {{ kr.targetValue }}</span>
                         </div>
@@ -81,7 +81,7 @@
                         </div>
                         <div class="diagnosis-card-content">
                             <textarea 
-                                v-model="currentReview.selfDiagnosis.achievements" 
+                                v-model="localGoalReview.content.achievements" 
                                 placeholder="列出这段时间的主要成就..."
                                 class="diagnosis-textarea"
                             ></textarea>
@@ -95,7 +95,7 @@
                         </div>
                         <div class="diagnosis-card-content">
                             <textarea 
-                                v-model="currentReview.selfDiagnosis.challenges" 
+                                v-model="localGoalReview.content.challenges" 
                                 placeholder="记录遇到的主要挑战..."
                                 class="diagnosis-textarea"
                             ></textarea>
@@ -109,7 +109,7 @@
                         </div>
                         <div class="diagnosis-card-content">
                             <textarea 
-                                v-model="currentReview.selfDiagnosis.learnings" 
+                                v-model="localGoalReview.content.learnings" 
                                 placeholder="总结经验教训..."
                                 class="diagnosis-textarea"
                             ></textarea>
@@ -123,7 +123,7 @@
                         </div>
                         <div class="diagnosis-card-content">
                             <textarea 
-                                v-model="currentReview.selfDiagnosis.nextSteps" 
+                                v-model="localGoalReview.content.nextSteps" 
                                 placeholder="制定下一步计划..."
                                 class="diagnosis-textarea"
                             ></textarea>
@@ -136,42 +136,39 @@
         <!-- 按钮 -->
         <section class="goal-review-actions">
             <div class="goal-review-button-group">
-                <button class="inline-button bg-blue" @click="saveReview()">完成复盘</button>
+                <button class="inline-button bg-blue" @click="handleAddReviewToGoal(localGoalReview as GoalReview)">完成复盘</button>
             </div>
         </section>
     </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, type ComputedRef, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useGoalStore } from '../stores/goalStore';
-import { useGoalReviewStore } from '../stores/goalReviewStore';
-import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
-import { useGoalReview } from '../composables/useGoalReview';
-import type { Goal } from '../types/goal';
-import { storeToRefs } from 'pinia';
+// composables
+import { useGoalServices } from '../composables/useGoalService';
+
+// domains
+import { GoalReview } from '../../domain/entities/goalReview';
+import { Goal } from '../../domain/aggregates/goal';
+// utils
+import { format } from 'date-fns';
 
 const loading = ref(true);
 const route = useRoute();
 const router = useRouter();
 const goalStore = useGoalStore();
-const goalReviewStore = useGoalReviewStore();
-const taskStore = useTaskStore();
 
-const { saveReview } = useGoalReview();
-// 当前目标
 const goalUuid = route.params.goalUuid as string;
-// 将 store 中的数据映射到组件中
-const { tempReview: currentReview } = storeToRefs(goalReviewStore);
-const goal = computed(() => {
-    const foundGoal = goalStore.getGoalById(goalUuid);
-    if (!foundGoal) {
-        router.push('/404');
-        throw new Error('Goal not found');
-    }
-    return foundGoal;
-}) as ComputedRef<Goal>;
+
+const goal = goalStore.getGoalByUuid(goalUuid) as Goal;
+
+const localGoalReview = ref<GoalReview>(GoalReview.forCreate(goal, 'custom'));
+
+const { handleAddReviewToGoal } = useGoalServices();
+// 当前目标
+
 // 任务完成情况
 const taskStatus = ref({
     overall: { incomplete: 0, total: 0 },
@@ -179,14 +176,7 @@ const taskStatus = ref({
 });
 
 onMounted(async () => {
-    if (!goalStore.getGoalById(goalUuid)) {
-        router.push('/404');
-        return;
-    }
-    goalReviewStore.initTempReview(goalUuid);
-    
-    // 获取任务状态
-    taskStatus.value = await taskStore.getTaskStatsForGoal(goalUuid);
+   
     
     loading.value = false;
 });
@@ -195,8 +185,10 @@ onMounted(async () => {
 <style scoped>
 #goal-review {
     width: 100%;
-    height: 100%;
+    min-height: 100%;
     padding: 2rem 150px;
+
+    background: linear-gradient(120deg, rgba(var(--v-theme-primary), 0.08) 0%, rgba(var(--v-theme-surface), 0.95) 100%);
 }
 /* header */
 .goal-review-header {

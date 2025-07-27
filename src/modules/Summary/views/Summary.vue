@@ -70,29 +70,20 @@
     <main class="summary-main">
       <!-- 今日任务区域 -->
       <section class="content-section">
-        <div class="section-header">
-          <h2 class="section-title">任务</h2>
-        </div>
         <TaskInSummaryCard />
       </section>
 
       <!-- 目标概览区域 -->
       <section class="content-section">
-        <div class="section-header">
-          <h2 class="section-title">目标概览</h2>
-          <v-btn color="primary" variant="text" size="small" append-icon="mdi-arrow-right">
-            查看全部
-          </v-btn>
+        <div v-if="goals.length === 0" class="no-goal-tip">
+          <v-icon size="48" color="primary" class="mb-2">mdi-target-off</v-icon>
+          <div class="tip-title">还没有进行中的目标</div>
+          <div class="tip-desc">目标可以帮你更好地规划和追踪进度，快去<span class="tip-link"
+              @click="$router.push('/goal-management')">目标模块</span>创建一个吧！</div>
         </div>
-
-        <div class="goals-grid">
+        <div v-else class="goals-grid">
           <GoalInfoShowCard v-for="goal in goals" :key="goal.uuid" :goal="goal" class="goal-card-item" />
         </div>
-      </section>
-
-      <!-- 项目仓库区域 -->
-      <section class="content-section">
-        <RecentRepoCard />
       </section>
 
       <!-- 时间线图表区域 -->
@@ -112,7 +103,7 @@ import GoalInfoShowCard from '@/modules/Goal/presentation/components/GoalInfoSho
 import MotivateCard from '@/modules/Goal/presentation/components/MotivateCard.vue';
 import GoalGanttChart from '@/modules/Goal/presentation/components/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/presentation/components/TaskInSummaryCard.vue';
-import RecentRepoCard from '@/modules/Repository/presentation/components/RecentRepoCard.vue';
+
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();
@@ -243,7 +234,6 @@ const getCurrentDateString = () => {
 .content-section {
   background: rgb(var(--v-theme-surface));
   border-radius: 16px;
-  padding: 1.5rem;
   border: 1px solid rgba(var(--v-theme-outline), 0.12);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
   transition: all 0.3s ease;
@@ -276,7 +266,7 @@ const getCurrentDateString = () => {
   margin: 0;
 }
 
-.goals-grid{
+.goals-grid {
   display: grid;
   grid-template-rows: repeat(auto-fill, minmax(300px, 1fr));
 }
@@ -291,6 +281,41 @@ const getCurrentDateString = () => {
 
 .goal-card-item:hover {
   transform: scale(1.02);
+}
+
+.no-goal-tip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 0;
+  color: rgba(var(--v-theme-on-surface), 0.7);
+  font-size: 1.1rem;
+  background: linear-gradient(135deg, rgba(var(--v-theme-primary), 0.03), rgba(var(--v-theme-secondary), 0.03));
+  border-radius: 12px;
+}
+
+.tip-title {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: rgb(var(--v-theme-primary));
+}
+
+.tip-desc {
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.tip-link {
+  color: rgb(var(--v-theme-primary));
+  cursor: pointer;
+  text-decoration: underline;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.tip-link:hover {
+  color: rgb(var(--v-theme-secondary));
 }
 
 /* 响应式设计 */

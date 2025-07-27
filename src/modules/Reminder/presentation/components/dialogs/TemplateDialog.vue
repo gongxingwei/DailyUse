@@ -1,9 +1,9 @@
 <template>
-  <v-dialog :model-value="isOpen" max-width="500">
+  <v-dialog :model-value="isOpen" max-width="500" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
         <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-bell-plus' }}</v-icon>
-        {{ isEditing ? 'Edit Reminder Template' : 'Create Reminder Template' }}
+        {{ isEditing ? '编辑提醒模板' : '新建提醒模板' }}
         <v-spacer />
         <v-btn icon variant="text" @click="closeDialog">
           <v-icon>mdi-close</v-icon>
@@ -12,49 +12,49 @@
 
       <v-divider />
 
-      <v-card-text class="pa-6">
+      <v-card-text class="pa-6 scroll-area">
         <v-form ref="formRef" v-model="isFormValid">
           <!-- 模板名称 -->
-          <v-text-field v-model="templateName" label="Template Name" :rules="nameRules" required class="mb-4" />
+          <v-text-field v-model="templateName" label="模板名称" :rules="nameRules" required class="mb-4" />
 
           <!-- 描述 -->
-          <v-textarea v-model="templateDescription" label="Description" rows="3" class="mb-4" />
+          <v-textarea v-model="templateDescription" label="描述" rows="3" class="mb-4" />
 
           <!-- 优先级选择 -->
-          <v-select v-model="templateImportanceLevel" :items="priorityOptions" label="Priority" class="mb-4" />
+          <v-select v-model="templateImportanceLevel" :items="priorityOptions" label="优先级" class="mb-4" />
 
           <!-- 启用开关 -->
-          <v-switch v-model="templateSelfEnabled" label="Enable Template" color="primary" class="mb-4" />
+          <v-switch v-model="templateSelfEnabled" label="启用模板" color="primary" class="mb-4" />
 
           <!-- 通知设置 -->
-          <v-switch v-model="templateNotificationSound" label="Sound" color="primary" class="mb-2" />
-          <v-switch v-model="templateNotificationVibration" label="Vibration" color="primary" class="mb-2" />
-          <v-switch v-model="templateNotificationPopup" label="Popup" color="primary" class="mb-4" />
+          <v-switch v-model="templateNotificationSound" label="声音" color="primary" class="mb-2" />
+          <v-switch v-model="templateNotificationVibration" label="震动" color="primary" class="mb-2" />
+          <v-switch v-model="templateNotificationPopup" label="弹窗" color="primary" class="mb-4" />
 
           <!-- 时间配置 -->
           <div class="mb-4">
-            <v-label class="mb-2">Reminder Time</v-label>
+            <v-label class="mb-2">提醒时间</v-label>
             <div class="d-flex align-center gap-2 mb-3">
-              <v-select v-model="timeHour" :items="hourOptions" label="Hour" density="compact" style="width: 100px;" />
+              <v-select v-model="timeHour" :items="hourOptions" label="小时" density="compact" style="width: 100px;" />
               <span>时</span>
-              <v-select v-model="timeMinute" :items="minuteOptions" label="Minute" density="compact" style="width: 100px;" />
+              <v-select v-model="timeMinute" :items="minuteOptions" label="分钟" density="compact" style="width: 100px;" />
               <span>分</span>
             </div>
             <div class="text-caption text-medium-emphasis">
-              Selected time: {{ selectedTime }}
+              已选时间：{{ selectedTime }}
             </div>
           </div>
 
           <!-- 星期选择器 -->
           <div class="mb-4">
-            <v-label class="mb-2">Days of Week</v-label>
+            <v-label class="mb-2">星期</v-label>
             <v-chip-group v-model="timeDaysOfWeek" multiple column>
               <v-chip v-for="day in weekDayOptions" :key="day.value" :value="day.value" variant="outlined" filter>
                 {{ day.title }}
               </v-chip>
             </v-chip-group>
             <div class="text-caption text-medium-emphasis mt-1">
-              Selected days: {{ selectedDaysText }}
+              已选星期：{{ selectedDaysText }}
             </div>
           </div>
         </v-form>
@@ -63,10 +63,10 @@
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
         <v-btn variant="text" @click="closeDialog">
-          Cancel
+          取消
         </v-btn>
         <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
-          {{ isEditing ? 'Update' : 'Create' }}
+          {{ isEditing ? '更新' : '创建' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -176,12 +176,12 @@ const selectedTime = computed(() => {
   return `${timeHour.value.toString().padStart(2, '0')}:${timeMinute.value.toString().padStart(2, '0')}`;
 });
 const selectedDaysText = computed(() => {
-  if (timeDaysOfWeek.value.length === 0) return 'None';
-  if (timeDaysOfWeek.value.length === 7) return 'Every day';
+  if (timeDaysOfWeek.value.length === 0) return '无';
+  if (timeDaysOfWeek.value.length === 7) return '每天';
   return timeDaysOfWeek.value
     .sort()
     .map(day => weekDayOptions.find(opt => opt.value === day)?.title)
-    .join(', ');
+    .join('、');
 });
 
 // =====================
@@ -216,15 +216,15 @@ watch([timeHour, timeMinute, timeDaysOfWeek], () => {
 // 校验规则与选项
 // =====================
 const nameRules = [
-  (v: string) => !!v || 'Name is required',
-  (v: string) => v.length >= 2 || 'Name must be at least 2 characters'
+  (v: string) => !!v || '名称不能为空',
+  (v: string) => v.length >= 2 || '名称至少2个字符'
 ];
 const priorityOptions = [
-  { title: 'Trivial', value: ImportanceLevel.Trivial },
-  { title: 'Minor', value: ImportanceLevel.Minor },
-  { title: 'Moderate', value: ImportanceLevel.Moderate },
-  { title: 'Important', value: ImportanceLevel.Important },
-  { title: 'Vital', value: ImportanceLevel.Vital }
+  { title: '琐事', value: ImportanceLevel.Trivial },
+  { title: '次要', value: ImportanceLevel.Minor },
+  { title: '一般', value: ImportanceLevel.Moderate },
+  { title: '重要', value: ImportanceLevel.Important },
+  { title: '关键', value: ImportanceLevel.Vital }
 ];
 
 // =====================
@@ -293,3 +293,11 @@ watch(
 );
 
 </script>
+
+<style scoped>
+.scroll-area {
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0; /* 防止内容撑开父容器 */
+}
+</style>

@@ -10,7 +10,7 @@
                 <v-switch v-model="enabled" :label="enabled ? '启用' : '禁用'" :disabled="!enableMode" inset hide-details
                     color="primary" />
             </v-card-title>
-            <v-card-text>
+            <v-card-text class="scroll-area">
                 <reminder-grid :items="templates" :grid-size="100" />
             </v-card-text>
             <v-card-actions>
@@ -82,3 +82,11 @@ const handleBack = () => {
 };
 
 </script>
+
+<style scoped>
+.scroll-area {
+  flex: 1 1 auto;
+  overflow: auto;
+  min-height: 0; /* 防止内容撑开父容器 */
+}
+</style>

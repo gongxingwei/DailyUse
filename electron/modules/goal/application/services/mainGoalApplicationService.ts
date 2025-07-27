@@ -1,11 +1,9 @@
-import type { 
-  IGoal, 
-  IGoalCreateDTO, 
-  IRecord, 
-  IRecordCreateDTO, 
-  IGoalDir, 
+import type {
+  IGoal,
+  IRecord,
+  IGoalDir,
   IGoalReview,
-  IGoalReviewCreateDTO
+  IKeyResult,
 } from "../../../../../common/modules/goal/types/goal";
 import { Goal } from "../../domain/aggregates/goal";
 import { GoalReview } from "../../domain/entities/goalReview";
@@ -19,7 +17,7 @@ import type { IGoalRepository } from "../../domain/repositories/iGoalRepository"
 /**
  * 主进程目标应用服务
  * 处理目标相关的业务逻辑和数据库操作
- * 
+ *
  * 职责：
  * 1. 目标的CRUD操作
  * 2. 关键结果管理
@@ -30,20 +28,25 @@ import type { IGoalRepository } from "../../domain/repositories/iGoalRepository"
 export class MainGoalApplicationService {
   private static instance: MainGoalApplicationService;
   private goalRepository: IGoalRepository;
+
   constructor(goalRepository: IGoalRepository) {
     this.goalRepository = goalRepository;
   }
 
-  static async createInstance(goalRepository?: IGoalRepository): Promise<MainGoalApplicationService> {
+  static async createInstance(
+    goalRepository?: IGoalRepository
+  ): Promise<MainGoalApplicationService> {
     const goalContainer = GoalContainer.getInstance();
-    goalRepository = goalRepository || (await goalContainer.getGoalRepository());
+    goalRepository =
+      goalRepository || (await goalContainer.getGoalRepository());
     this.instance = new MainGoalApplicationService(goalRepository);
     return this.instance;
   }
-  
+
   static async getInstance(): Promise<MainGoalApplicationService> {
     if (!this.instance) {
-      MainGoalApplicationService.instance = await MainGoalApplicationService.createInstance();
+      MainGoalApplicationService.instance =
+        await MainGoalApplicationService.createInstance();
     }
     return this.instance;
   }
@@ -53,13 +56,9 @@ export class MainGoalApplicationService {
   /**
    * 创建目标
    */
-  async createGoal(accountUuid: string, goalData: IGoalCreateDTO): Promise<Goal> {
-    // 验证数据
-    const validation = Goal.validate(goalData);
-    if (!validation.isValid) {
-      throw new Error(`目标数据验证失败: ${validation.errors.join(', ')}`);
-    }
-    const goal = Goal.fromCreateDTO(goalData);
+  async createGoal(accountUuid: string, goalDTO: IGoal): Promise<Goal> {
+    const goal = Goal.fromDTO(goalDTO);
+    console.log("🔄 [MainGoalApplicationService.createGoal] 创建目标:", goal);
     const createdGoal = await this.goalRepository.createGoal(accountUuid, goal);
     return createdGoal;
   }
@@ -75,50 +74,44 @@ export class MainGoalApplicationService {
   /**
    * 根据ID获取目标
    */
-  async getGoalById(goalUuid: string): Promise<Goal | null> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
+  async getGoalById(
+    accountUuid: string,
+    goalUuid: string
+  ): Promise<Goal | null> {
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     return goal || null;
   }
 
   /**
    * 更新目标
    */
-  async updateGoal(goalData: IGoal): Promise<Goal> {
-    const existingGoal = await this.goalRepository.getGoalById(goalData.uuid);
+  async updateGoal(accountUuid: string, goalData: IGoal): Promise<Goal> {
+    const existingGoal = await this.goalRepository.getGoalByUuid(
+      accountUuid,
+      goalData.uuid
+    );
     if (!existingGoal) {
       throw new Error(`目标不存在: ${goalData.uuid}`);
     }
-    const updates = {
-      name: goalData.name,
-      description: goalData.description,
-      color: goalData.color,
-      dirId: goalData.dirId,
-      startTime: goalData.startTime,
-      endTime: goalData.endTime,
-      note: goalData.note,
-      keyResults: goalData.keyResults.map(kr => ({
-        name: kr.name,
-        startValue: kr.startValue,
-        targetValue: kr.targetValue,
-        currentValue: kr.currentValue,
-        calculationMethod: kr.calculationMethod,
-        weight: kr.weight
-      })),
-      analysis: goalData.analysis
-    };
-    const updatedGoal = await this.goalRepository.updateGoal(goalData.uuid, updates);
-    return updatedGoal;
+
+    // Convert DTO to Goal object
+    const updatedGoal = Goal.fromDTO(goalData);
+    const result = await this.goalRepository.updateGoal(
+      accountUuid,
+      updatedGoal
+    );
+    return result;
   }
 
   /**
    * 删除目标
    */
-  async deleteGoal(goalUuid: string): Promise<void> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
+  async deleteGoal(accountUuid: string, goalUuid: string): Promise<void> {
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goal) {
       throw new Error(`目标不存在: ${goalUuid}`);
     }
-    await this.goalRepository.deleteGoal(goalUuid);
+    await this.goalRepository.deleteGoal(accountUuid, goalUuid);
   }
 
   /**
@@ -126,51 +119,35 @@ export class MainGoalApplicationService {
    */
   async deleteAllGoals(accountUuid: string): Promise<void> {
     const goals = await this.goalRepository.getAllGoals(accountUuid);
-    const goalUuids = goals.map(goal => goal.uuid);
-    await this.goalRepository.batchDeleteGoals(goalUuids);
+    const goalUuids = goals.map((goal) => goal.uuid);
+    await this.goalRepository.batchDeleteGoals(accountUuid, goalUuids);
   }
 
   // ========== 关键结果管理 ==========
 
   /**
-   * 更新关键结果当前值
-   */
-  async updateKeyResultCurrentValue(
-    goalUuid: string, 
-    keyResultId: string, 
-    currentValue: number
-  ): Promise<Goal> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
-    if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
-    }
-    goal.updateKeyResultCurrentValue(keyResultId, currentValue);
-    const updatedGoal = await this.goalRepository.updateGoal(goalUuid, {
-      keyResults: goal.keyResults.map(kr => ({
-        name: kr.name,
-        startValue: kr.startValue,
-        targetValue: kr.targetValue,
-        currentValue: kr.currentValue,
-        calculationMethod: kr.calculationMethod,
-        weight: kr.weight
-      }))
-    });
-    return updatedGoal;
-  }
-
-  /**
    * 为目标的关键结果添加记录（通过聚合根）
    */
-  async addRecordToGoal(recordDTO: IRecordCreateDTO): Promise<{ goal: Goal; record: Record }> {
+  async addRecordToGoal(
+    accountUuid: string,
+    recordDTO: IRecord
+  ): Promise<{ goal: Goal; record: Record }> {
     if (recordDTO.value <= 0) {
-      throw new Error('记录值必须大于0');
+      throw new Error("记录值必须大于0");
     }
-    const goal = await this.goalRepository.getGoalById(recordDTO.goalUuid);
+
+    const goal = await this.goalRepository.getGoalByUuid(
+      accountUuid,
+      recordDTO.goalUuid
+    );
     if (!goal) {
       throw new Error(`目标不存在: ${recordDTO.goalUuid}`);
     }
-    const record = goal.addRecord(recordDTO);
-    const updatedGoal = await this.goalRepository.updateGoal(goal.uuid, goal.toDTO());
+
+    const record = Record.fromDTO(recordDTO);
+    goal.addRecord(record);
+
+    const updatedGoal = await this.goalRepository.updateGoal(accountUuid, goal);
     return { goal: updatedGoal, record };
   }
 
@@ -181,7 +158,10 @@ export class MainGoalApplicationService {
     const goals = await this.goalRepository.getAllGoals(accountUuid);
     const allRecords: Record[] = [];
     for (const goal of goals) {
-      const records = await this.goalRepository.getRecordsByGoal(goal.uuid);
+      const records = await this.goalRepository.getRecordsByGoal(
+        accountUuid,
+        goal.uuid
+      );
       allRecords.push(...records);
     }
     return allRecords;
@@ -190,16 +170,22 @@ export class MainGoalApplicationService {
   /**
    * 根据目标ID获取记录
    */
-  async getRecordsBygoalUuid(goalUuid: string): Promise<Record[]> {
-    const records = await this.goalRepository.getRecordsByGoal(goalUuid);
+  async getRecordsByGoalUuid(
+    accountUuid: string,
+    goalUuid: string
+  ): Promise<Record[]> {
+    const records = await this.goalRepository.getRecordsByGoal(
+      accountUuid,
+      goalUuid
+    );
     return records;
   }
 
   /**
    * 删除记录
    */
-  async deleteRecord(recordId: string): Promise<void> {
-    await this.goalRepository.deleteRecord(recordId);
+  async deleteRecord(accountUuid: string, recordId: string): Promise<void> {
+    await this.goalRepository.deleteRecord(accountUuid, recordId);
   }
 
   // ========== 目标复盘管理（聚合根驱动）==========
@@ -208,78 +194,65 @@ export class MainGoalApplicationService {
    * 为目标添加复盘（聚合根驱动）
    */
   async addReviewToGoal(
-    goalUuid: string,
-    reviewData: IGoalReviewCreateDTO
+    accountUuid: string,
+    goalReviewDTO: IGoalReview
   ): Promise<{ goal: Goal; review: GoalReview }> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
-    if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
+    try {
+      console.log(
+        "🔄 [MainGoalApplicationService.addReviewToGoal] 添加复盘:", goalReviewDTO
+      );
+      
+      // Create review entity and add to goal
+      const goalReview = GoalReview.fromDTO(goalReviewDTO);
+
+      // Update goal with new review
+      await this.goalRepository.createGoalReview(accountUuid, goalReview);
+      const goal = await this.goalRepository.getGoalByUuid(
+        accountUuid,
+        goalReviewDTO.goalUuid
+      );
+      if (!goal) {
+        throw new Error(`目标不存在: ${goalReviewDTO.goalUuid}`);
+      }
+      return { goal, review: goalReview };
+    } catch (error) {
+      if (error instanceof Error) {
+        throw new Error(`添加复盘失败：${error.message}`);
+      } else {
+        throw new Error(`添加复盘失败：${String(error)}`);
+      }
     }
-    const goalReview = GoalReview.fromCreateDTO(reviewData);
-    goal.addReview(goalReview);
-    await this.goalRepository.updateGoal(goal.uuid, {});
-    return { goal, review: goalReview };
   }
 
   /**
    * 更新目标的复盘（聚合根驱动）
    */
   async updateReviewInGoal(
-    goalUuid: string,
-    reviewId: string,
-    updateData: Partial<IGoalReviewCreateDTO>
+    accountUuid: string,
+    goalReviewDTO: IGoalReview
   ): Promise<{ goal: Goal; review: GoalReview }> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
+    const review = GoalReview.fromDTO(goalReviewDTO);
+    await this.goalRepository.updateGoalReview(accountUuid, review);
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalReviewDTO.goalUuid);
     if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
+      throw new Error(`目标不存在: ${goalReviewDTO.goalUuid}`);
     }
-    goal.updateReview(reviewId, updateData);
-    const review = goal.getReview(reviewId);
-    if (!review) {
-      throw new Error(`复盘不存在: ${reviewId}`);
-    }
-    await this.goalRepository.updateGoal(goal.uuid, {});
     return { goal, review };
   }
 
   /**
-   * 从目标中移除复盘（聚合根驱动）
+   * 从目标中移除复盘
    */
   async removeReviewFromGoal(
-    goalUuid: string,
-    reviewId: string
+    accountUuid: string,
+    goalReviewDTO: IGoalReview      
   ): Promise<Goal> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
+    await this.goalRepository.removeGoalReview(accountUuid, goalReviewDTO.uuid);
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalReviewDTO.goalUuid);
     if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
+      throw new Error(`目标不存在: ${goalReviewDTO.goalUuid}`);
     }
-    goal.removeReview(reviewId);
-    await this.goalRepository.updateGoal(goal.uuid, {});
     return goal;
-  }
-
-  /**
-   * 获取目标的所有复盘
-   */
-  async getGoalReviews(goalUuid: string): Promise<GoalReview[]> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
-    if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
-    }
-    const reviews = goal.getReviewsSortedByDate();
-    return reviews;
-  }
-
-  /**
-   * 为目标创建复盘快照（聚合根驱动）
-   */
-  async createGoalReviewSnapshot(goalUuid: string): Promise<{ goal: Goal; snapshot: any }> {
-    const goal = await this.goalRepository.getGoalById(goalUuid);
-    if (!goal) {
-      throw new Error(`目标不存在: ${goalUuid}`);
-    }
-    const snapshot = goal.createSnapshot();
-    return { goal, snapshot };
   }
 
   // ========== 目标目录管理 ==========
@@ -287,14 +260,25 @@ export class MainGoalApplicationService {
   /**
    * 创建目标目录
    */
-  async createGoalDir(goalDirData: IGoalDir, accountUuid: string): Promise<GoalDir> {
-    const validation = GoalDir.validate(goalDirData);
+  async createGoalDir(
+    accountUuid: string,
+    goalDirDTO: IGoalDir
+  ): Promise<GoalDir> {
+    const validation = GoalDir.validate(goalDirDTO);
     if (!validation.isValid) {
-      throw new Error(`目录数据验证失败: ${validation.errors.join(', ')}`);
+      throw new Error(`目录数据验证失败: ${validation.errors.join(", ")}`);
     }
-    const goalDir = GoalDir.fromCreateDTO(goalDirData);
-    const createdGoalDir = await this.goalRepository.createGoalDirectory(accountUuid, goalDir);
-    console.log("✅ [MainGoalApplicationService.createGoalDir]:创建目标目录成功", createdGoalDir);
+
+    // Convert DTO to domain object
+    const goalDir = GoalDir.fromDTO(goalDirDTO);
+    const createdGoalDir = await this.goalRepository.createGoalDirectory(
+      accountUuid,
+      goalDir
+    );
+    console.log(
+      "✅ [MainGoalApplicationService.createGoalDir]:创建目标目录成功",
+      createdGoalDir
+    );
     return createdGoalDir;
   }
 
@@ -302,7 +286,9 @@ export class MainGoalApplicationService {
    * 获取所有目标目录
    */
   async getAllGoalDirs(accountUuid: string): Promise<GoalDir[]> {
-    const goalDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    const goalDirs = await this.goalRepository.getAllGoalDirectories(
+      accountUuid
+    );
     return goalDirs;
   }
 
@@ -310,143 +296,85 @@ export class MainGoalApplicationService {
    * 删除目标目录
    */
   async deleteGoalDir(accountUuid: string, goalDirId: string): Promise<void> {
-    const goalDir = await this.goalRepository.getGoalDirectoryById(goalDirId);
+    const goalDir = await this.goalRepository.getGoalDirectoryByUuid(
+      accountUuid,
+      goalDirId
+    );
     if (!goalDir) {
       throw new Error(`目标目录不存在: ${goalDirId}`);
     }
-    const goalsInDir = await this.goalRepository.getGoalsByDirectory(accountUuid, goalDirId);
+
+    const goalsInDir = await this.goalRepository.getGoalsByDirectory(
+      accountUuid,
+      goalDirId
+    );
     if (goalsInDir.length > 0) {
-      throw new Error(`无法删除目录，还有 ${goalsInDir.length} 个目标在使用此目录`);
+      throw new Error(
+        `无法删除目录，还有 ${goalsInDir.length} 个目标在使用此目录`
+      );
     }
-    await this.goalRepository.deleteGoalDirectory(goalDirId);
+
+    await this.goalRepository.deleteGoalDirectory(accountUuid, goalDirId);
   }
 
   /**
    * 更新目标目录
    */
-  async updateGoalDir(goalDirData: IGoalDir): Promise<GoalDir> {
-    const existingGoalDir = await this.goalRepository.getGoalDirectoryById(goalDirData.uuid);
+  async updateGoalDir(
+    accountUuid: string,
+    goalDirData: IGoalDir
+  ): Promise<GoalDir> {
+    const existingGoalDir = await this.goalRepository.getGoalDirectoryByUuid(
+      accountUuid,
+      goalDirData.uuid
+    );
     if (!existingGoalDir) {
       throw new Error(`目标目录不存在: ${goalDirData.uuid}`);
     }
-    const updatedGoalDir = await this.goalRepository.updateGoalDirectory(goalDirData);
-    return updatedGoalDir;
-  }
 
-  /**
-   * 为目标添加关键结果（通过聚合根）
-   */
-  async addKeyResultToGoal(
-    goalUuid: string,
-    keyResultData: {
-      name: string;
-      startValue: number;
-      targetValue: number;
-      currentValue?: number;
-      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
-      weight?: number;
-    }
-  ): Promise<{ goal: Goal; keyResultId: string }> {
-    const goalWithRecords = await this.goalRepository.getGoalById(goalUuid);
-    if (!goalWithRecords) {
-      throw new Error('目标不存在');
-    }
-    const fullKeyResultData = {
-      name: keyResultData.name,
-      startValue: keyResultData.startValue,
-      targetValue: keyResultData.targetValue,
-      currentValue: keyResultData.currentValue ?? keyResultData.startValue,
-      calculationMethod: keyResultData.calculationMethod ?? 'sum' as const,
-      weight: keyResultData.weight ?? 1,
-    };
-    const keyResultId = goalWithRecords.addKeyResult(fullKeyResultData);
-    await this.goalRepository.updateGoal(goalUuid, {
-      name: goalWithRecords.name,
-      description: goalWithRecords.description,
-      color: goalWithRecords.color,
-      dirId: goalWithRecords.dirId,
-      startTime: goalWithRecords.startTime,
-      endTime: goalWithRecords.endTime,
-      note: goalWithRecords.note,
-      keyResults: goalWithRecords.keyResults,
-    });
-    return { goal: goalWithRecords, keyResultId };
+    // Convert DTO to domain object
+    const updatedGoalDir = GoalDir.fromDTO(goalDirData);
+    const result = await this.goalRepository.updateGoalDirectory(
+      accountUuid,
+      updatedGoalDir
+    );
+    return result;
   }
 
   /**
    * 删除目标的关键结果（通过聚合根）
    */
-  async removeKeyResultFromGoal(goalUuid: string, keyResultId: string): Promise<Goal> {
-    const goalWithRecords = await this.goalRepository.getGoalById(goalUuid);
-    if (!goalWithRecords) {
-      throw new Error('目标不存在');
-    }
-    goalWithRecords.removeKeyResult(keyResultId);
-    await this.goalRepository.updateGoal(goalUuid, {
-      name: goalWithRecords.name,
-      description: goalWithRecords.description,
-      color: goalWithRecords.color,
-      dirId: goalWithRecords.dirId,
-      startTime: goalWithRecords.startTime,
-      endTime: goalWithRecords.endTime,
-      note: goalWithRecords.note,
-      keyResults: goalWithRecords.keyResults,
-    });
-    return goalWithRecords;
-  }
-
-  /**
-   * 更新目标的关键结果（通过聚合根）
-   */
-  async updateKeyResultOfGoal(
+  async removeKeyResultFromGoal(
+    accountUuid: string,
     goalUuid: string,
-    keyResultId: string,
-    updates: {
-      name?: string;
-      targetValue?: number;
-      weight?: number;
-      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
-    }
+    keyResultId: string
   ): Promise<Goal> {
-    const goalWithRecords = await this.goalRepository.getGoalById(goalUuid);
-    if (!goalWithRecords) {
-      throw new Error('目标不存在');
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goal) {
+      throw new Error("目标不存在");
     }
-    goalWithRecords.updateKeyResult(keyResultId, updates);
-    await this.goalRepository.updateGoal(goalUuid, {
-      name: goalWithRecords.name,
-      description: goalWithRecords.description,
-      color: goalWithRecords.color,
-      dirId: goalWithRecords.dirId,
-      startTime: goalWithRecords.startTime,
-      endTime: goalWithRecords.endTime,
-      note: goalWithRecords.note,
-      keyResults: goalWithRecords.keyResults,
-    });
-    return goalWithRecords;
-  }
 
+    goal.removeKeyResult(keyResultId);
+    await this.goalRepository.updateGoal(accountUuid, goal);
+    return goal;
+  }
   // ========== 记录管理 ==========
 
   /**
    * 从目标中删除记录（通过聚合根）
    */
-  async removeRecordFromGoal(goalUuid: string, recordId: string): Promise<Goal> {
-    const goalWithRecords = await this.goalRepository.getGoalById(goalUuid);
-    if (!goalWithRecords) {
-      throw new Error('目标不存在');
+  async removeRecordFromGoal(
+    accountUuid: string,
+    goalUuid: string,
+    recordId: string
+  ): Promise<Goal> {
+    const goal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goal) {
+      throw new Error("目标不存在");
     }
-    goalWithRecords.removeRecord(recordId);
-    await this.goalRepository.updateGoal(goalUuid, {
-      name: goalWithRecords.name,
-      description: goalWithRecords.description,
-      color: goalWithRecords.color,
-      dirId: goalWithRecords.dirId,
-      startTime: goalWithRecords.startTime,
-      endTime: goalWithRecords.endTime,
-      note: goalWithRecords.note,
-      keyResults: goalWithRecords.keyResults,
-    });
-    return goalWithRecords;
+
+    goal.removeRecord(recordId);
+    await this.goalRepository.updateGoal(accountUuid, goal);
+    return goal;
   }
 }

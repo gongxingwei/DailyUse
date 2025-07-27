@@ -1,127 +1,73 @@
 <template>
-    <v-dialog v-model="props.modelValue" max-width="400">
+    <v-dialog :model-value="props.modelValue" max-width="400" persistent>
         <v-card>
             <v-card-title class="pa-4">
                 <v-icon size="24" class="mr-2">mdi-folder-plus</v-icon>
-                {{ dialogTitle }}
+                {{ isEditing ? '编辑目标节点' : '创建目标节点' }}
             </v-card-title>
 
-            <!-- 正常表单状态 -->
-            <template v-if="goalDirData">
+            <v-form ref="formRef">
                 <v-card-text class="pa-4">
-                    <v-text-field v-model="name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
-                        @keyup.enter="handleSave">
-                    </v-text-field>
+                <v-text-field v-model="localGoalDir.name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
+                    @keyup.enter="handleSave">
+                </v-text-field>
 
-                    <v-select v-model="icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
-                        item-title="text" item-value="value">
-                        <template v-slot:item="{ props, item }">
-                            <v-list-item v-bind="props">
-                                <template v-slot:prepend>
-                                    <v-icon>{{ item.raw.value }}</v-icon>
-                                </template>
-                                <v-list-item-title>{{ item.raw.text }}</v-list-item-title>
-                            </v-list-item>
-                        </template>
-                    </v-select>
-                </v-card-text>
+                <v-select v-model="localGoalDir.icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
+                    item-title="text" item-value="value">
+                    <template v-slot:item="{ props, item }">
+                        <v-list-item v-bind="props">
+                            <template v-slot:prepend>
+                                <v-icon>{{ item.raw.value }}</v-icon>
+                            </template>
+                          
+                        </v-list-item>
+                    </template>
+                </v-select>
+            </v-card-text>
+            </v-form>
+            
 
-                <v-card-actions class="pa-4">
-                    <v-spacer></v-spacer>
-                    <v-btn variant="outlined" @click="handleCancel">取消</v-btn>
-                    <v-btn color="primary" class="ml-2" @click="handleSave" :disabled="!isFormValid">
-                        确定
-                    </v-btn>
-                </v-card-actions>
-            </template>
+            <v-card-actions class="pa-4">
+                <v-btn variant="text" @click="handleCancel">取消</v-btn>
+                <v-btn color="primary" class="ml-2" @click="handleSave" variant="elevated" :disabled="!isFormValid">
+                    确定
+                </v-btn>
+            </v-card-actions>
 
-            <!-- 错误状态 -->
-            <template v-else>
-                <v-card-text class="pa-4">
-                    <v-alert type="error" variant="tonal" prominent class="mb-4">
-                        <template v-slot:prepend>
-                            <v-icon>mdi-alert-circle</v-icon>
-                        </template>
-                        <v-alert-title>数据加载错误</v-alert-title>
-                        <div class="mt-2">
-                            目标节点数据未正确加载。可能的原因：
-                            <ul class="mt-2 ml-4">
-                                <li>数据初始化失败</li>
-                                <li>网络连接问题</li>
-                                <li>存储服务异常</li>
-                            </ul>
-                        </div>
-                        <div class="mt-3 text-body-2 text-medium-emphasis">
-                            建议：关闭对话框后重新尝试，或刷新页面。
-                        </div>
-                    </v-alert>
-                </v-card-text>
-
-                <v-card-actions class="pa-4">
-                    <v-btn variant="outlined" @click="handleRetry">
-                        <v-icon start>mdi-refresh</v-icon>
-                        重试
-                    </v-btn>
-                    <v-spacer></v-spacer>
-                    <v-btn color="primary" @click="handleCancel">关闭</v-btn>
-                </v-card-actions>
-            </template>
         </v-card>
     </v-dialog>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { GoalDir } from '@/modules/Goal/domain/entities/goalDir';
-import type { IGoalDir } from '@common/modules/goal/types/goal';
+import { computed, watch, ref } from 'vue';
+import { GoalDir } from '@/modules/Goal/domain/aggregates/goalDir';
+import { Goal } from '../../domain/aggregates/goal';
+
 const props = defineProps<{
     modelValue: boolean;
-    goalDirDialogMode: 'create' | 'edit'; // 创建或编辑模式
-     goalDirData: GoalDir | IGoalDir | null; // 目标目录数据
+    goalDir: GoalDir | null; // 目标目录数据
 }>();
 
 const emit = defineEmits<{
-    (e: 'save'): void;
-    (e: 'cancel'): void;
-    (e: 'retry'): void;
+    (e: 'update:modelValue', value: boolean): void;
+    (e: 'create-goal-dir', goalDir: GoalDir): void;
+    (e: 'edit-goal-dir', goalDir: GoalDir): void;
 }>();
 
-const dialogTitle = computed(() => {
-    if (!props.goalDirDialogMode) return '目标节点';
-    return props.goalDirDialogMode === 'create' ? '创建目标节点' : '编辑目标节点';
-});
-
-const goalDirInstance = computed(() => {
-    if (!props.goalDirData) return null;
-    
-    // 如果已经是 GoalDir 实例，直接返回
-    if (props.goalDirData instanceof GoalDir) {
-        return props.goalDirData;
-    }
-    
-    // 如果是普通对象，转换为 GoalDir 实例
-    return GoalDir.fromDTO(props.goalDirData);
-});
-
-const name = computed({
-    get: () => goalDirInstance.value?.name,
-    set: (value: string) => {
-        goalDirInstance.value?.updateName(value);
-    },
-});
-
-const icon = computed({
-    get: () => goalDirInstance.value?.icon,
-    set: (value: string) => {
-        goalDirInstance.value?.updateIcon(value);
-    },
-});
-
+const localGoalDir = ref<GoalDir>(GoalDir.forCreate());
+const isEditing = computed(() => !!props.goalDir);
+const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const isFormValid = computed(() => {
-    if (!goalDirInstance.value) return false;
-    return GoalDir.validate(goalDirInstance.value).isValid;
-});
+    return formRef.value?.isValid ?? false;
+})
 
+watch(() => localGoalDir.value.name, (newName) => {
+    console.log('localGoalDir name changed:', newName);
+    console.log('isFormValid', isFormValid.value);
+    console.log('formRef:', formRef.value);
+    console.log('formRef.value?.isValid:', formRef.value?.isValid);
+    console.log('isFormValid:', isFormValid.value);
+}); 
 const iconOptions = [
     { text: '文件夹', value: 'mdi-folder' },
     { text: '目标', value: 'mdi-target' },
@@ -139,17 +85,34 @@ const nameRules = [
 
 
 const handleSave = () => {
-    emit('save');
+    if (!isFormValid.value) return;
+    if (props.goalDir) {
+        // 编辑模式
+        emit('edit-goal-dir', GoalDir.ensureGoalDirNeverNull(localGoalDir.value));
+    } else {
+        // 创建模式
+        emit('create-goal-dir', GoalDir.ensureGoalDirNeverNull(localGoalDir.value));
+    }
+    closeDialog();
 };
 
 const handleCancel = () => {
-    emit('cancel');
+    closeDialog();
 };
 
-const handleRetry = () => {
-    emit('retry');
+const closeDialog = () => {
+    emit('update:modelValue', false);
 };
 
-
-
+watch(
+    [() => props.modelValue, () => props.goalDir],
+    ([show, goalDir]) => {
+        if (show) {
+            localGoalDir.value = props.goalDir ? props.goalDir.clone() : GoalDir.forCreate();
+        } else {
+            localGoalDir.value = GoalDir.forCreate();
+        }
+    },
+    { immediate: true }
+)
 </script>

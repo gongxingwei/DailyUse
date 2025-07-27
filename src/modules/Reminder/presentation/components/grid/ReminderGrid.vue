@@ -126,7 +126,7 @@ const onDragEnd = (event: any) => {
   width: 100%;
   height: 100%;
   min-height: 400px;
-  background: rgb(96, 96, 138);
+  background: transparent;
   padding: 20px;
 }
 

@@ -7,13 +7,13 @@
             </v-btn>
 
             <v-toolbar-title class="text-h6 font-weight-medium">
-                {{ goal?.title || '未检测到' }}
+                {{ goal?.name || '未检测到' }}
             </v-toolbar-title>
 
             <v-spacer />
 
             <!-- 编辑按钮 -->
-            <v-btn icon @click="startEditGoal(goal?.id as string)">
+            <v-btn icon @click="startEditGoal(goal as Goal)">
                 <v-icon>mdi-pencil</v-icon>
             </v-btn>
 
@@ -25,7 +25,7 @@
                     </v-btn>
                 </template>
                 <v-list>
-                    <v-list-item @click="startMidtermReview(goal?.id as string)">
+                    <v-list-item @click="startMidtermReview(goal?.uuid as string)">
                         <v-list-item-title>期中复盘</v-list-item-title>
                     </v-list-item>
                     <v-list-item @click="viewGoalReviewRecord()">
@@ -42,17 +42,17 @@
                     </v-btn>
                 </template>
                 <v-list>
-                    <v-list-item @click="toggleArchiveGoal(goal?.id as string)">
+                    <v-list-item @click="toggleArchiveGoal(goal?.uuid as string)">
                         <template v-slot:prepend>
                             <v-icon>mdi-archive</v-icon>
                         </template>
                         <v-list-item-title>{{ isArchived ? '取消归档' : '归档' }}</v-list-item-title>
                     </v-list-item>
-                    <v-list-item @click="toggleDeleteGoal(goal?.id as string)">
+                    <v-list-item @click="startDeleteGoal(goal?.uuid as string)">
                         <template v-slot:prepend>
                             <v-icon>mdi-delete</v-icon>
                         </template>
-                        <v-list-item-title>{{ isDeleted ? '取消删除' : '删除' }}</v-list-item-title>
+                        <v-list-item-title>{{ '删除' }}</v-list-item-title>
                     </v-list-item>
                 </v-list>
             </v-menu>
@@ -67,9 +67,9 @@
                         目标已结束
                     </template>
                     <div class="d-flex align-center justify-space-between">
-                        <span>共历时 {{ totalDays }} 天，目标进度 {{ goalProgress }}%</span>
+                        <span>共历时 {{ totalDays }} 天，目标进度 {{ goal?.progress }}%</span>
                         <v-btn color="success" variant="elevated" size="small"
-                            @click="startMidtermReview(goal?.id as string)">
+                            @click="startMidtermReview(goal?.uuid as string)">
                             复盘目标
                         </v-btn>
                     </div>
@@ -82,11 +82,11 @@
                             <!-- 进度圆环 -->
                             <v-col cols="12" md="4" class="d-flex justify-center align-center">
                                 <div class="progress-container">
-                                    <v-progress-circular :model-value="goalProgress" :color="goalColor" size="120"
+                                    <v-progress-circular :model-value="goal?.progress" :color="goalColor" size="120"
                                         width="12" class="progress-circle">
                                         <div class="progress-text-container">
                                             <div class="progress-value">
-                                                <span class="text-h4 font-weight-bold">{{ goalProgress }}</span>
+                                                <span class="text-h4 font-weight-bold">{{ goal?.progress }}</span>
                                                 <span class="text-h6 text-medium-emphasis">%</span>
                                             </div>
                                             <div class="text-caption text-medium-emphasis">目标进度</div>
@@ -109,7 +109,7 @@
                                         <template v-else>
                                             <div class="d-flex align-center mb-2">
                                                 <span class="text-h3 font-weight-bold text-primary mr-2">{{
-                                                    remainingDays }}</span>
+                                                    goal?.remainingDays }}</span>
                                                 <span class="text-h6">天后结束</span>
                                             </div>
                                         </template>
@@ -118,7 +118,8 @@
                                     <!-- 日期范围 -->
                                     <div class="mb-4">
                                         <v-chip variant="outlined" prepend-icon="mdi-calendar-range">
-                                            {{ formatDate(goal?.startTime) }} - {{ formatDate(goal?.endTime) }}
+                                            {{ goal?.startTime ? format(goal.startTime, 'yyyy-MM-dd') : '未知' }} - {{
+                                                goal?.endTime ? format(goal.endTime, 'yyyy-MM-dd') : '未知' }}
                                         </v-chip>
                                     </div>
 
@@ -149,7 +150,7 @@
                             </span>
                         </div>
                         <div class="text-body-1 font-italic text-medium-emphasis">
-                            {{ isShowingMotive ? goal?.motive : goal?.feasibility }}
+                            {{ isShowingMotive ? goal?.analysis.motive : goal?.analysis.feasibility }}
                         </div>
                     </v-card-text>
                 </v-card>
@@ -172,9 +173,9 @@
                             <!-- 关键结果标签页 -->
                             <v-window-item value="keyResults" class="h-100">
                                 <div class="scrollable-content">
-                                    <v-row v-if="keyResults.length > 0">
+                                    <v-row v-if="keyResults">
                                         <v-col v-for="keyResult in keyResults" :key="keyResult.uuid" cols="12" lg="6">
-                                            <KeyResultCard :keyResult="keyResult" :goalUuid="goalUuid" />
+                                            <KeyResultCard :keyResult="keyResult" :goal="goal as Goal" />
                                         </v-col>
                                     </v-row>
                                     <v-empty-state v-else icon="mdi-target" title="暂无关键结果" text="添加关键结果来跟踪目标进度" />
@@ -185,8 +186,8 @@
                             <v-window-item value="repositories" class="h-100">
                                 <div class="scrollable-content">
                                     <v-row v-if="relativeRepos.length > 0">
-                                        <v-col v-for="repo in relativeRepos" :key="repo.title" cols="12" lg="6">
-                                            <RepoInfoCard :repository="repo" />
+                                        <v-col v-for="repo in relativeRepos" :key="repo.name" cols="12" lg="6">
+                                            <RepoInfoCard :repository="Repository.ensureRepositoryNeverNull(repo)" />
                                         </v-col>
                                     </v-row>
                                     <v-empty-state v-else icon="mdi-source-repository" title="暂无关联仓库"
@@ -199,16 +200,21 @@
             </div>
         </div>
 
-        <!-- 对话框组件 -->
-        <GoalDialog :visible="showGoalDialog" @cancel="cancelGoalEdit" @save="saveGoal" />
-        <ConfirmDialog v-model="showDeleteConfirmDialog" title="删除目标" message="确定要删除该目标吗？" confirm-text="确认"
-            cancel-text="取消" @confirm="handleDeleteGoal(goal?.id as string)" @cancel="cancelDeleteGoal" />
-        <GoalReviewCard :visible="showGoalReviewRecored" @close="closeGoalReviewRecord" />
+        <!-- 对话框 -->
+        <!-- 目标对话框 -->
+        <GoalDialog :visible="goalDialog.show" :goal="Goal.ensureGoal(goalDialog.goal)"
+            @update:modelValue="goalDialog.show = $event" @create-goal="handleCreateGoal"
+            @update-goal="handleUpdateGoal" />
+        <!-- 确认对话框 -->
+        <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
+            confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
+            @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
+        <GoalReviewCard :visible="showGoalReviewRecored" :goal="goal!" @close="closeGoalReviewRecord" />
     </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from 'vue';
+import { computed, ref, type ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
 // store
 import { useGoalStore } from '../stores/goalStore';
@@ -216,51 +222,75 @@ import { useRepositoryStore } from '@/modules/Repository/presentation/stores/rep
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
 import { useGoalReview } from '../composables/useGoalReview';
-import { useGoalManagement } from '../composables/useGoalManagement';
-
+// domain
+import { Goal } from '../../domain/aggregates/goal';
+import { Repository } from '@/modules/Repository';
 // 组件
 import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import KeyResultCard from '../components/KeyResultCard.vue';
-import RepoInfoCard from '@/modules/Repository/components/RepoInfoCard.vue';
-
+import RepoInfoCard from '@/modules/Repository/presentation/components/RepoInfoCard.vue';
+// utils
+import { format } from 'date-fns';
 const route = useRoute();
 const goalStore = useGoalStore();
 const repositoryStore = useRepositoryStore();
-const { showGoalDialog, startEditGoal, saveGoal, cancelGoalEdit } = useGoalDialog();
+const { goalDialog, startEditGoal, handleCreateGoal, handleDeleteGoal, handleUpdateGoal } = useGoalDialog();
 const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
-const { showDeleteConfirmDialog, handleDeleteGoal, cancelDeleteGoal } = useGoalManagement();
 
-const goal = computed(() => {
+
+const goal: ComputedRef<Goal | null> = computed(() => {
     const goalUuid = route.params.goalUuid as string;
     if (!goalUuid) return null;
-    return goalStore.getGoalById(goalUuid);
+    return goalStore.getGoalByUuid(goalUuid);
 });
 
-const goalUuid = computed(() => route.params.goalUuid as string);
-const goalColor = computed(() => goal.value?.color || '#FF5733');
+console.log(goal.value);
+
 const keyResults = computed(() => {
-    const goalUuid = route.params.goalUuid as string;
-    return goalStore.getAllKeyResultsBygoalUuid(goalUuid);
+    const keyResults = goal.value?.keyResults || [];
+    return keyResults.length > 0 ? keyResults : null;
+})
+
+const goalColor = computed(() => goal.value?.color || '#FF5733');
+
+const confirmDialog = ref<{
+    show: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    onCancel: () => void;
+}>({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    onCancel: () => { },
 });
 
-const isArchived = computed(() => goal.value?.dirId === 'archive');
+
+const isArchived = computed(() => goal.value?.dirUuid === 'archive');
 const toggleArchiveGoal = (goalUuid: string) => {
     if (!isArchived.value) {
-        goalStore.archiveGoalById(goalUuid);
+        console.log('archive goal', goalUuid);
     } else {
-        goalStore.unarchiveGoalById(goalUuid);
+        console.log('unarchive');
     }
 };
 
-const isDeleted = computed(() => goal.value?.dirId === 'trash');
-const toggleDeleteGoal = (goalUuid: string) => {
-    if (!isDeleted.value) {
-        goalStore.deleteGoalById(goalUuid);
-    } else {
-        goalStore.restoreGoalById(goalUuid);
-    }
+const startDeleteGoal = (goalUuid: string) => {
+    confirmDialog.value = {
+        show: true,
+        title: '删除目标',
+        message: '您确定要删除这个目标吗？此操作不可逆。',
+        onConfirm: () => {
+            handleDeleteGoal(goalUuid);
+        },
+        onCancel: () => {
+            console.log('❌ 删除目标操作已取消');
+        }
+    };
 };
 
 const isGoalEnded = computed(() => {
@@ -286,35 +316,12 @@ const timeProgress = computed(() => {
     return Math.min(Math.max(progress, 0), 100).toFixed(1);
 });
 
-const goalProgress = computed(() => {
-    const goalUuid = route.params.goalUuid as string;
-    return goalStore.getGoalProgress(goalUuid) || 0;
-});
-
-const remainingDays = computed(() => {
-    const goalUuid = route.params.goalUuid as string;
-    const goal = goalStore.getGoalById(goalUuid);
-    if (!goal) return 0;
-    const endDate = new Date(goal.endTime);
-    const today = new Date();
-    const timeDiff = endDate.getTime() - today.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
-});
 
 const isShowingMotive = ref(Math.random() > 0.5);
 
-function formatDate(dateString: any) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-}
-
 const activeTab = ref('keyResults');
 const relativeRepos = computed(() => {
-    const repos = repositoryStore.getRelativeRepoBygoalUuid(goal.value?.id as string);
+    const repos = repositoryStore.getRelativeRepoBygoalUuid(goal.value?.uuid as string);
     return repos;
 });
 </script>
@@ -326,8 +333,8 @@ const relativeRepos = computed(() => {
     flex-direction: column;
     overflow: hidden;
     background: linear-gradient(135deg,
-      rgba(var(--v-theme-primary), 0.02) 0%,
-      rgba(var(--v-theme-surface), 0.91) 100%);
+            rgba(var(--v-theme-primary), 0.02) 0%,
+            rgba(var(--v-theme-surface), 0.91) 100%);
 }
 
 .main-content {

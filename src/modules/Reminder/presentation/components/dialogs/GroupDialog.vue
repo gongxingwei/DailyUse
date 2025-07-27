@@ -1,9 +1,9 @@
 <template>
-  <v-dialog v-model="isOpen" max-width="500">
+  <v-dialog v-model="isOpen" max-width="500" persistent>
     <v-card>
       <v-card-title class="d-flex align-center">
         <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-folder-plus' }}</v-icon>
-        {{ isEditing ? 'Edit Reminder Group' : 'Create Reminder Group' }}
+        {{ isEditing ? '编辑提醒分组' : '新建提醒分组' }}
         <v-spacer />
         <v-btn icon variant="text" @click="closeDialog">
           <v-icon>mdi-close</v-icon>
@@ -17,7 +17,7 @@
           <!-- 分组名称输入框 -->
           <v-text-field
             v-model="groupModelName"
-            label="Group Name"
+            label="分组名称"
             :rules="nameRules"
             required
             class="mb-4"
@@ -28,10 +28,10 @@
       <v-card-actions class="pa-6 pt-0">
         <v-spacer />
         <v-btn variant="text" @click="closeDialog">
-          Cancel
+          取消
         </v-btn>
         <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
-          {{ isEditing ? 'Update' : 'Create' }}
+          {{ isEditing ? '更新' : '创建' }}
         </v-btn>
       </v-card-actions>
     </v-card>
@@ -98,8 +98,8 @@ const groupModelName = computed({
 // 校验规则
 // =====================
 const nameRules = [
-  (v: string) => !!v || 'Name is required',
-  (v: string) => v.length >= 2 || 'Name must be at least 2 characters'
+  (v: string) => !!v || '分组名称不能为空',
+  (v: string) => v.length >= 2 || '分组名称至少2个字符'
 ];
 
 // =====================

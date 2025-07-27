@@ -153,7 +153,7 @@
   }>();
   
   // 快速选择值
-  const quickValues = [0.5, 1, 2, 5, 10];
+  const quickValues = [1, 2, 5, 10];
   
   const initializeRecord = () => {
     return {

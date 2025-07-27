@@ -145,7 +145,7 @@ const confirmPasswordRules = [
 ];
 
 const isCurrentFormValid = computed(() => {
-    return formRef.value ? formRef.value.checkValidity() : false;
+    return formRef.value?.isValid ?? false;
 });
 
 // 密码强度计算

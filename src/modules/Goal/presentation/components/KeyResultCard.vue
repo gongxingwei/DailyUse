@@ -74,7 +74,7 @@
     </div>
     <!-- 记录对话框 -->
     <RecordDialog :visible="showRecordDialog"
-      @save="(record) => handleSaveRecord(record, props.goalUuid, props.keyResult.uuid)" @cancel="handleCancelAddRecord" />
+      @save="(record) => handleSaveRecord(record, props.goal.uuid, props.keyResult.uuid)" @cancel="handleCancelAddRecord" />
   </v-card>
 
 
@@ -86,18 +86,16 @@ import { computed } from 'vue';
 import type { KeyResult } from '../types/goal';
 import RecordDialog from './RecordDialog.vue';
 import { useRecordDialog } from '../composables/useRecordDialog';
-import { useGoalStore } from '../stores/goalStore';
+import { Goal } from '../../domain/aggregates/goal';
 
 const router = useRouter();
-const goalStore = useGoalStore();
+
 const { showRecordDialog, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
 
 const props = defineProps<{
   keyResult: KeyResult;
-  goalUuid: string;
+  goal: Goal;
 }>();
-
-const goal = computed(() => goalStore.getGoalById(props.goalUuid));
 
 const progress = computed(() => {
   return Math.min((props.keyResult.currentValue / props.keyResult.targetValue) * 100, 100);
@@ -107,8 +105,8 @@ const navigateToKeyResultInfo = () => {
   router.push({
     name: 'key-result-info',
     params: {
-      goalUuid: props.goalUuid,
-      keyResultId: props.keyResult.uuid
+      goalUuid: props.goal.uuid,
+      keyResultUuid: props.keyResult.uuid
     }
   });
 };
@@ -123,7 +121,7 @@ const navigateToKeyResultInfo = () => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   border: 1px solid rgba(var(--v-theme-outline), 0.12);
-  background: rgb(var(--v-theme-surface));
+  background: rgb(var(--v-theme-surface-light));
 }
 
 .key-result-card:hover {
