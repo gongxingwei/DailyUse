@@ -495,6 +495,7 @@ export class TaskDomainService {
    * @throws 状态不合法时抛出异常
    */
   changeInstanceStatus(
+    accountUuid: string,
     taskInstance: TaskInstance,
     newStatus: string
   ): {
@@ -510,14 +511,14 @@ export class TaskDomainService {
         taskInstance.start();
         break;
       case "completed":
-        taskInstance.complete();
+        taskInstance.complete(accountUuid);
         break;
       case "cancelled":
         taskInstance.cancel();
         break;
       case "pending":
         if (taskInstance.status === "completed") {
-          taskInstance.undoComplete();
+          taskInstance.undoComplete(accountUuid);
         } else {
           taskInstance.pending();
         }

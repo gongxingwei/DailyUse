@@ -1,7 +1,6 @@
 import {
   InitializationManager,
   InitializationPhase,
-  InitializationTask,
 } from "@electron/shared/initialization/initializationManager";
 // 渲染进程各个模块的初始化任务
 import { registerAccountInitializationTasks } from "@/modules/Account/initialization/accountInitialization";

@@ -163,12 +163,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
-import { useRouter } from 'vue-router'
-import { useRepositoryStore } from '../stores/repositoryStore'
+import { ref, computed } from 'vue'
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
 import { Repository } from '../../domain/aggregates/repository'
-import { fileSystem } from '@/shared/utils/fileUtils'
 import type { IRepository } from '../../domain/types'
 const props = defineProps<{
   modelValue: boolean
@@ -177,10 +174,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void
+  (e: 'handle-delete-repository', repository: Repository): void
 }>()
 
-const router = useRouter()
-const repoStore = useRepositoryStore()
 const goalStore = useGoalStore()
 const form = ref()
 const deleteConfirm = ref('')
@@ -195,7 +191,7 @@ const dialogVisible = computed({
 const availableGoals = computed(() => {
   return goalStore.goals.map(goal => ({
     uuid: goal.uuid,
-    title: goal.title,
+    title: goal.name,
   }))
 })
 
@@ -210,17 +206,6 @@ const repoData = ref({
 } as IRepository)
 
 
-
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
 const openInExplorer = () => {
   console.log('打开文件夹:', repoData.value.path)
 }
@@ -230,7 +215,7 @@ const saveSettings = async () => {
 }
 
 const handleDelete = async () => {
-  console.log('删除仓库:', repoData.value.name)
+  emit('handle-delete-repository', props.repo as Repository)
   
 }
 

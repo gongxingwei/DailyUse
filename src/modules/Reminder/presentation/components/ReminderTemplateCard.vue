@@ -52,7 +52,7 @@
 
 <script setup lang="ts">
 import type { ReminderTemplate } from "../../domain/entities/reminderTemplate";
-import { ref, computed, watch, inject } from "vue";
+import { computed, inject } from "vue";
 import { useReminderStore } from "../stores/reminderStore";
 import { ImportanceLevel } from "@/shared/types/importance";
 import { recurrenceRuleToText } from "@common/shared/utils/recurrenceRuleUtils";

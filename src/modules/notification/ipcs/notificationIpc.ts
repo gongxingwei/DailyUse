@@ -10,7 +10,7 @@ export class NotificationIpc {
     }
 
     public static closeNotification(uuid: string): Promise<TResponse<void>> {
-        return window.shared.ipcRenderer.invoke('close-notification', id);
+        return window.shared.ipcRenderer.invoke('close-notification', uuid);
     }
 
     public static notificationAction(

@@ -40,7 +40,7 @@ export class SqliteUserSessionRepository implements ISessionRepository {
    */
   async findById(sessionId: string): Promise<Session | null> {
     const stmt = this.db.prepare(`
-      SELECT * FROM auth_sessions WHERE id = ?
+      SELECT * FROM auth_sessions WHERE uuid = ?
     `);
 
     const row = stmt.get(sessionId) as any;

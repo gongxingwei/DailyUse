@@ -1,5 +1,5 @@
 <template>
-    <v-dialog v-bind:model-value="show" width="400" persistent>
+    <v-dialog v-bind:model-value="show" width="600" persistent>
         <v-card>
             <v-card-title class="d-flex align-center">
                 <v-icon class="mr-2" color="primary">mdi-folder</v-icon>
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
-import { ref, computed, watch, inject } from "vue";
+import { computed, inject } from "vue";
 // components
 
 import ReminderGrid from "./grid/ReminderGrid.vue";

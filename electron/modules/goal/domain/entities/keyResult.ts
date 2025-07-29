@@ -202,8 +202,8 @@ export class KeyResult extends Entity implements IKeyResult {
       weight: data.weight,
     });
     keyResult._lifecycle = {
-      createdAt: new Date(data.lifecycle.createdAt),
-      updatedAt: new Date(data.lifecycle.updatedAt),
+      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
       status: data.lifecycle.status || "active",
     };
     return keyResult;

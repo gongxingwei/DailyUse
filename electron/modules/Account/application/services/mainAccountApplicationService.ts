@@ -1,4 +1,4 @@
-import type { IAccountRepository } from "../../../Account";
+import type { AccountDTO, IAccountRepository } from "../../../Account";
 // import type { IUserRepository } from "../../../Account";
 import { Account } from "../../domain/aggregates/account";
 import { User } from "../../domain/entities/user";
@@ -74,24 +74,24 @@ export class MainAccountApplicationService {
       }
 
       // 4. 创建 User 实体（个人资料）
-      const user = new User(
-        generateUUID(),
-        registerData.firstName || '',
-        registerData.lastName || '',
-        registerData.sex || '2',
-        registerData.avatar || '',
-        registerData.bio || '',
-      );
+      const user = new User({
+        uuid: generateUUID(),
+        firstName: registerData.firstName || '',
+        lastName: registerData.lastName || '',
+        sex: registerData.sex || '2',
+        avatar: registerData.avatar || '',
+        bio: registerData.bio || '',
+      });
 
       // 5. 创建 Account 聚合根（身份信息）
-      const account = Account.createForRegistration(
-        registerData.username,
-        registerData.accountType || AccountType.LOCAL,
+      const account = new Account({
+        uuid: generateUUID(),
+        username: registerData.username,
+        accountType: registerData.accountType || AccountType.LOCAL,
         user,
-        registerData.password,
-        registerData.email ? new Email(registerData.email) : undefined,
-        registerData.phone ? new PhoneNumber(registerData.phone) : undefined
-      );
+        email: registerData.email ? new Email(registerData.email) : undefined,
+        phoneNumber: registerData.phone ? new PhoneNumber(registerData.phone) : undefined
+    });
 
       // 6. 保存 Account（包含 User）
       await this.accountRepository.save(account);
@@ -119,6 +119,40 @@ export class MainAccountApplicationService {
       return {
         success: false,
         message: error instanceof Error ? error.message : '注册失败',
+        data: undefined
+      };
+    }
+  }
+
+  async updateUserProfile(
+    accountUuid: string,
+    userDTO: User
+  ): Promise<TResponse<void>> {
+    try {
+      const account = await this.accountRepository.findById(accountUuid);
+      if (!account) {
+        return {
+          success: false,
+          message: '账号不存在',
+          data: undefined
+        };
+      }
+      const user = User.fromDTO(userDTO);
+
+      account.user = user;
+
+      console.log('✅ [主进程-更新] 用户信息开始持久化');
+      await this.accountRepository.save(account);
+
+      return {
+        success: true,
+        message: '用户信息更新成功',
+      };
+    } catch (error) {
+      console.error('❌ [主进程-更新] 更新用户信息失败:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '更新用户信息失败',
         data: undefined
       };
     }
@@ -438,6 +472,32 @@ export class MainAccountApplicationService {
       return {
         success: false,
         message: error instanceof Error ? error.message : '获取账号ID失败',
+        data: undefined
+      };
+    }
+  }
+
+  async getCurrentAccount(accountUuid: string): Promise<TResponse<AccountDTO>> {
+    try {
+      const account = await this.accountRepository.findById(accountUuid);
+      if (!account) {
+        return {
+          success: false,
+          message: '当前账号不存在',
+          data: undefined
+        };
+      }
+
+      return {
+        success: true,
+        message: '获取当前账号成功',
+        data: account.toDTO()
+      };
+    } catch (error) {
+      console.error('❌ [主进程-获取] 获取当前账号失败:', error);
+      return {
+        success: false,
+        message: error instanceof Error ? error.message : '获取当前账号失败',
         data: undefined
       };
     }

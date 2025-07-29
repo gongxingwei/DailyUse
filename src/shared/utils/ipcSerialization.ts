@@ -122,7 +122,7 @@ export function deepSerializeForIpc(obj: any): any {
     const regularSerialized = serializeForIpc(obj);
 
     // 然后使用JSON.stringify/parse进行深度清理
-    const deepCleaned = JSON.parse(JSON.stringify(regularSerialized, (key, value) => {
+    const deepCleaned = JSON.parse(JSON.stringify(regularSerialized, (_key, value) => {
       if (typeof value === 'function') {
         return undefined;
       }

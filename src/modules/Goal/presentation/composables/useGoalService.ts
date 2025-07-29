@@ -236,13 +236,12 @@ export function useGoalServices() {
 
   /**
    * Remove a review from a goal
-   * @param goalUuid - The UUID of the goal
-   * @param reviewId - The UUID of the review to remove
+   * @param review - The review to remove
    */
-  const handleRemoveReviewFromGoal = async (goalUuid: string, reviewId: string) => {
-    console.log('[useGoalServices] Removing review from goal:', { goalUuid, reviewId });
+  const handleRemoveReviewFromGoal = async (review: GoalReview) => {
+    console.log('[useGoalServices] Removing review from goal:', { review });
     try {
-      const result = await goalService.removeReviewFromGoal(goalUuid, reviewId);
+      const result = await goalService.removeReviewFromGoal(review);
       if (result.success && result.data) {
         showSuccess(`复盘移除成功`);
       } else {

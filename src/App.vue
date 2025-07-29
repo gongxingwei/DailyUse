@@ -16,7 +16,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useThemeInit } from './modules/Theme/useThemeInit';
-import { init } from './aaa';
+
 useThemeInit();
 
 const isLoading = ref(false);

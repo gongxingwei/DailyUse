@@ -1,7 +1,10 @@
 import { EventBus } from '@/shared/events/eventBus';
 import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../../../Task/index';
 import { MainGoalApplicationService } from '../../application/services/mainGoalApplicationService';
-const goalApplicationService = new MainGoalApplicationService();
+import { Record } from '../../domain/entities/record';
+
+let goalApplicationService: MainGoalApplicationService;
+
 /**
  * Goal 模块主进程事件处理器
  * 负责处理来自其他模块的事件，如任务完成、撤销等
@@ -13,8 +16,9 @@ export class GoalEventHandlers {
   /**
    * 注册 Goal 模块的事件处理器
    */
-  static registerHandlers(): void {
+  static async registerHandlers(): Promise<void> {
     const eventBus = EventBus.getInstance();
+    goalApplicationService = await MainGoalApplicationService.getInstance();
 
     // 处理任务完成事件
     GoalEventHandlers.taskCompletedHandler = async (event: TaskCompletedEvent) => {
@@ -59,18 +63,16 @@ export class GoalEventHandlers {
       try {
         console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加记录 +${link.incrementValue}`);
         
-        const result = await goalApplicationService.addRecordToGoal(
-          link.goalUuid,
-          link.keyResultId,
-          link.incrementValue,
-          `任务完成自动记录: ${event.payload.taskId}`
+        const record = new Record({
+          goalUuid: link.goalUuid,
+          keyResultUuid: link.keyResultId,
+          value: link.incrementValue,
+          note: `任务完成，目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 增加了 ${link.incrementValue}`
+        })
+        await goalApplicationService.addRecordToGoal(
+          event.payload.accountUuid,
+          record.toDTO()
         );
-
-        if (result.success) {
-          console.log(`✅ [Goal事件处理器] 成功添加记录: ${result.data?.record.uuid}`);
-        } else {
-          console.error(`❌ [Goal事件处理器] 添加记录失败: ${result.message}`);
-        }
       } catch (error) {
         console.error(`❌ [Goal事件处理器] 处理关键结果 ${link.keyResultId} 失败:`, error);
       }
@@ -85,19 +87,16 @@ export class GoalEventHandlers {
     for (const link of event.payload.keyResultLinks!) {
       try {
         console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加回退记录 -${link.incrementValue}`);
-        
-        const result = await goalApplicationService.addRecordToGoal(
-          link.goalUuid,
-          link.keyResultId,
-          -link.incrementValue, // 负值表示回退
-          `任务撤销完成自动记录: ${event.payload.taskId}`
+        const record = new Record({
+          goalUuid: link.goalUuid,
+          keyResultUuid: link.keyResultId,
+          value: -link.incrementValue,
+          note: `任务完成，目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 增加了 ${link.incrementValue}`
+        })
+        await goalApplicationService.addRecordToGoal(
+          event.payload.accountUuid,
+          record.toDTO()
         );
-
-        if (result.success) {
-          console.log(`✅ [Goal事件处理器] 成功添加回退记录: ${result.data?.record.uuid}`);
-        } else {
-          console.error(`❌ [Goal事件处理器] 添加回退记录失败: ${result.message}`);
-        }
       } catch (error) {
         console.error(`❌ [Goal事件处理器] 处理关键结果回退 ${link.keyResultId} 失败:`, error);
       }

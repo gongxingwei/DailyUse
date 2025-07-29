@@ -369,7 +369,7 @@ export function useTaskService() {
   const batchCompleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => getTaskService().completeTaskInstance(uuid))
+        taskIds.map(uuid => getTaskService().completeTaskInstance(uuid))
       );
       
       const successCount = results.filter(r => r.success).length;
@@ -402,7 +402,7 @@ export function useTaskService() {
   const batchDeleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(id => getTaskService().deleteTaskInstance(uuid))
+        taskIds.map(uuid => getTaskService().deleteTaskInstance(uuid))
       );
       
       const successCount = results.filter((r: any) => r.success).length;

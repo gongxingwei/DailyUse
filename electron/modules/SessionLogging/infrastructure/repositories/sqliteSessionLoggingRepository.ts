@@ -45,7 +45,7 @@ export class SqliteSessionLoggingRepository
     stmt.run(
       data.uuid,
       data.account_uuid,
-      data.session_id,
+      data.session_uuid,
       data.operation_type,
       data.device_info,
       data.ip_address,

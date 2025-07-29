@@ -130,6 +130,7 @@
 import { ref, computed, watch } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
 import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
+import { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 
 type ReminderAlert = TaskTemplate['reminderConfig']['alerts'][number];
 

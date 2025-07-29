@@ -32,14 +32,14 @@ export class RepositoryFactory {
    * 初始化所有仓库
    */
   static initialize(db: Database): void {
-    this._authCredentialRepo = new SqliteAuthCredentialRepository(db); // 内部获取DB
+    this._authCredentialRepo = new SqliteAuthCredentialRepository(); // 内部获取DB
     this._userSessionRepo = new SqliteUserSessionRepository(db);
     this._tokenRepo = new SqliteTokenRepository(db);
     this._mfaDeviceRepo = new SqliteMFADeviceRepository(db);
-    this._sessionLogRepo = new SqliteSessionLoggingRepository(db);
+    this._sessionLogRepo = new SqliteSessionLoggingRepository();
     this._auditTrailRepo = new SqliteAuditTrailRepository(db);
-    this._userRepo = new SqliteUserRepository(db);
-    this._accountRepo = new SqliteAccountRepository(this._userRepo); // 注入 UserRepository 依赖
+    this._userRepo = new SqliteUserRepository();
+    this._accountRepo = new SqliteAccountRepository(); // 注入 UserRepository 依赖
   }
 
   // Authentication 模块仓库获取器

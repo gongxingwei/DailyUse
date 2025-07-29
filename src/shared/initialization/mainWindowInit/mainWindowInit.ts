@@ -1,5 +1,5 @@
 import { authenticationService } from "@/modules/Authentication/application/services/authenticationService";
-import { accountLoggedService } from "@/modules/Account/application/services/accountLoggedService";
+
 import {
   InitializationManager,
   InitializationPhase,

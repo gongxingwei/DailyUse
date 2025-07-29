@@ -128,10 +128,10 @@ export async function registerGoalIpcHandlers() {
     }
     const result = await goalApplicationService.addRecordToGoal(auth.accountUuid, recordDTO);
     // result 结构: { goal, record }
+    const { goal, record } = result;
     const resultDTO = {
-      ...result,
-      goal: result.goal?.toDTO ? result.goal.toDTO() : result.goal,
-      record: result.record?.toDTO ? result.record.toDTO() : result.record,
+      goalDTO: goal.toDTO(),
+      recordDTO: record.toDTO(),
     };
     return { success: true, data: resultDTO, message: '添加成功' };
   }));

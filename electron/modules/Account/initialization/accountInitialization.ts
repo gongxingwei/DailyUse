@@ -1,8 +1,7 @@
 import { InitializationManager, InitializationPhase, InitializationTask } from '../../../shared/initialization/initializationManager';
 import { AccountIpcHandler } from '../infrastructure/ipc/accountIpcHandler';
-import { AccountInfoGetterEventHandlers } from '../application/eventHandlers/accountInfoGetterEventHandler';
-import { AccountStatusVerificationHandler } from '../application/eventHandlers/accountStatusVerificationHandler';
 import { registerAccountEventHandlers } from '../application/eventHandlers';
+
 /**
  * 账户模块的初始化任务定义
  */

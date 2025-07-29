@@ -20,7 +20,6 @@ export class TaskIpcHandler {
     this.registerMetaTemplateHandlers();
     this.registerTaskTemplateHandlers();
     this.registerTaskInstanceHandlers();
-    this.registerTaskStatsHandlers();
     this.registerReminderSystemHandlers();
   }
 
@@ -436,27 +435,6 @@ export class TaskIpcHandler {
           message: `Failed to enable reminders: ${error instanceof Error ? error.message : '未知错误'}` 
         };
       }
-    }));
-  }
-
-  /**
-   * 注册统计分析相关的 IPC 处理器
-   */
-  private registerTaskStatsHandlers(): void {
-    // 获取目标相关的任务统计信息
-    ipcMain.handle('task:stats:get-for-goal', withAuth(async (_event, [goalUuid], auth) => {
-      if (!auth.accountUuid) {
-        return { success: false, message: '未登录或登录已过期，请重新登录' };
-      }
-      return await this.taskService.getTaskStatsForGoal(auth.accountUuid, goalUuid);
-    }));
-
-    // 获取任务完成时间线
-    ipcMain.handle('task:stats:get-completion-timeline', withAuth(async (_event, [goalUuid, startDate, endDate], auth) => {
-      if (!auth.accountUuid) {
-        return { success: false, message: '未登录或登录已过期，请重新登录' };
-      }
-      return await this.taskService.getTaskCompletionTimeline(auth.accountUuid, goalUuid, startDate, endDate);
     }));
   }
 

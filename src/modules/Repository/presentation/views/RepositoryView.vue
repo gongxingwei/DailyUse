@@ -66,7 +66,7 @@
               </div>
               <div class="meta-item">
                 <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                <span class="text-caption">更新于 {{ formatDate(repo.updatedAt) }}</span>
+                <span class="text-caption">更新于 {{ formatDistanceToNow(new Date(repo.updatedAt), { locale: zhCN }) }} 前</span>
               </div>
             </div>
           </v-card-text>
@@ -85,13 +85,19 @@
 
     <!-- 对话框 -->
     <RepoDialog v-model="repoDialog.show" :repository="Repository.ensureRepository(repoDialog.repository)" 
-      @create-repo="handleCreateRepository" @edit-repo="handleUpdateRepository" />
+      @create-repo="handleCreateRepository" @edit-repo="handleUpdateRepository" 
+      @handle-delete-repo="handleDeleteRepository" />
     <RepoSettings v-model="showSettings" :repo="Repository.ensureRepositoryNeverNull(selectedRepo)" />
+
+    <!-- snackbar -->
+    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right">
+      {{ snackbar.message }}
+    </v-snackbar>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRepositoryStore } from '../stores/repositoryStore'
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore'
 import { Repository } from '@/modules/Repository/domain/aggregates/repository'
@@ -100,13 +106,14 @@ import RepoDialog from '../components/RepoDialog.vue'
 import RepoSettings from '../components/RepoSettings.vue'
 // utils
 import { fileSystem } from '@/shared/utils/fileUtils'
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 const { 
   snackbar,
   handleCreateRepository,
   handleUpdateRepository,
   handleDeleteRepository,
-  handleGetRepositoryById,
 } = useRepositoryServices()
 
 const repositoryStore = useRepositoryStore()
@@ -126,49 +133,6 @@ const startCreateRepo = () => {
   }
 }
 
-const startEditRepo = (repo: Repository) => {
-  repoDialog.value = {
-    show: true,
-    repository: repo
-  }
-}
-
-// 统计数据
-const recentReposCount = computed(() => {
-  return repositoryStore.repositories.filter(repo =>
-    repo.updatedAt && new Date(repo.updatedAt) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
-  ).length
-})
-
-const linkedGoalsCount = computed(() => {
-  return repositoryStore.repositories.filter(repo => repo.relatedGoals && repo.relatedGoals.length > 0).length
-})
-
-const lastUpdateTime = computed(() => {
-  if (repositoryStore.repositories.length === 0) return new Date().toISOString()
-  return repositoryStore.repositories
-    .map(repo => repo.updatedAt)
-    .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0]
-})
-
-const formatDate = (date: Date | string) => {
-  const d = typeof date === 'string' ? new Date(date) : date
-  return d.toLocaleString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
-
-const formatDateShort = (date: Date | string) => {
-  const d = typeof date === 'string' ? new Date(date) : date
-  return d.toLocaleDateString('zh-CN', {
-    month: '2-digit',
-    day: '2-digit'
-  })
-}
 
 const getGoalTitle = (goalUuid: string) => {
   const goal = goalStore.goals.find(g => g.uuid === goalUuid)

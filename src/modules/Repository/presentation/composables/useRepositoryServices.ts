@@ -1,6 +1,5 @@
 import { getRepositoryApplicationService } from "../../application/services/repositoryApplicationService";
 // types
-import type { RepositoryProps } from "../../domain/aggregates/repository";
 import type { Repository } from "../../domain/aggregates/repository";
 // composables
 import { useSnackbar } from "@/shared/composables/useSnackbar";
@@ -20,7 +19,7 @@ export function useRepositoryServices() {
   // 获取领域应用服务实例
   const repositoryService = getRepositoryApplicationService();
   // 获取全局 snackbar 相关方法
-  const { snackbar, showSnackbar, showError, showSuccess, showInfo } = useSnackbar();
+  const { snackbar, showError, showSuccess } = useSnackbar();
 
   /**
    * 创建仓库

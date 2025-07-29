@@ -31,7 +31,7 @@ export class ScheduleIpcClient {
    * 取消定时任务
    */
   async cancelSchedule(uuid: string): Promise<boolean> {
-    return await window.shared.ipcRenderer.invoke("cancel-schedule", id);
+    return await window.shared.ipcRenderer.invoke("cancel-schedule", uuid);
   }
 
   /**

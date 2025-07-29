@@ -35,11 +35,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRepositoryStore } from '../stores/repositoryStore'
 import { Repository } from '../../domain/aggregates/repository'
 import RepoInfoCard from '../components/RepoInfoCard.vue'
 
-const repositoryStore = useRepositoryStore()
 
 const getRecentRepositories = computed<Repository[]>(() => {
     return []

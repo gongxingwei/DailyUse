@@ -41,7 +41,6 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue';
 import { GoalDir } from '@/modules/Goal/domain/aggregates/goalDir';
-import { Goal } from '../../domain/aggregates/goal';
 
 const props = defineProps<{
     modelValue: boolean;
@@ -106,7 +105,7 @@ const closeDialog = () => {
 
 watch(
     [() => props.modelValue, () => props.goalDir],
-    ([show, goalDir]) => {
+    ([show]) => {
         if (show) {
             localGoalDir.value = props.goalDir ? props.goalDir.clone() : GoalDir.forCreate();
         } else {

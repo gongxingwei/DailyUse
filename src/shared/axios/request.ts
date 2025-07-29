@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from "axios";
 import type { TResponse } from "@/shared/types/response";
 import { TokenManager } from "@/modules/Account/utils/tokenManagement";
 import type { InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
-import { remoteAuthService } from "@/modules/Account/domain/services/remoteAuthService";
+;
 // 创建自定义的 axios 实例类型
 interface CustomAxiosInstance
   extends Omit<AxiosInstance, "get" | "post" | "put" | "delete"> {
@@ -58,16 +58,16 @@ myaxios.interceptors.response.use(
           throw new Error("No refresh token");
         }
 
-        // 调用刷新token的API
-        const response = await remoteAuthService.refreshToken(refreshToken);
-        if (!response || !response.data) {
-          throw new Error("刷新token失败");
-        }
-        const { accessToken } = response.data;
-        TokenManager.setTokens(accessToken, refreshToken);
+        // // 调用刷新token的API
+        // const response = await remoteAuthService.refreshToken(refreshToken);
+        // if (!response || !response.data) {
+        //   throw new Error("刷新token失败");
+        // }
+        // const { accessToken } = response.data;
+        // TokenManager.setTokens(accessToken, refreshToken);
 
-        // 重新发送原始请求
-        originalRequest.headers.Authorization = `Bearer ${accessToken}`;
+        // // 重新发送原始请求
+        // originalRequest.headers.Authorization = `Bearer ${accessToken}`;
         return myaxios(originalRequest);
       } catch (refreshError) {
         // 刷新失败，清除tokens并跳转到登录页

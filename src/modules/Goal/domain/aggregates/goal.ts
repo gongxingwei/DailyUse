@@ -1,12 +1,16 @@
-import { addDays } from "date-fns";
+import { addDays, isValid, differenceInDays, isSameDay } from "date-fns";
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { IGoal } from "@common/modules/goal";
 import { KeyResult } from "../entities/keyResult";
 import { Record } from "../entities/record";
 import { GoalReview } from "../entities/goalReview";
-import { differenceInDays, isSameDay } from "date-fns";
 
+/**
+ * 目标聚合根
+ * 用于管理目标的所有业务逻辑，包括关键结果、记录、复盘等。
+ */
 export class Goal extends AggregateRoot implements IGoal {
+  // ======================== 私有属性 ========================
   private _name: string;
   private _description?: string;
   private _color: string;
@@ -31,6 +35,19 @@ export class Goal extends AggregateRoot implements IGoal {
   };
   private _version: number;
 
+  // ======================== 构造函数 ========================
+  /**
+   * 创建一个目标实例
+   * @param params - 目标的初始化参数
+   * @example
+   * new Goal({
+   *   name: "减肥",
+   *   color: "#FF5733",
+   *   analysis: { motive: "健康", feasibility: "高" },
+   *   startTime: new Date(),
+   *   endTime: addDays(new Date(), 30)
+   * })
+   */
   constructor(params: {
     uuid?: string;
     name: string;
@@ -58,32 +75,26 @@ export class Goal extends AggregateRoot implements IGoal {
     this._keyResults = [];
     this._records = [];
     this._reviews = [];
-
     this._analysis = {
       motive: params.analysis?.motive ?? "",
       feasibility: params.analysis?.feasibility ?? "",
     };
-
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
       status: "active",
     };
-
     this._analytics = {
       overallProgress: 0,
       weightedProgress: 0,
       completedKeyResults: 0,
       totalKeyResults: 0,
     };
-
     this._version = 1;
   }
 
-  // getter/setter 相关代码
-  get name(): string {
-    return this._name;
-  }
+  // ======================== Getter/Setter ========================
+  get name(): string { return this._name; }
   set name(value: string) {
     if (!value.trim()) throw new Error("目标标题不能为空");
     this._name = value;
@@ -91,36 +102,28 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get description(): string | undefined {
-    return this._description;
-  }
+  get description(): string | undefined { return this._description; }
   set description(value: string | undefined) {
     this._description = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get color(): string {
-    return this._color;
-  }
+  get color(): string { return this._color; }
   set color(value: string) {
     this._color = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get dirUuid(): string | undefined {
-    return this._dirUuid;
-  }
+  get dirUuid(): string | undefined { return this._dirUuid; }
   set dirUuid(value: string | undefined) {
     this._dirUuid = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get startTime(): Date {
-    return this._startTime;
-  }
+  get startTime(): Date { return this._startTime; }
   set startTime(value: Date) {
     if (value.getTime() >= this._endTime.getTime()) {
       throw new Error("开始时间必须早于结束时间");
@@ -130,9 +133,7 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get endTime(): Date {
-    return this._endTime;
-  }
+  get endTime(): Date { return this._endTime; }
   set endTime(value: Date) {
     if (value.getTime() <= this._startTime.getTime()) {
       throw new Error("结束时间必须晚于开始时间");
@@ -142,88 +143,100 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get note(): string | undefined {
-    return this._note;
-  }
+  get note(): string | undefined { return this._note; }
   set note(value: string | undefined) {
     this._note = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get keyResults(): KeyResult[] {
-    return this._keyResults;
-  }
-  get records(): Record[] {
-    return this._records;
-  }
-  get reviews(): GoalReview[] {
-    return this._reviews;
-  }
-  get analysis(): { motive: string; feasibility: string } {
-    return this._analysis;
-  }
+  get keyResults(): KeyResult[] { return this._keyResults; }
+  get records(): Record[] { return this._records; }
+  get reviews(): GoalReview[] { return this._reviews; }
+  get analysis(): { motive: string; feasibility: string } { return this._analysis; }
   get lifecycle(): {
     createdAt: Date;
     updatedAt: Date;
     status: "active" | "completed" | "paused" | "archived";
-  } {
-    return this._lifecycle;
-  }
+  } { return this._lifecycle; }
   get analytics(): {
     overallProgress: number;
     weightedProgress: number;
     completedKeyResults: number;
     totalKeyResults: number;
-  } {
-    return this._analytics;
-  }
-  get version(): number {
-    return this._version;
-  }
+  } { return this._analytics; }
+  get version(): number { return this._version; }
 
+  // ======================== 业务方法 ========================
+
+  /**
+   * 获取所有关键结果的总权重
+   * @returns 总权重
+   */
   get totalWeight(): number {
     return this._keyResults.reduce((acc, kr) => acc + kr.weight, 0);
   }
 
+  /**
+   * 获取目标整体进度（加权平均，百分比）
+   * @returns number 0~100
+   */
   get progress(): number {
-    if (this._keyResults.length === 0) return 0;
-    const totalWeight = this.totalWeight;
-    const weightedProgress = this._keyResults.reduce(
-      (sum, kr) => sum + (kr.progress * kr.weight) / totalWeight,
-      0
-    );
-    return Math.round(weightedProgress * 100);
-  }
+  if (this._keyResults.length === 0) return 0;
+  const totalWeight = this.totalWeight;
+  if (totalWeight === 0) return 0;
+  // 先累加所有加权进度，再除以总权重
+  const weightedSum = this._keyResults.reduce(
+    (sum, kr) => sum + kr.progress * kr.weight,
+    0
+  );
+  return Math.round(weightedSum / totalWeight);
+}
 
+  /**
+   * 获取当天的进度（根据当天所有记录加权计算）
+   * @returns number 0~100
+   */
   get todayProgress(): number {
     if (this._keyResults.length === 0) return 0;
-
-    // 获取今天的所有记录
     const today = new Date();
     const todayRecords = this._records.filter((r) =>
       isSameDay(r.lifecycle.createdAt, today)
     );
-
     if (todayRecords.length === 0) return 0;
-
     let todayWeight = 0;
     for (const kr of this._keyResults) {
-      // 找到该关键结果今天的所有记录
       const krRecords = todayRecords.filter((r) => r.keyResultUuid === kr.uuid);
       if (krRecords.length > 0) {
         const sumValue = krRecords.reduce((sum, r) => sum + r.value, 0);
         todayWeight += sumValue * kr.weight;
       }
     }
-
     return Math.round((todayWeight / this.totalWeight) * 100);
   }
 
+  /**
+   * 获取目标剩余天数
+   * @returns number
+   */
   get remainingDays(): number {
     return differenceInDays(this.endTime, this.startTime);
   }
 
+  /**
+   * 获取某个关键结果的所有记录
+   * @param keyResultUuid - 关键结果的 uuid
+   * @returns 该关键结果的所有记录
+   */
+  getRecordsByKeyResultUuid(keyResultUuid: string): Record[] {
+    return this._records.filter((r) => r.keyResultUuid === keyResultUuid);
+  }
+
+  /**
+   * 添加关键结果
+   * @param keyResult - 关键结果实体
+   * @throws 如果 uuid 已存在
+   */
   addKeyResult(keyResult: KeyResult): void {
     if (this._keyResults.some((kr) => kr.uuid === keyResult.uuid)) {
       throw new Error("Key result already exists");
@@ -233,6 +246,11 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
+  /**
+   * 移除关键结果
+   * @param keyResultUuid - 关键结果 uuid
+   * @throws 如果未找到
+   */
   removeKeyResult(keyResultUuid: string): void {
     const index = this._keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
     if (index === -1) {
@@ -243,6 +261,11 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
+  /**
+   * 更新关键结果
+   * @param keyResult - 新的关键结果实体
+   * @throws 如果未找到
+   */
   updateKeyResult(keyResult: KeyResult): void {
     const index = this._keyResults.findIndex(
       (kr) => kr.uuid === keyResult.uuid
@@ -257,6 +280,16 @@ export class Goal extends AggregateRoot implements IGoal {
 
   /**
    * 创建当前目标快照
+   * @returns snapshot 对象
+   * @example
+   * {
+   *   snapshotDate: Date,
+   *   overallProgress: number,
+   *   weightedProgress: number,
+   *   completedKeyResults: number,
+   *   totalKeyResults: number,
+   *   keyResultsSnapshot: Array<{ uuid, name, progress, currentValue, targetValue }>
+   * }
    */
   createSnapShot(): GoalReview["snapshot"] {
     return {
@@ -275,6 +308,98 @@ export class Goal extends AggregateRoot implements IGoal {
     };
   }
 
+  /**
+   * 添加记录，并自动更新关键结果进度
+   * @param record - 记录实体
+   * @throws 如果关键结果不存在
+   * @example
+   * goal.addRecord(new Record(...))
+   */
+  addRecord(record: Record): void {
+    const { keyResultUuid, value } = record;
+    const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
+    if (!keyResult) {
+      throw new Error("关键结果不存在，无法添加记录");
+    }
+    keyResult.currentValue += value;
+    this._records.push(record);
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 移除记录
+   * @param uuid - 记录 uuid
+   */
+  removeRecord(uuid: string): void {
+    this._records = this._records.filter((r) => r.uuid !== uuid);
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 添加目标复盘
+   * @param review - 复盘实体
+   */
+  addReview(review: GoalReview): void {
+    this._reviews.push(review);
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 移除目标复盘
+   * @param uuid - 复盘 uuid
+   */
+  removeReview(uuid: string): void {
+    this._reviews = this._reviews.filter((rv) => rv.uuid !== uuid);
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 归档目标
+   */
+  archive(): void {
+    this._lifecycle.status = "archived";
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 完成目标
+   */
+  complete(): void {
+    this._lifecycle.status = "completed";
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 暂停目标
+   */
+  pause(): void {
+    this._lifecycle.status = "paused";
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  /**
+   * 激活目标
+   */
+  activate(): void {
+    this._lifecycle.status = "active";
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  // ======================== 工具方法 ========================
+
+  /**
+   * 判断对象是否为 Goal 实例
+   * @param obj - 任意对象
+   * @returns 是否为 Goal
+   */
   static isGoal(obj: any): obj is Goal {
     return (
       obj instanceof Goal ||
@@ -288,7 +413,8 @@ export class Goal extends AggregateRoot implements IGoal {
 
   /**
    * 保证返回 Goal 实例或 null
-   * @param goal 可能为 DTO、实体或 null
+   * @param goal - 可能为 DTO、实体或 null
+   * @returns Goal 或 null
    */
   static ensureGoal(goal: IGoal | Goal | null): Goal | null {
     if (Goal.isGoal(goal)) {
@@ -300,7 +426,8 @@ export class Goal extends AggregateRoot implements IGoal {
 
   /**
    * 保证返回 Goal 实例，永不为 null
-   * @param goal 可能为 DTO、实体或 null
+   * @param goal - 可能为 DTO、实体或 null
+   * @returns Goal
    */
   static ensureGoalNeverNull(goal: IGoal | Goal | null): Goal {
     if (Goal.isGoal(goal)) {
@@ -310,8 +437,28 @@ export class Goal extends AggregateRoot implements IGoal {
     }
   }
 
+  // ======================== 数据转换 ========================
+
   /**
-   * 转为接口数据
+   * 转为接口数据（DTO）
+   * @returns IGoal 对象
+   * @example
+   * {
+   *   uuid: string,
+   *   name: string,
+   *   description?: string,
+   *   color: string,
+   *   dirUuid?: string,
+   *   startTime: Date,
+   *   endTime: Date,
+   *   note?: string,
+   *   keyResults: KeyResultDTO[],
+   *   records: RecordDTO[],
+   *   reviews: GoalReviewDTO[],
+   *   analysis: { motive: string, feasibility: string },
+   *   lifecycle: { createdAt: Date, updatedAt: Date, status: string },
+   *   version: number
+   * }
    */
   toDTO(): IGoal {
     return {
@@ -336,6 +483,10 @@ export class Goal extends AggregateRoot implements IGoal {
 
   /**
    * 从接口数据创建实例
+   * @param dto - IGoal DTO 对象
+   * @returns Goal 实体
+   * @example
+   * Goal.fromDTO(goalDTO)
    */
   static fromDTO(dto: IGoal): Goal {
     const goal = new Goal({
@@ -346,8 +497,8 @@ export class Goal extends AggregateRoot implements IGoal {
       dirUuid: dto.dirUuid,
       note: dto.note,
       analysis: { ...dto.analysis },
-      startTime: dto.startTime,
-      endTime: dto.endTime,
+      startTime: isValid(new Date(dto.startTime)) ? new Date(dto.startTime) : new Date(),
+      endTime: isValid(new Date(dto.endTime)) ? new Date(dto.endTime) : new Date(),
     });
     goal._keyResults = (dto.keyResults ?? []).map((kr) =>
       KeyResult.fromDTO(kr)
@@ -360,7 +511,8 @@ export class Goal extends AggregateRoot implements IGoal {
   }
 
   /**
-   * 克隆当前对象
+   * 克隆当前对象（深拷贝）
+   * @returns Goal 实体
    */
   clone(): Goal {
     // 用 toDTO 再 fromDTO，确保深拷贝
@@ -369,6 +521,7 @@ export class Goal extends AggregateRoot implements IGoal {
 
   /**
    * 创建一个初始化对象（用于新建表单）
+   * @returns Goal 实体
    */
   static forCreate(): Goal {
     return new Goal({

@@ -4,7 +4,4 @@ export { AuthenticationService } from './application/services/authenticationServ
 export type { 
   PasswordAuthenticationRequest,
   PasswordAuthenticationResponse,
-  LoginCredentials, 
-  AuthResult, 
-  RegisterData 
 } from './domain/types';

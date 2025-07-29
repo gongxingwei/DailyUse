@@ -10,22 +10,22 @@ import { Goal } from "../aggregates/goal";
 export class GoalReview extends Entity implements IGoalReview {
   private _goalUuid: string;
   private _title: string;
-  private _type: IGoalReview['type'];
+  private _type: IGoalReview["type"];
   private _reviewDate: Date;
-  private _content: IGoalReview['content'];
-  private _snapshot: IGoalReview['snapshot'];
-  private _rating: IGoalReview['rating'];
-  private _lifecycle: IGoalReview['lifecycle'];
+  private _content: IGoalReview["content"];
+  private _snapshot: IGoalReview["snapshot"];
+  private _rating: IGoalReview["rating"];
+  private _lifecycle: IGoalReview["lifecycle"];
 
   constructor(params: {
     uuid?: string;
     goalUuid: string;
     title: string;
-    type: IGoalReview['type'];
+    type: IGoalReview["type"];
     reviewDate: Date;
-    content: IGoalReview['content'];
-    snapshot: IGoalReview['snapshot'];
-    rating: IGoalReview['rating'];
+    content: IGoalReview["content"];
+    snapshot: IGoalReview["snapshot"];
+    rating: IGoalReview["rating"];
   }) {
     super(params.uuid || GoalReview.generateId());
     const now = new Date();
@@ -63,10 +63,10 @@ export class GoalReview extends Entity implements IGoalReview {
     this._lifecycle.updatedAt = new Date();
   }
 
-  get type(): IGoalReview['type'] {
+  get type(): IGoalReview["type"] {
     return this._type;
   }
-  set type(value: IGoalReview['type']) {
+  set type(value: IGoalReview["type"]) {
     this._type = value;
     this._lifecycle.updatedAt = new Date();
   }
@@ -80,26 +80,26 @@ export class GoalReview extends Entity implements IGoalReview {
     this._lifecycle.updatedAt = new Date();
   }
 
-  get content(): IGoalReview['content'] {
+  get content(): IGoalReview["content"] {
     return this._content;
   }
-  set content(value: IGoalReview['content']) {
+  set content(value: IGoalReview["content"]) {
     this._content = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get snapshot(): IGoalReview['snapshot'] {
+  get snapshot(): IGoalReview["snapshot"] {
     return this._snapshot;
   }
-  set snapshot(value: IGoalReview['snapshot']) {
+  set snapshot(value: IGoalReview["snapshot"]) {
     this._snapshot = value;
     this._lifecycle.updatedAt = new Date();
   }
 
-  get rating(): IGoalReview['rating'] {
+  get rating(): IGoalReview["rating"] {
     return this._rating;
   }
-  set rating(value: IGoalReview['rating']) {
+  set rating(value: IGoalReview["rating"]) {
     if (value) {
       const validateRating = (score: number, name: string) => {
         if (score < 1 || score > 10) {
@@ -114,7 +114,7 @@ export class GoalReview extends Entity implements IGoalReview {
     this._lifecycle.updatedAt = new Date();
   }
 
-  get lifecycle(): IGoalReview['lifecycle'] {
+  get lifecycle(): IGoalReview["lifecycle"] {
     return this._lifecycle;
   }
 
@@ -124,10 +124,11 @@ export class GoalReview extends Entity implements IGoalReview {
   get overallRating(): number | null {
     if (!this._rating) return null;
     return (
-      this._rating.progressSatisfaction +
-      this._rating.executionEfficiency +
-      this._rating.goalReasonableness
-    ) / 3;
+      (this._rating.progressSatisfaction +
+        this._rating.executionEfficiency +
+        this._rating.goalReasonableness) /
+      3
+    );
   }
 
   /**
@@ -140,14 +141,17 @@ export class GoalReview extends Entity implements IGoalReview {
   /**
    * 获取复盘时的进度变化
    */
-  calculateProgressChange(previousSnapshot?: IGoalReview['snapshot']): {
+  calculateProgressChange(previousSnapshot?: IGoalReview["snapshot"]): {
     progressChange: number;
     completedKeyResultsChange: number;
   } | null {
     if (!previousSnapshot) return null;
     return {
-      progressChange: this._snapshot.overallProgress - previousSnapshot.overallProgress,
-      completedKeyResultsChange: this._snapshot.completedKeyResults - previousSnapshot.completedKeyResults,
+      progressChange:
+        this._snapshot.overallProgress - previousSnapshot.overallProgress,
+      completedKeyResultsChange:
+        this._snapshot.completedKeyResults -
+        previousSnapshot.completedKeyResults,
     };
   }
 
@@ -155,14 +159,24 @@ export class GoalReview extends Entity implements IGoalReview {
    * 判断对象是否为 GoalReview 或 IGoalReview
    */
   static isGoalReview(obj: any): obj is GoalReview | IGoalReview {
-    return obj instanceof GoalReview || (obj && typeof obj === 'object' && 'uuid' in obj && 'goalUuid' in obj && 'title' in obj && 'type' in obj);
+    return (
+      obj instanceof GoalReview ||
+      (obj &&
+        typeof obj === "object" &&
+        "uuid" in obj &&
+        "goalUuid" in obj &&
+        "title" in obj &&
+        "type" in obj)
+    );
   }
 
   /**
    * 保证返回 GoalReview 实例或 null
    * @param review 可能为 DTO、实体或 null
    */
-  static ensureGoalReview(review: IGoalReview | GoalReview | null): GoalReview | null {
+  static ensureGoalReview(
+    review: IGoalReview | GoalReview | null
+  ): GoalReview | null {
     if (GoalReview.isGoalReview(review)) {
       return review instanceof GoalReview ? review : GoalReview.fromDTO(review);
     } else {
@@ -198,27 +212,35 @@ export class GoalReview extends Entity implements IGoalReview {
       rating: data.rating,
     });
     goalReview._lifecycle = {
-      createdAt: data.lifecycle.createdAt,
-      updatedAt: data.lifecycle.updatedAt,
+      createdAt: isValid(data.lifecycle.createdAt)
+        ? new Date(data.lifecycle.createdAt)
+        : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt)
+        ? new Date(data.lifecycle.updatedAt)
+        : new Date(),
     };
     return goalReview;
   }
 
-  static forCreate(goal: Goal, type: GoalReview['type']): GoalReview {
+  static forCreate(goal: Goal, type: GoalReview["type"]): GoalReview {
     const snapshot = goal.createSnapShot();
     const goalReview = new GoalReview({
       goalUuid: goal.uuid,
-      title: '',
+      title: "",
       type: type,
       reviewDate: new Date(),
       snapshot: snapshot,
       content: {
-        achievements: '',
-        challenges: '',
-        learnings: '',
-        nextSteps: '',
+        achievements: "",
+        challenges: "",
+        learnings: "",
+        nextSteps: "",
       },
-      rating: { progressSatisfaction: 0, executionEfficiency: 0, goalReasonableness: 0 },
+      rating: {
+        progressSatisfaction: 0,
+        executionEfficiency: 0,
+        goalReasonableness: 0,
+      },
     });
     return goalReview;
   }

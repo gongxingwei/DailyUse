@@ -15,6 +15,20 @@ export class AccountIpcClient {
         console.log('📝 [AccountIpcClient] 获取账号信息', accountUuid);
         return ipcInvokeWithAuth('account:get-by-id', accountUuid);
     }
+
+    /**
+     * 更新用户信息
+     */
+    async updateUserProfile(userDTO: any): Promise<TResponse<void>> {
+        console.log('📝 [AccountIpcClient] 更新用户信息', userDTO);
+        const data = JSON.parse(JSON.stringify(userDTO));
+        return ipcInvokeWithAuth('account:update-user-profile', data);
+    }
+
+    async getCurrentAccount(): Promise<TResponse<AccountDTO>> {
+        console.log('📝 [AccountIpcClient] 获取当前账号信息');
+        return ipcInvokeWithAuth('account:get-current-account');
+    }
 }
 
 export const accountIpcClient = new AccountIpcClient();

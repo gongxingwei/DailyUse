@@ -40,7 +40,6 @@ const navItems = [
     { icon: 'mdi mdi-bell', title: t('mainLayout.navigation.test'), to: '/test' },
 ]
 const bottomItems = [
-    { icon: 'mdi mdi-account', title: t('mainLayout.navigation.profile'), to: '/profile' },
     { icon: 'mdi mdi-cog', title: t('mainLayout.navigation.settings'), to: '/setting' },
 ]
 </script>

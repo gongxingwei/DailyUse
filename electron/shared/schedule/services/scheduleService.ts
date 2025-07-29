@@ -206,7 +206,7 @@ export class ScheduleService {
    * 清理所有调度任务
    */
   cleanup(): void {
-    for (const [uuid, job] of this.scheduleJobs) {
+    for (const [_uuid, job] of this.scheduleJobs) {
       job.cancel();
     }
     this.scheduleJobs.clear();

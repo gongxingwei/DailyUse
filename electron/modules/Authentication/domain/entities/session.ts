@@ -161,7 +161,7 @@ export class Session {
   /**
    * 更新会话的IP地址（用于处理动态IP）
    */
-  updateIPAddress(newIP: string, reason: string = 'IP address changed'): void {
+  updateIPAddress(newIP: string, _reason: string = 'IP address changed'): void {
     if (this._ipAddress !== newIP) {
       this._ipAddress = newIP;
       this._lastActiveAt = TimeUtils.now();

@@ -1,8 +1,6 @@
 import { defineStore } from "pinia";
 import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
-import { ImportanceLevel } from "@/shared/types/importance";
-import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
 
 export function ensureReminderTemplate(obj: any): ReminderTemplate {
   if (ReminderTemplate.isReminderTemplate(obj)) {

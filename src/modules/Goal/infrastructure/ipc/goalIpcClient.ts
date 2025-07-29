@@ -181,8 +181,9 @@ export class GoalIpcClient {
    */
   async addRecordToGoal(
     record: Record,
-  ): Promise<TResponse<IGoal>> {
+  ): Promise<TResponse<{goalDTO: IGoal, recordDTO: IRecord}>> {
     try {
+      console.log('🔄 [渲染进程-IPC] 为目标添加记录:', record);
       const recordDTO = record.toDTO();
       const data = JSON.parse(JSON.stringify(recordDTO));
       const response = await ipcInvokeWithAuth(

@@ -366,7 +366,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     });
   }
 
-  complete(): void {
+  complete(accountUuid: string): void {
     if (this._status !== "inProgress" && this._status !== "pending") {
       throw new Error(`Cannot complete task in status: ${this._status}`);
     }
@@ -384,6 +384,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
+          accountUuid,
           taskId: this._uuid,
           keyResultLinks: this._keyResultLinks,
           completedAt: new Date(),
@@ -620,7 +621,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     };
   }
 
-  undoComplete(): void {
+  undoComplete(accountUuid: string): void {
     if (this._status !== "completed") {
       throw new Error(`Cannot undo completion for task in status: ${this._status}`);
     }
@@ -647,6 +648,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         aggregateId: this._uuid,
         occurredOn: new Date(),
         payload: {
+          accountUuid,
           taskId: this._uuid,
           keyResultLinks: this._keyResultLinks,
           undoAt: new Date(),

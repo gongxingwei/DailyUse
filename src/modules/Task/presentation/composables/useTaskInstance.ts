@@ -111,7 +111,7 @@ export function useTaskInstance() {
   const batchCompleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.allSettled(
-        taskIds.map(id => completeTaskInstance(uuid))
+        taskIds.map(uuid => completeTaskInstance(uuid))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;
@@ -137,7 +137,7 @@ export function useTaskInstance() {
   const batchDeleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.allSettled(
-        taskIds.map(id => deleteTaskInstance(uuid))
+        taskIds.map(uuid => deleteTaskInstance(uuid))
       );
       
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value).length;

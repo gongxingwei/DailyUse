@@ -103,7 +103,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useI18n } from 'vue-i18n';
 // composables
 import { useGoalServices } from '../composables/useGoalService';
@@ -273,6 +273,14 @@ const startEditGoalDir = (goalDir: GoalDirEntity) => {
     goalDir: goalDir
   };
 };
+
+onMounted(() => {
+  // 查找 uuid 为 "system_all" 的目录
+  const allDir = allGoalDirs.value.find(dir => dir.uuid === "system_all");
+  if (allDir) {
+    currentDir.value = allDir;
+  }
+});
 
 </script>
 

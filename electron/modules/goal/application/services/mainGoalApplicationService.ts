@@ -3,17 +3,14 @@ import type {
   IRecord,
   IGoalDir,
   IGoalReview,
-  IKeyResult,
 } from "../../../../../common/modules/goal/types/goal";
 import { Goal } from "../../domain/aggregates/goal";
 import { GoalReview } from "../../domain/entities/goalReview";
 import { GoalDir } from "../../domain/aggregates/goalDir";
 import { Record } from "../../domain/entities/record";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
-import { generateUUID } from "@/shared/utils/uuid";
 import { GoalContainer } from "../../infrastructure/di/goalContainer";
 import type { IGoalRepository } from "../../domain/repositories/iGoalRepository";
-
+import { SYSTEM_GOAL_DIRS } from "../../../../../common/modules/goal/types/goal";
 /**
  * 主进程目标应用服务
  * 处理目标相关的业务逻辑和数据库操作
@@ -50,6 +47,35 @@ export class MainGoalApplicationService {
     }
     return this.instance;
   }
+  // ========== 初始化目标应用服务 ==========
+
+  /**
+   * 初始化系统内置目标目录（文件夹）
+   * @param accountUuid 用户账号ID
+   */
+  async initializeSystemGoalDirs(accountUuid: string): Promise<void> {
+  for (const config of Object.values(SYSTEM_GOAL_DIRS)) {
+    // 检查是否已存在
+    const exists = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, config.uuid);
+    if (!exists) {
+      const dir: IGoalDir = {
+        uuid: config.uuid,
+        name: config.name,
+        icon: config.icon,
+        color: config.color,
+        description: "",
+        sortConfig: { sortKey: "createdAt", sortOrder: 0 },
+        lifecycle: {
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          status: "active"
+        }
+      };
+      await this.goalRepository.createGoalDirectory(accountUuid, GoalDir.fromDTO(dir));
+    }
+  }
+}
+
 
   // ========== 目标管理 ==========
 
@@ -135,7 +161,6 @@ export class MainGoalApplicationService {
     if (recordDTO.value <= 0) {
       throw new Error("记录值必须大于0");
     }
-
     const goal = await this.goalRepository.getGoalByUuid(
       accountUuid,
       recordDTO.goalUuid
@@ -143,12 +168,21 @@ export class MainGoalApplicationService {
     if (!goal) {
       throw new Error(`目标不存在: ${recordDTO.goalUuid}`);
     }
-
+    
+    // 将 record 进行持久化存储
     const record = Record.fromDTO(recordDTO);
-    goal.addRecord(record);
+    const createdRecord = await this.goalRepository.createRecord(
+      accountUuid,
+      record
+    );
 
+    // 调用聚合根的方法将记录添加到目标中，这会更新关键结果的值
+    goal.addRecord(createdRecord);
+
+    // 更新目标的关键结果和进度
     const updatedGoal = await this.goalRepository.updateGoal(accountUuid, goal);
-    return { goal: updatedGoal, record };
+    
+    return { goal: updatedGoal, record: createdRecord };
   }
 
   /**

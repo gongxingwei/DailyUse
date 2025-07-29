@@ -1,5 +1,6 @@
 import { Entity } from "@/shared/domain/entity";
 import type { IRecord } from "@common/modules/goal";
+import { isValid } from "date-fns";
 
 /**
  * 记录领域实体
@@ -38,12 +39,7 @@ export class Record extends Entity implements IRecord {
   get goalUuid(): string {
     return this._goalUuid;
   }
-  set goalUuid(value: string) {
-    if (!value.trim()) throw new Error("目标ID不能为空");
-    this._goalUuid = value;
-    this._lifecycle.updatedAt = new Date();
-  }
-
+  
   get keyResultUuid(): string {
     return this._keyResultUuid;
   }
@@ -151,8 +147,8 @@ export class Record extends Entity implements IRecord {
       note: data.note,
     });
     record._lifecycle = {
-      createdAt: data.lifecycle.createdAt,
-      updatedAt: data.lifecycle.updatedAt,
+            createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
+            updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
     };
     return record;
   }

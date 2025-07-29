@@ -109,7 +109,7 @@ export const useEditorGroupStore = defineStore('editorGroup', {
             // 如果关闭的是活动标签页，激活下一个标签页
             if (tabId === group.activeTabId) {
                 const nextTab = group.tabs[tabIndex] || group.tabs[tabIndex - 1]
-                group.activeTabId = nextTab?.id || null
+                group.activeTabId = nextTab?.uuid || null
             }
 
             if (group.tabs.length === 0) {

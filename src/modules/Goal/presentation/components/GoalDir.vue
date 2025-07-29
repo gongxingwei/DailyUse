@@ -64,7 +64,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed,ref } from 'vue';
+import { ref, onMounted } from 'vue';
 
 import { GoalDir } from '../../domain/aggregates/goalDir';
 import { useGoalStore } from '../stores/goalStore';
@@ -90,6 +90,14 @@ const selectDir = (goalDir: GoalDir) => {
   selectedGoalDir.value = goalDir;
   emit('selected-goal-dir', goalDir);
 };
+
+onMounted(() => {
+  // 查找 uuid 为 "system_all" 的目录
+  const allDir = props.goalDirs.find(dir => dir.uuid === "system_all");
+  if (allDir) {
+    selectedGoalDir.value = allDir;
+  }
+});
 </script>
 
 <style scoped>

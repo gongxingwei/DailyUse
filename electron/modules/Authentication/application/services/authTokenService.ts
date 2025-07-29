@@ -1,6 +1,6 @@
 
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
-import { IAuthCredentialRepository, ITokenRepository } from "../../domain/repositories/authenticationRepository";
+import { ITokenRepository } from "../../domain/repositories/authenticationRepository";
 
 // domainServices
 import { tokenService } from "../../domain/services/tokenService";
@@ -10,13 +10,13 @@ import { tokenService } from "../../domain/services/tokenService";
 export class AuthTokenService {
   private static instance: AuthTokenService;
   private tokenRepository: ITokenRepository;
-  private authCredentialRepository: IAuthCredentialRepository;
+
 
   constructor(
-    authCredentialRepository: IAuthCredentialRepository,
+
     tokenRepository: ITokenRepository
   ) {
-    this.authCredentialRepository = authCredentialRepository;
+
     this.tokenRepository = tokenRepository;
   }
   public static async getInstance(): Promise<AuthTokenService> {
@@ -28,9 +28,8 @@ export class AuthTokenService {
 
   public static async createInstance(): Promise<AuthTokenService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
-    const authCredentialRepository: IAuthCredentialRepository = authenticationContainer.getAuthCredentialRepository();
     const tokenRepository: ITokenRepository = authenticationContainer.getTokenRepository();
-    return new AuthTokenService(authCredentialRepository, tokenRepository);
+    return new AuthTokenService(tokenRepository);
   }
 
     /**

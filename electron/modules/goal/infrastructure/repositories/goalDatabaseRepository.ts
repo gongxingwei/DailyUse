@@ -5,14 +5,16 @@ import { GoalDir } from "../../domain/aggregates/goalDir";
 import { Record } from "../../domain/entities/record";
 import { KeyResult } from "../../domain/entities/keyResult";
 import { GoalReview } from "../../domain/entities/goalReview";
-import { IGoal } from "@/modules/Goal/presentation/types/goal";
 
 export class GoalDatabaseRepository implements IGoalRepository {
   constructor(private db: Database) {}
 
   // ========== 目标目录 CRUD ==========
 
-  async createGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir> {
+  async createGoalDirectory(
+    accountUuid: string,
+    goalDir: GoalDir
+  ): Promise<GoalDir> {
     const row = await this.mapGoalDirToRow(accountUuid, goalDir);
     const stmt = this.db.prepare(`
       INSERT INTO goal_directories (
@@ -29,21 +31,26 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.color,
       row.parentUuid || null,
       row.categoryUuid || null,
-      row.sortKey || 'default',
+      row.sortKey || "default",
       row.sortOrder || 0,
-      row.status || 'active',
+      row.status || "active",
       row.createdAt?.getTime?.() || Date.now(),
       row.updatedAt?.getTime?.() || Date.now()
     );
-    const createdGoalDir = await this.getGoalDirectoryByUuid(accountUuid, goalDir.uuid);
+    const createdGoalDir = await this.getGoalDirectoryByUuid(
+      accountUuid,
+      goalDir.uuid
+    );
     if (!createdGoalDir) {
       throw new Error("Failed to create goal directory");
     }
     return createdGoalDir;
-
   }
 
-  async getGoalDirectoryByUuid(accountUuid: string, uuid: string): Promise<GoalDir | null> {
+  async getGoalDirectoryByUuid(
+    accountUuid: string,
+    uuid: string
+  ): Promise<GoalDir | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM goal_directories WHERE account_uuid = ? AND uuid = ?
     `);
@@ -67,7 +74,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return goalDirs;
   }
 
-  async updateGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir> {
+  async updateGoalDirectory(
+    accountUuid: string,
+    goalDir: GoalDir
+  ): Promise<GoalDir> {
     const row = await this.mapGoalDirToRow(accountUuid, goalDir);
     const stmt = this.db.prepare(`
       UPDATE goal_directories 
@@ -75,7 +85,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
           category_uuid = ?, sort_key = ?, sort_order = ?, status = ?, updated_at = ?
       WHERE account_uuid = ? AND uuid = ?
     `);
-    
+
     stmt.run(
       row.name,
       row.description,
@@ -83,15 +93,18 @@ export class GoalDatabaseRepository implements IGoalRepository {
       row.color,
       row.parent_uuid || null,
       row.category_uuid || null,
-      row.sort_key || 'default',
+      row.sort_key || "default",
       row.sort_order || 0,
-      row.status || 'active',
+      row.status || "active",
       row.updated_at,
       accountUuid,
       row.uuid
     );
-    
-    const updatedGoalDir = await this.getGoalDirectoryByUuid(accountUuid, goalDir.uuid);
+
+    const updatedGoalDir = await this.getGoalDirectoryByUuid(
+      accountUuid,
+      goalDir.uuid
+    );
     if (!updatedGoalDir) {
       throw new Error("Failed to update goal directory");
     }
@@ -155,123 +168,65 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return createdGoal;
   }
 
-   async getGoalByUuid(accountUuid: string, uuid: string): Promise<Goal | null> {
+  async getGoalByUuid(accountUuid: string, uuid: string): Promise<Goal | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM goals WHERE account_uuid = ? AND uuid = ?
     `);
-    const row: Partial<IGoal> = stmt.get(accountUuid, uuid);
+    const row = stmt.get(accountUuid, uuid);
     if (!row) return null;
-    
+
     // 加载关键结果和记录
     const keyResults = await this.getKeyResultsByGoalUuid(accountUuid, uuid);
     const records = await this.getRecordsByGoal(accountUuid, uuid);
     const reviews = await this.getGoalReviewsByGoal(accountUuid, uuid);
-    
-    // 构建 DTO 对象
-    const goalDTO = {
-      uuid: row.uuid,
-      name: row.name,
-      description: row.description,
-      color: row.color,
-      dirUuid: row.directory_uuid,
-      startTime: new Date(row.start_time),
-      endTime: new Date(row.end_time),
-      note: row.notes,
-      keyResults,
-      records,
-      reviews,
-      analysis: {
-        feasibility: JSON.parse(row.feasibility_analysis || '{}'),
-        motive: JSON.parse(row.motive_analysis || '{}')
-      },
-      lifecycle: {
-        status: row.status,
-        createdAt: new Date(row.created_at),
-        updatedAt: new Date(row.updated_at)
-      },
-      version: row.version
-    };
-    
-    return Goal.fromDTO(goalDTO);
+    console.log('goalReviews:', reviews);
+
+    const goal = await this.mapRowToGoal(row, keyResults, records, reviews);
+
+    return goal;
   }
 
   async getAllGoals(accountUuid: string): Promise<Goal[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM goals WHERE account_uuid = ? ORDER BY created_at DESC
     `);
-    const rows: Partial<IGoal>[] = stmt.all(accountUuid);
+    const rows: any[] = stmt.all(accountUuid);
     const goals: Goal[] = [];
     for (const row of rows) {
-      const keyResults = await this.getKeyResultsByGoalUuid(accountUuid, row.uuid);
+      const keyResults = await this.getKeyResultsByGoalUuid(
+        accountUuid,
+        row.uuid
+      );
       const records = await this.getRecordsByGoal(accountUuid, row.uuid);
       const reviews = await this.getGoalReviewsByGoal(accountUuid, row.uuid);
-      
-      const goalDTO = {
-        uuid: row.uuid,
-        name: row.name,
-        description: row.description,
-        color: row.color,
-        dirUuid: row.directory_uuid,
-        startTime: new Date(row.start_time),
-        endTime: new Date(row.end_time),
-        note: row.notes,
-        keyResults,
-        records,
-        reviews,
-        analysis: {
-          feasibility: JSON.parse(row.feasibility_analysis || '{}'),
-          motive: JSON.parse(row.motive_analysis || '{}')
-        },
-        lifecycle: {
-          status: row.status,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at)
-        },
-        version: row.version
-      };
-      
-      goals.push(Goal.fromDTO(goalDTO));
+
+      const goal = await this.mapRowToGoal(row, keyResults, records, reviews);
+
+      goals.push(goal);
     }
     return goals;
   }
 
-
-  async getGoalsByDirectory(accountUuid: string, directoryId: string): Promise<Goal[]> {
+  async getGoalsByDirectory(
+    accountUuid: string,
+    directoryId: string
+  ): Promise<Goal[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM goals WHERE account_uuid = ? AND directory_uuid = ? ORDER BY created_at DESC
     `);
-    const rows: Partial<IGoal>[] = stmt.all(accountUuid, directoryId);
+    const rows: any[] = stmt.all(accountUuid, directoryId);
     const goals: Goal[] = [];
     for (const row of rows) {
-      const keyResults = await this.getKeyResultsByGoalUuid(accountUuid, row.uuid);
+      const keyResults = await this.getKeyResultsByGoalUuid(
+        accountUuid,
+        row.uuid
+      );
       const records = await this.getRecordsByGoal(accountUuid, row.uuid);
       const reviews = await this.getGoalReviewsByGoal(accountUuid, row.uuid);
-      
-      const goalDTO = {
-        uuid: row.uuid,
-        name: row.name,
-        description: row.description,
-        color: row.color,
-        dirUuid: row.directory_uuid,
-        startTime: new Date(row.start_time),
-        endTime: new Date(row.end_time),
-        note: row.notes,
-        keyResults,
-        records,
-        reviews,
-        analysis: {
-          feasibility: JSON.parse(row.feasibility_analysis || '{}'),
-          motive: JSON.parse(row.motive_analysis || '{}')
-        },
-        lifecycle: {
-          status: row.status,
-          createdAt: new Date(row.created_at),
-          updatedAt: new Date(row.updated_at)
-        },
-        version: row.version
-      };
-      
-      goals.push(Goal.fromDTO(goalDTO));
+
+      const goal = await this.mapRowToGoal(row, keyResults, records, reviews);
+
+      goals.push(goal);
     }
     return goals;
   }
@@ -285,7 +240,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
           tags = ?, notes = ?, attachments = ?, analysis = ?, status = ?, version = ?, updated_at = ?
       WHERE account_uuid = ? AND uuid = ?
     `);
-    
+
     stmt.run(
       row.directory_uuid,
       row.category_uuid || null,
@@ -311,7 +266,9 @@ export class GoalDatabaseRepository implements IGoalRepository {
     );
 
     // 更新关键结果（简单做法：先删后增）
-    const deleteKRStmt = this.db.prepare(`DELETE FROM key_results WHERE goal_uuid = ?`);
+    const deleteKRStmt = this.db.prepare(
+      `DELETE FROM key_results WHERE goal_uuid = ?`
+    );
     deleteKRStmt.run(goal.uuid);
     for (const kr of goal.keyResults) {
       await this.createKeyResult(accountUuid, goal.uuid, kr);
@@ -333,7 +290,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
 
   // ========== 关键结果 CRUD ==========
 
-  async createKeyResult(accountUuid: string, goalUuid: string, keyResult: KeyResult): Promise<string> {
+  async createKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResult: KeyResult
+  ): Promise<string> {
     const row = await this.mapKeyResultToRow(accountUuid, goalUuid, keyResult);
     const stmt = this.db.prepare(`
       INSERT INTO key_results (
@@ -373,7 +334,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return keyResult.uuid;
   }
 
-  async getKeyResultsByGoalUuid(accountUuid: string, goalUuid: string): Promise<KeyResult[]> {
+  async getKeyResultsByGoalUuid(
+    accountUuid: string,
+    goalUuid: string
+  ): Promise<KeyResult[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM key_results WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at ASC
     `);
@@ -415,7 +379,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return record;
   }
 
-  async getRecordByUuid(accountUuid: string, uuid: string): Promise<Record | null> {
+  async getRecordByUuid(
+    accountUuid: string,
+    uuid: string
+  ): Promise<Record | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM goal_records WHERE account_uuid = ? AND uuid = ?
     `);
@@ -424,7 +391,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return this.mapRowToRecord(row);
   }
 
-  async getRecordsByGoal(accountUuid: string, goalUuid: string): Promise<Record[]> {
+  async getRecordsByGoal(
+    accountUuid: string,
+    goalUuid: string
+  ): Promise<Record[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM goal_records WHERE account_uuid = ? AND goal_uuid = ? ORDER BY created_at DESC
     `);
@@ -445,7 +415,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
           verified_at = ?, updated_at = ?
       WHERE account_uuid = ? AND uuid = ?
     `);
-    
+
     stmt.run(
       row.value,
       row.notes,
@@ -457,7 +427,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       accountUuid,
       row.uuid
     );
-    
+
     return record;
   }
 
@@ -470,7 +440,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
 
   // ========== 目标评审 CRUD ==========
 
-  async createGoalReview(accountUuid: string, review: GoalReview): Promise<GoalReview> {
+  async createGoalReview(
+    accountUuid: string,
+    review: GoalReview
+  ): Promise<GoalReview> {
     const row = await this.mapGoalReviewToRow(accountUuid, review);
     const stmt = this.db.prepare(`
       INSERT INTO goal_reviews (
@@ -512,7 +485,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     stmt.run(accountUuid, uuid);
   }
 
-  async getGoalReviewByUuid(accountUuid: string, uuid: string): Promise<GoalReview | null> {
+  async getGoalReviewByUuid(
+    accountUuid: string,
+    uuid: string
+  ): Promise<GoalReview | null> {
     const stmt = this.db.prepare(`
       SELECT * FROM goal_reviews WHERE account_uuid = ? AND uuid = ?
     `);
@@ -521,7 +497,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return this.mapRowToGoalReview(row);
   }
 
-  async getGoalReviewsByGoal(accountUuid: string, goalUuid: string): Promise<GoalReview[]> {
+  async getGoalReviewsByGoal(
+    accountUuid: string,
+    goalUuid: string
+  ): Promise<GoalReview[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM goal_reviews WHERE account_uuid = ? AND goal_uuid = ? ORDER BY review_date DESC
     `);
@@ -534,7 +513,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return reviews;
   }
 
-  async updateGoalReview(accountUuid: string, review: GoalReview): Promise<GoalReview> {
+  async updateGoalReview(
+    accountUuid: string,
+    review: GoalReview
+  ): Promise<GoalReview> {
     const row = await this.mapGoalReviewToRow(accountUuid, review);
     const stmt = this.db.prepare(`
       UPDATE goal_reviews 
@@ -544,7 +526,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
           adjustment_recommendations = ?, snapshot = ?, metadata = ?, updated_at = ?
       WHERE account_uuid = ? AND uuid = ?
     `);
-    
+
     stmt.run(
       row.title,
       row.review_type,
@@ -563,8 +545,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
       accountUuid,
       row.uuid
     );
-    
-    const updatedReview = await this.getGoalReviewByUuid(accountUuid, review.uuid);
+
+    const updatedReview = await this.getGoalReviewByUuid(
+      accountUuid,
+      review.uuid
+    );
     if (!updatedReview) {
       throw new Error("Failed to update goal review");
     }
@@ -574,14 +559,21 @@ export class GoalDatabaseRepository implements IGoalRepository {
   // ========== 批量操作 ==========
 
   async batchDeleteGoals(accountUuid: string, uuids: string[]): Promise<void> {
-    const stmt = this.db.prepare(`DELETE FROM goals WHERE account_uuid = ? AND uuid = ?`);
+    const stmt = this.db.prepare(
+      `DELETE FROM goals WHERE account_uuid = ? AND uuid = ?`
+    );
     for (const uuid of uuids) {
       stmt.run(accountUuid, uuid);
     }
   }
 
-  async batchDeleteRecords(accountUuid: string, uuids: string[]): Promise<void> {
-    const stmt = this.db.prepare(`DELETE FROM goal_records WHERE account_uuid = ? AND uuid = ?`);
+  async batchDeleteRecords(
+    accountUuid: string,
+    uuids: string[]
+  ): Promise<void> {
+    const stmt = this.db.prepare(
+      `DELETE FROM goal_records WHERE account_uuid = ? AND uuid = ?`
+    );
     for (const uuid of uuids) {
       stmt.run(accountUuid, uuid);
     }
@@ -605,7 +597,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       start_time: dto.startTime.getTime(),
       end_time: dto.endTime.getTime(),
       priority: 3, // Default value
-      goal_type: 'personal', // Default value
+      goal_type: "personal", // Default value
       tags: null, // Not in DTO
       notes: dto.note || null,
       attachments: null, // Not in DTO
@@ -618,7 +610,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return row;
   }
 
-  private async mapGoalDirToRow(accountUuid: string, goalDir: GoalDir): Promise<any> {
+  private async mapGoalDirToRow(
+    accountUuid: string,
+    goalDir: GoalDir
+  ): Promise<any> {
     const dto = goalDir.toDTO();
     const row = {
       uuid: dto.uuid,
@@ -626,10 +621,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
       name: dto.name,
       description: dto.description || null,
       icon: dto.icon,
-      color: dto.color || 'default-color',
+      color: dto.color || "default-color",
       parent_uuid: dto.parentUuid || null,
       category_uuid: null, // Not in DTO
-      sort_key: dto.sortConfig?.sortKey || 'default',
+      sort_key: dto.sortConfig?.sortKey || "default",
       sort_order: dto.sortConfig?.sortOrder || 0,
       status: dto.lifecycle.status,
       created_at: dto.lifecycle.createdAt?.getTime() || Date.now(),
@@ -638,7 +633,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return row;
   }
 
-  private async mapRecordToRow(accountUuid: string, record: Record): Promise<any> {
+  private async mapRecordToRow(
+    accountUuid: string,
+    record: Record
+  ): Promise<any> {
     const dto = record.toDTO();
     const row = {
       uuid: dto.uuid,
@@ -657,7 +655,11 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return row;
   }
 
-  private async mapKeyResultToRow(accountUuid: string, goalUuid: string, keyResult: KeyResult): Promise<any> {
+  private async mapKeyResultToRow(
+    accountUuid: string,
+    goalUuid: string,
+    keyResult: KeyResult
+  ): Promise<any> {
     const dto = keyResult.toDTO();
     const row = {
       uuid: dto.uuid,
@@ -684,7 +686,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return row;
   }
 
-  private async mapGoalReviewToRow(accountUuid: string, review: GoalReview): Promise<any> {
+  private async mapGoalReviewToRow(
+    accountUuid: string,
+    review: GoalReview
+  ): Promise<any> {
     const dto = review.toDTO();
     const row = {
       uuid: dto.uuid,
@@ -709,22 +714,55 @@ export class GoalDatabaseRepository implements IGoalRepository {
     return row;
   }
 
+  private async mapRowToGoal(
+    row: any,
+    keyResults: KeyResult[],
+    records: Record[],
+    reviews: GoalReview[]
+  ): Promise<Goal> {
+    const goalDTO = {
+      uuid: row.uuid,
+      name: row.name,
+      description: row.description,
+      color: row.color,
+      dirUuid: row.directory_uuid,
+      startTime: new Date(row.start_time),
+      endTime: new Date(row.end_time),
+      note: row.note,
+      analysis: {
+        motive: row.motive,
+        feasibility: row.feasibility,
+      },
+      lifecycle: {
+        createdAt: new Date(row.created_at),
+        updatedAt: new Date(row.updated_at),
+        status: row.status || 'active',
+      },
+      version: row.version,
+      accountUuid: row.account_uuid,
+      keyResults: keyResults,
+      records: records,
+      reviews: reviews,
+    };
+    return Goal.fromDTO(goalDTO);
+  }
+
   private async mapRowToGoalDir(row: any): Promise<GoalDir> {
     const goalDirDTO = {
       uuid: row.uuid,
       name: row.name,
       description: row.description || undefined,
       icon: row.icon,
-      color: row.color || 'default-color',
+      color: row.color || "default-color",
       sortConfig: {
-        sortKey: row.sort_key || 'default',
+        sortKey: row.sort_key || "default",
         sortOrder: row.sort_order || 0,
       },
       parentUuid: row.parent_uuid,
       lifecycle: {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
-        status: row.status || 'active',
+        status: row.status || "active",
       },
     };
     return GoalDir.fromDTO(goalDirDTO);
@@ -742,7 +780,7 @@ export class GoalDatabaseRepository implements IGoalRepository {
       lifecycle: {
         createdAt: new Date(row.created_at),
         updatedAt: new Date(row.updated_at),
-        status: row.status || 'active',
+        status: row.status || "active",
       },
     };
     return KeyResult.fromDTO(keyResultDTO);
@@ -775,10 +813,10 @@ export class GoalDatabaseRepository implements IGoalRepository {
         challenges: row.challenges,
         learnings: row.learnings,
         nextSteps: row.next_steps,
-        adjustments: row.adjustment_recommendations || '',
+        adjustments: row.adjustment_recommendations || "",
       },
       snapshot: JSON.parse(row.snapshot),
-      metadata: JSON.parse(row.metadata || '{}'),
+      metadata: JSON.parse(row.metadata || "{}"),
       rating: {
         progressSatisfaction: row.progress_rating,
         executionEfficiency: row.executive_rating,

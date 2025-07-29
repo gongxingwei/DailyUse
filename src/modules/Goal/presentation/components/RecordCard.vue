@@ -22,41 +22,9 @@
               mdi-clock-outline
             </v-icon>
             <div>
-              <div class="text-body-2 font-weight-medium">
-                {{ TimeUtils.formatDisplayDate(record.date) }}
-              </div>
-              <div class="text-caption text-medium-emphasis">
-                {{ TimeUtils.formatDisplayTime(record.date) }}
-              </div>
+              {{ format(record.lifecycle.createdAt, 'yyyy/MM/dd HH:mm') }}
             </div>
           </div>
-        </v-col>
-
-        <!-- 操作按钮 -->
-        <v-col cols="3" class="d-flex justify-end">
-          <v-menu>
-            <template v-slot:activator="{ props }">
-              <v-btn v-bind="props" icon="mdi-dots-vertical" variant="text" size="small" color="medium-emphasis">
-                <v-icon>mdi-dots-vertical</v-icon>
-              </v-btn>
-            </template>
-
-            <v-list density="compact" min-width="120">
-              <v-list-item @click="handleEdit(record.uuid)">
-                <template v-slot:prepend>
-                  <v-icon size="16">mdi-pencil</v-icon>
-                </template>
-                <v-list-item-title>编辑</v-list-item-title>
-              </v-list-item>
-
-              <v-list-item @click="handleDelete(record.uuid)" class="text-error">
-                <template v-slot:prepend>
-                  <v-icon size="16">mdi-delete</v-icon>
-                </template>
-                <v-list-item-title>删除</v-list-item-title>
-              </v-list-item>
-            </v-list>
-          </v-menu>
         </v-col>
       </v-row>
 
@@ -76,25 +44,13 @@
 </template>
 
 <script setup lang="ts">
-import type { IRecord } from '../types/goal';
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
+import { Record } from '../../domain/entities/record';
+import { format } from 'date-fns';
+
 defineProps<{
-  record: IRecord;
+  record: Record;
 }>();
 
-const emit = defineEmits<{
-  (e: 'edit', recordId: string): void;
-  (e: 'delete', recordId: string): void;
-}>();
-
-
-const handleEdit = (recordId: string) => {
-  emit('edit', recordId);
-};
-
-const handleDelete = (recordId: string) => {
-  emit('delete', recordId);
-};
 </script>
 
 <style scoped>

@@ -187,7 +187,7 @@ const availableKeyResults = computed(() => {
       results.push({
         goalUuid: goal.uuid,
         keyResultId: kr.uuid,
-        title: `${goal.title} - ${kr.name}`
+        title: `${goal.name} - ${kr.name}`
       });
     });
   });
@@ -205,12 +205,12 @@ const rules = {
 
 // 辅助方法
 const getGoalTitle = (goalUuid: string) => {
-  const goal = goalStore.getGoalById(goalUuid);
-  return goal?.title || '未知目标';
+  const goal = goalStore.getGoalByUuid(goalUuid);
+  return goal?.name || '未知目标';
 };
 
 const getKeyResultTitle = (goalUuid: string, keyResultId: string) => {
-  const goal = goalStore.getGoalById(goalUuid);
+  const goal = goalStore.getGoalByUuid(goalUuid);
   const keyResult = goal?.keyResults?.find(kr => kr.uuid === keyResultId);
   return keyResult?.name || '未知关键结果';
 };
@@ -222,7 +222,7 @@ const getKeyResultTitle = (goalUuid: string, keyResultId: string) => {
 // };
 
 const getKeyResultOptions = (goalUuid: string) => {
-  const goal = goalStore.getGoalById(goalUuid);
+  const goal = goalStore.getGoalByUuid(goalUuid);
   return goal?.keyResults || [];
 };
 

@@ -1,6 +1,6 @@
 import { getReminderDomainApplicationService } from "../../application/services/reminderApplicationService";
 // types
-import type { IReminderTemplate } from "../../../../../common/modules/reminder/types/reminder";
+
 // composables
 import { useSnackbar } from "@/shared/composables/useSnackbar";
 // domain aggregates
@@ -22,7 +22,7 @@ export function useReminderServices() {
   // 获取领域应用服务实例（负责与主进程通信及本地状态同步）
   const reminderService = getReminderDomainApplicationService();
   // 获取全局 snackbar 相关方法
-  const { snackbar, showSnackbar, showError, showSuccess, showInfo } = useSnackbar();
+  const { snackbar, showError, showSuccess } = useSnackbar();
 
   /**
    * 创建提醒模板

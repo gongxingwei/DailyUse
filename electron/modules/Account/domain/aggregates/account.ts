@@ -10,12 +10,6 @@ import { AccountStatus, AccountType, IAccount, AccountDTO } from "../types/accou
 /**
  * Account 聚合根
  * 管理账号的核心身份信息和关联实体
- * 
- * 职责：
- * - 管理用户的核心身份信息（用户名、邮箱、手机号）
- * - 维护账号生命周期（注册、注销、资料修改）
- * - 处理账号状态（启用/禁用）和多设备绑定
- * - 不包含密码和认证凭证，仅管理身份信息
  */
 export class Account extends AggregateRoot implements IAccount {
   private _username: string;
@@ -25,7 +19,7 @@ export class Account extends AggregateRoot implements IAccount {
   private _status: AccountStatus;
   private _accountType: AccountType;
   private _user: User;
-  private _roleUuids: Set<string>; // 角色ID集合
+  private _roleUuids: Set<string>;
   private _createdAt: DateTime;
   private _updatedAt: DateTime;
   private _lastLoginAt?: DateTime;
@@ -34,185 +28,88 @@ export class Account extends AggregateRoot implements IAccount {
   private _isEmailVerified: boolean;
   private _isPhoneVerified: boolean;
 
-  constructor(
-    username: string,
-    accountType: AccountType,
-    user: User,
-    password?: string,
-    uuid?: string,
-    email?: Email,
-
-    phoneNumber?: PhoneNumber,
-    createdAt?: DateTime,
-    updatedAt?: DateTime,
-    lastLoginAt?: DateTime,
-    isRegistration: boolean = false
-  ) {
-    super(uuid || Account.generateId());
-    this._username = username;
-    this._email = email;
-    this._phoneNumber = phoneNumber;
-    this._status = AccountStatus.PENDING_VERIFICATION;
-    this._accountType = accountType;
-    this._user = user;
-    this._roleUuids = new Set();
-    this._createdAt = createdAt || TimeUtils.now();
-    this._updatedAt = updatedAt ||TimeUtils.now();
-    this._lastLoginAt = lastLoginAt;
-    this._isEmailVerified = email ? email.isVerified : false;
-    this._isPhoneVerified = phoneNumber ? phoneNumber.isVerified : false;
-
-    // 如果没有邮箱和手机号，直接激活本地账号
-    if (accountType === AccountType.LOCAL && !email && !phoneNumber) {
-      this._status = AccountStatus.ACTIVE;
-    }
-
-    // 根据场景发布不同的事件
-    if (isRegistration) {
-      // 发布账号注册事件
-      this.addDomainEvent({
-        aggregateId: this._uuid,
-        eventType: 'AccountRegistered',
-        occurredOn: new Date(),
-        payload: {
-          accountUuid: this._uuid,
-          username: this._username,
-          password: password,
-          email: this._email?.value,
-          phone: this._phoneNumber?.number,
-          accountType: this._accountType,
-          userId: this._user.uuid,
-          userProfile: {
-            firstName: this._user.firstName,
-            lastName: this._user.lastName,
-            avatar: this._user.avatar,
-            bio: this._user.bio
-          },
-          status: this._status,
-          createdAt: this._createdAt,
-          // 标识这是一个注册事件，Authentication 模块需要创建认证凭证
-          requiresAuthentication: true
-        }
-      });
-    } else {
-      // 发布普通账号创建事件
-      this.addDomainEvent({
-        aggregateId: this._uuid,
-        eventType: 'AccountCreated',
-        occurredOn: new Date(),
-        payload: {
-          accountUuid: this._uuid,
-          username: this._username,
-          email: this._email?.value,
-          phone: this._phoneNumber?.number,
-          accountType: this._accountType,
-          userId: this._user.uuid,
-          createdAt: this._createdAt
-        }
-      });
-    }
-  }
-
   /**
-   * 注册场景下的账号创建工厂方法
+   * 构造函数（对象参数，自动生成时间相关字段）
    */
-  static createForRegistration(
-    username: string,
-    accountType: AccountType,
-    user: User,
-    password?: string,
-    email?: Email,
-    phoneNumber?: PhoneNumber
-  ): Account {
-    return new Account(username, accountType, user, password, undefined, email, phoneNumber, undefined, undefined, undefined, true);
+  constructor(params: {
+    uuid?: string;
+    username: string;
+    accountType: AccountType;
+    user: User;
+    email?: Email;
+    phoneNumber?: PhoneNumber;
+    address?: Address;
+    roleUuids?: Set<string>;
+    status?: AccountStatus;
+    emailVerificationToken?: string;
+    phoneVerificationCode?: string;
+    isEmailVerified?: boolean;
+    isPhoneVerified?: boolean;
+    lastLoginAt?: DateTime;
+  }) {
+    super(params.uuid || Account.generateId());
+    this._username = params.username;
+    this._email = params.email;
+    this._phoneNumber = params.phoneNumber;
+    this._address = params.address;
+    this._status = params.status ?? AccountStatus.PENDING_VERIFICATION;
+    this._accountType = params.accountType;
+    this._user = params.user;
+    this._roleUuids = params.roleUuids ?? new Set();
+    this._createdAt = TimeUtils.now();
+    this._updatedAt = TimeUtils.now();
+    this._lastLoginAt = params.lastLoginAt;
+    this._emailVerificationToken = params.emailVerificationToken;
+    this._phoneVerificationCode = params.phoneVerificationCode;
+    this._isEmailVerified = params.isEmailVerified ?? (params.email ? params.email.isVerified : false);
+    this._isPhoneVerified = params.isPhoneVerified ?? (params.phoneNumber ? params.phoneNumber.isVerified : false);
   }
 
-  // Getters
-  get username(): string {
-    return this._username;
-  }
+  // ======================== Getter/Setter ========================
+  get username(): string { return this._username; }
+  set username(value: string) { this._username = value; this._updatedAt = TimeUtils.now(); }
 
-  get email(): Email | undefined {
-    return this._email;
-  }
+  get email(): Email | undefined { return this._email; }
+  set email(value: Email | undefined) { this._email = value; this._updatedAt = TimeUtils.now(); }
 
-  get emailVerificationToken(): string | undefined {
-    return this._emailVerificationToken;
-  }
+  get phoneNumber(): PhoneNumber | undefined { return this._phoneNumber; }
+  set phoneNumber(value: PhoneNumber | undefined) { this._phoneNumber = value; this._updatedAt = TimeUtils.now(); }
 
-  
-  get isEmailVerified(): boolean {
-    return this._isEmailVerified;
-  }
-  get phoneVerificationCode(): string | undefined {
-    return this._phoneVerificationCode;
-  }
+  get address(): Address | undefined { return this._address; }
+  set address(value: Address | undefined) { this._address = value; this._updatedAt = TimeUtils.now(); }
 
-  get isPhoneVerified(): boolean {
-    return this._isPhoneVerified;
-  }
-  get phoneNumber(): PhoneNumber | undefined {
-    return this._phoneNumber;
-  }
+  get status(): AccountStatus { return this._status; }
+  set status(value: AccountStatus) { this._status = value; this._updatedAt = TimeUtils.now(); }
 
-  get address(): Address | undefined {
-    return this._address;
-  }
+  get accountType(): AccountType { return this._accountType; }
+  set accountType(value: AccountType) { this._accountType = value; this._updatedAt = TimeUtils.now(); }
 
-  get status(): AccountStatus {
-    return this._status;
-  }
+  get user(): User { return this._user; }
+  set user(value: User) { this._user = value; this._updatedAt = TimeUtils.now(); }
 
-  get accountType(): AccountType {
-    return this._accountType;
-  }
+  get roleIds(): Set<string> { return new Set(this._roleUuids); }
+  set roleIds(value: Set<string>) { this._roleUuids = value; this._updatedAt = TimeUtils.now(); }
 
-  get user(): User {
-    return this._user;
-  }
+  get createdAt(): DateTime { return this._createdAt; }
+  set createdAt(value: DateTime) { this._createdAt = value; }
 
-  get roleIds(): Set<string> {
-    return new Set(this._roleUuids);
-  }
+  get updatedAt(): DateTime { return this._updatedAt; }
+  set updatedAt(value: DateTime) { this._updatedAt = value; }
 
-  get createdAt(): DateTime {
-    return this._createdAt;
-  }
+  get lastLoginAt(): DateTime | undefined { return this._lastLoginAt; }
+  set lastLoginAt(value: DateTime | undefined) { this._lastLoginAt = value; }
 
-  get updatedAt(): DateTime {
-    return this._updatedAt;
-  }
+  get emailVerificationToken(): string | undefined { return this._emailVerificationToken; }
+  set emailVerificationToken(value: string | undefined) { this._emailVerificationToken = value; }
 
-  get lastLoginAt(): DateTime | undefined {
-    return this._lastLoginAt;
-  }
+  get phoneVerificationCode(): string | undefined { return this._phoneVerificationCode; }
+  set phoneVerificationCode(value: string | undefined) { this._phoneVerificationCode = value; }
 
-  set phoneVerificationCode(code: string | undefined) {
-    this._phoneVerificationCode = code;
-  }
+  get isEmailVerified(): boolean { return this._isEmailVerified; }
+  set isEmailVerified(value: boolean) { this._isEmailVerified = value; }
 
-  set emailVerificationToken(token: string | undefined) {
-    this._emailVerificationToken = token;
-  }
-
-  set status(status: AccountStatus) {
-    this._status = status;
-  }
-
-  set isEmailVerified(isVerified: boolean) {
-    this._isEmailVerified = isVerified;
-  }
-
-  set isPhoneVerified(isVerified: boolean) {
-    this._isPhoneVerified = isVerified;
-  }
-  set roleIds(roleIds: Set<string>) {
-    this._roleUuids = roleIds;
-  }
-
-  set user(user: User) {
-    this._user = user;
-  }
+  get isPhoneVerified(): boolean { return this._isPhoneVerified; }
+  set isPhoneVerified(value: boolean) { this._isPhoneVerified = value; }
   /**
    * 更新邮箱
    */
@@ -455,10 +352,49 @@ export class Account extends AggregateRoot implements IAccount {
   validatePhoneCode(code: string): boolean {
     return this._phoneVerificationCode === code;
   }
+  // ======================== 辅助方法 ========================
 
+  /**
+   * 判断对象是否为 Account 实例
+   */
+  static isAccount(obj: any): obj is Account {
+    return (
+      obj instanceof Account ||
+      (obj &&
+        typeof obj === "object" &&
+        "uuid" in obj &&
+        "username" in obj &&
+        "user" in obj)
+    );
+  }
+
+  /**
+   * 保证返回 Account 实例或 null
+   */
+  static ensureAccount(account: IAccount | Account | null): Account | null {
+    if (Account.isAccount(account)) {
+      return account instanceof Account ? account : Account.fromDTO(account);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * 保证返回 Account 实例，永不为 null
+   */
+  static ensureAccountNeverNull(account: IAccount | Account | null): Account {
+    if (Account.isAccount(account)) {
+      return account instanceof Account ? account : Account.fromDTO(account);
+    } else {
+      return Account.forCreate();
+    }
+  }
+
+  /**
+   * 转为接口数据（DTO）
+   */
   toDTO(): AccountDTO {
-    let user = this.user.toDTO();
-    let accountDTO = {
+    return {
       uuid: this.uuid,
       username: this.username,
       status: this.status,
@@ -468,38 +404,55 @@ export class Account extends AggregateRoot implements IAccount {
       lastLoginAt: this.lastLoginAt,
       email: this.email?.value,
       phone: this.phoneNumber?.fullNumber,
-      _emailVerificationToken: this._emailVerificationToken,
+      emailVerificationToken: this.emailVerificationToken,
       phoneVerificationCode: this.phoneVerificationCode,
       roleIds: this.roleIds,
       isEmailVerified: this.isEmailVerified,
       isPhoneVerified: this.isPhoneVerified,
-      user: user
-    }
-    console.log('将账号数据转换为DTO', accountDTO)
-    return accountDTO;
+      user: this.user.toDTO(),
+    };
   }
 
-  static fromDTO(dto: AccountDTO): Account { 
-    const account = new Account(
-      dto.username,
-      dto.accountType,
-      User.fromDTO(dto.user),
-      undefined,
-      dto.uuid,
-      dto.email ? new Email(dto.email) : undefined,
-      dto.phone ? new PhoneNumber(dto.phone) : undefined,
-      dto.createdAt,
-      dto.updatedAt,
-      dto.lastLoginAt,
-    )
-    account.roleIds = dto.roleIds || new Set()
-    account.emailVerificationToken = dto.emailVerificationToken
-    account.phoneVerificationCode = dto.phoneVerificationCode
-    account.status = dto.status
-    account.isEmailVerified = dto.isEmailVerified
-    account.isPhoneVerified = dto.isPhoneVerified
+  /**
+   * 从接口数据创建实例
+   */
+  static fromDTO(dto: AccountDTO): Account {
+    const account = new Account({
+      uuid: dto.uuid,
+      username: dto.username,
+      accountType: dto.accountType,
+      user: User.fromDTO(dto.user),
+      email: dto.email ? new Email(dto.email) : undefined,
+      phoneNumber: dto.phone ? new PhoneNumber(dto.phone) : undefined,
+      // 其它属性后续用 setter 恢复
+    });
+    account.createdAt = dto.createdAt ?? TimeUtils.now();
+    account.updatedAt = dto.updatedAt ?? TimeUtils.now();
+    account.lastLoginAt = dto.lastLoginAt;
+    account.roleIds = dto.roleIds || new Set();
+    account.emailVerificationToken = dto.emailVerificationToken;
+    account.phoneVerificationCode = dto.phoneVerificationCode;
+    account.status = dto.status;
+    account.isEmailVerified = dto.isEmailVerified;
+    account.isPhoneVerified = dto.isPhoneVerified;
+    return account;
+  }
 
+  /**
+   * 克隆当前对象（深拷贝）
+   */
+  clone(): Account {
+    return Account.fromDTO(this.toDTO());
+  }
 
-    return account
+  /**
+   * 创建一个初始化对象（用于新建表单）
+   */
+  static forCreate(): Account {
+    return new Account({
+      username: "",
+      accountType: AccountType.LOCAL,
+      user: User.forCreate(),
+    });
   }
 }

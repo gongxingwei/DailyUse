@@ -83,6 +83,7 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async save(user: User,account_uuid: string): Promise<void> {
+    console.log('开始新增用户信息:', user);
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
@@ -111,6 +112,7 @@ export class SqliteUserRepository implements IUserRepository {
   }
 
   async update(user: User): Promise<void> {
+    console.log('开始更新用户信息:', user);
     try {
       const db = await this.getDB();
       const stmt = db.prepare(`
@@ -150,14 +152,14 @@ export class SqliteUserRepository implements IUserRepository {
     }
   }
   private mapRowToUser(row: any): User {
-    const user = new User(
-      row.uuid,
-      row.first_name,
-      row.last_name,
-      row.sex,
-      row.avatar_url,
-      row.bio
-    );
+    const user = new User({
+      uuid: row.uuid,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      sex: row.sex,
+      avatar: row.avatar_url,
+      bio: row.bio
+    });
 
     // 恢复社交账号
     if (row.social_accounts) {

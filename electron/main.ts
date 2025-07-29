@@ -5,7 +5,6 @@ import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { initializeApp, cleanupApp } from './shared/initialization/appInitializer';
 import { WindowManager } from './windows/windowManager';
-import { logToFile } from './shared/utils/logger';
 
 
 // console.log = (...args) => { logToFile("info", ...args); };

@@ -46,23 +46,23 @@ export class EventSubscriptionInitializer {
     }
   }
 
-  /**
-   * 初始化 SessionLogging 模块的事件处理器
-   */
-  private static initializeSessionLoggingEventHandlers(): void {
-    try {
-      // TODO: 实现 SessionLogging 模块的事件处理器
-      // 例如：监听 AccountRegistered 事件来记录注册行为
+  // /**
+  //  * 初始化 SessionLogging 模块的事件处理器
+  //  */
+  // private static initializeSessionLoggingEventHandlers(): void {
+  //   try {
+  //     // TODO: 实现 SessionLogging 模块的事件处理器
+  //     // 例如：监听 AccountRegistered 事件来记录注册行为
       
-      // eventBus.subscribe('AccountRegistered', async (event) => {
-      //   await sessionLoggingEventHandler.handleAccountRegistered(event);
-      // });
+  //     // eventBus.subscribe('AccountRegistered', async (event) => {
+  //     //   await sessionLoggingEventHandler.handleAccountRegistered(event);
+  //     // });
 
-      console.log('📝 [EventSubscription] SessionLogging 模块事件处理器初始化完成');
-    } catch (error) {
-      console.error('❌ [EventSubscription] SessionLogging 模块事件处理器初始化失败:', error);
-    }
-  }
+  //     console.log('📝 [EventSubscription] SessionLogging 模块事件处理器初始化完成');
+  //   } catch (error) {
+  //     console.error('❌ [EventSubscription] SessionLogging 模块事件处理器初始化失败:', error);
+  //   }
+  // }
 
   /**
    * 清理所有事件订阅

@@ -2,7 +2,8 @@ import type { NotificationWindowOptions } from "../types/notification";
 import type { TResponse } from "@/shared/types/response";
 
 import { serializeForIpc } from "@/shared/utils/ipcSerialization";
-
+import { ImportanceLevel } from "@/shared/types/importance";
+import { generateUUID } from "@/shared/utils/uuid";
 export class NotificationService {
 
 
@@ -41,7 +42,7 @@ export class NotificationService {
     try {
       const response = await window.shared.ipcRenderer.invoke(
         "close-notification",
-        id
+        uuid
       );
       return response;
     } catch (error) {
@@ -99,9 +100,10 @@ export class NotificationService {
    */
   public async showSimple(title: string, message: string): Promise<TResponse> {
     return await this.showNotification({
+      uuid: generateUUID(),
       title,
       body: message,
-      importance: 'normal',
+      importance: ImportanceLevel.Moderate,
     });
 
   }
@@ -113,9 +115,10 @@ export class NotificationService {
    */
   public async showWarning(title: string, message: string): Promise<TResponse> {
     return await this.showNotification({
+      uuid: generateUUID(),
       title,
       body: message,
-      urgency: 'critical',
+      importance: ImportanceLevel.Vital,
       actions: [
         { text: '我知道了', type: 'confirm' }
       ]

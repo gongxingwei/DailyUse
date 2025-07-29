@@ -69,8 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref } from 'vue';
-import { useRouter } from 'vue-router';
+import { computed, ref } from 'vue';
 import type { PasswordAuthenticationRequest } from '@/modules/Authentication/domain/types';
 import { useSnackbar } from '@/shared/composables/useSnackbar';
 // utils
@@ -79,7 +78,6 @@ import { usernameRules, passwordRules } from '../../../Account/validations/accou
 import { AuthenticationService } from "../../application/services/authenticationService";
 const authenticationService = AuthenticationService.getInstance();
 const { snackbar, showError, showSuccess } = useSnackbar();
-const router = useRouter();
 const loading = ref(false);
 const formRef = ref();
 const isCurrentFormValid = computed(() => {

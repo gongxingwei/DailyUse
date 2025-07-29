@@ -1,4 +1,3 @@
-
 <template>
   <div>
     <!-- Tabs -->
@@ -15,7 +14,7 @@
 
     <!-- Tab Content -->
     <div v-if="activeTab === '通知测试'">
-      
+      <!-- 通知测试内容 -->
     </div>
     <div v-else-if="activeTab === '右键菜单测试'">
       <context-menu-test />
@@ -26,28 +25,58 @@
           <h2>其他测试</h2>
           <p>这里可以放其他类型的测试内容</p>
         </div>
-        <!-- 你可以在这里添加其他测试内容 -->
+        <!-- AccountStore 测试区块 -->
+        <div class="test-section">
+          <h3>AccountStore 测试</h3>
+          <div class="form-row">
+            <label>当前账号用户名：</label>
+            <span>{{ account?.username || '未登录' }}</span>
+          </div>
+          <div class="form-row">
+            <label>当前账号 UUID：</label>
+            <span>{{ account?.uuid || '无' }}</span>
+          </div>
+          <div class="form-row">
+            <label>当前账号类型：</label>
+            <span>{{ account?.accountType || '无' }}</span>
+          </div>
+          <div class="form-row">
+            <label>当前账号状态：</label>
+            <span>{{ account?.status || '无' }}</span>
+          </div>
+          <div class="button-group">
+            <button class="btn btn-primary btn-sm" @click="logAccount">打印账号信息</button>
+            <button class="btn btn-secondary btn-sm" @click="clearAccount">清空账号</button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue';
-import { notificationService } from '@/modules/notification/services/notificationService';
-import type { NotificationWindowOptions } from '@/modules/notification/types/notification';
+import { ref } from 'vue';
+import { useAccountStore } from '@/modules/Account/presentation/stores/accountStore';
 import ContextMenuTest from './components/ContextMenuTest.vue';
 
 // Tabs 相关
 const tabs = ['通知测试', '右键菜单测试', '其他测试'];
 const activeTab = ref(tabs[0]);
 
-// 测试状态
-const activeNotificationCount = ref(0);
-const totalSentCount = ref(0);
-const actionReceivedCount = ref(0);
+// AccountStore 测试
+const accountStore = useAccountStore();
+const account = accountStore.currentAccount;
 
+// 打印账号信息
+function logAccount() {
+  console.log('当前账号信息:', account);
+  alert(JSON.stringify(account, null, 2));
+}
 
+// 清空账号
+function clearAccount() {
+  alert('账号已清空');
+}
 </script>
 
 <style scoped>
@@ -60,13 +89,11 @@ const actionReceivedCount = ref(0);
 .tabs button {
   padding: 8px 16px;
   border: none;
-  background: #eee;
   cursor: pointer;
   border-radius: 4px 4px 0 0;
 }
 .tabs button.active {
-  background: #007bff;
-  color: #fff;
+
 }
 
 /* 保留原有样式 */
@@ -93,9 +120,7 @@ const actionReceivedCount = ref(0);
 .test-section {
   margin-bottom: 30px;
   padding: 20px;
-  background: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #e9ecef;
 }
 .test-section h3 {
   margin-top: 0;

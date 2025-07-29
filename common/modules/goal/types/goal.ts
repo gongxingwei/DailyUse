@@ -16,7 +16,7 @@ export interface IKeyResult {
   startValue: number;
   targetValue: number;
   currentValue: number;
-  calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
+  calculationMethod: "sum" | "average" | "max" | "min" | "custom";
   weight: number;
   lifecycle: {
     createdAt: Date;
@@ -133,7 +133,22 @@ export interface IGoalReview {
  * 系统默认文件夹配置
  */
 export const SYSTEM_GOAL_DIRS = {
-  ALL: "system_all",
-  DELETED: "system_deleted",
-  ARCHIVED: "system_archived",
+  ALL: {
+    uuid: "system_all",
+    name: "全部目标",
+    icon: "mdi-folder-multiple",
+    color: "#2196f3",
+  },
+  DELETED: {
+    uuid: "system_deleted",
+    name: "已删除",
+    icon: "mdi-delete",
+    color: "#f44336",
+  },
+  ARCHIVED: {
+    uuid: "system_archived",
+    name: "已归档",
+    icon: "mdi-archive",
+    color: "#9e9e9e",
+  },
 } as const;

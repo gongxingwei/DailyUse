@@ -1,12 +1,11 @@
-import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { ISessionRepository } from "../../../SessionManagement/domain/repositories/sessionRepository";
+import { IAuthCredentialRepository, ISessionRepository } from "../../domain/repositories/authenticationRepository";
+
 import { 
   UserLoggedOutEvent,
   SessionTerminatedEvent,
   AllSessionsTerminatedEvent
 } from "../../domain/events/authenticationEvents";
 import { eventBus } from "../../../../shared/events/eventBus";
-import { generateUUID } from "@/shared/utils/uuid";
 import { UserSession } from "../../../SessionManagement/domain/types";
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
 
@@ -46,14 +45,17 @@ export interface LogoutResult {
 export class AuthenticationLogoutService {
   private static instance: AuthenticationLogoutService;
   private authCredentialRepository: IAuthCredentialRepository;
-  constructor(authCredentialRepository: IAuthCredentialRepository) {
-    
+  private sessionRepository: ISessionRepository;
+
+  constructor(authCredentialRepository: IAuthCredentialRepository, sessionRepository: ISessionRepository) {
     this.authCredentialRepository = authCredentialRepository;
+    this.sessionRepository = sessionRepository;
   }
-  static async createInstance(): Promise<AuthenticationLogoutService> {
+  static async createInstance(authCredentialRepository?: IAuthCredentialRepository, sessionRepository?: ISessionRepository): Promise<AuthenticationLogoutService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
-    const authCredentialRepository = authenticationContainer.getAuthCredentialRepository();
-    return new AuthenticationLogoutService(authCredentialRepository);
+    const authCredentialRepo = authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
+    const sessionRepo = sessionRepository || authenticationContainer.getSessionRepository();
+    return new AuthenticationLogoutService(authCredentialRepo, sessionRepo);
   }
   static async getInstance(): Promise<AuthenticationLogoutService> {
     if (!AuthenticationLogoutService.instance) {

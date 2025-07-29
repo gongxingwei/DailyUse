@@ -1,7 +1,6 @@
 import { eventBus } from "@/shared/events/eventBus";
 import type {
   UserLoggedInEvent,
-  UserLoggedInEventPayload,
 } from "@/modules/Authentication/domain/events/authenticationEvents";
 import { cleanupUserSession, initializeUserSession } from "../../appInitialization";
 import {

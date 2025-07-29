@@ -22,7 +22,7 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
   getters: {
     getItemById: (state) => (uuid: string): ShortcutItem | undefined => {
       for (const category of state.categories) {
-        const item = category.items.find(item => item.uuid === id);
+        const item = category.items.find(item => item.uuid === uuid);
         if (item) return item;
       }
       return undefined;
@@ -52,7 +52,7 @@ export const useQuickLauncherStore = defineStore('quickLauncher', {
         .filter((item): item is ShortcutItem => item !== null);
     },
     getCategoryById: (state) => (uuid: string): ShortcutCategory | undefined => {
-      return state.categories.find(c => c.uuid === id);
+      return state.categories.find(c => c.uuid === uuid);
     },
     sortedCategories: (state) => {
       return [...state.categories].sort((a, b) => {

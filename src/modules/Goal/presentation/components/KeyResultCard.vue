@@ -1,10 +1,10 @@
 <template>
-  <v-card class="key-result-card" :class="{ 'key-result-card--completed': progress >= 100 }" variant="outlined"
+  <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }" variant="outlined"
     elevation="0" :hover="true" @click="navigateToKeyResultInfo">
     <!-- 进度背景层 -->
     <div class="progress-background" :style="{
       background: `linear-gradient(90deg, ${goal?.color || '#FF5733'} 0%, ${goal?.color || '#FF5733'}88 100%)`,
-      width: `${progress}%`,
+      width: `${keyResult.progress}%`,
     }"></div>
 
     <!-- 卡片头部 -->
@@ -13,8 +13,8 @@
         <div class="key-result-title">
           <h3 class="text-h6 font-weight-bold mb-0">{{ keyResult.name }}</h3>
           <div class="d-flex align-center mt-1">
-            <v-icon :color="progress >= 100 ? 'success' : 'medium-emphasis'" size="16" class="mr-1">
-              {{ progress >= 100 ? 'mdi-check-circle' : 'mdi-target' }}
+            <v-icon :color="keyResult.progress >= 100 ? 'success' : 'medium-emphasis'" size="16" class="mr-1">
+              {{ keyResult.progress >= 100 ? 'mdi-check-circle' : 'mdi-target' }}
             </v-icon>
             <span class="text-caption text-medium-emphasis">
               权重: {{ keyResult.weight }}
@@ -23,9 +23,9 @@
         </div>
 
         <!-- 进度圆环 -->
-        <v-progress-circular :model-value="progress" :color="goal?.color || 'primary'" size="48" width="4"
+        <v-progress-circular :model-value="keyResult.progress" :color="goal?.color || 'primary'" size="48" width="4"
           class="progress-ring">
-          <span class="text-caption font-weight-bold">{{ Math.round(progress) }}%</span>
+          <span class="text-caption font-weight-bold">{{ Math.round(keyResult.progress) }}%</span>
         </v-progress-circular>
       </div>
     </v-card-title>
@@ -46,7 +46,7 @@
 
         <!-- 添加记录按钮 -->
         <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="startAddRecord(keyResult.uuid)">
+          @click.stop="startAddRecord(goal.uuid, keyResult.uuid)">
           <v-icon>mdi-plus</v-icon>
           <v-tooltip activator="parent" location="bottom">
             添加记录
@@ -56,7 +56,7 @@
 
       <!-- 进度条 -->
       <div class="mt-3">
-        <v-progress-linear :model-value="progress" :color="goal?.color || 'primary'" height="6" rounded
+        <v-progress-linear :model-value="keyResult.progress" :color="goal?.color || 'primary'" height="6" rounded
           class="progress-bar" />
         <div class="d-flex justify-space-between align-center mt-1">
           <span class="text-caption text-medium-emphasis">进度</span>
@@ -68,13 +68,14 @@
     </v-card-text>
 
     <!-- 完成状态覆盖层 -->
-    <div v-if="progress >= 100" class="completion-overlay">
+    <div v-if="keyResult.progress >= 100" class="completion-overlay">
       <v-icon color="success" size="32">mdi-check-circle</v-icon>
       <span class="text-caption font-weight-bold text-success">已完成</span>
     </div>
     <!-- 记录对话框 -->
-    <RecordDialog :visible="showRecordDialog"
-      @save="(record) => handleSaveRecord(record, props.goal.uuid, props.keyResult.uuid)" @cancel="handleCancelAddRecord" />
+    <RecordDialog :model-value="recordDialog.show" :record="Record.ensureRecord(recordDialog.record)"
+      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid" @create-record="handleAddRecordToGoal"
+      @update:model-value="recordDialog.show = $event" />
   </v-card>
 
 
@@ -82,24 +83,21 @@
 
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
-import { computed } from 'vue';
-import type { KeyResult } from '../types/goal';
+
 import RecordDialog from './RecordDialog.vue';
 import { useRecordDialog } from '../composables/useRecordDialog';
 import { Goal } from '../../domain/aggregates/goal';
+import { Record } from '../../domain/entities/record';
+import { KeyResult } from '../../domain/entities/keyResult';
 
 const router = useRouter();
 
-const { showRecordDialog, startAddRecord, handleSaveRecord, handleCancelAddRecord } = useRecordDialog();
+const { recordDialog, startAddRecord, handleAddRecordToGoal } = useRecordDialog();
 
 const props = defineProps<{
   keyResult: KeyResult;
   goal: Goal;
 }>();
-
-const progress = computed(() => {
-  return Math.min((props.keyResult.currentValue / props.keyResult.targetValue) * 100, 100);
-});
 
 const navigateToKeyResultInfo = () => {
   router.push({

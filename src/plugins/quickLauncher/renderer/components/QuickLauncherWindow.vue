@@ -165,7 +165,7 @@ const selectedCategoryId = computed(() => store.state.selectedCategoryId);
 // Watch for store changes
 watch(() => store.categories, (newCategories) => {
   if (newCategories.length > 0 && !newCategories.find(c => c.uuid === store.state.selectedCategoryId)) {
-    store.state.selectedCategoryId = newCategories[0].id;
+    store.state.selectedCategoryId = newCategories[0].uuid;
   }
 }, { deep: true });
 

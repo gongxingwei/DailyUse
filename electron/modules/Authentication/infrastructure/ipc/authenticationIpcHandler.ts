@@ -2,7 +2,6 @@ import { ipcMain } from "electron";
 import { AuthenticationLoginService} from "../../application/services/authenticationLoginService";
 import { AuthenticationLogoutService} from "../../application/services/authenticationLogoutService";
 import type { PasswordAuthenticationRequest, PasswordAuthenticationResponse, AuthInfo } from "../../domain/types";
-import { withAuth } from "../../application/services/authTokenService";
 import { authSession } from "../../application/services/authSessionStore";
 /**
  * Authentication 模块的 IPC 处理器
@@ -19,6 +18,7 @@ export class AuthenticationIpcHandler {
 ) {
   this.loginService = loginService;
   this.logoutService = logoutService;
+  void this.logoutService;
   this.setupIpcHandlers();
 }
 
@@ -43,6 +43,7 @@ export class AuthenticationIpcHandler {
    * 设置IPC处理器
    */
   private setupIpcHandlers(): void {
+    
     // 处理登录请求
     console.log('🚀 [AuthenticationIpc] 启动登录请求处理');
 

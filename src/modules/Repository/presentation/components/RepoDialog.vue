@@ -66,7 +66,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { fileSystem } from '@/shared/utils/fileUtils';
-import { useRepositoryStore } from '../stores/repositoryStore'
 import { Repository } from '@/modules/Repository/domain/aggregates/repository'
 
 
@@ -81,9 +80,6 @@ const emit = defineEmits<{
   (e: 'edit-repo', repo: Repository): void
 }>()
 
-
-
-const repoStore = useRepositoryStore()
 const form = ref()
 const creating = ref(false)
 const localRepo = ref<Repository>(props.repository ? props.repository.clone() : Repository.forCreate())

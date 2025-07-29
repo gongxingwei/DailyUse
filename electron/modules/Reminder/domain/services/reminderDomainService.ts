@@ -1,4 +1,3 @@
-import { ReminderTemplate } from "../entities/reminderTemplate";
 import { ReminderTemplateGroup } from "../aggregates/reminderTemplateGroup";
 import type { IReminderTemplateRepository } from "../../domain/repositories/iReminderTemplateRepository";
 import type { IReminderTemplateGroupRepository } from "../../domain/repositories/iReminderTemplateGroupRepository";

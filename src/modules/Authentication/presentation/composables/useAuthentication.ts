@@ -1,11 +1,11 @@
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { AuthenticationService } from "../../application/services/authenticationService";
 
 import { useSnackbar } from "@/shared/composables/useSnackbar";
 import type {
   PasswordAuthenticationRequest,
-  PasswordAuthenticationResponse,
+  
 } from "@/modules/Authentication/domain/types";
 const { snackbar, showError, showSuccess } = useSnackbar();
 const authenticationService = AuthenticationService.getInstance();

@@ -1,7 +1,6 @@
 import { eventBus } from "@electron/shared/events/eventBus";
 import type {
   UserLoggedInEvent,
-  UserLoggedInEventPayload,
 } from "@electron/modules/Authentication/domain/events/authenticationEvents";
 import { cleanupUserSession, initializeUserSession } from "../../appInitializer";
 import {

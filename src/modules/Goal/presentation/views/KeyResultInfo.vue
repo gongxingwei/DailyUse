@@ -15,29 +15,29 @@
     <KeyResultCard :keyResult="keyResult" :goal="goal" class="mb-2" />
 
     <!-- 计算方式、起始值、权重 -->
-    <v-row class="mb-2" align="center">
-  <v-col cols="12" md="4">
-    <v-sheet class="pa-2" color="surface-light" rounded>
-      <v-icon start color="primary">mdi-calculator-variant</v-icon>
-      <span class="font-weight-medium">计算方式：</span>
-      <span>{{ keyResult.calculationMethod }}</span>
-    </v-sheet>
-  </v-col>
-  <v-col cols="12" md="4">
-    <v-sheet class="pa-2" color="surface-light" rounded>
-      <v-icon start color="primary">mdi-numeric</v-icon>
-      <span class="font-weight-medium">起始值：</span>
-      <span>{{ keyResult.startValue }}</span>
-    </v-sheet>
-  </v-col>
-  <v-col cols="12" md="4">
-    <v-sheet class="pa-2" color="surface-light" rounded>
-      <v-icon start color="primary">mdi-weight</v-icon>
-      <span class="font-weight-medium">权重：</span>
-      <span>{{ keyResult.weight }}</span>
-    </v-sheet>
-  </v-col>
-</v-row>
+    <v-row class="mb-2 flex-grow-0" align="center">
+      <v-col cols="12" md="4">
+        <v-sheet class="pa-2" color="surface-light" rounded>
+          <v-icon start color="primary">mdi-calculator-variant</v-icon>
+          <span class="font-weight-medium">计算方式：</span>
+          <span>{{ keyResult.calculationMethod }}</span>
+        </v-sheet>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-sheet class="pa-2" color="surface-light" rounded>
+          <v-icon start color="primary">mdi-numeric</v-icon>
+          <span class="font-weight-medium">起始值：</span>
+          <span>{{ keyResult.startValue }}</span>
+        </v-sheet>
+      </v-col>
+      <v-col cols="12" md="4">
+        <v-sheet class="pa-2" color="surface-light" rounded>
+          <v-icon start color="primary">mdi-weight</v-icon>
+          <span class="font-weight-medium">权重：</span>
+          <span>{{ keyResult.weight }}</span>
+        </v-sheet>
+      </v-col>
+    </v-row>
 
     <!-- 相关任务、记录 -->
     <v-card class="flex-grow-1 pa-0" elevation="2" rounded>
@@ -73,7 +73,7 @@
             </div>
             <v-list v-else lines="two" density="comfortable">
               <v-list-item v-for="record in records" :key="record.uuid" class="mb-2">
-                <RecordCard :record="record" />
+                <RecordCard :record="Record.ensureRecordNeverNull(record)" />
               </v-list-item>
             </v-list>
           </div>
@@ -97,6 +97,7 @@ import RecordCard from '../components/RecordCard.vue';
 // domain
 import { KeyResult } from '../../domain/entities/keyResult';
 import { Goal } from '../../domain/aggregates/goal';
+import { Record } from '../../domain/entities/record';
 
 const router = useRouter();
 const route = useRoute();
@@ -108,42 +109,41 @@ const taskStore = useTaskStore();
 
 const taskTemplates = ref<any>([]);
 const goal = computed(() => {
-    const goal = goalStore.getGoalByUuid(goalUuid);
-    if (!goal) {
-        throw new Error('Goal not found');
-    }
-    return Goal.ensureGoalNeverNull(goal);
+  const goal = goalStore.getGoalByUuid(goalUuid);
+  if (!goal) {
+    throw new Error('Goal not found');
+  }
+  return Goal.ensureGoalNeverNull(goal);
 });
 // 目标的颜色
 
 // 关键结果
 const keyResult = computed(() => {
-    const keyResult = goal.value.keyResults.find(kr => kr.uuid === keyResultUuid);
-    if (!keyResult) {
-        throw new Error('Key result not found');
-    }
-    return KeyResult.ensureKeyResultNeverNull(keyResult);
+  const keyResult = goal.value.keyResults.find(kr => kr.uuid === keyResultUuid);
+  if (!keyResult) {
+    throw new Error('Key result not found');
+  }
+  return KeyResult.ensureKeyResultNeverNull(keyResult);
 });
 
 const activeTab = ref(0);
 const tabs = [
-    { name: '关联任务', value: 0 },
-    { name: '记录', value: 1 },
+  { name: '关联任务', value: 0 },
+  { name: '记录', value: 1 },
 ];
 
-onMounted(async() => {
-    taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
+onMounted(async () => {
+  taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
 
 })
 
 // 计算所有记录
 const records = computed(() => {
-    const records = goalStore.getRecordsByKeyResultId(keyResultUuid);
-    if (!records) {
-        throw new Error('Records not found');
-    }
-
-    return records;
+  const records = goal.value.getRecordsByKeyResultUuid(keyResultUuid);
+  console.log('all Records:', goal.value.records);
+  console.log('Records for Key Result:', records);
+  console.log(goalStore.getGoalByUuid(goalUuid));
+  return records;
 });
 </script>
 
@@ -152,17 +152,21 @@ const records = computed(() => {
   background-color: rgb(var(--v-theme-surface));
   min-height: 0;
 }
+
 .tab-content {
   min-height: 0;
   overflow: hidden;
 }
+
 .scrollable-content {
   height: 100%;
   overflow-y: auto;
 }
+
 .v-list-item-title {
   font-size: 1rem;
 }
+
 .v-list-item-subtitle {
   font-size: 0.85rem;
   color: var(--v-theme-on-surface-light);

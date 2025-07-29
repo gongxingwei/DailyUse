@@ -45,21 +45,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, provide } from 'vue';
+import { ref, provide } from 'vue';
 
 
-import { useReminderGrid } from '../modules/Reminder/presentation/composables/useReminderGrid';
-import { GridItem } from '../../common/modules/reminder/types/reminder';
+import { useReminderGrid } from '../composables/useReminderGrid';
+import { GridItem } from '../../../../../common/modules/reminder/types/reminder';
 // domains
 import { ReminderTemplateGroup } from '@/modules/Reminder/domain/aggregates/reminderTemplateGroup';
 import { ReminderTemplate } from '@/modules/Reminder/domain/entities/reminderTemplate';
 // components
-import ReminderGrid from '../modules/Reminder/presentation/components/grid/ReminderGrid.vue';
-import DetailPanel from '../modules/Reminder/presentation/components/DetailPanel.vue';
+import ReminderGrid from '@/modules/Reminder/presentation/components/grid/ReminderGrid.vue';
 import ReminderTemplateCard from '@/modules/Reminder/presentation/components/ReminderTemplateCard.vue';
 import ReminderTemplateGroupCard from '@/modules/Reminder/presentation/components/ReminderTemplateGroupCard.vue';
-import TemplateDialog from '../modules/Reminder/presentation/components/dialogs/TemplateDialog.vue';
-import GroupDialog from '../modules/Reminder/presentation/components/dialogs/GroupDialog.vue';
+import TemplateDialog from '@/modules/Reminder/presentation/components/dialogs/TemplateDialog.vue';
+import GroupDialog from '@/modules/Reminder/presentation/components/dialogs/GroupDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import TemplateMoveDialog from '@/modules/Reminder/presentation/components/dialogs/TemplateMoveDialog.vue';
 // composables
@@ -123,8 +122,6 @@ provide('onSetTemplateEnabled', (templateUuid: string, enabled: boolean) => {
 // Use the reminder grid composable
 const {
   allGridItems,
-  selectedItem,
-  isDetailPanelOpen,
   selectItem,
   closeDetailPanel,
 

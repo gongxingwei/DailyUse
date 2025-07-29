@@ -1,503 +1,161 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { User } from "../entities/user";
-import { Email } from "../valueObjects/email";
-import { PhoneNumber } from "../valueObjects/phoneNumber";
-import { Address } from "../valueObjects/address";
-import { AccountStatus, AccountType, IAccount, AccountDTO } from "../types/account";
-
 /**
- * Account 聚合根
- * 管理账号的核心身份信息和关联实体
- * 
- * 职责：
- * - 管理用户的核心身份信息（用户名、邮箱、手机号）
- * - 维护账号生命周期（注册、注销、资料修改）
- * - 处理账号状态（启用/禁用）和多设备绑定
- * - 不包含密码和认证凭证，仅管理身份信息
+ * Permission 实体
+ * 权限实体
  */
-export class Account extends AggregateRoot implements IAccount {
-  private _username: string;
-  private _email?: Email;
-  private _phoneNumber?: PhoneNumber;
-  private _address?: Address;
-  private _status: AccountStatus;
-  private _accountType: AccountType;
-  private _user: User;
-  private _roleUuids: Set<string>; // 角色ID集合
-  private _createdAt: Date;
-  private _updatedAt: Date;
-  private _lastLoginAt?: Date;
-  private _emailVerificationToken?: string;
-  private _phoneVerificationCode?: string;
-  private _isEmailVerified: boolean;
-  private _isPhoneVerified: boolean;
+export interface PermissionDTO {
+  uuid: string;
+  code: string;
+  name: string;
+  description: string;
+  module: string;
+}
 
-  constructor(
-    username: string,
-    accountType: AccountType,
-    user: User,
-    password?: string,
-    uuid?: string,
-    email?: Email,
+export class Permission {
+  private _uuid: string;
+  private _code: string; // 权限代码，如 'user:read', 'task:create'
+  private _name: string;
+  private _description: string;
+  private _module: string; // 所属模块
 
-    phoneNumber?: PhoneNumber,
-    createdAt?: Date,
-    updatedAt?: Date,
-    lastLoginAt?: Date,
-    isRegistration: boolean = false
-  ) {
-    super(uuid || Account.generateId());
-    this._username = username;
-    this._email = email;
-    this._phoneNumber = phoneNumber;
-    this._status = AccountStatus.PENDING_VERIFICATION;
-    this._accountType = accountType;
-    this._user = user;
-    this._roleUuids = new Set();
-    this._createdAt = createdAt ||  new Date();
-    this._updatedAt = updatedAt || new Date();
-    this._lastLoginAt = lastLoginAt;
-    this._isEmailVerified = email ? email.isVerified : false;
-    this._isPhoneVerified = phoneNumber ? phoneNumber.isVerified : false;
+  /**
+   * 构造函数
+   * @param params - 权限初始化参数
+   * @example
+   * new Permission({ uuid: "xxx", code: "user:read", name: "用户查看", description: "查看用户信息", module: "user" })
+   */
+  constructor(params: {
+    uuid: string;
+    code: string;
+    name: string;
+    description?: string;
+    module: string;
+  }) {
+    this._uuid = params.uuid;
+    this._code = params.code;
+    this._name = params.name;
+    this._description = params.description ?? "";
+    this._module = params.module;
+  }
 
-    // 如果没有邮箱和手机号，直接激活本地账号
-    if (accountType === AccountType.LOCAL && !email && !phoneNumber) {
-      this._status = AccountStatus.ACTIVE;
-    }
+  get id(): string {
+    return this._uuid;
+  }
 
-    // 根据场景发布不同的事件
-    if (isRegistration) {
-      // 发布账号注册事件
-      this.addDomainEvent({
-        aggregateId: this._uuid,
-        eventType: 'AccountRegistered',
-        occurredOn: new Date(),
-        payload: {
-          accountUuid: this._uuid,
-          username: this._username,
-          password: password,
-          email: this._email?.value,
-          phone: this._phoneNumber?.number,
-          accountType: this._accountType,
-          userId: this._user.uuid,
-          userProfile: {
-            firstName: this._user.firstName,
-            lastName: this._user.lastName,
-            avatar: this._user.avatar,
-            bio: this._user.bio
-          },
-          status: this._status,
-          createdAt: this._createdAt,
-          // 标识这是一个注册事件，Authentication 模块需要创建认证凭证
-          requiresAuthentication: true
-        }
-      });
+  get code(): string {
+    return this._code;
+  }
+
+  get name(): string {
+    return this._name;
+  }
+
+  get description(): string {
+    return this._description;
+  }
+
+  get module(): string {
+    return this._module;
+  }
+
+  /**
+   * 更新权限信息
+   */
+  updateInfo(name?: string, description?: string): void {
+    if (name) this._name = name;
+    if (description) this._description = description;
+  }
+
+  /**
+   * 检查权限代码格式是否正确
+   */
+  static isValidCode(code: string): boolean {
+    // 权限代码格式：module:action
+    const codeRegex = /^[a-z]+:[a-z]+$/;
+    return codeRegex.test(code);
+  }
+
+  // ======================== 辅助方法 ========================
+
+  /**
+   * 转为接口数据（DTO）
+   */
+  toDTO(): PermissionDTO {
+    return {
+      uuid: this._uuid,
+      code: this._code,
+      name: this._name,
+      description: this._description,
+      module: this._module,
+    };
+  }
+
+  /**
+   * 从接口数据创建实例
+   */
+  static fromDTO(dto: PermissionDTO): Permission {
+    return new Permission({
+      uuid: dto.uuid,
+      code: dto.code,
+      name: dto.name,
+      description: dto.description,
+      module: dto.module,
+    });
+  }
+
+  /**
+   * 克隆当前对象
+   */
+  clone(): Permission {
+    return Permission.fromDTO(this.toDTO());
+  }
+
+  /**
+   * 创建一个初始化对象（用于新建表单）
+   */
+  static forCreate(): Permission {
+    return new Permission({
+      uuid: "",
+      code: "",
+      name: "",
+      description: "",
+      module: "",
+    });
+  }
+
+  /**
+   * 判断对象是否为 Permission 实例
+   */
+  static isPermission(obj: any): obj is Permission {
+    return (
+      obj instanceof Permission ||
+      (obj &&
+        typeof obj === "object" &&
+        "uuid" in obj &&
+        "code" in obj &&
+        "name" in obj &&
+        "module" in obj)
+    );
+  }
+
+  /**
+   * 保证返回 Permission 实例或 null
+   */
+  static ensurePermission(permission: PermissionDTO | Permission | null): Permission | null {
+    if (Permission.isPermission(permission)) {
+      return permission instanceof Permission ? permission : Permission.fromDTO(permission);
     } else {
-      // 发布普通账号创建事件
-      this.addDomainEvent({
-        aggregateId: this._uuid,
-        eventType: 'AccountCreated',
-        occurredOn: new Date(),
-        payload: {
-          accountUuid: this._uuid,
-          username: this._username,
-          email: this._email?.value,
-          phone: this._phoneNumber?.number,
-          accountType: this._accountType,
-          userId: this._user.uuid,
-          createdAt: this._createdAt
-        }
-      });
+      return null;
     }
   }
 
   /**
-   * 注册场景下的账号创建工厂方法
+   * 保证返回 Permission 实例，永不为 null
    */
-  static createForRegistration(
-    username: string,
-    accountType: AccountType,
-    user: User,
-    password?: string,
-    email?: Email,
-    phoneNumber?: PhoneNumber
-  ): Account {
-    return new Account(username, accountType, user, password, undefined, email, phoneNumber, undefined, undefined, undefined, true);
-  }
-
-  // Getters
-  get username(): string {
-    return this._username;
-  }
-
-  get email(): Email | undefined {
-    return this._email;
-  }
-
-  get emailVerificationToken(): string | undefined {
-    return this._emailVerificationToken;
-  }
-
-  
-  get isEmailVerified(): boolean {
-    return this._isEmailVerified;
-  }
-  get phoneVerificationCode(): string | undefined {
-    return this._phoneVerificationCode;
-  }
-
-  get isPhoneVerified(): boolean {
-    return this._isPhoneVerified;
-  }
-  get phoneNumber(): PhoneNumber | undefined {
-    return this._phoneNumber;
-  }
-
-  get address(): Address | undefined {
-    return this._address;
-  }
-
-  get status(): AccountStatus {
-    return this._status;
-  }
-
-  get accountType(): AccountType {
-    return this._accountType;
-  }
-
-  get user(): User {
-    return this._user;
-  }
-
-  get roleIds(): Set<string> {
-    return new Set(this._roleUuids);
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  get lastLoginAt(): Date | undefined {
-    return this._lastLoginAt;
-  }
-
-  set phoneVerificationCode(code: string | undefined) {
-    this._phoneVerificationCode = code;
-  }
-
-  set emailVerificationToken(token: string | undefined) {
-    this._emailVerificationToken = token;
-  }
-
-  set status(status: AccountStatus) {
-    this._status = status;
-  }
-
-  set isEmailVerified(isVerified: boolean) {
-    this._isEmailVerified = isVerified;
-  }
-
-  set isPhoneVerified(isVerified: boolean) {
-    this._isPhoneVerified = isVerified;
-  }
-  set roleIds(roleIds: Set<string>) {
-    this._roleUuids = roleIds;
-  }
-
-  set user(user: User) {
-    this._user = user;
-  }
-  /**
-   * 更新邮箱
-   */
-  updateEmail(emailAddress: string): void {
-    const newEmail = new Email(emailAddress);
-    this._email = newEmail;
-    this._updatedAt =  new Date();
-    
-    // 如果账号已激活，更新邮箱后需要重新验证
-    if (this._status === AccountStatus.ACTIVE) {
-      this._status = AccountStatus.PENDING_VERIFICATION;
+  static ensurePermissionNeverNull(permission: PermissionDTO | Permission | null): Permission {
+    if (Permission.isPermission(permission)) {
+      return permission instanceof Permission ? permission : Permission.fromDTO(permission);
+    } else {
+      return Permission.forCreate();
     }
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'EmailUpdated',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, email: emailAddress, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 更新手机号
-   */
-  updatePhone(phoneNumber: string, countryCode: string = '+86'): void {
-    const newPhone = new PhoneNumber(phoneNumber, countryCode);
-    this._phoneNumber = newPhone;
-    this._updatedAt =  new Date();
-
-    // 如果账号已激活，更新手机号后需要重新验证
-    if (this._status === AccountStatus.ACTIVE) {
-      this._status = AccountStatus.PENDING_VERIFICATION;
-    }
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'PhoneUpdated',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, phoneNumber: newPhone.fullNumber, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 更新地址
-   */
-  updateAddress(address: Address): void {
-    this._address = address;
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'AddressUpdated',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 验证邮箱
-   */
-  verifyEmail(): void {
-    if (!this._email) {
-      throw new Error('账号未设置邮箱');
-    }
-
-    this._email = this._email.verify();
-    this._emailVerificationToken = undefined;
-    
-    // 如果手机号也已验证或不存在，则激活账号
-    if (!this._phoneNumber || this._phoneNumber.isVerified) {
-      this._status = AccountStatus.ACTIVE;
-    }
-
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'EmailVerified',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 验证手机号
-   */
-  verifyPhone(): void {
-    if (!this._phoneNumber) {
-      throw new Error('账号未设置手机号');
-    }
-
-    this._phoneNumber = this._phoneNumber.verify();
-    this._phoneVerificationCode = undefined;
-    
-    // 如果邮箱也已验证或不存在，则激活账号
-    if (!this._email || this._email.isVerified) {
-      this._status = AccountStatus.ACTIVE;
-    }
-
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'PhoneVerified',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 禁用账号
-   */
-  disable(): void {
-    this._status = AccountStatus.DISABLED;
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'AccountDisabled',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 启用账号
-   */
-  enable(): void {
-    this._status = AccountStatus.ACTIVE;
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'AccountEnabled',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 暂停账号
-   */
-  suspend(): void {
-    this._status = AccountStatus.SUSPENDED;
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'AccountSuspended',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 添加角色
-   */
-  addRole(roleId: string): void {
-    this._roleUuids.add(roleId);
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'RoleAdded',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 移除角色
-   */
-  removeRole(roleId: string): void {
-    this._roleUuids.delete(roleId);
-    this._updatedAt =  new Date();
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'RoleRemoved',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, roleId, timestamp: this._updatedAt }
-    });
-  }
-
-  /**
-   * 检查是否拥有某个角色
-   */
-  hasRole(roleId: string): boolean {
-    return this._roleUuids.has(roleId);
-  }
-
-  /**
-   * 记录登录时间
-   */
-  recordLogin(): void {
-    this._lastLoginAt =  new Date();
-    this._updatedAt = this._lastLoginAt;
-
-    this.addDomainEvent({
-      aggregateId: this.uuid,
-      eventType: 'UserLoggedIn',
-      occurredOn: new Date(),
-      payload: { accountUuid: this.uuid, timestamp: this._lastLoginAt }
-    });
-  }
-
-  /**
-   * 检查账号是否可以登录
-   */
-  canLogin(): boolean {
-    return this._status === AccountStatus.ACTIVE;
-  }
-
-  /**
-   * 生成邮箱验证令牌
-   */
-  generateEmailVerificationToken(): string {
-    this._emailVerificationToken = Math.random().toString(36).substring(2, 15);
-    return this._emailVerificationToken;
-  }
-
-  /**
-   * 生成手机验证码
-   */
-  generatePhoneVerificationCode(): string {
-    this._phoneVerificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-    return this._phoneVerificationCode;
-  }
-
-  /**
-   * 验证邮箱令牌
-   */
-  validateEmailToken(token: string): boolean {
-    return this._emailVerificationToken === token;
-  }
-
-  /**
-   * 验证手机验证码
-   */
-  validatePhoneCode(code: string): boolean {
-    return this._phoneVerificationCode === code;
-  }
-
-  toDTO(): AccountDTO {
-    let user = this.user.toDTO();
-    let accountDTO = {
-      uuid: this.uuid,
-      username: this.username,
-      status: this.status,
-      accountType: this.accountType,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      lastLoginAt: this.lastLoginAt,
-      email: this.email?.value,
-      phone: this.phoneNumber?.fullNumber,
-      _emailVerificationToken: this._emailVerificationToken,
-      phoneVerificationCode: this.phoneVerificationCode,
-      roleIds: this.roleIds,
-      isEmailVerified: this.isEmailVerified,
-      isPhoneVerified: this.isPhoneVerified,
-      user: user
-    }
-    console.log('将账号数据转换为DTO', accountDTO)
-    return accountDTO;
-  }
-
-  static fromDTO(dto: AccountDTO): Account { 
-    const account = new Account(
-      dto.username,
-      dto.accountType,
-      User.fromDTO(dto.user),
-      undefined,
-      dto.uuid,
-      dto.email ? new Email(dto.email) : undefined,
-      dto.phone ? new PhoneNumber(dto.phone) : undefined,
-      dto.createdAt,
-      dto.updatedAt,
-      dto.lastLoginAt,
-    )
-    account.roleIds = dto.roleIds || new Set()
-    account.emailVerificationToken = dto.emailVerificationToken
-    account.phoneVerificationCode = dto.phoneVerificationCode
-    account.status = dto.status
-    account.isEmailVerified = dto.isEmailVerified
-    account.isPhoneVerified = dto.isPhoneVerified
-
-
-    return account
   }
 }

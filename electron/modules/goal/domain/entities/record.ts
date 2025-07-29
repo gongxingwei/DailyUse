@@ -152,8 +152,8 @@ export class Record extends Entity implements IRecord {
       note: data.note,
     });
     record._lifecycle = {
-      createdAt: data.lifecycle.createdAt,
-      updatedAt: data.lifecycle.updatedAt,
+      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
     };
     return record;
   }

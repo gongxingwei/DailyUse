@@ -2,7 +2,7 @@ import { AccountRegisteredEvent } from "../../../Account/domain/events/accountEv
 import { AuthCredential } from "../../domain/aggregates/authCredential";
 import { Password } from "../../domain/valueObjects/password";
 import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { ipcMain, BrowserWindow } from "electron";
+import { ipcMain } from "electron";
 import { generateUUID } from "@/shared/utils/uuid";
 
 /**
@@ -19,7 +19,7 @@ export class AuthenticationEventHandler {
 
 
     // 监听 Account 模块的注册事件
-    ipcMain.on('AccountRegistered', async (event, data) => {
+    ipcMain.on('AccountRegistered', async (_event, _data) => {
       console.log('[Authentication] 监听到 Account 模块的注册事件');
     })
   }

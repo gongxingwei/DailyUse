@@ -74,6 +74,8 @@ import MetadataSection from './sections/MetadataSection.vue';
 import KeyResultLinksSection from './sections/KeyResultLinksSection.vue';
 import { useTaskTemplateForm } from '../../composables/useTaskTemplateForm';
 import { useTaskStore } from '../../stores/taskStore';
+// domains
+import { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 
 const taskStore = useTaskStore();
 

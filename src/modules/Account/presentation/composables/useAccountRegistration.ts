@@ -1,9 +1,9 @@
-import { ref, computed, reactive } from "vue";
+import { ref, reactive } from "vue";
 import { AccountApplicationService } from "../../application/services/accountApplicationService";
 
-import type { User, AccountRegistrationRequest } from "../../index";
+import type { AccountRegistrationRequest } from "../../index";
 import { useSnackbar } from "@/shared/composables/useSnackbar";
- const { snackbar, showSuccess, showError, showInfo } = useSnackbar();
+ const { snackbar, showSuccess, showError } = useSnackbar();
 
 /**
  * 账号注册 Composable

@@ -1,7 +1,6 @@
 import type { TResponse } from "@/shared/types/response";
 import type {
   IGoal,
-  IRecord,
   IGoalDir,
   IGoalReview,
 } from "@common/modules/goal/types/goal";
@@ -24,6 +23,12 @@ import { GoalReview } from "../../domain/entities/goalReview";
 export class GoalDomainApplicationService {
   private get goalStore() {
     return useGoalStore();
+  }
+
+  use() {
+    // 防止未使用警告，后续会用到
+    void this.syncGoalsToState;
+    void this.syncGoalDirsToState;
   }
 
   // ========== 目标管理 ==========
@@ -236,7 +241,7 @@ export class GoalDomainApplicationService {
 
   async addRecordToGoal(
     record: Record
-  ): Promise<TResponse<IGoal>> {
+  ): Promise<TResponse<Goal>> {
     try {
       
 
@@ -244,7 +249,8 @@ export class GoalDomainApplicationService {
       const response = await goalIpcClient.addRecordToGoal(record);
 
       if (response.success && response.data) {
-        const goalDTO = response.data;
+        const {goalDTO} = response.data;
+        console.log("✅ [目标应用服务] 记录添加成功,返回的 GoalDTO 数据:", goalDTO);
         const goal = Goal.fromDTO(goalDTO);
         // 同步目标到前端状态（包含新记录）
         await this.syncGoalToState(goal);
@@ -252,7 +258,7 @@ export class GoalDomainApplicationService {
         return {
           success: true,
           message: response.message,
-          data: response.data,
+          data: goal,
         };
       }
 

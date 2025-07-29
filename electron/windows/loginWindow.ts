@@ -1,7 +1,7 @@
 import path from "path";
 import { BaseWindow } from "./baseWindow";
 import { WindowConfig, ILoginWindow, LoginWindowEvents } from "./types";
-import { globalShortcut } from "electron";
+
 /**
  * 登录窗口类
  * 负责处理用户登录界面

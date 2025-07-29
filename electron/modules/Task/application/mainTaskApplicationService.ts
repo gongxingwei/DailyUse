@@ -14,8 +14,6 @@ import type {
 } from "../domain/types/task";
 import type {
   TaskResponse,
-  TaskStats,
-  TaskTimeline
 } from "../../../../src/modules/Task/domain/types/task";
 
 /**
@@ -415,7 +413,7 @@ export class MainTaskApplicationService {
         return { success: false, message: "Task instance not found" };
       }
       const taskInstance = response.data;
-      taskInstance.complete();
+      taskInstance.complete(accountUuid);
       const updateResponse = await this.taskInstanceRepo.update(accountUuid, taskInstance);
       if (!updateResponse.success) {
         return { success: false, message: updateResponse.message };
@@ -443,7 +441,7 @@ export class MainTaskApplicationService {
       if (!taskInstance.isCompleted()) {
         return { success: false, message: "Task instance is not completed, cannot undo completion" };
       }
-      taskInstance.undoComplete();
+      taskInstance.undoComplete(accountUuid);
       const updateResponse = await this.taskInstanceRepo.update(accountUuid, taskInstance);
       if (!updateResponse.success) {
         return { success: false, message: updateResponse.message };
@@ -492,44 +490,6 @@ export class MainTaskApplicationService {
       return { success: updateResponse.success, message: updateResponse.success ? "Task instance cancelled successfully" : updateResponse.message };
     } catch (error) {
       return { success: false, message: `Failed to cancel task instance ${taskInstanceId}: ${error instanceof Error ? error.message : "未知错误"}` };
-    }
-  }
-
-  // ========== 统计分析 ==========
-
-  /**
-   * 获取目标相关的任务统计信息（占位实现）
-   * @param accountUuid 用户账号ID
-   * @param _goalUuid 目标ID
-   * @returns { success: boolean, data?: TaskStats, message?: string }
-   * 示例返回: { success: true, data: { overall: {...}, taskDetails: [] } }
-   */
-  async getTaskStatsForGoal(accountUuid: string, _goalUuid: string): Promise<TaskResponse<TaskStats>> {
-    try {
-      const stats: TaskStats = {
-        overall: { total: 0, completed: 0, incomplete: 0, completionRate: 0, missedTasks: 0 },
-        taskDetails: [],
-      };
-      return { success: true, data: stats };
-    } catch (error) {
-      return { success: false, message: `Failed to get task stats for goal: ${error instanceof Error ? error.message : "未知错误"}` };
-    }
-  }
-
-  /**
-   * 获取任务完成时间线（占位实现）
-   * @param accountUuid 用户账号ID
-   * @param _goalUuid 目标ID
-   * @param _startDate 开始日期
-   * @param _endDate 结束日期
-   * @returns { success: boolean, data?: TaskTimeline[], message?: string }
-   */
-  async getTaskCompletionTimeline(accountUuid: string, _goalUuid: string, _startDate: string, _endDate: string): Promise<TaskResponse<TaskTimeline[]>> {
-    try {
-      const timeline: TaskTimeline[] = [];
-      return { success: true, data: timeline };
-    } catch (error) {
-      return { success: false, message: `Failed to get task completion timeline: ${error instanceof Error ? error.message : "未知错误"}` };
     }
   }
 

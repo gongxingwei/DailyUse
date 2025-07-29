@@ -132,8 +132,8 @@ export class IPLocation {
     const suspiciousISPs = ['Tor', 'VPN', 'Proxy'];
 
     return suspiciousCountries.includes(this._country) ||
-           (this._isp && suspiciousISPs.some(isp => 
-             this._isp!.toLowerCase().includes(isp.toLowerCase())));
+       (!!this._isp && suspiciousISPs.some(isp => 
+         this._isp!.toLowerCase().includes(isp.toLowerCase())));
   }
 
   /**

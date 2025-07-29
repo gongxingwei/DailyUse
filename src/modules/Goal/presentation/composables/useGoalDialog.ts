@@ -2,6 +2,8 @@ import { useGoalServices } from "./useGoalService";
 import { ref } from "vue";
 import { Goal } from "../../domain/aggregates/goal";
 import { KeyResult } from "../../domain/entities/keyResult";
+import { GoalReview } from "../../domain/entities/goalReview";
+import router from "@/shared/router";
 export function useGoalDialog() {
   const { handleCreateGoal, handleUpdateGoal, handleDeleteGoal } =
     useGoalServices();
@@ -44,7 +46,7 @@ export function useGoalDialog() {
   };
 
   const handleCreateKeyResult = async (goal: Goal, keyResult: KeyResult) => {
-    console.log('Creating key result:', goal,keyResult);
+    console.log("Creating key result:", goal, keyResult);
     goal.addKeyResult(keyResult);
   };
 
@@ -64,6 +66,31 @@ export function useGoalDialog() {
     goal.removeKeyResult(keyResultUuid);
   };
 
+  // ======= goalReview =======
+  const goalReviewDialog = ref<{
+    show: boolean;
+    goal: Goal | null;
+  }>({
+    show: false,
+    goal: null,
+  });
+
+  const showReviewCard = (goal: Goal) => {
+    goalReviewDialog.value = {
+      show: true,
+      goal,
+    };
+  };
+
+  const startCreateGoalReview = (goalUuid: string) => {
+    router.push({
+      name: "goal-review",
+      params: {
+        goalUuid: goalUuid,
+      },
+    });
+  };
+
   return {
     goalDialog,
     startCreateGoal,
@@ -78,5 +105,9 @@ export function useGoalDialog() {
     handleCreateKeyResult,
     handleUpdateKeyResult,
     handleRemoveKeyResult,
+
+    goalReviewDialog,
+    showReviewCard,
+    startCreateGoalReview,
   };
 }

@@ -3,10 +3,6 @@ import { getDatabase } from "../../../../shared/database/index";
 import { IAccountRepository } from "../../index";
 import { IUserRepository } from "../../index";
 import { Account } from "../../domain/aggregates/account";
-import { User } from "../../domain/entities/user";
-import { Email } from "../../domain/valueObjects/email";
-import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
-import { AccountType, AccountStatus } from "../../domain/types/account";
 import { SqliteUserRepository } from "./sqliteUserRepository";
 /**
  * SQLite 账号存储库实现
@@ -211,12 +207,14 @@ export class SqliteAccountRepository implements IAccountRepository {
       const existing = await this.findById(account.uuid);
 
       if (existing) {
+        console.log(`账号 ${account.uuid} 已存在，执行更新操作`);
         await this.updateAccount(account);
       } else {
+        console.log(`账号 ${account.uuid} 不存在，执行插入操作`);
         await this.insertAccount(account);
       }
 
-      await this.userRepository.save(account.user, account.uuid);
+      
     } catch (error) {
       console.error("保存账号失败:", error);
       throw error;
@@ -282,6 +280,7 @@ export class SqliteAccountRepository implements IAccountRepository {
    * 插入新账号
    */
   private async insertAccount(account: Account): Promise<void> {
+    await this.userRepository.save(account.user, account.uuid);
     const db = await this.getDb();
     const query = `
       INSERT INTO accounts (

@@ -1,6 +1,6 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import type { IGoalDir } from "@common/modules/goal";
-import { isValid, parseISO } from "date-fns";
+import { isValid } from "date-fns";
 
 /**
  * 目标目录领域实体
@@ -170,8 +170,8 @@ export class GoalDir extends AggregateRoot implements IGoalDir {
       sortOrder: data.sortConfig.sortOrder || 0,
     };
     goalDir._lifecycle = {
-      createdAt: isValid(data.lifecycle.createdAt) ? data.lifecycle.createdAt : new Date(),
-      updatedAt: isValid(data.lifecycle.updatedAt) ? data.lifecycle.updatedAt : new Date(),
+      createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
+      updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
       status: data.lifecycle.status || "active",
     };
     return goalDir;

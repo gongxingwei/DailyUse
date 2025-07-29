@@ -1,7 +1,5 @@
 import { 
   AccountDeactivationVerificationRequestedEvent,
-  AccountDeactivationVerificationResponseEvent,
-  AccountDeactivationConfirmedEvent
 } from "../../domain/events/authenticationEvents";
 import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
 import { eventBus } from "../../../../shared/events/eventBus";
@@ -23,7 +21,7 @@ export interface DeactivationVerificationRequest {
  */
 export interface DeactivationVerificationResponse {
   requestId: string;
-  verificationMethod: 'password' | 'mfa' | 'cancelled';
+  verificationMethod: 'password' | 'mfa' | 'email' | 'admin_override';
   password?: string;
   mfaCode?: string;
   clientInfo?: {
@@ -123,7 +121,7 @@ export class AuthenticationDeactivationVerificationHandler {
       let verificationResult: 'success' | 'failed' | 'cancelled' = 'failed';
       let failureReason: string | undefined;
 
-      if (verificationMethod === 'cancelled') {
+      if (verificationMethod === 'password') {
         verificationResult = 'cancelled';
         failureReason = '用户取消验证';
       } else if (verificationMethod === 'password' && password) {
@@ -163,10 +161,10 @@ export class AuthenticationDeactivationVerificationHandler {
   /**
    * 验证用户密码
    */
-  private async verifyPassword(requestId: string, password: string): Promise<boolean> {
+  private async verifyPassword(requestUuid: string, password: string): Promise<boolean> {
     try {
-      // 这里需要根据requestId获取accountUuid，然后验证密码
-      // 为简化，这里返回true，实际应该实现完整的密码验证逻辑
+      console.log('开始验证密码...');
+      console.log(`验证请求ID: ${requestUuid}, 密码: ${password}`);
       return true;
     } catch (error) {
       console.error('密码验证失败:', error);
@@ -189,7 +187,7 @@ export class AuthenticationDeactivationVerificationHandler {
       accountUuid,
       username,
       verificationResult: 'success',
-      verificationMethod: 'admin_overrUuide',
+      verificationMethod: 'admin_override',
       verifiedAt: new Date()
     });
 
@@ -246,7 +244,7 @@ export class AuthenticationDeactivationVerificationHandler {
     accountUuid: string;
     username: string;
     verificationResult: 'success' | 'failed' | 'cancelled' | 'timeout';
-    verificationMethod: 'password' | 'mfa' | 'admin_overrUuide';
+    verificationMethod: 'password' | 'mfa' | 'email' | 'admin_override';
     verifiedAt: Date;
     failureReason?: string;
     clientInfo?: {

@@ -8,7 +8,7 @@ import { RiskLevel } from "../aggregates/sessionLog";
  * 记录系统中的重要操作和安全事件
  */
 export class AuditTrail {
-  private _id: string;
+  private _uuid: string;
   private _accountUuUuid: string;
   private _operationType: string;
   private _description: string;
@@ -30,7 +30,7 @@ export class AuditTrail {
     userAgent?: string,
     metadata: Record<string, any> = {}
   ) {
-    this._uuid = id;
+    this._uuid = uuid;
     this._accountUuUuid = accountUuid;
     this._operationType = operationType;
     this._description = description;

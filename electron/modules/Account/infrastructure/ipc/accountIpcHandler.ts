@@ -1,8 +1,5 @@
 import { ipcMain } from "electron";
-import { 
-  AccountDeactivationService, 
-  AccountDeactivationResult 
-} from "../../application/services/accountDeactivationService";
+
 import { MainAccountApplicationService } from "../../application/services/mainAccountApplicationService";
 import type { AccountRegistrationRequest, AccountDTO } from '../../domain/types/account';
 import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
@@ -12,7 +9,7 @@ import { withAuth } from '@electron/modules/Authentication/application/services/
  * 处理来自渲染进程的账号相关请求
  */
 export class AccountIpcHandler {
-  private deactivationService: AccountDeactivationService | null = null;
+  // private deactivationService: AccountDeactivationService | null = null;
   private accountApplicationService: MainAccountApplicationService | null = null;
   private _isInitialized = false;
 
@@ -126,45 +123,106 @@ export class AccountIpcHandler {
       })
     );
     // 处理账号注销请求
+    // ipcMain.handle(
+    //   'account:request-deactivation', 
+    //   withAuth(async (_event, [request], auth): Promise<AccountDeactivationResult> => {
+    //     try {
+    //       await this.ensureInitialized();
+
+    //       if (!auth.accountUuid) {
+    //         return {
+    //           success: false,
+    //           accountUuid: request.accountUuid,
+    //           message: '未登录或登录已过期，请重新登录',
+    //           requiresVerification: false,
+    //           errorCode: 'PERMISSION_DENIED'
+    //         };
+    //       }
+          
+    //       const result = await this.deactivationService!.requestAccountDeactivation(request);
+          
+          
+    //       return result;
+    //     } catch (error) {
+    //       console.error('❌ [AccountIpc] 账号注销请求处理异常:', error);
+          
+    //       return {
+    //         success: false,
+    //         accountUuid: request.accountUuid,
+    //         message: '账号注销请求处理异常，请稍后重试',
+    //         requiresVerification: false,
+    //         errorCode: 'SYSTEM_ERROR'
+    //       };
+    //     }
+    //   })
+    // );
+
     ipcMain.handle(
-      'account:request-deactivation', 
-      withAuth(async (_event, [request], auth): Promise<AccountDeactivationResult> => {
+      'account:update-user-profile',
+      withAuth(async (_event, [userDTO], auth): Promise<TResponse<void>> => {
         try {
           await this.ensureInitialized();
 
           if (!auth.accountUuid) {
             return {
               success: false,
-              accountUuid: request.accountUuid,
               message: '未登录或登录已过期，请重新登录',
-              requiresVerification: false,
-              errorCode: 'PERMISSION_DENIED'
             };
           }
-          
-          console.log('🏠 [AccountIpc] 收到账号注销请求:', {
-            accountUuid: request.accountUuid,
-            requestedBy: request.requestedBy
-          });
-          
-          const result = await this.deactivationService!.requestAccountDeactivation(request);
-          
-          console.log('📤 [AccountIpc] 账号注销请求处理完成:', {
-            accountUuid: request.accountUuid,
-            success: result.success,
-            requiresVerification: result.requiresVerification
-          });
-          
-          return result;
+
+          const response = await this.accountApplicationService!.updateUserProfile(auth.accountUuid, userDTO);
+          if (response.success && response.data) {
+            return {
+              success: true,
+              message: '用户信息更新成功'
+            };
+          } else {
+            return {
+              success: false,
+              message: response.message || '用户信息更新失败',
+            };
+          }
         } catch (error) {
-          console.error('❌ [AccountIpc] 账号注销请求处理异常:', error);
-          
+          console.error('❌ [AccountIpc] 用户信息更新异常:', error);
           return {
             success: false,
-            accountUuid: request.accountUuid,
-            message: '账号注销请求处理异常，请稍后重试',
-            requiresVerification: false,
-            errorCode: 'SYSTEM_ERROR'
+            message: '用户信息更新失败，请稍后重试',
+          };
+        }
+      })
+    );
+
+    ipcMain.handle(
+      'account:get-current-account',
+      withAuth(async (_event, _args, auth): Promise<TResponse<AccountDTO>> => {
+        try {
+          await this.ensureInitialized();
+
+          if (!auth.accountUuid) {
+            return {
+              success: false,
+              message: '未登录或登录已过期，请重新登录',
+            };
+          }
+
+          const response = await this.accountApplicationService!.getCurrentAccount(auth.accountUuid);
+          if (response.success) {
+            return {
+              success: true,
+              message: '获取当前用户信息成功',
+              data: response.data,
+            };
+          } else {
+            return {
+              success: false,
+              message: response.message || '获取当前用户信息失败',
+            };
+          }
+        } catch (error) {
+          console.error('❌ [AccountIpc] 获取当前用户信息失败:', error);
+          return {
+            success: false,
+            message: '获取当前用户信息失败，请稍后重试',
           };
         }
       })
@@ -185,13 +243,6 @@ export class AccountIpcHandler {
       ipcMain.removeHandler('account:request-deactivation');
       ipcMain.removeHandler('account:force-deactivation');
       ipcMain.removeHandler('account:get-info');
-      
-      // 清理注销服务
-      if (this.deactivationService) {
-        await this.deactivationService.destroy();
-        this.deactivationService = null;
-      }
-      
       this.accountApplicationService = null;
       this._isInitialized = false;
       

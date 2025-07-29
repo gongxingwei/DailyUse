@@ -431,7 +431,7 @@ export class SessionLog extends AggregateRoot {
 
     // 设置从数据库读取的属性
     (sessionLog as any)._id = row.uuid;
-    (sessionLog as any)._sessionUuid = row.session_id;
+    (sessionLog as any)._sessionUuid = row.session_uuid;
     (sessionLog as any)._loginTime = row.login_time ? new Date(row.login_time) : undefined;
     (sessionLog as any)._logoutTime = row.logout_time ? new Date(row.logout_time) : undefined;
     (sessionLog as any)._duration = row.duration;
@@ -474,7 +474,7 @@ export class SessionLog extends AggregateRoot {
     return {
       uuid: this.uuid,
       account_uuid: this._accountUuUuid,
-      session_id: this._sessionUuid,
+      session_uuid: this._sessionUuid,
       operation_type: this._operationType,
       device_info: this._deviceInfo,
       ip_address: this._ipLocation.ipAddress,

@@ -85,5 +85,5 @@ export interface UserDTO {
   sex: string | null;
   avatar: string | null;
   bio: string | null;
-  socialAccounts: Map<string, string>;
+  socialAccounts: { [key: string]: string };
 }

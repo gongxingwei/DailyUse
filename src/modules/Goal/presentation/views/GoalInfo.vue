@@ -25,10 +25,10 @@
                     </v-btn>
                 </template>
                 <v-list>
-                    <v-list-item @click="startMidtermReview(goal?.uuid as string)">
+                    <v-list-item @click="startCreateGoalReview(goal?.uuid as string)">
                         <v-list-item-title>期中复盘</v-list-item-title>
                     </v-list-item>
-                    <v-list-item @click="viewGoalReviewRecord()">
+                    <v-list-item @click="showReviewCard(goal as Goal)">
                         <v-list-item-title>复盘记录</v-list-item-title>
                     </v-list-item>
                 </v-list>
@@ -69,7 +69,7 @@
                     <div class="d-flex align-center justify-space-between">
                         <span>共历时 {{ totalDays }} 天，目标进度 {{ goal?.progress }}%</span>
                         <v-btn color="success" variant="elevated" size="small"
-                            @click="startMidtermReview(goal?.uuid as string)">
+                            @click="startCreateGoalReview(goal?.uuid as string)">
                             复盘目标
                         </v-btn>
                     </div>
@@ -209,7 +209,8 @@
         <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
             confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
             @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
-        <GoalReviewCard :visible="showGoalReviewRecored" :goal="goal!" @close="closeGoalReviewRecord" />
+        <GoalReviewCard :visible="goalReviewDialog.show" :goal="(goalReviewDialog.goal as Goal)"
+        @update:modelValue="goalReviewDialog.show = $event" />
     </v-container>
 </template>
 
@@ -221,7 +222,6 @@ import { useGoalStore } from '../stores/goalStore';
 import { useRepositoryStore } from '@/modules/Repository/presentation/stores/repositoryStore';
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
-import { useGoalReview } from '../composables/useGoalReview';
 // domain
 import { Goal } from '../../domain/aggregates/goal';
 import { Repository } from '@/modules/Repository';
@@ -236,8 +236,8 @@ import { format } from 'date-fns';
 const route = useRoute();
 const goalStore = useGoalStore();
 const repositoryStore = useRepositoryStore();
-const { goalDialog, startEditGoal, handleCreateGoal, handleDeleteGoal, handleUpdateGoal } = useGoalDialog();
-const { showGoalReviewRecored, viewGoalReviewRecord, closeGoalReviewRecord, startMidtermReview } = useGoalReview();
+const { goalDialog, startEditGoal, handleCreateGoal, handleDeleteGoal, handleUpdateGoal, goalReviewDialog, showReviewCard, startCreateGoalReview } = useGoalDialog();
+
 
 
 const goal: ComputedRef<Goal | null> = computed(() => {

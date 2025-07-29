@@ -209,7 +209,11 @@ export class KeyResult extends Entity implements IKeyResult {
       currentValue: data.currentValue,
       calculationMethod: data.calculationMethod,
       weight: data.weight,
-      lifecycle: data.lifecycle,
+      lifecycle: {
+        createdAt: isValid(data.lifecycle.createdAt) ? new Date(data.lifecycle.createdAt) : new Date(),
+        updatedAt: isValid(data.lifecycle.updatedAt) ? new Date(data.lifecycle.updatedAt) : new Date(),
+        status: data.lifecycle.status || "active",
+      },
     });
   }
 

@@ -25,11 +25,6 @@
         <!-- 空状态 -->
         <v-empty-state v-if="!goal.reviews?.length" icon="mdi-book-edit-outline" title="暂无复盘记录" text="开始记录您的目标复盘，追踪成长轨迹"
           class="my-8">
-          <template v-slot:actions>
-            <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="handleCreate">
-              创建复盘记录
-            </v-btn>
-          </template>
         </v-empty-state>
 
         <!-- 复盘记录列表 -->
@@ -78,10 +73,6 @@
                       查看
                     </v-btn>
 
-                    <v-btn color="primary" variant="text" size="small" prepend-icon="mdi-pencil" class="mr-2"
-                      @click="handleEdit(review.uuid)">
-                      编辑
-                    </v-btn>
 
                     <v-btn color="error" variant="text" size="small" icon="mdi-delete"
                       @click="handleDelete(review.uuid)">
@@ -102,7 +93,6 @@
 </template>
 
 <script setup lang="ts">
-import { useGoalReview } from '../composables/useGoalReview';
 import { GoalReview } from '../../domain/entities/goalReview';
 import { Goal } from '../../domain/aggregates/goal';
 import { format } from 'date-fns';
@@ -114,10 +104,9 @@ defineProps<{
 
 const emit = defineEmits<{
   (e: 'close'): void;
-  (e: 'edit', reviewId: string): void;
   (e: 'delete', reviewId: string): void;
   (e: 'view', reviewId: string): void;
-  (e: 'create'): void;
+  (e: 'update:modelValue', value: boolean): void;
 }>();
 
 // 复盘类型相关方法
@@ -157,11 +146,6 @@ const getReviewTypeText = (type: GoalReview['type']): string => {
 // 事件处理
 const handleClose = () => emit('close');
 
-const handleEdit = (reviewId: string) => {
-  emit('edit', reviewId);
-  handleClose();
-};
-
 const handleDelete = (reviewId: string) => {
   if (confirm('确定要删除这条复盘记录吗？')) {
     emit('delete', reviewId);
@@ -173,10 +157,6 @@ const handleView = (reviewId: string) => {
   handleClose();
 };
 
-const handleCreate = () => {
-  emit('create');
-  handleClose();
-};
 </script>
 
 <style scoped>

@@ -40,11 +40,6 @@ const routes: RouteRecordRaw[] = [
                 }
             },
             {
-                path: '/profile',
-                name: 'profile',
-                component: () => import('@/views/Profile.vue'),
-            },
-            {
                 path: '/summary',
                 name: 'summary',
                 component: Summary,
@@ -81,7 +76,7 @@ const routes: RouteRecordRaw[] = [
             }, {
                 path: '/reminder',
                 name: 'reminder',
-                component: () => import('@/views/ReminderView.vue')
+                component: () => import('@/modules/Reminder/presentation/views/ReminderView.vue')
             },
             {
                 path: '/repository/:title',
