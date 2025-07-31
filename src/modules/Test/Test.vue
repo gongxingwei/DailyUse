@@ -13,11 +13,11 @@
     </div>
 
     <!-- Tab Content -->
-    <div v-if="activeTab === '通知测试'">
-      <!-- 通知测试内容 -->
+    <div v-if="activeTab === '图表测试'">
+      <EchartsTest />
     </div>
     <div v-else-if="activeTab === '右键菜单测试'">
-      <context-menu-test />
+      这是右键菜单测试内容
     </div>
     <div v-else-if="activeTab === '其他测试'">
       <div class="notification-test-container">
@@ -57,10 +57,10 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAccountStore } from '@/modules/Account/presentation/stores/accountStore';
-import ContextMenuTest from './components/ContextMenuTest.vue';
+import EchartsTest from './components/EchartsTest.vue';
 
 // Tabs 相关
-const tabs = ['通知测试', '右键菜单测试', '其他测试'];
+const tabs = ['图表测试', '右键菜单测试', '其他测试'];
 const activeTab = ref(tabs[0]);
 
 // AccountStore 测试
