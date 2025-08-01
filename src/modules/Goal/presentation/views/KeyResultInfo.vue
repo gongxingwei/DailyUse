@@ -73,7 +73,7 @@
             </div>
             <v-list v-else lines="two" density="comfortable">
               <v-list-item v-for="record in records" :key="record.uuid" class="mb-2">
-                <RecordCard :record="Record.ensureRecordNeverNull(record)" />
+                <GoalRecordCard :record="GoalRecord.ensureGoalRecordNeverNull(record)" />
               </v-list-item>
             </v-list>
           </div>
@@ -93,11 +93,11 @@ import { useGoalStore } from '../stores/goalStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
 import KeyResultCard from '../components/KeyResultCard.vue';
-import RecordCard from '../components/RecordCard.vue';
+import GoalRecordCard from '../components/GoalRecordCard.vue';
 // domain
 import { KeyResult } from '../../domain/entities/keyResult';
 import { Goal } from '../../domain/aggregates/goal';
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 
 const router = useRouter();
 const route = useRoute();
@@ -139,9 +139,9 @@ onMounted(async () => {
 
 // 计算所有记录
 const records = computed(() => {
-  const records = goal.value.getRecordsByKeyResultUuid(keyResultUuid);
-  console.log('all Records:', goal.value.records);
-  console.log('Records for Key Result:', records);
+  const records = goal.value.getGoalRecordsByKeyResultUuid(keyResultUuid);
+  console.log('all GoalRecords:', goal.value.records);
+  console.log('GoalRecords for Key Result:', records);
   console.log(goalStore.getGoalByUuid(goalUuid));
   return records;
 });

@@ -1,13 +1,13 @@
 import type {
   IGoal,
-  IRecord,
+  IGoalRecord,
   IGoalDir,
   IGoalReview,
 } from "../../../../../common/modules/goal/types/goal";
 import { Goal } from "../../domain/aggregates/goal";
 import { GoalReview } from "../../domain/entities/goalReview";
 import { GoalDir } from "../../domain/aggregates/goalDir";
-import { Record } from "../../domain/entities/record";
+import { GoalRecord } from "../../domain/entities/record";
 import { GoalContainer } from "../../infrastructure/di/goalContainer";
 import type { IGoalRepository } from "../../domain/repositories/iGoalRepository";
 import { SYSTEM_GOAL_DIRS } from "../../../../../common/modules/goal/types/goal";
@@ -154,10 +154,10 @@ export class MainGoalApplicationService {
   /**
    * 为目标的关键结果添加记录（通过聚合根）
    */
-  async addRecordToGoal(
+  async addGoalRecordToGoal(
     accountUuid: string,
-    recordDTO: IRecord
-  ): Promise<{ goal: Goal; record: Record }> {
+    recordDTO: IGoalRecord
+  ): Promise<{ goal: Goal; record: GoalRecord }> {
     if (recordDTO.value <= 0) {
       throw new Error("记录值必须大于0");
     }
@@ -170,45 +170,45 @@ export class MainGoalApplicationService {
     }
     
     // 将 record 进行持久化存储
-    const record = Record.fromDTO(recordDTO);
-    const createdRecord = await this.goalRepository.createRecord(
+    const record = GoalRecord.fromDTO(recordDTO);
+    const createdGoalRecord = await this.goalRepository.createGoalRecord(
       accountUuid,
       record
     );
 
     // 调用聚合根的方法将记录添加到目标中，这会更新关键结果的值
-    goal.addRecord(createdRecord);
+    goal.addGoalRecord(createdGoalRecord);
 
     // 更新目标的关键结果和进度
     const updatedGoal = await this.goalRepository.updateGoal(accountUuid, goal);
     
-    return { goal: updatedGoal, record: createdRecord };
+    return { goal: updatedGoal, record: createdGoalRecord };
   }
 
   /**
    * 获取所有记录
    */
-  async getAllRecords(accountUuid: string): Promise<Record[]> {
+  async getAllGoalRecords(accountUuid: string): Promise<GoalRecord[]> {
     const goals = await this.goalRepository.getAllGoals(accountUuid);
-    const allRecords: Record[] = [];
+    const allGoalRecords: GoalRecord[] = [];
     for (const goal of goals) {
-      const records = await this.goalRepository.getRecordsByGoal(
+      const records = await this.goalRepository.getGoalRecordsByGoal(
         accountUuid,
         goal.uuid
       );
-      allRecords.push(...records);
+      allGoalRecords.push(...records);
     }
-    return allRecords;
+    return allGoalRecords;
   }
 
   /**
    * 根据目标ID获取记录
    */
-  async getRecordsByGoalUuid(
+  async getGoalRecordsByGoalUuid(
     accountUuid: string,
     goalUuid: string
-  ): Promise<Record[]> {
-    const records = await this.goalRepository.getRecordsByGoal(
+  ): Promise<GoalRecord[]> {
+    const records = await this.goalRepository.getGoalRecordsByGoal(
       accountUuid,
       goalUuid
     );
@@ -218,8 +218,8 @@ export class MainGoalApplicationService {
   /**
    * 删除记录
    */
-  async deleteRecord(accountUuid: string, recordId: string): Promise<void> {
-    await this.goalRepository.deleteRecord(accountUuid, recordId);
+  async deleteGoalRecord(accountUuid: string, recordId: string): Promise<void> {
+    await this.goalRepository.deleteGoalRecord(accountUuid, recordId);
   }
 
   // ========== 目标复盘管理（聚合根驱动）==========
@@ -397,7 +397,7 @@ export class MainGoalApplicationService {
   /**
    * 从目标中删除记录（通过聚合根）
    */
-  async removeRecordFromGoal(
+  async removeGoalRecordFromGoal(
     accountUuid: string,
     goalUuid: string,
     recordId: string
@@ -407,7 +407,7 @@ export class MainGoalApplicationService {
       throw new Error("目标不存在");
     }
 
-    goal.removeRecord(recordId);
+    goal.removeGoalRecord(recordId);
     await this.goalRepository.updateGoal(accountUuid, goal);
     return goal;
   }

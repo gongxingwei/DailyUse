@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import { Goal } from "../../domain/aggregates/goal";
 import { GoalDir } from "../../domain/aggregates/goalDir";
-import { Record } from "../../domain/entities/record";
+import { GoalRecord } from "../../domain/entities/record";
 import { SYSTEM_GOAL_DIRS } from "@common/modules/goal/types/goal";
 
 /**
@@ -77,7 +77,7 @@ export const useGoalStore = defineStore("goal", {
       );
     },
 
-    getTodayRecordCount: (state) => {
+    getTodayGoalRecordCount: (state) => {
       const today = new Date();
       const todayStart = new Date(
         today.getFullYear(),
@@ -86,36 +86,36 @@ export const useGoalStore = defineStore("goal", {
       ).getTime();
       const todayEnd = todayStart + 24 * 60 * 60 * 1000 - 1;
 
-      let todayRecordCount = 0;
+      let todayGoalRecordCount = 0;
       for (const goal of state.goals) {
         for (const record of goal.records) {
           if (
             record.lifecycle.createdAt.getTime() >= todayStart &&
             record.lifecycle.createdAt.getTime() <= todayEnd
           ) {
-            todayRecordCount++;
+            todayGoalRecordCount++;
           }
         }
       }
-      return todayRecordCount;
+      return todayGoalRecordCount;
     },
 
     // ========== 记录查询（通过目标获取）==========
 
-    getAllRecords(): Record[] | null {
+    getAllGoalRecords(): GoalRecord[] | null {
       const records = this.goals.flatMap((g) => g.records);
-      const ensuredRecords = records.map((record) =>
-        Record.ensureRecordNeverNull(record)
+      const ensuredGoalRecords = records.map((record) =>
+        GoalRecord.ensureGoalRecordNeverNull(record)
       );
-      return ensuredRecords.length > 0 ? ensuredRecords : null;
+      return ensuredGoalRecords.length > 0 ? ensuredGoalRecords : null;
     },
 
-    getRecordsBygoalUuid: (state) => (goalUuid: string) => {
+    getGoalRecordsBygoalUuid: (state) => (goalUuid: string) => {
       const goal = state.goals.find((g) => g.uuid === goalUuid);
       return goal?.records || [];
     },
 
-    getRecordsByKeyResultUuid: (state) => (keyResultUuid: string) => {
+    getGoalRecordsByKeyResultUuid: (state) => (keyResultUuid: string) => {
       return state.goals
         .flatMap((g) => g.records)
         .filter((r) => r.keyResultUuid === keyResultUuid);

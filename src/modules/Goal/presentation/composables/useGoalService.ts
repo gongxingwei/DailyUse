@@ -5,7 +5,7 @@ import { useSnackbar } from "@/shared/composables/useSnackbar";
 // Domain entities
 import { Goal } from "../../domain/aggregates/goal";
 import { GoalDir } from "../../domain/aggregates/goalDir";
-import { Record } from "../../domain/entities/record";
+import { GoalRecord } from "../../domain/entities/record";
 import { GoalReview } from "../../domain/entities/goalReview";
 
 /**
@@ -162,10 +162,10 @@ export function useGoalServices() {
    * Add a record to a goal
    * @param record - The record to add
    */
-  const handleAddRecordToGoal = async (record: Record) => {
+  const handleAddGoalRecordToGoal = async (record: GoalRecord) => {
     console.log('[useGoalServices] Adding record to goal:', record);
     try {
-      const result = await goalService.addRecordToGoal(record);
+      const result = await goalService.addGoalRecordToGoal(record);
       if (result.success && result.data) {
         showSuccess(`记录添加成功`);
       } else {
@@ -181,10 +181,10 @@ export function useGoalServices() {
    * Remove a record from a goal
    * @param record - The record to remove
    */
-  const handleRemoveRecordFromGoal = async (record: Record) => {
+  const handleRemoveGoalRecordFromGoal = async (record: GoalRecord) => {
     console.log('[useGoalServices] Removing record from goal:', record);
     try {
-      const result = await goalService.removeRecordFromGoal(record);
+      const result = await goalService.removeGoalRecordFromGoal(record);
       if (result.success && result.data) {
         showSuccess(`记录删除成功`);
       } else {
@@ -278,8 +278,8 @@ export function useGoalServices() {
     handleCreateGoalDir,
     handleUpdateGoalDir,
     handleDeleteGoalDir,
-    handleAddRecordToGoal,
-    handleRemoveRecordFromGoal,
+    handleAddGoalRecordToGoal,
+    handleRemoveGoalRecordFromGoal,
     handleAddReviewToGoal,
     handleUpdateReviewInGoal,
     handleRemoveReviewFromGoal,

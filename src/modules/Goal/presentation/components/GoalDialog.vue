@@ -166,9 +166,9 @@
   <KeyResultDialog :model-value="keyResultDialog.show"
     :key-result="KeyResult.ensureKeyResult(keyResultDialog.keyResult)"
     @update:model-value="keyResultDialog.show = $event"
-    @create-key-result="handleCreateKeyResult(props.goal as Goal, $event as KeyResult)" 
-    @update-key-result="handleUpdateKeyResult(props.goal as Goal, $event as KeyResult)" 
-    @remove-key-result="handleRemoveKeyResult(props.goal as Goal, $event as string)" />
+    @create-key-result="handleCreateKeyResult(goalModel as Goal, $event as KeyResult)"
+    @update-key-result="handleUpdateKeyResult(goalModel as Goal, $event as KeyResult)"
+    @remove-key-result="handleRemoveKeyResult(goalModel as Goal, $event as string)" />
      <!-- 确认对话框 -->
     <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
       confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, reactive } from 'vue';
 // components
 import KeyResultDialog from './KeyResultDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
@@ -206,6 +206,7 @@ const emit = defineEmits<{
 // 本地表单对象
 const loading = ref(false);
 const goalModel = ref<Goal>(Goal.forCreate());
+
 const isEditing = computed(() => !!props.goal);
 
 const confirmDialog = ref<{

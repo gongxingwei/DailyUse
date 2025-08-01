@@ -35,7 +35,7 @@
           <!-- 增加值输入 -->
           <div class="mb-6">
             <v-text-field
-              v-model.number="localRecord.value"
+              v-model.number="localGoalRecord.value"
               label="增加值"
               type="number"
               variant="outlined"
@@ -67,7 +67,7 @@
                   <v-icon color="primary" class="mr-3">mdi-clock-outline</v-icon>
                   <div>
                     <div class="text-body-1 font-weight-medium">记录时间</div>
-                    <div class="text-h6 text-primary">{{ format(localRecord.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}</div>
+                    <div class="text-h6 text-primary">{{ format(localGoalRecord.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}</div>
                   </div>
                 </div>
               </v-card-text>
@@ -76,7 +76,7 @@
           <!-- 备注输入 -->
           <div class="mb-4">
             <v-textarea
-              v-model="localRecord.note"
+              v-model="localGoalRecord.note"
               label="备注说明"
               placeholder="添加关于此次记录的详细说明..."
               variant="outlined"
@@ -97,11 +97,11 @@
               <v-chip
                 v-for="quickValue in quickValues"
                 :key="quickValue"
-                :color="localRecord.value === quickValue ? 'primary' : 'surface-variant'"
-                :variant="localRecord.value === quickValue ? 'flat' : 'outlined'"
+                :color="localGoalRecord.value === quickValue ? 'primary' : 'surface-variant'"
+                :variant="localGoalRecord.value === quickValue ? 'flat' : 'outlined'"
                 size="small"
                 clickable
-                @click="localRecord.value = quickValue"
+                @click="localGoalRecord.value = quickValue"
                 class="quick-value-chip"
               >
                 {{ quickValue }}
@@ -119,18 +119,18 @@ import { computed, watch, ref } from 'vue';
 // utils
 import { format } from 'date-fns';
 // domains
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 const props = defineProps<{
   modelValue: boolean;
-  record: Record | null;
+  record: GoalRecord | null;
   goalUuid: string;
   keyResultUuid: string;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:modelValue', value: boolean): void;
-  (e: 'create-record', record: Record): void;
-  (e: 'update-record', record: Record): void;
+  (e: 'create-record', record: GoalRecord): void;
+  (e: 'update-record', record: GoalRecord): void;
 }>();
 
 const quickValues = [1, 2, 5, 10];
@@ -138,7 +138,7 @@ const quickValues = [1, 2, 5, 10];
 const formRef = ref();
 const formValid = ref(false);
 
-const localRecord = ref<Record>(Record.forCreate(props.goalUuid, props.keyResultUuid));
+const localGoalRecord = ref<GoalRecord>(GoalRecord.forCreate(props.goalUuid, props.keyResultUuid));
 
 const isEditing = computed(() => !!props.record);
 
@@ -148,14 +148,14 @@ const valueRules = [
   (v: number) => v <= 10000 || '增加值不能超过10000'
 ];
 
-const isValid = computed(() => formValid.value && localRecord.value.value > 0);
+const isValid = computed(() => formValid.value && localGoalRecord.value.value > 0);
 
 const handleSave = () => {
   if (formRef.value?.validate()) {
     if (isEditing.value) {
-      emit('update-record', localRecord.value as Record);
+      emit('update-record', localGoalRecord.value as GoalRecord);
     } else {
-      emit('create-record', localRecord.value as Record);
+      emit('create-record', localGoalRecord.value as GoalRecord);
     }
     closeDialog();
   }
@@ -173,7 +173,7 @@ watch(
   () => props.modelValue,
   (show) => {
     if (show) {
-      localRecord.value = props.record ? props.record.clone() : Record.forCreate(props.goalUuid, props.keyResultUuid);
+      localGoalRecord.value = props.record ? props.record.clone() : GoalRecord.forCreate(props.goalUuid, props.keyResultUuid);
     }
   }
 );

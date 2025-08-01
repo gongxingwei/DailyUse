@@ -38,7 +38,7 @@ export interface IGoal {
   endTime: Date;
   note?: string;
   keyResults: IKeyResult[];
-  records: IRecord[];
+  records: IGoalRecord[];
   reviews: IGoalReview[];
   analysis: {
     motive: string;
@@ -76,7 +76,7 @@ export interface IGoalDir {
 /**
  * 关键结果记录
  */
-export interface IRecord {
+export interface IGoalRecord {
   uuid: string;
   goalUuid: string;
   keyResultUuid: string;

@@ -2,7 +2,7 @@ import { addDays } from "date-fns";
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { IGoal } from "@common/modules/goal";
 import { KeyResult } from "../entities/keyResult";
-import { Record } from "../entities/record";
+import { GoalRecord } from "../entities/record";
 import { GoalReview } from "../entities/goalReview";
 
 export class Goal extends AggregateRoot implements IGoal {
@@ -14,7 +14,7 @@ export class Goal extends AggregateRoot implements IGoal {
   private _endTime: Date;
   private _note?: string;
   private _keyResults: KeyResult[];
-  private _records: Record[];
+  private _records: GoalRecord[];
   private _reviews: GoalReview[];
   private _analysis: { motive: string; feasibility: string };
   private _lifecycle: {
@@ -153,7 +153,7 @@ export class Goal extends AggregateRoot implements IGoal {
   get keyResults(): KeyResult[] {
     return this._keyResults;
   }
-  get records(): Record[] {
+  get records(): GoalRecord[] {
     return this._records;
   }
   get reviews(): GoalReview[] {
@@ -233,7 +233,7 @@ export class Goal extends AggregateRoot implements IGoal {
   /**
    * 添加记录
    */
-  addRecord(record: Record): void {
+  addGoalRecord(record: GoalRecord): void {
     const { keyResultUuid, value } = record;
     const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
     if (!keyResult) {
@@ -248,7 +248,7 @@ export class Goal extends AggregateRoot implements IGoal {
   /**
    * 移除记录
    */
-  removeRecord(uuid: string): void {
+  removeGoalRecord(uuid: string): void {
     this._records = this._records.filter((r) => r.uuid !== uuid);
     this._lifecycle.updatedAt = new Date();
     this._version++;
@@ -340,7 +340,7 @@ export class Goal extends AggregateRoot implements IGoal {
   /**
    * 获取某个关键结果的所有记录
    */
-  getRecordsByKeyResult(keyResultUuid: string): Record[] {
+  getGoalRecordsByKeyResult(keyResultUuid: string): GoalRecord[] {
     return this._records.filter((r) => r.keyResultUuid === keyResultUuid);
   }
 
@@ -427,7 +427,7 @@ export class Goal extends AggregateRoot implements IGoal {
       endTime: typeof dto.endTime === 'string' ? new Date(dto.endTime) : dto.endTime,
     });
     goal._keyResults = dto.keyResults.map((kr) => KeyResult.fromDTO(kr));
-    goal._records = dto.records.map((r) => Record.fromDTO(r));
+    goal._records = dto.records.map((r) => GoalRecord.fromDTO(r));
     goal._reviews = dto.reviews.map((rv) => GoalReview.fromDTO(rv));
     goal._lifecycle = { 
       createdAt: new Date(dto.lifecycle.createdAt),

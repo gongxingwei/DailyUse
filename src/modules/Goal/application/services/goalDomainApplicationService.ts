@@ -8,7 +8,7 @@ import { goalIpcClient } from "../../infrastructure/ipc/goalIpcClient";
 import { GoalDir } from "../../domain/aggregates/goalDir";
 import { useGoalStore } from "../../presentation/stores/goalStore";
 import { Goal } from "../../domain/aggregates/goal";
-import { Record } from "../../domain/entities/record";
+import { GoalRecord } from "../../domain/entities/record";
 import { GoalReview } from "../../domain/entities/goalReview";
 /**
  * 目标领域应用服务
@@ -239,14 +239,14 @@ export class GoalDomainApplicationService {
 
   // ========== 记录管理（聚合根驱动）==========
 
-  async addRecordToGoal(
-    record: Record
+  async addGoalRecordToGoal(
+    record: GoalRecord
   ): Promise<TResponse<Goal>> {
     try {
       
 
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.addRecordToGoal(record);
+      const response = await goalIpcClient.addGoalRecordToGoal(record);
 
       if (response.success && response.data) {
         const {goalDTO} = response.data;
@@ -278,12 +278,12 @@ export class GoalDomainApplicationService {
     }
   }
 
-  async removeRecordFromGoal(
-    record: Record
+  async removeGoalRecordFromGoal(
+    record: GoalRecord
   ): Promise<TResponse<{ goal: IGoal }>> {
     try {
       // 调用主进程的聚合根方法
-      const response = await goalIpcClient.removeRecordFromGoal(record);
+      const response = await goalIpcClient.removeGoalRecordFromGoal(record);
 
       if (response.success && response.data) {
         const goal = Goal.fromDTO(response.data.goal);

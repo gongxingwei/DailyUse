@@ -1,13 +1,13 @@
 import { ref } from 'vue';
 import { useGoalServices } from './useGoalService';
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 
-export function useRecordDialog() {
-    const { handleAddRecordToGoal } = useGoalServices();
+export function useGoalRecordDialog() {
+    const { handleAddGoalRecordToGoal } = useGoalServices();
 
     const recordDialog = ref<{
         show: boolean,
-        record: Record | null,
+        record: GoalRecord | null,
         goalUuid: string,
         keyResultUuid: string,
     }>({
@@ -17,12 +17,12 @@ export function useRecordDialog() {
         keyResultUuid: '',
     });
 
-    const startAddRecord = (goalUuid: string, keyResultId: string) => {
+    const startAddGoalRecord = (goalUuid: string, keyResultUuid: string) => {
         recordDialog.value = {
             show: true,
             record: null,
             goalUuid: goalUuid,
-            keyResultUuid: keyResultId,
+            keyResultUuid: keyResultUuid,
         };
     };
 
@@ -30,7 +30,7 @@ export function useRecordDialog() {
     
     return {
         recordDialog,
-        startAddRecord,
-        handleAddRecordToGoal
+        startAddGoalRecord,
+        handleAddGoalRecordToGoal
     };
 }

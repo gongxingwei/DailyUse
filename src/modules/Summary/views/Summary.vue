@@ -51,7 +51,7 @@
                   <v-icon icon="mdi-chart-line" size="24" color="success" />
                 </div>
                 <div class="stat-info">
-                  <div class="stat-number">{{ todayRecordCount }}</div>
+                  <div class="stat-number">{{ todayGoalRecordCount }}</div>
                   <div class="stat-label">今日记录</div>
                 </div>
               </div>
@@ -117,8 +117,8 @@ const tasks = computed(() => {
   return tasks;
 });
 
-const todayRecordCount = computed(() => {
-  return goalStore.getTodayRecordCount;
+const todayGoalRecordCount = computed(() => {
+  return goalStore.getTodayGoalRecordCount;
 });
 
 const getCurrentDateString = () => {

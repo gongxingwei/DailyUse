@@ -1,19 +1,19 @@
 import { Entity } from "@/shared/domain/entity";
-import type { IRecord } from "@common/modules/goal";
+import type { IGoalRecord } from "@common/modules/goal";
 import { isValid } from "date-fns";
 
 /**
  * 记录领域实体
  * 作为 Goal 聚合内的实体，负责关键结果记录的业务逻辑和数据管理
- * 注意：Record 不是聚合根，它的生命周期由 Goal 聚合根管理
+ * 注意：GoalRecord 不是聚合根，它的生命周期由 Goal 聚合根管理
  */
-export class Record extends Entity implements IRecord {
+export class GoalRecord extends Entity implements IGoalRecord {
   private _goalUuid: string;
   private _keyResultUuid: string;
   private _value: number;
 
   private _note?: string;
-  private _lifecycle: IRecord["lifecycle"];
+  private _lifecycle: IGoalRecord["lifecycle"];
 
   constructor(params: {
     uuid?: string;
@@ -22,7 +22,7 @@ export class Record extends Entity implements IRecord {
     value: number;
     note?: string;
   }) {
-    super(params.uuid || Record.generateId());
+    super(params.uuid || GoalRecord.generateId());
     const now = new Date();
 
     this._goalUuid = params.goalUuid;
@@ -66,14 +66,14 @@ export class Record extends Entity implements IRecord {
     this._lifecycle.updatedAt = new Date();
   }
 
-  get lifecycle(): IRecord["lifecycle"] {
+  get lifecycle(): IGoalRecord["lifecycle"] {
     return this._lifecycle;
   }
 
   /**
    * 更新记录信息
    */
-  updateRecord(updates: { value?: number; date?: Date; note?: string }): void {
+  updateGoalRecord(updates: { value?: number; date?: Date; note?: string }): void {
     if (updates.value !== undefined) {
       this.value = updates.value;
     }
@@ -82,11 +82,11 @@ export class Record extends Entity implements IRecord {
     }
   }
   /**
-   * 判断对象是否为 Record 或 IRecord
+   * 判断对象是否为 GoalRecord 或 IGoalRecord
    */
-  static isRecord(obj: any): obj is Record | IRecord {
+  static isGoalRecord(obj: any): obj is GoalRecord | IGoalRecord {
     return (
-      obj instanceof Record ||
+      obj instanceof GoalRecord ||
       (obj &&
         typeof obj === "object" &&
         "uuid" in obj &&
@@ -97,34 +97,34 @@ export class Record extends Entity implements IRecord {
   }
 
   /**
-   * 保证返回 Record 实例或 null
+   * 保证返回 GoalRecord 实例或 null
    * @param rec 可能为 DTO、实体或 null
    */
-  static ensureRecord(rec: IRecord | Record | null): Record | null {
-    if (Record.isRecord(rec)) {
-      return rec instanceof Record ? rec : Record.fromDTO(rec);
+  static ensureGoalRecord(rec: IGoalRecord | GoalRecord | null): GoalRecord | null {
+    if (GoalRecord.isGoalRecord(rec)) {
+      return rec instanceof GoalRecord ? rec : GoalRecord.fromDTO(rec);
     } else {
       return null;
     }
   }
 
   /**
-   * 保证返回 Record 实例，永不为 null
+   * 保证返回 GoalRecord 实例，永不为 null
    * @param rec 可能为 DTO、实体或 null
    */
-  static ensureRecordNeverNull(rec: IRecord | Record | null): Record {
-    if (Record.isRecord(rec)) {
-      return rec instanceof Record ? rec : Record.fromDTO(rec);
+  static ensureGoalRecordNeverNull(rec: IGoalRecord | GoalRecord | null): GoalRecord {
+    if (GoalRecord.isGoalRecord(rec)) {
+      return rec instanceof GoalRecord ? rec : GoalRecord.fromDTO(rec);
     } else {
       // 默认创建一个空记录
-      return Record.forCreate("", "");
+      return GoalRecord.forCreate("", "");
     }
   }
 
   /**
    * 转换为数据传输对象
    */
-  toDTO(): IRecord {
+  toDTO(): IGoalRecord {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
@@ -138,8 +138,8 @@ export class Record extends Entity implements IRecord {
   /**
    * 从数据传输对象创建记录
    */
-  static fromDTO(data: IRecord): Record {
-    const record = new Record({
+  static fromDTO(data: IGoalRecord): GoalRecord {
+    const record = new GoalRecord({
       uuid: data.uuid,
       goalUuid: data.goalUuid,
       keyResultUuid: data.keyResultUuid,
@@ -153,17 +153,17 @@ export class Record extends Entity implements IRecord {
     return record;
   }
 
-  static forCreate(goalUuid: string, keyResultUuid: string): Record {
-    const record = new Record({
+  static forCreate(goalUuid: string, keyResultUuid: string): GoalRecord {
+    const record = new GoalRecord({
       goalUuid,
       keyResultUuid,
-      value: 0,
+      value: 1,
     });
     return record;
   }
 
-  clone(): Record {
-    const record = new Record({
+  clone(): GoalRecord {
+    const record = new GoalRecord({
       uuid: this.uuid,
       goalUuid: this._goalUuid,
       keyResultUuid: this._keyResultUuid,

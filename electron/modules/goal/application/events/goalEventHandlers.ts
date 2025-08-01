@@ -1,7 +1,7 @@
 import { EventBus } from '@/shared/events/eventBus';
 import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../../../Task/index';
 import { MainGoalApplicationService } from '../../application/services/mainGoalApplicationService';
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 
 let goalApplicationService: MainGoalApplicationService;
 
@@ -63,13 +63,13 @@ export class GoalEventHandlers {
       try {
         console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加记录 +${link.incrementValue}`);
         
-        const record = new Record({
+        const record = new GoalRecord({
           goalUuid: link.goalUuid,
           keyResultUuid: link.keyResultId,
           value: link.incrementValue,
           note: `任务完成，目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 增加了 ${link.incrementValue}`
         })
-        await goalApplicationService.addRecordToGoal(
+        await goalApplicationService.addGoalRecordToGoal(
           event.payload.accountUuid,
           record.toDTO()
         );
@@ -87,13 +87,13 @@ export class GoalEventHandlers {
     for (const link of event.payload.keyResultLinks!) {
       try {
         console.log(`🔄 [Goal事件处理器] 为目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 添加回退记录 -${link.incrementValue}`);
-        const record = new Record({
+        const record = new GoalRecord({
           goalUuid: link.goalUuid,
           keyResultUuid: link.keyResultId,
           value: -link.incrementValue,
           note: `任务完成，目标 ${link.goalUuid} 的关键结果 ${link.keyResultId} 增加了 ${link.incrementValue}`
         })
-        await goalApplicationService.addRecordToGoal(
+        await goalApplicationService.addGoalRecordToGoal(
           event.payload.accountUuid,
           record.toDTO()
         );

@@ -44,11 +44,11 @@
 </template>
 
 <script setup lang="ts">
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 import { format } from 'date-fns';
 
 defineProps<{
-  record: Record;
+  record: GoalRecord;
 }>();
 
 </script>

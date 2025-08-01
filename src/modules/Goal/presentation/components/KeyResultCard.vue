@@ -46,7 +46,7 @@
 
         <!-- 添加记录按钮 -->
         <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="startAddRecord(goal.uuid, keyResult.uuid)">
+          @click.stop="startAddGoalRecord(goal.uuid, keyResult.uuid)">
           <v-icon>mdi-plus</v-icon>
           <v-tooltip activator="parent" location="bottom">
             添加记录
@@ -73,8 +73,8 @@
       <span class="text-caption font-weight-bold text-success">已完成</span>
     </div>
     <!-- 记录对话框 -->
-    <RecordDialog :model-value="recordDialog.show" :record="Record.ensureRecord(recordDialog.record)"
-      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid" @create-record="handleAddRecordToGoal"
+    <GoalRecordDialog :model-value="recordDialog.show" :record="(recordDialog.record as GoalRecord)"
+      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid" @create-record="handleAddGoalRecordToGoal"
       @update:model-value="recordDialog.show = $event" />
   </v-card>
 
@@ -84,15 +84,15 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 
-import RecordDialog from './RecordDialog.vue';
-import { useRecordDialog } from '../composables/useRecordDialog';
+import GoalRecordDialog from './GoalRecordDialog.vue';
+import { useGoalRecordDialog } from '../composables/useGoalRecordDialog';
 import { Goal } from '../../domain/aggregates/goal';
-import { Record } from '../../domain/entities/record';
+import { GoalRecord } from '../../domain/entities/record';
 import { KeyResult } from '../../domain/entities/keyResult';
 
 const router = useRouter();
 
-const { recordDialog, startAddRecord, handleAddRecordToGoal } = useRecordDialog();
+const { recordDialog, startAddGoalRecord, handleAddGoalRecordToGoal } = useGoalRecordDialog();
 
 const props = defineProps<{
   keyResult: KeyResult;

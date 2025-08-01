@@ -10,6 +10,7 @@ import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
 import '@/shared/styles/icons.css'
 import { i18n } from './i18n'
 import { initializeApp } from './shared/initialization/appInitialization'
+
 // import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
 // // 配置 Monaco Editor 的 worker
@@ -36,7 +37,6 @@ app
 const pluginManager = new PluginManager()
 // 注册快速启动器插件
 pluginManager.register(quickLauncherPlugin)
-
 app.mount('#app')
   .$nextTick(() => {
      (async () => {

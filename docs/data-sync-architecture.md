@@ -132,7 +132,7 @@ export class GoalDomainApplicationService {
       // 并行获取所有数据
       const [goals, records, goalDirs] = await Promise.all([
         this.getAllGoals(),     // 获取所有目标
-        this.getAllRecords(),   // 获取所有记录
+        this.getAllGoalRecords(),   // 获取所有记录
         this.getAllGoalDirs(),  // 获取所有目标目录
       ]);
 
@@ -233,11 +233,11 @@ export class GoalIpcClient {
   /**
    * 获取所有记录
    */
-  async getAllRecords(): Promise<TResponse<IRecord[]>> {
+  async getAllGoalRecords(): Promise<TResponse<IGoalRecord[]>> {
     try {
       console.log('🔄 [渲染进程-IPC] 获取所有记录');
       
-      const response = await window.shared.ipcRenderer.invoke('goal:getAllRecords');
+      const response = await window.shared.ipcRenderer.invoke('goal:getAllGoalRecords');
       
       if (response.success) {
         console.log(`✅ [渲染进程-IPC] 获取记录成功，数量: ${response.data?.length || 0}`);
@@ -309,7 +309,7 @@ export class PiniaGoalStateRepository implements IGoalStateRepository {
    */
   async syncAllGoalData(data: {
     goals: IGoal[];
-    records: IRecord[];
+    records: IGoalRecord[];
     goalDirs: IGoalDir[];
   }): Promise<void> {
     try {
@@ -374,7 +374,7 @@ export const useGoalStore = defineStore('goal', {
      */
     async syncAllGoalData(data: {
       goals: IGoal[];
-      records: IRecord[];
+      records: IGoalRecord[];
       goalDirs: IGoalDir[];
     }): Promise<void> {
       this.goals = data.goals;
@@ -461,12 +461,12 @@ GoalDomainApplicationService.syncAllData()
     ↓
 并行调用 IPC 获取数据:
     ├─ goalIpcClient.getAllGoals()     → 'goal:get-all'
-    ├─ goalIpcClient.getAllRecords()   → 'goal:getAllRecords'
+    ├─ goalIpcClient.getAllGoalRecords()   → 'goal:getAllGoalRecords'
     └─ goalIpcClient.getAllGoalDirs()  → 'goal:dir:get-all'
     ↓
 主进程处理 IPC 请求:
     ├─ MainGoalApplicationService.getAllGoals()
-    ├─ MainGoalApplicationService.getAllRecords()
+    ├─ MainGoalApplicationService.getAllGoalRecords()
     └─ MainGoalApplicationService.getAllGoalDirs()
     ↓
 从 SQLite 数据库查询数据
@@ -563,7 +563,7 @@ if (!this.stateRepository?.isAvailable()) {
 // 并行获取所有数据，减少总等待时间
 const [goals, records, goalDirs] = await Promise.all([
   this.getAllGoals(),
-  this.getAllRecords(), 
+  this.getAllGoalRecords(), 
   this.getAllGoalDirs(),
 ]);
 ```
@@ -619,7 +619,7 @@ export function getGoalDomainApplicationService(): GoalDomainApplicationService 
 ```typescript
 // 状态仓库接口，便于测试和替换实现
 export interface IGoalStateRepository {
-  syncAllGoalData(data: { goals: IGoal[]; records: IRecord[]; goalDirs: IGoalDir[]; }): Promise<void>;
+  syncAllGoalData(data: { goals: IGoal[]; records: IGoalRecord[]; goalDirs: IGoalDir[]; }): Promise<void>;
   addGoal(goal: IGoal): Promise<void>;
   updateGoal(goal: IGoal): Promise<void>;
   removeGoal(goalUuid: string): Promise<void>;

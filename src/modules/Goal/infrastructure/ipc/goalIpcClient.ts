@@ -1,14 +1,14 @@
 import type { TResponse } from "@/shared/types/response";
 import type { 
   IGoal, 
-  IRecord, 
+  IGoalRecord, 
   IGoalDir, 
   IGoalReview,
 } from "@common/modules/goal/types/goal";
 import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
 import { ipcInvokeWithAuth } from "@/shared/utils/ipcInvokeWithAuth";
 import { GoalReview } from "../../domain/entities/goalReview";
-import { Record } from "../../domain/entities/record";
+import { GoalRecord } from "../../domain/entities/record";
 import { GoalDir } from "../../domain/aggregates/goalDir";
 import { Goal } from "../../domain/aggregates/goal";
 /**
@@ -179,15 +179,15 @@ export class GoalIpcClient {
   /**
    * 为目标的关键结果添加记录（聚合根驱动）
    */
-  async addRecordToGoal(
-    record: Record,
-  ): Promise<TResponse<{goalDTO: IGoal, recordDTO: IRecord}>> {
+  async addGoalRecordToGoal(
+    record: GoalRecord,
+  ): Promise<TResponse<{goalDTO: IGoal, recordDTO: IGoalRecord}>> {
     try {
       console.log('🔄 [渲染进程-IPC] 为目标添加记录:', record);
       const recordDTO = record.toDTO();
       const data = JSON.parse(JSON.stringify(recordDTO));
       const response = await ipcInvokeWithAuth(
-        'goal:addRecordToGoal', 
+        'goal:addGoalRecordToGoal', 
         data
       );
       
@@ -210,12 +210,12 @@ export class GoalIpcClient {
   /**
    * 从目标中删除记录（聚合根驱动）
    */
-  async removeRecordFromGoal(record: Record): Promise<TResponse<{ goal: IGoal }>> {
+  async removeGoalRecordFromGoal(record: GoalRecord): Promise<TResponse<{ goal: IGoal }>> {
     try {
       console.log('🔄 [渲染进程-IPC] 从目标删除记录:', { record });
       const recordDTO = record.toDTO();
       const data = JSON.parse(JSON.stringify(recordDTO));
-      const response = await ipcInvokeWithAuth('goal:removeRecord', data);
+      const response = await ipcInvokeWithAuth('goal:removeGoalRecord', data);
 
       if (response.success) {
         console.log('✅ [渲染进程-IPC] 记录删除成功:', record.uuid);

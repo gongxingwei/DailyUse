@@ -48,6 +48,7 @@ export function useGoalDialog() {
   const handleCreateKeyResult = async (goal: Goal, keyResult: KeyResult) => {
     console.log("Creating key result:", goal, keyResult);
     goal.addKeyResult(keyResult);
+    // goal.keyResults = [...goal.keyResults]; 不需要这行代码也能实现响应式，确定后后可以去除
   };
 
   // 开始编辑关键结果
@@ -60,10 +61,12 @@ export function useGoalDialog() {
 
   const handleUpdateKeyResult = async (goal: Goal, keyResult: KeyResult) => {
     goal.updateKeyResult(keyResult);
+    goal.keyResults = [...goal.keyResults];
   };
 
   const handleRemoveKeyResult = async (goal: Goal, keyResultUuid: string) => {
     goal.removeKeyResult(keyResultUuid);
+    goal.keyResults = [...goal.keyResults];
   };
 
   // ======= goalReview =======

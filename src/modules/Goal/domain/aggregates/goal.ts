@@ -2,7 +2,7 @@ import { addDays, isValid, differenceInDays, isSameDay } from "date-fns";
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
 import { IGoal } from "@common/modules/goal";
 import { KeyResult } from "../entities/keyResult";
-import { Record } from "../entities/record";
+import { GoalRecord } from "../entities/record";
 import { GoalReview } from "../entities/goalReview";
 
 /**
@@ -19,7 +19,7 @@ export class Goal extends AggregateRoot implements IGoal {
   private _endTime: Date;
   private _note?: string;
   private _keyResults: KeyResult[];
-  private _records: Record[];
+  private _records: GoalRecord[];
   private _reviews: GoalReview[];
   private _analysis: { motive: string; feasibility: string };
   private _lifecycle: {
@@ -94,7 +94,9 @@ export class Goal extends AggregateRoot implements IGoal {
   }
 
   // ======================== Getter/Setter ========================
-  get name(): string { return this._name; }
+  get name(): string {
+    return this._name;
+  }
   set name(value: string) {
     if (!value.trim()) throw new Error("目标标题不能为空");
     this._name = value;
@@ -102,28 +104,36 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get description(): string | undefined { return this._description; }
+  get description(): string | undefined {
+    return this._description;
+  }
   set description(value: string | undefined) {
     this._description = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get color(): string { return this._color; }
+  get color(): string {
+    return this._color;
+  }
   set color(value: string) {
     this._color = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get dirUuid(): string | undefined { return this._dirUuid; }
+  get dirUuid(): string | undefined {
+    return this._dirUuid;
+  }
   set dirUuid(value: string | undefined) {
     this._dirUuid = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get startTime(): Date { return this._startTime; }
+  get startTime(): Date {
+    return this._startTime;
+  }
   set startTime(value: Date) {
     if (value.getTime() >= this._endTime.getTime()) {
       throw new Error("开始时间必须早于结束时间");
@@ -133,7 +143,9 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get endTime(): Date { return this._endTime; }
+  get endTime(): Date {
+    return this._endTime;
+  }
   set endTime(value: Date) {
     if (value.getTime() <= this._startTime.getTime()) {
       throw new Error("结束时间必须晚于开始时间");
@@ -143,29 +155,71 @@ export class Goal extends AggregateRoot implements IGoal {
     this._version++;
   }
 
-  get note(): string | undefined { return this._note; }
+  get note(): string | undefined {
+    return this._note;
+  }
   set note(value: string | undefined) {
     this._note = value;
     this._lifecycle.updatedAt = new Date();
     this._version++;
   }
 
-  get keyResults(): KeyResult[] { return this._keyResults; }
-  get records(): Record[] { return this._records; }
-  get reviews(): GoalReview[] { return this._reviews; }
-  get analysis(): { motive: string; feasibility: string } { return this._analysis; }
+  get keyResults(): KeyResult[] {
+    return this._keyResults;
+  }
+
+  set keyResults(value: KeyResult[]) {
+    this._keyResults = value;
+    this._lifecycle.updatedAt = new Date();
+    this._version++;
+  }
+
+  get records(): GoalRecord[] {
+    return this._records;
+  }
+  get reviews(): GoalReview[] {
+    return this._reviews;
+  }
+  get analysis(): { motive: string; feasibility: string } {
+    return this._analysis;
+  }
   get lifecycle(): {
     createdAt: Date;
     updatedAt: Date;
     status: "active" | "completed" | "paused" | "archived";
-  } { return this._lifecycle; }
+  } {
+    return this._lifecycle;
+  }
   get analytics(): {
     overallProgress: number;
     weightedProgress: number;
     completedKeyResults: number;
     totalKeyResults: number;
-  } { return this._analytics; }
-  get version(): number { return this._version; }
+  } {
+    return this._analytics;
+  }
+
+  get overallProgress(): number {
+  // 例如整体进度（可用你已有的 progress 逻辑）
+  return this.progress;
+}
+
+get weightedProgress(): number {
+  // 如果有特殊加权逻辑，写在这里
+  return this.progress;
+}
+
+get completedKeyResults(): number {
+  return this._keyResults.filter(kr => kr.progress >= 100).length;
+}
+
+get totalKeyResults(): number {
+  return this._keyResults.length;
+}
+
+  get version(): number {
+    return this._version;
+  }
 
   // ======================== 业务方法 ========================
 
@@ -182,16 +236,29 @@ export class Goal extends AggregateRoot implements IGoal {
    * @returns number 0~100
    */
   get progress(): number {
-  if (this._keyResults.length === 0) return 0;
-  const totalWeight = this.totalWeight;
-  if (totalWeight === 0) return 0;
-  // 先累加所有加权进度，再除以总权重
-  const weightedSum = this._keyResults.reduce(
-    (sum, kr) => sum + kr.progress * kr.weight,
-    0
-  );
-  return Math.round(weightedSum / totalWeight);
-}
+    if (this._keyResults.length === 0) return 0;
+    const totalWeight = this.totalWeight;
+    if (totalWeight === 0) return 0;
+    // 先累加所有加权进度，再除以总权重
+    const weightedSum = this._keyResults.reduce(
+      (sum, kr) => sum + kr.progress * kr.weight,
+      0
+    );
+    return Math.round(weightedSum / totalWeight);
+  }
+
+  /**
+   * 获取时间进度
+   * 0-1 之间的值，表示从开始时间到现在的进度
+   * @returns number 0~1
+   */
+  get TimeProgress(): number {
+    const now = new Date();
+    const totalDays = differenceInDays(this.endTime, this.startTime);
+    if (totalDays <= 0) return 0; // 如果总天数为0或负数，返回0
+    const elapsedDays = differenceInDays(now, this.startTime);
+    return Math.min(1, elapsedDays / totalDays);
+  }
 
   /**
    * 获取当天的进度（根据当天所有记录加权计算）
@@ -200,15 +267,17 @@ export class Goal extends AggregateRoot implements IGoal {
   get todayProgress(): number {
     if (this._keyResults.length === 0) return 0;
     const today = new Date();
-    const todayRecords = this._records.filter((r) =>
+    const todayGoalRecords = this._records.filter((r) =>
       isSameDay(r.lifecycle.createdAt, today)
     );
-    if (todayRecords.length === 0) return 0;
+    if (todayGoalRecords.length === 0) return 0;
     let todayWeight = 0;
     for (const kr of this._keyResults) {
-      const krRecords = todayRecords.filter((r) => r.keyResultUuid === kr.uuid);
-      if (krRecords.length > 0) {
-        const sumValue = krRecords.reduce((sum, r) => sum + r.value, 0);
+      const krGoalRecords = todayGoalRecords.filter(
+        (r) => r.keyResultUuid === kr.uuid
+      );
+      if (krGoalRecords.length > 0) {
+        const sumValue = krGoalRecords.reduce((sum, r) => sum + r.value, 0);
         todayWeight += sumValue * kr.weight;
       }
     }
@@ -220,7 +289,8 @@ export class Goal extends AggregateRoot implements IGoal {
    * @returns number
    */
   get remainingDays(): number {
-    return differenceInDays(this.endTime, this.startTime);
+    const today = new Date();
+    return differenceInDays(this.endTime, today);
   }
 
   /**
@@ -228,7 +298,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * @param keyResultUuid - 关键结果的 uuid
    * @returns 该关键结果的所有记录
    */
-  getRecordsByKeyResultUuid(keyResultUuid: string): Record[] {
+  getGoalRecordsByKeyResultUuid(keyResultUuid: string): GoalRecord[] {
     return this._records.filter((r) => r.keyResultUuid === keyResultUuid);
   }
 
@@ -294,10 +364,10 @@ export class Goal extends AggregateRoot implements IGoal {
   createSnapShot(): GoalReview["snapshot"] {
     return {
       snapshotDate: new Date(),
-      overallProgress: this.analytics.overallProgress,
-      weightedProgress: this.analytics.weightedProgress,
-      completedKeyResults: this.analytics.completedKeyResults,
-      totalKeyResults: this.analytics.totalKeyResults,
+      overallProgress: this.overallProgress,
+      weightedProgress: this.weightedProgress,
+      completedKeyResults: this.completedKeyResults,
+      totalKeyResults: this.totalKeyResults,
       keyResultsSnapshot: this._keyResults.map((kr) => ({
         uuid: kr.uuid,
         name: kr.name,
@@ -313,9 +383,9 @@ export class Goal extends AggregateRoot implements IGoal {
    * @param record - 记录实体
    * @throws 如果关键结果不存在
    * @example
-   * goal.addRecord(new Record(...))
+   * goal.addGoalRecord(new GoalRecord(...))
    */
-  addRecord(record: Record): void {
+  addGoalRecord(record: GoalRecord): void {
     const { keyResultUuid, value } = record;
     const keyResult = this._keyResults.find((kr) => kr.uuid === keyResultUuid);
     if (!keyResult) {
@@ -331,7 +401,7 @@ export class Goal extends AggregateRoot implements IGoal {
    * 移除记录
    * @param uuid - 记录 uuid
    */
-  removeRecord(uuid: string): void {
+  removeGoalRecord(uuid: string): void {
     this._records = this._records.filter((r) => r.uuid !== uuid);
     this._lifecycle.updatedAt = new Date();
     this._version++;
@@ -453,7 +523,7 @@ export class Goal extends AggregateRoot implements IGoal {
    *   endTime: Date,
    *   note?: string,
    *   keyResults: KeyResultDTO[],
-   *   records: RecordDTO[],
+   *   records: GoalRecordDTO[],
    *   reviews: GoalReviewDTO[],
    *   analysis: { motive: string, feasibility: string },
    *   lifecycle: { createdAt: Date, updatedAt: Date, status: string },
@@ -497,13 +567,17 @@ export class Goal extends AggregateRoot implements IGoal {
       dirUuid: dto.dirUuid,
       note: dto.note,
       analysis: { ...dto.analysis },
-      startTime: isValid(new Date(dto.startTime)) ? new Date(dto.startTime) : new Date(),
-      endTime: isValid(new Date(dto.endTime)) ? new Date(dto.endTime) : new Date(),
+      startTime: isValid(new Date(dto.startTime))
+        ? new Date(dto.startTime)
+        : new Date(),
+      endTime: isValid(new Date(dto.endTime))
+        ? new Date(dto.endTime)
+        : new Date(),
     });
     goal._keyResults = (dto.keyResults ?? []).map((kr) =>
       KeyResult.fromDTO(kr)
     );
-    goal._records = (dto.records ?? []).map((r) => Record.fromDTO(r));
+    goal._records = (dto.records ?? []).map((r) => GoalRecord.fromDTO(r));
     goal._reviews = (dto.reviews ?? []).map((rv) => GoalReview.fromDTO(rv));
     goal._lifecycle = { ...dto.lifecycle };
     goal._version = dto.version;

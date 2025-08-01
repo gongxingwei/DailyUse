@@ -1,7 +1,7 @@
 import type { Goal } from '../aggregates/goal';
 import type { GoalDir } from '../aggregates/goalDir';
 import { GoalReview } from '../entities/goalReview';
-import type { Record } from '../entities/record';
+import type { GoalRecord } from '../entities/record';
 
 /**
  * Goal 仓库接口
@@ -23,12 +23,12 @@ export interface IGoalRepository {
   updateGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir>;
   deleteGoalDirectory(accountUuid: string, uuid: string): Promise<void>;
 
-  // Record 操作
-  createRecord(accountUuid: string, record: Record): Promise<Record>;
-  getRecordByUuid(accountUuid: string, uuid: string): Promise<Record | null>;
-  getRecordsByGoal(accountUuid: string, goalUuid: string): Promise<Record[]>;
-  updateRecord(accountUuid: string, record: Record): Promise<Record>;
-  deleteRecord(accountUuid: string, uuid: string): Promise<void>;
+  // GoalRecord 操作
+  createGoalRecord(accountUuid: string, record: GoalRecord): Promise<GoalRecord>;
+  getGoalRecordByUuid(accountUuid: string, uuid: string): Promise<GoalRecord | null>;
+  getGoalRecordsByGoal(accountUuid: string, goalUuid: string): Promise<GoalRecord[]>;
+  updateGoalRecord(accountUuid: string, record: GoalRecord): Promise<GoalRecord>;
+  deleteGoalRecord(accountUuid: string, uuid: string): Promise<void>;
 
   // GoalReview 操作
   createGoalReview(accountUuid: string, review: GoalReview): Promise<GoalReview>;
@@ -39,5 +39,5 @@ export interface IGoalRepository {
 
   // 批量操作
   batchDeleteGoals(accountUuid: string, uuids: string[]): Promise<void>;
-  batchDeleteRecords(accountUuid: string, uuids: string[]): Promise<void>;
+  batchDeleteGoalRecords(accountUuid: string, uuids: string[]): Promise<void>;
 }
