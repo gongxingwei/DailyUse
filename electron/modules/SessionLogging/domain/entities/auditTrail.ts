@@ -1,52 +1,50 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 import { IPLocation } from "../valueObjects/ipLocation";
-import { RiskLevel } from "../aggregates/sessionLog";
-
+import { Entity } from "@/shared/domain/entity";
+import { IAuditTrail, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
 /**
  * 审计轨迹实体
  * 记录系统中的重要操作和安全事件
  */
-export class AuditTrail {
-  private _uuid: string;
+export class AuditTrail extends Entity implements IAuditTrail {
   private _accountUuUuid: string;
-  private _operationType: string;
+  private _operationType: OperationType;
   private _description: string;
   private _riskLevel: RiskLevel;
   private _ipLocation: IPLocation;
   private _userAgent?: string;
   private _metadata: Record<string, any>;
-  private _timestamp: DateTime;
+  private _timestamp: Date;
   private _isAlertTriggered: boolean;
   private _alertLevel?: 'info' | 'warning' | 'error' | 'critical';
 
-  constructor(
-    uuid: string,
-    accountUuid: string,
-    operationType: string,
-    description: string,
-    riskLevel: RiskLevel,
-    ipLocation: IPLocation,
-    userAgent?: string,
-    metadata: Record<string, any> = {}
-  ) {
-    this._uuid = uuid;
-    this._accountUuUuid = accountUuid;
-    this._operationType = operationType;
-    this._description = description;
-    this._riskLevel = riskLevel;
-    this._ipLocation = ipLocation;
-    this._userAgent = userAgent;
-    this._metadata = { ...metadata };
-    this._timestamp = TimeUtils.now();
-    this._isAlertTriggered = false;
-
-    // 根据风险等级自动确定告警级别
-    this.determineAlertLevel();
+  constructor(params: {
+    uuid?: string;
+    accountUuid: string;
+    operationType: OperationType;
+    description: string;
+    riskLevel: RiskLevel;
+    ipLocation: IPLocation;
+    userAgent?: string;
+    metadata?: Record<string, any>;
+    timestamp?: Date;
+    isAlertTriggered?: boolean;
+    alertLevel?: 'info' | 'warning' | 'error' | 'critical';
+  }) {
+    super(params.uuid || AuditTrail.generateId());
+    this._accountUuUuid = params.accountUuid;
+    this._operationType = params.operationType;
+    this._description = params.description;
+    this._riskLevel = params.riskLevel;
+    this._ipLocation = params.ipLocation;
+    this._userAgent = params.userAgent;
+    this._metadata = { ...(params.metadata ?? {}) };
+    this._timestamp = params.timestamp ?? new Date();
+    this._isAlertTriggered = params.isAlertTriggered ?? false;
+    this._alertLevel = params.alertLevel ?? this.determineAlertLevel();
   }
 
   // Getters
-  get id(): string {
+  get uuid(): string {
     return this._uuid;
   }
 
@@ -54,7 +52,7 @@ export class AuditTrail {
     return this._accountUuUuid;
   }
 
-  get operationType(): string {
+  get operationType(): OperationType {
     return this._operationType;
   }
 
@@ -78,7 +76,7 @@ export class AuditTrail {
     return { ...this._metadata };
   }
 
-  get timestamp(): DateTime {
+  get timestamp(): Date {
     return this._timestamp;
   }
 
@@ -88,6 +86,40 @@ export class AuditTrail {
 
   get alertLevel(): 'info' | 'warning' | 'error' | 'critical' | undefined {
     return this._alertLevel;
+  }
+
+  // Setters
+  set description(value: string) {
+    this._description = value;
+  }
+
+  set riskLevel(value: RiskLevel) {
+    this._riskLevel = value;
+    this._alertLevel = this.determineAlertLevel();
+  }
+
+  set ipLocation(value: IPLocation) {
+    this._ipLocation = value;
+  }
+
+  set userAgent(value: string | undefined) {
+    this._userAgent = value;
+  }
+
+  set metadata(value: Record<string, any>) {
+    this._metadata = { ...value };
+  }
+
+  set timestamp(value: Date) {
+    this._timestamp = value;
+  }
+
+  set isAlertTriggered(value: boolean) {
+    this._isAlertTriggered = value;
+  }
+
+  set alertLevel(value: 'info' | 'warning' | 'error' | 'critical' | undefined) {
+    this._alertLevel = value;
   }
 
   /**
@@ -112,130 +144,23 @@ export class AuditTrail {
     if (alertLevel) {
       this._alertLevel = alertLevel;
     }
-    
-    this.addMetadata('alertTriggeredAt', TimeUtils.now().toISOString());
-  }
-
-  /**
-   * 检查是否需要告警
-   */
-  shouldTriggerAlert(): boolean {
-    // 基于风险等级和操作类型判断是否需要告警
-    if (this._riskLevel === RiskLevel.HIGH || this._riskLevel === RiskLevel.CRITICAL) {
-      return true;
-    }
-
-    // 特定操作类型总是需要告警
-    const alertOperations = [
-      'password_change',
-      'mfa_disable',
-      'account_lockout',
-      'suspicious_activity',
-      'data_breach_attempt',
-      'privilege_escalation'
-    ];
-
-    return alertOperations.includes(this._operationType);
-  }
-
-  /**
-   * 获取告警消息
-   */
-  getAlertMessage(): string {
-    const location = this._ipLocation.getLocationDescription();
-    const time = TimeUtils.format(this._timestamp, 'YYYY-MM-DD HH:mm:ss');
-    
-    return `[${this._riskLevel.toUpperCase()}] ${this._description} - Account: ${this._accountUuUuid}, Location: ${location}, Time: ${time}`;
-  }
-
-  /**
-   * 检查是否为安全相关事件
-   */
-  isSecurityEvent(): boolean {
-    const securityOperations = [
-      'login_failed',
-      'password_change',
-      'mfa_verification',
-      'account_locked',
-      'suspicious_activity',
-      'data_access_violation',
-      'privilege_escalation',
-      'brute_force_attempt'
-    ];
-
-    return securityOperations.includes(this._operationType) ||
-           this._riskLevel === RiskLevel.HIGH ||
-           this._riskLevel === RiskLevel.CRITICAL;
-  }
-
-  /**
-   * 检查是否为合规相关事件
-   */
-  isComplianceEvent(): boolean {
-    const complianceOperations = [
-      'data_export',
-      'data_deletion',
-      'permission_change',
-      'audit_log_access',
-      'personal_data_access',
-      'gdpr_request'
-    ];
-
-    return complianceOperations.includes(this._operationType);
-  }
-
-  /**
-   * 获取事件严重性评分（1-10）
-   */
-  getSeverityScore(): number {
-    let score = 1;
-
-    // 基于风险等级
-    switch (this._riskLevel) {
-      case RiskLevel.CRITICAL:
-        score += 7;
-        break;
-      case RiskLevel.HIGH:
-        score += 5;
-        break;
-      case RiskLevel.MEDIUM:
-        score += 3;
-        break;
-      case RiskLevel.LOW:
-        score += 1;
-        break;
-    }
-
-    // 基于操作类型
-    if (this.isSecurityEvent()) {
-      score += 2;
-    }
-
-    // 基于地理位置
-    if (this._ipLocation.isSuspiciousLocation()) {
-      score += 1;
-    }
-
-    return Math.min(10, score);
+    this.addMetadata('alertTriggeredAt', new Date().toISOString());
   }
 
   /**
    * 确定告警级别
    */
-  private determineAlertLevel(): void {
+  private determineAlertLevel(): 'info' | 'warning' | 'error' | 'critical' {
     switch (this._riskLevel) {
       case RiskLevel.CRITICAL:
-        this._alertLevel = 'critical';
-        break;
+        return 'critical';
       case RiskLevel.HIGH:
-        this._alertLevel = 'error';
-        break;
+        return 'error';
       case RiskLevel.MEDIUM:
-        this._alertLevel = 'warning';
-        break;
+        return 'warning';
       case RiskLevel.LOW:
-        this._alertLevel = 'info';
-        break;
+      default:
+        return 'info';
     }
   }
 
@@ -254,9 +179,6 @@ export class AuditTrail {
     timestamp: string;
     isAlertTriggered: boolean;
     alertLevel?: string;
-    severityScore: number;
-    isSecurityEvent: boolean;
-    isComplianceEvent: boolean;
   } {
     return {
       uuid: this._uuid,
@@ -269,113 +191,7 @@ export class AuditTrail {
       metadata: this._metadata,
       timestamp: this._timestamp.toISOString(),
       isAlertTriggered: this._isAlertTriggered,
-      alertLevel: this._alertLevel,
-      severityScore: this.getSeverityScore(),
-      isSecurityEvent: this.isSecurityEvent(),
-      isComplianceEvent: this.isComplianceEvent()
-    };
-  }
-
-  /**
-   * 从数据库行创建 AuditTrail 对象
-   */
-  static fromDatabase(row: {
-    uuid: string;
-    account_uuid: string;
-    session_log_Uuid?: string;
-    operation_type: string;
-    description: string;
-    risk_level: string;
-    ip_address: string;
-    ip_country?: string;
-    ip_region?: string;
-    ip_city?: string;
-    ip_latitude?: number;
-    ip_longitude?: number;
-    ip_timezone?: string;
-    ip_isp?: string;
-    user_agent?: string;
-    metadata?: string;
-    is_alert_triggered: number;
-    alert_level?: string;
-    timestamp: number;
-  }): AuditTrail {
-    const ipLocation = new IPLocation(
-      row.ip_address,
-      row.ip_country || 'Unknown',
-      row.ip_region || 'Unknown',
-      row.ip_city || 'Unknown',
-      row.ip_latitude,
-      row.ip_longitude,
-      row.ip_timezone,
-      row.ip_isp
-    );
-
-    const metadata = row.metadata ? JSON.parse(row.metadata) : {};
-    
-    const auditTrail = new AuditTrail(
-      row.uuid,
-      row.account_uuid,
-      row.operation_type,
-      row.description,
-      row.risk_level as RiskLevel,
-      ipLocation,
-      row.user_agent,
-      metadata
-    );
-
-    // 设置从数据库读取的属性
-    (auditTrail as any)._isAlertTriggered = Boolean(row.is_alert_triggered);
-    (auditTrail as any)._alertLevel = row.alert_level as any;
-    (auditTrail as any)._timestamp = new Date(row.timestamp);
-
-    return auditTrail;
-  }
-
-  /**
-   * 转换为数据库格式
-   */
-  toDatabaseFormat(): {
-    uuid: string;
-    account_uuid: string;
-    session_log_Uuid?: string;
-    operation_type: string;
-    description: string;
-    risk_level: string;
-    ip_address: string;
-    ip_country?: string;
-    ip_region?: string;
-    ip_city?: string;
-    ip_latitude?: number;
-    ip_longitude?: number;
-    ip_timezone?: string;
-    ip_isp?: string;
-    user_agent?: string;
-    metadata?: string;
-    is_alert_triggered: number;
-    alert_level?: string;
-    timestamp: number;
-  } {
-    return {
-      uuid: this._uuid,
-      account_uuid: this._accountUuUuid,
-      session_log_Uuid: undefined, // 需要在保存时设置关联的session_log_Uuid
-      operation_type: this._operationType,
-      description: this._description,
-      risk_level: this._riskLevel,
-      ip_address: this._ipLocation.ipAddress,
-      ip_country: this._ipLocation.country,
-      ip_region: this._ipLocation.region,
-      ip_city: this._ipLocation.city,
-      ip_latitude: this._ipLocation.latitude,
-      ip_longitude: this._ipLocation.longitude,
-      ip_timezone: this._ipLocation.timezone,
-      ip_isp: this._ipLocation.isp,
-      user_agent: this._userAgent,
-      metadata: Object.keys(this._metadata).length > 0 ? JSON.stringify(this._metadata) : undefined,
-      is_alert_triggered: this._isAlertTriggered ? 1 : 0,
-      alert_level: this._alertLevel,
-      timestamp: this._timestamp.getTime()
+      alertLevel: this._alertLevel
     };
   }
 }

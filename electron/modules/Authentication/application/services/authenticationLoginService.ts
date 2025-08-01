@@ -10,12 +10,11 @@ import {
 } from "../../domain/events/authenticationEvents";
 import { AccountStatusVerificationResponseEvent } from "../../../Account/domain/events/accountEvents";
 import { eventBus } from "../../../../shared/events/eventBus";
-import { generateUUID } from "@/shared/utils/uuid";
 import { AccountUuidGetterResponseEvent } from "../../../Account/index";
 import { tokenService } from "../../domain/services/tokenService";
 import { authSession } from "../../application/services/authSessionStore";
 import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } from "../../domain/types";
-
+import crypto from "crypto";
 
 /**
  * AuthenticationLoginService
@@ -203,7 +202,7 @@ export class AuthenticationLoginService {
         accountUuid: accountUuid,
       });
       // 7. 生成会话ID
-      const sessionId = generateUUID();
+      const sessionId = crypto.randomUUID();
       // 8. 发布凭证验证成功事件
       await this.publishCredentialVerificationEvent({
         accountUuid,
@@ -278,7 +277,7 @@ export class AuthenticationLoginService {
    * @returns Promise<{ accountUuid?: string }>
    */
   private async getAccountUuidByUsername(username: string): Promise<{ accountUuid?: string }> {
-    const requestId = generateUUID();
+    const requestId = crypto.randomUUID();
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.pendingAccountUuidRequests.delete(requestId);
@@ -307,7 +306,7 @@ export class AuthenticationLoginService {
    */
   private async verifyAccountStatus(accountUuid: string, username: string): Promise<AccountStatusVerificationResponseEvent> {
     return new Promise((resolve, reject) => {
-      const requestId = generateUUID();
+      const requestId = crypto.randomUUID();
       const timeout = setTimeout(() => {
         this.pendingStatusVerifications.delete(requestId);
         reject(new Error("账号状态验证超时"));

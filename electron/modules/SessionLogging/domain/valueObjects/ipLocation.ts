@@ -1,8 +1,11 @@
+import { ValueObject } from "@/shared/domain/valueObject";
+import { IIPLocation } from "@common/modules/sessionLog/types/sessionLog";
+
 /**
  * IP地理位置值对象
  * 解析IP所属地理信息，不可变
  */
-export class IPLocation {
+export class IPLocation extends ValueObject<any> implements IIPLocation {
   private readonly _ipAddress: string;
   private readonly _country: string;
   private readonly _region: string;
@@ -12,58 +15,47 @@ export class IPLocation {
   private readonly _timezone?: string;
   private readonly _isp?: string;
 
-  constructor(
-    ipAddress: string,
-    country: string,
-    region: string,
-    city: string,
-    latitude?: number,
-    longitude?: number,
-    timezone?: string,
-    isp?: string
-  ) {
-    this._ipAddress = ipAddress;
-    this._country = country;
-    this._region = region;
-    this._city = city;
-    this._latitude = latitude;
-    this._longitude = longitude;
-    this._timezone = timezone;
-    this._isp = isp;
+  constructor(params: {
+    ipAddress: string;
+    country: string;
+    region: string;
+    city: string;
+    latitude?: number;
+    longitude?: number;
+    timezone?: string;
+    isp?: string;
+  }) {
+    super(params);
+    this._ipAddress = params.ipAddress;
+    this._country = params.country;
+    this._region = params.region;
+    this._city = params.city;
+    this._latitude = params.latitude;
+    this._longitude = params.longitude;
+    this._timezone = params.timezone;
+    this._isp = params.isp;
   }
 
   /**
    * 从IP地址解析地理位置（简化实现）
    */
   static async fromIPAddress(ipAddress: string): Promise<IPLocation> {
-    // 这里应该调用真实的IP地理位置服务，如MaxMind GeoIP2等
-    // 简化实现，实际应用中需要集成地理位置API
-    
-    // 检查是否为本地IP
     if (IPLocation.isLocalIP(ipAddress)) {
-      return new IPLocation(
+      return new IPLocation({
         ipAddress,
-        'Local',
-        'Local',
-        'Local',
-        undefined,
-        undefined,
-        undefined,
-        'Local Network'
-      );
+        country: 'Local',
+        region: 'Local',
+        city: 'Local',
+        isp: 'Local Network'
+      });
     }
-
-    // 模拟的地理位置数据
-    return new IPLocation(
+    return new IPLocation({
       ipAddress,
-      'Unknown',
-      'Unknown',
-      'Unknown',
-      undefined,
-      undefined,
-      undefined,
-      'Unknown ISP'
-    );
+      country: 'Unknown',
+      region: 'Unknown',
+      city: 'Unknown',
+      isp: 'Unknown ISP'
+    });
   }
 
   /**
@@ -71,16 +63,15 @@ export class IPLocation {
    */
   static isLocalIP(ipAddress: string): boolean {
     const localPatterns = [
-      /^127\./,           // 127.x.x.x (localhost)
-      /^192\.168\./,      // 192.168.x.x (private)
-      /^10\./,            // 10.x.x.x (private)
-      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,  // 172.16.x.x - 172.31.x.x (private)
-      /^::1$/,            // IPv6 localhost
-      /^fe80:/,           // IPv6 link-local
-      /^fc00:/,           // IPv6 unique local
-      /^fd00:/            // IPv6 unique local
+      /^127\./,
+      /^192\.168\./,
+      /^10\./,
+      /^172\.(1[6-9]|2[0-9]|3[0-1])\./,
+      /^::1$/,
+      /^fe80:/,
+      /^fc00:/,
+      /^fd00:/
     ];
-
     return localPatterns.some(pattern => pattern.test(ipAddress));
   }
 
@@ -88,7 +79,7 @@ export class IPLocation {
    * 检查是否与另一个位置在同一地区
    */
   isSameRegion(other: IPLocation): boolean {
-    return this._country === other._country && 
+    return this._country === other._country &&
            this._region === other._region;
   }
 
@@ -103,37 +94,30 @@ export class IPLocation {
    * 计算与另一个位置的距离（如果有经纬度信息）
    */
   distanceTo(other: IPLocation): number | null {
-    if (!this._latitude || !this._longitude || 
+    if (!this._latitude || !this._longitude ||
         !other._latitude || !other._longitude) {
       return null;
     }
-
-    // 使用Haversine公式计算两点间距离
-    const R = 6371; // 地球半径（公里）
+    const R = 6371;
     const dLat = this.toRadians(other._latitude - this._latitude);
     const dLon = this.toRadians(other._longitude - this._longitude);
-    
     const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(this.toRadians(this._latitude)) * 
+              Math.cos(this.toRadians(this._latitude)) *
               Math.cos(this.toRadians(other._latitude)) *
               Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // 返回距离（公里）
+    return R * c;
   }
 
   /**
    * 检查是否为可疑地理位置
    */
   isSuspiciousLocation(): boolean {
-    // 这里可以根据业务需求定义可疑位置的规则
-    // 例如：某些国家、地区或ISP
     const suspiciousCountries = ['Unknown'];
     const suspiciousISPs = ['Tor', 'VPN', 'Proxy'];
-
     return suspiciousCountries.includes(this._country) ||
-       (!!this._isp && suspiciousISPs.some(isp => 
-         this._isp!.toLowerCase().includes(isp.toLowerCase())));
+      (!!this._isp && suspiciousISPs.some(isp =>
+        this._isp!.toLowerCase().includes(isp.toLowerCase())));
   }
 
   /**
@@ -142,8 +126,7 @@ export class IPLocation {
   getLocationDescription(): string {
     const parts = [this._city, this._region, this._country]
       .filter(part => part && part !== 'Unknown')
-      .filter((value, index, self) => self.indexOf(value) === index); // 去重
-
+      .filter((value, index, self) => self.indexOf(value) === index);
     return parts.length > 0 ? parts.join(', ') : 'Unknown Location';
   }
 
@@ -152,11 +135,9 @@ export class IPLocation {
    */
   getFullDescription(): string {
     let description = this.getLocationDescription();
-    
     if (this._isp && this._isp !== 'Unknown ISP') {
       description += ` (${this._isp})`;
     }
-    
     return description;
   }
 
@@ -181,16 +162,16 @@ export class IPLocation {
    */
   static fromDatabaseFormat(data: string): IPLocation {
     const parsed = JSON.parse(data);
-    return new IPLocation(
-      parsed.ipAddress,
-      parsed.country,
-      parsed.region,
-      parsed.city,
-      parsed.latitude,
-      parsed.longitude,
-      parsed.timezone,
-      parsed.isp
-    );
+    return new IPLocation({
+      ipAddress: parsed.ipAddress,
+      country: parsed.country,
+      region: parsed.region,
+      city: parsed.city,
+      latitude: parsed.latitude,
+      longitude: parsed.longitude,
+      timezone: parsed.timezone,
+      isp: parsed.isp
+    });
   }
 
   // Getters
@@ -262,6 +243,28 @@ export class IPLocation {
       fullDescription: this.getFullDescription(),
       isSuspicious: this.isSuspiciousLocation()
     };
+  }
+
+  static fromDTO(dto: {
+    ipAddress: string;
+    country: string;
+    region: string;
+    city: string;
+    latitude?: number;
+    longitude?: number;
+    timezone?: string;
+    isp?: string;
+  }): IPLocation {
+    return new IPLocation({
+      ipAddress: dto.ipAddress,
+      country: dto.country,
+      region: dto.region,
+      city: dto.city,
+      latitude: dto.latitude,
+      longitude: dto.longitude,
+      timezone: dto.timezone,
+      isp: dto.isp
+    });
   }
 
   /**

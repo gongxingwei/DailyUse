@@ -1,32 +1,9 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 import { IPLocation } from "../valueObjects/ipLocation";
 import { AuditTrail } from "../entities/auditTrail";
+import { ISessionLog, OperationStatus, OperationType, RiskLevel, SessionLogDTO } from "@common/modules/sessionLog/types/sessionLog";
+import { isValid } from "date-fns";
 
-/**
- * 操作类型枚举
- */
-export enum OperationType {
-  LOGIN = 'login',
-  LOGOUT = 'logout',
-  EXPIRED = 'expired',
-  FORCED_LOGOUT = 'forced_logout',
-  SESSION_REFRESH = 'session_refresh',
-  MFA_VERIFICATION = 'mfa_verification',
-  PASSWORD_CHANGE = 'password_change',
-  SUSPICIOUS_ACTIVITY = 'suspicious_activity'
-}
-
-/**
- * 风险等级枚举
- */
-export enum RiskLevel {
-  LOW = 'low',
-  MEDIUM = 'medium',
-  HIGH = 'high',
-  CRITICAL = 'critical'
-}
 
 /**
  * 会话日志聚合根
@@ -37,68 +14,72 @@ export enum RiskLevel {
  * - 提供会话历史查询
  * - 通过AccountUuid弱关联账号模块，避免直接依赖
  */
-export class SessionLog extends AggregateRoot {
-  private _accountUuUuid: string; // 关联账号ID
-  private _sessionUuid?: string; // 关联会话ID（可选）
+export class SessionLog extends AggregateRoot implements ISessionLog {
+  private _accountUuid: string;
+  private _sessionUuid?: string;
   private _operationType: OperationType;
+  private _operationStatus: OperationStatus;
   private _deviceInfo: string;
   private _ipLocation: IPLocation;
   private _userAgent?: string;
-  private _loginTime?: DateTime;
-  private _logoutTime?: DateTime;
-  private _duration?: number; // 会话持续时间（分钟）
-  private _riskLevel: RiskLevel;
-  private _riskFactors: string[]; // 风险因素列表
-  private _isAnomalous: boolean; // 是否为异常会话
-  private _auditTrails: Map<string, AuditTrail>; // 审计轨迹
-  private _createdAt: DateTime;
-  private _updatedAt: DateTime;
+  private _loginTime?: Date;
+  private _logoutTime?: Date;
+  private _duration?: number;
+  private _riskLevel: RiskLevel = RiskLevel.LOW;
+  private _riskFactors: string[] = [];
+  private _isAnomalous: boolean = false;
+  private _auditTrails: Map<string, AuditTrail> = new Map();
+  private _createdAt: Date = new Date();
+  private _updatedAt: Date = new Date();
 
-  constructor(
-    uuid: string,
-    accountUuid: string,
-    operationType: OperationType,
-    deviceInfo: string,
-    ipLocation: IPLocation,
-    userAgent?: string,
-    sessionId?: string
-  ) {
-    super(uuid);
-    this._accountUuUuid = accountUuid;
-    this._sessionUuid = sessionId;
-    this._operationType = operationType;
-    this._deviceInfo = deviceInfo;
-    this._ipLocation = ipLocation;
-    this._userAgent = userAgent;
-    this._riskLevel = RiskLevel.LOW;
-    this._riskFactors = [];
-    this._isAnomalous = false;
-    this._auditTrails = new Map();
-    this._createdAt = TimeUtils.now();
-    this._updatedAt = TimeUtils.now();
+  constructor(params: {
+    uuid?: string;
+    accountUuid: string;
+    operationType: OperationType;
+    operationStatus: OperationStatus;
+    deviceInfo: string;
+    ipLocation: IPLocation;
+    userAgent?: string;
+    sessionUuid?: string;
+  }) {
+    super(params.uuid ?? SessionLog.generateId());
+    this._accountUuid = params.accountUuid;
+    this._sessionUuid = params.sessionUuid;
+    this._operationType = params.operationType;
+    this._operationStatus = params.operationStatus;
+    this._deviceInfo = params.deviceInfo;
+    this._ipLocation = params.ipLocation;
+    this._userAgent = params.userAgent;
+    this._createdAt = new Date();
+    this._updatedAt = new Date();
 
-    // 根据操作类型设置时间
-    if (operationType === OperationType.LOGIN) {
+    // 自动设置时间
+    if (params.operationType === OperationType.LOGIN) {
       this._loginTime = this._createdAt;
-    } else if (operationType === OperationType.LOGOUT || operationType === OperationType.EXPIRED) {
+    } else if (
+      params.operationType === OperationType.LOGOUT ||
+      params.operationType === OperationType.EXPIRED
+    ) {
       this._logoutTime = this._createdAt;
     }
-
-    // 自动进行风险评估
     this.assessRisk();
   }
 
   // Getters
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
   }
 
-  get sessionId(): string | undefined {
+  get sessionUuid(): string | undefined {
     return this._sessionUuid;
   }
 
   get operationType(): OperationType {
     return this._operationType;
+  }
+
+  get operationStatus(): OperationStatus {
+    return this._operationStatus;
   }
 
   get deviceInfo(): string {
@@ -113,11 +94,11 @@ export class SessionLog extends AggregateRoot {
     return this._userAgent;
   }
 
-  get loginTime(): DateTime | undefined {
+  get loginTime(): Date | undefined {
     return this._loginTime;
   }
 
-  get logoutTime(): DateTime | undefined {
+  get logoutTime(): Date | undefined {
     return this._logoutTime;
   }
 
@@ -141,38 +122,82 @@ export class SessionLog extends AggregateRoot {
     return Array.from(this._auditTrails.values());
   }
 
-  get createdAt(): DateTime {
+  get createdAt(): Date {
     return this._createdAt;
   }
 
-  get updatedAt(): DateTime {
+  get updatedAt(): Date {
     return this._updatedAt;
+  }
+
+  set duration(value: number | undefined) {
+    this._duration = value;
+    this._updatedAt = new Date();
+  }
+
+  set riskLevel(value: RiskLevel) {
+    this._riskLevel = value;
+    this._updatedAt = new Date();
+  }
+
+  set auditTrails(trails: AuditTrail[]) {
+    this._auditTrails = new Map(trails.map(trail => [trail.uuid, trail]));
+    this._updatedAt = new Date();
+  }
+
+  set createdAt(value: Date) {
+    this._createdAt = value;
+  }
+
+  set updatedAt(value: Date) {
+    this._updatedAt = value;
+  }
+
+  // Setters for business attributes
+  set loginTime(value: Date | undefined) {
+    this._loginTime = value;
+    this._updatedAt = new Date();
+  }
+
+  set logoutTime(value: Date | undefined) {
+    this._logoutTime = value;
+    this._updatedAt = new Date();
+    if (this._loginTime && this._logoutTime) {
+      const durationMs = this._logoutTime.getTime() - this._loginTime.getTime();
+      this._duration = Math.floor(durationMs / (60 * 1000));
+    }
+  }
+
+  set riskFactors(factors: string[]) {
+    this._riskFactors = factors;
+    this._updatedAt = new Date();
+    this.assessRisk();
+  }
+
+  set isAnomalous(value: boolean) {
+    this._isAnomalous = value;
+    this._updatedAt = new Date();
   }
 
   /**
    * 记录登出
    */
-  recordLogout(logoutTime?: DateTime): void {
+  recordLogout(logoutTime?: Date): void {
     if (this._operationType !== OperationType.LOGIN) {
       throw new Error('Can only record logout for login operations');
     }
 
-    this._logoutTime = logoutTime || TimeUtils.now();
-    this._updatedAt = this._logoutTime;
+    this.logoutTime = logoutTime || new Date();
 
-    // 计算会话持续时间
-    if (this._loginTime) {
-      const durationMs = this._logoutTime.getTime() - this._loginTime.getTime();
-      this._duration = Math.floor(durationMs / (60 * 1000)); // 转换为分钟
-    }
+    // 计算会话持续时间已在 setter 中处理
 
     this.addDomainEvent({
       aggregateId: this.uuid,
       eventType: 'SessionLogoutRecorded',
       occurredOn: new Date(),
       payload: { 
-        accountUuid: this._accountUuUuid,
-        sessionId: this._sessionUuid,
+        accountUuid: this._accountUuid,
+        sessionUuid: this._sessionUuid,
         duration: this._duration,
         timestamp: this._logoutTime 
       }
@@ -183,23 +208,23 @@ export class SessionLog extends AggregateRoot {
    * 标记为异常会话
    */
   markAsAnomalous(reason: string): void {
-    this._isAnomalous = true;
+    this.isAnomalous = true;
     this._riskFactors.push(reason);
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     // 重新评估风险等级
     this.assessRisk();
 
     // 创建审计轨迹
-    this.addAuditTrail('anomaly_detected', reason, RiskLevel.HIGH);
+    this.addAuditTrail(OperationType.SUSPICIOUS_ACTIVITY, reason, RiskLevel.HIGH);
 
     this.addDomainEvent({
       aggregateId: this.uuid,
       eventType: 'AnomalousSessionDetected',
       occurredOn: new Date(),
       payload: { 
-        accountUuid: this._accountUuUuid,
-        sessionId: this._sessionUuid,
+        accountUuid: this._accountUuid,
+        sessionUuid: this._sessionUuid,
         reason: reason,
         riskLevel: this._riskLevel,
         timestamp: this._updatedAt 
@@ -213,7 +238,7 @@ export class SessionLog extends AggregateRoot {
   addRiskFactor(factor: string): void {
     if (!this._riskFactors.includes(factor)) {
       this._riskFactors.push(factor);
-      this._updatedAt = TimeUtils.now();
+      this._updatedAt = new Date();
       this.assessRisk();
     }
   }
@@ -221,19 +246,18 @@ export class SessionLog extends AggregateRoot {
   /**
    * 添加审计轨迹
    */
-  addAuditTrail(operationType: string, description: string, riskLevel: RiskLevel): void {
-    const auditId = `audit_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-    const audit = new AuditTrail(
-      auditId,
-      this._accountUuUuid,
+  addAuditTrail(operationType: OperationType, description: string, riskLevel: RiskLevel): void {
+
+    const audit = new AuditTrail({
+      accountUuid: this._accountUuid,
       operationType,
       description,
       riskLevel,
-      this._ipLocation
-    );
+      ipLocation: this._ipLocation
+    });
 
-    this._auditTrails.set(auditId, audit);
-    this._updatedAt = TimeUtils.now();
+    this._auditTrails.set(audit.uuid, audit);
+    this._updatedAt = new Date();
 
     // 如果是高风险操作，发出告警事件
     if (riskLevel === RiskLevel.HIGH || riskLevel === RiskLevel.CRITICAL) {
@@ -242,8 +266,8 @@ export class SessionLog extends AggregateRoot {
         eventType: 'HighRiskActivityDetected',
         occurredOn: new Date(),
         payload: { 
-          accountUuid: this._accountUuUuid,
-          auditId: auditId,
+          accountUuid: this._accountUuid,
+          auditUuid: audit.uuid,
           operationType: operationType,
           description: description,
           riskLevel: riskLevel,
@@ -257,7 +281,6 @@ export class SessionLog extends AggregateRoot {
    * 检测异地登录
    */
   detectRemoteLocationLogin(previousLocations: IPLocation[]): boolean {
-    // 检查是否是新的地理位置
     const isNewLocation = !previousLocations.some(location => 
       location.isSameRegion(this._ipLocation)
     );
@@ -277,7 +300,7 @@ export class SessionLog extends AggregateRoot {
   detectConcurrentDeviceLogin(activeDevices: string[]): boolean {
     const deviceCount = activeDevices.filter(device => device !== this._deviceInfo).length;
     
-    if (deviceCount >= 3) { // 同时3个或更多设备
+    if (deviceCount >= 3) {
       this.markAsAnomalous('Multiple concurrent device logins detected');
       this.addRiskFactor('multiple_concurrent_devices');
       return true;
@@ -290,7 +313,7 @@ export class SessionLog extends AggregateRoot {
    * 检测频繁登录尝试
    */
   detectFrequentLoginAttempts(recentAttempts: number, timeWindowMinutes: number = 10): boolean {
-    if (recentAttempts >= 5) { // 10分钟内5次或更多尝试
+    if (recentAttempts >= 5) {
       this.markAsAnomalous(`${recentAttempts} login attempts within ${timeWindowMinutes} minutes`);
       this.addRiskFactor('frequent_login_attempts');
       return true;
@@ -305,7 +328,6 @@ export class SessionLog extends AggregateRoot {
   private assessRisk(): void {
     let score = 0;
 
-    // 基于风险因素计算分数
     this._riskFactors.forEach(factor => {
       switch (factor) {
         case 'remote_location_login':
@@ -331,7 +353,6 @@ export class SessionLog extends AggregateRoot {
       }
     });
 
-    // 基于分数确定风险等级
     if (score >= 80) {
       this._riskLevel = RiskLevel.CRITICAL;
     } else if (score >= 50) {
@@ -346,31 +367,16 @@ export class SessionLog extends AggregateRoot {
   /**
    * 转换为DTO对象
    */
-  toDTO(): {
-    uuid: string;
-    accountUuid: string;
-    sessionId?: string;
-    operationType: OperationType;
-    deviceInfo: string;
-    ipLocation: any;
-    userAgent?: string;
-    loginTime?: string;
-    logoutTime?: string;
-    duration?: number;
-    riskLevel: RiskLevel;
-    riskFactors: string[];
-    isAnomalous: boolean;
-    createdAt: string;
-    updatedAt: string;
-  } {
+  toDTO(): SessionLogDTO{
     return {
       uuid: this.uuid,
-      accountUuid: this._accountUuUuid,
-      sessionId: this._sessionUuid,
-      operationType: this._operationType,
-      deviceInfo: this._deviceInfo,
-      ipLocation: this._ipLocation.toDTO(),
-      userAgent: this._userAgent,
+      accountUuid: this._accountUuid,
+      sessionUuid: this._sessionUuid,
+      operationType: this._operationType || '',
+      operationStatus: this._operationStatus || '',
+      deviceInfo: this._deviceInfo || '',
+      ipLocation: this._ipLocation.toDTO() || {},
+      userAgent: this._userAgent || '',
       loginTime: this._loginTime?.toISOString(),
       logoutTime: this._logoutTime?.toISOString(),
       duration: this._duration,
@@ -383,117 +389,27 @@ export class SessionLog extends AggregateRoot {
   }
 
   /**
-   * 从数据库行创建 SessionLog 对象
+   * 从DTO转换为实体
    */
-  static fromDatabase(row: {
-    uuid: string;
-    account_uuid: string;
-    session_uuid?: string;
-    operation_type: string;
-    device_info: string;
-    ip_address: string;
-    ip_country?: string;
-    ip_region?: string;
-    ip_city?: string;
-    ip_latitude?: number;
-    ip_longitude?: number;
-    ip_timezone?: string;
-    ip_isp?: string;
-    user_agent?: string;
-    login_time?: number;
-    logout_time?: number;
-    duration?: number;
-    risk_level: string;
-    risk_factors?: string;
-    is_anomalous: number;
-    created_at: number;
-    updated_at: number;
-  }): SessionLog {
-    const ipLocation = new IPLocation(
-      row.ip_address,
-      row.ip_country || 'Unknown',
-      row.ip_region || 'Unknown',
-      row.ip_city || 'Unknown',
-      row.ip_latitude,
-      row.ip_longitude,
-      row.ip_timezone,
-      row.ip_isp
-    );
-
-    const sessionLog = new SessionLog(
-      row.uuid,
-      row.account_uuid,
-      row.operation_type as OperationType,
-      row.device_info,
-      ipLocation,
-      row.user_agent
-    );
-
-    // 设置从数据库读取的属性
-    (sessionLog as any)._id = row.uuid;
-    (sessionLog as any)._sessionUuid = row.session_uuid;
-    (sessionLog as any)._loginTime = row.login_time ? new Date(row.login_time) : undefined;
-    (sessionLog as any)._logoutTime = row.logout_time ? new Date(row.logout_time) : undefined;
-    (sessionLog as any)._duration = row.duration;
-    (sessionLog as any)._riskLevel = row.risk_level as RiskLevel;
-    (sessionLog as any)._riskFactors = row.risk_factors ? JSON.parse(row.risk_factors) : [];
-    (sessionLog as any)._isAnomalous = Boolean(row.is_anomalous);
-    (sessionLog as any)._createdAt = new Date(row.created_at);
-    (sessionLog as any)._updatedAt = new Date(row.updated_at);
-
+  static fromDTO(dto: SessionLogDTO): SessionLog {
+    const sessionLog = new SessionLog({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      sessionUuid: dto.sessionUuid,
+      operationType: dto.operationType,
+      operationStatus: dto.operationStatus,
+      ipLocation: IPLocation.fromDTO(dto.ipLocation),
+      userAgent: dto.userAgent,
+      deviceInfo: dto.deviceInfo
+    });
+    sessionLog.loginTime = dto.loginTime && isValid(dto.loginTime) ? new Date(dto.loginTime) : undefined;
+sessionLog.logoutTime = dto.logoutTime && isValid(dto.logoutTime) ? new Date(dto.logoutTime) : undefined;
+    sessionLog.riskFactors = dto.riskFactors || [];
+    sessionLog.isAnomalous = dto.isAnomalous || false;
+    sessionLog.duration = dto.duration;
+    sessionLog.riskLevel = dto.riskLevel;
+    sessionLog.createdAt = new Date(dto.createdAt);
+    sessionLog.updatedAt = new Date(dto.updatedAt);
     return sessionLog;
-  }
-
-  /**
-   * 转换为数据库格式
-   */
-  toDatabaseFormat(): {
-    uuid: string;
-    account_uuid: string;
-    session_uuid?: string;
-    operation_type: string;
-    device_info: string;
-    ip_address: string;
-    ip_country?: string;
-    ip_region?: string;
-    ip_city?: string;
-    ip_latitude?: number;
-    ip_longitude?: number;
-    ip_timezone?: string;
-    ip_isp?: string;
-    user_agent?: string;
-    login_time?: number;
-    logout_time?: number;
-    duration?: number;
-    risk_level: string;
-    risk_factors?: string;
-    is_anomalous: number;
-    created_at: number;
-    updated_at: number;
-  } {
-    return {
-      uuid: this.uuid,
-      account_uuid: this._accountUuUuid,
-      session_uuid: this._sessionUuid,
-      operation_type: this._operationType,
-      device_info: this._deviceInfo,
-      ip_address: this._ipLocation.ipAddress,
-      ip_country: this._ipLocation.country,
-      ip_region: this._ipLocation.region,
-      ip_city: this._ipLocation.city,
-      ip_latitude: this._ipLocation.latitude,
-      ip_longitude: this._ipLocation.longitude,
-      ip_timezone: this._ipLocation.timezone,
-      ip_isp: this._ipLocation.isp,
-      user_agent: this._userAgent,
-      login_time: this._loginTime?.getTime(),
-      logout_time: this._logoutTime?.getTime(),
-      duration: this._duration,
-      risk_level: this._riskLevel,
-      risk_factors: this._riskFactors.length > 0 ? JSON.stringify(this._riskFactors) : undefined,
-      is_anomalous: this._isAnomalous ? 1 : 0,
-      created_at: this._createdAt.getTime(),
-      updated_at: this._updatedAt.getTime()
-    };
   }
 }

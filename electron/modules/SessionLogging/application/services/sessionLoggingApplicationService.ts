@@ -1,8 +1,13 @@
 import { ISessionLoggingRepository } from "../../domain/repositories/sessionLoggingRepository";
-import { SessionLog, OperationType, RiskLevel } from "../../domain/aggregates/sessionLog";
+import { SessionLog } from "../../domain/aggregates/sessionLog";
 import { IPLocation } from "../../domain/valueObjects/ipLocation";
 import { generateUUID } from "@/shared/utils/uuid";
 import { sessionLoggingContainer } from "../../infrastructure/di/sessionLoggingContainer";
+import {
+  OperationType,
+  OperationStatus,
+  RiskLevel,
+} from "@common/modules/sessionLog/types/sessionLog";
 /**
  * SessionLogging 应用服务
  * 负责处理认证相关的会话日志记录逻辑
@@ -11,12 +16,14 @@ export class SessionLoggingApplicationService {
   private static instance: SessionLoggingApplicationService;
   private sessionLoggingRepository: ISessionLoggingRepository;
   constructor() {
-    this.sessionLoggingRepository = sessionLoggingContainer.getSessionLoggingRepository()
+    this.sessionLoggingRepository =
+      sessionLoggingContainer.getSessionLoggingRepository();
   }
 
   public static getSessionLoggingApplicationService(): SessionLoggingApplicationService {
     if (!SessionLoggingApplicationService.instance) {
-      SessionLoggingApplicationService.instance = new SessionLoggingApplicationService();
+      SessionLoggingApplicationService.instance =
+        new SessionLoggingApplicationService();
     }
     return SessionLoggingApplicationService.instance;
   }
@@ -26,35 +33,48 @@ export class SessionLoggingApplicationService {
    */
   async handleLoginAttemptEvent(event: any): Promise<void> {
     try {
-      const { username, accountUuid, result, failureReason, clientInfo } = event.payload;
+      const { username, accountUuid, result, failureReason, clientInfo } =
+        event.payload;
 
-      const deviceInfo = clientInfo?.deviceId || 'unknown-device';
+      const deviceInfo = clientInfo?.deviceId || "unknown-device";
       const userAgent = clientInfo?.userAgent;
-      const ipAddress = clientInfo?.ipAddress || 'unknown';
+      const ipAddress = clientInfo?.ipAddress || "unknown";
 
       const ipLocation = await IPLocation.fromIPAddress(ipAddress);
       const operationType = OperationType.LOGIN;
 
-      const sessionLog = new SessionLog(
-        generateUUID(),
-        accountUuid || 'unknown',
-        operationType,
-        deviceInfo,
-        ipLocation,
-        userAgent
-      );
+      let sessionLog: SessionLog;
 
-      if (result !== 'success') {
-        sessionLog.addAuditTrail(
-          'login_attempt_failed',
-          `登录失败: ${failureReason || 'Unknown reason'}`,
+      if (result === "success") {
+        sessionLog = new SessionLog({
+          uuid: generateUUID(),
+          accountUuid,
+          operationType,
+          operationStatus: OperationStatus.SUCCESS,
+          deviceInfo,
+          ipLocation,
+          userAgent,
+        });
+      } else {
+        sessionLog = new SessionLog({
+          uuid: generateUUID(),
+          accountUuid,
+          operationType,
+          operationStatus: OperationStatus.FAILURE,
+          deviceInfo,
+          ipLocation,
+          userAgent,
+        });
+
+       sessionLog.addAuditTrail(
+          OperationType.LOGIN,
+          `登录失败: ${failureReason || "Unknown reason"}`,
           RiskLevel.MEDIUM
         );
       }
-
       await this.sessionLoggingRepository.save(sessionLog);
     } catch (error) {
-      console.error('❌ [SessionLogging] 记录登录尝试日志失败:', error);
+      console.error("❌ [SessionLogging] 记录登录尝试日志失败:", error);
     }
   }
 
@@ -63,35 +83,52 @@ export class SessionLoggingApplicationService {
    */
   async handleCredentialVerificationEvent(event: any): Promise<void> {
     try {
-      const { accountUuid, username, verificationResult, failureReason, clientInfo } = event.payload;
+      const {
+        accountUuid,
+        username,
+        verificationResult,
+        failureReason,
+        clientInfo,
+      } = event.payload;
 
-      const deviceInfo = clientInfo?.deviceId || 'unknown-device';
+      const deviceInfo = clientInfo?.deviceId || "unknown-device";
       const userAgent = clientInfo?.userAgent;
-      const ipAddress = clientInfo?.ipAddress || 'unknown';
+      const ipAddress = clientInfo?.ipAddress || "unknown";
 
       const ipLocation = await IPLocation.fromIPAddress(ipAddress);
       const operationType = OperationType.LOGIN;
+      let sessionLog: SessionLog;
 
-      const sessionLog = new SessionLog(
-        generateUUID(),
-        accountUuid,
-        operationType,
-        deviceInfo,
-        ipLocation,
-        userAgent
-      );
+      if (verificationResult === "success") {
+        sessionLog = new SessionLog({
+          uuid: generateUUID(),
+          accountUuid,
+          operationType,
+          operationStatus: OperationStatus.SUCCESS,
+          deviceInfo,
+          ipLocation,
+          userAgent,
+        });
+      } else {
+        sessionLog = new SessionLog({
+          uuid: generateUUID(),
+          accountUuid,
+          operationType,
+          operationStatus: OperationStatus.FAILURE,
+          deviceInfo,
+          ipLocation,
+          userAgent,
+        });
 
-      if (verificationResult !== 'success') {
         sessionLog.addAuditTrail(
-          'credential_verification_failed',
-          `凭证验证失败: ${failureReason || 'Unknown reason'}`,
+          OperationType.LOGIN,
+          `凭证验证失败: ${failureReason || "Unknown reason"}`,
           RiskLevel.HIGH
         );
       }
-
       await this.sessionLoggingRepository.save(sessionLog);
     } catch (error) {
-      console.error('❌ [SessionLogging] 记录凭证验证日志失败:', error);
+      console.error("❌ [SessionLogging] 记录凭证验证日志失败:", error);
     }
   }
 
@@ -102,32 +139,34 @@ export class SessionLoggingApplicationService {
     try {
       const { accountUuid, sessionId, clientInfo } = event.payload;
 
-      const deviceInfo = clientInfo?.deviceId || 'unknown-device';
+      const deviceInfo = clientInfo?.deviceId || "unknown-device";
       const userAgent = clientInfo?.userAgent;
-      const ipAddress = clientInfo?.ipAddress || 'unknown';
+      const ipAddress = clientInfo?.ipAddress || "unknown";
 
       const ipLocation = await IPLocation.fromIPAddress(ipAddress);
       const operationType = OperationType.LOGIN;
 
-      const sessionLog = new SessionLog(
-        generateUUID(),
+      
+      const sessionLog = new SessionLog({
+        uuid: generateUUID(),
         accountUuid,
+        sessionUuid: sessionId,
         operationType,
+        operationStatus: OperationStatus.SUCCESS,
         deviceInfo,
         ipLocation,
         userAgent,
-        sessionId
-      );
+      });
 
       sessionLog.addAuditTrail(
-        'login_success',
+        OperationType.LOGIN,
         `用户登录成功，会话ID: ${sessionId}`,
         RiskLevel.LOW
       );
 
       await this.sessionLoggingRepository.save(sessionLog);
     } catch (error) {
-      console.error('❌ [SessionLogging] 记录登录成功日志失败:', error);
+      console.error("❌ [SessionLogging] 记录登录成功日志失败:", error);
     }
   }
 }

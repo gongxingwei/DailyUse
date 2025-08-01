@@ -9,6 +9,10 @@ export class SessionLoggingTables {
    * 创建会话记录相关表
    */
   static createTables(db: Database): void {
+     db.exec(`
+      DROP TABLE IF EXISTS session_logs;
+
+    `);
     // 会话日志表
     db.exec(`
       CREATE TABLE IF NOT EXISTS session_logs (
@@ -17,6 +21,7 @@ export class SessionLoggingTables {
         session_uuid TEXT,
         operation_type TEXT NOT NULL CHECK(operation_type IN ('login', 'logout', 'expired', 'forced_logout', 'session_refresh', 'mfa_verification', 'password_change', 'account_locked', 'suspicious_activity')),
         operation_status TEXT NOT NULL CHECK(operation_status IN ('success', 'failure', 'warning', 'info')),
+        user_agent TEXT,
         device_info TEXT NOT NULL,
         ip_address TEXT NOT NULL,
         -- 地理位置信息
@@ -27,22 +32,12 @@ export class SessionLoggingTables {
         ip_longitude REAL,
         ip_timezone TEXT,
         ip_isp TEXT,
-        -- 浏览器信息
-        user_agent TEXT,
-        browser_name TEXT,
-        browser_version TEXT,
-        os_name TEXT,
-        os_version TEXT,
         -- 会话时间信息
         login_time INTEGER,
         logout_time INTEGER,
         session_duration INTEGER, -- 会话持续时间（秒）
         -- 风险评估
         risk_level TEXT NOT NULL CHECK(risk_level IN ('low', 'medium', 'high', 'critical')) DEFAULT 'low',
-        risk_score INTEGER CHECK(risk_score BETWEEN 0 AND 100),
-        risk_factors TEXT, -- JSON 格式存储风险因素数组
-        is_anomalous BOOLEAN NOT NULL DEFAULT 0,
-        anomaly_reasons TEXT, -- JSON 格式存储异常原因
         -- 响应信息
         response_time INTEGER, -- 响应时间（毫秒）
         response_size INTEGER, -- 响应大小（字节）
@@ -154,8 +149,6 @@ export class SessionLoggingTables {
       CREATE INDEX IF NOT EXISTS idx_session_logs_operation_type ON session_logs(operation_type);
       CREATE INDEX IF NOT EXISTS idx_session_logs_operation_status ON session_logs(operation_status);
       CREATE INDEX IF NOT EXISTS idx_session_logs_risk_level ON session_logs(risk_level);
-      CREATE INDEX IF NOT EXISTS idx_session_logs_risk_score ON session_logs(risk_score);
-      CREATE INDEX IF NOT EXISTS idx_session_logs_is_anomalous ON session_logs(is_anomalous);
       CREATE INDEX IF NOT EXISTS idx_session_logs_created_at ON session_logs(created_at);
       CREATE INDEX IF NOT EXISTS idx_session_logs_login_time ON session_logs(login_time);
       CREATE INDEX IF NOT EXISTS idx_session_logs_ip_address ON session_logs(ip_address);
