@@ -1,39 +1,43 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
+import { Entity } from "@/shared/domain/entity";
+import { ISession, ISessionDTO } from "@common/modules/authentication/types/authentication";
+import { isValid } from "date-fns";
 
 /**
  * 会话实体
  * 管理用户登录会话的生命周期
  */
-export class Session {
-  private _uuid: string;
-  private _accountUuUuid: string;
+export class Session extends Entity implements ISession {
+  private _accountUuid: string;
+  private _token: string;
   private _deviceInfo: string;
   private _ipAddress: string;
   private _userAgent?: string;
-  private _createdAt: DateTime;
-  private _lastActiveAt: DateTime;
-  private _expiresAt: DateTime;
+  private _createdAt: Date;
+  private _lastActiveAt: Date;
+  private _expiresAt: Date;
   private _isActive: boolean;
-  private _terminatedAt?: DateTime;
+  private _terminatedAt?: Date;
   private _terminationReason?: string;
 
-  constructor(
-    uuid: string,
+  constructor(params: {
+    uuid?: string,
     accountUuid: string,
+    token: string,
     deviceInfo: string,
     ipAddress: string,
     userAgent?: string,
-    sessionDurationInMinutes: number = 60 * 24 // 默认24小时
-  ) {
-    this._uuid = uuid;
-    this._accountUuUuid = accountUuid;
-    this._deviceInfo = deviceInfo;
-    this._ipAddress = ipAddress;
-    this._userAgent = userAgent;
-    this._createdAt = TimeUtils.now();
+    sessionDurationInMinutes?: number // 默认24小时
+  }) {
+    super(params.uuid || Session.generateId());
+    this._accountUuid = params.accountUuid;
+    this._token = params.token;
+    this._deviceInfo = params.deviceInfo;
+    this._ipAddress = params.ipAddress;
+    this._userAgent = params.userAgent;
+    this._createdAt = new Date();
     this._lastActiveAt = this._createdAt;
-    this._expiresAt = TimeUtils.add(this._createdAt, sessionDurationInMinutes, 'minutes');
+    const sessionDurationInMinutes = params.sessionDurationInMinutes ?? 60 * 24;
+    this._expiresAt = new Date(this._createdAt.getTime() + sessionDurationInMinutes * 60 * 1000);
     this._isActive = true;
   }
 
@@ -43,7 +47,11 @@ export class Session {
   }
 
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
+  }
+
+  get token(): string {
+    return this._token;
   }
 
   get deviceInfo(): string {
@@ -58,35 +66,55 @@ export class Session {
     return this._userAgent;
   }
 
-  get createdAt(): DateTime {
+  get createdAt(): Date {
     return this._createdAt;
   }
 
-  get lastActiveAt(): DateTime {
+  set createdAt(value: Date) {
+    this._createdAt = value;
+  }
+
+  get lastActiveAt(): Date {
     return this._lastActiveAt;
   }
 
-  get expiresAt(): DateTime {
+  set lastActiveAt(value: Date) {
+    this._lastActiveAt = value;
+  }
+
+  get expiresAt(): Date {
     return this._expiresAt;
+  }
+
+  set expiresAt(value: Date) {
+    this._expiresAt = value;
   }
 
   get isActive(): boolean {
     return this._isActive && !this.isExpired();
   }
 
-  get terminatedAt(): DateTime | undefined {
+  get terminatedAt(): Date | undefined {
     return this._terminatedAt;
+  }
+
+  set terminatedAt(value: Date | undefined) {
+    this._terminatedAt = value;
   }
 
   get terminationReason(): string | undefined {
     return this._terminationReason;
   }
 
+  set terminationReason(value: string | undefined) {
+    this._terminationReason = value;
+  }
+
   /**
    * 检查会话是否已过期
    */
   isExpired(): boolean {
-    const now = TimeUtils.now();
+    const now = new Date();
     return now.getTime() > this._expiresAt.getTime();
   }
 
@@ -102,8 +130,8 @@ export class Session {
       throw new Error('Cannot refresh expired session');
     }
 
-    this._lastActiveAt = TimeUtils.now();
-    this._expiresAt = TimeUtils.add(this._lastActiveAt, extendMinutes, 'minutes');
+    this._lastActiveAt = new Date();
+    this._expiresAt = new Date(this._lastActiveAt.getTime() + extendMinutes * 60 * 1000);
   }
 
   /**
@@ -111,7 +139,7 @@ export class Session {
    */
   terminate(reason: string = 'User logout'): void {
     this._isActive = false;
-    this._terminatedAt = TimeUtils.now();
+    this._terminatedAt = new Date();
     this._terminationReason = reason;
   }
 
@@ -126,7 +154,7 @@ export class Session {
    * 检查会话是否即将过期
    */
   isNearExpiry(thresholdMinutes: number = 10): boolean {
-    const now = TimeUtils.now();
+    const now = new Date();
     const timeToExpiry = this._expiresAt.getTime() - now.getTime();
     const thresholdMilliseconds = thresholdMinutes * 60 * 1000;
     
@@ -137,7 +165,7 @@ export class Session {
    * 获取会话剩余时间（分钟）
    */
   getRemainingMinutes(): number {
-    const now = TimeUtils.now();
+    const now = new Date();
     const remainingMilliseconds = Math.max(0, this._expiresAt.getTime() - now.getTime());
     return Math.floor(remainingMilliseconds / (60 * 1000));
   }
@@ -146,7 +174,7 @@ export class Session {
    * 获取会话持续时间（分钟）
    */
   getDurationMinutes(): number {
-    const endTime = this._terminatedAt || TimeUtils.now();
+    const endTime = this._terminatedAt || new Date();
     const durationMilliseconds = endTime.getTime() - this._createdAt.getTime();
     return Math.floor(durationMilliseconds / (60 * 1000));
   }
@@ -164,7 +192,7 @@ export class Session {
   updateIPAddress(newIP: string, _reason: string = 'IP address changed'): void {
     if (this._ipAddress !== newIP) {
       this._ipAddress = newIP;
-      this._lastActiveAt = TimeUtils.now();
+      this._lastActiveAt = new Date();
       // 这里可以记录IP变化日志
     }
   }
@@ -172,86 +200,38 @@ export class Session {
   /**
    * 转换为DTO对象
    */
-  toDTO(): {
-    uuid: string;
-    accountUuid: string;
-    deviceInfo: string;
-    ipAddress: string;
-    userAgent?: string;
-    createdAt: string;
-    lastActiveAt: string;
-    expiresAt: string;
-    isActive: boolean;
-    terminatedAt?: string;
-    terminationReason?: string;
-  } {
+  toDTO(): ISessionDTO {
     return {
       uuid: this._uuid,
-      accountUuid: this._accountUuUuid,
+      accountUuid: this._accountUuid,
+      token: this._token,
       deviceInfo: this._deviceInfo,
       ipAddress: this._ipAddress,
       userAgent: this._userAgent,
-      createdAt: this._createdAt.toISOString(),
-      lastActiveAt: this._lastActiveAt.toISOString(),
-      expiresAt: this._expiresAt.toISOString(),
+      createdAt: this._createdAt.getTime(),
+      lastActiveAt: this._lastActiveAt.getTime(),
+      expiresAt: this._expiresAt.getTime(),
       isActive: this._isActive,
-      terminatedAt: this._terminatedAt?.toISOString(),
+      terminatedAt: this._terminatedAt?.getTime(),
       terminationReason: this._terminationReason
     };
   }
 
-  /**
-   * 从数据库数据创建会话实例
-   */
-  static fromDatabase(data: {
-    uuid: string;
-    account_uuid: string;
-    device_info: string;
-    ip_address: string;
-    user_agent?: string;
-    created_at: number;
-    last_active_at: number;
-    expires_at: number;
-    is_active: boolean;
-  }): Session {
-    const session = Object.create(Session.prototype);
-    session._uuid = data.uuid;
-    session._accountUuUuid = data.account_uuid;
-    session._deviceInfo = data.device_info;
-    session._ipAddress = data.ip_address;
-    session._userAgent = data.user_agent;
-    session._createdAt = new Date(data.created_at);
-    session._lastActiveAt = new Date(data.last_active_at);
-    session._expiresAt = new Date(data.expires_at);
-    session._isActive = data.is_active;
-    
+  static fromDTO(dto: ISessionDTO): Session {
+    const session = new Session({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      token: dto.token,
+      deviceInfo: dto.deviceInfo,
+      ipAddress: dto.ipAddress,
+      userAgent: dto.userAgent,
+      sessionDurationInMinutes: 60 * 24 // 默认24小时
+    });
+    session.createdAt = isValid(dto.createdAt) ? new Date(dto.createdAt) : new Date();
+    session.lastActiveAt = isValid(dto.lastActiveAt) ? new Date(dto.lastActiveAt) : new Date();
+    session.expiresAt = isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date();
+    session.terminatedAt = dto.terminatedAt && isValid(dto.terminatedAt) ? new Date(dto.terminatedAt) : undefined;
     return session;
   }
 
-  /**
-   * 转换为数据库格式
-   */
-  toDatabaseFormat(): {
-    uuid: string;
-    account_uuid: string;
-    device_info: string;
-    ip_address: string;
-    user_agent?: string;
-    created_at: number;
-    last_active_at: number;
-    expires_at: number;
-    is_active: boolean;
-  } {
-    return {
-      uuid: this._uuid,
-      account_uuid: this._accountUuUuid,
-      device_info: this._deviceInfo,
-      ip_address: this._ipAddress,
-      user_agent: this._userAgent,
-      created_at: this._createdAt.getTime(),
-      last_active_at: this._lastActiveAt.getTime(),
-      expires_at: this._expiresAt.getTime(),
-      is_active: this._isActive
-    };
-  }
 }

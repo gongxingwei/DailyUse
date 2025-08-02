@@ -33,7 +33,7 @@ export class SessionLoggingApplicationService {
    */
   async handleLoginAttemptEvent(event: any): Promise<void> {
     try {
-      const { username, accountUuid, result, failureReason, clientInfo } =
+      const { accountUuid, result, failureReason, clientInfo } =
         event.payload;
 
       const deviceInfo = clientInfo?.deviceId || "unknown-device";
@@ -85,7 +85,6 @@ export class SessionLoggingApplicationService {
     try {
       const {
         accountUuid,
-        username,
         verificationResult,
         failureReason,
         clientInfo,

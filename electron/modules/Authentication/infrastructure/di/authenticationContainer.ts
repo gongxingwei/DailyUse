@@ -1,12 +1,12 @@
 import { Database } from 'better-sqlite3';
-import type { IAuthCredentialRepository } from "../../index";
-import type { ISessionRepository } from "../../index";
-import type { ITokenRepository } from "../../index";
-import type { IMFADeviceRepository } from "../../index";
-import { SqliteAuthCredentialRepository } from "../../index";
-import { SqliteUserSessionRepository } from "../../index";
-import { SqliteTokenRepository } from "../../index";
-import { SqliteMFADeviceRepository } from "../../index";
+import type { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
+import type { ISessionRepository } from "../../domain/repositories/authenticationRepository";
+import type { ITokenRepository } from "../../domain/repositories/authenticationRepository";
+import type { IMFADeviceRepository } from "../../domain/repositories/authenticationRepository";
+import { SqliteAuthCredentialRepository } from "../repositories/sqliteAuthCredentialRepository";
+import { SqliteSessionRepository } from "../repositories/sqliteUserSessionRepository";
+import { SqliteTokenRepository } from "../repositories/sqliteTokenRepository";
+import { SqliteMFADeviceRepository } from "../repositories/sqliteMFADeviceRepository";
 import { getDatabase } from "../../../../shared/database/index";
 
 export class AuthenticationContainer {
@@ -18,7 +18,7 @@ export class AuthenticationContainer {
     private constructor(db: Database) {
         
         this.authCredentialRepository = new SqliteAuthCredentialRepository();
-        this.sessionRepository = new SqliteUserSessionRepository(db);
+        this.sessionRepository = new SqliteSessionRepository();
         this.tokenRepository = new SqliteTokenRepository(db);
         this.mfaDeviceRepository = new SqliteMFADeviceRepository(db);
     }

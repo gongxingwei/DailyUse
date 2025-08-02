@@ -92,7 +92,7 @@ export interface UserLoggedInEventPayload {
   accountUuid: string;
   username: string;
   credentialId: string;
-  sessionId: string;
+  sessionUuid: string;
   loginAt: Date;
   clientInfo?: {
     ipAddress?: string;
@@ -182,12 +182,12 @@ export interface AccountDeactivationConfirmedEvent extends DomainEvent<AccountDe
 }
 
 /**
- * 用户注销事件载荷
+ * 用户登出事件载荷
  */
 export interface UserLoggedOutEventPayload {
   accountUuid: string;
   username: string;
-  sessionId: string;
+  sessionUuid: string;
   logoutType: 'manual' | 'forced' | 'expired' | 'system';
   logoutReason?: string;
   loggedOutAt: Date;
@@ -199,7 +199,7 @@ export interface UserLoggedOutEventPayload {
 }
 
 /**
- * 用户注销事件
+ * 用户登出事件
  */
 export interface UserLoggedOutEvent extends DomainEvent<UserLoggedOutEventPayload> {
   eventType: 'UserLoggedOut';
@@ -210,7 +210,7 @@ export interface UserLoggedOutEvent extends DomainEvent<UserLoggedOutEventPayloa
  * 会话终止事件载荷
  */
 export interface SessionTerminatedEventPayload {
-  sessionId: string;
+  sessionUuid: string;
   accountUuid: string;
   terminationType: 'logout' | 'timeout' | 'forced' | 'concurrent_login';
   terminatedAt: Date;

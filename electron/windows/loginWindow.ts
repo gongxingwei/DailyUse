@@ -97,6 +97,8 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
       }
     });
 
+
+
     // 监听窗口控制事件
     this.window.webContents.on("ipc-message", (_event, channel, command) => {
       if (channel === "window-control") {

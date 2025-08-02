@@ -1,6 +1,6 @@
 import { IPLocation } from "../valueObjects/ipLocation";
 import { Entity } from "@/shared/domain/entity";
-import { IAuditTrail, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
+import { IAuditTrail, IAuditTrailDTO, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
 /**
  * 审计轨迹实体
  * 记录系统中的重要操作和安全事件
@@ -167,19 +167,7 @@ export class AuditTrail extends Entity implements IAuditTrail {
   /**
    * 转换为DTO对象
    */
-  toDTO(): {
-    uuid: string;
-    accountUuid: string;
-    operationType: string;
-    description: string;
-    riskLevel: RiskLevel;
-    ipLocation: any;
-    userAgent?: string;
-    metadata: Record<string, any>;
-    timestamp: string;
-    isAlertTriggered: boolean;
-    alertLevel?: string;
-  } {
+  toDTO(): IAuditTrailDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuUuid,
@@ -188,10 +176,26 @@ export class AuditTrail extends Entity implements IAuditTrail {
       riskLevel: this._riskLevel,
       ipLocation: this._ipLocation.toDTO(),
       userAgent: this._userAgent,
-      metadata: this._metadata,
+      metadata: JSON.stringify(this._metadata),
       timestamp: this._timestamp.toISOString(),
-      isAlertTriggered: this._isAlertTriggered,
+      isAlertTriggered: this._isAlertTriggered ? 1 : 0,
       alertLevel: this._alertLevel
     };
+  }
+
+  static fromDTO(dto: IAuditTrailDTO): AuditTrail {
+    return new AuditTrail({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      operationType: dto.operationType as OperationType,
+      description: dto.description,
+      riskLevel: dto.riskLevel as RiskLevel,
+      ipLocation: IPLocation.fromDTO(dto.ipLocation),
+      userAgent: dto.userAgent,
+      metadata: JSON.parse(dto.metadata),
+      timestamp: new Date(dto.timestamp),
+      isAlertTriggered: dto.isAlertTriggered === 1,
+      alertLevel: dto.alertLevel
+    });
   }
 }

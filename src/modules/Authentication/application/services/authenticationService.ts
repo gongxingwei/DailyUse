@@ -2,6 +2,7 @@ import type {
   PasswordAuthenticationRequest,
   PasswordAuthenticationResponse,
   AuthInfo,
+  LogoutResult,
 } from "../../domain/types";
 import { useAuthenticationStore } from "../../presentation/stores/authenticationStore";
 import { authenticationIpcClient } from "../../infrastructure/ipcs/authenticationIpcClient";
@@ -48,6 +49,8 @@ export class AuthenticationService {
       );
       if (response.success && response.data) {
         this.authenticationStore.$patch({
+          username: response.data.username,
+          sessionUuid: response.data.sessionUuid,
           token: response.data.token,
           accountUuid: response.data.accountUuid,
         });
@@ -65,6 +68,7 @@ export class AuthenticationService {
           token: null,
           username: "",
           accountUuid: "",
+          sessionUuid: "",
         },
       };
     }
@@ -75,8 +79,10 @@ export class AuthenticationService {
       const response = await authenticationIpcClient.getLoginInfo();
       if (response.success && response.data) {
         this.authenticationStore.$patch({
-          token: response.data.token,
+          username: response.data.username,
           accountUuid: response.data.accountUuid,
+          token: response.data.token,
+          sessionUuid: response.data.sessionUuid,
         });
         await this.publishUserLoggedInEvent(response.data);
       }
@@ -86,6 +92,31 @@ export class AuthenticationService {
       return {
         success: false,
         message: "获取认证信息失败，请稍后重试",
+        data: undefined,
+      };
+    }
+  }
+
+  async logout(): Promise<TResponse<LogoutResult>> {
+    try {
+      const response = await authenticationIpcClient.logout({
+        username: this.authenticationStore.username!,
+        token: this.authenticationStore.token!,
+        sessionUuid: this.authenticationStore.sessionUuid!,
+        accountUuid: this.authenticationStore.accountUuid!,
+        logoutType: 'manual',
+        reason: "用户主动注销",
+      });
+      if (response.success) {
+        this.authenticationStore.$reset();
+        await authenticationIpcClient.logoutEvent();
+      }
+      return response;
+    } catch (error) {
+      console.error("注销失败:", error);
+      return {
+        success: false,
+        message: "注销失败，请稍后重试",
         data: undefined,
       };
     }

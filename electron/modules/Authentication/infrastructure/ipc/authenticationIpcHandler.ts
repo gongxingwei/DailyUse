@@ -1,8 +1,9 @@
 import { ipcMain } from "electron";
 import { AuthenticationLoginService} from "../../application/services/authenticationLoginService";
 import { AuthenticationLogoutService} from "../../application/services/authenticationLogoutService";
-import type { PasswordAuthenticationRequest, PasswordAuthenticationResponse, AuthInfo } from "../../domain/types";
+import type { PasswordAuthenticationRequest, PasswordAuthenticationResponse, AuthInfo, LogoutResult, LogoutRequest } from "../../domain/types";
 import { authSession } from "../../application/services/authSessionStore";
+
 /**
  * Authentication 模块的 IPC 处理器
  * 处理来自渲染进程的认证相关请求
@@ -18,7 +19,6 @@ export class AuthenticationIpcHandler {
 ) {
   this.loginService = loginService;
   this.logoutService = logoutService;
-  void this.logoutService;
   this.setupIpcHandlers();
 }
 
@@ -79,33 +79,19 @@ export class AuthenticationIpcHandler {
     });
 
     // 处理登出请求
-    ipcMain.handle('authentication:logout', async (_event, sessionId: string): Promise<{ success: boolean; message: string }> => {
+    ipcMain.handle('authentication:logout', async (_event, request: LogoutRequest): Promise<LogoutResult> => {
       try {
-        console.log('🔐 [AuthIpc] 收到登出请求:', sessionId);
-        
-        // TODO: 实现登出逻辑
-        // 1. 清除会话
-        // 2. 发布登出事件
-        // 3. 通知SessionLogging模块
-        
-        return {
-          success: true,
-          message: '登出成功'
-        };
+        return await this.logoutService.logout(request);
       } catch (error) {
         console.error('❌ [AuthIpc] 登出处理异常:', error);
-        
-        return {
-          success: false,
-          message: '登出失败'
-        };
+        return { success: false, message: '登出处理异常，请稍后重试' };
       }
     });
 
     // 验证会话状态
-    ipcMain.handle('authentication:verify-session', async (_event, sessionId: string): Promise<{ valid: boolean; accountUuid?: string }> => {
+    ipcMain.handle('authentication:verify-session', async (_event, sessionUuid: string): Promise<{ valid: boolean; accountUuid?: string }> => {
       try {
-        console.log('🔐 [AuthIpc] 验证会话状态:', sessionId);
+        console.log('🔐 [AuthIpc] 验证会话状态:', sessionUuid);
         
         // TODO: 实现会话验证逻辑
         // 1. 查找会话

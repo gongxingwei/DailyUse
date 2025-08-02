@@ -2,7 +2,7 @@ import { Database } from 'better-sqlite3';
 
 // Authentication 模块仓库
 import { SqliteAuthCredentialRepository } from '../../modules/Authentication/infrastructure/repositories/sqliteAuthCredentialRepository';
-import { SqliteUserSessionRepository } from '../../modules/Authentication/infrastructure/repositories/sqliteUserSessionRepository';
+import { SqliteSessionRepository } from '../../modules/Authentication/infrastructure/repositories/sqliteUserSessionRepository';
 import { SqliteTokenRepository } from '../../modules/Authentication/infrastructure/repositories/sqliteTokenRepository';
 import { SqliteMFADeviceRepository } from '../../modules/Authentication/infrastructure/repositories/sqliteMFADeviceRepository';
 
@@ -20,7 +20,7 @@ import { SqliteUserRepository } from '../../modules/Account/infrastructure/repos
  */
 export class RepositoryFactory {
   private static _authCredentialRepo: SqliteAuthCredentialRepository;
-  private static _userSessionRepo: SqliteUserSessionRepository;
+  private static _userSessionRepo: SqliteSessionRepository;
   private static _tokenRepo: SqliteTokenRepository;
   private static _mfaDeviceRepo: SqliteMFADeviceRepository;
   private static _sessionLogRepo: SqliteSessionLoggingRepository;
@@ -33,7 +33,7 @@ export class RepositoryFactory {
    */
   static initialize(db: Database): void {
     this._authCredentialRepo = new SqliteAuthCredentialRepository(); // 内部获取DB
-    this._userSessionRepo = new SqliteUserSessionRepository(db);
+    this._userSessionRepo = new SqliteSessionRepository();
     this._tokenRepo = new SqliteTokenRepository(db);
     this._mfaDeviceRepo = new SqliteMFADeviceRepository(db);
     this._sessionLogRepo = new SqliteSessionLoggingRepository();
@@ -50,7 +50,7 @@ export class RepositoryFactory {
     return this._authCredentialRepo;
   }
 
-  static getUserSessionRepository(): SqliteUserSessionRepository {
+  static getUserSessionRepository(): SqliteSessionRepository {
     if (!this._userSessionRepo) {
       throw new Error('RepositoryFactory not initialized. Call initialize() first.');
     }

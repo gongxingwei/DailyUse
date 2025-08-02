@@ -8,6 +8,6 @@ export type {
 } from './domain/repositories/sessionLoggingRepository';
 
 // SessionLogging 领域模型导出
-export { SessionLog, OperationType, RiskLevel } from './domain/aggregates/sessionLog';
+export { SessionLog } from './domain/aggregates/sessionLog';
 export { AuditTrail } from './domain/entities/auditTrail';
 export { IPLocation } from './domain/valueObjects/ipLocation';

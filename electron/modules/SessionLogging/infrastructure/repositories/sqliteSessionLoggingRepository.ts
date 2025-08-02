@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
 import { getDatabase } from "../../../../shared/database/index";
-import { ISessionLog, OperationType, RiskLevel, OperationStatus } from "@common/modules/sessionLog/types/sessionLog";
+import { OperationType, RiskLevel, OperationStatus } from "@common/modules/sessionLog/types/sessionLog";
 import { ISessionLoggingRepository } from "../../domain/repositories/sessionLoggingRepository";
 import { IPLocation } from "../../domain/valueObjects/ipLocation";
 import { SessionLog } from "../../domain/aggregates/sessionLog";

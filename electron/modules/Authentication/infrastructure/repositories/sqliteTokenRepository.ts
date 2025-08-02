@@ -178,14 +178,14 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 将数据库行映射为 Token 对象
    */
   private mapRowToToken(row: any): Token {
-    return Token.fromDatabase(
-      row.token_value,
-      row.token_type,
-      row.account_uuid,
-      new Date(row.issued_at),
-      new Date(row.expires_at),
-      row.device_info,
-      Boolean(row.is_revoked)
-    );
+    return Token.fromDTO({
+      value: row.token_value,
+      type: row.token_type,
+      accountUuid: row.account_uuid,
+      issuedAt: row.issued_at,
+      expiresAt: row.expires_at,
+      deviceInfo: row.device_info,
+      isRevoked: row.is_revoked === 1
+    });
   }
 }

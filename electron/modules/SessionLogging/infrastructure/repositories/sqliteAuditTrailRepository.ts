@@ -11,12 +11,12 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   /**
    * 保存审计轨迹
    */
-  async save(auditTrail: AuditTrail): Promise<void> {
-    const data = auditTrail.toDatabaseFormat();
+  async save(sessionLogUuid: string, auditTrail: AuditTrail): Promise<void> {
+    const data = auditTrail.toDTO();
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
-        uuid, account_uuid, session_log_Uuid, operation_type, description, risk_level,
+        uuid, account_uuid, session_log_uuid, operation_type, description, risk_level,
         ip_address, ip_country, ip_region, ip_city, ip_latitude, ip_longitude,
         ip_timezone, ip_isp, user_agent, metadata, is_alert_triggered, alert_level, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -24,23 +24,23 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
 
     stmt.run(
       data.uuid,
-      data.account_uuid,
-      data.session_log_Uuid,
-      data.operation_type,
+      data.accountUuid,
+      sessionLogUuid,
+      data.operationType,
       data.description,
-      data.risk_level,
-      data.ip_address,
-      data.ip_country,
-      data.ip_region,
-      data.ip_city,
-      data.ip_latitude,
-      data.ip_longitude,
-      data.ip_timezone,
-      data.ip_isp,
-      data.user_agent,
+      data.riskLevel,
+      data.ipLocation.ipAddress,
+      data.ipLocation.country,
+      data.ipLocation.region,
+      data.ipLocation.city,
+      data.ipLocation.latitude,
+      data.ipLocation.longitude,
+      data.ipLocation.timezone,
+      data.ipLocation.isp,
+      data.userAgent,
       data.metadata,
-      data.is_alert_triggered,
-      data.alert_level,
+      data.isAlertTriggered,
+      data.alertLevel,
       data.timestamp
     );
   }
@@ -49,13 +49,11 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    * 保存审计轨迹并关联会话日志
    */
   async saveWithSessionLog(auditTrail: AuditTrail, sessionLogId: string): Promise<void> {
-    const data = auditTrail.toDatabaseFormat();
-    // 设置关联的session_log_Uuid
-    data.session_log_Uuid = sessionLogId;
+    const data = auditTrail.toDTO();
     
     const stmt = this.db.prepare(`
       INSERT OR REPLACE INTO audit_trails (
-        uuid, account_uuid, session_log_Uuid, operation_type, description, risk_level,
+        uuid, account_uuid, session_log_uuid, operation_type, description, risk_level,
         ip_address, ip_country, ip_region, ip_city, ip_latitude, ip_longitude,
         ip_timezone, ip_isp, user_agent, metadata, is_alert_triggered, alert_level, timestamp
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
@@ -63,23 +61,23 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
 
     stmt.run(
       data.uuid,
-      data.account_uuid,
-      data.session_log_Uuid,
-      data.operation_type,
+      data.accountUuid,
+      sessionLogId,
+      data.operationType,
       data.description,
-      data.risk_level,
-      data.ip_address,
-      data.ip_country,
-      data.ip_region,
-      data.ip_city,
-      data.ip_latitude,
-      data.ip_longitude,
-      data.ip_timezone,
-      data.ip_isp,
-      data.user_agent,
+      data.riskLevel,
+      data.ipLocation.ipAddress,
+      data.ipLocation.country,
+      data.ipLocation.region,
+      data.ipLocation.city,
+      data.ipLocation.latitude,
+      data.ipLocation.longitude,
+      data.ipLocation.timezone,
+      data.ipLocation.isp,
+      data.userAgent,
       data.metadata,
-      data.is_alert_triggered,
-      data.alert_level,
+      data.isAlertTriggered,
+      data.alertLevel,
       data.timestamp
     );
   }
@@ -89,13 +87,13 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async findById(uuid: string): Promise<AuditTrail | null> {
     const stmt = this.db.prepare(`
-      SELECT * FROM audit_trails WHERE id = ?
+      SELECT * FROM audit_trails WHERE uuid = ?
     `);
 
     const row = stmt.get(uuid) as any;
     if (!row) return null;
 
-    return AuditTrail.fromDatabase(row);
+    return this.mapRowToAuditTrail(row);
   }
 
   /**
@@ -109,7 +107,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -118,12 +116,12 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
   async findBySessionLogId(sessionLogId: string): Promise<AuditTrail[]> {
     const stmt = this.db.prepare(`
       SELECT * FROM audit_trails 
-      WHERE session_log_Uuid = ?
+      WHERE session_log_uuid = ?
       ORDER BY timestamp DESC
     `);
 
     const rows = stmt.all(sessionLogId) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -137,7 +135,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(operationType) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -151,7 +149,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(riskLevel) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -165,7 +163,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all() as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -179,7 +177,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(startTime.getTime(), endTime.getTime()) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -193,7 +191,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid, startTime.getTime(), endTime.getTime()) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -201,7 +199,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async delete(uuid: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM audit_trails WHERE id = ?
+      DELETE FROM audit_trails WHERE uuid = ?
     `);
 
     stmt.run(uuid);
@@ -223,7 +221,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
    */
   async deleteBySessionLogId(sessionLogId: string): Promise<void> {
     const stmt = this.db.prepare(`
-      DELETE FROM audit_trails WHERE session_log_Uuid = ?
+      DELETE FROM audit_trails WHERE session_log_uuid = ?
     `);
 
     stmt.run(sessionLogId);
@@ -290,7 +288,7 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(accountUuid, startTime.getTime()) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
   }
 
   /**
@@ -308,6 +306,10 @@ export class SqliteAuditTrailRepository implements IAuditTrailRepository {
     `);
 
     const rows = stmt.all(startTime.getTime()) as any[];
-    return rows.map(row => AuditTrail.fromDatabase(row));
+    return await Promise.all(rows.map(row => this.mapRowToAuditTrail(row)));
+  }
+
+  private async mapRowToAuditTrail(row: any): Promise<AuditTrail> {
+    return AuditTrail.fromDTO(row);
   }
 }

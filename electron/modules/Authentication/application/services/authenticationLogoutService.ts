@@ -1,43 +1,10 @@
 import { IAuthCredentialRepository, ISessionRepository } from "../../domain/repositories/authenticationRepository";
-
-import { 
-  UserLoggedOutEvent,
-  SessionTerminatedEvent,
-  AllSessionsTerminatedEvent
-} from "../../domain/events/authenticationEvents";
 import { eventBus } from "../../../../shared/events/eventBus";
-import { UserSession } from "../../../SessionManagement/domain/types";
+import { Session } from "../../domain/entities/session";
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
+import { LogoutRequest, LogoutResult } from "../../domain/types";
+import { authSession } from "../../application/services/authSessionStore";
 
-
-/**
- * 注销请求数据
- */
-export interface LogoutRequest {
-  sessionId?: string;
-  accountUuid?: string;
-  username?: string;
-  logoutType: 'manual' | 'forced' | 'expired' | 'system';
-  reason?: string;
-  clientInfo?: {
-    ipAddress?: string;
-    userAgent?: string;
-    deviceId?: string;
-  };
-}
-
-/**
- * 注销结果
- */
-export interface LogoutResult {
-  success: boolean;
-  sessionId?: string;
-  accountUuid?: string;
-  username?: string;
-  message: string;
-  terminatedSessionsCount?: number;
-  errorCode?: 'SESSION_NOT_FOUND' | 'ALREADY_LOGGED_OUT' | 'INVALID_REQUEST';
-}
 
 /**
  * Authentication 模块的注销服务
@@ -68,16 +35,16 @@ export class AuthenticationLogoutService {
    * 处理用户注销请求
    */
   async logout(request: LogoutRequest): Promise<LogoutResult> {
-    const { sessionId, accountUuid, username, logoutType, reason, clientInfo } = request;
+    const { sessionUuid, accountUuid, username, logoutType, reason, clientInfo } = request;
 
     try {
       // 1. 查找会话
-      let session: UserSession | null = null;
+      let session: Session | null = null;
       let targetAccountUuid = accountUuid;
       let targetUsername = username;
 
-      if (sessionId) {
-        session = await this.sessionRepository.findById(sessionId);
+      if (sessionUuid) {
+        session = await this.sessionRepository.findById(sessionUuid);
         if (!session) {
           return {
             success: false,
@@ -98,7 +65,7 @@ export class AuthenticationLogoutService {
       } else {
         return {
           success: false,
-          message: '必须提供 sessionId 或 accountUuid',
+          message: '必须提供 sessionUuid 或 accountUuid',
           errorCode: 'INVALID_REQUEST'
         };
       }
@@ -126,16 +93,18 @@ export class AuthenticationLogoutService {
         await this.sessionRepository.delete(session.uuid);
       }
 
+      authSession.clearAuthInfo(); // 清除当前会话的认证信息
+
       // 5. 发布会话终止事件
       if (session) {
         const remainingActiveSessions = await this.getRemainingActiveSessionsCount(targetAccountUuid!);
         
-        await eventBus.publish<SessionTerminatedEvent>({
+        await eventBus.publish({
           aggregateId: targetAccountUuid!,
           eventType: 'SessionTerminated',
           occurredOn: new Date(),
           payload: {
-            sessionId: session.uuid,
+            sessionUuid: session.uuid,
             accountUuid: targetAccountUuid!,
             terminationType: this.mapLogoutTypeToTerminationType(logoutType),
             terminatedAt: new Date(),
@@ -144,15 +113,15 @@ export class AuthenticationLogoutService {
         });
       }
 
-      // 6. 发布用户注销事件
-      await eventBus.publish<UserLoggedOutEvent>({
+      // 6. 发布用户登出事件
+      await eventBus.publish({
         aggregateId: targetAccountUuid!,
         eventType: 'UserLoggedOut',
         occurredOn: new Date(),
         payload: {
           accountUuid: targetAccountUuid!,
           username: targetUsername || '',
-          sessionId: session?.id || '',
+          sessionUuid: session?.uuid || '',
           logoutType,
           logoutReason: reason,
           loggedOutAt: new Date(),
@@ -162,7 +131,7 @@ export class AuthenticationLogoutService {
 
       return {
         success: true,
-        sessionId: session?.uuid,
+        sessionUuid: session?.uuid,
         accountUuid: targetAccountUuid,
         username: targetUsername,
         message: '注销成功',
@@ -204,7 +173,7 @@ export class AuthenticationLogoutService {
       await this.sessionRepository.deleteByAccountUuid(accountUuid);
 
       // 3. 发布全部会话终止事件
-      await eventBus.publish<AllSessionsTerminatedEvent>({
+      await eventBus.publish({
         aggregateId: accountUuid,
         eventType: 'AllSessionsTerminated',
         occurredOn: new Date(),
@@ -220,14 +189,14 @@ export class AuthenticationLogoutService {
       // 4. 为每个会话发布注销事件
       for (const session of activeSessions) {
         if (this.isSessionActive(session)) {
-          await eventBus.publish<UserLoggedOutEvent>({
+          await eventBus.publish({
             aggregateId: accountUuid,
             eventType: 'UserLoggedOut',
             occurredOn: new Date(),
             payload: {
               accountUuid,
               username,
-              sessionId: session.uuid,
+              sessionUuid: session.uuid,
               logoutType,
               logoutReason: reason,
               loggedOutAt: new Date(),
@@ -287,40 +256,40 @@ export class AuthenticationLogoutService {
     });
   }
 
-  /**
-   * 清理过期会话
-   */
-  async cleanupExpiredSessions(): Promise<number> {
-    try {
-      // 获取所有活跃会话
-      const allSessions = await this.sessionRepository.findActiveSessions();
-      let cleanedCount = 0;
+  // /**
+  //  * 清理过期会话
+  //  */
+  // async cleanupExpiredSessions(): Promise<number> {
+  //   try {
+  //     // 获取所有活跃会话
+  //     const allSessions = await this.sessionRepository.findActiveSessions();
+  //     let cleanedCount = 0;
 
-      for (const session of allSessions) {
-        if (!this.isSessionActive(session)) {
-          await this.logout({
-            sessionId: session.uuid,
-            logoutType: 'expired',
-            reason: '会话过期自动清理'
-          });
-          cleanedCount++;
-        }
-      }
+  //     for (const session of allSessions) {
+  //       if (!this.isSessionActive(session)) {
+  //         await this.logout({
+  //           sessionUuid: session.uuid,
+  //           logoutType: 'expired',
+  //           reason: '会话过期自动清理'
+  //         });
+  //         cleanedCount++;
+  //       }
+  //     }
 
-      // 执行仓库层的清理
-      await this.sessionRepository.cleanup();
+  //     // 执行仓库层的清理
+  //     await this.sessionRepository.cleanup();
 
-      return cleanedCount;
-    } catch (error) {
-      console.error('清理过期会话失败:', error);
-      return 0;
-    }
-  }
+  //     return cleanedCount;
+  //   } catch (error) {
+  //     console.error('清理过期会话失败:', error);
+  //     return 0;
+  //   }
+  // }
 
   /**
    * 检查会话是否仍然活跃
    */
-  private isSessionActive(session: UserSession): boolean {
+  private isSessionActive(session: Session): boolean {
     if (!session.expiresAt) {
       return true; // 永不过期的会话
     }

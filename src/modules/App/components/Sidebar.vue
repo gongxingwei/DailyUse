@@ -11,17 +11,20 @@
         </button>
         <div class="sidebar-divider"></div>
         <div class="sidebar-bottom">
-            <button class="sidebar-btn bottom-button" v-for="item in bottomItems" :key="item.to" :title="item.title" @click="go(item.to)">
-            <span :class="item.icon" style="font-size: 24px;"></span>
-        </button>
+            <button class="sidebar-btn bottom-button" v-for="item in bottomItems" :key="item.to" :title="item.title"
+                @click="go(item.to)">
+                <span :class="item.icon" style="font-size: 24px;"></span>
+            </button>
+            <SidebarMoreMenu />
         </div>
-        
+
     </div>
 </template>
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ProfileAvatar from '@/modules/Account/presentation/components/ProfileAvatar.vue'
+import SidebarMoreMenu from './SidebarMoreMenu.vue';
 import { useI18n } from 'vue-i18n';
 const router = useRouter()
 const { t } = useI18n();
@@ -55,6 +58,7 @@ const bottomItems = [
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
 }
+
 .sidebar-btn {
     width: 44px;
     height: 44px;
@@ -68,10 +72,12 @@ const bottomItems = [
     transition: background 0.2s;
     position: relative;
 }
+
 .sidebar-btn:hover {
     background-color: rgba(var(--v-theme-on-surface), 0.1);
     border-radius: 8px;
 }
+
 .sidebar-divider {
     width: 80%;
     height: 1px;

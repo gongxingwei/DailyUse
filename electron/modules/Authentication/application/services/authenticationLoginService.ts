@@ -1,6 +1,5 @@
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
-import { IAuthCredentialRepository, ITokenRepository } from "../../domain/repositories/authenticationRepository";
-import { SqliteAuthCredentialRepository, SqliteTokenRepository } from "../../index";
+import { IAuthCredentialRepository, ITokenRepository, ISessionRepository } from "../../domain/repositories/authenticationRepository";
 import {
   AccountUuidGetterRequestedEvent,
   AccountStatusVerificationRequestedEvent,
@@ -15,6 +14,11 @@ import { tokenService } from "../../domain/services/tokenService";
 import { authSession } from "../../application/services/authSessionStore";
 import type { PasswordAuthenticationResponse, PasswordAuthenticationRequest } from "../../domain/types";
 import crypto from "crypto";
+
+// domains
+import { Session } from "../../domain/entities/session";
+import { Token } from "../../domain/valueObjects/token";
+
 
 /**
  * AuthenticationLoginService
@@ -37,6 +41,11 @@ export class AuthenticationLoginService {
    * 令牌仓库
    */
   private tokenRepository: ITokenRepository;
+
+  /**
+   * 会话仓库
+   */
+  private sessionRepository: ISessionRepository;
 
   /**
    * 待处理的账号ID请求（requestId -> Promise控制器）
@@ -68,9 +77,10 @@ export class AuthenticationLoginService {
    * @param tokenRepository 令牌仓库
    * 构造时自动注册事件监听器
    */
-  constructor(authCredentialRepository: IAuthCredentialRepository, tokenRepository: ITokenRepository) {
+  constructor(authCredentialRepository: IAuthCredentialRepository, tokenRepository: ITokenRepository, sessionRepository: ISessionRepository) {
     this.authCredentialRepository = authCredentialRepository;
     this.tokenRepository = tokenRepository;
+    this.sessionRepository = sessionRepository;
     this.setupEventListeners();
   }
 
@@ -84,13 +94,15 @@ export class AuthenticationLoginService {
    */
   static async createInstance(
     authCredentialRepository?: IAuthCredentialRepository,
-    tokenRepository?: ITokenRepository
+    tokenRepository?: ITokenRepository,
+    sessionRepository?: ISessionRepository
   ): Promise<AuthenticationLoginService> {
     const authenticationContainer = await AuthenticationContainer.getInstance();
     authCredentialRepository = authCredentialRepository || authenticationContainer.getAuthCredentialRepository();
     tokenRepository = tokenRepository || authenticationContainer.getTokenRepository();
-    console.log('[AuthLoginService] 创建实例', { authCredentialRepository, tokenRepository });
-    return new AuthenticationLoginService(authCredentialRepository, tokenRepository);
+    sessionRepository = sessionRepository || authenticationContainer.getSessionRepository();
+
+    return new AuthenticationLoginService(authCredentialRepository, tokenRepository, sessionRepository);
   }
 
   /**
@@ -197,9 +209,15 @@ export class AuthenticationLoginService {
       await tokenService.saveToken(accessToken, this.tokenRepository);
       console.log("✓ [AuthLogin] 密码验证通过，访问令牌已保存");
       // 6. 保存登录信息到会话存储
+      const newAuthSession =authCredential.createSession(accessToken.value,clientInfo?.deviceId || "unknown-device", clientInfo?.country || "unknown", clientInfo?.userAgent);
+
+      await this.sessionRepository.save(newAuthSession);
+
       authSession.setAuthInfo({
+        username: username,
         token: accessToken.value,
         accountUuid: accountUuid,
+        sessionUuid: newAuthSession.uuid,
       });
       // 7. 生成会话ID
       const sessionId = crypto.randomUUID();
@@ -217,7 +235,7 @@ export class AuthenticationLoginService {
         accountUuid,
         username,
         credentialId: authCredential.uuid,
-        sessionId,
+        sessionUuid: newAuthSession.uuid,
         loginAt: new Date(),
         clientInfo,
       });
@@ -236,7 +254,8 @@ export class AuthenticationLoginService {
         data: {
           username,
           accountUuid,
-          token: accessToken.value || null
+          token: accessToken.value || null,
+          sessionUuid: newAuthSession.uuid,
         },
       };
     } catch (error) {

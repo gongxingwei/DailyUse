@@ -71,14 +71,14 @@ export interface IAuditTrail {
 export interface IAuditTrailDTO {
   uuid: string;
   accountUuid: string;
-  operationType: OperationType;
+  operationType: string; // OperationType 的字符串表示
   description: string;
-  riskLevel: RiskLevel;
+  riskLevel: string; // RiskLevel 的字符串表示
   ipLocation: IIPLocationDTO;
   userAgent?: string;
-  metadata: Record<string, any>;
+  metadata: string; // 存储为 JSON 字符串
   timestamp: string;
-  isAlertTriggered: boolean;
+  isAlertTriggered: number; // 0 或 1
   alertLevel?: 'info' | 'warning' | 'error' | 'critical';
 }
 

@@ -150,6 +150,7 @@ export class ReminderTemplate extends Entity implements IReminderTemplate {
   calculateReminderSchedules(baseTime: string): ReminderSchedule[] {
     const schedules: ReminderSchedule[] = [];
     const baseDate = new Date(baseTime);
+    console.log('这 baseDateTime有用吗:', baseTime, 'baseDate:', baseDate);
     const traverse = (
       times: RelativeTimeSchedule[],
       currentTime: Date,

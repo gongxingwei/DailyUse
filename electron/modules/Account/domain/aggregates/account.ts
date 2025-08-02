@@ -1,6 +1,4 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 import { User } from "../entities/user";
 import { Email } from "../valueObjects/email";
 import { PhoneNumber } from "../valueObjects/phoneNumber";
@@ -20,9 +18,9 @@ export class Account extends AggregateRoot implements IAccount {
   private _accountType: AccountType;
   private _user: User;
   private _roleUuids: Set<string>;
-  private _createdAt: DateTime;
-  private _updatedAt: DateTime;
-  private _lastLoginAt?: DateTime;
+  private _createdAt: Date;
+  private _updatedAt: Date;
+  private _lastLoginAt?: Date;
   private _emailVerificationToken?: string;
   private _phoneVerificationCode?: string;
   private _isEmailVerified: boolean;
@@ -45,7 +43,7 @@ export class Account extends AggregateRoot implements IAccount {
     phoneVerificationCode?: string;
     isEmailVerified?: boolean;
     isPhoneVerified?: boolean;
-    lastLoginAt?: DateTime;
+    lastLoginAt?: Date;
   }) {
     super(params.uuid || Account.generateId());
     this._username = params.username;
@@ -56,8 +54,8 @@ export class Account extends AggregateRoot implements IAccount {
     this._accountType = params.accountType;
     this._user = params.user;
     this._roleUuids = params.roleUuids ?? new Set();
-    this._createdAt = TimeUtils.now();
-    this._updatedAt = TimeUtils.now();
+    this._createdAt = new Date();
+    this._updatedAt = new Date();
     this._lastLoginAt = params.lastLoginAt;
     this._emailVerificationToken = params.emailVerificationToken;
     this._phoneVerificationCode = params.phoneVerificationCode;
@@ -67,37 +65,37 @@ export class Account extends AggregateRoot implements IAccount {
 
   // ======================== Getter/Setter ========================
   get username(): string { return this._username; }
-  set username(value: string) { this._username = value; this._updatedAt = TimeUtils.now(); }
+  set username(value: string) { this._username = value; this._updatedAt = new Date(); }
 
   get email(): Email | undefined { return this._email; }
-  set email(value: Email | undefined) { this._email = value; this._updatedAt = TimeUtils.now(); }
+  set email(value: Email | undefined) { this._email = value; this._updatedAt = new Date(); }
 
   get phoneNumber(): PhoneNumber | undefined { return this._phoneNumber; }
-  set phoneNumber(value: PhoneNumber | undefined) { this._phoneNumber = value; this._updatedAt = TimeUtils.now(); }
+  set phoneNumber(value: PhoneNumber | undefined) { this._phoneNumber = value; this._updatedAt = new Date(); }
 
   get address(): Address | undefined { return this._address; }
-  set address(value: Address | undefined) { this._address = value; this._updatedAt = TimeUtils.now(); }
+  set address(value: Address | undefined) { this._address = value; this._updatedAt = new Date(); }
 
   get status(): AccountStatus { return this._status; }
-  set status(value: AccountStatus) { this._status = value; this._updatedAt = TimeUtils.now(); }
+  set status(value: AccountStatus) { this._status = value; this._updatedAt = new Date(); }
 
   get accountType(): AccountType { return this._accountType; }
-  set accountType(value: AccountType) { this._accountType = value; this._updatedAt = TimeUtils.now(); }
+  set accountType(value: AccountType) { this._accountType = value; this._updatedAt = new Date(); }
 
   get user(): User { return this._user; }
-  set user(value: User) { this._user = value; this._updatedAt = TimeUtils.now(); }
+  set user(value: User) { this._user = value; this._updatedAt = new Date(); }
 
   get roleIds(): Set<string> { return new Set(this._roleUuids); }
-  set roleIds(value: Set<string>) { this._roleUuids = value; this._updatedAt = TimeUtils.now(); }
+  set roleIds(value: Set<string>) { this._roleUuids = value; this._updatedAt = new Date(); }
 
-  get createdAt(): DateTime { return this._createdAt; }
-  set createdAt(value: DateTime) { this._createdAt = value; }
+  get createdAt(): Date { return this._createdAt; }
+  set createdAt(value: Date) { this._createdAt = value; }
 
-  get updatedAt(): DateTime { return this._updatedAt; }
-  set updatedAt(value: DateTime) { this._updatedAt = value; }
+  get updatedAt(): Date { return this._updatedAt; }
+  set updatedAt(value: Date) { this._updatedAt = value; }
 
-  get lastLoginAt(): DateTime | undefined { return this._lastLoginAt; }
-  set lastLoginAt(value: DateTime | undefined) { this._lastLoginAt = value; }
+  get lastLoginAt(): Date | undefined { return this._lastLoginAt; }
+  set lastLoginAt(value: Date | undefined) { this._lastLoginAt = value; }
 
   get emailVerificationToken(): string | undefined { return this._emailVerificationToken; }
   set emailVerificationToken(value: string | undefined) { this._emailVerificationToken = value; }
@@ -116,7 +114,7 @@ export class Account extends AggregateRoot implements IAccount {
   updateEmail(emailAddress: string): void {
     const newEmail = new Email(emailAddress);
     this._email = newEmail;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
     
     // 如果账号已激活，更新邮箱后需要重新验证
     if (this._status === AccountStatus.ACTIVE) {
@@ -137,7 +135,7 @@ export class Account extends AggregateRoot implements IAccount {
   updatePhone(phoneNumber: string, countryCode: string = '+86'): void {
     const newPhone = new PhoneNumber(phoneNumber, countryCode);
     this._phoneNumber = newPhone;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     // 如果账号已激活，更新手机号后需要重新验证
     if (this._status === AccountStatus.ACTIVE) {
@@ -157,7 +155,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   updateAddress(address: Address): void {
     this._address = address;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -183,7 +181,7 @@ export class Account extends AggregateRoot implements IAccount {
       this._status = AccountStatus.ACTIVE;
     }
 
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -209,7 +207,7 @@ export class Account extends AggregateRoot implements IAccount {
       this._status = AccountStatus.ACTIVE;
     }
 
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -224,7 +222,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   disable(): void {
     this._status = AccountStatus.DISABLED;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -239,7 +237,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   enable(): void {
     this._status = AccountStatus.ACTIVE;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -254,7 +252,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   suspend(): void {
     this._status = AccountStatus.SUSPENDED;
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -269,7 +267,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   addRole(roleId: string): void {
     this._roleUuids.add(roleId);
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -284,7 +282,7 @@ export class Account extends AggregateRoot implements IAccount {
    */
   removeRole(roleId: string): void {
     this._roleUuids.delete(roleId);
-    this._updatedAt = TimeUtils.now();
+    this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
@@ -305,7 +303,7 @@ export class Account extends AggregateRoot implements IAccount {
    * 记录登录时间
    */
   recordLogin(): void {
-    this._lastLoginAt = TimeUtils.now();
+    this._lastLoginAt = new Date();
     this._updatedAt = this._lastLoginAt;
 
     this.addDomainEvent({
@@ -426,8 +424,8 @@ export class Account extends AggregateRoot implements IAccount {
       phoneNumber: dto.phone ? new PhoneNumber(dto.phone) : undefined,
       // 其它属性后续用 setter 恢复
     });
-    account.createdAt = dto.createdAt ?? TimeUtils.now();
-    account.updatedAt = dto.updatedAt ?? TimeUtils.now();
+    account.createdAt = dto.createdAt ?? new Date();
+    account.updatedAt = dto.updatedAt ?? new Date();
     account.lastLoginAt = dto.lastLoginAt;
     account.roleIds = dto.roleIds || new Set();
     account.emailVerificationToken = dto.emailVerificationToken;

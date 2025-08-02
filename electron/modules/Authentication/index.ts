@@ -1,7 +1,7 @@
 
 // Authentication 模块仓库导出
 export { SqliteAuthCredentialRepository } from './infrastructure/repositories/sqliteAuthCredentialRepository';
-export { SqliteUserSessionRepository } from './infrastructure/repositories/sqliteUserSessionRepository';
+export { SqliteSessionRepository } from './infrastructure/repositories/sqliteUserSessionRepository';
 export { SqliteTokenRepository } from './infrastructure/repositories/sqliteTokenRepository';
 export { SqliteMFADeviceRepository } from './infrastructure/repositories/sqliteMFADeviceRepository';
 

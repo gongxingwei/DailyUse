@@ -1,44 +1,36 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
 
-/**
- * 令牌类型枚举
- */
-export enum TokenType {
-  REMEMBER_ME = 'remember_me',
-  ACCESS_TOKEN = 'access_token',
-  REFRESH_TOKEN = 'refresh_token',
-  EMAIL_VERIFICATION = 'email_verification',
-  PASSWORD_RESET = 'password_reset'
-}
+import { IToken, TokenType, ITokenDTO } from "@common/modules/authentication/types/authentication";
+import { isValid, addDays, addMinutes, addHours } from "date-fns";
+import { ValueObject } from "@/shared/domain/valueObject";
 
 /**
  * 令牌值对象
  * 封装各种类型的令牌和相关验证逻辑
  */
-export class Token {
-  private readonly _value: string;
-  private readonly _type: TokenType;
-  private readonly _accountUuUuid: string;
-  private readonly _issuedAt: DateTime;
-  private readonly _expiresAt: DateTime;
-  private readonly _deviceInfo?: string;
+export class Token extends ValueObject<string> implements IToken {
+  private _type: TokenType;
+  private _accountUuUuid: string;
+  private _issuedAt: Date;
+  private _expiresAt: Date;
+  private _deviceInfo?: string;
   private _isRevoked: boolean;
 
-  constructor(
-    value: string,
-    type: TokenType,
-    accountUuid: string,
-    expiresAt: DateTime,
-    deviceInfo?: string
-  ) {
-    this._value = value;
-    this._type = type;
-    this._accountUuUuid = accountUuid;
-    this._issuedAt = TimeUtils.now();
-    this._expiresAt = expiresAt;
-    this._deviceInfo = deviceInfo;
-    this._isRevoked = false;
+  constructor(params: {
+    value?: string;
+    type: TokenType;
+    accountUuid: string;
+    issuedAt?: Date;
+    expiresAt: Date;
+    deviceInfo?: string;
+    isRevoked?: boolean;
+  }) {
+    super(params.value || Token.generateTokenValue());
+    this._type = params.type;
+    this._accountUuUuid = params.accountUuid;
+    this._issuedAt = params.issuedAt ?? new Date();
+    this._expiresAt = params.expiresAt;
+    this._deviceInfo = params.deviceInfo;
+    this._isRevoked = params.isRevoked ?? false;
   }
 
   /**
@@ -46,9 +38,8 @@ export class Token {
    */
   static createRememberToken(accountUuid: string, deviceInfo: string, daysToExpire: number = 30): Token {
     const value = Token.generateTokenValue();
-    const expiresAt = TimeUtils.add(TimeUtils.now(), daysToExpire, 'days');
-    
-    return new Token(value, TokenType.REMEMBER_ME, accountUuid, expiresAt, deviceInfo);
+    const expiresAt = addDays(new Date(), daysToExpire);
+    return new Token({ value, type: TokenType.REMEMBER_ME, accountUuid, expiresAt, deviceInfo });
   }
 
   /**
@@ -56,9 +47,8 @@ export class Token {
    */
   static createAccessToken(accountUuid: string, minutesToExpire: number = 60): Token {
     const value = Token.generateTokenValue();
-    const expiresAt = TimeUtils.add(TimeUtils.now(), minutesToExpire, 'minutes');
-    
-    return new Token(value, TokenType.ACCESS_TOKEN, accountUuid, expiresAt);
+    const expiresAt = addMinutes(new Date(), minutesToExpire);
+    return new Token({ value, type: TokenType.ACCESS_TOKEN, accountUuid, expiresAt });
   }
 
   /**
@@ -66,9 +56,8 @@ export class Token {
    */
   static createRefreshToken(accountUuid: string, daysToExpire: number = 7): Token {
     const value = Token.generateTokenValue();
-    const expiresAt = TimeUtils.add(TimeUtils.now(), daysToExpire, 'days');
-    
-    return new Token(value, TokenType.REFRESH_TOKEN, accountUuid, expiresAt);
+    const expiresAt = addDays(new Date(), daysToExpire);
+    return new Token({ value, type: TokenType.REFRESH_TOKEN, accountUuid, expiresAt });
   }
 
   /**
@@ -76,9 +65,8 @@ export class Token {
    */
   static createEmailVerificationToken(accountUuid: string, hoursToExpire: number = 24): Token {
     const value = Token.generateTokenValue();
-    const expiresAt = TimeUtils.add(TimeUtils.now(), hoursToExpire, 'hours');
-    
-    return new Token(value, TokenType.EMAIL_VERIFICATION, accountUuid, expiresAt);
+    const expiresAt = addHours(new Date(), hoursToExpire);
+    return new Token({ value, type: TokenType.EMAIL_VERIFICATION, accountUuid, expiresAt });
   }
 
   /**
@@ -86,9 +74,8 @@ export class Token {
    */
   static createPasswordResetToken(accountUuid: string, hoursToExpire: number = 2): Token {
     const value = Token.generateTokenValue();
-    const expiresAt = TimeUtils.add(TimeUtils.now(), hoursToExpire, 'hours');
-    
-    return new Token(value, TokenType.PASSWORD_RESET, accountUuid, expiresAt);
+    const expiresAt = addHours(new Date(), hoursToExpire);
+    return new Token({ value, type: TokenType.PASSWORD_RESET, accountUuid, expiresAt });
   }
 
   /**
@@ -98,8 +85,7 @@ export class Token {
     if (this._isRevoked) {
       return false;
     }
-    
-    const now = TimeUtils.now();
+    const now = new Date();
     return now.getTime() < this._expiresAt.getTime();
   }
 
@@ -107,7 +93,7 @@ export class Token {
    * 检查令牌是否已过期
    */
   isExpired(): boolean {
-    const now = TimeUtils.now();
+    const now = new Date();
     return now.getTime() >= this._expiresAt.getTime();
   }
 
@@ -122,10 +108,9 @@ export class Token {
    * 检查是否即将过期（剩余时间少于总时间的20%）
    */
   isNearExpiry(): boolean {
-    const now = TimeUtils.now();
+    const now = new Date();
     const totalLifetime = this._expiresAt.getTime() - this._issuedAt.getTime();
     const remainingTime = this._expiresAt.getTime() - now.getTime();
-    
     return remainingTime < (totalLifetime * 0.2);
   }
 
@@ -133,7 +118,7 @@ export class Token {
    * 获取剩余有效时间（毫秒）
    */
   getRemainingTime(): number {
-    const now = TimeUtils.now();
+    const now = new Date();
     return Math.max(0, this._expiresAt.getTime() - now.getTime());
   }
 
@@ -150,11 +135,11 @@ export class Token {
     return this._accountUuUuid;
   }
 
-  get issuedAt(): DateTime {
+  get issuedAt(): Date {
     return this._issuedAt;
   }
 
-  get expiresAt(): DateTime {
+  get expiresAt(): Date {
     return this._expiresAt;
   }
 
@@ -170,29 +155,18 @@ export class Token {
    * 生成随机令牌值
    */
   private static generateTokenValue(): string {
-    // 生成加密安全的随机令牌
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     let result = '';
-    
     for (let i = 0; i < 64; i++) {
       result += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    
     return result;
   }
 
   /**
    * 转换为DTO对象
    */
-  toDTO(): {
-    value: string;
-    type: TokenType;
-    accountUuid: string;
-    issuedAt: string;
-    expiresAt: string;
-    deviceInfo?: string;
-    isRevoked: boolean;
-  } {
+  toDTO(): ITokenDTO {
     return {
       value: this._value,
       type: this._type,
@@ -205,21 +179,17 @@ export class Token {
   }
 
   /**
-   * 从数据库行创建 Token 对象
+   * 从DTO对象创建 Token
    */
-  static fromDatabase(
-    value: string,
-    type: TokenType,
-    accountUuid: string,
-    issuedAt: DateTime,
-    expiresAt: DateTime,
-    deviceInfo?: string,
-    isRevoked: boolean = false
-  ): Token {
-    const token = new Token(value, type, accountUuid, expiresAt, deviceInfo);
-    // 设置从数据库读取的签发时间和撤销状态
-    (token as any)._issuedAt = issuedAt;
-    (token as any)._isRevoked = isRevoked;
-    return token;
+  static fromDTO(dto: ITokenDTO): Token {
+    return new Token({
+      value: dto.value,
+      type: dto.type,
+      accountUuid: dto.accountUuid,
+      issuedAt: isValid(dto.issuedAt) ? new Date(dto.issuedAt) : new Date(),
+      expiresAt: isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date(),
+      deviceInfo: dto.deviceInfo,
+      isRevoked: dto.isRevoked
+    });
   }
 }

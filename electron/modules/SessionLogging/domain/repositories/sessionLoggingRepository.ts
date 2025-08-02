@@ -23,7 +23,7 @@ export interface ISessionLoggingRepository {
  * 审计轨迹存储库接口
  */
 export interface IAuditTrailRepository {
-  save(auditTrail: AuditTrail): Promise<void>;
+  save(sessionLogUuid: string, auditTrail: AuditTrail): Promise<void>;
   findById(uuid: string): Promise<AuditTrail | null>;
   findByAccountUuid(accountUuid: string): Promise<AuditTrail[]>;
   findBySessionLogId(sessionLogId: string): Promise<AuditTrail[]>;

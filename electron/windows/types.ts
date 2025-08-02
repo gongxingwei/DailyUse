@@ -85,6 +85,7 @@ export interface LoginWindowEvents extends WindowEvents {
   'login-success': (userData: any) => void;
   'login-failed': (error: string) => void;
   'login-cancelled': () => void;
+  
 }
 
 /**

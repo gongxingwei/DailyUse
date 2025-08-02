@@ -4,4 +4,5 @@ export interface AuthInfo {
     token: string;
     accountUuid: string;
     username: string;
+    sessionUuid: string;
 }

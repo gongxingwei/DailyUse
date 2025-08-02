@@ -137,7 +137,8 @@ export class WindowManager extends EventEmitter {
     
     // 隐藏主窗口
     if (this.mainWindow) {
-      this.mainWindow.hide();
+      this.mainWindow.close(); // 或 this.mainWindow.destroy();
+  this.mainWindow = null;
     }
     
     // 创建或显示登录窗口

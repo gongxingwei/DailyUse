@@ -9,6 +9,9 @@ export class AuthenticationTables {
    * 创建认证相关表
    */
   static createTables(db: Database): void {
+    db.exec(`
+      DROP TABLE IF EXISTS auth_sessions;
+    `);
     // 认证凭证表
     db.exec(`
       CREATE TABLE IF NOT EXISTS auth_credentials (
@@ -42,8 +45,9 @@ export class AuthenticationTables {
         created_at INTEGER NOT NULL,
         last_active_at INTEGER NOT NULL,
         expires_at INTEGER NOT NULL,
-        is_active BOOLEAN NOT NULL DEFAULT 1,
-        logout_reason TEXT, -- 登出原因
+        is_active BOOLEAN NOT NULL DEFAULT 1, -- 是否为活跃会话
+        terminated_at INTEGER, -- 会话终止时间
+        termination_reason TEXT, -- 会话终止原因
         FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
       )
     `);

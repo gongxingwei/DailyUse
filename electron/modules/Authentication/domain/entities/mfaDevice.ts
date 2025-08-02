@@ -1,6 +1,3 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
-
 /**
  * MFA设备类型枚举
  */
@@ -27,8 +24,8 @@ export class MFADevice {
   private _backupCodes?: string[]; // 备用验证码
   private _isVerified: boolean;
   private _isEnabled: boolean;
-  private _createdAt: DateTime;
-  private _lastUsedAt?: DateTime;
+  private _createdAt: Date;
+  private _lastUsedAt?: Date;
   private _verificationAttempts: number;
   private _maxAttempts: number;
 
@@ -45,7 +42,7 @@ export class MFADevice {
     this._name = name;
     this._isVerified = false;
     this._isEnabled = false;
-    this._createdAt = TimeUtils.now();
+    this._createdAt = new Date();
     this._verificationAttempts = 0;
     this._maxAttempts = maxAttempts;
   }
@@ -87,11 +84,11 @@ export class MFADevice {
     return this._isEnabled && this._isVerified;
   }
 
-  get createdAt(): DateTime {
+  get createdAt(): Date {
     return this._createdAt;
   }
 
-  get lastUsedAt(): DateTime | undefined {
+  get lastUsedAt(): Date | undefined {
     return this._lastUsedAt;
   }
 
@@ -172,7 +169,7 @@ export class MFADevice {
     }
 
     if (isValid) {
-      this._lastUsedAt = TimeUtils.now();
+      this._lastUsedAt = new Date();
       this._verificationAttempts = 0; // 重置失败次数
       
       if (!this._isVerified) {

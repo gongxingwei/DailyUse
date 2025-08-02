@@ -63,8 +63,6 @@ type EChartsOption = ComposeOption<
 
 import { ref, provide, computed } from 'vue';
 
-import { watch } from 'vue';
-import { Goal } from '@/modules/Goal/domain/aggregates/goal';
 import { GoalRecord } from '@/modules/Goal/domain/entities/record';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 const goalStore = useGoalStore();
@@ -107,7 +105,7 @@ function getTimePeriod(date: Date): TimePeriod {
 }
 
 // 柱形图 option
-const periodBarOption = computed(() => {
+const periodBarOption = computed<EChartsOption>(() => {
   // 获取当前目标的记录
   const records = (selectedGoal.value?.records as GoalRecord[]) || [];
   const stat = classifyGoalRecordsByPeriod(records);

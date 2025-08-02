@@ -1,5 +1,3 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-
 // 账号状态枚举
 export enum AccountStatus {
   ACTIVE = "active",
@@ -21,9 +19,9 @@ export interface IAccount {
   username: string;
   status: AccountStatus;
   accountType: AccountType;
-  createdAt: DateTime;
-  updatedAt: DateTime;
-  lastLoginAt?: DateTime;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date;
 }
 
 // 注册数据类型（包含密码，密码在 Authentication 模块处理）
@@ -65,9 +63,9 @@ export interface AccountDTO {
   username: string;
   status: AccountStatus;
   accountType: AccountType;
-  createdAt: DateTime;
-  updatedAt: DateTime;
-  lastLoginAt?: DateTime;
+  createdAt: Date;
+  updatedAt: Date;
+  lastLoginAt?: Date;
   email?: string;
   emailVerificationToken?: string;
   isEmailVerified: boolean;

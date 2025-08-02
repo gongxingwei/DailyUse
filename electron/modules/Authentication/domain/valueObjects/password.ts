@@ -1,16 +1,16 @@
-import { DateTime } from "../../../../shared/types/myDateTime";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
+import { IPassword, IPasswordDTO } from "@common/modules/authentication/types/authentication";
+
 
 /**
  * 密码值对象
  * 封装密码相关的业务逻辑和验证
  */
-export class Password {
+export class Password implements IPassword {
   private readonly _hashedValue: string;
   private readonly _salt: string;
   private readonly _algorithm: string;
-  private readonly _createdAt: DateTime;
-  private readonly _expiresAt: DateTime | undefined;
+  private readonly _createdAt: Date;
+  private readonly _expiresAt: Date | undefined;
 
   constructor(plainPassword: string) {
     if (!Password.validateStrength(plainPassword)) {
@@ -20,7 +20,7 @@ export class Password {
     this._salt = this.generateSalt();
     this._algorithm = 'bcrypt'; // 实际应用中应使用真正的加密算法
     this._hashedValue = this.hashPassword(plainPassword, this._salt);
-    this._createdAt = TimeUtils.now();
+    this._createdAt = new Date();
     this._expiresAt = undefined;
   }
 
@@ -32,7 +32,7 @@ export class Password {
     password._hashedValue = hashedValue;
     password._salt = salt;
     password._algorithm = algorithm;
-    password._createdAt = TimeUtils.now();
+    password._createdAt = new Date();
     password._expiresAt = undefined;
     return password;
   }
@@ -44,8 +44,8 @@ export class Password {
     hashedValue: string, 
     salt: string, 
     algorithm: string, 
-    createdAt: DateTime,
-    expiresAt?: DateTime | undefined
+    createdAt: Date,
+    expiresAt?: Date | undefined
   ): Password {
     const password = Object.create(Password.prototype);
     password._hashedValue = hashedValue;
@@ -106,7 +106,7 @@ static validateStrength(password: string): boolean {
    * 检查密码是否需要更新（例如：创建时间超过一定期限）
    */
   needsUpdate(maxAgeInDays: number = 90): boolean {
-    const now = TimeUtils.now();
+    const now = new Date();
     const ageInMilliseconds = now.getTime() - this._createdAt.getTime();
     const ageInDays = ageInMilliseconds / (1000 * 60 * 60 * 24);
     return ageInDays > maxAgeInDays;
@@ -125,11 +125,11 @@ static validateStrength(password: string): boolean {
     return this._algorithm;
   }
 
-  get createdAt(): DateTime {
+  get createdAt(): Date {
     return this._createdAt;
   }
 
-  get expiresAt(): DateTime | undefined {
+  get expiresAt(): Date | undefined {
     return this._expiresAt;
   }
 
