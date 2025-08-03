@@ -1,6 +1,6 @@
 import { AccountDeactivationVerificationRequestedEvent } from "../../domain/events/authenticationEvents";
 import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { ipcMain } from "electron";
 
 /**

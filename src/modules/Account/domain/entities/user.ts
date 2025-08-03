@@ -1,4 +1,4 @@
-import { Entity } from "@/shared/domain/entity";
+import { Entity } from "@common/shared/domain/entity";
 import type { UserDTO } from "@/modules/Account/domain/types/account";
 
 /**

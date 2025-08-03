@@ -1,7 +1,7 @@
 import { AccountStatusVerificationRequestedEvent } from "../../../Authentication/domain/events/authenticationEvents";
 import { AccountStatusVerificationResponseEvent } from "../../domain/events/accountEvents";
 import { AccountStatus } from "../../../../../common/modules/account/types/account";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { MainAccountApplicationService } from "../services/mainAccountApplicationService";
 /**
  * Account 模块的状态验证事件处理器

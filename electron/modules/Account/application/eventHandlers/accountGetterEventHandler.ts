@@ -1,5 +1,5 @@
 import { AccountInfoGetterRequestedEvent } from "../../../Authentication/domain/events/authenticationEvents";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { MainAccountApplicationService } from "../services/mainAccountApplicationService";
 import { AccountInfoGetterResponseEventPayload, AccountInfoGetterResponseEvent } from "../../domain/events/accountEvents";
 import { Account } from "../../domain/aggregates/account";

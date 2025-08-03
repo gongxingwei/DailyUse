@@ -1,4 +1,4 @@
-import { EventBus } from '../../../../shared/events/eventBus';
+import { EventBus } from '@common/shared/events/eventBus';
 import type { TaskCompletedEvent } from '../../domain/events/taskEvents';
 
 export class TaskEventHandlers {

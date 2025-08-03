@@ -1,7 +1,7 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { TaskTemplate } from "./taskTemplate";
 import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
-
+import { DateTime } from "../../../../shared/types/myDateTime";
 
 export class TaskMetaTemplate extends AggregateRoot {
   private _name: string;

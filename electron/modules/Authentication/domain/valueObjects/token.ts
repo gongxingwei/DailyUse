@@ -1,7 +1,7 @@
 
 import { IToken, TokenType, ITokenDTO } from "@common/modules/authentication/types/authentication";
 import { isValid, addDays, addMinutes, addHours } from "date-fns";
-import { ValueObject } from "@/shared/domain/valueObject";
+import { ValueObject } from "@common/shared/domain/valueObject";
 
 /**
  * 令牌值对象

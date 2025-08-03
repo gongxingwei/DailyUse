@@ -1,4 +1,4 @@
-import { DomainEvent } from "@/shared/domain/domainEvent";
+import { DomainEvent } from "@common/shared/domain/domainEvent";
 
 export interface UserLoggedInEventPayload {
   accountUuid: string;

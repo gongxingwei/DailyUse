@@ -1,4 +1,4 @@
-import { eventBus } from "@electron/shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import type {
   UserLoggedInEvent,
 } from "@electron/modules/Authentication/domain/events/authenticationEvents";

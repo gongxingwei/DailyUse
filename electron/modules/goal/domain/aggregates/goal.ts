@@ -1,5 +1,5 @@
 import { addDays } from "date-fns";
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { IGoal } from "@common/modules/goal";
 import { KeyResult } from "../entities/keyResult";
 import { GoalRecord } from "../entities/record";

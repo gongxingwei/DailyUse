@@ -1,4 +1,4 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { User } from "../entities/user";
 import { Email } from "../valueObjects/email";
 import { PhoneNumber } from "../valueObjects/phoneNumber";

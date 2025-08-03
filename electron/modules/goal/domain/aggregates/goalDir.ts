@@ -1,4 +1,4 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import type { IGoalDir } from "@common/modules/goal";
 import { isValid } from "date-fns";
 

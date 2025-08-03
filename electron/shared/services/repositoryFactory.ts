@@ -34,8 +34,8 @@ export class RepositoryFactory {
   static initialize(db: Database): void {
     this._authCredentialRepo = new SqliteAuthCredentialRepository(); // 内部获取DB
     this._userSessionRepo = new SqliteSessionRepository();
-    this._tokenRepo = new SqliteTokenRepository(db);
-    this._mfaDeviceRepo = new SqliteMFADeviceRepository(db);
+    this._tokenRepo = new SqliteTokenRepository();
+    this._mfaDeviceRepo = new SqliteMFADeviceRepository();
     this._sessionLogRepo = new SqliteSessionLoggingRepository();
     this._auditTrailRepo = new SqliteAuditTrailRepository(db);
     this._userRepo = new SqliteUserRepository();

@@ -2,7 +2,7 @@
 import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
-import { isValidUUID } from '../../../../src/shared/utils/uuid';
+import { isValidUUID } from '@common/shared/utils/uuid';
 
 /**
  * 基础信息验证器

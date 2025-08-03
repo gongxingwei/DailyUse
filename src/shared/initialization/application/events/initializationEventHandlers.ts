@@ -1,4 +1,4 @@
-import { eventBus } from "@/shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import type {
   UserLoggedInEvent,
 } from "@/modules/Authentication/domain/events/authenticationEvents";

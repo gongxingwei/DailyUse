@@ -1,4 +1,4 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { DateTime } from '@/shared/types/myDateTime';
 
 import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../events/taskEvents';

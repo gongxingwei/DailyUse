@@ -1,4 +1,4 @@
-import { DomainEvent } from "@/shared/domain/domainEvent";
+import { DomainEvent } from "@common/shared/domain/domainEvent";
 
 /**
  * 通过 accountUuid 获取账号信息的请求事件载荷

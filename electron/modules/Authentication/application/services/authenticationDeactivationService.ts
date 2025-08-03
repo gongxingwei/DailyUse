@@ -2,7 +2,7 @@ import {
   IAuthCredentialRepository,
   ISessionRepository,
 } from "../../domain/repositories/authenticationRepository";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
 import {
   AccountDeactivationVerificationRequestedEvent,

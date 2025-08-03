@@ -1,4 +1,4 @@
-import { ValueObject } from "@/shared/domain/valueObject";
+import { ValueObject } from "@common/shared/domain/valueObject";
 import { IIPLocation } from "@common/modules/sessionLog/types/sessionLog";
 
 /**

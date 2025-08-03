@@ -9,7 +9,7 @@ import type {
 import { useAuthenticationStore } from "../../presentation/stores/authenticationStore";
 import { authenticationIpcClient } from "../../infrastructure/ipcs/authenticationIpcClient";
 // 事件系统
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import type { UserLoggedInEvent, UserLoggedInEventPayload,  } from "../../domain/events/authenticationEvents";
 
 /**

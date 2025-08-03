@@ -1,4 +1,4 @@
-import { DomainEvent } from "@/shared/domain/domainEvent";
+import { DomainEvent } from "@common/shared/domain/domainEvent";
 import { AccountDTO } from "@common/modules/account/types/account";
 /**
  * 账号注册事件载荷

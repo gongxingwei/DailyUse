@@ -17,7 +17,7 @@ import {
   AccountUuidGetterResponseEvent,
   AccountInfoGetterResponseEvent,
 } from "../../../Account/domain/events/accountEvents";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { tokenService } from "../../domain/services/tokenService";
 import { authSession } from "../../application/services/authSessionStore";
 import type {

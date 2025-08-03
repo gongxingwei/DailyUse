@@ -1,4 +1,4 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 // domains
 import { Password } from "../valueObjects/password";
 import { Token } from "../valueObjects/token";

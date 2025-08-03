@@ -1,4 +1,4 @@
-import { Entity } from "@/shared/domain/entity";
+import { Entity } from "@common/shared/domain/entity";
 import type { IGoalRecord } from "@common/modules/goal";
 import { isValid } from "date-fns";
 

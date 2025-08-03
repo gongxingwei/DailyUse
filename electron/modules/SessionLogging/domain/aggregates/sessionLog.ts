@@ -1,4 +1,4 @@
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { IPLocation } from "../valueObjects/ipLocation";
 import { AuditTrail } from "../entities/auditTrail";
 import { ISessionLog, OperationStatus, OperationType, RiskLevel, SessionLogDTO } from "@common/modules/sessionLog/types/sessionLog";

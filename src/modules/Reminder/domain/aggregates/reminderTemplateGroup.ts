@@ -1,5 +1,5 @@
 import { ReminderTemplate } from "../entities/reminderTemplate";
-import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import type { IReminderTemplateGroup, ReminderTemplateEnableMode } from "@common/modules/reminder";
 import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
 

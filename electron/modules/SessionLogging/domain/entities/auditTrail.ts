@@ -1,5 +1,5 @@
 import { IPLocation } from "../valueObjects/ipLocation";
-import { Entity } from "@/shared/domain/entity";
+import { Entity } from "@common/shared/domain/entity";
 import { IMainProcessAuditTrail, IAuditTrailDTO, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
 /**
  * 审计轨迹实体

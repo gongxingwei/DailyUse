@@ -1,4 +1,4 @@
-import { Entity } from "@/shared/domain/entity";
+import { Entity } from "@common/shared/domain/entity";
 import { ISession, ISessionDTO } from "@common/modules/authentication/types/authentication";
 import { isValid } from "date-fns";
 

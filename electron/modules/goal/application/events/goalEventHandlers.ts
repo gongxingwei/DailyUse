@@ -1,4 +1,4 @@
-import { EventBus } from '@/shared/events/eventBus';
+import { EventBus } from '@common/shared/events/eventBus';
 import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../../../Task/index';
 import { MainGoalApplicationService } from '../../application/services/mainGoalApplicationService';
 import { GoalRecord } from '../../domain/entities/record';

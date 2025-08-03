@@ -1,4 +1,4 @@
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { SessionLoggingApplicationService } from "../services/sessionLoggingApplicationService";
 import type { LoginAttemptEvent, UserLoggedInEvent, LoginCredentialVerificationEvent } from "../../../Authentication/index"
 

@@ -1,4 +1,4 @@
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { MainAccountApplicationService } from "../services/mainAccountApplicationService";
 import type { AccountUuidGetterRequestedEvent } from "../../../Authentication/index";
 import type { AccountUuidGetterResponseEvent } from "../../index"

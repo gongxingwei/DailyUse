@@ -1,4 +1,4 @@
-import { eventBus } from "../events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { AuthenticationEventHandler } from "../../modules/Authentication/application/eventHandlers/authenticationEventHandler";
 import { RepositoryFactory } from "../services/repositoryFactory";
 import { AccountRegisteredEvent } from "../../modules/Account/domain/events/accountEvents";

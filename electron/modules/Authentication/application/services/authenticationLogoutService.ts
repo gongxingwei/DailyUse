@@ -1,5 +1,5 @@
 import { IAuthCredentialRepository, ISessionRepository } from "../../domain/repositories/authenticationRepository";
-import { eventBus } from "../../../../shared/events/eventBus";
+import { eventBus } from "@common/shared/events/eventBus";
 import { Session } from "../../domain/entities/session";
 import { AuthenticationContainer } from "../../infrastructure/di/authenticationContainer";
 import { LogoutRequest, LogoutResult } from "../../domain/types";
