@@ -242,7 +242,7 @@ export class ValidationUtils {
       return this.success();
     }
 
-    // 检查是否有timestamp属性（DateTime类型）
+    // 检查是否有timestamp属性（Date类型）
     let dateValue: Date;
     if (typeof date === 'object' && date.timestamp) {
       dateValue = new Date(date.timestamp);

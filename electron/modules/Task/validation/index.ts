@@ -15,7 +15,7 @@ export { MetadataValidator } from './MetadataValidator';
 // 便捷的验证函数
 import { TaskTemplateValidator } from './TaskTemplateValidator';
 import { ValidatorFactory, ValidationReportGenerator } from './ValidatorFactory';
-import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate } from '@common/modules/task/types/task';
 
 /**
  * 快速验证任务模板

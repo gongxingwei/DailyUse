@@ -1,5 +1,5 @@
 // 验证器工厂和高级验证功能
-import type { ITaskTemplate } from "@/modules/Task/domain/types/task";
+import type { ITaskTemplate } from '@common/modules/task/types/task';
 import type {
   ITemplateValidator,
   ValidationResult,

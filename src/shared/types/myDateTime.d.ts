@@ -37,7 +37,7 @@ export type DateInfo = {
 /**
  * 完整的日期时间类型
  */
-export type DateTime = {
+export type Date = {
   /** 日期信息 */
   date: DateInfo;
   /** 时间信息 */

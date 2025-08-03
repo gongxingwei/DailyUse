@@ -1,7 +1,9 @@
 import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { TaskTemplate } from "./taskTemplate";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
-import { DateTime } from "../../../../shared/types/myDateTime";
+import { addMinutes } from "date-fns/addMinutes";
+import type { 
+  ITaskMetaTemplateDTO,
+} from '@common/modules/task/types/task';
 
 export class TaskMetaTemplate extends AggregateRoot {
   private _name: string;
@@ -11,16 +13,16 @@ export class TaskMetaTemplate extends AggregateRoot {
   private _defaultReminderConfig: TaskTemplate['reminderConfig'];
   private _defaultMetadata: TaskTemplate['metadata'];
   private _lifecycle: {
-    createdAt: DateTime;
-    updatedAt: DateTime;
+    createdAt: Date;
+    updatedAt: Date;
     status: "active" | "archived";
   };
 
   private DefaultTimeConfig: TaskTemplate['timeConfig'] = {
     type: 'timed',
     baseTime: {
-      start: TimeUtils.now(),
-      end: TimeUtils.addMinutes(TimeUtils.now(), 60), // 默认持续时间为60分钟
+      start: new Date(),
+      end: addMinutes(new Date(), 60), // 默认持续时间为60分钟
       duration: 60 // 默认持续时间为60分钟
     },
     recurrence: {
@@ -60,7 +62,7 @@ export class TaskMetaTemplate extends AggregateRoot {
     }
   ) {
     super(uuid);
-    const now = TimeUtils.now();
+    const now = new Date();
 
     this._name = name;
     this._description = options?.description;
@@ -98,8 +100,8 @@ export class TaskMetaTemplate extends AggregateRoot {
     defaultReminderConfig?: TaskTemplate['reminderConfig'];
     defaultMetadata?: TaskTemplate['metadata'];
     lifecycle: {
-      createdAt: DateTime;
-      updatedAt: DateTime;
+      createdAt: Date;
+      updatedAt: Date;
       status: "active" | "archived";
     };
   }): TaskMetaTemplate {
@@ -142,20 +144,56 @@ export class TaskMetaTemplate extends AggregateRoot {
   /**
    * 转换为数据传输对象
    */
-  toDTO(): ITaskMetaTemplate {
+  toDTO(): ITaskMetaTemplateDTO {
     return {
       uuid: this.uuid,
       name: this._name,
       description: this._description,
       category: this._category,
-      defaultTimeConfig: this._defaultTimeConfig,
-      defaultReminderConfig: this._defaultReminderConfig,
+      defaultTimeConfig: {
+        type: this._defaultTimeConfig.type,
+        baseTime: {
+          start: this._defaultTimeConfig.baseTime.start.getTime(),
+          end: this._defaultTimeConfig.baseTime.end?.getTime(),
+          duration: this._defaultTimeConfig.baseTime.duration,
+        },
+        recurrence: {
+          type: this._defaultTimeConfig.recurrence.type,
+          interval: this._defaultTimeConfig.recurrence.interval,
+          endCondition: this._defaultTimeConfig.recurrence.endCondition ? {
+            type: this._defaultTimeConfig.recurrence.endCondition.type,
+            endDate: this._defaultTimeConfig.recurrence.endCondition.endDate?.getTime(),
+            count: this._defaultTimeConfig.recurrence.endCondition.count,
+          } : undefined,
+          config: this._defaultTimeConfig.recurrence.config,
+        },
+        timezone: this._defaultTimeConfig.timezone,
+        dstHandling: this._defaultTimeConfig.dstHandling,
+      },
+      defaultReminderConfig: {
+        enabled: this._defaultReminderConfig.enabled ? 1 : 0,
+        alerts: this._defaultReminderConfig.alerts.map(alert => ({
+          uuid: alert.uuid,
+          timing: {
+            type: alert.timing.type,
+            minutesBefore: alert.timing.minutesBefore,
+            absoluteTime: alert.timing.absoluteTime?.getTime(),
+          },
+          type: alert.type,
+          message: alert.message,
+        })),
+        snooze: {
+          enabled: this._defaultReminderConfig.snooze.enabled ? 1 : 0,
+          interval: this._defaultReminderConfig.snooze.interval,
+          maxCount: this._defaultReminderConfig.snooze.maxCount,
+        },
+      },
       defaultMetadata: this._defaultMetadata,
       lifecycle: {
-        createdAt: this._lifecycle.createdAt,
-        updatedAt: this._lifecycle.updatedAt,
-        status: this._lifecycle.status
-      }
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+        status: this._lifecycle.status,
+      },
     };
   }
 
@@ -163,7 +201,7 @@ export class TaskMetaTemplate extends AggregateRoot {
    * 导出完整数据（用于序列化）
    * 为了兼容 JSON.stringify()，委托给 toDTO()
    */
-  toJSON(): ITaskMetaTemplate {
+  toJSON(): ITaskMetaTemplateDTO {
     return this.toDTO();
   }
 }

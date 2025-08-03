@@ -1,12 +1,11 @@
 import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
-import { DateTime } from '@/shared/types/myDateTime';
 import type { 
   TaskTimeConfig, 
   TaskReminderConfig,
   KeyResultLink,
-  ITaskTemplate
-} from "@/modules/Task/domain/types/task";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
+  ITaskTemplate,
+  ITaskTemplateDTO,
+} from '@common/modules/task/types/task';
 
 export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _title: string;
@@ -30,17 +29,17 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   };
   private _lifecycle: {
     status: "draft" | "active" | "paused" | "archived";
-    createdAt: DateTime;
-    updatedAt: DateTime;
-    activatedAt?: DateTime;
-    pausedAt?: DateTime;
+    createdAt: Date;
+    updatedAt: Date;
+    activatedAt?: Date;
+    pausedAt?: Date;
   };
   private _analytics: {
     totalInstances: number;
     completedInstances: number;
     averageCompletionTime?: number;
     successRate: number;
-    lastInstanceDate?: DateTime;
+    lastInstanceDate?: Date;
   };
   private _keyResultLinks?: KeyResultLink[];
   private _version: number;
@@ -63,7 +62,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     }
   ) {
     super(uuid);
-    const now = TimeUtils.now();
+    const now = new Date();
 
     this._title = title;
     this._description = options?.description;
@@ -149,37 +148,37 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   // Methods
   updateTitle(title: string): void {
     this._title = title;
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   updateDescription(description?: string): void {
     this._description = description;
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   updateTimeConfig(timeConfig: TaskTimeConfig): void {
     this._timeConfig = timeConfig;
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   updateReminderConfig(reminderConfig: TaskReminderConfig): void {
     this._reminderConfig = reminderConfig;
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   updateSchedulingPolicy(policy: Partial<typeof this._schedulingPolicy>): void {
     this._schedulingPolicy = { ...this._schedulingPolicy, ...policy };
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   updateMetadata(metadata: Partial<typeof this._metadata>): void {
     this._metadata = { ...this._metadata, ...metadata };
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   setPriority(priority?: 1 | 2 | 3 | 4 | 5): void {
     this._metadata.priority = priority;
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   addKeyResultLink(link: KeyResultLink): void {
@@ -187,7 +186,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       this._keyResultLinks = [];
     }
     this._keyResultLinks.push(link);
-    this._lifecycle.updatedAt = TimeUtils.now();
+    this._lifecycle.updatedAt = new Date();
   }
 
   removeKeyResultLink(goalUuid: string, keyResultId: string): void {
@@ -195,7 +194,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       this._keyResultLinks = this._keyResultLinks.filter(
         (link) => !(link.goalUuid === goalUuid && link.keyResultId === keyResultId)
       );
-      this._lifecycle.updatedAt = TimeUtils.now();
+      this._lifecycle.updatedAt = new Date();
     }
   }
   // ===== UI 校验和操作预览方法 =====
@@ -400,7 +399,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 从完整数据创建 TaskTemplate 实例（用于反序列化）
    * 保留所有原始状态信息
    */
-  static fromCompleteData(data: any): TaskTemplate {
+  static fromDTO(data: any): TaskTemplate {
     // 创建基础实例
     const instance = new TaskTemplate(
       data.uuid || data._id,
@@ -477,121 +476,89 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
 
   static ensureTaskTemplate(data: any): TaskTemplate {
     if (data instanceof TaskTemplate) {
-      return TaskTemplate.fromCompleteData(data);
+      return TaskTemplate.fromDTO(data);
     }
-    return TaskTemplate.fromCompleteData(data);
+    return TaskTemplate.fromDTO(data);
   }
 
   /**
    * 克隆实例（用于创建副本）
    */
   clone(): TaskTemplate {
-    return TaskTemplate.fromCompleteData(this.toDTO());
+    return TaskTemplate.fromDTO(this.toDTO());
   }
 
   /**
    * 转换为数据传输对象
    * 使用 JSON.parse(JSON.stringify()) 确保返回纯净的 JSON 对象，移除所有 Proxy 和不可序列化内容
    */
-  toDTO(): ITaskTemplate {
-    const rawData = {
+  toDTO(): ITaskTemplateDTO {
+    return {
       uuid: this.uuid,
       title: this._title,
       description: this._description,
-      timeConfig: this._timeConfig,
-      reminderConfig: this._reminderConfig,
-      schedulingPolicy: this._schedulingPolicy,
+      timeConfig: {
+        type: this._timeConfig.type,
+        baseTime: {
+          start: this._timeConfig.baseTime.start.getTime(),
+          end: this._timeConfig.baseTime.end?.getTime(),
+          duration: this._timeConfig.baseTime.duration,
+        },
+        recurrence: {
+          type: this._timeConfig.recurrence.type,
+          interval: this._timeConfig.recurrence.interval,
+          endCondition: this._timeConfig.recurrence.endCondition ? {
+            type: this._timeConfig.recurrence.endCondition.type,
+            endDate: this._timeConfig.recurrence.endCondition.endDate?.getTime(),
+            count: this._timeConfig.recurrence.endCondition.count,
+          } : undefined,
+          config: this._timeConfig.recurrence.config,
+        },
+        timezone: this._timeConfig.timezone,
+        dstHandling: this._timeConfig.dstHandling,
+      },
+      reminderConfig: {
+        enabled: this._reminderConfig.enabled ? 1 : 0,
+        alerts: this._reminderConfig.alerts.map(alert => ({
+          uuid: alert.uuid,
+          timing: {
+            type: alert.timing.type,
+            minutesBefore: alert.timing.minutesBefore,
+            absoluteTime: alert.timing.absoluteTime?.getTime(),
+          },
+          type: alert.type,
+          message: alert.message,
+        })),
+        snooze: {
+          enabled: this._reminderConfig.snooze.enabled ? 1 : 0,
+          interval: this._reminderConfig.snooze.interval,
+          maxCount: this._reminderConfig.snooze.maxCount,
+        },
+      },
+      schedulingPolicy: {
+        allowReschedule: this._schedulingPolicy.allowReschedule ? 1 : 0,
+        maxDelayDays: this._schedulingPolicy.maxDelayDays,
+        skipWeekends: this._schedulingPolicy.skipWeekends ? 1 : 0,
+        skipHolidays: this._schedulingPolicy.skipHolidays ? 1 : 0,
+        workingHoursOnly: this._schedulingPolicy.workingHoursOnly ? 1 : 0,
+      },
       metadata: this._metadata,
-      lifecycle: this._lifecycle,
-      analytics: this._analytics,
+      lifecycle: {
+        status: this._lifecycle.status,
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+        activatedAt: this._lifecycle.activatedAt?.getTime(),
+        pausedAt: this._lifecycle.pausedAt?.getTime(),
+      },
+      analytics: {
+        totalInstances: this._analytics.totalInstances,
+        completedInstances: this._analytics.completedInstances,
+        averageCompletionTime: this._analytics.averageCompletionTime,
+        successRate: this._analytics.successRate,
+        lastInstanceDate: this._analytics.lastInstanceDate?.getTime(),
+      },
       keyResultLinks: this._keyResultLinks,
       version: this._version,
-    };
-
-    // 使用深度序列化确保返回纯净的 JSON 对象，移除 Proxy 等不可序列化内容
-    try {
-      return JSON.parse(JSON.stringify(rawData));
-    } catch (error) {
-      console.error('❌ [TaskTemplate.toDTO] 序列化失败:', error);
-      // 如果序列化失败，返回基本信息
-      return {
-        uuid: this.uuid,
-        title: this._title,
-        description: this._description,
-        timeConfig: JSON.parse(JSON.stringify(this._timeConfig)),
-        reminderConfig: JSON.parse(JSON.stringify(this._reminderConfig)),
-        schedulingPolicy: JSON.parse(JSON.stringify(this._schedulingPolicy)),
-        metadata: JSON.parse(JSON.stringify(this._metadata)),
-        lifecycle: JSON.parse(JSON.stringify(this._lifecycle)),
-        analytics: JSON.parse(JSON.stringify(this._analytics)),
-        keyResultLinks: this._keyResultLinks ? JSON.parse(JSON.stringify(this._keyResultLinks)) : undefined,
-        version: this._version,
-      };
-    }
-  }
-
-  /**
-   * 导出完整数据（用于序列化）
-   * 为了兼容 JSON.stringify()，委托给 toDTO()
-   */
-  toJSON(): ITaskTemplate {
-    return this.toDTO();
-  }
-
-  static fromJSON(data: { uuid: string; title: string; description?: string; timeConfig: TaskTimeConfig; reminderConfig: TaskReminderConfig; schedulingPolicy: ITaskTemplate["schedulingPolicy"]; metadata: ITaskTemplate["metadata"]; lifecycle: ITaskTemplate["lifecycle"]; analytics: ITaskTemplate["analytics"]; keyResultLinks?: KeyResultLink[]; version: number; }): ITaskTemplate {
-    return TaskTemplate.fromCompleteData(data);
-  }
-}
-
-// === 新架构适配方法 ===
-
-/**
- * 任务模板映射器
- * 处理领域模型(TaskTemplate)和数据传输对象(ITaskTemplate)之间的转换
- * 
- * 设计说明：
- * - TaskTemplate：面向对象的领域模型，包含业务逻辑和行为方法
- * - ITaskTemplate：面向过程的数据传输对象，用于序列化和跨进程传输
- */
-export class TaskTemplateMapper {
-  /**
-   * 将领域模型转换为数据传输对象
-   */
-  static toDTO(template: TaskTemplate): ITaskTemplate {
-    return template.toDTO();
-  }
-
-  /**
-   * 将数据传输对象转换为领域模型
-   */
-  static fromDTO(data: ITaskTemplate): TaskTemplate {
-    return TaskTemplate.fromCompleteData(data);
-  }
-
-  /**
-   * 批量转换领域模型数组为 DTO 数组
-   */
-  static toDTOArray(templates: TaskTemplate[]): ITaskTemplate[] {
-    return templates.map(template => this.toDTO(template));
-  }
-
-  /**
-   * 批量转换 DTO 数组为领域模型数组
-   */
-  static fromDTOArray(dataArray: ITaskTemplate[]): TaskTemplate[] {
-    return dataArray.map(data => this.fromDTO(data));
-  }
-
-  /**
-   * 创建用于更新的部分 DTO 数据
-   */
-  static toPartialDTO(template: TaskTemplate): Partial<ITaskTemplate> {
-    const data = template.toDTO();
-    return {
-      uuid: data.uuid,
-      lifecycle: data.lifecycle,
-      analytics: data.analytics,
-      version: data.version,
     };
   }
 }

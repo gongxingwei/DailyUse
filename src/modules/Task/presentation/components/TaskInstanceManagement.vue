@@ -226,7 +226,7 @@
 
                                         <v-list-item-subtitle class="task-meta">
                                             <v-icon size="small" class="mr-1">mdi-check</v-icon>
-                                            完成于 {{ formatTime(task.completedAt?.isoString || task.scheduledTime.isoString) }}
+                                            完成于 {{ format(task.completedAt!, 'yyyy-MM-dd HH:mm:ss') }}
                                         </v-list-item-subtitle>
                                     </div>
 
@@ -255,9 +255,10 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
-import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
+import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
 import { useTaskInstanceManagement } from '../composables/useTaskInstanceManagement';
 import { useTaskService } from '../composables/useTaskService';
+import { format } from 'date-fns';
 const { selectedDate, currentWeekStart, dayTasks, completedTasks, incompleteTasks,  selectDay, previousWeek, nextWeek } = useTaskInstanceManagement();
 const { handleCompleteTaskInstance, handleUndoCompleteTaskInstance } = useTaskService();
 
@@ -320,13 +321,6 @@ const formatDate = (dateStr: string) => {
     return `${date.getDate()}`;
 };
 
-const formatTime = (isoString: string) => {
-    return new Date(isoString).toLocaleTimeString('zh-CN', {
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
-
 const getKeyResultName = (link: any) => {
     const goal = goalStore.getGoalByUuid(link.goalUuid);
     const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
@@ -335,16 +329,16 @@ const getKeyResultName = (link: any) => {
 
 // ✅ 修改任务计数逻辑
 const getTaskCountForDate = (date: string) => {
-    const selectedDateTime = TaskTimeUtils.fromISOString(new Date(date).toISOString());
-    const nextDay = TaskTimeUtils.fromISOString(new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000).toISOString());
-    
+    const selectedDate = new Date(date).toISOString().split('T')[0];
+    const nextDay = new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
     return taskStore.getAllTaskInstances.filter(task => {
-        if (!task.scheduledTime || typeof task.scheduledTime.timestamp !== 'number') {
+        if (!task.scheduledTime || typeof task.scheduledTime.getTime() !== 'number') {
             return false;
         }
-        
-        return task.scheduledTime.timestamp >= selectedDateTime.timestamp &&
-               task.scheduledTime.timestamp < nextDay.timestamp;
+
+        return task.scheduledTime.getTime() >= new Date(selectedDate).getTime() &&
+               task.scheduledTime.getTime() < new Date(nextDay).getTime();
     }).length;
 };
 

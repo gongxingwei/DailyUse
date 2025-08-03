@@ -1,7 +1,7 @@
 import { TaskTemplate } from "../aggregates/taskTemplate";
 import { TaskMetaTemplate } from "../aggregates/taskMetaTemplate";
 import { taskInstanceService } from "./taskInstanceService";
-import type { TaskTimeConfig, TaskReminderConfig } from "../types/task";
+import type { TaskTimeConfig, TaskReminderConfig } from '@common/modules/task/types/task';
 import { v4 as uuidv4 } from "uuid";
 
 /**
@@ -124,8 +124,8 @@ export class TaskTemplateService {
 
     if (
       template.timeConfig.baseTime.end &&
-      template.timeConfig.baseTime.end.timestamp <=
-        template.timeConfig.baseTime.start.timestamp
+      template.timeConfig.baseTime.end.getTime() <=
+        template.timeConfig.baseTime.start.getTime()
     ) {
       errors.push("结束时间必须晚于开始时间");
     }
@@ -162,7 +162,7 @@ export class TaskTemplateService {
       1
     );
     return instances.length > 0
-      ? new Date(instances[0].scheduledTime.timestamp)
+      ? new Date(instances[0].scheduledTime.getTime())
       : null;
   }
 

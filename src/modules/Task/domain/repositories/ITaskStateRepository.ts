@@ -1,4 +1,4 @@
-import type { ITaskTemplate, ITaskInstance } from '../types/task';
+import type { ITaskTemplate, ITaskInstance } from '@common/modules/task/types/task';
 
 /**
  * 任务状态仓库接口 - 用于管理前端状态同步

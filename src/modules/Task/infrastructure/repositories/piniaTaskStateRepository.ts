@@ -1,5 +1,5 @@
 import type { ITaskStateRepository } from '@/modules/Task/domain/repositories/ITaskStateRepository';
-import type { ITaskTemplate, ITaskInstance } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate, ITaskInstance } from '@common/modules/task/types/task';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 
 /**

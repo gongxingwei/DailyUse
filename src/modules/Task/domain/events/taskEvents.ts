@@ -1,5 +1,5 @@
 import type { DomainEvent } from "@common/shared/domain/domainEvent";
-import type { KeyResultLink } from "@/modules/Task/domain/types/task";
+import type { KeyResultLink } from '@common/modules/task/types/task';
 export interface TaskCompletedEventPayload {
   taskId: string;
   keyResultLinks: KeyResultLink[];

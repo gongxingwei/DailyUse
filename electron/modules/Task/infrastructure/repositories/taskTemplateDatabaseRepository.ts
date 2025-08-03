@@ -24,11 +24,8 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 将 TaskTemplate 实体转换为数据库记录
    */
-  private toDbRecord(template: TaskTemplate, accountUuid: string): any {
-    console.log('🔄 [数据库仓库] toDbRecord：开始转换TaskTemplate为数据库记录');
-    console.log('🔍 [数据库仓库] 输入的template类型:', typeof template);
-    console.log('🔍 [数据库仓库] 是否为TaskTemplate实例:', template instanceof TaskTemplate);
-    
+  private mapTemplateToRow(template: TaskTemplate, accountUuid: string): any {
+
     try {
       const json = template.toDTO();
       console.log('✅ [数据库仓库] template.toDTO()调用成功');
@@ -46,18 +43,10 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         analytics: JSON.stringify(json.analytics),
         key_result_links: json.keyResultLinks ? JSON.stringify(json.keyResultLinks) : null,
         version: json.version,
-        created_at: new Date(json.lifecycle.createdAt.isoString).getTime(),
-        updated_at: new Date(json.lifecycle.updatedAt.isoString).getTime()
+        created_at: json.lifecycle.createdAt,
+        updated_at: json.lifecycle.updatedAt
       };
       
-      console.log('✅ [数据库仓库] 数据库记录创建成功');
-      console.log('🔍 [数据库仓库] 记录字段检查:');
-      for (const key in record) {
-        const value = (record as any)[key];
-        console.log(`  - ${key}:`, typeof value, value !== null ? String(value).substring(0, 100) : 'null');
-      }
-      
-      // 验证整个记录对象
       try {
         JSON.stringify(record);
         console.log('✅ [数据库仓库] 数据库记录可序列化');
@@ -77,11 +66,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   /**
    * 将数据库记录转换为 TaskTemplate 实体
    */
-  private fromDbRecord(record: any): TaskTemplate {
-    console.log('🔄 [数据库仓库] fromDbRecord：开始转换数据库记录为TaskTemplate');
-    console.log('🔍 [数据库仓库] 输入的record类型:', typeof record);
-    console.log('🔍 [数据库仓库] 记录ID:', record?.uuid);
-    
+  private mapRowToTemplate(record: any): TaskTemplate {
     try {
       const templateData = {
         uuid: record.uuid,
@@ -99,18 +84,9 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       
       console.log('✅ [数据库仓库] 模板数据解析成功');
       console.log('🔍 [数据库仓库] 解析后的数据:', templateData);
-      
-      // 验证解析后的数据是否可序列化
-      try {
-        JSON.stringify(templateData);
-        console.log('✅ [数据库仓库] 解析后的模板数据可序列化');
-      } catch (error) {
-        console.error('❌ [数据库仓库] 解析后的模板数据不可序列化:', error);
-        throw error;
-      }
-      
-      const template = TaskTemplate.fromCompleteData(templateData);
-      console.log('✅ [数据库仓库] TaskTemplate.fromCompleteData()调用成功');
+
+      const template = TaskTemplate.fromDTO(templateData);
+      console.log('✅ [数据库仓库] TaskTemplate.fromDTO()调用成功');
       console.log('🔍 [数据库仓库] 创建的template类型:', typeof template);
       console.log('🔍 [数据库仓库] 是否为TaskTemplate实例:', template instanceof TaskTemplate);
       
@@ -145,10 +121,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
     
     try {
       const db = await this.getDB();
-      console.log('✅ [主进程-步骤4] 数据库连接获取成功');
-      
-      console.log('🔄 [主进程-步骤4] 开始转换实体为数据库记录');
-      const record = this.toDbRecord(template, accountUuid);
+      const record = this.mapTemplateToRow(template, accountUuid);
       console.log('✅ [主进程-步骤4] 实体转换为数据库记录成功');
 
       const stmt = db.prepare(`
@@ -170,45 +143,12 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       // 验证返回的template对象
       console.log('🔄 [主进程-步骤4] 验证返回的template对象');
-      try {
-        const returnDto = template.toDTO();
-        JSON.stringify(returnDto);
-        console.log('✅ [主进程-步骤4] 返回的template对象可转换为可序列化的DTO');
-      } catch (error) {
-        console.error('❌ [主进程-步骤4] 返回的template对象无法序列化:', error);
-        // 这可能是序列化问题的源头
-      }
 
       const result = {
         success: true,
         data: template,
         message: 'TaskTemplate 保存成功'
       };
-      
-      // 验证最终返回结果
-      try {
-        JSON.stringify(result);
-        console.log('✅ [主进程-步骤4] 最终返回结果可序列化');
-      } catch (error) {
-        console.error('❌ [主进程-步骤4] 最终返回结果不可序列化:', error);
-        console.error('❌ [主进程-步骤4] 这可能是"An object could not be cloned"错误的根源');
-        
-        // 尝试创建安全的返回结果
-        const safeResult = {
-          success: true,
-          data: template.toDTO(), // 返回DTO而不是实体
-          message: 'TaskTemplate 保存成功'
-        };
-        
-        try {
-          JSON.stringify(safeResult);
-          console.log('🔄 [主进程-步骤4] 使用DTO作为返回数据修复序列化问题');
-          return safeResult as TResponse<TaskTemplate>;
-        } catch (safeError) {
-          console.error('❌ [主进程-步骤4] 连DTO版本的返回结果也不可序列化:', safeError);
-          throw error;
-        }
-      }
 
       return result;
     } catch (error) {
@@ -239,7 +179,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
 
       const transaction = db.transaction(() => {
         for (const template of templates) {
-          const record = this.toDbRecord(template, accountUuid);
+          const record = this.mapTemplateToRow(template, accountUuid);
           stmt.run(
             record.uuid, record.account_uuid, record.title, record.description,
             record.time_config, record.reminder_config, record.scheduling_policy,
@@ -280,7 +220,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       const record = stmt.get(uuid, accountUuid);
       
       if (record) {
-        const template = this.fromDbRecord(record);
+        const template = this.mapRowToTemplate(record);
         return {
           success: true,
           data: template,
@@ -316,7 +256,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
       `);
       
       const records = stmt.all(accountUuid);
-      const templates = records.map(record => this.fromDbRecord(record));
+      const templates = records.map(record => this.mapRowToTemplate(record));
 
       return {
         success: true,
@@ -339,7 +279,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
   async update(accountUuid: string, template: TaskTemplate): Promise<TResponse<TaskTemplate>> {
     try {
       const db = await this.getDB();
-      const record = this.toDbRecord(template, accountUuid);
+      const record = this.mapTemplateToRow(template, accountUuid);
 
       const stmt = db.prepare(`
         UPDATE task_templates SET
@@ -425,7 +365,7 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         `%"keyResultId":"${keyResultId}"%`
       );
       
-      const templates = records.map(record => this.fromDbRecord(record));
+      const templates = records.map(record => this.mapRowToTemplate(record));
 
       return {
         success: true,

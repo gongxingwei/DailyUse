@@ -1,8 +1,7 @@
 import { UserSession, SessionStatus, SessionData } from "../domain/types";
 import { ISessionRepository } from "../domain/repositories/sessionRepository";
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
 import type { TResponse } from "@/shared/types/response";
-
+import { addDays, isBefore } from "date-fns";
 /**
  * 会话管理服务
  * 负责用户会话的创建、维护、验证和销毁
@@ -35,16 +34,16 @@ export class SessionManagementService {
   ): Promise<TResponse<UserSession>> {
     try {
       const sessionId = this.generateSessionId();
-      const now = TimeUtils.now();
+      const now = new Date();
       
       // 计算过期时间
       let expiresAt;
       if (options.rememberMe) {
         // 记住我：30天过期
-        expiresAt = TimeUtils.addDays(now, 30);
+        expiresAt = addDays(now, 30);
       } else {
         // 默认：24小时过期
-        expiresAt = TimeUtils.addDays(now, 1);
+        expiresAt = addDays(now, 1);
       }
 
       const session: UserSession = {
@@ -107,7 +106,7 @@ export class SessionManagementService {
       }
 
       // 检查是否过期
-      if (session.expiresAt && TimeUtils.isBefore(session.expiresAt, TimeUtils.now())) {
+      if (session.expiresAt && isBefore(session.expiresAt, new Date())) {
         session.status = SessionStatus.EXPIRED;
         await this.sessionRepository.save(session);
         
@@ -119,7 +118,7 @@ export class SessionManagementService {
       }
 
       // 更新最后访问时间
-      session.lastAccessAt = TimeUtils.now();
+      session.lastAccessAt = new Date();
       await this.sessionRepository.save(session);
 
       return {
@@ -158,13 +157,13 @@ export class SessionManagementService {
       // 生成新的令牌
       session.token = this.generateToken();
       session.refreshToken = this.generateToken();
-      session.lastAccessAt = TimeUtils.now();
+      session.lastAccessAt = new Date();
       
       // 更新过期时间
       if (session.rememberMe) {
-        session.expiresAt = TimeUtils.addDays(TimeUtils.now(), 30);
+        session.expiresAt = addDays(new Date(), 30);
       } else {
-        session.expiresAt = TimeUtils.addDays(TimeUtils.now(), 1);
+        session.expiresAt = addDays(new Date(), 1);
       }
 
       await this.sessionRepository.save(session);
@@ -286,8 +285,8 @@ export class SessionManagementService {
    * 将旧的会话数据转换为新格式
    */
   convertLegacySessionData(sessionData: SessionData): UserSession {
-    const now = TimeUtils.now();
-    const lastLoginTime = TimeUtils.fromTimestamp(sessionData.lastLoginTime);
+    const now = new Date();
+    const lastLoginTime = new Date(sessionData.lastLoginTime);
     
     return {
       uuid: this.generateSessionId(),
@@ -301,8 +300,8 @@ export class SessionManagementService {
       createdAt: lastLoginTime,
       lastAccessAt: now,
       expiresAt: sessionData.rememberMe === 1 
-        ? TimeUtils.addDays(lastLoginTime, 30)
-        : TimeUtils.addDays(lastLoginTime, 1)
+        ? addDays(lastLoginTime, 30)
+        : addDays(lastLoginTime, 1)
     };
   }
 

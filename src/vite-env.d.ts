@@ -10,9 +10,6 @@ declare global {
         data?: T;
         error?: Error;
     };
-    type ITaskTemplate = import('@/modules/Task/domain/types/task').ITaskTemplate;
-    type ITaskInstance = import('@/modules/Task/domain/types/task').ITaskInstance;
-    type ITaskMetaTemplate = import('@/modules/Task/domain/types/task').ITaskMetaTemplate;
 }
 
 

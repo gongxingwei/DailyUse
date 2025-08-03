@@ -8,7 +8,6 @@ import { taskReminderService } from "./taskReminderService";
 import type { ITaskTemplateRepository } from "../repositories/iTaskTemplateRepository";
 import type { ITaskInstanceRepository } from "../repositories/iTaskInstanceRepository";
 import { TaskTemplateValidator } from "../../validation/TaskTemplateValidator";
-import type { DateTime } from "@/shared/types/myDateTime";
 import type { ITaskMetaTemplateRepository } from "../repositories/iTaskMetaTemplateRepository";
 
 /**
@@ -360,7 +359,7 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     options: {
       maxInstances?: number;
-      dateRange?: { start: DateTime; end: DateTime };
+      dateRange?: { start: Date; end: Date };
       skipConflicts?: boolean;
       accountUuid?: string;
     } = {}
@@ -593,7 +592,7 @@ export class TaskDomainService {
           updatedInstances.push(taskInstance);
         }
         if (timeConfigChanged) {
-          taskInstance.updateTimeConfig(updatedTemplate.timeConfig);
+          taskInstance.updateConfig(updatedTemplate.timeConfig);
           updatedInstances.push(taskInstance);
         }
         if (reminderConfigChanged) {

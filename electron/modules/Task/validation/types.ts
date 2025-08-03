@@ -1,5 +1,5 @@
 // 验证接口和类型定义
-import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate } from '@common/modules/task/types/task';
 
 /**
  * 验证结果接口

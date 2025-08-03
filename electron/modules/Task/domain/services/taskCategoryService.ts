@@ -1,6 +1,6 @@
 import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { ITaskMetaTemplateRepository } from '../repositories/iTaskMetaTemplateRepository';
-import type { TaskTimeConfig, TaskReminderConfig } from '../types/task';
+import type { TaskTimeConfig, TaskReminderConfig } from '@common/modules/task/types/task';
 import { TaskMetaTemplateFactory } from '../utils/taskMetaTemplateFactory';
 
 /**
@@ -37,7 +37,7 @@ export class TaskMetaTemplateService {
       ...customTimeConfig,
       timezone: customTimeConfig?.timezone ||
         metaTemplate.defaultTimeConfig.timezone ||
-        Intl.DateTimeFormat().resolvedOptions().timeZone
+        'UTC', // 如果没有自定义时区，则使用元模板默认时区
     } as TaskTimeConfig;
 
     const mergedReminderConfig = {

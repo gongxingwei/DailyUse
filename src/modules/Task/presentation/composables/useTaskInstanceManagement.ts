@@ -1,9 +1,10 @@
 import { ref, computed } from 'vue';
-import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
 import { TaskInstance } from '../../domain/aggregates/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
 import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 import { useNotification } from './useNotification';
+import { toDayStart } from '@common/shared/utils/dateUtils';
+
 
 /**
  * 任务实例管理 Composable
@@ -24,18 +25,22 @@ export function useTaskInstanceManagement() {
 
   // 计算属性
   const dayTasks = computed(() => {
-    const selectedDateTime = TaskTimeUtils.fromISOString(new Date(selectedDate.value).toISOString());
-    const nextDay = TaskTimeUtils.fromISOString(
-      new Date(new Date(selectedDate.value).getTime() + 24 * 60 * 60 * 1000).toISOString()
-    );
-    
+    const selected = new Date(selectedDate.value);
+    const dayStart = toDayStart(selected);
+    const nextDayStart = new Date(dayStart);
+    nextDayStart.setDate(dayStart.getDate() + 1);
+
     return taskInstances.value.filter(task => {
-      if (!task.timeConfig.scheduledTime || typeof task.timeConfig.scheduledTime.timestamp !== 'number') {
+      if (
+        !task.timeConfig.scheduledTime ||
+        typeof task.timeConfig.scheduledTime.getTime() !== 'number'
+      ) {
         return false;
       }
-      
-      return task.timeConfig.scheduledTime.timestamp >= selectedDateTime.timestamp &&
-             task.timeConfig.scheduledTime.timestamp < nextDay.timestamp;
+      return (
+        task.timeConfig.scheduledTime.getTime() >= dayStart.getTime() &&
+        task.timeConfig.scheduledTime.getTime() < nextDayStart.getTime()
+      );
     });
   });
 
@@ -44,7 +49,11 @@ export function useTaskInstanceManagement() {
   );
 
   const incompleteTasks = computed(() =>
-    dayTasks.value.filter(task => (task.status === 'pending' || task.status === 'inProgress') && task instanceof TaskInstance)
+    dayTasks.value.filter(
+      task =>
+        (task.status === 'pending' || task.status === 'inProgress') &&
+        task instanceof TaskInstance
+    )
   );
 
   // 单个任务操作方法
@@ -52,7 +61,6 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const result = await getTaskService().completeTaskInstance(task.uuid);
-      
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已完成`);
         await refreshTasks();
@@ -71,7 +79,6 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const result = await getTaskService().undoCompleteTaskInstance(task.uuid);
-      
       if (result.success) {
         showSuccess(`任务 "${task.title}" 撤销完成成功`);
         await refreshTasks();
@@ -90,7 +97,6 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const result = await getTaskService().deleteTaskInstance(task.uuid);
-      
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已删除`);
         await refreshTasks();
@@ -109,7 +115,6 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const result = await getTaskService().startTaskInstance(task.uuid);
-      
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已开始`);
         await refreshTasks();
@@ -128,7 +133,6 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const result = await getTaskService().cancelTaskInstance(task.uuid);
-      
       if (result.success) {
         showSuccess(`任务 "${task.title}" 已取消`);
         await refreshTasks();
@@ -146,22 +150,18 @@ export function useTaskInstanceManagement() {
   // 批量操作
   const batchCompleteTask = async (tasks: TaskInstance[]) => {
     if (tasks.length === 0) return;
-    
     loading.value = true;
     try {
       const results = await Promise.allSettled(
         tasks.map(task => getTaskService().completeTaskInstance(task.uuid))
       );
-      
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
       const failCount = results.length - successCount;
-      
       if (failCount === 0) {
         showSuccess(`成功完成 ${successCount} 个任务`);
       } else {
         showInfo(`完成 ${successCount} 个任务，失败 ${failCount} 个`);
       }
-      
       await refreshTasks();
     } catch (error) {
       console.error('批量完成任务错误:', error);
@@ -173,22 +173,18 @@ export function useTaskInstanceManagement() {
 
   const batchDeleteTask = async (tasks: TaskInstance[]) => {
     if (tasks.length === 0) return;
-    
     loading.value = true;
     try {
       const results = await Promise.allSettled(
         tasks.map(task => getTaskService().deleteTaskInstance(task.uuid))
       );
-      
       const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
       const failCount = results.length - successCount;
-      
       if (failCount === 0) {
         showSuccess(`成功删除 ${successCount} 个任务`);
       } else {
         showInfo(`删除 ${successCount} 个任务，失败 ${failCount} 个`);
       }
-      
       await refreshTasks();
     } catch (error) {
       console.error('批量删除任务错误:', error);

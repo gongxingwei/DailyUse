@@ -156,7 +156,7 @@
             
             <div class="template-dates">
                 <span class="date-text">
-                    创建于 {{ TaskTimeUtils.formatDisplayDate(template.lifecycle.createdAt) }}
+                    创建于 {{ format(template.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}
                 </span>
             </div>
         </v-card-actions>
@@ -165,9 +165,10 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { TaskTimeUtils } from '../../domain/utils/taskTimeUtils';
+import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
+import { format } from 'date-fns';
 interface Props {
     template: TaskTemplate;
     statusFilters?: Array<{

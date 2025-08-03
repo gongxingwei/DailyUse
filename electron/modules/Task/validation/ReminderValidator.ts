@@ -1,6 +1,6 @@
 // 提醒验证器
-import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
-import type { TaskReminderConfig } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate } from '@common/modules/task/types/task';
+import type { TaskReminderConfig } from '@common/modules/task/types/task';
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
 
@@ -295,11 +295,11 @@ export class ReminderValidator implements ITemplateValidator {
 
     // 检查提醒时间与任务时间的逻辑关系
     if (template.timeConfig.type === 'timed' && template.timeConfig.baseTime.start) {
-      const taskTime = new Date(template.timeConfig.baseTime.start.timestamp);
+      const taskTime = new Date(template.timeConfig.baseTime.start.getTime());
       
       for (const alert of reminder.alerts) {
         if (alert.timing?.type === 'absolute' && alert.timing.absoluteTime) {
-          const reminderTime = new Date(alert.timing.absoluteTime.timestamp);
+          const reminderTime = new Date(alert.timing.absoluteTime.getTime());
           
           if (reminderTime >= taskTime) {
             errors.push('绝对时间提醒不能晚于或等于任务开始时间');

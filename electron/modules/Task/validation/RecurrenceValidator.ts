@@ -1,6 +1,5 @@
 // 重复规则验证器
-import type { ITaskTemplate } from "@/modules/Task/domain/types/task";
-import type { RecurrenceRule } from "@/modules/Task/domain/types/task";
+import type { ITaskTemplate,RecurrenceRule } from '@common/modules/task/types/task';
 import type { ITemplateValidator, ValidationResult } from "./types";
 import { ValidationUtils } from "./ValidationUtils";
 
@@ -459,8 +458,8 @@ export class RecurrenceValidator implements ITemplateValidator {
     if (recurrence.type === "daily" && recurrence.interval === 1) {
       if (template.timeConfig.type === "timeRange") {
         const duration =
-          template.timeConfig.baseTime.end?.timestamp! -
-          template.timeConfig.baseTime.start.timestamp;
+          template.timeConfig.baseTime.end?.getTime()! -
+          template.timeConfig.baseTime.start.getTime();
         const durationHours = duration / (1000 * 60 * 60);
 
         if (durationHours > 12) {

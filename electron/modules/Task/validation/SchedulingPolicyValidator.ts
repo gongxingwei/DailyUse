@@ -1,5 +1,5 @@
 // 调度策略验证器
-import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate } from '@common/modules/task/types/task';
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
 
@@ -141,10 +141,10 @@ export class SchedulingPolicyValidator implements ITemplateValidator {
 
     // 检查工作时间限制与非工作时间任务的冲突
     if (policy.workingHoursOnly && template.timeConfig.type === 'timed') {
-      const startTime = template.timeConfig.baseTime.start.time;
+      const startTime = template.timeConfig.baseTime.start.getTime();
       if (startTime) {
-        const hour = startTime.hour;
-        
+        const hour = new Date(startTime).getHours();
+
         // 假设工作时间为9:00-18:00
         if (hour < 9 || hour >= 18) {
           warnings.push('任务设置在非工作时间，但策略要求仅工作时间执行');

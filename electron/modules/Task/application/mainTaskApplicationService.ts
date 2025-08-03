@@ -10,11 +10,10 @@ import { TaskTemplateValidator } from "../validation/TaskTemplateValidator";
 import type {
   ITaskTemplate,
   ITaskInstance,
-  ITaskMetaTemplate
-} from "../domain/types/task";
-import type {
+  ITaskMetaTemplate,
   TaskResponse,
-} from "../../../../src/modules/Task/domain/types/task";
+  ITaskTemplateDTO
+} from "@common/modules/task/types/task";
 
 /**
  * MainTaskApplicationService
@@ -194,7 +193,7 @@ export class MainTaskApplicationService {
    * @returns { success: boolean, data?: ITaskTemplate, message?: string }
    * 业务流程：DTO转领域实体 -> 验证 -> 激活 -> 保存 -> 自动生成任务实例
    */
-  async createTaskTemplate(accountUuid: string, dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+  async createTaskTemplate(accountUuid: string, dto: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplate>> {
     try {
       // 1. DTO 转领域实体
       const template = TaskTemplate.fromDTO(dto);

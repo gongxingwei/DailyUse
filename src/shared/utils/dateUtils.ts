@@ -1,26 +1,4 @@
 /**
- * 日期工具类
- */
-
-/**
- * 格式化日期为 YYYY-MM-DD 格式
- * @param date 日期对象或日期字符串
- */
-export const formatDate = (date: Date | string): string => {
-    const d = new Date(date);
-    return d.toISOString().split('T')[0];
-};
-
-/**
- * 格式化日期时间为 HH:mm 格式
- * @param date 日期对象或日期字符串
- */
-export const formatDateTime = (date: Date | string): string => {
-    const d = new Date(date);
-    return `${d.getHours().toString().padStart(2, '0')}:${d.getMinutes().toString().padStart(2, '0')}`;
-};
-
-/**
  * 日期格式化模板
  * @param date 日期对象或日期字符串
  * @param template 格式化模板，支持：YYYY-MM-DD HH:mm:ss

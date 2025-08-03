@@ -97,7 +97,7 @@
 import { computed } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
-import type { KeyResultLink } from '@/modules/Task/domain/types/task';
+import type { KeyResultLink } from '@common/modules/task/types/task';
 import { useRouter } from 'vue-router';
 import type { TaskInstance } from '@/modules/Task/domain/aggregates/taskInstance';
 const router = useRouter();

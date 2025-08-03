@@ -2,14 +2,12 @@ import { defineStore } from "pinia";
 import { TaskTemplate } from "../../domain/aggregates/taskTemplate";
 import { TaskInstance } from "../../domain/aggregates/taskInstance";
 import { TaskMetaTemplate } from "../../domain/aggregates/taskMetaTemplate";
-
-import { TimeUtils } from "@/shared/utils/myDateTimeUtils";
+import {  toDayStart } from "@common/shared/utils/dateUtils";
 
 export function ensureTaskInstance(data: any): TaskInstance {
   if (data instanceof TaskInstance) {
     return data;
   }
-
   // 使用 fromCompleteData 方法完整还原实例
   return TaskInstance.fromCompleteData(data);
 }
@@ -18,9 +16,8 @@ export function ensureTaskTemplate(data: any): TaskTemplate {
   if (data instanceof TaskTemplate) {
     return data;
   }
-
   // 使用 fromCompleteData 方法完整还原实例
-  return TaskTemplate.fromCompleteData(data);
+  return TaskTemplate.fromDTO(data);
 }
 
 export function ensureTaskMetaTemplate(data: any): TaskMetaTemplate {
@@ -76,30 +73,23 @@ export const useTaskStore = defineStore("task", {
       },
 
     getTodayTaskInstances(): TaskInstance[] {
-      const today = TimeUtils.now();
-      const todayStart = TimeUtils.createDateTime(
-        today.date.year,
-        today.date.month,
-        today.date.day
-      );
-      const todayEnd = TimeUtils.createDateTime(
-        today.date.year,
-        today.date.month,
-        today.date.day + 1
-      );
+      const today = new Date();
+      const todayStart = toDayStart(today);
+      const todayEnd = new Date(todayStart);
+      todayEnd.setDate(todayStart.getDate() + 1);
 
       return this.taskInstances
         .map((i) => ensureTaskInstance(i))
         .filter((task) => {
           if (
             !task.scheduledTime ||
-            typeof task.scheduledTime.timestamp !== "number"
+            typeof task.scheduledTime.getTime() !== "number"
           ) {
             return false;
           }
           return (
-            task.scheduledTime.timestamp >= todayStart.timestamp &&
-            task.scheduledTime.timestamp < todayEnd.timestamp
+            task.scheduledTime.getTime() >= todayStart.getTime() &&
+            task.scheduledTime.getTime() < todayEnd.getTime()
           );
         });
     },
@@ -534,7 +524,6 @@ export const useTaskStore = defineStore("task", {
       }
     },
 
-
     // === 批量数据同步方法 ===
     /**
      * 批量设置任务模板（从主进程同步数据时使用）
@@ -629,7 +618,7 @@ export const useTaskStore = defineStore("task", {
       return {
         templates: this.taskTemplates.map((template) => {
           const safeTemplate = ensureTaskTemplate(template);
-          return safeTemplate.toJSON();
+          return safeTemplate.toDTO();
         }),
         instances: this.taskInstances.map((instance) => {
           const safeInstance = ensureTaskInstance(instance);
@@ -647,7 +636,7 @@ export const useTaskStore = defineStore("task", {
     }): void {
       try {
         this.taskTemplates = snapshot.templates.map((data) =>
-          TaskTemplate.fromCompleteData(data)
+          TaskTemplate.fromDTO(data)
         );
         this.taskInstances = snapshot.instances.map((data) =>
           TaskInstance.fromCompleteData(data)

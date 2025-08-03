@@ -1,4 +1,4 @@
-import { DateTime } from "@/shared/types/myDateTime";
+
 
 export enum SessionStatus {
   ACTIVE = "active",
@@ -16,9 +16,9 @@ export interface UserSession {
   rememberMe: boolean;
   autoLogin: boolean;
   status: SessionStatus;
-  createdAt: DateTime;
-  lastAccessAt: DateTime;
-  expiresAt?: DateTime;
+  createdAt: Date;
+  lastAccessAt: Date;
+  expiresAt?: Date;
   ipAddress?: string;
   userAgent?: string;
 }

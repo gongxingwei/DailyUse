@@ -33,13 +33,13 @@ export function useTimeConfigValidation() {
       }
 
       // 时间顺序检查
-      if (timeConfig.baseTime.end.timestamp <= timeConfig.baseTime.start.timestamp) {
+      if (timeConfig.baseTime.end.getTime() <= timeConfig.baseTime.start.getTime()) {
         errors.value.push('结束时间必须晚于开始时间');
         return false;
       }
 
       // 时长合理性检查
-      const duration = timeConfig.baseTime.end.timestamp - timeConfig.baseTime.start.timestamp;
+      const duration = timeConfig.baseTime.end.getTime() - timeConfig.baseTime.start.getTime();
       const hours = duration / (1000 * 60 * 60);
       
       if (hours > 12) {
@@ -50,8 +50,8 @@ export function useTimeConfigValidation() {
     }
 
     // 时间设置的用户体验检查
-    if (timeConfig.type === 'timed' && timeConfig.baseTime.start.time) {
-      const hour = timeConfig.baseTime.start.time.hour;
+    if (timeConfig.type === 'timed' && timeConfig.baseTime.start) {
+      const hour = timeConfig.baseTime.start.getHours();
       if (hour < 6 || hour > 23) {
         warnings.value.push('任务时间较早或较晚，请确认是否合适');
       }
@@ -70,10 +70,10 @@ export function useTimeConfigValidation() {
     for (const other of otherTimes) {
       if (other.type === 'allDay') continue;
       
-      const start1 = timeConfig.baseTime.start.timestamp;
-      const end1 = timeConfig.baseTime.end?.timestamp || start1 + (60 * 60 * 1000); // 默认1小时
-      const start2 = other.baseTime.start.timestamp;
-      const end2 = other.baseTime.end?.timestamp || start2 + (60 * 60 * 1000);
+      const start1 = timeConfig.baseTime.start.getTime();
+      const end1 = timeConfig.baseTime.end?.getTime() || start1 + (60 * 60 * 1000); // 默认1小时
+      const start2 = other.baseTime.start.getTime();
+      const end2 = other.baseTime.end?.getTime() || start2 + (60 * 60 * 1000);
 
       if (start1 < end2 && end1 > start2) {
         warnings.value.push('存在时间重叠的任务，请注意安排');
@@ -98,8 +98,8 @@ export function useTimeConfigValidation() {
     }
 
     // 每日重复且时间很晚的警告
-    if (recurrence.type === 'daily' && timeConfig.baseTime.start.time) {
-      const hour = timeConfig.baseTime.start.time.hour;
+    if (recurrence.type === 'daily' && timeConfig.baseTime.start) {
+      const hour = timeConfig.baseTime.start.getHours();
       if (hour > 22) {
         warnings.value.push('每日重复任务时间较晚，可能影响执行');
       }

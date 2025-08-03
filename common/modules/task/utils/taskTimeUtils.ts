@@ -1,67 +1,28 @@
-import type { RecurrenceRule } from "@/modules/Task/domain/types/task";
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
-import { TaskTemplate } from '../aggregates/taskTemplate';
-import { TaskInstance } from '../aggregates/taskInstance';
-import { DateTime } from '@/shared/types/myDateTime';
+import type { RecurrenceRule } from "@common/modules/task/types/task";
+import { TaskTemplate } from "../../../../electron/modules/Task/domain/aggregates/taskTemplate";
+import { TaskInstance } from "../../../../electron/modules/Task/domain/aggregates/taskInstance";
+import {
+  addMinutes,
+  format,
+  isAfter,
+  isBefore,
+  isEqual,
+  differenceInMinutes,
+} from "date-fns";
+
 export class TaskTimeUtils {
-  // ===============================
-  // 重新导出通用功能 - 让 TaskTimeUtils 也能使用所有通用方法
-  // ===============================
-
-  // 核心创建方法
-  static createTimePoint = TimeUtils.createTimePoint;
-  static createDateTime = TimeUtils.createDateTime;
-  static isDateTime = TimeUtils.isDateTime;
-  static fromISOString = TimeUtils.fromISOString;
-  static fromTimestamp = TimeUtils.fromTimestamp;
-  static now = TimeUtils.now;
-  static toDateTime = TimeUtils.toDateTime;
-  static safeToDateTime = TimeUtils.safeToDateTime;
-  static ensureDateTime = TimeUtils.ensureDateTime;
-
-  // 时间操作方法
-  static updateDateKeepTime = TimeUtils.updateDateKeepTime;
-  static updateTimeKeepDate = TimeUtils.updateTimeKeepDate;
-  static updateDate = TimeUtils.updateDate;
-  static updateTime = TimeUtils.updateTime;
-  static startOfDay = TimeUtils.startOfDay;
-  static endOfDay = TimeUtils.endOfDay;
-  static addMinutes = TimeUtils.addMinutes;
-  static addDays = TimeUtils.addDays;
-
-  // 比较方法
-  static compare = TimeUtils.compare;
-  static compareMultiple = TimeUtils.compareMultiple;
-  static isAfter = TimeUtils.isAfter;
-  static isBefore = TimeUtils.isBefore;
-  static isEqual = TimeUtils.isEqual;
-  static isInRange = TimeUtils.isInRange;
-
-  // 格式化方法
-  static formatDateToInput = TimeUtils.formatDateToInput;
-  static formatTimeToInput = TimeUtils.formatTimeToInput;
-  static getMinutesBetween = TimeUtils.getMinutesBetween;
-
-  // 重新导出通用显示格式化方法
-  static formatDisplayDate = TimeUtils.formatDisplayDate;
-  static formatDisplayTime = TimeUtils.formatDisplayTime;
-
-  // ===============================
-  // Task 模块特有功能
-  // ===============================
-
   /**
    * 计算下一个重复时间
    */
   static getNextOccurrence(
     config: TaskTemplate["timeConfig"],
-    from?: DateTime
-  ): DateTime | null {
-    const fromTime = from || this.now();
+    from?: Date
+  ): Date | null {
+    const fromTime = from || new Date();
     const { recurrence, baseTime } = config;
 
     if (recurrence.type === "none") {
-      return baseTime.start.timestamp > fromTime.timestamp
+      return baseTime.start.getTime() > fromTime.getTime()
         ? baseTime.start
         : null;
     }
@@ -74,9 +35,9 @@ export class TaskTimeUtils {
    * 计算所有提醒时间
    */
   static calculateReminderTimes(
-    taskTime: DateTime,
+    taskTime: Date,
     reminderConfig: TaskTemplate["reminderConfig"]
-  ): DateTime[] {
+  ): Date[] {
     if (!reminderConfig.enabled) return [];
 
     return reminderConfig.alerts
@@ -87,52 +48,13 @@ export class TaskTimeUtils {
           alert.timing.type === "relative" &&
           alert.timing.minutesBefore
         ) {
-          return this.addMinutes(taskTime, -alert.timing.minutesBefore);
+          return addMinutes(taskTime, -alert.timing.minutesBefore);
         } else {
           throw new Error("Invalid reminder timing configuration");
         }
       })
-      .filter((reminderTime) => reminderTime.timestamp > Date.now())
-      .sort((a, b) => a.timestamp - b.timestamp);
-  }
-
-  /**
-   * 格式化显示时间配置
-   */
-  static formatTimeConfig(timeConfig: TaskTemplate["timeConfig"]): {
-    dateRange: string;
-    timeRange: string;
-    recurrence: string;
-    timezone: string;
-    summary: string;
-  } {
-    const { type, baseTime, recurrence, timezone } = timeConfig;
-    let dateRange, timeRange;
-    
-    const startDate = this.formatDisplayDate(baseTime.start);
-    const startTime = this.formatDisplayTime(baseTime.start);
-    
-    if (type === "timeRange" && baseTime.end) {
-      const endDate = this.formatDisplayDate(baseTime.end);
-      const endTime = this.formatDisplayTime(baseTime.end);
-      dateRange = `${startDate} - ${endDate}`;
-      timeRange = `${startTime} - ${endTime}`;
-    } else {
-      dateRange = `开始于 ${startDate}`;
-      timeRange = startTime;
-    }
-
-    if (type === "allDay") {
-      timeRange = "全天";
-    }
-
-    return {
-      dateRange: dateRange,
-      timeRange: timeRange,
-      recurrence: this.formatRecurrence(recurrence),
-      timezone: timezone || "系统时区",
-      summary: this.formatTimeConfigSummary(timeConfig),
-    };
+      .filter((reminderTime) => reminderTime.getTime() > Date.now())
+      .sort((a, b) => a.getTime() - b.getTime());
   }
 
   /**
@@ -180,9 +102,9 @@ export class TaskTimeUtils {
       recurrenceText += "，结束条件未设置";
       return recurrenceText;
     }
-    
+
     if (endCondition.type === "date" && endCondition.endDate) {
-      const endDate = this.formatDisplayDate(endCondition.endDate);
+      const endDate = format(endCondition.endDate, "yyyy-MM-dd");
       recurrenceText += `，直到${endDate}`;
     } else if (endCondition.type === "count" && endCondition.count) {
       recurrenceText += `，共${endCondition.count}次`;
@@ -192,17 +114,39 @@ export class TaskTimeUtils {
   }
 
   /**
+   * 判断 date 是否在 [start, end] 区间内（包含端点）
+   */
+  static isInRange(date: Date, start: Date, end: Date): boolean {
+    return (
+      (isAfter(date, start) || isEqual(date, start)) &&
+      (isBefore(date, end) || isEqual(date, end))
+    );
+  }
+
+  /**
+   * 计算两个日期之间的分钟数
+   */
+  static getMinutesBetween(start: Date, end: Date): number {
+    return differenceInMinutes(end, start);
+  }
+
+  /**
    * 格式化时间配置摘要
    */
-  static formatTimeConfigSummary(timeConfig: TaskTemplate["timeConfig"]): string {
+  static formatTimeConfigSummary(
+    timeConfig: TaskTemplate["timeConfig"]
+  ): string {
     const { baseTime, recurrence } = timeConfig;
 
     if (recurrence.type === "none") {
-      return `${this.formatDisplayDate(baseTime.start)} ${this.formatDisplayTime(baseTime.start)}`;
+      return `${format(baseTime.start, "yyyy-MM-dd")} ${format(
+        baseTime.start,
+        "HH:mm"
+      )}`;
     }
 
     const recurrenceText = this.formatRecurrence(recurrence);
-    const timeText = this.formatDisplayTime(baseTime.start);
+    const timeText = format(baseTime.start, "HH:mm");
 
     return `${recurrenceText}，${timeText}`;
   }
@@ -210,22 +154,24 @@ export class TaskTimeUtils {
   /**
    * 格式化任务实例时间配置
    */
-  static formatTaskInstanceTimeConfig(timeConfig: TaskInstance["timeConfig"]): string {
-    const startDate = this.formatDisplayDate(timeConfig.scheduledTime);
-    const startTime = this.formatDisplayTime(timeConfig.scheduledTime);
+  static formatTaskInstanceTimeConfig(
+    timeConfig: TaskInstance["timeConfig"]
+  ): string {
+    const startDate = format(timeConfig.scheduledTime, "yyyy-MM-dd");
+    const startTime = format(timeConfig.scheduledTime, "HH:mm");
     const { type } = timeConfig;
-    
+
     if (type === "allDay") {
       return startDate;
     }
-    
+
     if (type === "timed") {
       return `${startDate} ${startTime}`;
     }
-    
+
     if (type === "timeRange" && timeConfig.endTime) {
-      const endDate = this.formatDisplayDate(timeConfig.endTime);
-      const endTime = this.formatDisplayTime(timeConfig.endTime);
+      const endDate = format(timeConfig.endTime, "yyyy-MM-dd");
+      const endTime = format(timeConfig.endTime, "HH:mm");
       return `${startDate} ${startTime} - ${endDate} ${endTime}`;
     }
 
@@ -237,7 +183,7 @@ export class TaskTimeUtils {
    */
   static getNextOccurrenceDisplay(
     timeConfig: TaskTemplate["timeConfig"],
-    from?: DateTime
+    from?: Date
   ): string {
     const nextTime = this.getNextOccurrence(timeConfig, from);
 
@@ -245,9 +191,9 @@ export class TaskTimeUtils {
       return "无下次执行";
     }
 
-    const now = from || this.now();
+    const now = from || new Date();
     const diffMinutes = Math.floor(
-      (nextTime.timestamp - now.timestamp) / (60 * 1000)
+      (nextTime.getTime() - now.getTime()) / (60 * 1000)
     );
 
     if (diffMinutes < 0) {
@@ -262,7 +208,7 @@ export class TaskTimeUtils {
       const days = Math.floor(diffMinutes / 1440);
       return `${days}天后`;
     } else {
-      return `${this.formatDisplayDate(nextTime)} ${this.formatDisplayTime(nextTime)}`;
+      return `${format(nextTime, "yyyy-MM-dd")} ${format(nextTime, "HH:mm")}`;
     }
   }
 
@@ -274,35 +220,40 @@ export class TaskTimeUtils {
    * 根据重复规则计算下一次时间
    */
   private static calculateNextByRule(
-    baseTime: DateTime,
+    baseTime: Date,
     rule: RecurrenceRule,
-    fromTime: DateTime
-  ): DateTime | null {
+    fromTime: Date
+  ): Date | null {
     const { type, interval = 1, endCondition, config } = rule;
-    
+
     if (!interval || !endCondition) {
       return null; // 无效的规则
     }
-    
+
     // 检查是否已达到结束条件
     if (
       endCondition.type === "date" &&
       endCondition.endDate &&
-      fromTime.timestamp > endCondition.endDate.timestamp
+      fromTime.getTime() > endCondition.endDate.getTime()
     ) {
       return null;
     }
 
-    let nextTime: DateTime;
-    const baseDate = new Date(baseTime.timestamp);
-    const fromDate = new Date(fromTime.timestamp);
+    let nextTime: Date;
+    const baseDate = new Date(baseTime.getTime());
+    const fromDate = new Date(fromTime.getTime());
 
     switch (type) {
       case "daily":
         nextTime = this.getNextDaily(baseDate, fromDate, interval);
         break;
       case "weekly":
-        nextTime = this.getNextWeekly(baseDate, fromDate, interval, config?.weekdays);
+        nextTime = this.getNextWeekly(
+          baseDate,
+          fromDate,
+          interval,
+          config?.weekdays
+        );
         break;
       case "monthly":
         nextTime = this.getNextMonthly(baseDate, fromDate, interval, config);
@@ -314,12 +265,16 @@ export class TaskTimeUtils {
     return nextTime;
   }
 
-  private static getNextDaily(baseDate: Date, fromDate: Date, interval: number): DateTime {
+  private static getNextDaily(
+    baseDate: Date,
+    fromDate: Date,
+    interval: number
+  ): Date {
     const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
     if (nextDate.getTime() === fromDate.getTime()) {
       nextDate.setDate(nextDate.getDate() + interval);
     }
-    return this.fromTimestamp(nextDate.getTime());
+    return nextDate;
   }
 
   private static getNextWeekly(
@@ -327,11 +282,13 @@ export class TaskTimeUtils {
     fromDate: Date,
     interval: number,
     weekdays?: number[]
-  ): DateTime {
+  ): Date {
     if (!weekdays || weekdays.length === 0) {
-      const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
+      const nextDate = new Date(
+        Math.max(baseDate.getTime(), fromDate.getTime())
+      );
       nextDate.setDate(nextDate.getDate() + 7 * interval);
-      return this.fromTimestamp(nextDate.getTime());
+      return nextDate;
     }
 
     // 找到下一个匹配的星期几
@@ -344,7 +301,7 @@ export class TaskTimeUtils {
         const nextDate = new Date(fromDate.getTime());
         nextDate.setDate(nextDate.getDate() + daysToAdd);
         nextDate.setHours(baseDate.getHours(), baseDate.getMinutes(), 0, 0);
-        return this.fromTimestamp(nextDate.getTime());
+        return nextDate;
       }
     }
 
@@ -353,7 +310,7 @@ export class TaskTimeUtils {
     const nextDate = new Date(fromDate.getTime());
     nextDate.setDate(nextDate.getDate() + daysToAdd);
     nextDate.setHours(baseDate.getHours(), baseDate.getMinutes(), 0, 0);
-    return this.fromTimestamp(nextDate.getTime());
+    return nextDate;
   }
 
   private static getNextMonthly(
@@ -361,7 +318,7 @@ export class TaskTimeUtils {
     fromDate: Date,
     interval: number,
     _config?: any
-  ): DateTime {
+  ): Date {
     const nextDate = new Date(Math.max(baseDate.getTime(), fromDate.getTime()));
     nextDate.setMonth(nextDate.getMonth() + interval);
 
@@ -370,6 +327,97 @@ export class TaskTimeUtils {
       nextDate.setDate(0); // 设置为上个月的最后一天
     }
 
-    return this.fromTimestamp(nextDate.getTime());
+    return nextDate;
+  }
+
+  /**
+   * 格式化 TaskTimeConfig，返回摘要信息
+   * @param timeConfig
+   * @returns { dateRange: string, timeRange: string, recurrence: string }
+   */
+  static formatTimeConfig(timeConfig: any): {
+    dateRange: string;
+    timeRange: string;
+    recurrence: string;
+  } {
+    // 日期范围
+    let dateRange = "";
+    if (timeConfig.baseTime?.start) {
+      const start = new Date(timeConfig.baseTime.start);
+      if (timeConfig.baseTime?.end) {
+        const end = new Date(timeConfig.baseTime.end);
+        dateRange =
+          `${start.getFullYear()}-${(start.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}-${start.getDate().toString().padStart(2, "0")}` +
+          " ~ " +
+          `${end.getFullYear()}-${(end.getMonth() + 1)
+            .toString()
+            .padStart(2, "0")}-${end.getDate().toString().padStart(2, "0")}`;
+      } else {
+        dateRange = `${start.getFullYear()}-${(start.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${start.getDate().toString().padStart(2, "0")}`;
+      }
+    }
+
+    // 时间范围
+    let timeRange = "";
+    if (timeConfig.type === "allDay") {
+      timeRange = "全天";
+    } else if (timeConfig.baseTime?.start) {
+      const start = new Date(timeConfig.baseTime.start);
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      const startStr = `${pad(start.getHours())}:${pad(start.getMinutes())}`;
+      if (timeConfig.baseTime?.end) {
+        const end = new Date(timeConfig.baseTime.end);
+        const endStr = `${pad(end.getHours())}:${pad(end.getMinutes())}`;
+        timeRange = `${startStr} ~ ${endStr}`;
+      } else {
+        timeRange = startStr;
+      }
+    }
+
+    // 重复模式
+    let recurrence = "";
+    if (timeConfig.recurrence?.type && timeConfig.recurrence?.type !== "none") {
+      switch (timeConfig.recurrence.type) {
+        case "daily":
+          recurrence = "每天";
+          break;
+        case "weekly":
+          recurrence = "每周";
+          break;
+        case "monthly":
+          recurrence = "每月";
+          break;
+        case "yearly":
+          recurrence = "每年";
+          break;
+        default:
+          recurrence = "自定义";
+      }
+      if (
+        timeConfig.recurrence?.interval &&
+        timeConfig.recurrence.interval > 1
+      ) {
+        recurrence = `每${timeConfig.recurrence.interval}${recurrence.slice(
+          1
+        )}`;
+      }
+      if (timeConfig.recurrence?.endCondition?.type === "count") {
+        recurrence += `，共${timeConfig.recurrence.endCondition.count}次`;
+      } else if (
+        timeConfig.recurrence?.endCondition?.type === "date" &&
+        timeConfig.recurrence.endCondition.endDate
+      ) {
+        const endDate = new Date(timeConfig.recurrence.endCondition.endDate);
+        recurrence += `，至${endDate.getFullYear()}-${(endDate.getMonth() + 1)
+          .toString()
+          .padStart(2, "0")}-${endDate.getDate().toString().padStart(2, "0")}`;
+      }
+    }
+
+    return { dateRange, timeRange, recurrence };
   }
 }

@@ -1,8 +1,9 @@
 // 时间配置验证器
-import type { ITaskTemplate, TaskTimeConfig } from '@/modules/Task/domain/types/task';
-import type { DateTime } from '@/shared/types/myDateTime';
+import type { ITaskTemplate, TaskTimeConfig } from '@common/modules/task/types/task';
+
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
+import { isAfter } from 'date-fns';
 
 /**
  * 时间配置验证器
@@ -59,20 +60,19 @@ export class TimeConfigValidator implements ITemplateValidator {
     // 验证开始时间
     if (!baseTime.start) {
       results.push(ValidationUtils.failure(['开始时间不能为空']));
-    } else {
-      results.push(this.validateDateTime(baseTime.start, '开始时间'));
+    } else if (baseTime.start instanceof Date) {
+      results.push(this.validateDate(baseTime.start, '开始时间'));
     }
 
     // 根据时间类型验证结束时间
     if (type === 'timeRange') {
       if (!baseTime.end) {
         results.push(ValidationUtils.failure(['时间段类型必须设置结束时间']));
-      } else {
-        results.push(this.validateDateTime(baseTime.end, '结束时间'));
-        
+      } else if (baseTime.end instanceof Date) {
+        results.push(this.validateDate(baseTime.end, '结束时间'));
         // 验证时间顺序
         if (baseTime.start && baseTime.end) {
-          if (baseTime.end.timestamp <= baseTime.start.timestamp) {
+          if (isAfter(baseTime.start, baseTime.end)) {
             results.push(ValidationUtils.failure(['结束时间必须晚于开始时间']));
           }
         }
@@ -91,129 +91,15 @@ export class TimeConfigValidator implements ITemplateValidator {
   }
 
   /**
-   * 验证DateTime对象
+   * 验证日期
    */
-  private validateDateTime(dateTime: DateTime, fieldName: string): ValidationResult {
-    if (!dateTime) {
-      return ValidationUtils.failure([`${fieldName}不能为空`]);
+  private validateDate(date: Date, fieldName: string): ValidationResult {
+    if (!(date instanceof Date) || isNaN(date.getTime())) {
+      return ValidationUtils.failure([`${fieldName}不是有效日期`]);
     }
-
-    const results: ValidationResult[] = [];
-
-    // 验证timestamp
-    if (typeof dateTime.timestamp !== 'number' || isNaN(dateTime.timestamp)) {
-      results.push(ValidationUtils.failure([`${fieldName}的时间戳格式不正确`]));
-    } else {
-      // 验证时间戳是否合理（不能是负数，不能太久远）
-      const now = Date.now();
-      const oneYearAgo = now - (365 * 24 * 60 * 60 * 1000);
-      const tenYearsLater = now + (10 * 365 * 24 * 60 * 60 * 1000);
-
-      if (dateTime.timestamp < oneYearAgo) {
-        results.push(ValidationUtils.success([`${fieldName}是很久以前的时间，请确认是否正确`]));
-      }
-
-      if (dateTime.timestamp > tenYearsLater) {
-        results.push(ValidationUtils.success([`${fieldName}是很久以后的时间，请确认是否正确`]));
-      }
-    }
-
-    // 验证date对象
-    if (!dateTime.date) {
-      results.push(ValidationUtils.failure([`${fieldName}的日期信息不能为空`]));
-    } else {
-      results.push(this.validateDateInfo(dateTime.date, fieldName));
-    }
-
-    // 验证time对象（如果存在）
-    if (dateTime.time) {
-      results.push(this.validateTimePoint(dateTime.time, fieldName));
-    }
-
-    // 验证ISO字符串
-    if (!dateTime.isoString) {
-      results.push(ValidationUtils.failure([`${fieldName}的ISO字符串不能为空`]));
-    } else {
-      const isoDate = new Date(dateTime.isoString);
-      if (isNaN(isoDate.getTime())) {
-        results.push(ValidationUtils.failure([`${fieldName}的ISO字符串格式不正确`]));
-      }
-      // 检查timestamp和ISO字符串是否一致
-      else if (Math.abs(isoDate.getTime() - dateTime.timestamp) > 1000) {
-        results.push(ValidationUtils.failure([`${fieldName}的时间戳与ISO字符串不一致`]));
-      }
-    }
-
-    return ValidationUtils.mergeResults(...results);
+    return ValidationUtils.success();
   }
 
-  /**
-   * 验证日期信息
-   */
-  private validateDateInfo(date: any, fieldName: string): ValidationResult {
-    const results: ValidationResult[] = [];
-
-    // 验证年份
-    results.push(ValidationUtils.validateNumberRange(date.year, `${fieldName}年份`, {
-      min: 1900,
-      max: 2100,
-      required: true,
-      integer: true
-    }));
-
-    // 验证月份
-    results.push(ValidationUtils.validateNumberRange(date.month, `${fieldName}月份`, {
-      min: 1,
-      max: 12,
-      required: true,
-      integer: true
-    }));
-
-    // 验证日期
-    results.push(ValidationUtils.validateNumberRange(date.day, `${fieldName}日期`, {
-      min: 1,
-      max: 31,
-      required: true,
-      integer: true
-    }));
-
-    // 验证日期合法性
-    if (date.year && date.month && date.day) {
-      const testDate = new Date(date.year, date.month - 1, date.day);
-      if (testDate.getFullYear() !== date.year || 
-          testDate.getMonth() !== date.month - 1 || 
-          testDate.getDate() !== date.day) {
-        results.push(ValidationUtils.failure([`${fieldName}不是有效日期`]));
-      }
-    }
-
-    return ValidationUtils.mergeResults(...results);
-  }
-
-  /**
-   * 验证时间点
-   */
-  private validateTimePoint(time: any, fieldName: string): ValidationResult {
-    const results: ValidationResult[] = [];
-
-    // 验证小时
-    results.push(ValidationUtils.validateNumberRange(time.hour, `${fieldName}小时`, {
-      min: 0,
-      max: 23,
-      required: true,
-      integer: true
-    }));
-
-    // 验证分钟
-    results.push(ValidationUtils.validateNumberRange(time.minute, `${fieldName}分钟`, {
-      min: 0,
-      max: 59,
-      required: true,
-      integer: true
-    }));
-
-    return ValidationUtils.mergeResults(...results);
-  }
 
   /**
    * 验证持续时间
@@ -257,24 +143,32 @@ export class TimeConfigValidator implements ITemplateValidator {
     const errors: string[] = [];
 
     // 检查全天任务是否设置了具体时间
-    if (timeConfig.type === 'allDay' && timeConfig.baseTime.start?.time) {
+    if (timeConfig.type === 'allDay' && (timeConfig.baseTime as any)?.start?.time) {
       warnings.push('全天任务不需要设置具体时间');
     }
 
     // 检查定时任务是否缺少时间
-    if (timeConfig.type === 'timed' && !timeConfig.baseTime.start?.time) {
+    if (timeConfig.type === 'timed' && !(timeConfig.baseTime as any)?.start?.time) {
       errors.push('定时任务必须设置具体时间');
     }
 
     // 检查时间段任务的持续时间
-    if (timeConfig.type === 'timeRange' && timeConfig.baseTime.start && timeConfig.baseTime.end) {
-      const duration = timeConfig.baseTime.end.timestamp - timeConfig.baseTime.start.timestamp;
-      const durationInMinutes = duration / (1000 * 60);
-      
-      if (durationInMinutes < 1) {
-        errors.push('时间段持续时间不能少于1分钟');
-      } else if (durationInMinutes > 8 * 60) { // 8小时
-        warnings.push('时间段持续时间超过8小时，建议分解为多个任务');
+    if (
+      timeConfig.type === 'timeRange' &&
+      timeConfig.baseTime.start &&
+      timeConfig.baseTime.end
+    ) {
+      const start = timeConfig.baseTime.start;
+      const end = timeConfig.baseTime.end;
+      if (start instanceof Date && end instanceof Date) {
+        const duration = end.getTime() - start.getTime();
+        const durationInMinutes = duration / (1000 * 60);
+
+        if (durationInMinutes < 1) {
+          errors.push('时间段持续时间不能少于1分钟');
+        } else if (durationInMinutes > 8 * 60) {
+          warnings.push('时间段持续时间超过8小时，建议分解为多个任务');
+        }
       }
     }
 

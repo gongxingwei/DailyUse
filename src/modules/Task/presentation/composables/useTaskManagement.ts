@@ -58,7 +58,7 @@ export function useTaskManagement() {
         // 简化的今日任务计算
         const today = new Date().toDateString();
         return i.timeConfig.scheduledTime && 
-               new Date(i.timeConfig.scheduledTime.timestamp).toDateString() === today;
+               new Date(i.timeConfig.scheduledTime.getTime()).toDateString() === today;
       }).length
     };
   });

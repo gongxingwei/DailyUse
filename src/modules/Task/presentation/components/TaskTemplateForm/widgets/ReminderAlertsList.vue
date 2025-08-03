@@ -129,7 +129,6 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 
 type ReminderAlert = TaskTemplate['reminderConfig']['alerts'][number];
@@ -146,7 +145,7 @@ interface Emits {
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-const absoluteTimeInput = ref(TimeUtils.now());
+const absoluteTimeInput = ref(new Date());
 
 const localAlerts = computed({
   get: () => props.modelValue,
@@ -216,14 +215,9 @@ const handleAbsoluteTimeChange = (timeValue: string, alertIndex: number) => {
       return;
     }
     
-    // 创建新的 DateTime，使用当前日期和用户选择的时间
-    const now = TimeUtils.now();
-    const absoluteTime = TimeUtils.createDateTime(
-      now.date.year,
-      now.date.month,
-      now.date.day,
-      TimeUtils.createTimePoint(hours, minutes)
-    );
+    // 创建新的 Date，使用当前日期和用户选择的时间
+    const now = new Date();
+    const absoluteTime = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hours, minutes);
     
     // 只更新指定的提醒项
     const updatedAlerts = [...localAlerts.value];
@@ -281,7 +275,7 @@ watch(() => localAlerts.value, (alerts) => {
       alert.timing.minutesBefore = undefined;
       // 确保有默认的绝对时间
       if (!alert.timing.absoluteTime) {
-        alert.timing.absoluteTime = TimeUtils.now();
+        alert.timing.absoluteTime = new Date();
       }
     }
   });

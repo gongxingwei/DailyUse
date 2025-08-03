@@ -1,6 +1,6 @@
 import nodeSchedule from "node-schedule";
 import { BrowserWindow } from "electron";
-import type { DateTime } from "@/shared/types/myDateTime";
+
 
 
 export interface ScheduleTask {
@@ -11,7 +11,7 @@ export interface ScheduleTask {
 export interface ScheduleOptions {
   uuid: string;
   cron?: string;
-  dateTime?: DateTime;
+  dateTime?: Date;
   task: ScheduleTask;
 }
 
@@ -62,8 +62,7 @@ export class ScheduleService {
         });
       } else if (options.dateTime) {
         // 使用具体时间
-        const date = this.dateTimeToDate(options.dateTime);
-        job = nodeSchedule.scheduleJob(date, () => {
+        job = nodeSchedule.scheduleJob(options.dateTime, () => {
           this.executeTask(options.uuid, options.task);
         });
       } else {
@@ -177,29 +176,6 @@ export class ScheduleService {
         this.scheduleJobs.delete(uuid);
       }
     }
-  }
-
-  /**
-   * 将 DateTime 转换为 Date 对象
-   */
-  private dateTimeToDate(dateTime: DateTime): Date {
-    return new Date(
-      dateTime.isoString
-    );
-  }
-
-  /**
-   * 创建 cron 表达式
-   */
-  createCronExpression(dateTime: DateTime): string {
-    const { time, date } = dateTime;
-
-    if (!time) {
-      throw new Error("创建 cron 表达式需要具体时间");
-    }
-
-    // 格式: 秒 分 时 日 月 周
-    return `0 ${time.minute} ${time.hour} ${date.day} ${date.month} *`;
   }
 
   /**

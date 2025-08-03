@@ -1,7 +1,6 @@
 import { ref, computed, watch, readonly, type Ref } from 'vue';
-import type { RecurrenceRule } from '@/modules/Task/domain/types/task';
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
-
+import type { RecurrenceRule } from '@common/modules/task/types/task';
+import { format } from 'date-fns';
 /**
  * 重复规则验证组合式函数
  * 提供重复规则的UI层面验证功能
@@ -54,8 +53,8 @@ export function useRecurrenceValidation(recurrenceRule: Ref<RecurrenceRule>) {
         if (!endCondition.endDate) {
           errors.push('必须设置结束日期');
         } else {
-          const now = TimeUtils.now();
-          if (endCondition.endDate.timestamp <= now.timestamp) {
+          const now = new Date();
+          if (endCondition.endDate.getTime() <= now.getTime()) {
             errors.push('结束日期必须在当前时间之后');
           }
         }
@@ -192,8 +191,8 @@ export function useRecurrenceValidation(recurrenceRule: Ref<RecurrenceRule>) {
     if (endCondition?.type === 'count' && endCondition.count) {
       description += `，共${endCondition.count}次`;
     } else if (endCondition?.type === 'date' && endCondition.endDate) {
-      // 使用TimeUtils的formatDateToInput方法来格式化日期
-      const endDateStr = TimeUtils.formatDateToInput(endCondition.endDate);
+      // 使用formatDateToInput方法来格式化日期
+      const endDateStr = format(endCondition.endDate, 'yyyy-MM-dd');
       description += `，至${endDateStr}`;
     }
 

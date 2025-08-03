@@ -40,7 +40,7 @@ MainGoalApplicationService
 ### 3. 数据库持久化
 - ✅ 数据库表结构: `goal_directories`, `goals`, `key_results`, `goal_records`
 - ✅ 完整的 CRUD 操作支持
-- ✅ DateTime 类型转换处理
+- ✅ Date 类型转换处理
 - ✅ JSON 字段支持 (关键结果、分析数据等)
 - ✅ 外键约束和数据完整性
 

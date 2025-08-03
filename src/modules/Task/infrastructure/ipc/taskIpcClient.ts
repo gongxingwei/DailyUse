@@ -5,7 +5,7 @@ import type {
   ITaskTemplate,
   ITaskInstance,
   ITaskMetaTemplate
-} from '@/modules/Task/domain/types/task';
+} from '@common/modules/task/types/task';
 import { serializeForIpc, deepSerializeForIpc } from '@/shared/utils/ipcSerialization';
 import { ipcInvokeWithAuth } from '@/shared/utils/ipcInvokeWithAuth';
 

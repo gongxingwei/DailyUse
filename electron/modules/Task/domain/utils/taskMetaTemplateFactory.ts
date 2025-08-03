@@ -1,8 +1,7 @@
  // src/modules/Task/utils/taskTemplateFactory.ts
 import { TaskMetaTemplate } from '../aggregates/taskMetaTemplate';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskTimeUtils } from './taskTimeUtils';
-
+import { addMinutes } from 'date-fns';
 export class TaskMetaTemplateFactory {
   /**
    * 空白模板
@@ -17,8 +16,8 @@ export class TaskMetaTemplateFactory {
         defaultTimeConfig: {
           type: 'timed',
           baseTime: {
-            start: TaskTimeUtils.now(),
-            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 60), // 默认持续时间为60分钟
+            start: new Date(),
+            end: addMinutes(new Date(), 60), // 默认持续时间为60分钟
             duration: 60 // 默认持续时间为60分钟
           },
           recurrence: {
@@ -59,8 +58,8 @@ export class TaskMetaTemplateFactory {
         defaultTimeConfig: {
           type: 'timeRange',
           baseTime: {
-            start: TaskTimeUtils.now(),
-            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 30), // 默认持续时间为30分钟
+            start: new Date(),
+            end: addMinutes(new Date(), 30), // 默认持续时间为30分钟
           },
           recurrence: {
             type: 'daily',
@@ -113,7 +112,7 @@ export class TaskMetaTemplateFactory {
         defaultTimeConfig: {
           type: 'timed',
           baseTime: {
-            start: TaskTimeUtils.now(),
+            start: new Date(),
           },
           recurrence: {
             type: 'none',
@@ -172,8 +171,8 @@ export class TaskMetaTemplateFactory {
         defaultTimeConfig: {
           type: 'timeRange',
           baseTime: {
-            start: TaskTimeUtils.now(),
-            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 120) // 默认持续时间为2小时
+            start: new Date(),
+            end: addMinutes(new Date(), 120) // 默认持续时间为2小时
           },
           recurrence: {
             type: 'none',
@@ -237,8 +236,8 @@ export class TaskMetaTemplateFactory {
             endCondition: { type: 'never' }
           },
           baseTime: {
-            start: TaskTimeUtils.now(),
-            end: TaskTimeUtils.addMinutes(TaskTimeUtils.now(), 60) // 默认持续时间为60分钟
+            start: new Date(),
+            end: addMinutes(new Date(), 60) // 默认持续时间为60分钟
           },
           timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
           dstHandling: 'ignore'

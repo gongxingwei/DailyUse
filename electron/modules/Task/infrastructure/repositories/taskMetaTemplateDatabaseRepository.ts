@@ -36,8 +36,8 @@ export class TaskMetaTemplateDatabaseRepository implements ITaskMetaTemplateRepo
       default_reminder_config: JSON.stringify(json.defaultReminderConfig),
       default_metadata: JSON.stringify(json.defaultMetadata),
       lifecycle: JSON.stringify(json.lifecycle),
-      created_at: new Date(json.lifecycle.createdAt.isoString).getTime(),
-      updated_at: new Date(json.lifecycle.updatedAt.isoString).getTime()
+      created_at: json.lifecycle.createdAt,
+      updated_at: json.lifecycle.updatedAt
     };
   }
 

@@ -1,5 +1,5 @@
 // 基础信息验证器
-import type { ITaskTemplate } from '@/modules/Task/domain/types/task';
+import type { ITaskTemplate } from '@common/modules/task/types/task';
 import type { ITemplateValidator, ValidationResult } from './types';
 import { ValidationUtils } from './ValidationUtils';
 import { isValidUUID } from '@common/shared/utils/uuid';

@@ -95,9 +95,11 @@
 <script setup lang="ts">
 import { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
+
 import WeekdaySelector from '../widgets/WeekdaySelector.vue';
 import { useRecurrenceValidation } from '@/modules/Task/presentation/composables/useRecurrenceValidation';
+// utils
+import { formatDateToInput } from '@common/shared/utils/dateUtils';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -180,7 +182,7 @@ const recurrenceEndConditionCount = computed({
 const endConditionDateInput = computed({
   get: () => {
     const endDate = props.modelValue.timeConfig.recurrence.endCondition?.endDate;
-    return endDate ? TimeUtils.formatDateToInput(endDate) : '';
+    return endDate ? formatDateToInput(endDate) : '';
   },
   set: (value: string) => {
     updateEndConditionDate(value);
@@ -231,7 +233,7 @@ const handleEndConditionChange = (type: string | null) => {
           endCondition: {
             type: type as "never" | "date" | "count",
             ...(type === 'count' && { count: 1 }),
-            ...(type === 'date' && { endDate: TimeUtils.now() })
+            ...(type === 'date' && { endDate: new Date() })
           }
         }
       });
@@ -253,7 +255,7 @@ const updateWeekdays = (weekdays: number[]) => {
 // 更新结束日期
 const updateEndConditionDate = (date: string) => {
   if (!date) return;
-    const endDate = TimeUtils.toDateTime(date);
+  const endDate = new Date(date);
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,

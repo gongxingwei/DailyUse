@@ -89,8 +89,9 @@
 <script setup lang="ts">
 import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
-import { TimeUtils } from '@/shared/utils/myDateTimeUtils';
 import { useTimeConfigValidation } from '@/modules/Task/presentation/composables/useTimeConfigValidation';
+// utils
+import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@common/shared/utils/dateUtils';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -143,8 +144,7 @@ const updateStartDate = (date: string) => {
   if (!date) return;
   
   const currentStart = props.modelValue.timeConfig.baseTime.start;
-  const newStart = TimeUtils.updateDateKeepTime(currentStart, date);
-  
+  const newStart = updateDateKeepTime(currentStart, date);
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
@@ -160,7 +160,7 @@ const updateStartTime = (time: string) => {
   if (!time) return;
   
   const currentStart = props.modelValue.timeConfig.baseTime.start;
-  const newStart = TimeUtils.updateTimeKeepDate(currentStart, time);
+  const newStart = updateTimeKeepDate(currentStart, time);
   
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
@@ -177,7 +177,7 @@ const updateStartTime = (time: string) => {
   const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
   
-  const newEnd = TimeUtils.updateDateKeepTime(currentEnd, date);
+  const newEnd = updateDateKeepTime(currentEnd, date);
   
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
@@ -196,7 +196,7 @@ const updateEndTime = (time: string) => {
   const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
   
-  const newEnd = TimeUtils.updateTimeKeepDate(currentEnd, time);
+  const newEnd = updateTimeKeepDate(currentEnd, time);
   
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
@@ -211,14 +211,14 @@ const updateEndTime = (time: string) => {
 const initializeFormData = () => {
   if (props.modelValue?.timeConfig?.baseTime?.start) {
     const startTime = props.modelValue.timeConfig.baseTime.start;
-    startDateInput.value = TimeUtils.formatDateToInput(startTime);
-    startTimeInput.value = TimeUtils.formatTimeToInput(startTime);
+    startDateInput.value = formatDateToInput(startTime);
+    startTimeInput.value = formatTimeToInput(startTime);
   }
 
   if (props.modelValue?.timeConfig?.baseTime?.end) {
     const endTime = props.modelValue.timeConfig.baseTime.end;
-    endDateInput.value = TimeUtils.formatDateToInput(endTime);
-    endTimeInput.value = TimeUtils.formatTimeToInput(endTime);
+    endDateInput.value = formatDateToInput(endTime);
+    endTimeInput.value = formatTimeToInput(endTime);
   }
 };
 

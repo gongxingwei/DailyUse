@@ -1,10 +1,9 @@
 import { TaskInstance } from "../aggregates/taskInstance";
 import { TResponse } from "../../../../../src/shared/types/response";
-import { TimeUtils } from "../../../../../src/shared/utils/myDateTimeUtils";
 import { scheduleService } from "../../../../shared/schedule/services/scheduleService";
-import { TaskTimeUtils } from "../utils/taskTimeUtils";
-import type { TaskReminderConfig } from "../types/task";
-import { DateTime } from '@/shared/types/myDateTime';
+import type { TaskReminderConfig } from '@common/modules/task/types/task';
+import { addMinutes } from "date-fns";
+
 /**
  * 任务提醒服务
  * 
@@ -20,7 +19,7 @@ import { DateTime } from '@/shared/types/myDateTime';
  */
 export class TaskReminderService {
   private static instance: TaskReminderService;
-  private activeReminders = new Map<string, DateTime[]>();
+  private activeReminders = new Map<string, Date[]>();
 
   /**
    * 获取单例实例
@@ -60,7 +59,7 @@ export class TaskReminderService {
         };
       }
 
-      const reminderTimes: DateTime[] = [];
+      const reminderTimes: Date[] = [];
 
       for (const alert of taskInstance.reminderStatus.alerts) {
         if (alert.status === "pending") {
@@ -114,7 +113,7 @@ export class TaskReminderService {
     alert: TaskInstance["reminderStatus"]["alerts"][number]
   ): Promise<{
     reminderId: string;
-    reminderTime: DateTime;
+    reminderTime: Date;
   } | null> {
     try {
       const reminderId = `task-reminder-${taskInstance.uuid}-${alert.uuid}`;
@@ -124,9 +123,9 @@ export class TaskReminderService {
         taskInstance.timeConfig.scheduledTime
       );
 
-      const now = TaskTimeUtils.now();
-      if (reminderTime.timestamp <= now.timestamp) {
-        console.warn(`提醒时间 ${reminderTime.isoString} 已过期，跳过创建`);
+      const now = new Date();
+      if (reminderTime.getTime() <= now.getTime()) {
+        console.warn(`提醒时间 ${reminderTime.toISOString()} 已过期，跳过创建`);
         return null;
       }
 
@@ -140,8 +139,8 @@ export class TaskReminderService {
             alertId: alert.uuid,
             title: `任务提醒: ${taskInstance.title}`,
             body: this.generateReminderMessage(taskInstance, reminderTime),
-            reminderTime: reminderTime.isoString,
-            taskTime: taskInstance.timeConfig.scheduledTime.isoString,
+            reminderTime: reminderTime.toISOString(),
+            taskTime: taskInstance.timeConfig.scheduledTime.toISOString(),
             alertType: alert.alertConfig.type,
             customMessage: alert.alertConfig.message,
           },
@@ -175,8 +174,8 @@ export class TaskReminderService {
    */
   private calculateReminderTime(
     alertConfig: TaskReminderConfig["alerts"][number],
-    taskScheduledTime: DateTime
-  ): DateTime {
+    taskScheduledTime: Date
+  ): Date {
     if (
       alertConfig.timing.type === "absolute" &&
       alertConfig.timing.absoluteTime
@@ -186,7 +185,7 @@ export class TaskReminderService {
       alertConfig.timing.type === "relative" &&
       alertConfig.timing.minutesBefore
     ) {
-      return TaskTimeUtils.addMinutes(
+      return addMinutes(
         taskScheduledTime,
         -alertConfig.timing.minutesBefore
       );
@@ -210,9 +209,9 @@ export class TaskReminderService {
    */
   private generateReminderMessage(
     task: TaskInstance,
-    reminderTime: DateTime
+    reminderTime: Date
   ): string {
-    const timeDiff = task.scheduledTime.timestamp - reminderTime.timestamp;
+    const timeDiff = task.scheduledTime.getTime() - reminderTime.getTime();
     const minutesBefore = Math.round(timeDiff / (1000 * 60));
 
     const timeConfig = task.timeConfig;
@@ -222,14 +221,14 @@ export class TaskReminderService {
       timeStr = "今日";
     } else if (timeConfig.type === "timed") {
       timeStr = `${
-        task.scheduledTime.time?.hour
-      }:${task.scheduledTime.time?.minute?.toString().padStart(2, "0")}`;
+        task.scheduledTime.getHours()
+      }:${task.scheduledTime.getMinutes().toString().padStart(2, "0")}`;
     } else if (timeConfig.type === "timeRange" && timeConfig.endTime) {
-      const startTime = task.scheduledTime.time;
-      const endTime = timeConfig.endTime.time;
-      timeStr = `${startTime?.hour}:${startTime?.minute
+      const startTime = task.scheduledTime;
+      const endTime = timeConfig.endTime;
+      timeStr = `${startTime?.getHours()}:${startTime?.getMinutes()
         ?.toString()
-        .padStart(2, "0")} - ${endTime?.hour}:${endTime?.minute
+        .padStart(2, "0")} - ${endTime?.getHours()}:${endTime?.getMinutes()
         ?.toString()
         .padStart(2, "0")}`;
     }
@@ -263,7 +262,7 @@ export class TaskReminderService {
         };
       } else {
         for (const reminderTime of reminderTimes) {
-          const reminderId = `task-reminder-${taskInstanceId}-${reminderTime.timestamp}`;
+          const reminderId = `task-reminder-${taskInstanceId}-${reminderTime.getTime()}`;
           await scheduleService.cancelSchedule(reminderId);
         }
 
@@ -327,28 +326,28 @@ export class TaskReminderService {
    */
   getUpcomingReminders(withinMinutes: number = 60): Array<{
     taskId: string;
-    reminderTime: DateTime;
+    reminderTime: Date;
     minutesUntil: number;
   }> {
-    const now = TimeUtils.now();
-    const cutoffTime = now.timestamp + withinMinutes * 60 * 1000;
+    const now = new Date();
+    const cutoffTime = now.getTime() + withinMinutes * 60 * 1000;
     const upcoming: Array<{
       taskId: string;
-      reminderTime: DateTime;
+      reminderTime: Date;
       minutesUntil: number;
     }> = [];
 
     for (const [taskId, reminderTimes] of this.activeReminders) {
       for (const reminderTime of reminderTimes) {
         if (
-          reminderTime.timestamp > now.timestamp &&
-          reminderTime.timestamp <= cutoffTime
+          reminderTime.getTime() > now.getTime() &&
+          reminderTime.getTime() <= cutoffTime
         ) {
           upcoming.push({
             taskId,
             reminderTime,
             minutesUntil: Math.round(
-              (reminderTime.timestamp - now.timestamp) / (1000 * 60)
+              (reminderTime.getTime() - now.getTime()) / (1000 * 60)
             ),
           });
         }
@@ -356,7 +355,7 @@ export class TaskReminderService {
     }
 
     return upcoming.sort(
-      (a, b) => a.reminderTime.timestamp - b.reminderTime.timestamp
+      (a, b) => a.reminderTime.getTime() - b.reminderTime.getTime()
     );
   }
 }

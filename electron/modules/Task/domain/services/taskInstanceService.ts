@@ -1,8 +1,9 @@
 import { v4 as uuidv4 } from 'uuid';
 import { TaskInstance } from '../aggregates/taskInstance';
 import { TaskTemplate } from '../aggregates/taskTemplate';
-import type { DateTime } from '@/shared/types/myDateTime';
-import { TaskTimeUtils } from '@/modules/Task/domain/utils/taskTimeUtils';
+
+import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
+import { addMinutes } from 'date-fns/addMinutes';
 
 /**
  * 任务实例服务
@@ -24,12 +25,12 @@ export class TaskInstanceService {
    */
   createInstanceFromTemplate(
     taskTemplate: TaskTemplate,
-    scheduledTime?: DateTime,
+    scheduledTime?: Date,
     customOptions?: {
       title?: string;
       description?: string;
       priority?: 1 | 2 | 3 | 4;
-      endTime?: DateTime;
+      endTime?: Date;
     }
   ): TaskInstance {
     const instanceId = uuidv4();
@@ -77,7 +78,7 @@ export class TaskInstanceService {
 
     let currentTime = timeConfig.baseTime.start;
     let count = 0;
-    const now = TaskTimeUtils.now();
+    const now = new Date();
 
     while (count < maxInstances) {
       const nextTime = TaskTimeUtils.getNextOccurrence(timeConfig, currentTime);
@@ -85,9 +86,9 @@ export class TaskInstanceService {
       if (this.shouldStopGeneration(timeConfig, nextTime, count)) break;
 
       // 只生成未来的实例
-      if (nextTime.timestamp >= now.timestamp) {
+      if (nextTime.getTime() >= now.getTime()) {
         const endTime = timeConfig.baseTime.end
-          ? TaskTimeUtils.addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
+          ? addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
           : undefined;
         instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
       }
@@ -116,8 +117,8 @@ export class TaskInstanceService {
    */
   generateInstancesInRange(
     taskTemplate: TaskTemplate,
-    startDate: DateTime,
-    endDate: DateTime
+    startDate: Date,
+    endDate: Date
   ): TaskInstance[] {
     const instances: TaskInstance[] = [];
     const { timeConfig } = taskTemplate;
@@ -130,20 +131,20 @@ export class TaskInstanceService {
     }
 
     let currentTime = timeConfig.baseTime.start;
-    if (currentTime.timestamp < startDate.timestamp) {
+    if (currentTime.getTime() < startDate.getTime()) {
       currentTime = startDate;
     }
 
     let count = 0;
     const maxInstances = 1000;
 
-    while (currentTime.timestamp <= endDate.timestamp && count < maxInstances) {
+    while (currentTime.getTime() <= endDate.getTime() && count < maxInstances) {
       const nextTime = TaskTimeUtils.getNextOccurrence(timeConfig, currentTime);
-      if (!nextTime || nextTime.timestamp > endDate.timestamp) break;
+      if (!nextTime || nextTime.getTime() > endDate.getTime()) break;
       if (this.shouldStopGeneration(timeConfig, nextTime, count)) break;
 
       const endTime = timeConfig.baseTime.end
-        ? TaskTimeUtils.addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
+        ? addMinutes(nextTime, TaskTimeUtils.getMinutesBetween(timeConfig.baseTime.start, timeConfig.baseTime.end))
         : undefined;
 
       instances.push(this.createInstanceFromTemplate(taskTemplate, nextTime, { endTime }));
@@ -219,7 +220,7 @@ export class TaskInstanceService {
       errors.push('时间段类型的任务必须设置结束时间');
     }
     if (taskInstance.timeConfig.endTime &&
-      taskInstance.timeConfig.endTime.timestamp <= taskInstance.timeConfig.scheduledTime.timestamp) {
+      taskInstance.timeConfig.endTime.getTime() <= taskInstance.timeConfig.scheduledTime.getTime()) {
       errors.push('结束时间必须晚于开始时间');
     }
     if (taskInstance.priority < 1 || taskInstance.priority > 4) {
@@ -245,8 +246,8 @@ export class TaskInstanceService {
    */
   rescheduleInstance(
     taskInstance: TaskInstance,
-    newScheduledTime: DateTime,
-    newEndTime?: DateTime
+    newScheduledTime: Date,
+    newEndTime?: Date
   ): void {
     try {
       taskInstance.reschedule(newScheduledTime, newEndTime);
@@ -266,10 +267,10 @@ export class TaskInstanceService {
    * ```
    */
   private hasTimeOverlap(taskInstance1: TaskInstance, taskInstance2: TaskInstance): boolean {
-    const start1 = taskInstance1.timeConfig.scheduledTime.timestamp;
-    const end1 = taskInstance1.timeConfig.endTime?.timestamp || start1 + (taskInstance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
-    const start2 = taskInstance2.timeConfig.scheduledTime.timestamp;
-    const end2 = taskInstance2.timeConfig.endTime?.timestamp || start2 + (taskInstance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
+    const start1 = taskInstance1.timeConfig.scheduledTime.getTime();
+    const end1 = taskInstance1.timeConfig.endTime?.getTime() || start1 + (taskInstance1.timeConfig.estimatedDuration || 60) * 60 * 1000;
+    const start2 = taskInstance2.timeConfig.scheduledTime.getTime();
+    const end2 = taskInstance2.timeConfig.endTime?.getTime() || start2 + (taskInstance2.timeConfig.estimatedDuration || 60) * 60 * 1000;
     return start1 < end2 && start2 < end1;
   }
 
@@ -280,10 +281,10 @@ export class TaskInstanceService {
    * @param count 当前生成数量
    * @returns 是否应该停止生成
    */
-  private shouldStopGeneration(timeConfig: any, nextTime: DateTime, count: number): boolean {
+  private shouldStopGeneration(timeConfig: any, nextTime: Date, count: number): boolean {
     if (timeConfig.recurrence.endCondition.type === 'date' &&
       timeConfig.recurrence.endCondition.endDate &&
-      nextTime.timestamp > timeConfig.recurrence.endCondition.endDate.timestamp) {
+      nextTime.getTime() > timeConfig.recurrence.endCondition.endDate.getTime()) {
       return true;
     }
     if (timeConfig.recurrence.endCondition.type === 'count' &&
