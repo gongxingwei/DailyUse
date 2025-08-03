@@ -5,7 +5,7 @@ import { User } from "../../domain/entities/user";
 import { Email } from "../../domain/valueObjects/email";
 import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
 import type { TResponse } from "@/shared/types/response";
-import { AccountRegistrationRequest, AccountType } from "../../domain/types/account";
+import { AccountRegistrationRequest, AccountType } from "../../../../../common/modules/account/types/account";
 import { generateUUID } from "@/shared/utils/uuid";
 import { eventBus } from "../../../../shared/events/eventBus";
 import { AccountContainer } from "../../infrastructure/di/accountContainer";

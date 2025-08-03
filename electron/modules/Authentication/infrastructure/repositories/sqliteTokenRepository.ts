@@ -1,19 +1,31 @@
-import { Database } from 'better-sqlite3';
-import { Token } from '../../domain/valueObjects/token';
-import { ITokenRepository } from '../../domain/repositories/authenticationRepository';
-
+import { Database } from "better-sqlite3";
+import { Token } from "../../domain/valueObjects/token";
+import { ITokenRepository } from "../../domain/repositories/authenticationRepository";
+import { getDatabase } from "../../../../shared/database/index";
 /**
  * SQLite Token 仓库实现
  * 注意：本实现需与 auth_tokens 表结构字段保持一致
  */
 export class SqliteTokenRepository implements ITokenRepository {
-  constructor(private readonly db: Database) {}
+  private db: Database | null = null;
+  constructor() {}
+
+  /**
+   * 获取数据库连接
+   */
+  private async getDb(): Promise<Database> {
+    if (!this.db) {
+      this.db = await getDatabase();
+    }
+    return this.db;
+  }
 
   /**
    * 保存令牌
    */
   async save(token: Token): Promise<void> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       INSERT OR REPLACE INTO auth_tokens (
         token_value, token_type, account_uuid, issued_at, expires_at, device_info, is_revoked
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -34,7 +46,8 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 根据令牌值查找令牌
    */
   async findByValue(value: string): Promise<Token | null> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       SELECT * FROM auth_tokens WHERE token_value = ?
     `);
 
@@ -48,49 +61,56 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 根据账户ID查找令牌
    */
   async findByAccountUuid(accountUuid: string): Promise<Token[]> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       SELECT * FROM auth_tokens 
       WHERE account_uuid = ? AND is_revoked = 0
       ORDER BY issued_at DESC
     `);
 
     const rows = stmt.all(accountUuid) as any[];
-    return rows.map(row => this.mapRowToToken(row));
+    return rows.map((row) => this.mapRowToToken(row));
   }
 
   /**
    * 根据类型查找令牌
    */
   async findByType(type: string): Promise<Token[]> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       SELECT * FROM auth_tokens 
       WHERE token_type = ? AND is_revoked = 0
       ORDER BY issued_at DESC
     `);
 
     const rows = stmt.all(type) as any[];
-    return rows.map(row => this.mapRowToToken(row));
+    return rows.map((row) => this.mapRowToToken(row));
   }
 
   /**
    * 根据账户ID和类型查找令牌
    */
-  async findByAccountUuidAndType(accountUuid: string, type: string): Promise<Token[]> {
-    const stmt = this.db.prepare(`
+  async findByAccountUuidAndType(
+    accountUuid: string,
+    type: string
+  ): Promise<Token[]> {
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       SELECT * FROM auth_tokens 
       WHERE account_uuid = ? AND token_type = ? AND is_revoked = 0
       ORDER BY issued_at DESC
     `);
 
     const rows = stmt.all(accountUuid, type) as any[];
-    return rows.map(row => this.mapRowToToken(row));
+    return rows.map((row) => this.mapRowToToken(row));
   }
 
   /**
    * 删除令牌
    */
   async delete(value: string): Promise<void> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       DELETE FROM auth_tokens WHERE token_value = ?
     `);
 
@@ -101,7 +121,8 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 删除账户的所有令牌
    */
   async deleteByAccountUuid(accountUuid: string): Promise<void> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       DELETE FROM auth_tokens WHERE account_uuid = ?
     `);
 
@@ -112,7 +133,8 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 撤销令牌
    */
   async revoke(value: string): Promise<void> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       UPDATE auth_tokens 
       SET is_revoked = 1 
       WHERE token_value = ?
@@ -125,7 +147,8 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 撤销账户的所有令牌
    */
   async revokeAllByAccountUuid(accountUuid: string): Promise<void> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       UPDATE auth_tokens 
       SET is_revoked = 1 
       WHERE account_uuid = ?
@@ -137,8 +160,12 @@ export class SqliteTokenRepository implements ITokenRepository {
   /**
    * 撤销账户指定类型的所有令牌
    */
-  async revokeAllByAccountUuidAndType(accountUuid: string, type: string): Promise<void> {
-    const stmt = this.db.prepare(`
+  async revokeAllByAccountUuidAndType(
+    accountUuid: string,
+    type: string
+  ): Promise<void> {
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       UPDATE auth_tokens 
       SET is_revoked = 1 
       WHERE account_uuid = ? AND token_type = ?
@@ -151,7 +178,8 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 清理过期的令牌
    */
   async deleteExpiredTokens(): Promise<number> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       DELETE FROM auth_tokens 
       WHERE expires_at < ? OR is_revoked = 1
     `);
@@ -164,14 +192,15 @@ export class SqliteTokenRepository implements ITokenRepository {
    * 获取账户的所有有效令牌
    */
   async findActiveByAccountUuid(accountUuid: string): Promise<Token[]> {
-    const stmt = this.db.prepare(`
+    const db = await this.getDb();
+    const stmt = db.prepare(`
       SELECT * FROM auth_tokens 
       WHERE account_uuid = ? AND is_revoked = 0 AND expires_at > ?
       ORDER BY issued_at DESC
     `);
 
     const rows = stmt.all(accountUuid, Date.now()) as any[];
-    return rows.map(row => this.mapRowToToken(row));
+    return rows.map((row) => this.mapRowToToken(row));
   }
 
   /**
@@ -185,7 +214,7 @@ export class SqliteTokenRepository implements ITokenRepository {
       issuedAt: row.issued_at,
       expiresAt: row.expires_at,
       deviceInfo: row.device_info,
-      isRevoked: row.is_revoked === 1
+      isRevoked: row.is_revoked === 1,
     });
   }
 }

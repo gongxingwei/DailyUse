@@ -1,7 +1,7 @@
 import { ipcMain } from "electron";
 
 import { MainAccountApplicationService } from "../../application/services/mainAccountApplicationService";
-import type { AccountRegistrationRequest, AccountDTO } from '../../domain/types/account';
+import type { AccountRegistrationRequest, AccountDTO } from '../../../../../common/modules/account/types/account';
 import { withAuth } from '@electron/modules/Authentication/application/services/authTokenService';
 
 /**

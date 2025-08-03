@@ -56,7 +56,7 @@
               <v-icon color="white" size="12">mdi-target</v-icon>
             </v-avatar>
             <span class="text-caption text-medium-emphasis">
-              来自目标：{{ currentGoal.title }}
+              来自目标：{{ currentGoal.name }}
             </span>
           </div>
         </div>
@@ -76,7 +76,7 @@
   <script setup lang="ts">
   import { ref, onMounted } from 'vue';
   import { useGoalStore } from '../stores/goalStore';
-  import type { Goal } from '../types/goal';
+  import { Goal } from '../../domain/aggregates/goal';
   
   const goalStore = useGoalStore();
   const isShowingMotive = ref(true);

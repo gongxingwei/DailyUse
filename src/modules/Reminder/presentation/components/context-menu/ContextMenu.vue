@@ -1,7 +1,7 @@
 <template>
   <teleport to="body">
     <div 
-      v-if="show"
+      v-if="props.show"
       class="context-menu-overlay"
       @click="$emit('close')"
     >
@@ -25,7 +25,7 @@
 </template>
 
 <script setup lang="ts">
-import { watch } from 'vue';
+
 interface MenuItem {
   label: string;
   icon: string;

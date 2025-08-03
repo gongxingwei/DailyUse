@@ -26,6 +26,6 @@
       "@common/*": ["common/*"],
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron", "common/modules/goal/types/goal.ts", "common/modules/reminder/types/reminder.ts", "common/shared/types/recurrenceRule.ts"],
+  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron", "common/modules/goal/types/goal.ts", "common/modules/reminder/types/reminder.ts", "common/shared/types/recurrenceRule.ts", "common/modules/account/types/account.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }

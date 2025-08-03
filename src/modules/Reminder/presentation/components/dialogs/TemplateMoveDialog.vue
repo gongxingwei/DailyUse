@@ -36,7 +36,6 @@
 import { ref, computed, watch } from 'vue';
 import { useReminderStore } from '@/modules/Reminder/presentation/stores/reminderStore';
 import type { ReminderTemplate } from '@/modules/Reminder/domain/entities/reminderTemplate';
-import type { ReminderTemplateGroup } from '@/modules/Reminder/domain/aggregates/reminderTemplateGroup';
 
 interface Props {
   modelValue: boolean;

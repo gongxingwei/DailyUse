@@ -1,4 +1,4 @@
-import { IPassword, IPasswordDTO } from "@common/modules/authentication/types/authentication";
+import { IPassword } from "@common/modules/authentication/types/authentication";
 
 
 /**

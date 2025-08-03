@@ -176,7 +176,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, reactive } from 'vue';
+import { ref, computed, watch } from 'vue';
 // components
 import KeyResultDialog from './KeyResultDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';

@@ -2,7 +2,7 @@ import { useGoalServices } from "./useGoalService";
 import { ref } from "vue";
 import { Goal } from "../../domain/aggregates/goal";
 import { KeyResult } from "../../domain/entities/keyResult";
-import { GoalReview } from "../../domain/entities/goalReview";
+
 import router from "@/shared/router";
 export function useGoalDialog() {
   const { handleCreateGoal, handleUpdateGoal, handleDeleteGoal } =

@@ -1,7 +1,11 @@
-export interface PasswordAuthenticationRequest {
-  username: string;
-  password: string;
-  remember?: boolean;
+export interface AuthenticationResponsePayload {
+  username?: string;
+  accountUuid?: string;
+  sessionUuid?: string;
+  token?: string;
+}
+
+export interface AuthenticationRequest {
   clientInfo?: {
     ip: string;
     userAgent: string;
@@ -11,12 +15,22 @@ export interface PasswordAuthenticationRequest {
     city: string;
   };
 }
-export interface PasswordAuthenticationResponse {
-  token: string | null;
+
+export interface PasswordAuthenticationRequest extends AuthenticationRequest {
+  username: string;
+  password: string;
+  remember?: boolean;
+}
+export interface PasswordAuthenticationResponse extends AuthenticationResponsePayload{}
+
+export interface RememberMeTokenAuthenticationRequest extends AuthenticationRequest {
   username: string;
   accountUuid: string;
-  sessionUuid: string;
+  rememberMeToken: string;
 }
+
+export interface RememberMeTokenAuthenticationResponse extends AuthenticationResponsePayload {}
+
 
 export interface AuthInfo {
   username: string;

@@ -1,8 +1,16 @@
 import { Database } from "better-sqlite3";
 import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { AuthCredential } from "../../domain/aggregates/authCredential";
-import { TimeUtils } from "../../../../shared/utils/myDateTimeUtils";
+
 import { getDatabase } from "../../../../shared/database/index";
+// repositories
+import { SqliteMFADeviceRepository } from "./sqliteMFADeviceRepository";
+import { SqliteSessionRepository } from "./sqliteUserSessionRepository";
+import { SqliteTokenRepository } from "./sqliteTokenRepository";
+import { TokenType } from "@common/modules/authentication/types/authentication";
+// domains
+import { AuthCredential } from "../../domain/aggregates/authCredential";
+import { MFADevice } from "../../domain/entities/mfaDevice";
+import { Session } from "../../domain/entities/session";
 /**
  * SQLite 认证凭证仓库实现
  */
@@ -44,10 +52,10 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
       passwordInfo.expiresAt,
       credential.failedAttempts,
       credential.maxAttempts,
-      credential.lockedUntil ? TimeUtils.toTimestamp(credential.lockedUntil) : null,
-      credential.lastAuthAt ? TimeUtils.toTimestamp(credential.lastAuthAt) : null,
-      TimeUtils.toTimestamp(credential.createdAt),
-      TimeUtils.toTimestamp(credential.updatedAt)
+      credential.lockedUntil ? credential.lockedUntil.getTime() : null,
+      credential.lastAuthAt ? credential.lastAuthAt.getTime() : null,
+      credential.createdAt.getTime(),
+      credential.updatedAt.getTime()
     );
   }
 
@@ -106,7 +114,7 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
     `);
     
     const rows = stmt.all() as any[];
-    return rows.map(row => this.mapRowToAuthCredential(row));
+    return Promise.all(rows.map(row => this.mapRowToAuthCredential(row)));
   }
 
   async existsByAccountUuid(accountUuid: string): Promise<boolean> {
@@ -122,22 +130,42 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
   /**
    * 将数据库行映射为 AuthCredential 聚合根
    */
-  private mapRowToAuthCredential(row: any): AuthCredential {
-    return AuthCredential.restoreFromPersistence(
-      row.uuid,
+  private async mapRowToAuthCredential(row: any): Promise<AuthCredential> {
+    const tokenRepo = new SqliteTokenRepository();
+    const tokens = await tokenRepo.findByAccountUuid(row.account_uuid);
+    const rememberTokens = await tokenRepo.findByAccountUuidAndType(
       row.account_uuid,
-      row.password_hash,
-      row.password_salt,
-      row.password_algorithm,
-      TimeUtils.fromTimestamp(row.password_created_at),
-      TimeUtils.fromTimestamp(row.created_at),
-      TimeUtils.fromTimestamp(row.updated_at),
-      row.last_auth_at ? TimeUtils.fromTimestamp(row.last_auth_at) : undefined,
-      row.password_expires_at ? TimeUtils.fromTimestamp(row.password_expires_at) : undefined,
-      row.failed_attempts,
-      row.max_attempts,
-      row.locked_until ? TimeUtils.fromTimestamp(row.locked_until) : undefined
+      TokenType.REMEMBER_ME
     );
+    const otherTokens = tokens.filter(t => t.type !== TokenType.REMEMBER_ME);
+    const rememberTokenMap = new Map(rememberTokens.map(t => [t.type, t]));
+    const tokenMap = new Map(otherTokens.map(t => [t.type, t]));
+    const sessionRepo = new SqliteSessionRepository();
+    const sessions = await sessionRepo.findByAccountUuid(row.account_uuid);
+    const sessionMap = new Map<string, Session>(sessions.map(s => [s.uuid, s]));
+    const mfaDeviceRepo = new SqliteMFADeviceRepository();
+    const mfaDevices = await mfaDeviceRepo.findByAccountUuid(row.account_uuid);
+    const mfaDeviceMap = new Map<string, MFADevice>(mfaDevices.map(d => [d.uuid, d]));
+    const authCredential = AuthCredential.restoreFromPersistenceWithEntities({
+      uuid: row.uuid,
+      accountUuid: row.account_uuid,
+      passwordHash: row.password_hash,
+      passwordSalt: row.password_salt,
+      passwordAlgorithm: row.password_algorithm,
+      passwordCreatedAt: new Date(row.password_created_at),
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+      lastAuthAt: row.last_auth_at ? new Date(row.last_auth_at) : undefined,
+      passwordExpiresAt: row.password_expires_at ? new Date(row.password_expires_at) : undefined,
+      failedAttempts: row.failed_attempts,
+      maxAttempts: row.max_attempts,
+      lockedUntil: row.locked_until ? new Date(row.locked_until) : undefined,
+      tokens: tokenMap,
+      rememberTokens: rememberTokenMap,
+      sessions: sessionMap,
+      mfaDevices: mfaDeviceMap
+    });
+    return authCredential;
   }
 
   /**
@@ -156,8 +184,8 @@ export class SqliteAuthCredentialRepository implements IAuthCredentialRepository
       hash: passwordInfo.hashedValue,
       salt: passwordInfo.salt,
       algorithm: passwordInfo.algorithm,
-      createdAt: TimeUtils.toTimestamp(passwordInfo.createdAt),
-      expiresAt: passwordInfo.expiresAt ? TimeUtils.toTimestamp(passwordInfo.expiresAt) : undefined
+      createdAt: passwordInfo.createdAt.getTime(),
+      expiresAt: passwordInfo.expiresAt ? passwordInfo.expiresAt.getTime() : undefined
     };
   }
 }

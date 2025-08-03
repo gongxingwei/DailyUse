@@ -1,5 +1,5 @@
 
-export * from "@electron/modules/Account/domain/types/account";
+export * from "@common/modules/account/types/account";
 
 
 

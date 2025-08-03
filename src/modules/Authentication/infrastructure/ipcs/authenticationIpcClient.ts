@@ -4,6 +4,8 @@ import type {
   LogoutResult,
   PasswordAuthenticationRequest,
   PasswordAuthenticationResponse,
+  RememberMeTokenAuthenticationRequest,
+  RememberMeTokenAuthenticationResponse,
 } from "@/modules/Authentication/domain/types";
 
 export class AuthenticationIpcClient {
@@ -26,6 +28,22 @@ export class AuthenticationIpcClient {
     return await window.shared.ipcRenderer.invoke(
       "authentication:password-authentication",
       serializedCredentials
+    );
+  }
+
+  async getQuickLoginAccounts(): Promise<TResponse<Array<{ accountUuid: string; username: string; token: string }>>> {
+    console.log("[AuthenticationIpcClient] 获取快速登录账户列表");
+    return await window.shared.ipcRenderer.invoke(
+      "authentication:get-quick-login-accounts"
+    );
+  }
+  async rememberMeTokenAuthentication(
+    request: RememberMeTokenAuthenticationRequest
+  ): Promise<TResponse<RememberMeTokenAuthenticationResponse>> {
+    console.log("[AuthenticationIpcClient] rememberMeTokenAuthentication");
+    return await window.shared.ipcRenderer.invoke(
+      "authentication:remember-me-token-authentication",
+      request
     );
   }
 

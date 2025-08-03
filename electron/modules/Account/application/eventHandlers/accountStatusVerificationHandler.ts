@@ -1,6 +1,6 @@
 import { AccountStatusVerificationRequestedEvent } from "../../../Authentication/domain/events/authenticationEvents";
 import { AccountStatusVerificationResponseEvent } from "../../domain/events/accountEvents";
-import { AccountStatus } from "../../domain/types/account";
+import { AccountStatus } from "../../../../../common/modules/account/types/account";
 import { eventBus } from "../../../../shared/events/eventBus";
 import { MainAccountApplicationService } from "../services/mainAccountApplicationService";
 /**

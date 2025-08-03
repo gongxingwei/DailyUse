@@ -1,11 +1,11 @@
 import { IPLocation } from "../valueObjects/ipLocation";
 import { Entity } from "@/shared/domain/entity";
-import { IAuditTrail, IAuditTrailDTO, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
+import { IMainProcessAuditTrail, IAuditTrailDTO, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
 /**
  * 审计轨迹实体
  * 记录系统中的重要操作和安全事件
  */
-export class AuditTrail extends Entity implements IAuditTrail {
+export class AuditTrail extends Entity implements IMainProcessAuditTrail {
   private _accountUuUuid: string;
   private _operationType: OperationType;
   private _description: string;

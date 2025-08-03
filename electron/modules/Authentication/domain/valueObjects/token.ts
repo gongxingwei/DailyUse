@@ -122,6 +122,10 @@ export class Token extends ValueObject<string> implements IToken {
     return Math.max(0, this._expiresAt.getTime() - now.getTime());
   }
 
+  extendExpiry(days: number = 30): void {
+    this._expiresAt = addDays(new Date(), days);
+  }
+
   // Getters
   get value(): string {
     return this._value;

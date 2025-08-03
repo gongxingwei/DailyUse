@@ -130,7 +130,7 @@ const toggleTaskComplete = async (task: TaskInstance) => {
 
 // 获取关键结果名称的方法
 const getKeyResultName = (link: KeyResultLink) => {
-  const goal = goalStore.getGoalById(link.goalUuid);
+  const goal = goalStore.getGoalByUuid(link.goalUuid);
   const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
   return kr?.name || '未知关键结果';
 };

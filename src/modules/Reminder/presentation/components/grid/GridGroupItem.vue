@@ -26,7 +26,6 @@
 
 <script setup lang="ts">
 import { ref, inject } from 'vue';
-import { GridItem } from '../../../../../../common/modules/reminder/types/reminder';
 import { ReminderTemplate } from '../../../domain/entities/reminderTemplate';
 import { ReminderTemplateGroup } from '../../../domain/aggregates/reminderTemplateGroup';
 

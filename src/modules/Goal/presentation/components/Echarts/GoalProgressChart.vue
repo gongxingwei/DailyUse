@@ -46,7 +46,7 @@ const safe_color = '#52c41a'
 const surfaceColor = theme.current.value.colors.surface
 const fontColor = theme.current.value.colors.font // 获取主题主色
 
-const progressOption = computed(() => {
+const progressOption = computed<EChartsOption>(() => {
   const progress = props.goal?.progress ?? 0
   const timeProgress = Math.round((props.goal?.TimeProgress ?? 0) * 100)
 

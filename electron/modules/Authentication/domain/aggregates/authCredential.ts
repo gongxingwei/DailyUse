@@ -1,20 +1,29 @@
 import { AggregateRoot } from "@/shared/domain/aggregateRoot";
+// domains
 import { Password } from "../valueObjects/password";
 import { Token } from "../valueObjects/token";
 import { Session } from "../entities/session";
 import { MFADevice } from "../entities/mfaDevice";
+// types
+import {
+  IMainProcessAuthCredential, TokenType
+} from "@common/modules/authentication/types/authentication";
+// utils
 import { addMinutes } from "date-fns";
 
 /**
  * 认证凭证聚合根
- * 
+ *
  * 职责：
  * - 验证用户身份（登录、OAuth、MFA）
  * - 管理会话（Session）和凭证（Token、密码）
  * - 实现"记住我"等快速登录功能
  * - 不直接引用Account对象，通过accountUuid关联
  */
-export class AuthCredential extends AggregateRoot {
+export class AuthCredential
+  extends AggregateRoot
+  implements IMainProcessAuthCredential
+{
   private _accountUuUuid: string; // 关联的账号ID
   private _password: Password;
   private _sessions: Map<string, Session>; // 活跃会话
@@ -28,12 +37,7 @@ export class AuthCredential extends AggregateRoot {
   private _lockedUntil?: Date;
   private _tokens: Map<string, Token>;
 
-
-  constructor(
-    uuid: string,
-    accountUuid: string,
-    password: Password
-  ) {
+  constructor(uuid: string, accountUuid: string, password: Password) {
     super(uuid);
     this._accountUuUuid = accountUuid;
     this._password = password;
@@ -66,11 +70,13 @@ export class AuthCredential extends AggregateRoot {
   }
 
   get activeSessions(): Session[] {
-    return Array.from(this._sessions.values()).filter(session => session.isActive);
+    return Array.from(this._sessions.values()).filter(
+      (session) => session.isActive
+    );
   }
 
-  get mfaDevices(): MFADevice[] {
-    return Array.from(this._mfaDevices.values());
+  get mfaDevices(): Map<string, MFADevice> {
+    return this._mfaDevices;
   }
 
   get failedAttempts(): number {
@@ -85,12 +91,44 @@ export class AuthCredential extends AggregateRoot {
     return this._lockedUntil;
   }
 
-  get tokens(): Token[] { 
+  get tokens(): Map<string, Token> {
+    return this._tokens;
+  }
+
+  get tokenList(): Token[] {
     return Array.from(this._tokens.values());
+  }
+  get password(): Password {
+    return this._password;
+  }
+  get rememberTokens(): Map<string, Token> {
+    return this._rememberTokens;
+  }
+  get rememberTokenList(): Token[] {
+    return Array.from(this._rememberTokens.values());
+  }
+  get sessions(): Map<string, Session> {
+    return this._sessions;
   }
 
   isAccountLocked(): boolean {
     return this._lockedUntil !== undefined && this._lockedUntil > new Date();
+  }
+
+  getAccessToken(): Token | undefined {
+    const token = this._tokens.get(TokenType.ACCESS_TOKEN);
+  if (token) {
+    if (token.isValid()) {
+      return token;
+    } else {
+      token.revoke();
+    }
+  }
+  // 创建新 access_token（有效期可自定义）
+  const newToken = Token.createAccessToken(this.accountUuid, 3600); // 1小时有效
+  this._tokens.set(TokenType.ACCESS_TOKEN, newToken);
+  this._updatedAt = new Date();
+  return newToken;
   }
 
   /**
@@ -98,27 +136,28 @@ export class AuthCredential extends AggregateRoot {
    */
   verifyPassword(password: string): {
     success: boolean;
-    token: Token | undefined;
+    accessToken: Token | undefined;
   } {
-    let token: Token | undefined;
+    let accessToken: Token | undefined;
     if (this.isAccountLocked()) {
-    throw new Error('Account is locked. Please try again later.');
-  }
+      throw new Error("Account is locked. Please try again later.");
+    }
 
     const isValid = this._password.verify(password);
-    
+
     if (isValid) {
       this._failedAttempts = 0;
       this._lastAuthAt = new Date();
       this._updatedAt = this._lastAuthAt;
-      const accessToken = Token.createAccessToken(this.accountUuid, 9999);
-      token = accessToken;
-      this._tokens.set('access_token', accessToken)
+      accessToken = this.getAccessToken();
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'PasswordVerified',
+        eventType: "PasswordVerified",
         occurredOn: new Date(),
-        payload: { accountUuid: this._accountUuUuid, timestamp: this._lastAuthAt }
+        payload: {
+          accountUuid: this._accountUuUuid,
+          timestamp: this._lastAuthAt,
+        },
       });
     } else {
       this._failedAttempts++;
@@ -126,22 +165,22 @@ export class AuthCredential extends AggregateRoot {
         this._lockedUntil = addMinutes(new Date(), 30); // 锁定30分钟
         this.addDomainEvent({
           aggregateId: this.uuid,
-          eventType: 'AccountLocked',
+          eventType: "AccountLocked",
           occurredOn: new Date(),
-          payload: { accountUuid: this._accountUuUuid, timestamp: new Date() }
-        })
+          payload: { accountUuid: this._accountUuUuid, timestamp: new Date() },
+        });
       }
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'PasswordVerificationFailed',
+        eventType: "PasswordVerificationFailed",
         occurredOn: new Date(),
-        payload: { accountUuid: this._accountUuUuid, timestamp: new Date() }
+        payload: { accountUuid: this._accountUuUuid, timestamp: new Date() },
       });
     }
-    
+
     return {
       success: isValid,
-      token,
+      accessToken,
     };
   }
 
@@ -150,31 +189,36 @@ export class AuthCredential extends AggregateRoot {
    */
   changePassword(oldPassword: string, newPassword: string): void {
     if (!this._password.verify(oldPassword)) {
-      throw new Error('原密码不正确');
+      throw new Error("原密码不正确");
     }
 
     if (!Password.validateStrength(newPassword)) {
-      throw new Error('新密码强度不足');
+      throw new Error("新密码强度不足");
     }
 
     this._password = new Password(newPassword);
     this._updatedAt = new Date();
-    
+
     // 密码更改后，终止所有活跃会话（除了当前会话）
     this.terminateAllSessions();
-    
+
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: 'PasswordChanged',
+      eventType: "PasswordChanged",
       occurredOn: new Date(),
-      payload: { accountUuid: this._accountUuUuid, timestamp: this._updatedAt }
+      payload: { accountUuid: this._accountUuUuid, timestamp: this._updatedAt },
     });
   }
 
   /**
    * 创建新会话
    */
-  createSession(tokenValue: string, deviceInfo: string, ipAddress: string, userAgent?: string): Session {
+  createSession(
+    tokenValue: string,
+    deviceInfo: string,
+    ipAddress: string,
+    userAgent?: string
+  ): Session {
     const session = new Session({
       accountUuid: this._accountUuUuid,
       token: tokenValue,
@@ -182,22 +226,22 @@ export class AuthCredential extends AggregateRoot {
       ipAddress,
       userAgent: userAgent,
     });
-    
+
     this._sessions.set(session.uuid, session);
     this._lastAuthAt = new Date();
     this._updatedAt = this._lastAuthAt;
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: 'SessionCreated',
+      eventType: "SessionCreated",
       occurredOn: new Date(),
-      payload: { 
-        accountUuid: this._accountUuUuid, 
+      payload: {
+        accountUuid: this._accountUuUuid,
         sessionId: session.uuid,
         deviceInfo,
         ipAddress,
-        timestamp: this._lastAuthAt 
-      }
+        timestamp: this._lastAuthAt,
+      },
     });
 
     return session;
@@ -214,13 +258,13 @@ export class AuthCredential extends AggregateRoot {
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'SessionTerminated',
+        eventType: "SessionTerminated",
         occurredOn: new Date(),
-        payload: { 
-          accountUuid: this._accountUuUuid, 
+        payload: {
+          accountUuid: this._accountUuUuid,
           sessionId: sessionId,
-          timestamp: this._updatedAt 
-        }
+          timestamp: this._updatedAt,
+        },
       });
     }
   }
@@ -234,17 +278,17 @@ export class AuthCredential extends AggregateRoot {
         session.terminate();
       }
     }
-    
+
     this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: 'AllSessionsTerminated',
+      eventType: "AllSessionsTerminated",
       occurredOn: new Date(),
-      payload: { 
-        accountUuid: this._accountUuUuid, 
-        timestamp: this._updatedAt 
-      }
+      payload: {
+        accountUuid: this._accountUuUuid,
+        timestamp: this._updatedAt,
+      },
     });
   }
 
@@ -270,14 +314,14 @@ export class AuthCredential extends AggregateRoot {
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: 'MFADeviceBound',
+      eventType: "MFADeviceBound",
       occurredOn: new Date(),
-      payload: { 
-        accountUuid: this._accountUuUuid, 
+      payload: {
+        accountUuid: this._accountUuUuid,
         deviceId: device.uuid,
         deviceType: device.type,
-        timestamp: this._updatedAt 
-      }
+        timestamp: this._updatedAt,
+      },
     });
   }
 
@@ -292,13 +336,13 @@ export class AuthCredential extends AggregateRoot {
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'MFADeviceUnbound',
+        eventType: "MFADeviceUnbound",
         occurredOn: new Date(),
-        payload: { 
-          accountUuid: this._accountUuUuid, 
+        payload: {
+          accountUuid: this._accountUuUuid,
           deviceId: deviceId,
-          timestamp: this._updatedAt 
-        }
+          timestamp: this._updatedAt,
+        },
       });
     }
   }
@@ -314,18 +358,18 @@ export class AuthCredential extends AggregateRoot {
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'MFAVerified',
+        eventType: "MFAVerified",
         occurredOn: new Date(),
-        payload: { 
-          accountUuid: this._accountUuUuid, 
+        payload: {
+          accountUuid: this._accountUuUuid,
           deviceId: deviceId,
-          timestamp: this._lastAuthAt 
-        }
+          timestamp: this._lastAuthAt,
+        },
       });
-      
+
       return true;
     }
-    
+
     return false;
   }
 
@@ -339,14 +383,14 @@ export class AuthCredential extends AggregateRoot {
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: 'RememberTokenCreated',
+      eventType: "RememberTokenCreated",
       occurredOn: new Date(),
-      payload: { 
-        accountUuid: this._accountUuUuid, 
+      payload: {
+        accountUuid: this._accountUuUuid,
         tokenId: token.value,
         deviceInfo,
-        timestamp: this._updatedAt 
-      }
+        timestamp: this._updatedAt,
+      },
     });
 
     return token;
@@ -355,15 +399,25 @@ export class AuthCredential extends AggregateRoot {
   /**
    * 验证记住我令牌
    */
-  verifyRememberToken(tokenValue: string): boolean {
-    const token = this._rememberTokens.get(tokenValue);
-    if (token && token.isValid()) {
+  verifyRememberToken(tokenValue: string): {
+    success: boolean;
+    accessToken: Token | undefined;
+  } {
+    const token = this._rememberTokens.get(TokenType.REMEMBER_ME);
+    if (token && token.isValid() && token.value === tokenValue) {
       this._lastAuthAt = new Date();
       this._updatedAt = this._lastAuthAt;
-      return true;
+      token.extendExpiry(30); // 延长30天有效期
+      return {
+        success: true,
+        accessToken: this.getAccessToken(),
+      };
     }
-    
-    return false;
+
+    return {
+      success: false,
+      accessToken: undefined,
+    };
   }
 
   /**
@@ -377,13 +431,13 @@ export class AuthCredential extends AggregateRoot {
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: 'RememberTokenRevoked',
+        eventType: "RememberTokenRevoked",
         occurredOn: new Date(),
-        payload: { 
-          accountUuid: this._accountUuUuid, 
+        payload: {
+          accountUuid: this._accountUuUuid,
           tokenId: tokenValue,
-          timestamp: this._updatedAt 
-        }
+          timestamp: this._updatedAt,
+        },
       });
     }
   }
@@ -438,14 +492,14 @@ export class AuthCredential extends AggregateRoot {
       salt: (this._password as any)._salt,
       algorithm: (this._password as any)._algorithm,
       createdAt: (this._password as any)._createdAt,
-      expiresAt: (this._password as any)._expiresAt
+      expiresAt: (this._password as any)._expiresAt,
     };
   }
 
   /**
    * 用于仓库层重建对象时设置私有属性
    */
-  static restoreFromPersistence(
+  static restoreFromPersistenceWithEntities(params: {
     uuid: string,
     accountUuid: string,
     passwordHash: string,
@@ -458,34 +512,36 @@ export class AuthCredential extends AggregateRoot {
     passwordExpiresAt?: Date,
     failedAttempts?: number,
     maxAttempts?: number,
-    lockedUntil?: Date
-  ): AuthCredential {
+    lockedUntil?: Date,
+    tokens: Map<string, Token>,
+    rememberTokens: Map<string, Token>,
+    sessions: Map<string, Session>,
+    mfaDevices: Map<string, MFADevice>
+  }): AuthCredential {
     const password = Password.fromHashWithTimestamp(
-      passwordHash, 
-      passwordSalt, 
-      passwordAlgorithm, 
-      passwordCreatedAt,
-      passwordExpiresAt
+      params.passwordHash,
+      params.passwordSalt,
+      params.passwordAlgorithm,
+      params.passwordCreatedAt,
+      params.passwordExpiresAt
     );
-    const credential = new AuthCredential(uuid, accountUuid, password);
-    
+    const credential = new AuthCredential(params.uuid, params.accountUuid, password);
+
     // 设置私有属性
-    (credential as any)._createdAt = createdAt;
-    (credential as any)._updatedAt = updatedAt;
-    credential._lockedUntil = lockedUntil;
-    credential._failedAttempts = failedAttempts || 0;
-    credential._maxAttempts = maxAttempts || 5;
-    if (lastAuthAt) {
-      (credential as any)._lastAuthAt = lastAuthAt;
+    (credential as any)._createdAt = params.createdAt;
+    (credential as any)._updatedAt = params.updatedAt;
+    credential._lockedUntil = params.lockedUntil;
+    credential._failedAttempts = params.failedAttempts || 0;
+    credential._maxAttempts = params.maxAttempts || 5;
+    if (params.lastAuthAt) {
+      (credential as any)._lastAuthAt = params.lastAuthAt;
     }
-    
+    credential._tokens = params.tokens;
+    credential._rememberTokens = params.rememberTokens;
+    credential._sessions = params.sessions;
+    credential._mfaDevices = params.mfaDevices;
+
     return credential;
   }
 
-  /**
-   * 生成会话ID
-   */
-  private generateSessionId(): string {
-    return `session_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
-  }
 }

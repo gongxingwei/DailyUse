@@ -3,7 +3,7 @@ import { User } from "../entities/user";
 import { Email } from "../valueObjects/email";
 import { PhoneNumber } from "../valueObjects/phoneNumber";
 import { Address } from "../valueObjects/address";
-import { AccountStatus, AccountType, IAccount, AccountDTO } from "../types/account";
+import { AccountStatus, AccountType, IAccount, AccountDTO } from "../../../../../common/modules/account/types/account";
 
 /**
  * Account 聚合根

@@ -1,5 +1,21 @@
 import { DomainEvent } from "@/shared/domain/domainEvent";
 
+/**
+ * 通过 accountUuid 获取账号信息的请求事件载荷
+ */
+export interface AccountInfoGetterRequestedEventPayload {
+  accountUuid: string;
+  requestedAt: Date;
+  requestId: string; // 用于关联响应
+}
+
+/**
+ * 通过 accountUuid 获取账号信息的请求事件
+ */
+export interface AccountInfoGetterRequestedEvent extends DomainEvent<AccountInfoGetterRequestedEventPayload> {
+  eventType: 'AccountInfoGetterRequested';
+  payload: AccountInfoGetterRequestedEventPayload;
+}
 
 /**
  * username对应account_uuid请求事件载荷

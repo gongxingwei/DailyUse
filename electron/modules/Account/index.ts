@@ -16,7 +16,7 @@ export type {
   IPermissionRepository,
 } from "./domain/repositories/accountRepository";
 
-export { AccountStatus, AccountType } from "./domain/types/account";
+export { AccountStatus, AccountType } from "../../../common/modules/account/types/account";
 
 export type {
   IAccount,
@@ -24,7 +24,7 @@ export type {
   AccountUpdateData,
   AccountDTO,
   UserDTO,
-} from "./domain/types/account";
+} from "../../../common/modules/account/types/account";
 
 export { MainAccountApplicationService } from "./application/services/mainAccountApplicationService";
 

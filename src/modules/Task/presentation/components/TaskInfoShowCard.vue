@@ -69,9 +69,9 @@ const getStatusText = (status: string) => {
 };
 
 const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalById(link.goalUuid);
+    const goal = goalStore.getGoalByUuid(link.goalUuid);
     const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
-    return `${goal?.title} - ${kr?.name}`;
+    return `${goal?.name} - ${kr?.name}`;
 };
 
 

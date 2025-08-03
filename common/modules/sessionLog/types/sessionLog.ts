@@ -68,6 +68,10 @@ export interface IAuditTrail {
   alertLevel?: 'info' | 'warning' | 'error' | 'critical';
 }
 
+export interface IMainProcessAuditTrail extends IAuditTrail {}
+
+export interface IRenderProcessAuditTrail extends IAuditTrail {}
+
 export interface IAuditTrailDTO {
   uuid: string;
   accountUuid: string;

@@ -1,20 +1,11 @@
-/**
- * MFA设备类型枚举
- */
-export enum MFADeviceType {
-  TOTP = 'totp',           // Time-based One-Time Password (Google Authenticator等)
-  SMS = 'sms',             // 短信验证码
-  EMAIL = 'email',         // 邮箱验证码
-  HARDWARE_KEY = 'hardware_key', // 硬件密钥（如YubiKey）
-  BACKUP_CODES = 'backup_codes'  // 备用验证码
-}
+import { Entity } from "@/shared/domain/entity";
+import { IMainProcessMFADevice, MFADeviceType, IMFADeviceDTO } from "@common/modules/authentication/types/authentication";
 
 /**
  * MFA设备实体
  * 管理多因素认证设备的绑定、验证和管理
  */
-export class MFADevice {
-  private _uuid: string;
+export class MFADevice extends Entity implements IMainProcessMFADevice {
   private _accountUuUuid: string;
   private _type: MFADeviceType;
   private _name: string;
@@ -29,23 +20,24 @@ export class MFADevice {
   private _verificationAttempts: number;
   private _maxAttempts: number;
 
-  constructor(
-    uuid: string,
+  constructor(params: {
+    uuid?: string,
     accountUuid: string,
     type: MFADeviceType,
     name: string,
-    maxAttempts: number = 3
-  ) {
-    this._uuid = uuid;
-    this._accountUuUuid = accountUuid;
-    this._type = type;
-    this._name = name;
+    maxAttempts: number
+  }) {
+    super(params.uuid || MFADevice.generateId());
+    this._accountUuUuid = params.accountUuid;
+    this._type = params.type;
+    this._name = params.name;
     this._isVerified = false;
     this._isEnabled = false;
     this._createdAt = new Date();
+    this._maxAttempts = params.maxAttempts;
     this._verificationAttempts = 0;
-    this._maxAttempts = maxAttempts;
   }
+    
 
   // Getters
   get uuid(): string {
@@ -98,6 +90,10 @@ export class MFADevice {
 
   get isLocked(): boolean {
     return this._verificationAttempts >= this._maxAttempts;
+  }
+
+  get maxAttempts(): number {
+    return this._maxAttempts;
   }
 
   /**
@@ -316,29 +312,18 @@ export class MFADevice {
   /**
    * 转换为DTO对象
    */
-  toDTO(): {
-    uuid: string;
-    accountUuid: string;
-    type: MFADeviceType;
-    name: string;
-    isVerified: boolean;
-    isEnabled: boolean;
-    createdAt: string;
-    lastUsedAt?: string;
-    verificationAttempts: number;
-    isLocked: boolean;
-  } {
+  toDTO(): IMFADeviceDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuUuid,
       type: this._type,
       name: this._name,
-      isVerified: this._isVerified,
-      isEnabled: this._isEnabled,
-      createdAt: this._createdAt.toISOString(),
-      lastUsedAt: this._lastUsedAt?.toISOString(),
+      isVerified: this._isVerified === true ? 1 : 0,
+      isEnabled: this._isEnabled === true ? 1 : 0,
+      createdAt: this._createdAt.getTime(),
+      lastUsedAt: this._lastUsedAt?.getTime(),
       verificationAttempts: this._verificationAttempts,
-      isLocked: this.isLocked
+      maxAttempts: this._maxAttempts,
     };
   }
 
@@ -361,13 +346,13 @@ export class MFADevice {
     created_at: number;
     last_used_at?: number;
   }): MFADevice {
-    const device = new MFADevice(
-      row.uuid,
-      row.account_uuid,
-      row.type as MFADeviceType,
-      row.name,
-      row.max_attempts
-    );
+    const device = new MFADevice({
+      uuid: row.uuid,
+      accountUuid: row.account_uuid,
+      type: row.type as MFADeviceType,
+      name: row.name,
+      maxAttempts: row.max_attempts
+  });
 
     // 设置从数据库读取的属性
     (device as any)._secretKey = row.secret_key;

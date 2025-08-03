@@ -9,9 +9,10 @@ export class AuthenticationTables {
    * 创建认证相关表
    */
   static createTables(db: Database): void {
-    db.exec(`
-      DROP TABLE IF EXISTS auth_sessions;
-    `);
+    // db.exec(`
+    //   DROP TABLE IF EXISTS auth_sessions;
+    //   DROP TABLE IF EXISTS auth_tokens;
+    // `);
     // 认证凭证表
     db.exec(`
       CREATE TABLE IF NOT EXISTS auth_credentials (

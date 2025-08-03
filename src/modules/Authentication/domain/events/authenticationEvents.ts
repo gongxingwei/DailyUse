@@ -3,7 +3,7 @@ import { DomainEvent } from "@/shared/domain/domainEvent";
 export interface UserLoggedInEventPayload {
   accountUuid: string;
   username: string;
-  token: string | null;
+  token: string;
 }
 
 export interface UserLoggedInEvent extends DomainEvent<UserLoggedInEventPayload> {

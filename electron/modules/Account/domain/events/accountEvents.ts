@@ -1,5 +1,5 @@
 import { DomainEvent } from "@/shared/domain/domainEvent";
-
+import { AccountDTO } from "@common/modules/account/types/account";
 /**
  * 账号注册事件载荷
  */
@@ -121,4 +121,13 @@ export interface AccountUuidGetterResponseEventPayload {
 export interface AccountUuidGetterResponseEvent extends DomainEvent<AccountUuidGetterResponseEventPayload> {
   eventType: 'AccountUuidGetterResponse';
   payload: AccountUuidGetterResponseEventPayload;
+}
+
+export interface AccountInfoGetterResponseEventPayload {
+  accountDTO: AccountDTO;
+  requestId: string;
+}
+export interface AccountInfoGetterResponseEvent extends DomainEvent<AccountInfoGetterResponseEventPayload> {
+  eventType: 'AccountInfoGetterResponse';
+  payload: AccountInfoGetterResponseEventPayload;
 }

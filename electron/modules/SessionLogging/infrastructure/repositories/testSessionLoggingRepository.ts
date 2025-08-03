@@ -1,7 +1,7 @@
 import { SqliteSessionLoggingRepository } from "./sqliteSessionLoggingRepository";
 import { SessionLog } from "../../domain/aggregates/sessionLog";
 import { IPLocation } from "../../domain/valueObjects/ipLocation";
-import { OperationType, OperationStatus, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
+import { OperationType, OperationStatus } from "@common/modules/sessionLog/types/sessionLog";
 
 // 创建仓库实例
 const repo = new SqliteSessionLoggingRepository();

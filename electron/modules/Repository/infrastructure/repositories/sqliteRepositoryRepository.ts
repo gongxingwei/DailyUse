@@ -42,13 +42,14 @@ export class SqliteRepositoryRepository implements IRepositoryRepository {
     try {
       const db = await this.getDb();
       db.prepare(
-        `UPDATE repositories SET name = ?, path = ?, description = ?, updatedAt = ?, relatedGoals = ? WHERE account_uuid = ? AND id = ?`
+        `UPDATE repositories SET name = ?, path = ?, description = ?, updatedAt = ?, relatedGoals = ? WHERE account_uuid = ? AND uuid = ?`
       ).run(
         repository.name,
         repository.path,
         repository.description,
         repository.updatedAt.toISOString(),
         JSON.stringify(repository.relatedGoals || []),
+        accountUuid,
         repository.uuid
       );
     } catch (error) {

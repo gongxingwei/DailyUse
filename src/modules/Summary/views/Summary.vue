@@ -82,7 +82,7 @@
               @click="$router.push('/goal-management')">目标模块</span>创建一个吧！</div>
         </div>
         <div v-else class="goals-grid">
-          <GoalInfoShowCard v-for="goal in goals" :key="goal.uuid" :goal="goal" class="goal-card-item" />
+          <GoalInfoShowCard v-for="goal in goals" :key="goal.uuid" :goal="(goal as Goal)" class="goal-card-item" />
         </div>
       </section>
 
@@ -103,7 +103,8 @@ import GoalInfoShowCard from '@/modules/Goal/presentation/components/GoalInfoSho
 import MotivateCard from '@/modules/Goal/presentation/components/MotivateCard.vue';
 import GoalGanttChart from '@/modules/Goal/presentation/components/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/presentation/components/TaskInSummaryCard.vue';
-
+// domains
+import { Goal } from '@/modules/Goal/index';
 
 const goalStore = useGoalStore();
 const taskStore = useTaskStore();

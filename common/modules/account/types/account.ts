@@ -76,6 +76,20 @@ export interface AccountDTO {
   user: UserDTO;
 }
 
+export interface IAccountDTO {
+  uuid: string;
+  username: string;
+  email: string;
+  phone: string;
+  accountType: string;
+  user: UserDTO; // 关联的 User 实体
+  status: string;
+  createdAt: number;
+  updatedAt: number;
+  lastLoginAt?: number;
+  roleIds?: string[];
+}
+
 export interface UserDTO {
   uuid: string;
   firstName: string | null;

@@ -1,6 +1,4 @@
 import { createRouter, createWebHashHistory, RouteRecordRaw } from 'vue-router'
-import { useRepositoryStore } from '@/modules/Repository/presentation/stores/repositoryStore'
-import { useAccountStore } from '@/modules/Account/index';
 import MainLayout from '@/modules/App/MainLayout.vue'
 import NotificationWindow from '@/shared/utils/notification/NotificationWindow.vue'
 import Summary from '@/modules/Summary/views/Summary.vue';
@@ -106,7 +104,7 @@ const router = createRouter({
 // 全局前置守卫（可选）
 router.beforeEach((to, from, next) => {
     console.log('[router.beforeEach] 跳转到:', to.fullPath, '来自:', from.fullPath)
-    const accountStore = useAccountStore()
+
     // 设置页面标题
     document.title = `${to.meta.title || '默认标题'}`
 

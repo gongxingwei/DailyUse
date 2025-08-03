@@ -44,7 +44,7 @@
 
             <v-window v-model="localTab" class="mt-4">
               <v-window-item value="quick-login">
-
+                <local-quick-login />
               </v-window-item>
               <v-window-item value="login">
                 <local-login />
@@ -98,6 +98,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
+import LocalQuickLogin from '@/modules/Authentication/presentation/components/LocalQuickLogin.vue';
 import LocalLogin from '@/modules/Authentication/presentation/components/LocalLoginForm.vue';
 import LocalRegister from '@/modules/Account/presentation/components/LocalRegisterForm.vue';
 import AnimatedTrain from '@/shared/animation/AnimatedTrain.vue';
