@@ -54,7 +54,7 @@
 import type { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { computed, inject } from "vue";
 import { useReminderStore } from "../stores/reminderStore";
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 import { recurrenceRuleToText } from "@common/shared/utils/recurrenceRuleUtils";
 import { RecurrenceRule } from "@common/shared/types/recurrenceRule";
 const reminderStore = useReminderStore();

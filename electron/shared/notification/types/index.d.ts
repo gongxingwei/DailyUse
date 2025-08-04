@@ -1,4 +1,4 @@
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 
 export interface NotificationWindow {
   uuid: string;

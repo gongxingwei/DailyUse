@@ -1,6 +1,6 @@
 import { Entity } from "@common/shared/domain/entity";
 import type { IReminderTemplate } from "../../../../../common/modules/reminder/types/reminder";
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 import { SYSTEM_GROUP_ID } from "@common/modules/reminder/types/reminder";
 
 /**

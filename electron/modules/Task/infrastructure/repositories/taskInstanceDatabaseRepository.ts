@@ -2,7 +2,6 @@ import type { Database } from "better-sqlite3";
 import { getDatabase } from "../../../../shared/database/index";
 import type { ITaskInstanceRepository } from "../../domain/repositories/iTaskInstanceRepository";
 import { TaskInstance } from "../../domain/aggregates/taskInstance";
-import type { TResponse } from "@/shared/types/response";
 import { ITaskInstanceDTO } from "@common/modules/task/types/task";
 /**
  * TaskInstance 数据库仓库实现
@@ -36,17 +35,12 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       title: dto.title,
       description: dto.description,
       time_config: JSON.stringify(dto.timeConfig),
-      actual_start_time: dto.actualStartTime ?? null,
-      actual_end_time: dto.actualEndTime ?? null,
+      reminder_status: JSON.stringify(dto.reminderStatus),
+      metadata: JSON.stringify(dto.metadata),
+      lifecycle: JSON.stringify(dto.lifecycle),
       key_result_links: dto.keyResultLinks
         ? JSON.stringify(dto.keyResultLinks)
         : null,
-      priority: dto.priority,
-      status: dto.status,
-      completed_at: dto.completedAt ?? null,
-      reminder_status: JSON.stringify(dto.reminderStatus),
-      lifecycle: JSON.stringify(dto.lifecycle),
-      metadata: JSON.stringify(dto.metadata),
       version: dto.version,
       created_at: dto.lifecycle.createdAt,
       updated_at: dto.lifecycle.updatedAt,
@@ -63,14 +57,9 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       title: record.title,
       description: record.description,
       timeConfig: JSON.parse(record.time_config),
-      actualStartTime: record.actual_start_time ?? undefined,
-      actualEndTime: record.actual_end_time ?? undefined,
       keyResultLinks: record.key_result_links
         ? JSON.parse(record.key_result_links)
         : undefined,
-      priority: record.priority,
-      status: record.status,
-      completedAt: record.completed_at ?? undefined,
       reminderStatus: JSON.parse(record.reminder_status),
       lifecycle: JSON.parse(record.lifecycle),
       metadata: JSON.parse(record.metadata),
@@ -85,56 +74,37 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async save(
     accountUuid: string,
     instance: TaskInstance
-  ): Promise<TResponse<TaskInstance>> {
-    try {
-      const db = await this.getDB();
-      const record = this.mapTaskInstanceToRow(instance, accountUuid);
+  ): Promise<TaskInstance> {
+    const db = await this.getDB();
+    const record = this.mapTaskInstanceToRow(instance, accountUuid);
 
-      const stmt = db.prepare(`
-        INSERT OR REPLACE INTO task_instances (
-          uuid, account_uuid, template_uuid, title, description, time_config,
-          actual_start_time, actual_end_time, key_result_links, priority,
-          status, completed_at, reminder_status, lifecycle, metadata,
-          version, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO task_instances (
+        uuid, account_uuid, template_uuid, title, description,
+        time_config, reminder_status, metadata, lifecycle, key_result_links,
+        version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-      stmt.run(
-        record.uuid,
-        record.account_uuid,
-        record.template_uuid,
-        record.title,
-        record.description,
-        record.time_config,
-        record.actual_start_time,
-        record.actual_end_time,
-        record.key_result_links,
-        record.priority,
-        record.status,
-        record.completed_at,
-        record.reminder_status,
-        record.lifecycle,
-        record.metadata,
-        record.version,
-        record.created_at,
-        record.updated_at
-      );
+    stmt.run(
+      record.uuid,
+      record.account_uuid,
+      record.template_uuid,
+      record.title,
+      record.description,
 
-      return {
-        success: true,
-        data: instance,
-        message: "TaskInstance 保存成功",
-      };
-    } catch (error) {
-      console.error("保存 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: instance,
-        message: `保存失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+      record.time_config,
+      record.reminder_status,
+      record.metadata,
+      record.lifecycle,
+      record.key_result_links,
+
+      record.version,
+      record.created_at,
+      record.updated_at
+    );
+
+    return instance;
   }
 
   /**
@@ -143,136 +113,77 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async saveAll(
     accountUuid: string,
     instances: TaskInstance[]
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
+  ): Promise<TaskInstance[]> {
+    const db = await this.getDB();
 
-      const stmt = db.prepare(`
-        INSERT OR REPLACE INTO task_instances (
-          uuid, account_uuid, template_uuid, title, description, time_config,
-          actual_start_time, actual_end_time, key_result_links, priority,
-          status, completed_at, reminder_status, lifecycle, metadata,
-          version, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `);
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO task_instances (
+        uuid, account_uuid, template_uuid, title, description,
+        time_config, reminder_status, metadata, lifecycle, key_result_links,
+        version, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
 
-      const transaction = db.transaction(() => {
-        for (const instance of instances) {
-          const record = this.mapTaskInstanceToRow(instance, accountUuid);
-          stmt.run(
-            record.uuid,
-            record.account_uuid,
-            record.template_uuid,
-            record.title,
-            record.description,
-            record.time_config,
-            record.actual_start_time,
-            record.actual_end_time,
-            record.key_result_links,
-            record.priority,
-            record.status,
-            record.completed_at,
-            record.reminder_status,
-            record.lifecycle,
-            record.metadata,
-            record.version,
-            record.created_at,
-            record.updated_at
-          );
-        }
-      });
+    const transaction = db.transaction(() => {
+      for (const instance of instances) {
+        const record = this.mapTaskInstanceToRow(instance, accountUuid);
+        stmt.run(
+          record.uuid,
+          record.account_uuid,
+          record.template_uuid,
+          record.title,
+          record.description,
 
-      transaction();
+          record.time_config,
+          record.reminder_status,
+          record.metadata,
+          record.lifecycle,
+          record.key_result_links,
 
-      return {
-        success: true,
-        data: instances,
-        message: `成功保存 ${instances.length} 个 TaskInstance`,
-      };
-    } catch (error) {
-      console.error("批量保存 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: instances,
-        message: `批量保存失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+          record.version,
+          record.created_at,
+          record.updated_at
+        );
+      }
+    });
+
+    transaction();
+
+    return instances;
   }
 
   /**
    * 根据 ID 查找 TaskInstance
    */
-  async findById(
-    accountUuid: string,
-    uuid: string
-  ): Promise<TResponse<TaskInstance>> {
-    try {
-      const db = await this.getDB();
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE uuid = ? AND account_uuid = ?
-      `);
+  async findById(accountUuid: string, uuid: string): Promise<TaskInstance> {
+    const db = await this.getDB();
+    const stmt = db.prepare(`
+      SELECT * FROM task_instances 
+      WHERE uuid = ? AND account_uuid = ?
+    `);
 
-      const record = stmt.get(uuid, accountUuid);
+    const record = stmt.get(uuid, accountUuid);
 
-      if (record) {
-        const instance = this.mapRowToTaskInstance(record);
-        return {
-          success: true,
-          data: instance,
-          message: "TaskInstance 查找成功",
-        };
-      } else {
-        return {
-          success: false,
-          data: null as any,
-          message: `未找到 ID 为 ${uuid} 的 TaskInstance`,
-        };
-      }
-    } catch (error) {
-      console.error("查找 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: null as any,
-        message: `查找失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
+    if (record) {
+      return this.mapRowToTaskInstance(record);
+    } else {
+      return [] as any as TaskInstance; // 返回空数组而不是 undefined
     }
   }
 
   /**
    * 获取所有 TaskInstance
    */
-  async findAll(accountUuid: string): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE account_uuid = ?
-        ORDER BY created_at DESC
-      `);
+  async findAll(accountUuid: string): Promise<TaskInstance[]> {
+    const db = await this.getDB();
+    const stmt = db.prepare(`
+      SELECT * FROM task_instances 
+      WHERE account_uuid = ?
+      ORDER BY created_at DESC
+    `);
 
-      const records = stmt.all(accountUuid);
-      const instances = records.map((record) => this.mapRowToTaskInstance(record));
-
-      return {
-        success: true,
-        data: instances,
-        message: `找到 ${instances.length} 个 TaskInstance`,
-      };
-    } catch (error) {
-      console.error("获取所有 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: [],
-        message: `获取失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+    const records = stmt.all(accountUuid);
+    return records.map((record) => this.mapRowToTaskInstance(record));
   }
 
   /**
@@ -281,33 +192,16 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async findByTemplateId(
     accountUuid: string,
     templateId: string
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE template_uuid = ? AND account_uuid = ?
-        ORDER BY created_at DESC
-      `);
+  ): Promise<TaskInstance[]> {
+    const db = await this.getDB();
+    const stmt = db.prepare(`
+      SELECT * FROM task_instances 
+      WHERE template_uuid = ? AND account_uuid = ?
+      ORDER BY created_at DESC
+    `);
 
-      const records = stmt.all(templateId, accountUuid);
-      const instances = records.map((record) => this.mapRowToTaskInstance(record));
-
-      return {
-        success: true,
-        data: instances,
-        message: `找到 ${instances.length} 个相关 TaskInstance`,
-      };
-    } catch (error) {
-      console.error("根据模板ID查找 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: [],
-        message: `查找失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+    const records = stmt.all(templateId, accountUuid);
+    return records.map((record) => this.mapRowToTaskInstance(record));
   }
 
   /**
@@ -316,87 +210,16 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async findByGoal(
     accountUuid: string,
     goalUuid: string
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE account_uuid = ? AND key_result_links LIKE ?
-        ORDER BY created_at DESC
-      `);
+  ): Promise<TaskInstance[]> {
+    const db = await this.getDB();
+    const stmt = db.prepare(`
+      SELECT * FROM task_instances 
+      WHERE account_uuid = ? AND key_result_links LIKE ?
+      ORDER BY created_at DESC
+    `);
 
-      const records = stmt.all(accountUuid, `%"goalUuid":"${goalUuid}"%`);
-      const instances = records.map((record) => this.mapRowToTaskInstance(record));
-
-      return {
-        success: true,
-        data: instances,
-        message: `找到 ${instances.length} 个相关 TaskInstance`,
-      };
-    } catch (error) {
-      console.error("根据目标查找 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: [],
-        message: `查找失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
-  }
-
-  /**
-   * 获取今日任务
-   */
-  async findTodayTasks(
-    accountUuid: string
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
-      const today = new Date();
-      const startOfDay = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate()
-      ).getTime();
-      const endOfDay = startOfDay + 24 * 60 * 60 * 1000 - 1;
-
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE account_uuid = ? 
-        AND ((actual_start_time BETWEEN ? AND ?) 
-             OR (completed_at BETWEEN ? AND ?)
-             OR (created_at BETWEEN ? AND ? AND status IN ('pending', 'in_progress')))
-        ORDER BY created_at DESC
-      `);
-
-      const records = stmt.all(
-        accountUuid,
-        startOfDay,
-        endOfDay,
-        startOfDay,
-        endOfDay,
-        startOfDay,
-        endOfDay
-      );
-
-      const instances = records.map((record) => this.mapRowToTaskInstance(record));
-
-      return {
-        success: true,
-        data: instances,
-        message: `找到 ${instances.length} 个今日任务`,
-      };
-    } catch (error) {
-      console.error("获取今日任务失败:", error);
-      return {
-        success: false,
-        data: [],
-        message: `获取失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+    const records = stmt.all(accountUuid, `%"goalUuid":"${goalUuid}"%`);
+    return records.map((record) => this.mapRowToTaskInstance(record));
   }
 
   /**
@@ -406,7 +229,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
     accountUuid: string,
     startTime: Date,
     endTime: Date
-  ): Promise<TResponse<TaskInstance[]>> {
+  ): Promise<TaskInstance[]> {
     return this.findByTimeRange(accountUuid, startTime, endTime);
   }
 
@@ -417,40 +240,23 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
     accountUuid: string,
     startTime: Date,
     endTime: Date
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
-      const start = startTime.getTime();
-      const end = endTime.getTime();
+  ): Promise<TaskInstance[]> {
+    const db = await this.getDB();
+    const start = startTime.getTime();
+    const end = endTime.getTime();
 
-      const stmt = db.prepare(`
-        SELECT * FROM task_instances 
-        WHERE account_uuid = ? 
-        AND ((actual_start_time BETWEEN ? AND ?) 
-             OR (completed_at BETWEEN ? AND ?)
-             OR (created_at BETWEEN ? AND ?))
-        ORDER BY created_at DESC
-      `);
+    const stmt = db.prepare(`
+      SELECT * FROM task_instances 
+      WHERE account_uuid = ? 
+      AND ((actual_start_time BETWEEN ? AND ?) 
+           OR (completed_at BETWEEN ? AND ?)
+           OR (created_at BETWEEN ? AND ?))
+      ORDER BY created_at DESC
+    `);
 
-      const records = stmt.all(accountUuid, start, end, start, end, start, end);
+    const records = stmt.all(accountUuid, start, end, start, end, start, end);
 
-      const instances = records.map((record) => this.mapRowToTaskInstance(record));
-
-      return {
-        success: true,
-        data: instances,
-        message: `找到 ${instances.length} 个任务`,
-      };
-    } catch (error) {
-      console.error("根据时间范围查找任务失败:", error);
-      return {
-        success: false,
-        data: [],
-        message: `查找失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+    return records.map((record) => this.mapRowToTaskInstance(record));
   }
 
   /**
@@ -459,101 +265,53 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async update(
     accountUuid: string,
     instance: TaskInstance
-  ): Promise<TResponse<TaskInstance>> {
-    try {
-      const db = await this.getDB();
-      const record = this.mapTaskInstanceToRow(instance, accountUuid);
+  ): Promise<TaskInstance> {
+    const db = await this.getDB();
+    const record = this.mapTaskInstanceToRow(instance, accountUuid);
 
-      const stmt = db.prepare(`
-        UPDATE task_instances SET
-          template_uuid = ?, title = ?, description = ?, time_config = ?,
-          actual_start_time = ?, actual_end_time = ?, key_result_links = ?,
-          priority = ?, status = ?, completed_at = ?, reminder_status = ?,
-          lifecycle = ?, metadata = ?, version = ?, updated_at = ?
-        WHERE uuid = ? AND account_uuid = ?
-      `);
+    const stmt = db.prepare(`
+      UPDATE task_instances SET
+      template_uuid = ?, title = ?, description = ?,
+      time_config = ?, reminder_status = ?, metadata = ?, lifecycle = ?, key_result_links = ?,
+      version = ?, created_at = ?, updated_at = ?
+      WHERE uuid = ? AND account_uuid = ?
+    `);
 
-      const result = stmt.run(
-        record.template_uuid,
-        record.title,
-        record.description,
-        record.time_config,
-        record.actual_start_time,
-        record.actual_end_time,
-        record.key_result_links,
-        record.priority,
-        record.status,
-        record.completed_at,
-        record.reminder_status,
-        record.lifecycle,
-        record.metadata,
-        record.version,
-        record.updated_at,
-        record.uuid,
-        record.account_uuid
-      );
+    stmt.run(
+      record.template_uuid,
+      record.title,
+      record.description,
 
-      if (result.changes > 0) {
-        return {
-          success: true,
-          data: instance,
-          message: "TaskInstance 更新成功",
-        };
-      } else {
-        return {
-          success: false,
-          data: instance,
-          message: `未找到要更新的 TaskInstance (ID: ${instance.uuid})`,
-        };
-      }
-    } catch (error) {
-      console.error("更新 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: instance,
-        message: `更新失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+      record.time_config,
+      record.reminder_status,
+      record.metadata,
+      record.lifecycle,
+      record.key_result_links,
+
+      record.version,
+      record.created_at,
+      record.updated_at,
+
+      record.uuid,
+      record.account_uuid
+    );
+
+    return instance;
   }
 
   /**
    * 删除 TaskInstance
    */
-  async delete(accountUuid: string, uuid: string): Promise<TResponse<boolean>> {
-    try {
-      const db = await this.getDB();
-      const stmt = db.prepare(`
-        DELETE FROM task_instances 
-        WHERE uuid = ? AND account_uuid = ?
-      `);
+  async delete(accountUuid: string, uuid: string): Promise<boolean> {
+    const db = await this.getDB();
+    const stmt = db.prepare(`
+      DELETE FROM task_instances 
+      WHERE uuid = ? AND account_uuid = ?
+    `);
 
-      const result = stmt.run(uuid, accountUuid);
+    const result = stmt.run(uuid, accountUuid);
 
-      if (result.changes > 0) {
-        return {
-          success: true,
-          data: true,
-          message: "TaskInstance 删除成功",
-        };
-      } else {
-        return {
-          success: false,
-          data: false,
-          message: `未找到要删除的 TaskInstance (ID: ${uuid})`,
-        };
-      }
-    } catch (error) {
-      console.error("删除 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: false,
-        message: `删除失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+    return result.changes > 0;
   }
 
   /**
@@ -562,60 +320,43 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
   async updateInstances(
     accountUuid: string,
     instances: TaskInstance[]
-  ): Promise<TResponse<TaskInstance[]>> {
-    try {
-      const db = await this.getDB();
+  ): Promise<TaskInstance[]> {
+    const db = await this.getDB();
 
-      const stmt = db.prepare(`
-        UPDATE task_instances SET
-          template_uuid = ?, title = ?, description = ?, time_config = ?,
-          actual_start_time = ?, actual_end_time = ?, key_result_links = ?,
-          priority = ?, status = ?, completed_at = ?, reminder_status = ?,
-          lifecycle = ?, metadata = ?, version = ?, updated_at = ?
-        WHERE uuid = ? AND account_uuid = ?
-      `);
+    const stmt = db.prepare(`
+      UPDATE task_instances SET
+      template_uuid = ?, title = ?, description = ?,
+      time_config = ?, reminder_status = ?, metadata = ?, lifecycle = ?, key_result_links = ?,
+      version = ?, created_at = ?, updated_at = ?
+      WHERE uuid = ? AND account_uuid = ?
+    `);
 
-      const transaction = db.transaction(() => {
-        for (const instance of instances) {
-          const record = this.mapTaskInstanceToRow(instance, accountUuid);
-          stmt.run(
-            record.template_uuid,
-            record.title,
-            record.description,
-            record.time_config,
-            record.actual_start_time,
-            record.actual_end_time,
-            record.key_result_links,
-            record.priority,
-            record.status,
-            record.completed_at,
-            record.reminder_status,
-            record.lifecycle,
-            record.metadata,
-            record.version,
-            record.updated_at,
-            record.uuid,
-            record.account_uuid
-          );
-        }
-      });
+    const transaction = db.transaction(() => {
+      for (const instance of instances) {
+        const record = this.mapTaskInstanceToRow(instance, accountUuid);
+        stmt.run(
+          record.template_uuid,
+          record.title,
+          record.description,
 
-      transaction();
+          record.time_config,
+          record.reminder_status,
+          record.metadata,
+          record.lifecycle,
+          record.key_result_links,
 
-      return {
-        success: true,
-        data: instances,
-        message: `成功更新 ${instances.length} 个 TaskInstance`,
-      };
-    } catch (error) {
-      console.error("批量更新 TaskInstance 失败:", error);
-      return {
-        success: false,
-        data: instances,
-        message: `批量更新失败: ${
-          error instanceof Error ? error.message : "未知错误"
-        }`,
-      };
-    }
+          record.version,
+          record.created_at,
+          record.updated_at,
+
+          record.uuid,
+          record.account_uuid
+        );
+      }
+    });
+
+    transaction();
+
+    return instances;
   }
 }

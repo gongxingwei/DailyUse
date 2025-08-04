@@ -7,7 +7,7 @@ export const SYSTEM_GROUP_ID = "system-root";
 
 export type GridItem = ReminderTemplate | ReminderTemplateGroup;
 
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 
 export interface RelativeTimeSchedule {
   name: string;

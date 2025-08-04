@@ -1,6 +1,6 @@
 import nodeSchedule from "node-schedule";
 import { notificationService } from "@electron/shared/notification";
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 import type { RecurrenceRule as NodeScheduleRule } from "node-schedule";
 import type {
   RecurrenceRule as MyRecurrenceRule,

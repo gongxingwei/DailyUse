@@ -9,6 +9,12 @@ export class TaskTables {
    * 创建任务相关表
    */
   static createTables(db: Database): void {
+    db.exec(`
+      drop table if exists task_categories;
+      drop table if exists task_meta_templates;
+      drop table if exists task_templates;
+      drop table if exists task_instances;
+      `)
     // 任务分类表
     db.exec(`
       CREATE TABLE IF NOT EXISTS task_categories (
@@ -43,50 +49,39 @@ export class TaskTables {
         default_time_config TEXT NOT NULL, -- JSON 格式存储默认时间配置
         default_reminder_config TEXT NOT NULL, -- JSON 格式存储默认提醒配置
         default_metadata TEXT NOT NULL, -- JSON 格式存储默认元数据
-        -- 模板属性
-        is_system BOOLEAN NOT NULL DEFAULT 0,
-        is_enabled BOOLEAN NOT NULL DEFAULT 1,
-        usage_count INTEGER NOT NULL DEFAULT 0,
         -- 生命周期
-        lifecycle TEXT NOT NULL DEFAULT 'active',
-        version INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
       )
     `);
 
-    // 任务模板表 - 用户创建的可重用任务模板
+    // 任务模板表 - 用户创建的任务模板
     db.exec(`
       CREATE TABLE IF NOT EXISTS task_templates (
         uuid TEXT PRIMARY KEY,
         account_uuid TEXT NOT NULL,
-        meta_template_uuid TEXT,
         title TEXT NOT NULL,
         description TEXT,
-        category_uuid TEXT,
         -- 时间配置
         time_config TEXT NOT NULL, -- JSON 格式存储时间配置
-        estimated_duration INTEGER, -- 预估时长（分钟）
         -- 提醒配置
         reminder_config TEXT NOT NULL, -- JSON 格式存储提醒配置
         -- 调度策略
         scheduling_policy TEXT NOT NULL, -- JSON 格式存储调度策略
-        -- 关联配置
-        key_result_links TEXT, -- JSON 格式存储关键结果链接
         -- 元数据
         metadata TEXT NOT NULL, -- JSON 格式存储元数据
-        tags TEXT, -- JSON 格式存储标签
-        -- 统计信息
-        usage_count INTEGER NOT NULL DEFAULT 0,
-        completion_rate REAL, -- 完成率
-        average_duration INTEGER, -- 平均完成时长（分钟）
         -- 生命周期
-        lifecycle TEXT NOT NULL DEFAULT 'active',
-        analytics TEXT NOT NULL DEFAULT '{}', -- JSON 格式存储分析数据
-        version INTEGER NOT NULL DEFAULT 1,
+        status TEXT NOT NULL DEFAULT 'active',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
+        activated_at INTEGER,
+        paused_at INTEGER,
+        -- 统计信息
+        analytics TEXT NOT NULL DEFAULT '{}', -- JSON 格式存储分析数据
+        -- 关联配置
+        key_result_links TEXT, -- JSON 格式存储关键结果链接
+        version INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE,
         FOREIGN KEY (meta_template_uuid) REFERENCES task_meta_templates(uuid) ON DELETE SET NULL,
         FOREIGN KEY (category_uuid) REFERENCES task_categories(uuid) ON DELETE SET NULL
@@ -99,44 +94,24 @@ export class TaskTables {
         uuid TEXT PRIMARY KEY,
         account_uuid TEXT NOT NULL,
         template_uuid TEXT,
-        parent_uuid TEXT, -- 父任务（子任务支持）
         -- 基本信息
         title TEXT NOT NULL,
         description TEXT,
-        category_uuid TEXT,
         -- 时间信息
         time_config TEXT NOT NULL, -- JSON 格式存储时间配置
-        planned_start_time INTEGER,
-        planned_end_time INTEGER,
-        actual_start_time INTEGER,
-        actual_end_time INTEGER,
-        estimated_duration INTEGER, -- 预估时长（分钟）
-        actual_duration INTEGER, -- 实际时长（分钟）
-        -- 优先级和状态
-        priority INTEGER CHECK(priority BETWEEN 1 AND 5) DEFAULT 3,
-        status TEXT CHECK(status IN ('pending', 'in_progress', 'completed', 'cancelled', 'overdue', 'paused')) NOT NULL DEFAULT 'pending',
-        completion_percentage INTEGER CHECK(completion_percentage BETWEEN 0 AND 100) DEFAULT 0,
-        completed_at INTEGER,
         -- 提醒状态
-        reminder_status TEXT NOT NULL DEFAULT 'pending',
-        last_reminder_at INTEGER,
-        -- 关联信息
-        key_result_links TEXT, -- JSON 格式存储关键结果链接
-        -- 扩展信息
-        tags TEXT, -- JSON 格式存储标签
-        notes TEXT, -- 任务备注
-        attachments TEXT, -- JSON 格式存储附件信息
+        reminder_status TEXT NOT NULL DEFAULT '{}', -- JSON 格式存储提醒状态
         -- 元数据
         metadata TEXT NOT NULL DEFAULT '{}',
         -- 生命周期
-        lifecycle TEXT NOT NULL DEFAULT 'active',
+        lifecycle TEXT NOT NULL DEFAULT '{}', -- JSON 格式存储生命周期信息
+        -- 关联信息
+        key_result_links TEXT, -- JSON 格式存储关键结果链接
         version INTEGER NOT NULL DEFAULT 1,
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE,
         FOREIGN KEY (template_uuid) REFERENCES task_templates(uuid) ON DELETE SET NULL,
-        FOREIGN KEY (parent_uuid) REFERENCES task_instances(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (category_uuid) REFERENCES task_categories(uuid) ON DELETE SET NULL
       )
     `);
 
@@ -197,36 +172,21 @@ export class TaskTables {
   static createIndexes(db: Database): void {
     db.exec(`
       CREATE INDEX IF NOT EXISTS idx_task_categories_account_uuid ON task_categories(account_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_categories_parent_uuid ON task_categories(parent_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_categories_sort_order ON task_categories(sort_order);
       CREATE INDEX IF NOT EXISTS idx_task_categories_is_system ON task_categories(is_system);
       
       CREATE INDEX IF NOT EXISTS idx_task_meta_templates_account_uuid ON task_meta_templates(account_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_category_uuid ON task_meta_templates(category_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_is_system ON task_meta_templates(is_system);
-      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_is_enabled ON task_meta_templates(is_enabled);
-      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_usage_count ON task_meta_templates(usage_count);
-      CREATE INDEX IF NOT EXISTS idx_task_meta_templates_lifecycle ON task_meta_templates(lifecycle);
+      
       
       CREATE INDEX IF NOT EXISTS idx_task_templates_account_uuid ON task_templates(account_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_templates_meta_template_uuid ON task_templates(meta_template_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_templates_category_uuid ON task_templates(category_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_templates_lifecycle ON task_templates(lifecycle);
       CREATE INDEX IF NOT EXISTS idx_task_templates_usage_count ON task_templates(usage_count);
-      CREATE INDEX IF NOT EXISTS idx_task_templates_completion_rate ON task_templates(completion_rate);
       CREATE INDEX IF NOT EXISTS idx_task_templates_created_at ON task_templates(created_at);
       
       CREATE INDEX IF NOT EXISTS idx_task_instances_account_uuid ON task_instances(account_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_instances_template_uuid ON task_instances(template_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_parent_uuid ON task_instances(parent_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_instances_category_uuid ON task_instances(category_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_status ON task_instances(status);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_priority ON task_instances(priority);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_planned_start_time ON task_instances(planned_start_time);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_planned_end_time ON task_instances(planned_end_time);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_actual_start_time ON task_instances(actual_start_time);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_actual_end_time ON task_instances(actual_end_time);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_completed_at ON task_instances(completed_at);
       CREATE INDEX IF NOT EXISTS idx_task_instances_reminder_status ON task_instances(reminder_status);
       CREATE INDEX IF NOT EXISTS idx_task_instances_lifecycle ON task_instances(lifecycle);
       CREATE INDEX IF NOT EXISTS idx_task_instances_created_at ON task_instances(created_at);

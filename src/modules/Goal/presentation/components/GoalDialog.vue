@@ -303,14 +303,16 @@ const endTimeFormatted = computed({
 const updateStartTime = (val: string) => { startTimeFormatted.value = val; };
 const updateEndTime = (val: string) => { endTimeFormatted.value = val; };
 
-const allGoalDirs = goalStore.getAllGoalDirs;
+const allGoalDirs = computed(() => goalStore.getAllGoalDirs);
 
 const directoryOptions = ref([
-  ...allGoalDirs.map(dir => ({
+  ...allGoalDirs.value
+  .filter(dir => !goalStore.isSystemGoalDir(dir.uuid))
+  .map(
+    dir => ({
     text: dir.name,      // 下拉显示的名称
     value: dir.uuid      // 选中的值
   }))
-
 ]);
 
 

@@ -76,7 +76,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue';
 import { ReminderTemplate } from '@/modules/Reminder/domain/entities/reminderTemplate';
-import { ImportanceLevel } from '@/shared/types/importance';
+import { ImportanceLevel } from '@common/shared/types/importance';
 import { RecurrenceRuleHelper } from '@/shared/utils/recurrenceRuleHelpre';
 
 // =====================

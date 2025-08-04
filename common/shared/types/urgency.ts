@@ -1,4 +1,4 @@
-enum UrgencyLevel {
+export enum UrgencyLevel {
   /**
    * 非常紧急 - 需要立即处理
    * 示例: 药物提醒、紧急会议

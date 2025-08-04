@@ -1,8 +1,11 @@
 import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 
-import type { TaskCompletedEvent, TaskUndoCompletedEvent } from '../events/taskEvents';
+import {
+  TaskCompletedEvent,
+  TaskUndoCompletedEvent,
+} from "../events/taskEvents";
 
-import type {
+import {
   KeyResultLink,
   ITaskInstance,
   ITaskTemplate,
@@ -13,28 +16,19 @@ import type {
   TaskInstanceTimeConfig,
   ITaskInstanceDTO,
 } from "@common/modules/task/types/task";
+import { ImportanceLevel } from "@common/shared/types/importance";
+import { UrgencyLevel } from "@common/shared/types/urgency";
 import { addDays } from "date-fns/addDays";
 import { ensureDate } from "@common/shared/utils/dateUtils";
-
 
 export class TaskInstance extends AggregateRoot implements ITaskInstance {
   private _templateUuid: string;
   private _title: string;
   private _description?: string;
-  private _timeConfig: TaskInstanceTimeConfig; // 新增
-  private _actualStartTime?: Date;
-  private _actualEndTime?: Date;
-  private _keyResultLinks?: KeyResultLink[];
-  private _priority: 1 | 2 | 3 | 4 | 5;
-  private _status:
-    | "pending"
-    | "inProgress"
-    | "completed"
-    | "cancelled"
-    | "overdue";
-  private _completedAt?: Date;
+  private _timeConfig: TaskInstanceTimeConfig;
   private _reminderStatus: TaskInstanceReminderStatus;
   private _lifecycle: {
+    status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
     createdAt: Date;
     updatedAt: Date;
     startedAt?: Date;
@@ -48,89 +42,92 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     category: string;
     tags: string[];
     location?: string;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    urgency: UrgencyLevel;
+    importance: ImportanceLevel;
   };
+  private _keyResultLinks?: KeyResultLink[];
   private _version: number;
 
-  constructor(
-    uuid: string,
-    templateId: string,
-    title: string,
-    scheduledTime: Date,
-    priority: 1 | 2 | 3 | 4 | 5,
-    options?: {
-      description?: string;
-      timeConfig?: Partial<TaskInstanceTimeConfig>;
-      estimatedDuration?: number;
-      keyResultLinks?: KeyResultLink[];
-      reminderAlerts?: TaskReminderConfig["alerts"];
-      category?: string;
-      tags?: string[];
-      location?: string;
-      difficulty?: 1 | 2 | 3 | 4 | 5;
-    }
-  ) {
-    super(uuid);
+  constructor(params: {
+    uuid?: string;
+    templateUuid: string;
+    title: string;
+    scheduledTime: Date;
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
+    description?: string;
+    timeConfig?: Partial<TaskInstanceTimeConfig>;
+    estimatedDuration?: number;
+    keyResultLinks?: KeyResultLink[];
+    reminderAlerts?: TaskReminderConfig["alerts"];
+    category?: string;
+    tags?: string[];
+    location?: string;
+  }) {
+    super(params.uuid || AggregateRoot.generateId());
     const now = new Date();
 
-    this._templateUuid = templateId;
-    this._title = title;
-    this._description = options?.description;
+    this._templateUuid = params.templateUuid;
+    this._title = params.title;
+    this._description = params.description;
 
     this._timeConfig = {
-      type: options?.timeConfig?.type || "timed",
-      scheduledTime,
-      endTime: options?.timeConfig?.endTime,
-      estimatedDuration: options?.estimatedDuration || options?.timeConfig?.estimatedDuration,
-      timezone: options?.timeConfig?.timezone || "Asia/Shanghai",
-      allowReschedule: options?.timeConfig?.allowReschedule ?? true,
-      maxDelayDays: options?.timeConfig?.maxDelayDays || 3
+      type: params.timeConfig?.type || "timed",
+      scheduledTime: params.scheduledTime,
+      endTime: params.timeConfig?.endTime,
+      estimatedDuration:
+        params.estimatedDuration || params.timeConfig?.estimatedDuration,
+      timezone: params.timeConfig?.timezone || "Asia/Shanghai",
+      allowReschedule: params.timeConfig?.allowReschedule ?? true,
+      maxDelayDays: params.timeConfig?.maxDelayDays || 3,
     };
 
-    this._keyResultLinks = options?.keyResultLinks;
-    this._priority = priority;
-    this._status = "pending";
+    this._keyResultLinks = params.keyResultLinks;
 
     // 初始化提醒状态
     this._reminderStatus = {
       enabled: true,
       alerts:
-        options?.reminderAlerts?.map((alert) => ({
+        params.reminderAlerts?.map((alert) => ({
           uuid: alert.uuid,
           alertConfig: alert,
           status: "pending" as const,
-          scheduledTime: this.calculateReminderTime(alert, scheduledTime),
+          scheduledTime: this.calculateReminderTime(alert, params.scheduledTime),
           snoozeHistory: [],
         })) || [],
       globalSnoozeCount: 0,
     };
 
     this._lifecycle = {
+      status: "pending",
       createdAt: now,
       updatedAt: now,
       events: [],
     };
 
     this._metadata = {
-      category: options?.category || "general",
-      tags: options?.tags || [],
-      estimatedDuration: options?.estimatedDuration,
-      location: options?.location,
-      difficulty: options?.difficulty,
+      category: params.category || "general",
+      tags: params.tags || [],
+      estimatedDuration: params.estimatedDuration,
+      location: params.location,
+      urgency: params.urgency,
+      importance: params.importance,
     };
 
     this._version = 1;
 
     // 记录提醒调度事件
-    if (options?.reminderAlerts?.length) {
-      options.reminderAlerts.forEach((alert) => {
+    if (params.reminderAlerts?.length) {
+      params.reminderAlerts.forEach((alert) => {
         this._lifecycle.events.push({
           type: "reminder_scheduled",
           timestamp: now,
           alertId: alert.uuid,
           details: {
-            scheduledFor: this.calculateReminderTime(alert, scheduledTime)
-              .toISOString(),
+            scheduledFor: this.calculateReminderTime(
+              alert,
+              params.scheduledTime
+            ).toISOString(),
           },
         });
       });
@@ -153,7 +150,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   // Getters
-  get templateId(): string {
+  get templateUuid(): string {
     return this._templateUuid;
   }
 
@@ -177,21 +174,12 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     return this._timeConfig.scheduledTime;
   }
 
-
-  get actualStartTime(): Date | undefined {
-    return this._actualStartTime;
-  }
-
-  get actualEndTime(): Date | undefined {
-    return this._actualEndTime;
-  }
-
   get keyResultLinks(): KeyResultLink[] | undefined {
     return this._keyResultLinks;
   }
 
-  get priority(): 1 | 2 | 3 | 4 | 5 {
-    return this._priority;
+  get priority(): ImportanceLevel {
+    return this._metadata.importance;
   }
 
   get status():
@@ -200,11 +188,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     | "completed"
     | "cancelled"
     | "overdue" {
-    return this._status;
-  }
-
-  get completedAt(): Date | undefined {
-    return this._completedAt;
+    return this._lifecycle.status;
   }
 
   get reminderStatus(): TaskInstanceReminderStatus {
@@ -225,23 +209,23 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
 
   // Status check methods
   isPending(): boolean {
-    return this._status === "pending";
+    return this._lifecycle.status === "pending";
   }
 
   isInProgress(): boolean {
-    return this._status === "inProgress";
+    return this._lifecycle.status === "inProgress";
   }
 
   isCompleted(): boolean {
-    return this._status === "completed";
+    return this._lifecycle.status === "completed";
   }
 
   isCancelled(): boolean {
-    return this._status === "cancelled";
+    return this._lifecycle.status === "cancelled";
   }
 
   isOverdue(): boolean {
-    return this._status === "overdue";
+    return this._lifecycle.status === "overdue";
   }
 
   // Business methods
@@ -250,8 +234,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     if (!newTitle || newTitle.trim() === "") {
       throw new Error("Title cannot be empty");
     }
-    if (this._status !== "pending" && this._status !== "inProgress") {
-      throw new Error(`Cannot update title in status: ${this._status}`);
+    if (this._lifecycle.status !== "pending" && this._lifecycle.status !== "inProgress") {
+      throw new Error(`Cannot update title in status: ${this._lifecycle.status}`);
     }
     this._title = newTitle;
     this._lifecycle.updatedAt = new Date();
@@ -263,8 +247,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   updateDescription(newDescription: string): void {
-    if (this._status !== "pending" && this._status !== "inProgress") {
-      throw new Error(`Cannot update description in status: ${this._status}`);
+    if (this._lifecycle.status !== "pending" && this._lifecycle.status !== "inProgress") {
+      throw new Error(`Cannot update description in status: ${this._lifecycle.status}`);
     }
     this._description = newDescription;
     this._lifecycle.updatedAt = new Date();
@@ -275,11 +259,11 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     });
   }
 
-  updateConfig(
-    newTimeConfig: Partial<TaskInstanceTimeConfig>
-  ): void {
-    if (this._status === "completed" || this._status === "cancelled")
-      throw new Error("Cannot update time config for completed or cancelled tasks");
+  updateConfig(newTimeConfig: Partial<TaskInstanceTimeConfig>): void {
+    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled")
+      throw new Error(
+        "Cannot update time config for completed or cancelled tasks"
+      );
     if (!this._timeConfig.allowReschedule) {
       throw new Error("This task instance does not allow rescheduling");
     }
@@ -316,8 +300,10 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     enabled: boolean,
     alerts?: TaskReminderConfig["alerts"]
   ): void {
-    if (this._status === "completed" || this._status === "cancelled") {
-      throw new Error("Cannot update reminders for completed or cancelled tasks");
+    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled") {
+      throw new Error(
+        "Cannot update reminders for completed or cancelled tasks"
+      );
     }
 
     this._reminderStatus.enabled = enabled;
@@ -340,47 +326,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     });
   }
 
-  start(): void {
-    if (this._status !== "pending") {
-      throw new Error(`Cannot start task in status: ${this._status}`);
-    }
-
-    const now = new Date();
-    this._status = "inProgress";
-    this._actualStartTime = now;
-    this._lifecycle.startedAt = now;
-    this._lifecycle.updatedAt = now;
-
-    this._lifecycle.events.push({
-      type: "task_started",
-      timestamp: now,
-    });
-  }
-
-  pending(): void {
-    if (this._status !== "inProgress") {
-      throw new Error(`Cannot set task to pending in status: ${this._status}`);
-    }
-    const now = new Date();
-    this._status = "pending";
-    this._actualStartTime = undefined;
-    this._lifecycle.startedAt = undefined;
-    this._lifecycle.updatedAt = now;
-    this._lifecycle.events.push({
-      type: "task_rescheduled",
-      timestamp: now,
-    });
-  }
 
   complete(accountUuid: string): void {
-    if (this._status !== "inProgress" && this._status !== "pending") {
-      throw new Error(`Cannot complete task in status: ${this._status}`);
+    if (this._lifecycle.status !== "inProgress" && this._lifecycle.status !== "pending") {
+      throw new Error(`Cannot complete task in status: ${this._lifecycle.status}`);
     }
 
     const now = new Date();
-    this._status = "completed";
-    this._completedAt = now;
-    this._actualEndTime = now;
+    this._lifecycle.status = "completed";
     this._lifecycle.completedAt = now;
     this._lifecycle.updatedAt = now;
 
@@ -399,15 +352,6 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       this.addDomainEvent(event);
       console.log(`发布事件: ${event.eventType}`);
     }
-    
-    
-
-    // Calculate actual duration if start time exists
-    if (this._actualStartTime) {
-      this._metadata.actualDuration = Math.round(
-        (now.getTime() - this._actualStartTime.getTime()) / (1000 * 60)
-      );
-    }
 
     this._lifecycle.events.push({
       type: "task_completed",
@@ -419,12 +363,12 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   cancel(): void {
-    if (this._status === "completed") {
+    if (this._lifecycle.status === "completed") {
       throw new Error("Cannot cancel completed task");
     }
 
     const now = new Date();
-    this._status = "cancelled";
+    this._lifecycle.status = "cancelled";
     this._lifecycle.cancelledAt = now;
     this._lifecycle.updatedAt = now;
 
@@ -435,14 +379,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   markOverdue(): void {
-    if (this._status === "pending") {
-      this._status = "overdue";
+    if (this._lifecycle.status === "pending") {
+      this._lifecycle.status = "overdue";
       this._lifecycle.updatedAt = new Date();
     }
   }
 
   reschedule(newScheduledTime: Date, newEndTime?: Date): void {
-    if (this._status === "completed") {
+    if (this._lifecycle.status === "completed") {
       throw new Error("Cannot reschedule completed task");
     }
 
@@ -451,12 +395,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     }
 
     const oldTime = this._timeConfig.scheduledTime;
-    
+
     // 检查延期限制
     if (this._timeConfig.maxDelayDays) {
       const maxAllowedTime = addDays(oldTime, this._timeConfig.maxDelayDays);
       if (newScheduledTime.getTime() > maxAllowedTime.getTime()) {
-        throw new Error(`Cannot reschedule beyond ${this._timeConfig.maxDelayDays} days`);
+        throw new Error(
+          `Cannot reschedule beyond ${this._timeConfig.maxDelayDays} days`
+        );
       }
     }
 
@@ -464,32 +410,35 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     this._timeConfig = {
       ...this._timeConfig,
       scheduledTime: newScheduledTime,
-      endTime: newEndTime || this._timeConfig.endTime
+      endTime: newEndTime || this._timeConfig.endTime,
     };
-    
+
     // Reset overdue status if rescheduled
-    if (this._status === "overdue") {
-      this._status = "pending";
+    if (this._lifecycle.status === "overdue") {
+      this._lifecycle.status = "pending";
     }
 
     const now = new Date();
     this._lifecycle.updatedAt = now;
-    
+
     this._lifecycle.events.push({
       type: "task_rescheduled",
       timestamp: now,
-      details: { 
-        oldTime: oldTime.toISOString(), 
+      details: {
+        oldTime: oldTime.toISOString(),
         newTime: newScheduledTime.toISOString(),
         oldEndTime: this._timeConfig.endTime?.toISOString(),
-        newEndTime: newEndTime?.toISOString()
-      }
+        newEndTime: newEndTime?.toISOString(),
+      },
     });
 
     // 重新计算提醒时间
-    this._reminderStatus.alerts.forEach(alert => {
+    this._reminderStatus.alerts.forEach((alert) => {
       if (alert.status === "pending") {
-        alert.scheduledTime = this.calculateReminderTime(alert.alertConfig, newScheduledTime);
+        alert.scheduledTime = this.calculateReminderTime(
+          alert.alertConfig,
+          newScheduledTime
+        );
       }
     });
   }
@@ -514,11 +463,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     }
   }
 
-  snoozeReminder(
-    alertId: string,
-    snoozeUntil: Date,
-    reason?: string
-  ): void {
+  snoozeReminder(alertId: string, snoozeUntil: Date, reason?: string): void {
     const alert = this._reminderStatus.alerts.find((a) => a.uuid === alertId);
     if (alert && (alert.status === "triggered" || alert.status === "snoozed")) {
       const now = new Date();
@@ -628,14 +573,14 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   }
 
   undoComplete(accountUuid: string): void {
-    if (this._status !== "completed") {
-      throw new Error(`Cannot undo completion for task in status: ${this._status}`);
+    if (this._lifecycle.status !== "completed") {
+      throw new Error(
+        `Cannot undo completion for task in status: ${this._lifecycle.status}`
+      );
     }
 
     const now = new Date();
-    this._status = "inProgress";
-    this._completedAt = undefined;
-    this._actualEndTime = undefined;
+    this._lifecycle.status = "inProgress";
     this._metadata.actualDuration = undefined;
     this._lifecycle.completedAt = undefined;
     this._lifecycle.updatedAt = now;
@@ -658,24 +603,22 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
           taskId: this._uuid,
           keyResultLinks: this._keyResultLinks,
           undoAt: new Date(),
-        }
-      }
+        },
+      };
       this.addDomainEvent(event);
     }
   }
 
   // ✅ 添加重置为特定状态的方法
   resetToStatus(status: "pending" | "inProgress", reason?: string): void {
-    if (this._status === "completed" || this._status === "cancelled") {
+    if (this._lifecycle.status === "completed" || this._lifecycle.status === "cancelled") {
       const now = new Date();
-      const previousStatus = this._status;
-      
-      this._status = status;
+      const previousStatus = this._lifecycle.status;
+
+      this._lifecycle.status = status;
       this._lifecycle.updatedAt = now;
-      
+
       if (status === "pending") {
-        this._completedAt = undefined;
-        this._actualEndTime = undefined;
         this._metadata.actualDuration = undefined;
         this._lifecycle.completedAt = undefined;
       }
@@ -686,11 +629,11 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         details: {
           previousStatus,
           newStatus: status,
-          reason
+          reason,
         },
       });
     } else {
-      throw new Error(`Cannot reset task from status: ${this._status}`);
+      throw new Error(`Cannot reset task from status: ${this._lifecycle.status}`);
     }
   }
   // Factory method for creating from template
@@ -705,43 +648,41 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         category: string;
         tags: string[];
         estimatedDuration?: number;
-        priority?: 1 | 2 | 3 | 4 | 5;
-        difficulty?: 1 | 2 | 3 | 4 | 5;
+        importance: ImportanceLevel;
+        urgency: UrgencyLevel;
         location?: string;
       };
       keyResultLinks?: KeyResultLink[];
       reminderConfig: TaskReminderConfig;
-      schedulingPolicy?: ITaskTemplate['schedulingPolicy'];
+      schedulingPolicy?: ITaskTemplate["schedulingPolicy"];
     },
     scheduledTime: Date,
     endTime?: Date
   ): TaskInstance {
-    return new TaskInstance(
-      instanceId,
-      template.uuid,
-      template.title,
+    return new TaskInstance({
+      uuid: instanceId,
+      templateUuid: template.uuid,
+      title: template.title,
       scheduledTime,
-      (template.metadata.priority || 3) as 1 | 2 | 3 | 4 | 5,
-      {
-        description: template.description,
-        keyResultLinks: template.keyResultLinks,
-        category: template.metadata.category,
-        tags: template.metadata.tags,
+      importance: template.metadata.importance || ImportanceLevel.Moderate,
+      urgency: template.metadata.urgency || UrgencyLevel.Medium,
+      description: template.description,
+      keyResultLinks: template.keyResultLinks,
+      category: template.metadata.category,
+      tags: template.metadata.tags,
+      estimatedDuration: template.metadata.estimatedDuration,
+      location: template.metadata.location,
+      reminderAlerts: template.reminderConfig.alerts,
+      timeConfig: {
+        type: template.timeConfig.type,
+        scheduledTime,
+        endTime: endTime || template.timeConfig.baseTime.end,
         estimatedDuration: template.metadata.estimatedDuration,
-        location: template.metadata.location,
-        difficulty: template.metadata.difficulty,
-        reminderAlerts: template.reminderConfig.alerts,
-        timeConfig: {
-          type: template.timeConfig.type,
-          scheduledTime,
-          endTime: endTime || template.timeConfig.baseTime.end,
-          estimatedDuration: template.metadata.estimatedDuration,
-          timezone: template.timeConfig.timezone,
-          allowReschedule: template.schedulingPolicy?.allowReschedule ?? true,
-          maxDelayDays: template.schedulingPolicy?.maxDelayDays || 3
-        }
-      }
-    );
+        timezone: template.timeConfig.timezone,
+        allowReschedule: template.schedulingPolicy?.allowReschedule ?? true,
+        maxDelayDays: template.schedulingPolicy?.maxDelayDays || 3,
+      },
+    });
   }
 
   /**
@@ -750,46 +691,32 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
    */
   static fromCompleteData(data: any): TaskInstance {
     // 创建基础实例
-    const instance = new TaskInstance(
-      data.uuid || data._id,
-      data.templateId || data._templateUuid,
-      data.title || data._title,
-      data.scheduledTime || data._timeConfig?.scheduledTime || data.timeConfig?.scheduledTime,
-      data.priority || data._priority || 3,
-      {
-        description: data.description || data._description,
-        keyResultLinks: data.keyResultLinks || data._keyResultLinks,
-        category: data.metadata?.category || data._metadata?.category,
-        tags: data.metadata?.tags || data._metadata?.tags,
-        estimatedDuration: data.metadata?.estimatedDuration || data._metadata?.estimatedDuration,
-        location: data.metadata?.location || data._metadata?.location,
-        difficulty: data.metadata?.difficulty || data._metadata?.difficulty,
-        timeConfig: data.timeConfig || data._timeConfig,
-        reminderAlerts: data.reminderStatus?.alerts?.map((alert: any) => alert.alertConfig) || 
-                       data._reminderStatus?.alerts?.map((alert: any) => alert.alertConfig),
-      }
-    );
-
-    // 恢复状态
-    if (data.status !== undefined || data._status !== undefined) {
-      instance._status = data.status || data._status || "pending";
-    }
-
-    // 恢复时间信息
-    if (data.completedAt || data._completedAt) {
-      instance._completedAt = ensureDate(data.completedAt || data._completedAt);
-    }
-    if (data.actualStartTime || data._actualStartTime) {
-      instance._actualStartTime = ensureDate(data.actualStartTime || data._actualStartTime);
-    }
-    if (data.actualEndTime || data._actualEndTime) {
-      instance._actualEndTime = ensureDate(data.actualEndTime || data._actualEndTime);
-    }
-
+    const instance = new TaskInstance({
+      uuid: data.uuid || data._id,
+      templateUuid: data.templateId || data._templateUuid,
+      title: data.title || data._title,
+      scheduledTime: data.scheduledTime ||
+        data._timeConfig?.scheduledTime ||
+        data.timeConfig?.scheduledTime,
+      importance: data.metadata?.importance || data._metadata?.importance || ImportanceLevel.Moderate,
+      urgency: data.metadata?.urgency || data._metadata?.urgency || UrgencyLevel.Medium,
+      description: data.description || data._description,
+      keyResultLinks: data.keyResultLinks || data._keyResultLinks,
+      category: data.metadata?.category || data._metadata?.category,
+      tags: data.metadata?.tags || data._metadata?.tags,
+      estimatedDuration:
+        data.metadata?.estimatedDuration || data._metadata?.estimatedDuration,
+      location: data.metadata?.location || data._metadata?.location,
+      timeConfig: data.timeConfig || data._timeConfig,
+      reminderAlerts:
+        data.reminderStatus?.alerts?.map((alert: any) => alert.alertConfig) ||
+        data._reminderStatus?.alerts?.map((alert: any) => alert.alertConfig),
+    });
     // 恢复完整的生命周期状态
     if (data.lifecycle || data._lifecycle) {
       const lifecycle = data.lifecycle || data._lifecycle;
       instance._lifecycle = {
+        status: lifecycle.status || instance._lifecycle.status || "pending",
         createdAt: lifecycle.createdAt || instance._lifecycle.createdAt,
         updatedAt: lifecycle.updatedAt || instance._lifecycle.updatedAt,
         startedAt: lifecycle.startedAt || undefined,
@@ -813,17 +740,26 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       const reminderStatus = data.reminderStatus || data._reminderStatus;
       instance._reminderStatus = {
         enabled: reminderStatus.enabled ?? true,
-        alerts: reminderStatus.alerts?.map((alert: any) => ({
-          uuid: alert.uuid,
-          alertConfig: alert.alertConfig,
-          status: alert.status || "pending",
-          scheduledTime: alert.scheduledTime ? ensureDate(alert.scheduledTime) : new Date(),
-          triggeredAt: alert.triggeredAt ? ensureDate(alert.triggeredAt) : undefined,
-          dismissedAt: alert.dismissedAt ? ensureDate(alert.dismissedAt) : undefined,
-          snoozeHistory: alert.snoozeHistory || [],
-        })) || [],
+        alerts:
+          reminderStatus.alerts?.map((alert: any) => ({
+            uuid: alert.uuid,
+            alertConfig: alert.alertConfig,
+            status: alert.status || "pending",
+            scheduledTime: alert.scheduledTime
+              ? ensureDate(alert.scheduledTime)
+              : new Date(),
+            triggeredAt: alert.triggeredAt
+              ? ensureDate(alert.triggeredAt)
+              : undefined,
+            dismissedAt: alert.dismissedAt
+              ? ensureDate(alert.dismissedAt)
+              : undefined,
+            snoozeHistory: alert.snoozeHistory || [],
+          })) || [],
         globalSnoozeCount: reminderStatus.globalSnoozeCount || 0,
-        lastTriggeredAt: reminderStatus.lastTriggeredAt ? ensureDate(reminderStatus.lastTriggeredAt) : undefined,
+        lastTriggeredAt: reminderStatus.lastTriggeredAt
+          ? ensureDate(reminderStatus.lastTriggeredAt)
+          : undefined,
       };
     }
 
@@ -837,8 +773,12 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       const timeConfig = data.timeConfig || data._timeConfig;
       instance._timeConfig = {
         type: timeConfig.type || "timed",
-        scheduledTime: timeConfig.scheduledTime ? ensureDate(timeConfig.scheduledTime) : instance._timeConfig.scheduledTime,
-        endTime: timeConfig.endTime ? ensureDate(timeConfig.endTime) : undefined,
+        scheduledTime: timeConfig.scheduledTime
+          ? ensureDate(timeConfig.scheduledTime)
+          : instance._timeConfig.scheduledTime,
+        endTime: timeConfig.endTime
+          ? ensureDate(timeConfig.endTime)
+          : undefined,
         estimatedDuration: timeConfig.estimatedDuration,
         timezone: timeConfig.timezone || "Asia/Shanghai",
         allowReschedule: timeConfig.allowReschedule ?? true,
@@ -849,12 +789,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
     return instance;
   }
 
-  /**
-   * 克隆实例（用于创建副本）
-   */
-  clone(): TaskInstance {
-    return TaskInstance.fromCompleteData(this.toDTO());
-  }
+  // ============= 数据辅助方法 =============
 
   /**
    * 转换为数据传输对象
@@ -874,15 +809,9 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         allowReschedule: this._timeConfig.allowReschedule ? 1 : 0,
         maxDelayDays: this._timeConfig.maxDelayDays,
       },
-      actualStartTime: this._actualStartTime?.getTime(),
-      actualEndTime: this._actualEndTime?.getTime(),
-      keyResultLinks: this._keyResultLinks,
-      priority: this._priority,
-      status: this._status,
-      completedAt: this._completedAt?.getTime(),
       reminderStatus: {
         enabled: this._reminderStatus.enabled ? 1 : 0,
-        alerts: this._reminderStatus.alerts.map(alert => ({
+        alerts: this._reminderStatus.alerts.map((alert) => ({
           uuid: alert.uuid,
           alertConfig: {
             uuid: alert.alertConfig.uuid,
@@ -898,7 +827,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
           scheduledTime: alert.scheduledTime.getTime(),
           triggeredAt: alert.triggeredAt?.getTime(),
           dismissedAt: alert.dismissedAt?.getTime(),
-          snoozeHistory: alert.snoozeHistory.map(snooze => ({
+          snoozeHistory: alert.snoozeHistory.map((snooze) => ({
             snoozedAt: snooze.snoozedAt.getTime(),
             snoozeUntil: snooze.snoozeUntil.getTime(),
             reason: snooze.reason,
@@ -908,12 +837,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         lastTriggeredAt: this._reminderStatus.lastTriggeredAt?.getTime(),
       },
       lifecycle: {
+        status: this._lifecycle.status,
         createdAt: this._lifecycle.createdAt.getTime(),
         updatedAt: this._lifecycle.updatedAt.getTime(),
         startedAt: this._lifecycle.startedAt?.getTime(),
         completedAt: this._lifecycle.completedAt?.getTime(),
         cancelledAt: this._lifecycle.cancelledAt?.getTime(),
-        events: this._lifecycle.events.map(event => ({
+        events: this._lifecycle.events.map((event) => ({
           type: event.type,
           timestamp: event.timestamp.getTime(),
           alertId: event.alertId,
@@ -923,6 +853,106 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       metadata: this._metadata,
       version: this._version,
     };
+  }
+
+  /**
+   * 从 DTO 创建 TaskInstance 实例（用于反序列化）
+   * 从序列化数据、持久化数据或IPC传输的数据恢复领域对象
+   */
+  static fromDTO(data: ITaskInstanceDTO): TaskInstance {
+    const instance = new TaskInstance({
+      uuid: data.uuid,
+      templateUuid: data.templateId,
+      title: data.title,
+      scheduledTime: new Date(data.timeConfig.scheduledTime),
+      importance: data.metadata.importance,
+      urgency: data.metadata.urgency,
+      description: data.description,
+      keyResultLinks: data.keyResultLinks,
+      category: data.metadata.category,
+      tags: data.metadata.tags,
+      estimatedDuration: data.metadata.estimatedDuration,
+      location: data.metadata.location,
+      timeConfig: {
+        type: data.timeConfig.type,
+        scheduledTime: new Date(data.timeConfig.scheduledTime),
+        endTime: data.timeConfig.endTime ? new Date(data.timeConfig.endTime) : undefined,
+        estimatedDuration: data.timeConfig.estimatedDuration,
+        timezone: data.timeConfig.timezone,
+        allowReschedule: data.timeConfig.allowReschedule === 1,
+        maxDelayDays: data.timeConfig.maxDelayDays,
+      },
+      reminderAlerts: data.reminderStatus.alerts.map(alert => ({
+        uuid: alert.alertConfig.uuid,
+        timing: {
+          type: alert.alertConfig.timing.type,
+          minutesBefore: alert.alertConfig.timing.minutesBefore,
+          absoluteTime: alert.alertConfig.timing.absoluteTime ? new Date(alert.alertConfig.timing.absoluteTime) : undefined,
+        },
+        type: alert.alertConfig.type,
+        message: alert.alertConfig.message,
+      })),
+    });
+
+    // 恢复生命周期状态
+    instance._lifecycle = {
+      status: data.lifecycle.status,
+      createdAt: new Date(data.lifecycle.createdAt),
+      updatedAt: new Date(data.lifecycle.updatedAt),
+      startedAt: data.lifecycle.startedAt ? new Date(data.lifecycle.startedAt) : undefined,
+      completedAt: data.lifecycle.completedAt ? new Date(data.lifecycle.completedAt) : undefined,
+      cancelledAt: data.lifecycle.cancelledAt ? new Date(data.lifecycle.cancelledAt) : undefined,
+      events: data.lifecycle.events.map(event => ({
+        type: event.type,
+        timestamp: new Date(event.timestamp),
+        alertId: event.alertId,
+        details: event.details,
+      })),
+    };
+
+    // 恢复提醒状态
+    instance._reminderStatus = {
+      enabled: data.reminderStatus.enabled === 1,
+      alerts: data.reminderStatus.alerts.map(alert => ({
+        uuid: alert.uuid,
+        alertConfig: {
+          uuid: alert.alertConfig.uuid,
+          timing: {
+            type: alert.alertConfig.timing.type,
+            minutesBefore: alert.alertConfig.timing.minutesBefore,
+            absoluteTime: alert.alertConfig.timing.absoluteTime ? new Date(alert.alertConfig.timing.absoluteTime) : undefined,
+          },
+          type: alert.alertConfig.type,
+          message: alert.alertConfig.message,
+        },
+        status: alert.status,
+        scheduledTime: new Date(alert.scheduledTime),
+        triggeredAt: alert.triggeredAt ? new Date(alert.triggeredAt) : undefined,
+        dismissedAt: alert.dismissedAt ? new Date(alert.dismissedAt) : undefined,
+        snoozeHistory: alert.snoozeHistory.map(snooze => ({
+          snoozedAt: new Date(snooze.snoozedAt),
+          snoozeUntil: new Date(snooze.snoozeUntil),
+          reason: snooze.reason,
+        })),
+      })),
+      globalSnoozeCount: data.reminderStatus.globalSnoozeCount,
+      lastTriggeredAt: data.reminderStatus.lastTriggeredAt ? new Date(data.reminderStatus.lastTriggeredAt) : undefined,
+    };
+
+    // 恢复元数据
+    instance._metadata = data.metadata;
+
+    // 恢复版本号
+    instance._version = data.version;
+
+    return instance;
+  }
+
+  /**
+   * 克隆实例（用于创建副本）
+   */
+  clone(): TaskInstance {
+    return TaskInstance.fromDTO(this.toDTO());
   }
 
   static isTaskInstance(obj: any): obj is TaskInstance {

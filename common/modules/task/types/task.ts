@@ -1,3 +1,5 @@
+import { ImportanceLevel } from "@common/shared/types/importance";
+import { UrgencyLevel } from "@common/shared/types/urgency";
 
 /**
  * 关键结果关联
@@ -87,13 +89,13 @@ export type TaskReminderConfigDTO = {
  * 提醒项类型
  * 从TaskReminderConfig中提取单个提醒项的类型
  */
-export type ReminderAlert = TaskReminderConfig['alerts'][number];
+export type ReminderAlert = TaskReminderConfig["alerts"][number];
 
 /**
  * 提醒时机配置类型
  * 从ReminderAlert中提取时机配置的类型
  */
-export type ReminderTiming = ReminderAlert['timing'];
+export type ReminderTiming = ReminderAlert["timing"];
 
 /**
  * 重复规则 - 更灵活的重复模式
@@ -236,8 +238,8 @@ export interface ITaskTemplate {
     category: string;
     tags: string[];
     estimatedDuration?: number;
-    priority?: 1 | 2 | 3 | 4 | 5;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
     location?: string;
   };
   /** 生命周期 */
@@ -299,8 +301,8 @@ export interface ITaskTemplateDTO {
     category: string;
     tags: string[];
     estimatedDuration?: number;
-    priority?: 1 | 2 | 3 | 4 | 5;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
     location?: string;
   };
   /** 生命周期 */
@@ -337,7 +339,7 @@ export type TaskInstanceReminderStatus = {
     /** 提醒ID */
     uuid: string;
     /** 提醒配置 */
-    alertConfig: TaskReminderConfig['alerts'][number];
+    alertConfig: TaskReminderConfig["alerts"][number];
     /** 提醒状态 */
     status: "pending" | "triggered" | "dismissed" | "snoozed";
     /** 计划触发时间 */
@@ -370,7 +372,7 @@ export type TaskInstanceReminderStatusDTO = {
     /** 提醒ID */
     uuid: string;
     /** 提醒配置 */
-    alertConfig: TaskReminderConfigDTO['alerts'][number];
+    alertConfig: TaskReminderConfigDTO["alerts"][number];
     /** 提醒状态 */
     status: "pending" | "triggered" | "dismissed" | "snoozed";
     /** 计划触发时间 */
@@ -397,7 +399,19 @@ export type TaskInstanceReminderStatusDTO = {
  * 记录任务实例的重要事件和状态变更
  */
 export type TaskInstanceLifecycleEvent = {
-  type: "reminder_scheduled" | "reminder_triggered" | "reminder_dismissed" | "reminder_snoozed" | "reminder_cancelled" | "task_started" | "task_completed" | "task_undo" | "task_cancelled" | "task_rescheduled" | "task_overdue" | "task_title_updated";
+  type:
+    | "reminder_scheduled"
+    | "reminder_triggered"
+    | "reminder_dismissed"
+    | "reminder_snoozed"
+    | "reminder_cancelled"
+    | "task_started"
+    | "task_completed"
+    | "task_undo"
+    | "task_cancelled"
+    | "task_rescheduled"
+    | "task_overdue"
+    | "task_title_updated";
   timestamp: Date;
   alertId?: string;
   details?: Record<string, any>;
@@ -407,7 +421,19 @@ export type TaskInstanceLifecycleEvent = {
  * 任务实例生命周期事件 DTO
  */
 export type TaskInstanceLifecycleEventDTO = {
-  type: "reminder_scheduled" | "reminder_triggered" | "reminder_dismissed" | "reminder_snoozed" | "reminder_cancelled" | "task_started" | "task_completed" | "task_undo" | "task_cancelled" | "task_rescheduled" | "task_overdue" | "task_title_updated";
+  type:
+    | "reminder_scheduled"
+    | "reminder_triggered"
+    | "reminder_dismissed"
+    | "reminder_snoozed"
+    | "reminder_cancelled"
+    | "task_started"
+    | "task_completed"
+    | "task_undo"
+    | "task_cancelled"
+    | "task_rescheduled"
+    | "task_overdue"
+    | "task_title_updated";
   timestamp: number;
   alertId?: string;
   details?: Record<string, any>;
@@ -462,29 +488,18 @@ export interface ITaskInstance {
   /** 任务实例ID */
   uuid: string;
   /** 关联的任务模板ID */
-  templateId: string;
+  templateUuid: string;
   /** 任务标题 */
   title: string;
   /** 任务描述 */
   description?: string;
   /** 时间配置 */
   timeConfig: TaskInstanceTimeConfig;
-  /** 实际开始时间 */
-  actualStartTime?: Date;
-  /** 实际结束时间 */
-  actualEndTime?: Date;
-  /** 任务关联的关键结果 */
-  keyResultLinks?: KeyResultLink[];
-  /** 任务优先级 */
-  priority: 1 | 2 | 3 | 4 | 5;
-  /** 任务状态 */
-  status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
-  /** 完成时间 */
-  completedAt?: Date;
   /** 提醒状态 */
   reminderStatus: TaskInstanceReminderStatus;
   /** 生命周期 */
   lifecycle: {
+    status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
     createdAt: Date;
     updatedAt: Date;
     startedAt?: Date;
@@ -500,8 +515,11 @@ export interface ITaskInstance {
     category: string;
     tags: string[];
     location?: string;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    urgency: UrgencyLevel;
+    importance: ImportanceLevel;
   };
+  /** 任务关联的关键结果 */
+  keyResultLinks?: KeyResultLink[];
   /** 版本号 */
   version: number;
 }
@@ -530,22 +548,11 @@ export interface ITaskInstanceDTO {
   description?: string;
   /** 时间配置 */
   timeConfig: TaskInstanceTimeConfigDTO;
-  /** 实际开始时间 */
-  actualStartTime?: number;
-  /** 实际结束时间 */
-  actualEndTime?: number;
-  /** 任务关联的关键结果 */
-  keyResultLinks?: KeyResultLink[];
-  /** 任务优先级 */
-  priority: 1 | 2 | 3 | 4 | 5;
-  /** 任务状态 */
-  status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
-  /** 完成时间 */
-  completedAt?: number;
-  /** 提醒状态 */
   reminderStatus: TaskInstanceReminderStatusDTO;
   /** 生命周期 */
   lifecycle: {
+    /** 任务状态 */
+    status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue";
     createdAt: number;
     updatedAt: number;
     startedAt?: number;
@@ -561,8 +568,10 @@ export interface ITaskInstanceDTO {
     category: string;
     tags: string[];
     location?: string;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    urgency: UrgencyLevel;
+    importance: ImportanceLevel;
   };
+  keyResultLinks?: KeyResultLink[];
   /** 版本号 */
   version: number;
 }
@@ -589,15 +598,14 @@ export interface ITaskMetaTemplate {
     category: string;
     tags: string[];
     estimatedDuration?: number;
-    priority?: 1 | 2 | 3 | 4 | 5;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    importance?: ImportanceLevel;
+    urgency?: UrgencyLevel;
     location?: string;
   };
   /** 生命周期 */
   lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: "active" | "archived";
   };
 }
 
@@ -623,6 +631,10 @@ export interface ITaskMetaTemplateDTO {
   description?: string;
   /** 元模板分类 */
   category: string;
+  /** 元模板图标 */
+  icon?: string;
+  /** 元模板颜色 */
+  color?: string;
   /** 默认时间配置 */
   defaultTimeConfig: TaskTimeConfigDTO;
   /** 默认提醒配置 */
@@ -632,15 +644,14 @@ export interface ITaskMetaTemplateDTO {
     category: string;
     tags: string[];
     estimatedDuration?: number;
-    priority?: 1 | 2 | 3 | 4 | 5;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    importance?: ImportanceLevel;
+    urgency?: UrgencyLevel;
     location?: string;
   };
   /** 生命周期 */
   lifecycle: {
     createdAt: number;
     updatedAt: number;
-    status: "active" | "archived";
   };
 }
 

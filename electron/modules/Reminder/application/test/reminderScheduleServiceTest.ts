@@ -1,5 +1,5 @@
 import { reminderScheduleService } from "../services/reminderScheduleService";
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 
 function test() {
     const reminderInstance = reminderScheduleService.createReminderScheduleByCron(

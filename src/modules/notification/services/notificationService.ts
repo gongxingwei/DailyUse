@@ -2,7 +2,7 @@ import type { NotificationWindowOptions } from "../types/notification";
 import type { TResponse } from "@/shared/types/response";
 
 import { serializeForIpc } from "@/shared/utils/ipcSerialization";
-import { ImportanceLevel } from "@/shared/types/importance";
+import { ImportanceLevel } from "@common/shared/types/importance";
 import { generateUUID } from "@/shared/utils/uuid";
 export class NotificationService {
 
