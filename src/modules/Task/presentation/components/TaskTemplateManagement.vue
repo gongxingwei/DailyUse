@@ -149,12 +149,7 @@
         <!-- 消息提示框 -->
         <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right"
             variant="elevated" :multi-line="snackbar.message.length > 50">
-            <div class="d-flex align-center">
-                <span class="flex-1-1">{{ snackbar.message }}</span>
-                <v-btn icon variant="text" size="small" color="white" @click="closeSnackbar">
-                    <v-icon>mdi-close</v-icon>
-                </v-btn>
-            </div>
+            {{ snackbar.message }}
         </v-snackbar>
     </div>
 </template>
@@ -163,14 +158,13 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import TaskTemplateCard from './TaskTemplateCard.vue';
-import TaskTemplateDialog from './TaskTemplateDialog.vue';
-import TemplateSelectionDialog from './TemplateSelectionDialog.vue';
+import TaskTemplateDialog from './dialogs/TaskTemplateDialog.vue';
+import TemplateSelectionDialog from './dialogs/TemplateSelectionDialog.vue';
 import { useTaskService } from '../composables/useTaskService';
 import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 
 const {
     snackbar,
-    closeSnackbar,
     showEditTaskTemplateDialog,
     showTemplateSelectionDialog,
     isEditMode,

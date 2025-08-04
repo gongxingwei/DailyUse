@@ -6,6 +6,34 @@
     </v-card-title>
     <v-card-text>
       <v-row>
+        
+
+        <!-- 重要性 -->
+        <v-col cols="12" md="6">
+          <v-select
+            v-model="importance"
+            label="重要性"
+            :items="importanceOptions"
+            item-title="title"
+            item-value="value"
+            variant="outlined"
+            required
+          />
+        </v-col>
+
+        <!-- 紧急性 -->
+        <v-col cols="12" md="6">
+          <v-select
+            v-model="urgency"
+            label="紧急性"
+            :items="urgencyOptions"
+            item-title="title"
+            item-value="value"
+            variant="outlined"
+            required
+          />
+        </v-col>
+        
         <!-- 任务分类 -->
         <v-col cols="12" md="6">
           <v-select
@@ -17,28 +45,6 @@
           />
         </v-col>
 
-        <!-- 任务难度 -->
-        <v-col cols="12" md="6">
-          <v-select
-            v-model="difficulty"
-            label="任务难度"
-            :items="difficultyOptions"
-            variant="outlined"
-            required
-          />
-        </v-col>
-
-        <!-- 任务优先级 -->
-         <v-col cols="12" md="6">
-          <v-select
-            v-model="priority"
-            label="任务优先级"
-            :items="priorityOptions"
-            variant="outlined"
-            required
-            />
-         </v-col>
-
         <!-- 预估时长 -->
         <v-col cols="12" md="6">
           <v-text-field 
@@ -49,16 +55,6 @@
             min="1" 
             max="1440"
             :rules="durationRules"
-          />
-        </v-col>
-
-        <!-- 任务地点 -->
-        <v-col cols="12" md="6">
-          <v-text-field
-            v-model="location"
-            label="任务地点（可选）"
-            variant="outlined"
-            prepend-inner-icon="mdi-map-marker-outline"
           />
         </v-col>
 
@@ -85,6 +81,9 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
+import { ImportanceLevel } from '@common/shared/types/importance';
+import { UrgencyLevel } from '@common/shared/types/urgency';
+
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -110,22 +109,25 @@ const categoryOptions = [
   { title: '其他', value: 'general' }
 ];
 
-// 难度选项
-const difficultyOptions = [
-  { title: '⭐ 很简单', value: 1 },
-  { title: '⭐⭐ 简单', value: 2 },
-  { title: '⭐⭐⭐ 一般', value: 3 },
-  { title: '⭐⭐⭐⭐ 困难', value: 4 },
-  { title: '⭐⭐⭐⭐⭐ 很困难', value: 5 }
+
+// 重要性选项
+const importanceOptions = [
+  { title: '极其重要', value: ImportanceLevel.Vital, subtitle: '对生活/工作有重大影响，如健康检查、家人重要日子' },
+  { title: '非常重要', value: ImportanceLevel.Important, subtitle: '对目标实现很关键，如职业发展相关任务' },
+  { title: '中等重要', value: ImportanceLevel.Moderate, subtitle: '值得做但不是关键，如技能提升、社交活动' },
+  { title: '不太重要', value: ImportanceLevel.Minor, subtitle: '可做可不做，如日常琐事' },
+  { title: '无关紧要', value: ImportanceLevel.Trivial, subtitle: '纯粹消遣，如游戏娱乐' },
 ];
 
-const priorityOptions = [
-  { title: '1', value: 1 },
-  { title: '2', value: 2 },
-  { title: '3', value: 3 },
-  { title: '4', value: 4 },
-  { title: '5', value: 5 }
-]
+
+// 紧急性选项
+const urgencyOptions = [
+  { title: '非常紧急', value: UrgencyLevel.Critical, subtitle: '需要立即处理，如药物提醒、紧急会议' },
+  { title: '高度紧急', value: UrgencyLevel.High, subtitle: '今天必须处理，如当天截止的工作任务' },
+  { title: '中等紧急', value: UrgencyLevel.Medium, subtitle: '近期需要处理，如本周需要完成的报告' },
+  { title: '低度紧急', value: UrgencyLevel.Low, subtitle: '可以稍后处理，如长期学习计划' },
+  { title: '无期限', value: UrgencyLevel.None, subtitle: '没有具体时间要求，如兴趣学习、休闲活动' },
+];
 
 // 标签建议
 const tagSuggestions = [
@@ -151,25 +153,26 @@ const category = computed({
   }
 });
 
-const difficulty = computed({
-  get: () => props.modelValue.metadata.difficulty,
-  set: (value: number) => {
+
+const importance = computed({
+  get: () => props.modelValue.metadata.importance,
+  set: (value: string) => {
     const updatedTemplate = props.modelValue.clone();
     updatedTemplate.updateMetadata({
       ...updatedTemplate.metadata,
-      difficulty: value as 1 | 2 | 3 | 4 | 5 | undefined
+      importance: value as ImportanceLevel
     });
     emit('update:modelValue', updatedTemplate);
   }
 });
 
-const priority = computed({
-  get: () => props.modelValue.metadata.priority,
-  set: (value: number) => {
+const urgency = computed({
+  get: () => props.modelValue.metadata.urgency,
+  set: (value: string) => {
     const updatedTemplate = props.modelValue.clone();
     updatedTemplate.updateMetadata({
       ...updatedTemplate.metadata,
-      priority: value as 1 | 2 | 3 | 4 | 5 | undefined
+      urgency: value as UrgencyLevel
     });
     emit('update:modelValue', updatedTemplate);
   }
@@ -187,17 +190,6 @@ const estimatedDuration = computed({
   }
 });
 
-const location = computed({
-  get: () => props.modelValue.metadata.location,
-  set: (value: string) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      location: value
-    });
-    emit('update:modelValue', updatedTemplate);
-  }
-});
 
 const tags = computed({
   get: () => props.modelValue.metadata.tags,

@@ -1,4 +1,4 @@
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 import { reminderIpcClient } from "../../infrastructure/ipc/reminderIpcClient";
 import { useReminderStore } from "../../presentation/stores/reminderStore";
 import { ReminderTemplate } from "../../domain/entities/reminderTemplate";

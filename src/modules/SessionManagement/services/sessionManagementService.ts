@@ -1,6 +1,6 @@
 import { UserSession, SessionStatus, SessionData } from "../domain/types";
 import { ISessionRepository } from "../domain/repositories/sessionRepository";
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 import { addDays, isBefore } from "date-fns";
 /**
  * 会话管理服务

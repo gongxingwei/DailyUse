@@ -10,7 +10,7 @@ export interface AccountRegisteredEventPayload {
   email?: string;
   phone?: string;
   accountType: string;
-  userId: string; // 关联的 User 实体 ID
+  userUuid: string; // 关联的 User 实体 ID
   userProfile: {
     firstName: string;
     lastName: string;

@@ -33,7 +33,7 @@
                     v-for="metaTemplate in metaTemplates" 
                     :key="metaTemplate.uuid" 
                     class="template-type-card"
-                    :class="{ 'selected': selectedMetaTemplateId === metaTemplate.uuid }" 
+                    :class="{ 'selected': selectedmetaTemplateUuid === metaTemplate.uuid }" 
                     elevation="2" 
                     hover
                     @click="selectMetaTemplate(metaTemplate.uuid)"
@@ -73,7 +73,7 @@
                 <v-btn 
                     color="primary" 
                     variant="elevated" 
-                    :disabled="!selectedMetaTemplateId" 
+                    :disabled="!selectedmetaTemplateUuid" 
                     @click="confirmSelection"
                 >
                     继续创建
@@ -86,6 +86,8 @@
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
 import { TaskMetaTemplate } from '@/modules/Task/domain/aggregates/taskMetaTemplate';
+import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
+
 
 interface Props {
     visible: boolean;
@@ -99,9 +101,10 @@ interface Emits {
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
+const taskStore = useTaskStore();
 
 const metaTemplates = ref<TaskMetaTemplate[]>([]);
-const selectedMetaTemplateId = ref<string>('');
+const selectedmetaTemplateUuid = ref<string>('');
 const loading = ref(false);
 
 onMounted(async () => {
@@ -111,12 +114,8 @@ onMounted(async () => {
 const loadMetaTemplates = async () => {
     try {
         loading.value = true;
-        // 从主进程获取元模板，而不是使用本地初始化
-        const { getTaskDomainApplicationService } = await import('../../application/services/taskDomainApplicationService');
-        const taskService = getTaskDomainApplicationService();
-        const result = await taskService.getAllMetaTemplates();
-        // 转换为 TaskMetaTemplate 实例
-        metaTemplates.value = result.map(template => TaskMetaTemplate.fromCompleteData(template));
+        const metaTemplate = taskStore.getAllTaskMetaTemplates;
+        metaTemplates.value = metaTemplate;
     } catch (error) {
         console.error('获取元模板失败:', error);
         metaTemplates.value = [];
@@ -125,13 +124,13 @@ const loadMetaTemplates = async () => {
     }
 };
 
-const selectMetaTemplate = (metaTemplateId: string) => {
-    selectedMetaTemplateId.value = metaTemplateId;
+const selectMetaTemplate = (metaTemplateUuid: string) => {
+    selectedmetaTemplateUuid.value = metaTemplateUuid;
 };
 
 const confirmSelection = () => {
-    if (selectedMetaTemplateId.value) {
-        emit('select', selectedMetaTemplateId.value);
+    if (selectedmetaTemplateUuid.value) {
+        emit('select', selectedmetaTemplateUuid.value);
     }
 };
 
@@ -162,7 +161,7 @@ const getMetaTemplateIcon = (category: string): string => {
 // 重置选择当对话框关闭时
 watch(() => props.visible, (newVal) => {
     if (!newVal) {
-        selectedMetaTemplateId.value = '';
+        selectedmetaTemplateUuid.value = '';
     }
 });
 </script>

@@ -1,5 +1,5 @@
 import type { AccountRegistrationRequest } from "../../index";
-import type { TResponse } from "../../../../shared/types/response";
+import type { TResponse } from "../../../../../common/shared/types/response";
 import { accountIpcClient } from "../../infrastructure/ipcs/accountIpcClient";
 
 /**

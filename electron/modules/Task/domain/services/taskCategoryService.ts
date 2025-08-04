@@ -136,7 +136,7 @@ export class TaskMetaTemplateService {
     try {
       // 检查是否已经初始化过
       const existingTemplates = await metaTemplateRepository.findAll(accountUuid);
-      if (existingTemplates.data && existingTemplates.data.length > 0) {
+      if (existingTemplates && existingTemplates.length > 0) {
         return {
           success: true,
           message: '系统模板已存在，跳过初始化'
@@ -155,8 +155,8 @@ export class TaskMetaTemplateService {
       // 批量保存
       for (const template of systemTemplates) {
         const result = await metaTemplateRepository.save(accountUuid, template);
-        if (!result.success) {
-          console.error(`保存模板失败: ${template.name}`, result.message);
+        if (!result) {
+          console.error(`保存模板失败: ${template.name}`);
         }
       }
 

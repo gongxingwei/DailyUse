@@ -1,4 +1,4 @@
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 import { deepSerializeForIpc } from "@/shared/utils/ipcSerialization";
 import { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";

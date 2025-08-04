@@ -17,7 +17,7 @@ export class AccountTables {
         email TEXT UNIQUE,
         phone TEXT UNIQUE,
         account_type TEXT DEFAULT 'local' CHECK(account_type IN ('local', 'online')),
-        status TEXT DEFAULT 'active' CHECK(status IN ('active', 'inactive', 'suspended', 'deleted')),
+        status TEXT DEFAULT 'active' CHECK(status IN ('active', 'disabled', 'suspended', 'pending_verification')),
         role_ids TEXT, -- JSON 数组，存储角色ID
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,

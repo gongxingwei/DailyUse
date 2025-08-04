@@ -223,9 +223,6 @@ export class TaskInstanceService {
       taskInstance.timeConfig.endTime.getTime() <= taskInstance.timeConfig.scheduledTime.getTime()) {
       errors.push('结束时间必须晚于开始时间');
     }
-    if (taskInstance.priority < 1 || taskInstance.priority > 4) {
-      errors.push('优先级必须在1-4之间');
-    }
 
     return {
       valid: errors.length === 0,

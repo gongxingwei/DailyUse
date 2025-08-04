@@ -1,5 +1,5 @@
 import type { NotificationWindowOptions } from "../types/notification";
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 
 import { serializeForIpc } from "@/shared/utils/ipcSerialization";
 import { ImportanceLevel } from "@common/shared/types/importance";

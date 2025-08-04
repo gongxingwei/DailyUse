@@ -2,7 +2,8 @@
 import type { ITaskTemplate } from '@common/modules/task/types/task';
 import type { ITemplateValidator, ValidationResult } from "./types";
 import { ValidationUtils } from "./ValidationUtils";
-
+import { ImportanceLevel } from '@common/shared/types/importance';
+import { UrgencyLevel } from '@common/shared/types/urgency';
 /**
  * 元数据验证器
  * 负责验证任务模板的元数据信息
@@ -21,8 +22,8 @@ export class MetadataValidator implements ITemplateValidator {
     results.push(this.validateCategory(metadata.category));
     results.push(this.validateTags(metadata.tags));
     results.push(this.validateEstimatedDuration(metadata.estimatedDuration));
-    results.push(this.validatePriority(metadata.priority));
-    results.push(this.validateDifficulty(metadata.difficulty));
+    results.push(this.validateImportance(metadata.importance));
+    results.push(this.validateUrgency(metadata.urgency));
     results.push(this.validateLocation(metadata.location));
 
     // 验证元数据组合的合理性
@@ -193,46 +194,55 @@ export class MetadataValidator implements ITemplateValidator {
   /**
    * 验证优先级
    */
-  private validatePriority(priority?: 1 | 2 | 3 | 4 | 5): ValidationResult {
-    if (priority === undefined) {
-      return ValidationUtils.success(["未设置优先级，将使用默认优先级"]);
-    }
-
-    return ValidationUtils.validateEnum(
-      priority,
-      "任务优先级",
-      [1, 2, 3, 4, 5],
-      false
-    );
+  private validateImportance(importance: ImportanceLevel): ValidationResult {
+  if (importance === undefined) {
+    return ValidationUtils.success(["未设置重要性，将使用默认重要性"]);
   }
+  return ValidationUtils.validateEnum(
+    importance,
+    "任务重要性",
+    [
+      ImportanceLevel.Vital,
+      ImportanceLevel.Important,
+      ImportanceLevel.Moderate,
+      ImportanceLevel.Minor,
+      ImportanceLevel.Trivial
+    ],
+    false
+  );
+}
 
   /**
-   * 验证难度等级
+   * 验证紧急等级
    */
-  private validateDifficulty(difficulty: any): ValidationResult {
+  private validateUrgency(urgency: UrgencyLevel): ValidationResult {
+    if (urgency === undefined) {
+      return ValidationUtils.success(["未设置紧急性，将使用默认紧急性"]);
+    }
     const enumResult = ValidationUtils.validateEnum(
-      difficulty,
-      "难度等级",
-      [1, 2, 3, 4, 5],
-      true
+      urgency,
+      "任务紧急性",
+      [
+        UrgencyLevel.Critical,
+        UrgencyLevel.High,
+        UrgencyLevel.Medium,
+        UrgencyLevel.Low,
+        UrgencyLevel.None
+      ],
+      false
     );
-
     if (!enumResult.isValid) {
       return enumResult;
     }
-
     const warnings: string[] = [];
-
-    // 根据难度给出建议
-    switch (difficulty) {
-      case 1:
-        warnings.push("简单任务，适合在精力不足时完成");
+    switch (urgency) {
+      case UrgencyLevel.Critical:
+        warnings.push("极高紧急性任务，请优先处理");
         break;
-      case 5:
-        warnings.push("高难度任务，建议在精力充沛时处理");
+      case UrgencyLevel.None:
+        warnings.push("无紧急性任务，可灵活安排");
         break;
     }
-
     return ValidationUtils.success(warnings);
   }
 

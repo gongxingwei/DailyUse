@@ -12,11 +12,17 @@
                         </v-icon>
                         {{ getTemplateStatusText(template) }}
                     </v-chip>
-                    <v-chip v-if="template.metadata.priority" :color="getPriorityColor(template.metadata.priority)" 
-                        variant="outlined" size="small" class="priority-chip ml-2">
+                    <v-chip :color="getImportanceColor(template.metadata.importance)" 
+                        variant="outlined" size="small" class="importance-chip ml-2">
                         <v-icon start size="small">mdi-flag</v-icon>
-                        P{{ template.metadata.priority }}
+                        {{ getImportanceText(template.metadata.importance) }}
                     </v-chip>
+                    <v-chip :color="getUrgencyColor(template.metadata.urgency)" 
+                        variant="outlined" size="small" class="urgency-chip ml-2">
+                        <v-icon start size="small">mdi-flag</v-icon>
+                        {{ getUrgencyText(template.metadata.urgency) }}
+                    </v-chip>
+
                 </div>
             </div>
 
@@ -58,7 +64,7 @@
                         mdi-calendar-range
                     </v-icon>
                     <span class="meta-text">
-                        {{ dateRange }}
+                        开始于 {{ format(template.timeConfig.baseTime.start, 'yyyy-MM-dd') }}
                     </span>
                 </div>
 
@@ -169,6 +175,9 @@ import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate';
 import { format } from 'date-fns';
+import { ImportanceLevel } from '@common/shared/types/importance';
+import { UrgencyLevel } from '@common/shared/types/urgency';
+
 interface Props {
     template: TaskTemplate;
     statusFilters?: Array<{
@@ -227,17 +236,49 @@ const getTemplateStatusText = (template: TaskTemplate) => {
     return props.statusFilters.find(s => s.value === status)?.label || '';
 };
 
-const getPriorityColor = (priority: number) => {
-    switch (priority) {
-        case 1: return 'error';
-        case 2: return 'warning';
-        case 3: return 'info';
-        case 4: return 'success';
-        case 5: return 'default';
+const getImportanceColor = (importance: ImportanceLevel) => {
+    switch (importance) {
+        case ImportanceLevel.Trivial: return 'white';
+        case ImportanceLevel.Minor: return 'success';
+        case ImportanceLevel.Moderate: return 'info';
+        case ImportanceLevel.Important: return 'warning';
+        case ImportanceLevel.Vital: return 'error';
         default: return 'default';
     }
 };
 
+const getUrgencyColor = (urgency: UrgencyLevel) => {
+    switch (urgency) {
+        case UrgencyLevel.None: return 'white';
+        case UrgencyLevel.Low: return 'success';
+        case UrgencyLevel.Medium: return 'info';
+        case UrgencyLevel.High: return 'warning';
+        case UrgencyLevel.Critical: return 'error';
+        default: return 'default';
+    }
+};
+
+const getImportanceText = (importance: ImportanceLevel) => {
+    switch (importance) {
+        case ImportanceLevel.Vital: return '极其重要';
+        case ImportanceLevel.Important: return '非常重要';
+        case ImportanceLevel.Moderate: return '中等重要';
+        case ImportanceLevel.Minor: return '不太重要';
+        case ImportanceLevel.Trivial: return '无关紧要';
+        default: return '';
+    }
+};
+
+const getUrgencyText = (urgency: UrgencyLevel) => {
+    switch (urgency) {
+        case UrgencyLevel.Critical: return '非常紧急 - 需要立即处理';
+        case UrgencyLevel.High: return '高度紧急 - 今天必须处理';
+        case UrgencyLevel.Medium: return '中等紧急 - 近期需要处理';
+        case UrgencyLevel.Low: return '低度紧急 - 可以稍后处理';
+        case UrgencyLevel.None: return '无期限 - 没有具体时间要求';
+        default: return '';
+    }
+};
 const getKeyResultName = (link: any) => {
     const goal = goalStore.getGoalByUuid(link.goalUuid);
     const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);

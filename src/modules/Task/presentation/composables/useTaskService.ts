@@ -3,68 +3,33 @@ import { getTaskDomainApplicationService } from "../../application/services/task
 import { useTaskStore } from "../stores/taskStore";
 import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
 import type { TaskInstance } from "../../domain/aggregates/taskInstance";
-
-// 使用新架构的服务
-const getTaskService = () => getTaskDomainApplicationService();
-
-interface SnackbarConfig {
-  show: boolean;
-  message: string;
-  color: 'success' | 'error' | 'warning' | 'info';
-  timeout: number;
-}
+import { useSnackbar } from "@/shared/composables/useSnackbar";
 
 export function useTaskService() {
+  const getTaskService = () => getTaskDomainApplicationService();
+  const { showSuccess, showError, showWarning, showInfo, snackbar } = useSnackbar();
   const taskStore = useTaskStore();
   const showEditTaskTemplateDialog = ref(false);
   const showTemplateSelectionDialog = ref(false);
   const isEditMode = ref(false);
 
-  const snackbar = ref<SnackbarConfig>({
-    show: false,
-    message: '',
-    color: 'success',
-    timeout: 4000
-  });
-
-  const showSnackbar = (
-    message: string, 
-    color: SnackbarConfig['color'] = 'success',
-    timeout: number = 4000
-  ) => {
-    snackbar.value = {
-      show: true,
-      message,
-      color,
-      timeout
-    };
-  };
-
-
-  const closeSnackbar = () => {
-    snackbar.value.show = false;
-  };
-
   const startCreateTaskTemplate = () => {
     showTemplateSelectionDialog.value = true;
   };
-  const handleTemplateTypeSelected = async (metaTemplateId: string) => {
+  const handleTemplateTypeSelected = async (metaTemplateUuid: string) => {
     showTemplateSelectionDialog.value = false;
 
     try {
       // 使用修复后的架构：从元模板创建任务模板但不保存
       // 注意：这个方法现在只创建模板对象，不会保存到数据库
-      const newTaskTemplate = await getTaskService().createTaskTemplateFromMetaTemplate(
-        metaTemplateId,
-        '新任务模板', // 默认标题，用户可以在编辑器中修改
-        {
-          description: '基于元模板创建的任务',
-          priority: 3,
-          tags: ['新建'],
-        }
+      const newTaskTemplate = await getTaskService().createTaskTemplateByMetaTemplate(
+        metaTemplateUuid,
       );
       
-      console.log('✓ 从元模板创建任务模板成功（待保存）:', newTaskTemplate.title);
+      if (!newTaskTemplate) {
+        showError('无法创建任务模板，请检查元模板是否存在');
+        return;
+      }
       
       // 将创建的模板传递给编辑器
       taskStore.updateTaskTemplateBeingEdited(newTaskTemplate);
@@ -73,16 +38,10 @@ export function useTaskService() {
       // 显示编辑对话框，让用户进一步编辑
       showEditTaskTemplateDialog.value = true;
       
-      showSnackbar(
-        `成功创建任务模板 "${newTaskTemplate.title}"，请编辑并保存`,
-        'success'
-      );
+      showSuccess(`成功创建任务模板 "${newTaskTemplate.title}"，请编辑并保存`);
     } catch (error) {
       console.error('从元模板创建任务模板失败:', error);
-      showSnackbar(
-        `创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
@@ -103,16 +62,13 @@ export function useTaskService() {
         isEditMode.value = true;
         showEditTaskTemplateDialog.value = true;
         
-        showSnackbar(`开始编辑任务模板 "${template.title}"`, 'info');
+        showInfo(`开始编辑任务模板 "${template.title}"`);
       } else {
-        showSnackbar('未找到指定的任务模板', 'error');
+        showError('未找到指定的任务模板');
       }
     } catch (error) {
       console.error('获取模板失败:', error);
-      showSnackbar(
-        `获取模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`获取模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
   };
 
@@ -121,7 +77,7 @@ export function useTaskService() {
     try {
       const taskTemplateBeingEdited = taskStore.getTaskTemplateBeingEdited;
       if (!taskTemplateBeingEdited) {
-        showSnackbar('没有正在编辑的任务模板', 'error');
+        showError('没有正在编辑的任务模板');
         return;
       }
       
@@ -136,27 +92,18 @@ export function useTaskService() {
         result = await getTaskService().createTaskTemplate(templateDto);
       }
 
-      if (result.success && result.template) {
+      if (result.success && result.data) {
         showEditTaskTemplateDialog.value = false;
         isEditMode.value = false;
         
         const action = isEditMode.value ? '更新' : '创建';
-        showSnackbar(
-          `任务模板 "${result.template.title}" ${action}成功`,
-          'success'
-        );
+        showSuccess(`任务模板 "${result.data.title}" ${action}成功`);
       } else {
-        showSnackbar(
-          result.message || '保存任务模板失败',
-          'error'
-        );
+        showError(result.message || '保存任务模板失败');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(
-        `保存任务模板时发生错误: ${errorMessage}`,
-        'error'
-      );
+      showError(`保存任务模板时发生错误: ${errorMessage}`);
     }
   };
 
@@ -173,15 +120,15 @@ export function useTaskService() {
       const result = await getTaskService().deleteTaskTemplate(template.uuid);
       
       if (result.success) {
-        showSnackbar(result.message || '删除任务模板成功', 'success', 5000);
+        showSuccess(result.message || '删除任务模板成功', 5000);
       } else {
-        showSnackbar(result.message || '删除任务模板失败', 'error', 6000);
+        showError(result.message || '删除任务模板失败', 6000);
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`删除任务模板失败: ${errorMessage}`, 'error', 6000);
+      showError(`删除任务模板失败: ${errorMessage}`, 6000);
       return {
         success: false,
         message: errorMessage,
@@ -196,19 +143,15 @@ export function useTaskService() {
       const result = await getTaskService().deleteTaskInstance(taskId);
       
       if (result.success) {
-        showSnackbar(
-          `成功删除任务实例`,
-          'success',
-          4000
-        );
+        showSuccess(`成功删除任务实例`, 4000);
       } else {
-        showSnackbar(result.message || '删除任务实例失败', 'error', 6000);
+        showError(result.message || '删除任务实例失败', 6000);
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`删除任务实例失败: ${errorMessage}`, 'error', 6000);
+      showError(`删除任务实例失败: ${errorMessage}`, 6000);
       return {
         success: false,
         message: errorMessage,
@@ -222,15 +165,15 @@ export function useTaskService() {
       const result = await getTaskService().pauseTaskTemplate(templateId);
       
       if (result.success) {
-        showSnackbar(`任务模板已暂停`, 'success', 4000);
+        showSuccess(`任务模板已暂停`, 4000);
       } else {
-        showSnackbar(result.message || `暂停任务模板失败`, 'error', 6000);
+        showError(result.message || `暂停任务模板失败`, 6000);
       }
       
       return result.success;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`暂停任务模板失败: ${errorMessage}`, 'error', 6000);
+      showError(`暂停任务模板失败: ${errorMessage}`, 6000);
       return false;
     }
   }
@@ -240,15 +183,15 @@ export function useTaskService() {
       const result = await getTaskService().resumeTaskTemplate(templateId);
       
       if (result.success) {
-        showSnackbar(`任务模板已恢复`, 'success', 4000);
+        showSuccess(`任务模板已恢复`, 4000);
       } else {
-        showSnackbar(result.message || `恢复任务模板失败`, 'error', 6000);
+        showError(result.message || `恢复任务模板失败`, 6000);
       }
       
       return result.success;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`恢复任务模板失败: ${errorMessage}`, 'error', 6000);
+      showError(`恢复任务模板失败: ${errorMessage}`, 6000);
       return false;
     }
   }
@@ -258,19 +201,15 @@ export function useTaskService() {
       const result = await getTaskService().completeTaskInstance(taskId);
       
       if (result.success) {
-        showSnackbar(
-          `任务实例已完成`,
-          'success',
-          4000
-        );
+        showSuccess(`任务实例已完成`, 4000);
       } else {
-        showSnackbar(result.message || '完成任务实例失败', 'error', 6000);
+        showError(result.message || '完成任务实例失败', 6000);
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`完成任务实例失败: ${errorMessage}`, 'error', 6000);
+      showError(`完成任务实例失败: ${errorMessage}`, 6000);
       return {
         success: false,
         message: errorMessage,
@@ -284,19 +223,15 @@ export function useTaskService() {
       const result = await getTaskService().undoCompleteTaskInstance(taskId);
       
       if (result.success) {
-        showSnackbar(
-          `任务实例已撤销完成`,
-          'success',
-          4000
-        );
+        showSuccess(`任务实例已撤销完成`, 4000);
       } else {
-        showSnackbar(result.message || '撤销完成任务实例失败', 'error', 6000);
+        showError(result.message || '撤销完成任务实例失败', 6000);
       }
       
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showSnackbar(`撤销完成任务实例失败: ${errorMessage}`, 'error', 6000);
+      showError(`撤销完成任务实例失败: ${errorMessage}`, 6000);
       return {
         success: false,
         message: errorMessage,
@@ -312,10 +247,7 @@ export function useTaskService() {
       return metaTemplates;
     } catch (error) {
       console.error('获取元模板失败:', error);
-      showSnackbar(
-        `获取元模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`获取元模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -327,10 +259,7 @@ export function useTaskService() {
       return templates;
     } catch (error) {
       console.error('获取任务模板失败:', error);
-      showSnackbar(
-        `获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -342,10 +271,7 @@ export function useTaskService() {
       return instances;
     } catch (error) {
       console.error('获取今日任务失败:', error);
-      showSnackbar(
-        `获取今日任务失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`获取今日任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -353,13 +279,12 @@ export function useTaskService() {
   // 创建任务实例（从模板创建）
   const createTaskInstanceFromTemplate = async (_templateUuid: string, _scheduleDate?: Date) => {
     try {
-      showSnackbar('暂不支持直接创建任务实例，请联系开发者完善此功能', 'warning');
+      showWarning('暂不支持直接创建任务实例，请联系开发者完善此功能');
       return null;
     } catch (error) {
       console.error('创建任务实例失败:', error);
-      showSnackbar(
-        `创建任务实例失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
+      showError(
+        `创建任务实例失败: ${error instanceof Error ? error.message : '未知错误'}`
       );
       return null;
     }
@@ -376,24 +301,15 @@ export function useTaskService() {
       const failCount = results.length - successCount;
       
       if (failCount === 0) {
-        showSnackbar(
-          `成功完成 ${successCount} 个任务`,
-          'success'
-        );
+        showSuccess(`成功完成 ${successCount} 个任务`);
       } else {
-        showSnackbar(
-          `完成 ${successCount} 个任务，失败 ${failCount} 个`,
-          'warning'
-        );
+        showWarning(`完成 ${successCount} 个任务，失败 ${failCount} 个`);
       }
       
       return results;
     } catch (error) {
       console.error('批量完成任务失败:', error);
-      showSnackbar(
-        `批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -409,24 +325,15 @@ export function useTaskService() {
       const failCount = results.length - successCount;
       
       if (failCount === 0) {
-        showSnackbar(
-          `成功删除 ${successCount} 个任务`,
-          'success'
-        );
+        showSuccess(`成功删除 ${successCount} 个任务`);
       } else {
-        showSnackbar(
-          `删除 ${successCount} 个任务，失败 ${failCount} 个`,
-          'warning'
-        );
+        showWarning(`删除 ${successCount} 个任务，失败 ${failCount} 个`);
       }
       
       return results;
     } catch (error) {
       console.error('批量删除任务失败:', error);
-      showSnackbar(
-        `批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`批量操作失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -449,10 +356,7 @@ export function useTaskService() {
       }
     } catch (error) {
       console.error('搜索任务失败:', error);
-      showSnackbar(
-        `搜索失败: ${error instanceof Error ? error.message : '未知错误'}`,
-        'error'
-      );
+      showError(`搜索失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -460,8 +364,6 @@ export function useTaskService() {
   return {
     // Snackbar配置
     snackbar,
-    showSnackbar,
-    closeSnackbar,
     // 状态
     showEditTaskTemplateDialog,
     showTemplateSelectionDialog,

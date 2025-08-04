@@ -1,5 +1,4 @@
 import { TaskTemplate } from "../aggregates/taskTemplate";
-import { TaskMetaTemplate } from "../aggregates/taskMetaTemplate";
 import { TaskInstance } from "../aggregates/taskInstance";
 import { taskInstanceService } from "./taskInstanceService";
 import { taskTemplateService } from "./taskTemplateService";
@@ -9,6 +8,7 @@ import type { ITaskTemplateRepository } from "../repositories/iTaskTemplateRepos
 import type { ITaskInstanceRepository } from "../repositories/iTaskInstanceRepository";
 import { TaskTemplateValidator } from "../../validation/TaskTemplateValidator";
 import type { ITaskMetaTemplateRepository } from "../repositories/iTaskMetaTemplateRepository";
+import type { TResponse } from "@common/shared/types/response";
 
 /**
  * 任务领域服务
@@ -36,47 +36,46 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
-    // 1. 验证模板
-    const validation = TaskTemplateValidator.validate(taskTemplate);
-    if (!validation.isValid) {
-      return {
-        success: false,
-        message: `任务模板验证失败: ${validation.errors.join(", ")}`,
-      };
-    }
-    // 2. 激活并保存模板
-    taskTemplate.activate();
-    const response = await taskTemplateRepository.save(accountUuid, taskTemplate);
-    if (!response.success) {
-      return {
-        success: false,
-        message: `任务模板保存失败: ${response.message}`,
-      };
-    }
-    // 3. 生成初始任务实例
-    const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
-    const instanceResponses = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
-    if (!instanceResponses.success) {
-      return {
-        success: false,
-        message: `初始任务实例保存失败: ${instanceResponses.message}`,
-      };
-    }
-    // 4. 为每个实例创建提醒
-    for (const taskInstance of initialInstances) {
-      const reminderResponse = await taskReminderService.createTaskReminders(taskInstance);
-      if (!reminderResponse.success) {
+    try {
+      // 1. 验证模板
+      const validation = TaskTemplateValidator.validate(taskTemplate);
+      if (!validation.isValid) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
+          message: `任务模板验证失败: ${validation.errors.join(", ")}`,
         };
       }
+      
+      // 2. 激活并保存模板
+      taskTemplate.activate();
+      const savedTemplate = await taskTemplateRepository.save(accountUuid, taskTemplate);
+      
+      // 3. 生成初始任务实例
+      const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
+      const savedInstances = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
+      
+      // 4. 为每个实例创建提醒
+      for (const taskInstance of savedInstances) {
+        const reminderResponse = await taskReminderService.createTaskReminders(taskInstance);
+        if (!reminderResponse.success) {
+          return {
+            success: false,
+            message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
+          };
+        }
+      }
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 创建成功`,
+        data: savedTemplate,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `创建任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
     }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 创建成功`,
-      data: taskTemplate,
-    };
   }
 
   /**
@@ -97,69 +96,78 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
-    // 1. 验证
-    const validation = TaskTemplateValidator.validate(taskTemplate);
-    if (!validation.isValid) {
-      return {
-        success: false,
-        message: `任务模板验证失败: ${validation.errors.join(", ")}`,
-      };
-    }
-    // 2. 查询旧模板
-    const oldTemplate = await taskTemplateRepository.findById(accountUuid, taskTemplate.uuid);
-    if (!oldTemplate.success || !oldTemplate.data) {
-      return {
-        success: false,
-        message: `任务模板 ${taskTemplate.uuid} 不存在`,
-      };
-    }
-    // 3. 更新模板
-    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
-    if (!response.success) {
-      return {
-        success: false,
-        message: `任务模板更新失败: ${response.message}`,
-      };
-    }
-    // 4. 处理实例同步
-    const impact = await this.handleTemplateUpdateImpact(taskTemplate, oldTemplate.data, taskInstanceRepository, accountUuid);
-    if (impact.affectedCount > 0) {
-      let failedCount = 0;
-      for (const taskInstance of impact.updatedInstances) {
-        const resp = await taskInstanceRepository.update(accountUuid, taskInstance);
-        if (!resp.success) failedCount++;
-      }
-      if (failedCount > 0) {
-        return {
-          success: true,
-          message: `任务模板 ${taskTemplate.title} 更新成功，但影响了 ${impact.affectedCount} 个实例: ${impact.warnings.join(", ")}，${failedCount} 个实例更新失败`,
-          data: taskTemplate,
-        };
-      }
-    }
-    // 5. 同步提醒
-    const { updatedInstances } = impact;
-    for (const taskInstance of updatedInstances) {
-      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
-      if (!reminderResponse.success) {
+    try {
+      // 1. 验证
+      const validation = TaskTemplateValidator.validate(taskTemplate);
+      if (!validation.isValid) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.uuid} 的提醒更新失败: ${reminderResponse.message}`,
+          message: `任务模板验证失败: ${validation.errors.join(", ")}`,
         };
       }
-      const reReminderResponse = await taskReminderService.createTaskReminders(taskInstance);
-      if (!reReminderResponse.success) {
+      
+      // 2. 查询旧模板
+      const oldTemplate = await taskTemplateRepository.findById(accountUuid, taskTemplate.uuid);
+      if (!oldTemplate) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.uuid} 的提醒重新创建失败: ${reReminderResponse.message}`,
+          message: `任务模板 ${taskTemplate.uuid} 不存在`,
         };
       }
+      
+      // 3. 更新模板
+      const updatedTemplate = await taskTemplateRepository.update(accountUuid, taskTemplate);
+      
+      // 4. 处理实例同步
+      const impact = await this.handleTemplateUpdateImpact(taskTemplate, oldTemplate, taskInstanceRepository, accountUuid);
+      if (impact.affectedCount > 0) {
+        let failedCount = 0;
+        for (const taskInstance of impact.updatedInstances) {
+          try {
+            await taskInstanceRepository.update(accountUuid, taskInstance);
+          } catch (error) {
+            failedCount++;
+          }
+        }
+        if (failedCount > 0) {
+          return {
+            success: true,
+            message: `任务模板 ${taskTemplate.title} 更新成功，但影响了 ${impact.affectedCount} 个实例: ${impact.warnings.join(", ")}，${failedCount} 个实例更新失败`,
+            data: updatedTemplate,
+          };
+        }
+      }
+      
+      // 5. 同步提醒
+      const { updatedInstances } = impact;
+      for (const taskInstance of updatedInstances) {
+        const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
+        if (!reminderResponse.success) {
+          return {
+            success: false,
+            message: `任务实例 ${taskInstance.uuid} 的提醒更新失败: ${reminderResponse.message}`,
+          };
+        }
+        const reReminderResponse = await taskReminderService.createTaskReminders(taskInstance);
+        if (!reReminderResponse.success) {
+          return {
+            success: false,
+            message: `任务实例 ${taskInstance.uuid} 的提醒重新创建失败: ${reReminderResponse.message}`,
+          };
+        }
+      }
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 更新成功`,
+        data: updatedTemplate,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: `更新任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      };
     }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 更新成功`,
-      data: taskTemplate,
-    };
   }
 
   /**
@@ -182,52 +190,46 @@ export class TaskDomainService {
     force: boolean = false,
     accountUuid: string
   ): Promise<TResponse<void>> {
-    // 1. 校验依赖
-    const dependencies = await this.validateTemplateDependencies(taskTemplate, taskInstanceRepository, accountUuid);
-    if (!dependencies.canDelete && !force) {
-      return {
-        success: false,
-        message: `无法删除任务模板 ${taskTemplate.title}，存在 ${dependencies.activeInstances} 个未完成的实例`,
-      };
-    }
-    // 2. 强制删除所有相关实例
-    if (force) {
-      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
-      if (!relatedInstances.success || !relatedInstances.data) {
+    try {
+      // 1. 校验依赖
+      const dependencies = await this.validateTemplateDependencies(taskTemplate, taskInstanceRepository, accountUuid);
+      if (!dependencies.canDelete && !force) {
         return {
           success: false,
-          message: `获取相关任务实例失败: ${relatedInstances.message}`,
+          message: `无法删除任务模板 ${taskTemplate.title}，存在 ${dependencies.activeInstances} 个未完成的实例`,
         };
       }
-      for (const taskInstance of relatedInstances.data) {
-        const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
-        if (!reminderResponse.success) {
-          return {
-            success: false,
-            message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
-          };
-        }
-        const response = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
-        if (!response.success) {
-          return {
-            success: false,
-            message: `删除实例 ${taskInstance.uuid} 失败: ${response.message}`,
-          };
+      
+      // 2. 强制删除所有相关实例
+      if (force) {
+        const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
+        
+        for (const taskInstance of relatedInstances) {
+          const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
+          if (!reminderResponse.success) {
+            return {
+              success: false,
+              message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
+            };
+          }
+          
+          await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
         }
       }
-    }
-    // 3. 删除模板
-    const response = await taskTemplateRepository.delete(accountUuid, taskTemplate.uuid);
-    if (!response.success) {
+      
+      // 3. 删除模板
+      await taskTemplateRepository.delete(accountUuid, taskTemplate.uuid);
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 删除成功`,
+      };
+    } catch (error) {
       return {
         success: false,
-        message: `任务模板删除失败: ${response.message}`,
+        message: `删除任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 删除成功`,
-    };
   }
 
   /**
@@ -246,25 +248,33 @@ export class TaskDomainService {
     taskTemplateId: string,
     taskTemplateRepository: ITaskTemplateRepository
   ): Promise<TResponse<TaskTemplate>> {
-    const response = await taskTemplateRepository.findById(accountUuid, taskTemplateId);
-    if (!response.success || !response.data) {
+    try {
+      const taskTemplate = await taskTemplateRepository.findById(accountUuid, taskTemplateId);
+      if (!taskTemplate) {
+        return {
+          success: false,
+          message: `任务模板不存在`,
+        };
+      }
+      
+      if (!taskTemplate.isActive()) {
+        return {
+          success: false,
+          message: `任务模板 ${taskTemplate.title} 已被暂停或归档`,
+        };
+      }
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 获取成功`,
+        data: taskTemplate,
+      };
+    } catch (error) {
       return {
         success: false,
-        message: `获取任务模板失败: ${response.message}`,
+        message: `获取任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-    const taskTemplate = response.data;
-    if (!taskTemplate.isActive()) {
-      return {
-        success: false,
-        message: `任务模板 ${taskTemplate.title} 已被暂停或归档`,
-      };
-    }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 获取成功`,
-      data: taskTemplate,
-    };
   }
 
   /**
@@ -285,59 +295,46 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     force: boolean = false
   ): Promise<TResponse<string>> {
-    const response = await taskInstanceRepository.findById(accountUuid, taskInstanceId);
-    if (!response.success || !response.data) {
+    try {
+      const taskInstance = await taskInstanceRepository.findById(accountUuid, taskInstanceId);
+      if (!taskInstance) {
+        return {
+          success: false,
+          message: `任务实例不存在`,
+        };
+      }
+      
+      if (taskInstance.status === "completed" && !force) {
+        return {
+          success: false,
+          message: `无法删除已完成的任务实例 ${taskInstance.title}，请使用强制删除选项`,
+        };
+      }
+      
+      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
+      if (!reminderResponse.success) {
+        return {
+          success: false,
+          message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
+        };
+      }
+      
+      await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
+      
+      return {
+        success: true,
+        message: `任务实例 ${taskInstance.title} 删除成功`,
+        data: taskInstance.uuid,
+      };
+    } catch (error) {
       return {
         success: false,
-        message: `获取任务实例失败: ${response.message}`,
+        message: `删除任务实例失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-    const taskInstance = response.data;
-    if (taskInstance.status === "completed" && !force) {
-      return {
-        success: false,
-        message: `无法删除已完成的任务实例 ${taskInstance.title}，请使用强制删除选项`,
-      };
-    }
-    const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
-    if (!reminderResponse.success) {
-      return {
-        success: false,
-        message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
-      };
-    }
-    const deleteResponse = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
-    if (!deleteResponse.success) {
-      return {
-        success: false,
-        message: `删除任务实例 ${taskInstance.title} 失败: ${deleteResponse.message}`,
-      };
-    }
-    return {
-      success: true,
-      message: `任务实例 ${taskInstance.title} 删除成功`,
-      data: taskInstance.uuid,
-    };
   }
 
-  /**
-   * 从元模板创建任务模板
-   * @param metaTemplate 元模板对象
-   * @returns TaskTemplate
-   * @throws 配置无效时抛出异常
-   * @example
-   * ```ts
-   * const template = domainService.createTemplateFromMetaTemplate(metaTemplate);
-   * ```
-   */
-  createTemplateFromMetaTemplate(metaTemplate: TaskMetaTemplate): TaskTemplate {
-    const validation = taskMetaTemplateService.validateConfiguration(metaTemplate);
-    if (!validation.valid) {
-      throw new Error(`元模板配置无效: ${validation.errors.join(", ")}`);
-    }
-    const taskTemplate = taskTemplateService.createFromMetaTemplate(metaTemplate);
-    return taskTemplate;
-  }
+
 
   /**
    * 批量生成任务实例并验证业务规则
@@ -404,26 +401,29 @@ export class TaskDomainService {
     activeInstances: number;
     warnings: string[];
   }> {
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
-    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
+    try {
+      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
+      
+      const activeInstances = relatedInstances.filter(
+        (instance: TaskInstance) =>
+          ["pending", "inProgress"].includes(instance.status)
+      );
+      
+      return {
+        canDelete: activeInstances.length === 0,
+        activeInstances: activeInstances.length,
+        warnings:
+          activeInstances.length > 0
+            ? [`存在 ${activeInstances.length} 个未完成的实例`]
+            : [],
+      };
+    } catch (error) {
       return {
         canDelete: true,
         activeInstances: 0,
         warnings: [],
       };
     }
-    const activeInstances = relatedInstancesResponse.data.filter(
-      (instance) =>
-        ["pending", "inProgress"].includes(instance.status)
-    );
-    return {
-      canDelete: activeInstances.length === 0,
-      activeInstances: activeInstances.length,
-      warnings:
-        activeInstances.length > 0
-          ? [`存在 ${activeInstances.length} 个未完成的实例`]
-          : [],
-    };
   }
 
   /**
@@ -450,40 +450,46 @@ export class TaskDomainService {
         `无法从 ${taskTemplate.lifecycle.status} 状态转换到 ${newStatus} 状态`
       );
     }
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
-    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
-      throw new Error(`获取相关任务实例失败: ${relatedInstancesResponse.message}`);
-    }
-    const relatedInstances = relatedInstancesResponse.data.filter(
-      (instance: TaskInstance) =>
-        ["pending", "inProgress"].includes(instance.status)
-    );
-    const warnings: string[] = [];
-    if (newStatus === "paused") {
-      warnings.push(`暂停模板将影响 ${relatedInstances.length} 个未完成的实例`);
-    } else if (newStatus === "archived") {
-      warnings.push(
-        `归档模板将停止生成新实例，现有 ${relatedInstances.length} 个实例不受影响`
+    
+    try {
+      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
+      
+      const activeInstances = relatedInstances.filter(
+        (instance: TaskInstance) =>
+          ["pending", "inProgress"].includes(instance.status)
       );
+      
+      const warnings: string[] = [];
+      if (newStatus === "paused") {
+        warnings.push(`暂停模板将影响 ${activeInstances.length} 个未完成的实例`);
+      } else if (newStatus === "archived") {
+        warnings.push(
+          `归档模板将停止生成新实例，现有 ${activeInstances.length} 个实例不受影响`
+        );
+      }
+      
+      switch (newStatus) {
+        case "active":
+          taskTemplate.activate();
+          break;
+        case "paused":
+          taskTemplate.pause();
+          break;
+        case "archived":
+          taskTemplate.archive();
+          break;
+        default:
+          throw new Error(`不支持的状态: ${newStatus}`);
+      }
+      
+      return {
+        success: true,
+        affectedInstances: activeInstances,
+        warnings,
+      };
+    } catch (error) {
+      throw new Error(`获取相关任务实例失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-    switch (newStatus) {
-      case "active":
-        taskTemplate.activate();
-        break;
-      case "paused":
-        taskTemplate.pause();
-        break;
-      case "archived":
-        taskTemplate.archive();
-        break;
-      default:
-        throw new Error(`不支持的状态: ${newStatus}`);
-    }
-    return {
-      success: true,
-      affectedInstances: relatedInstances,
-      warnings,
-    };
   }
 
   /**
@@ -507,7 +513,7 @@ export class TaskDomainService {
     const warnings: string[] = [];
     switch (newStatus) {
       case "inProgress":
-        taskInstance.start();
+        taskInstance.resetToStatus("inProgress");
         break;
       case "completed":
         taskInstance.complete(accountUuid);
@@ -519,7 +525,7 @@ export class TaskDomainService {
         if (taskInstance.status === "completed") {
           taskInstance.undoComplete(accountUuid);
         } else {
-          taskInstance.pending();
+          taskInstance.resetToStatus("pending");
         }
         break;
       default:
@@ -549,66 +555,73 @@ export class TaskDomainService {
     updatedInstances: TaskInstance[];
     warnings: string[];
   }> {
-    const relatedInstancesResponse = await taskInstanceRepository.findByTemplateId(accountUuid, updatedTemplate.uuid);
-    if (!relatedInstancesResponse.success || !relatedInstancesResponse.data) {
+    try {
+      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, updatedTemplate.uuid);
+      
+      const pendingInstances = relatedInstances.filter(
+        (instance: TaskInstance) => instance.status !== "completed"
+      );
+      
+      const updatedInstances: TaskInstance[] = [];
+      const warnings: string[] = [];
+      
+      if (oldTemplate) {
+        const titleChanged = oldTemplate.title !== updatedTemplate.title;
+        const timeConfigChanged =
+          JSON.stringify(oldTemplate.timeConfig) !==
+          JSON.stringify(updatedTemplate.timeConfig);
+        const reminderConfigChanged =
+          JSON.stringify(oldTemplate.reminderConfig) !==
+          JSON.stringify(updatedTemplate.reminderConfig);
+        const descriptionChanged =
+          oldTemplate.description !== updatedTemplate.description;
+        
+        if (
+          titleChanged ||
+          timeConfigChanged ||
+          reminderConfigChanged ||
+          descriptionChanged
+        ) {
+          warnings.push(
+            `模板更新将影响 ${pendingInstances.length} 个未完成的实例`
+          );
+        }
+        
+        pendingInstances.forEach((taskInstance: TaskInstance) => {
+          if (titleChanged && taskInstance.status === "pending") {
+            taskInstance.updateTitle(updatedTemplate.title);
+            updatedInstances.push(taskInstance);
+          }
+          if (descriptionChanged) {
+            taskInstance.updateDescription(updatedTemplate.description || "");
+            updatedInstances.push(taskInstance);
+          }
+          if (timeConfigChanged) {
+            taskInstance.updateConfig(updatedTemplate.timeConfig);
+            updatedInstances.push(taskInstance);
+          }
+          if (reminderConfigChanged) {
+            taskInstance.updateReminderStatus(
+              updatedTemplate.reminderConfig.enabled,
+              updatedTemplate.reminderConfig.alerts
+            );
+            updatedInstances.push(taskInstance);
+          }
+        });
+      }
+      
+      return {
+        affectedCount: pendingInstances.length,
+        updatedInstances,
+        warnings,
+      };
+    } catch (error) {
       return {
         affectedCount: 0,
         updatedInstances: [],
         warnings: [],
       };
     }
-    const relatedInstances = relatedInstancesResponse.data.filter(
-      (instance: TaskInstance) => instance.status !== "completed"
-    );
-    const updatedInstances: TaskInstance[] = [];
-    const warnings: string[] = [];
-    if (oldTemplate) {
-      const titleChanged = oldTemplate.title !== updatedTemplate.title;
-      const timeConfigChanged =
-        JSON.stringify(oldTemplate.timeConfig) !==
-        JSON.stringify(updatedTemplate.timeConfig);
-      const reminderConfigChanged =
-        JSON.stringify(oldTemplate.reminderConfig) !==
-        JSON.stringify(updatedTemplate.reminderConfig);
-      const descriptionChanged =
-        oldTemplate.description !== updatedTemplate.description;
-      if (
-        titleChanged ||
-        timeConfigChanged ||
-        reminderConfigChanged ||
-        descriptionChanged
-      ) {
-        warnings.push(
-          `模板更新将影响 ${relatedInstances.length} 个未完成的实例`
-        );
-      }
-      relatedInstances.forEach((taskInstance: TaskInstance) => {
-        if (titleChanged && taskInstance.status === "pending") {
-          taskInstance.updateTitle(updatedTemplate.title);
-          updatedInstances.push(taskInstance);
-        }
-        if (descriptionChanged) {
-          taskInstance.updateDescription(updatedTemplate.description || "");
-          updatedInstances.push(taskInstance);
-        }
-        if (timeConfigChanged) {
-          taskInstance.updateConfig(updatedTemplate.timeConfig);
-          updatedInstances.push(taskInstance);
-        }
-        if (reminderConfigChanged) {
-          taskInstance.updateReminderStatus(
-            updatedTemplate.reminderConfig.enabled,
-            updatedTemplate.reminderConfig.alerts
-          );
-          updatedInstances.push(taskInstance);
-        }
-      });
-    }
-    return {
-      affectedCount: relatedInstances.length,
-      updatedInstances,
-      warnings,
-    };
   }
 
   /**
@@ -625,48 +638,42 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
-    if (taskTemplate.isPaused()) {
-      return {
-        success: false,
-        message: `任务模板 ${taskTemplate.title} 已处于暂停状态`,
-      };
-    }
-    const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
-    if (!relatedInstances.success || !relatedInstances.data) {
-      return {
-        success: false,
-        message: `获取相关任务实例失败: ${relatedInstances.message}`,
-      };
-    }
-    for (const taskInstance of relatedInstances.data) {
-      const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
-      if (!reminderResponse.success) {
+    try {
+      if (taskTemplate.isPaused()) {
         return {
           success: false,
-          message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
+          message: `任务模板 ${taskTemplate.title} 已处于暂停状态`,
         };
       }
-      const response = await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
-      if (!response.success) {
-        return {
-          success: false,
-          message: `删除实例 ${taskInstance.uuid} 失败: ${response.message}`,
-        };
+      
+      const relatedInstances = await taskInstanceRepository.findByTemplateId(accountUuid, taskTemplate.uuid);
+      
+      for (const taskInstance of relatedInstances) {
+        const reminderResponse = await taskReminderService.cancelTaskInstanceReminders(taskInstance.uuid);
+        if (!reminderResponse.success) {
+          return {
+            success: false,
+            message: `取消任务实例 ${taskInstance.uuid} 的提醒失败: ${reminderResponse.message}`,
+          };
+        }
+        
+        await taskInstanceRepository.delete(accountUuid, taskInstance.uuid);
       }
-    }
-    taskTemplate.pause();
-    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
-    if (!response.success) {
+      
+      taskTemplate.pause();
+      const updatedTemplate = await taskTemplateRepository.update(accountUuid, taskTemplate);
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 暂停成功`,
+        data: updatedTemplate,
+      };
+    } catch (error) {
       return {
         success: false,
-        message: `任务模板 ${taskTemplate.title} 暂停失败: ${response.message}`,
+        message: `暂停任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 暂停成功`,
-      data: taskTemplate,
-    };
   }
 
   /**
@@ -683,42 +690,41 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     accountUuid: string
   ): Promise<TResponse<TaskTemplate>> {
-    if (!taskTemplate.isPaused()) {
-      return {
-        success: false,
-        message: `任务模板 ${taskTemplate.title} 不处于暂停状态`,
-      };
-    }
-    const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
-    const instanceResponses = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
-    if (!instanceResponses.success) {
-      return {
-        success: false,
-        message: `初始任务实例保存失败: ${instanceResponses.message}`,
-      };
-    }
-    for (const taskInstance of initialInstances) {
-      const reminderResponse = await taskReminderService.createTaskReminders(taskInstance);
-      if (!reminderResponse.success) {
+    try {
+      if (!taskTemplate.isPaused()) {
         return {
           success: false,
-          message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
+          message: `任务模板 ${taskTemplate.title} 不处于暂停状态`,
         };
       }
-    }
-    taskTemplate.activate();
-    const response = await taskTemplateRepository.update(accountUuid, taskTemplate);
-    if (!response.success) {
+      
+      const initialInstances = taskInstanceService.generateInstancesFromTemplate(taskTemplate);
+      const savedInstances = await taskInstanceRepository.saveAll(accountUuid, initialInstances);
+      
+      for (const taskInstance of savedInstances) {
+        const reminderResponse = await taskReminderService.createTaskReminders(taskInstance);
+        if (!reminderResponse.success) {
+          return {
+            success: false,
+            message: `任务实例 ${taskInstance.uuid} 的提醒创建失败: ${reminderResponse.message}`,
+          };
+        }
+      }
+      
+      taskTemplate.activate();
+      const updatedTemplate = await taskTemplateRepository.update(accountUuid, taskTemplate);
+      
+      return {
+        success: true,
+        message: `任务模板 ${taskTemplate.title} 恢复成功`,
+        data: updatedTemplate,
+      };
+    } catch (error) {
       return {
         success: false,
-        message: `任务模板 ${taskTemplate.title} 恢复失败: ${response.message}`,
+        message: `恢复任务模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
       };
     }
-    return {
-      success: true,
-      message: `任务模板 ${taskTemplate.title} 恢复成功`,
-      data: taskTemplate,
-    };
   }
 
   /**
@@ -733,21 +739,24 @@ export class TaskDomainService {
     taskInstanceRepository: ITaskInstanceRepository,
     accountUuid: string
   ): Promise<TaskInstance[]> {
-    const allInstancesResponse = await taskInstanceRepository.findAll(accountUuid);
-    if (!allInstancesResponse.success || !allInstancesResponse.data) {
+    try {
+      const allInstances = await taskInstanceRepository.findAll(accountUuid);
+      
+      const existingInstances = allInstances.filter(
+        (instance: TaskInstance) =>
+          instance.status !== "completed" && instance.status !== "cancelled"
+      );
+      
+      return taskInstances.filter((newTaskInstance) => {
+        const conflicts = taskInstanceService.checkTimeConflicts(
+          existingInstances,
+          newTaskInstance
+        );
+        return conflicts.length === 0;
+      });
+    } catch (error) {
       return taskInstances;
     }
-    const existingInstances = allInstancesResponse.data.filter(
-      (instance: TaskInstance) =>
-        instance.status !== "completed" && instance.status !== "cancelled"
-    );
-    return taskInstances.filter((newTaskInstance) => {
-      const conflicts = taskInstanceService.checkTimeConflicts(
-        existingInstances,
-        newTaskInstance
-      );
-      return conflicts.length === 0;
-    });
   }
 
   /**

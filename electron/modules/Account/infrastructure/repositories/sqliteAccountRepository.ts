@@ -4,6 +4,7 @@ import { IAccountRepository } from "../../index";
 import { IUserRepository } from "../../index";
 import { Account } from "../../domain/aggregates/account";
 import { SqliteUserRepository } from "./sqliteUserRepository";
+import { is } from "date-fns/locale";
 /**
  * SQLite 账号存储库实现
  * 负责账号数据的持久化和查询
@@ -280,7 +281,6 @@ export class SqliteAccountRepository implements IAccountRepository {
    * 插入新账号
    */
   private async insertAccount(account: Account): Promise<void> {
-    await this.userRepository.save(account.user, account.uuid);
     const db = await this.getDb();
     const query = `
       INSERT INTO accounts (
@@ -306,7 +306,7 @@ export class SqliteAccountRepository implements IAccountRepository {
       null, // emailVerificationToken - 需要通过getter获取
       null, // phoneVerificationCode - 需要通过getter获取
     );
-
+    await this.userRepository.save(account.user, account.uuid);
     console.log(`账号 ${account.username} 创建成功`);
   }
 
@@ -357,8 +357,8 @@ export class SqliteAccountRepository implements IAccountRepository {
     if (!user) {
       throw new Error(`User profile not found for account: ${row.uuid}`);
     }
-    const UserDTO = user.toDTO();
-    console.log('UserDTO:', UserDTO);
+    const userDTO = user.toDTO();
+    console.log('UserDTO:', userDTO);
     // 解析角色ID (暂时不使用，预留用于将来扩展)
     // let roleIds: Set<string> = new Set();
     // if (row.roleIds) {
@@ -369,8 +369,21 @@ export class SqliteAccountRepository implements IAccountRepository {
     //     console.warn("Failed to parse role IDs:", error);
     //   }
     // }
-    const { uuid, ...rest} = row;
-    const accountDTO = {...rest, user:UserDTO, uuid: uuid}
+    const accountDTO = {
+      uuid: row.uuid,
+      username: row.username,
+      email: row.email,
+      phone: row.phone,
+      accountType: row.account_type,
+      status: row.status,
+      roleIds: JSON.parse(row.role_ids || '[]'),
+      createdAt: new Date(row.created_at),
+      updatedAt: new Date(row.updated_at),
+      lastLoginAt: row.last_login_at ? new Date(row.last_login_at) : undefined,
+      isEmailVerified: row.is_email_verified,
+      isPhoneVerified: row.is_phone_verified,
+      user: userDTO
+    }
     console.log(accountDTO)
     // 创建账号聚合根
     const account = Account.fromDTO(accountDTO);

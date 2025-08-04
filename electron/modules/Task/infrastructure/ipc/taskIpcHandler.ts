@@ -235,14 +235,6 @@ export class TaskIpcHandler {
         };
       }
     }));
-
-    // 从元模板创建任务模板
-    ipcMain.handle('task:templates:create-from-meta-template', withAuth(async (_event, [metaTemplateId, title, customOptions], auth) => {
-      if (!auth.accountUuid) {
-        return { success: false, message: '未登录或登录已过期，请重新登录' };
-      }
-      return await this.taskService.createTaskTemplateFromMetaTemplate(auth.accountUuid, metaTemplateId, title, customOptions);
-    }));
   }
 
   /**
@@ -304,14 +296,6 @@ export class TaskIpcHandler {
         return { success: false, message: '未登录或登录已过期，请重新登录' };
       }
       return await this.taskService.undoCompleteTask(auth.accountUuid, uuid);
-    }));
-
-    // 开始任务
-    ipcMain.handle('task:instances:start', withAuth(async (_event, [uuid], auth) => {
-      if (!auth.accountUuid) {
-        return { success: false, message: '未登录或登录已过期，请重新登录' };
-      }
-      return await this.taskService.startTask(auth.accountUuid, uuid);
     }));
 
     // 取消任务

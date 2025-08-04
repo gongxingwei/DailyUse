@@ -1,11 +1,14 @@
 import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
-import type { 
-  TaskTimeConfig, 
+import type {
+  TaskTimeConfig,
   TaskReminderConfig,
   KeyResultLink,
   ITaskTemplate,
   ITaskTemplateDTO,
-} from '@common/modules/task/types/task';
+} from "@common/modules/task/types/task";
+import { ImportanceLevel } from "@common/shared/types/importance";
+import { UrgencyLevel } from "@common/shared/types/urgency";
+import { addMinutes } from "date-fns";
 
 export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _title: string;
@@ -23,8 +26,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     category: string;
     tags: string[];
     estimatedDuration?: number;
-    priority?: 1 | 2 | 3 | 4 | 5;
-    difficulty?: 1 | 2 | 3 | 4 | 5;
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
     location?: string;
   };
   private _lifecycle: {
@@ -44,30 +47,34 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _keyResultLinks?: KeyResultLink[];
   private _version: number;
 
-  constructor(
-    uuid: string,
-    title: string,
-    timeConfig: TaskTimeConfig,
-    reminderConfig: TaskReminderConfig,
-    options?: {
-      description?: string;
-      category?: string;
-      tags?: string[];
-      priority?: 1 | 2 | 3 | 4 | 5;
-      difficulty?: 1 | 2 | 3 | 4 | 5;
-      estimatedDuration?: number;
-      location?: string;
-      keyResultLinks?: KeyResultLink[];
-      schedulingPolicy?: Partial<ITaskTemplate['schedulingPolicy']>;
-    }
-  ) {
-    super(uuid);
+  constructor(params: {
+    uuid?: string;
+    title: string;
+    description?: string;
+    timeConfig: TaskTimeConfig;
+    reminderConfig: TaskReminderConfig;
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
+    keyResultLinks?: KeyResultLink[];
+    category?: string;
+    tags?: string[];
+    estimatedDuration?: number;
+    location?: string;
+    schedulingPolicy?: {
+      allowReschedule?: boolean;
+      maxDelayDays?: number;
+      skipWeekends?: boolean;
+      skipHolidays?: boolean;
+      workingHoursOnly?: boolean;
+    };
+  }) {
+    super(params.uuid || AggregateRoot.generateId());
     const now = new Date();
 
-    this._title = title;
-    this._description = options?.description;
-    this._timeConfig = timeConfig;
-    this._reminderConfig = reminderConfig;
+    this._title = params.title;
+    this._description = params.description;
+    this._timeConfig = params.timeConfig;
+    this._reminderConfig = params.reminderConfig;
 
     this._schedulingPolicy = {
       allowReschedule: true,
@@ -75,16 +82,16 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       skipWeekends: false,
       skipHolidays: false,
       workingHoursOnly: false,
-      ...options?.schedulingPolicy,
+      ...params.schedulingPolicy,
     };
 
     this._metadata = {
-      category: options?.category || "general",
-      tags: options?.tags || [],
-      priority: options?.priority || 3,
-      difficulty: options?.difficulty || 3,
-      estimatedDuration: options?.estimatedDuration,
-      location: options?.location,
+      category: params.category || "general",
+      tags: params.tags || [],
+      importance: params.importance || ImportanceLevel.Moderate,
+      urgency: params.urgency || UrgencyLevel.Medium,
+      estimatedDuration: params.estimatedDuration,
+      location: params.location,
     };
 
     this._lifecycle = {
@@ -99,7 +106,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       successRate: 0,
     };
 
-    this._keyResultLinks = options?.keyResultLinks;
+    this._keyResultLinks = params.keyResultLinks;
     this._version = 1;
   }
 
@@ -176,8 +183,8 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     this._lifecycle.updatedAt = new Date();
   }
 
-  setPriority(priority?: 1 | 2 | 3 | 4 | 5): void {
-    this._metadata.priority = priority;
+  setImportance(importance: ImportanceLevel): void {
+    this._metadata.importance = importance;
     this._lifecycle.updatedAt = new Date();
   }
 
@@ -198,8 +205,25 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     }
   }
   // ===== UI 校验和操作预览方法 =====
-  // 注意：这些方法仅用于 UI 层面的校验和预览，
-  // 实际的业务操作应通过应用层服务调用 IPC 交给主进程处理
+  
+  switchTimeConfigType(type: "timeRange" | "timed" | "allDay"): void {
+    this._timeConfig.type = type;
+    this._lifecycle.updatedAt = new Date();
+    if (type === "timeRange") {
+      this._timeConfig.baseTime.duration = 0;
+      this._timeConfig.baseTime.start = new Date();
+      this._timeConfig.baseTime.end = addMinutes(this._timeConfig.baseTime.start, 60);
+    } else if (type === "timed") {
+      this._timeConfig.baseTime.duration = 0;
+      this._timeConfig.baseTime.start = new Date();
+    } else if (type === "allDay") {
+      this._timeConfig.baseTime.duration = 0;
+      const now = new Date();
+      const zeroHour = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+      this._timeConfig.baseTime.start = zeroHour;
+      this._timeConfig.baseTime.end = addMinutes(zeroHour, 1440); // 默认持续时间为24小时
+    }
+  }
 
   /**
    * 检查是否可以激活模板（UI 校验）
@@ -396,75 +420,81 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }
 
   /**
-   * 从完整数据创建 TaskTemplate 实例（用于反序列化）
+   * 从 DTO 创建 TaskTemplate 实例（用于反序列化）
    * 保留所有原始状态信息
    */
-  static fromDTO(data: any): TaskTemplate {
+  static fromDTO(data: ITaskTemplateDTO): TaskTemplate {
     // 创建基础实例
-    const instance = new TaskTemplate(
-      data.uuid || data._id,
-      data.title || data._title,
-      data.timeConfig || data._timeConfig,
-      data.reminderConfig || data._reminderConfig,
-      {
-        description: data.description || data._description,
-        keyResultLinks: data.keyResultLinks || data._keyResultLinks,
-        category: data.metadata?.category || data._metadata?.category,
-        tags: data.metadata?.tags || data._metadata?.tags,
-        priority: data.metadata?.priority || data._metadata?.priority,
-        difficulty: data.metadata?.difficulty || data._metadata?.difficulty,
-        estimatedDuration: data.metadata?.estimatedDuration || data._metadata?.estimatedDuration,
-        location: data.metadata?.location || data._metadata?.location,
-        schedulingPolicy: data.schedulingPolicy || data._schedulingPolicy,
-      }
-    );
+    const instance = new TaskTemplate({
+      uuid: data.uuid,
+      title: data.title,
+      description: data.description,
+      timeConfig: {
+        ...data.timeConfig,
+        baseTime: {
+          ...data.timeConfig.baseTime,
+          start: new Date(data.timeConfig.baseTime.start),
+          end: data.timeConfig.baseTime.end ? new Date(data.timeConfig.baseTime.end) : undefined,
+        },
+        recurrence: {
+          ...data.timeConfig.recurrence,
+          endCondition: data.timeConfig.recurrence.endCondition ? {
+            ...data.timeConfig.recurrence.endCondition,
+            endDate: data.timeConfig.recurrence.endCondition.endDate ? new Date(data.timeConfig.recurrence.endCondition.endDate) : undefined,
+          } : undefined,
+        },
+      },
+      reminderConfig: {
+        ...data.reminderConfig,
+        enabled: !!data.reminderConfig.enabled,
+        alerts: data.reminderConfig.alerts.map(alert => ({
+          ...alert,
+          timing: {
+            ...alert.timing,
+            absoluteTime: alert.timing.absoluteTime ? new Date(alert.timing.absoluteTime) : undefined,
+          },
+        })),
+        snooze: {
+          ...data.reminderConfig.snooze,
+          enabled: !!data.reminderConfig.snooze.enabled,
+        },
+      },
+      importance: data.metadata.importance,
+      urgency: data.metadata.urgency,
+      keyResultLinks: data.keyResultLinks,
+      category: data.metadata.category,
+      tags: data.metadata.tags,
+      estimatedDuration: data.metadata.estimatedDuration,
+      location: data.metadata.location,
+      schedulingPolicy: {
+        allowReschedule: !!data.schedulingPolicy.allowReschedule,
+        maxDelayDays: data.schedulingPolicy.maxDelayDays,
+        skipWeekends: !!data.schedulingPolicy.skipWeekends,
+        skipHolidays: !!data.schedulingPolicy.skipHolidays,
+        workingHoursOnly: !!data.schedulingPolicy.workingHoursOnly,
+      },
+    });
 
     // 恢复完整的生命周期状态
-    if (data.lifecycle || data._lifecycle) {
-      const lifecycle = data.lifecycle || data._lifecycle;
-      instance._lifecycle = {
-        status: lifecycle.status || "draft",
-        createdAt: lifecycle.createdAt || instance._lifecycle.createdAt,
-        updatedAt: lifecycle.updatedAt || instance._lifecycle.updatedAt,
-        activatedAt: lifecycle.activatedAt || undefined,
-        pausedAt: lifecycle.pausedAt || undefined,
-      };
-    }
+    instance._lifecycle = {
+      status: data.lifecycle.status,
+      createdAt: new Date(data.lifecycle.createdAt),
+      updatedAt: new Date(data.lifecycle.updatedAt),
+      activatedAt: data.lifecycle.activatedAt ? new Date(data.lifecycle.activatedAt) : undefined,
+      pausedAt: data.lifecycle.pausedAt ? new Date(data.lifecycle.pausedAt) : undefined,
+    };
 
     // 恢复分析数据
-    if (data.analytics || data._analytics) {
-      const analytics = data.analytics || data._analytics;
-      instance._analytics = {
-        totalInstances: analytics.totalInstances || 0,
-        completedInstances: analytics.completedInstances || 0,
-        averageCompletionTime: analytics.averageCompletionTime,
-        successRate: analytics.successRate || 0,
-        lastInstanceDate: analytics.lastInstanceDate || undefined,
-      };
-    }
+    instance._analytics = {
+      totalInstances: data.analytics.totalInstances,
+      completedInstances: data.analytics.completedInstances,
+      averageCompletionTime: data.analytics.averageCompletionTime,
+      successRate: data.analytics.successRate,
+      lastInstanceDate: data.analytics.lastInstanceDate ? new Date(data.analytics.lastInstanceDate) : undefined,
+    };
 
     // 恢复版本号
-    if (data.version !== undefined || data._version !== undefined) {
-      instance._version = data.version || data._version || 1;
-    }
-
-    // 恢复完整的元数据（如果有额外信息）
-    if (data.metadata || data._metadata) {
-      const metadata = data.metadata || data._metadata;
-      instance._metadata = {
-        ...instance._metadata,
-        ...metadata,
-      };
-    }
-
-    // 恢复调度策略
-    if (data.schedulingPolicy || data._schedulingPolicy) {
-      const policy = data.schedulingPolicy || data._schedulingPolicy;
-      instance._schedulingPolicy = {
-        ...instance._schedulingPolicy,
-        ...policy,
-      };
-    }
+    instance._version = data.version;
 
     return instance;
   }
@@ -476,7 +506,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
 
   static ensureTaskTemplate(data: any): TaskTemplate {
     if (data instanceof TaskTemplate) {
-      return TaskTemplate.fromDTO(data);
+      return data;
     }
     return TaskTemplate.fromDTO(data);
   }

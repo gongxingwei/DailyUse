@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from "axios";
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 import { TokenManager } from "@/modules/Account/utils/tokenManagement";
 import type { InternalAxiosRequestConfig, AxiosRequestConfig } from "axios";
 ;

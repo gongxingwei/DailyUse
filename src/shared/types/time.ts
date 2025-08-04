@@ -18,4 +18,3 @@ export interface TimeConfig {
         unit: ScheduleUnit;
     };
 }
-export type UrgencyLevel = 'normal' | 'critical' | 'low';

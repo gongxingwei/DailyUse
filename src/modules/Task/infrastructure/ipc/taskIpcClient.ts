@@ -2,9 +2,9 @@ import type {
   TaskResponse,
   TaskStats,
   TaskTimeline,
-  ITaskTemplate,
-  ITaskInstance,
-  ITaskMetaTemplate
+  ITaskTemplateDTO,
+  ITaskInstanceDTO,
+  ITaskMetaTemplateDTO
 } from '@common/modules/task/types/task';
 import { serializeForIpc, deepSerializeForIpc } from '@/shared/utils/ipcSerialization';
 import { ipcInvokeWithAuth } from '@/shared/utils/ipcInvokeWithAuth';
@@ -17,19 +17,19 @@ export class TaskIpcClient {
   
   // === MetaTemplate IPC 调用 ===
 
-  async getAllMetaTemplates(): Promise<TaskResponse<ITaskMetaTemplate[]>> {
+  async getAllMetaTemplates(): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:meta-templates:get-all');
   }
 
-  async getMetaTemplate(uuid: string): Promise<TaskResponse<ITaskMetaTemplate>> {
+  async getMetaTemplate(uuid: string): Promise<TaskResponse<ITaskMetaTemplateDTO>> {
     return await ipcInvokeWithAuth('task:meta-templates:get-by-id', uuid);
   }
 
-  async getMetaTemplatesByCategory(category: string): Promise<TaskResponse<ITaskMetaTemplate[]>> {
+  async getMetaTemplatesByCategory(category: string): Promise<TaskResponse<ITaskMetaTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:meta-templates:get-by-category', category);
   }
 
-  async saveMetaTemplate(metaTemplateData: any): Promise<TaskResponse<ITaskMetaTemplate>> {
+  async saveMetaTemplate(metaTemplateData: any): Promise<TaskResponse<ITaskMetaTemplateDTO>> {
     return await ipcInvokeWithAuth('task:meta-templates:save', serializeForIpc(metaTemplateData));
   }
 
@@ -39,49 +39,49 @@ export class TaskIpcClient {
 
   // === TaskTemplate IPC 调用 ===
 
-  async getTaskTemplate(taskTemplateId: string): Promise<TaskResponse<ITaskTemplate>> {
-    return await ipcInvokeWithAuth('task:templates:get-by-id', taskTemplateId);
+  async getTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<ITaskTemplateDTO>> {
+    return await ipcInvokeWithAuth('task:templates:get-by-id', taskTemplateUuid);
   }
 
-  async getAllTaskTemplates(): Promise<TaskResponse<ITaskTemplate[]>> {
+  async getAllTaskTemplates(): Promise<TaskResponse<ITaskTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:templates:get-all');
   }
 
-  async getTaskTemplateForKeyResult(goalUuid: string, keyResultId: string): Promise<TaskResponse<ITaskTemplate[]>> {
+  async getTaskTemplateForKeyResult(goalUuid: string, keyResultId: string): Promise<TaskResponse<ITaskTemplateDTO[]>> {
     return await ipcInvokeWithAuth('task:templates:get-by-key-result', goalUuid, keyResultId);
   }
 
-  async createTaskTemplate(dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+  async createTaskTemplate(dto: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplateDTO>> {
     const deepSerializedDto = deepSerializeForIpc(serializeForIpc(dto));
     return await ipcInvokeWithAuth('task:templates:create', deepSerializedDto);
   }
 
-  async updateTaskTemplate(dto: ITaskTemplate): Promise<TaskResponse<ITaskTemplate>> {
+  async updateTaskTemplate(dto: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplateDTO>> {
     return await ipcInvokeWithAuth('task:templates:update', deepSerializeForIpc(dto));
   }
 
-  async deleteTaskTemplate(taskTemplateId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:templates:delete', taskTemplateId);
+  async deleteTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:templates:delete', taskTemplateUuid);
   }
 
   async deleteAllTaskTemplates(): Promise<TaskResponse<void>> {
     return await ipcInvokeWithAuth('task:templates:delete-all');
   }
 
-  async activateTaskTemplate(taskTemplateId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:templates:activate', taskTemplateId);
+  async activateTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:templates:activate', taskTemplateUuid);
   }
 
-  async pauseTaskTemplate(taskTemplateId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:templates:pause', taskTemplateId);
+  async pauseTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:templates:pause', taskTemplateUuid);
   }
 
-  async resumeTaskTemplate(taskTemplateId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:templates:resume', taskTemplateId);
+  async resumeTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:templates:resume', taskTemplateUuid);
   }
 
-  async archiveTaskTemplate(taskTemplateId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:templates:archive', taskTemplateId);
+  async archiveTaskTemplate(taskTemplateUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:templates:archive', taskTemplateUuid);
   }
 
   async createTaskTemplateFromMetaTemplate(
@@ -92,7 +92,7 @@ export class TaskIpcClient {
       priority?: number;
       tags?: string[];
     }
-  ): Promise<TaskResponse<ITaskTemplate>> {
+  ): Promise<TaskResponse<ITaskTemplateDTO>> {
     return await ipcInvokeWithAuth(
       'task:templates:create-from-meta-template', 
       metaTemplateId, 
@@ -101,50 +101,50 @@ export class TaskIpcClient {
     );
   }
 
-  async saveTaskTemplate(taskTemplateData: any): Promise<TaskResponse<ITaskTemplate>> {
-    return await ipcInvokeWithAuth('task:templates:save', serializeForIpc(taskTemplateData));
+  async saveTaskTemplate(taskTemplateDTO: ITaskTemplateDTO): Promise<TaskResponse<ITaskTemplateDTO>> {
+    return await ipcInvokeWithAuth('task:templates:save', serializeForIpc(taskTemplateDTO));
   }
 
   // === TaskInstance IPC 调用 ===
 
-  async getTaskInstance(taskInstanceId: string): Promise<TaskResponse<ITaskInstance>> {
-    return await ipcInvokeWithAuth('task:instances:get-by-id', taskInstanceId);
+  async getTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<ITaskInstanceDTO>> {
+    return await ipcInvokeWithAuth('task:instances:get-by-id', taskInstanceUuid);
   }
 
-  async getAllTaskInstances(): Promise<TaskResponse<ITaskInstance[]>> {
+  async getAllTaskInstances(): Promise<TaskResponse<ITaskInstanceDTO[]>> {
     return await ipcInvokeWithAuth('task:instances:get-all');
   }
 
-  async getTodayTasks(): Promise<TaskResponse<ITaskInstance[]>> {
+  async getTodayTasks(): Promise<TaskResponse<ITaskInstanceDTO[]>> {
     return await ipcInvokeWithAuth('task:instances:get-today');
   }
 
-  async createTaskInstance(dto: ITaskInstance): Promise<TaskResponse<ITaskInstance>> {
+  async createTaskInstance(dto: ITaskInstanceDTO): Promise<TaskResponse<ITaskInstanceDTO>> {
     return await ipcInvokeWithAuth('task:instances:create', serializeForIpc(dto));
   }
 
-  async startTaskInstance(taskInstanceId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:start', taskInstanceId);
+  async startTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:start', taskInstanceUuid);
   }
 
-  async completeTaskInstance(taskInstanceId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:complete', taskInstanceId);
+  async completeTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:complete', taskInstanceUuid);
   }
 
-  async undoCompleteTaskInstance(taskInstanceId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:undo-complete', taskInstanceId);
+  async undoCompleteTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:undo-complete', taskInstanceUuid);
   }
 
-  async cancelTaskInstance(taskInstanceId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:cancel', taskInstanceId);
+  async cancelTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:cancel', taskInstanceUuid);
   }
 
-  async rescheduleTaskInstance(taskInstanceId: string, newScheduledTime: string, newEndTime?: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:reschedule', taskInstanceId, newScheduledTime, newEndTime);
+  async rescheduleTaskInstance(taskInstanceUuid: string, newScheduledTime: string, newEndTime?: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:reschedule', taskInstanceUuid, newScheduledTime, newEndTime);
   }
 
-  async deleteTaskInstance(taskInstanceId: string): Promise<TaskResponse<void>> {
-    return await ipcInvokeWithAuth('task:instances:delete', taskInstanceId);
+  async deleteTaskInstance(taskInstanceUuid: string): Promise<TaskResponse<void>> {
+    return await ipcInvokeWithAuth('task:instances:delete', taskInstanceUuid);
   }
 
   // === 提醒相关 IPC 调用 ===

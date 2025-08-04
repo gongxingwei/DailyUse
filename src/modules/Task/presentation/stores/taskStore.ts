@@ -4,29 +4,8 @@ import { TaskInstance } from "../../domain/aggregates/taskInstance";
 import { TaskMetaTemplate } from "../../domain/aggregates/taskMetaTemplate";
 import {  toDayStart } from "@common/shared/utils/dateUtils";
 
-export function ensureTaskInstance(data: any): TaskInstance {
-  if (data instanceof TaskInstance) {
-    return data;
-  }
-  // 使用 fromCompleteData 方法完整还原实例
-  return TaskInstance.fromCompleteData(data);
-}
 
-export function ensureTaskTemplate(data: any): TaskTemplate {
-  if (data instanceof TaskTemplate) {
-    return data;
-  }
-  // 使用 fromCompleteData 方法完整还原实例
-  return TaskTemplate.fromDTO(data);
-}
 
-export function ensureTaskMetaTemplate(data: any): TaskMetaTemplate {
-  if (data instanceof TaskMetaTemplate) {
-    return data;
-  }
-  // 使用工厂方法创建实例
-  return TaskMetaTemplate.fromCompleteData(data);
-}
 
 export const useTaskStore = defineStore("task", {
   state: () => ({
@@ -38,38 +17,33 @@ export const useTaskStore = defineStore("task", {
 
   getters: {
     getTaskTemplateBeingEdited(state): TaskTemplate | null {
-      return state.taskTemplateBeingEdited
-        ? ensureTaskTemplate(state.taskTemplateBeingEdited)
-        : null;
+      return state.taskTemplateBeingEdited as TaskTemplate | null;
     },
 
     getAllTaskTemplates(): TaskTemplate[] {
-      // 确保返回的都是完整的 TaskTemplate 实例
-      return this.taskTemplates.map((t) => ensureTaskTemplate(t));
+      return this.taskTemplates as TaskTemplate[];
     },
 
     getAllTaskInstances(): TaskInstance[] {
-      // 确保返回的都是完整的 TaskInstance 实例
-      return this.taskInstances.map((i) => ensureTaskInstance(i));
+      return this.taskInstances as TaskInstance[];
     },
 
     getAllTaskMetaTemplates(): TaskMetaTemplate[] {
-      // 确保返回的都是完整的 TaskMetaTemplate 实例
-      return this.metaTemplates.map((t) => ensureTaskMetaTemplate(t));
+      return this.metaTemplates as TaskMetaTemplate[];
     },
 
     getTaskTemplateById:
       (state) =>
       (uuid: string): TaskTemplate | undefined => {
         const template = state.taskTemplates.find((t) => t.uuid === uuid);
-        return template ? ensureTaskTemplate(template) : undefined;
+        return template as TaskTemplate | undefined;
       },
 
     getTaskInstanceById:
       (state) =>
       (uuid: string): TaskInstance | undefined => {
         const instance = state.taskInstances.find((t) => t.uuid === uuid);
-        return instance ? ensureTaskInstance(instance) : undefined;
+        return instance as TaskInstance | undefined;
       },
 
     getTodayTaskInstances(): TaskInstance[] {
@@ -78,40 +52,35 @@ export const useTaskStore = defineStore("task", {
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayStart.getDate() + 1);
 
-      return this.taskInstances
-        .map((i) => ensureTaskInstance(i))
-        .filter((task) => {
-          if (
-            !task.scheduledTime ||
-            typeof task.scheduledTime.getTime() !== "number"
-          ) {
-            return false;
-          }
-          return (
-            task.scheduledTime.getTime() >= todayStart.getTime() &&
-            task.scheduledTime.getTime() < todayEnd.getTime()
-          );
-        });
+      return (this.taskInstances as TaskInstance[]).filter((task) => {
+        if (
+          !task.scheduledTime ||
+          typeof task.scheduledTime.getTime() !== "number"
+        ) {
+          return false;
+        }
+        return (
+          task.scheduledTime.getTime() >= todayStart.getTime() &&
+          task.scheduledTime.getTime() < todayEnd.getTime()
+        );
+      });
     },
 
     getAllMetaTemplates: (state): TaskMetaTemplate[] => {
-      // 确保返回的都是完整的 TaskMetaTemplate 实例
-      return state.metaTemplates.map((t) => ensureTaskMetaTemplate(t));
+      return state.metaTemplates as TaskMetaTemplate[];
     },
 
-    getMetaTemplateById:
+    getMetaTemplateByUuid:
       (state) =>
       (uuid: string): TaskMetaTemplate | undefined => {
         const template = state.metaTemplates.find((t) => t.uuid === uuid);
-        return template ? ensureTaskMetaTemplate(template) : undefined;
+        return template as TaskMetaTemplate | undefined;
       },
 
     getMetaTemplatesByCategory:
       (state) =>
       (category: string): TaskMetaTemplate[] => {
-        return state.metaTemplates
-          .filter((t) => t.category === category)
-          .map((t) => ensureTaskMetaTemplate(t));
+        return (state.metaTemplates as TaskMetaTemplate[]).filter((t) => t.category === category);
       },
   },
 
@@ -126,402 +95,226 @@ export const useTaskStore = defineStore("task", {
           (link) => link.keyResultId === keyResultUuid
         );
       });
-      return templates.map((t) => {
-        return TaskTemplate.ensureTaskTemplate(t);
-      });
+      return templates as TaskTemplate[];
     },
     updateTaskTemplateBeingEdited(template: TaskTemplate | null) {
-      if (template) {
-        this.taskTemplateBeingEdited = ensureTaskTemplate(template);
-      } else {
-        this.taskTemplateBeingEdited = null;
-      }
+      this.taskTemplateBeingEdited = template as TaskTemplate | null;
     },
     // 当作数据库来操作
     // === 基础 CRUD 操作（确保类型安全）===
     async addTaskTemplate(
       template: TaskTemplate | any
     ): Promise<TResponse<TaskTemplate>> {
-      try {
-        const safeTemplate = ensureTaskTemplate(template);
-        this.taskTemplates.push(safeTemplate);
-        return {
-          success: true,
-          message: "任务模板添加成功",
-          data: safeTemplate,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `添加任务模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      this.taskTemplates.push(template as TaskTemplate);
+      return {
+        success: true,
+        message: "任务模板添加成功",
+        data: template as TaskTemplate,
+      };
     },
 
     async removeTaskTemplateById(templateId: string): Promise<TResponse<void>> {
-      try {
-        const index = this.taskTemplates.findIndex(
-          (t) => t.uuid === templateId
-        );
-        if (index !== -1) {
-          this.taskTemplates.splice(index, 1);
-          return {
-            success: true,
-            message: "任务模板删除成功",
-          };
-        }
+      const index = this.taskTemplates.findIndex(
+        (t) => t.uuid === templateId
+      );
+      if (index !== -1) {
+        this.taskTemplates.splice(index, 1);
         return {
-          success: false,
-          message: `未找到ID为 ${templateId} 的任务模板`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `删除任务模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
+          success: true,
+          message: "任务模板删除成功",
         };
       }
+      return {
+        success: false,
+        message: `未找到ID为 ${templateId} 的任务模板`,
+      };
     },
 
     async updateTaskTemplate(
       template: TaskTemplate | any
     ): Promise<TResponse<TaskTemplate>> {
-      try {
-        const safeTemplate = ensureTaskTemplate(template);
-        const index = this.taskTemplates.findIndex(
-          (t) => t.uuid === safeTemplate.uuid
-        );
-        if (index !== -1) {
-          this.taskTemplates[index] = safeTemplate;
-          return {
-            success: true,
-            message: "任务模板更新成功",
-            data: safeTemplate,
-          };
-        }
+      const index = this.taskTemplates.findIndex(
+        (t) => t.uuid === (template as TaskTemplate).uuid
+      );
+      if (index !== -1) {
+        this.taskTemplates[index] = template as TaskTemplate;
         return {
-          success: false,
-          message: `未找到ID为 ${safeTemplate.uuid} 的任务模板`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `更新任务模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
+          success: true,
+          message: "任务模板更新成功",
+          data: template as TaskTemplate,
         };
       }
+      return {
+        success: false,
+        message: `未找到ID为 ${(template as TaskTemplate).uuid} 的任务模板`,
+      };
     },
 
     async addTaskInstance(
       instance: TaskInstance | any
     ): Promise<TResponse<TaskInstance>> {
-      try {
-        const safeInstance = ensureTaskInstance(instance);
-        this.taskInstances.push(safeInstance);
-        return {
-          success: true,
-          message: "任务实例添加成功",
-          data: safeInstance,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `添加任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      this.taskInstances.push(instance as TaskInstance);
+      return {
+        success: true,
+        message: "任务实例添加成功",
+        data: instance as TaskInstance,
+      };
     },
 
     async addTaskInstances(
       instances: (TaskInstance | any)[]
     ): Promise<TResponse<TaskInstance[]>> {
-      try {
-        const safeInstances = instances.map((i) => ensureTaskInstance(i));
-        this.taskInstances.push(...safeInstances);
-        return {
-          success: true,
-          message: `成功添加 ${safeInstances.length} 个任务实例`,
-          data: safeInstances,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `批量添加任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      this.taskInstances.push(...(instances as TaskInstance[]));
+      return {
+        success: true,
+        message: `成功添加 ${(instances as TaskInstance[]).length} 个任务实例`,
+        data: instances as TaskInstance[],
+      };
     },
 
     async updateTaskInstance(
       instance: TaskInstance | any
     ): Promise<TResponse<TaskInstance>> {
-      try {
-        const safeInstance = ensureTaskInstance(instance);
-        const index = this.taskInstances.findIndex(
-          (t) => t.uuid === safeInstance.uuid
-        );
-        if (index !== -1) {
-          this.taskInstances[index] = safeInstance;
-          return {
-            success: true,
-            message: "任务实例更新成功",
-            data: safeInstance,
-          };
-        }
+      const index = this.taskInstances.findIndex(
+        (t) => t.uuid === (instance as TaskInstance).uuid
+      );
+      if (index !== -1) {
+        this.taskInstances[index] = instance as TaskInstance;
         return {
-          success: false,
-          message: `未找到ID为 ${safeInstance.uuid} 的任务实例`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `更新任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
+          success: true,
+          message: "任务实例更新成功",
+          data: instance as TaskInstance,
         };
       }
+      return {
+        success: false,
+        message: `未找到ID为 ${(instance as TaskInstance).uuid} 的任务实例`,
+      };
     },
 
     async updateTaskInstances(
       instances: (TaskInstance | any)[]
     ): Promise<TResponse<TaskInstance[]>> {
-      try {
-        const safeInstances = instances.map((i) => ensureTaskInstance(i));
-        const updatedInstances: TaskInstance[] = [];
-
-        safeInstances.forEach((instance) => {
-          const index = this.taskInstances.findIndex(
-            (t) => t.uuid === instance.uuid
-          );
-          if (index !== -1) {
-            this.taskInstances[index] = instance;
-            updatedInstances.push(instance);
-          }
-        });
-
-        return {
-          success: true,
-          message: `成功更新 ${updatedInstances.length} 个任务实例`,
-          data: updatedInstances,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `批量更新任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      const updatedInstances: TaskInstance[] = [];
+      (instances as TaskInstance[]).forEach((instance) => {
+        const index = this.taskInstances.findIndex(
+          (t) => t.uuid === instance.uuid
+        );
+        if (index !== -1) {
+          this.taskInstances[index] = instance;
+          updatedInstances.push(instance);
+        }
+      });
+      return {
+        success: true,
+        message: `成功更新 ${updatedInstances.length} 个任务实例`,
+        data: updatedInstances,
+      };
     },
 
     // ✅ 新增：删除单个任务实例
     async removeTaskInstanceById(instanceId: string): Promise<TResponse<void>> {
-      try {
-        const index = this.taskInstances.findIndex(
-          (t) => t.uuid === instanceId
-        );
-        if (index !== -1) {
-          this.taskInstances.splice(index, 1);
-          return {
-            success: true,
-            message: "任务实例删除成功",
-          };
-        }
+      const index = this.taskInstances.findIndex(
+        (t) => t.uuid === instanceId
+      );
+      if (index !== -1) {
+        this.taskInstances.splice(index, 1);
         return {
-          success: false,
-          message: `未找到ID为 ${instanceId} 的任务实例`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `删除任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
+          success: true,
+          message: "任务实例删除成功",
         };
       }
+      return {
+        success: false,
+        message: `未找到ID为 ${instanceId} 的任务实例`,
+      };
     },
 
     // ✅ 新增：批量删除任务实例
     async removeTaskInstancesByIds(
       instanceIds: string[]
     ): Promise<TResponse<number>> {
-      try {
-        let removedCount = 0;
+      let removedCount = 0;
 
-        // 从后往前删除，避免索引变化问题
-        for (let i = this.taskInstances.length - 1; i >= 0; i--) {
-          if (instanceIds.includes(this.taskInstances[i].uuid)) {
-            this.taskInstances.splice(i, 1);
-            removedCount++;
-          }
+      // 从后往前删除，避免索引变化问题
+      for (let i = this.taskInstances.length - 1; i >= 0; i--) {
+        if (instanceIds.includes(this.taskInstances[i].uuid)) {
+          this.taskInstances.splice(i, 1);
+          removedCount++;
         }
-
-        return {
-          success: true,
-          message: `成功删除 ${removedCount} 个任务实例`,
-          data: removedCount,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `批量删除任务实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
       }
+
+      return {
+        success: true,
+        message: `成功删除 ${removedCount} 个任务实例`,
+        data: removedCount,
+      };
     },
 
     // ✅ 新增：根据模板ID删除所有相关实例
     async removeInstancesByTemplateId(
       templateId: string
     ): Promise<TResponse<number>> {
-      try {
-        const initialCount = this.taskInstances.length;
-        this.taskInstances = this.taskInstances.filter(
-          (instance) => instance.templateId !== templateId
-        );
-        const removedCount = initialCount - this.taskInstances.length;
+      const initialCount = this.taskInstances.length;
+      this.taskInstances = this.taskInstances.filter(
+        (instance) => (instance as TaskInstance).templateUuid !== templateId
+      );
+      const removedCount = initialCount - this.taskInstances.length;
 
-        return {
-          success: true,
-          message: `成功删除模板 ${templateId} 的 ${removedCount} 个相关实例`,
-          data: removedCount,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `删除模板相关实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      return {
+        success: true,
+        message: `成功删除模板 ${templateId} 的 ${removedCount} 个相关实例`,
+        data: removedCount,
+      };
     },
 
     // ✅ 新增：根据状态删除实例
     async removeInstancesByStatus(
       status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue"
     ): Promise<TResponse<number>> {
-      try {
-        const initialCount = this.taskInstances.length;
-        this.taskInstances = this.taskInstances.filter((instance) => {
-          const safeInstance = ensureTaskInstance(instance);
-          return safeInstance.status !== status;
-        });
-        const removedCount = initialCount - this.taskInstances.length;
+      const initialCount = this.taskInstances.length;
+      this.taskInstances = this.taskInstances.filter((instance) => {
+        return (instance as TaskInstance).status !== status;
+      });
+      const removedCount = initialCount - this.taskInstances.length;
 
-        return {
-          success: true,
-          message: `成功删除 ${removedCount} 个状态为 ${status} 的实例`,
-          data: removedCount,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `按状态删除实例失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      return {
+        success: true,
+        message: `成功删除 ${removedCount} 个状态为 ${status} 的实例`,
+        data: removedCount,
+      };
     },
 
     // ✅ 修改：MetaTemplate 相关方法
     async addMetaTemplate(
       metaTemplate: TaskMetaTemplate
     ): Promise<TResponse<TaskMetaTemplate>> {
-      try {
-        const safeMetaTemplate = ensureTaskMetaTemplate(metaTemplate);
-        this.metaTemplates.push(safeMetaTemplate);
-        return {
-          success: true,
-          message: "元模板添加成功",
-          data: safeMetaTemplate,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `添加元模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
+      this.metaTemplates.push(metaTemplate as TaskMetaTemplate);
+      return {
+        success: true,
+        message: "元模板添加成功",
+        data: metaTemplate as TaskMetaTemplate,
+      };
     },
 
-    async updateMetaTemplate(
-      metaTemplate: TaskMetaTemplate
-    ): Promise<TResponse<TaskMetaTemplate>> {
-      try {
-        const safeMetaTemplate = ensureTaskMetaTemplate(metaTemplate);
-        const index = this.metaTemplates.findIndex(
-          (t) => t.uuid === safeMetaTemplate.uuid
-        );
-        if (index !== -1) {
-          this.metaTemplates[index] = safeMetaTemplate;
-          return {
-            success: true,
-            message: "元模板更新成功",
-            data: safeMetaTemplate,
-          };
-        }
-        return {
-          success: false,
-          message: `未找到ID为 ${safeMetaTemplate.uuid} 的元模板`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `更新元模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
-        };
-      }
-    },
 
     async deleteMetaTemplateById(
       metaTemplateId: string
     ): Promise<TResponse<void>> {
-      try {
-        const index = this.metaTemplates.findIndex(
-          (t) => t.uuid === metaTemplateId
-        );
-        if (index !== -1) {
-          this.metaTemplates.splice(index, 1);
-          return {
-            success: true,
-            message: "元模板删除成功",
-          };
-        }
+      const index = this.metaTemplates.findIndex(
+        (t) => t.uuid === metaTemplateId
+      );
+      if (index !== -1) {
+        this.metaTemplates.splice(index, 1);
         return {
-          success: false,
-          message: `未找到ID为 ${metaTemplateId} 的元模板`,
-        };
-      } catch (error) {
-        return {
-          success: false,
-          message: `删除元模板失败: ${
-            error instanceof Error ? error.message : "未知错误"
-          }`,
-          error: error instanceof Error ? error : new Error("Unknown error"),
+          success: true,
+          message: "元模板删除成功",
         };
       }
+      return {
+        success: false,
+        message: `未找到ID为 ${metaTemplateId} 的元模板`,
+      };
     },
 
     // === 批量数据同步方法 ===
@@ -529,9 +322,7 @@ export const useTaskStore = defineStore("task", {
      * 批量设置任务模板（从主进程同步数据时使用）
      */
     setTaskTemplates(templates: any[]): void {
-      this.taskTemplates = templates.map((template) =>
-        ensureTaskTemplate(template)
-      );
+      this.taskTemplates = templates as TaskTemplate[];
     },
 
     /**
@@ -546,9 +337,7 @@ export const useTaskStore = defineStore("task", {
      * 批量设置任务实例（从主进程同步数据时使用）
      */
     setTaskInstances(instances: any[]): void {
-      this.taskInstances = instances.map((instance) =>
-        ensureTaskInstance(instance)
-      );
+      this.taskInstances = instances as TaskInstance[];
     },
 
     /**
@@ -563,9 +352,7 @@ export const useTaskStore = defineStore("task", {
      * 批量设置元模板（从主进程同步数据时使用）
      */
     setMetaTemplates(metaTemplates: any[]): void {
-      this.metaTemplates = metaTemplates.map((meta) =>
-        ensureTaskMetaTemplate(meta)
-      );
+      this.metaTemplates = metaTemplates as TaskMetaTemplate[];
     },
 
     /**
@@ -585,15 +372,9 @@ export const useTaskStore = defineStore("task", {
 
       // 直接使用 $patch 批量更新，避免重复调用
       this.$patch({
-        taskTemplates: templates.map((template) =>
-          ensureTaskTemplate(template)
-        ),
-        taskInstances: instances.map((instance) =>
-          ensureTaskInstance(instance)
-        ),
-        metaTemplates: metaTemplates.map((meta) =>
-          ensureTaskMetaTemplate(meta)
-        ),
+        taskTemplates: templates as TaskTemplate[],
+        taskInstances: instances as TaskInstance[],
+        metaTemplates: metaTemplates as TaskMetaTemplate[],
       });
 
       console.log("✅ [TaskStore] syncAllData 同步完成");
@@ -616,14 +397,8 @@ export const useTaskStore = defineStore("task", {
       timestamp: number;
     } {
       return {
-        templates: this.taskTemplates.map((template) => {
-          const safeTemplate = ensureTaskTemplate(template);
-          return safeTemplate.toDTO();
-        }),
-        instances: this.taskInstances.map((instance) => {
-          const safeInstance = ensureTaskInstance(instance);
-          return safeInstance.toJSON();
-        }),
+        templates: (this.taskTemplates as TaskTemplate[]).map((template) => template.toDTO()),
+        instances: (this.taskInstances as TaskInstance[]).map((instance) => instance.toDTO()),
         timestamp: Date.now(),
       };
     },
@@ -634,25 +409,19 @@ export const useTaskStore = defineStore("task", {
       instances: any[];
       timestamp?: number;
     }): void {
-      try {
-        this.taskTemplates = snapshot.templates.map((data) =>
-          TaskTemplate.fromDTO(data)
-        );
-        this.taskInstances = snapshot.instances.map((data) =>
-          TaskInstance.fromCompleteData(data)
-        );
-
+      this.taskTemplates = snapshot.templates.map((data) =>
+        TaskTemplate.fromDTO(data)
+      );
+      this.taskInstances = snapshot.instances.map((data) =>
+        TaskInstance.fromDTO(data)
+      );
+      console.log(
+        `✓ 从快照恢复数据成功 (${snapshot.templates.length} 模板, ${snapshot.instances.length} 实例)`
+      );
+      if (snapshot.timestamp) {
         console.log(
-          `✓ 从快照恢复数据成功 (${snapshot.templates.length} 模板, ${snapshot.instances.length} 实例)`
+          `✓ 快照时间: ${new Date(snapshot.timestamp).toLocaleString()}`
         );
-        if (snapshot.timestamp) {
-          console.log(
-            `✓ 快照时间: ${new Date(snapshot.timestamp).toLocaleString()}`
-          );
-        }
-      } catch (error) {
-        console.error("✗ 从快照恢复数据失败:", error);
-        throw error;
       }
     },
 

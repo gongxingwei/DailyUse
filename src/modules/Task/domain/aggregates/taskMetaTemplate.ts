@@ -1,144 +1,204 @@
 import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
 import { TaskTemplate } from "./taskTemplate";
-import { addMinutes } from "date-fns/addMinutes";
-import type { 
-  ITaskMetaTemplateDTO,
-} from '@common/modules/task/types/task';
 
-export class TaskMetaTemplate extends AggregateRoot {
+import type {
+  IMainProcessTaskMetaTemplate,
+  ITaskMetaTemplateDTO,
+} from "@common/modules/task/types/task";
+import { ImportanceLevel } from "@common/shared/types/importance";
+import { UrgencyLevel } from "@common/shared/types/urgency";
+
+export class TaskMetaTemplate
+  extends AggregateRoot
+  implements IMainProcessTaskMetaTemplate
+{
   private _name: string;
   private _description?: string;
+  private _icon?: string;
+  private _color?: string;
   private _category: string;
-  private _defaultTimeConfig: TaskTemplate['timeConfig'];
-  private _defaultReminderConfig: TaskTemplate['reminderConfig'];
-  private _defaultMetadata: TaskTemplate['metadata'];
+  private _defaultTimeConfig: TaskTemplate["timeConfig"];
+  private _defaultReminderConfig: TaskTemplate["reminderConfig"];
+  private _defaultMetadata: TaskTemplate["metadata"];
   private _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: "active" | "archived";
   };
 
-  private DefaultTimeConfig: TaskTemplate['timeConfig'] = {
-    type: 'timed',
+  private DefaultTimeConfig: TaskTemplate["timeConfig"] = {
+    type: "timed",
     baseTime: {
       start: new Date(),
-      end: addMinutes(new Date(), 60), // 默认持续时间为60分钟
-      duration: 60 // 默认持续时间为60分钟
+      end: new Date(Date.now() + 60 * 60 * 1000), // 默认持续时间为60分钟
+      duration: 60, // 默认持续时间为60分钟
     },
     recurrence: {
-      type: 'none',
+      type: "none",
     },
-    timezone: 'UTC',
-    dstHandling: 'ignore'
+    timezone: "UTC",
+    dstHandling: "ignore",
   };
 
-  private DefaultReminderConfig: TaskTemplate['reminderConfig'] = {
+  private DefaultReminderConfig: TaskTemplate["reminderConfig"] = {
     enabled: false,
     alerts: [],
     snooze: {
       enabled: false,
       interval: 5, // 默认5分钟
-      maxCount: 1 // 默认最多一次
-    }
+      maxCount: 1, // 默认最多一次
+    },
   };
 
-  private DefaultMetadata: TaskTemplate['metadata'] = {
-    category: 'general',
+  private DefaultMetadata: TaskTemplate["metadata"] = {
+    category: "general",
     tags: [],
-    priority: 3, // 默认中等优先级
-    estimatedDuration: 60 // 默认估计持续时间为60分钟
+    importance: ImportanceLevel.Moderate,
+    urgency: UrgencyLevel.Medium,
+    estimatedDuration: 60, // 默认估计持续时间为60分钟
   };
 
-
-  constructor(
-    uuid: string,
-    name: string,
-    category: string,
-    options?: {
-      description?: string;
-      defaultTimeConfig?: TaskTemplate['timeConfig'];
-      defaultReminderConfig?: TaskTemplate['reminderConfig'];
-      defaultMetadata?: TaskTemplate['metadata'];
-    }
-  ) {
-    super(uuid);
+  constructor(params: {
+    uuid?: string;
+    name: string;
+    category: string;
+    icon?: string;
+    color?: string;
+    description?: string;
+    defaultTimeConfig?: TaskTemplate["timeConfig"];
+    defaultReminderConfig?: TaskTemplate["reminderConfig"];
+    defaultMetadata?: TaskTemplate["metadata"];
+  }) {
+    super(params.uuid || AggregateRoot.generateId());
     const now = new Date();
 
-    this._name = name;
-    this._description = options?.description;
-    this._category = category;
-    this._defaultTimeConfig = options?.defaultTimeConfig || this.DefaultTimeConfig;
-    this._defaultReminderConfig = options?.defaultReminderConfig || this.DefaultReminderConfig;
-    this._defaultMetadata = options?.defaultMetadata || this.DefaultMetadata;
-    
+    this._name = params.name;
+    this._description = params.description;
+    this._category = params.category;
+    this._icon = params.icon;
+    this._color = params.color;
+    this._defaultTimeConfig =
+      params.defaultTimeConfig || this.DefaultTimeConfig;
+    this._defaultReminderConfig =
+      params.defaultReminderConfig || this.DefaultReminderConfig;
+    this._defaultMetadata = params.defaultMetadata || this.DefaultMetadata;
+
     this._lifecycle = {
       createdAt: now,
       updatedAt: now,
-      status: "active"
     };
   }
 
   // Getters
-  get name(): string { return this._name; }
-  get description(): string | undefined { return this._description; }
-  get category(): string { return this._category; }
-  get defaultTimeConfig(): TaskTemplate['timeConfig'] { return this._defaultTimeConfig; }
-  get defaultReminderConfig(): TaskTemplate['reminderConfig'] { return this._defaultReminderConfig; }
-  get defaultMetadata(): TaskTemplate['metadata'] { return this._defaultMetadata; }
-  get lifecycle() { return this._lifecycle; }
+  get name(): string {
+    return this._name;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
+
+  get icon(): string | undefined {
+    return this._icon;
+  }
+
+  get color(): string | undefined {
+    return this._color;
+  }
+
+  get category(): string {
+    return this._category;
+  }
+  get defaultTimeConfig(): TaskTemplate["timeConfig"] {
+    return this._defaultTimeConfig;
+  }
+  get defaultReminderConfig(): TaskTemplate["reminderConfig"] {
+    return this._defaultReminderConfig;
+  }
+  get defaultMetadata(): TaskTemplate["metadata"] {
+    return this._defaultMetadata;
+  }
+  get lifecycle() {
+    return this._lifecycle;
+  }
 
    /**
-   * 从完整数据创建 TaskTemplateMeta 实例（用于反序列化）
+   * 从完整数据创建 TaskMetaTemplate 实例（用于反序列化）
    * 保留所有原始状态信息
    */
-  static fromCompleteData(data: {
-    uuid: string;
-    name: string;
-    description?: string;
-    category: string;
-    defaultTimeConfig?: TaskTemplate['timeConfig'];
-    defaultReminderConfig?: TaskTemplate['reminderConfig'];
-    defaultMetadata?: TaskTemplate['metadata'];
-    lifecycle: {
-      createdAt: Date;
-      updatedAt: Date;
-      status: "active" | "archived";
-    };
-  }): TaskMetaTemplate {
-    const instance = new TaskMetaTemplate(
-      data.uuid,
-      data.name,
-      data.category,
-      {
-        description: data.description,
-        defaultTimeConfig: data.defaultTimeConfig,
-        defaultReminderConfig: data.defaultReminderConfig,
-        defaultMetadata: data.defaultMetadata
-      }
-    );
-    
+  static fromDTO(data: ITaskMetaTemplateDTO): TaskMetaTemplate {
+    const metaTemplate = new TaskMetaTemplate({
+      uuid: data.uuid,
+      name: data.name,
+      category: data.category,
+      icon: data.icon,
+      color: data.color,
+      description: data.description,
+      defaultTimeConfig: {
+        ...data.defaultTimeConfig,
+        baseTime: {
+          ...data.defaultTimeConfig.baseTime,
+          start: new Date(data.defaultTimeConfig.baseTime.start),
+          end: data.defaultTimeConfig.baseTime.end
+            ? new Date(data.defaultTimeConfig.baseTime.end)
+            : undefined,
+        },
+        recurrence: {
+          ...data.defaultTimeConfig.recurrence,
+          endCondition: data.defaultTimeConfig.recurrence.endCondition
+            ? {
+                ...data.defaultTimeConfig.recurrence.endCondition,
+                endDate: data.defaultTimeConfig.recurrence.endCondition.endDate
+                  ? new Date(data.defaultTimeConfig.recurrence.endCondition.endDate)
+                  : undefined,
+              }
+            : undefined,
+        },
+      },
+      defaultReminderConfig: {
+        ...data.defaultReminderConfig,
+        enabled: !!data.defaultReminderConfig.enabled,
+        alerts: data.defaultReminderConfig.alerts.map(alert => ({
+          ...alert,
+          timing: {
+            ...alert.timing,
+            absoluteTime: alert.timing.absoluteTime
+              ? new Date(alert.timing.absoluteTime)
+              : undefined,
+          },
+        })),
+        snooze: {
+          ...data.defaultReminderConfig.snooze,
+          enabled: !!data.defaultReminderConfig.snooze.enabled,
+        },
+      },
+      defaultMetadata: {
+        category: data.defaultMetadata.category,
+        tags: data.defaultMetadata.tags,
+        estimatedDuration: data.defaultMetadata.estimatedDuration,
+        importance: data.defaultMetadata.importance ?? ImportanceLevel.Moderate,
+        urgency: data.defaultMetadata.urgency ?? UrgencyLevel.Medium,
+        location: data.defaultMetadata.location,
+      },
+    });
+
     // 手动设置生命周期信息
-    instance._lifecycle = {
-      createdAt: data.lifecycle.createdAt,
-      updatedAt: data.lifecycle.updatedAt,
-      status: data.lifecycle.status
+    metaTemplate._lifecycle = {
+      createdAt: new Date(data.lifecycle.createdAt),
+      updatedAt: new Date(data.lifecycle.updatedAt),
     };
-    
-    return instance;
+
+    return metaTemplate;
   }
 
   clone(): TaskMetaTemplate {
-    return new TaskMetaTemplate(
-      this.uuid,
-      this._name,
-      this._category,
-      {
-        description: this._description,
-        defaultTimeConfig: { ...this._defaultTimeConfig },
-        defaultReminderConfig: { ...this._defaultReminderConfig },
-        defaultMetadata: { ...this._defaultMetadata }
-      }
-    );
+    return new TaskMetaTemplate({
+      uuid: this.uuid,
+      name: this._name,
+      description: this._description,
+      category: this._category,
+      defaultTimeConfig: { ...this._defaultTimeConfig },
+      defaultReminderConfig: { ...this._defaultReminderConfig },
+      defaultMetadata: { ...this._defaultMetadata },
+    });
   }
 
   /**
@@ -192,16 +252,33 @@ export class TaskMetaTemplate extends AggregateRoot {
       lifecycle: {
         createdAt: this._lifecycle.createdAt.getTime(),
         updatedAt: this._lifecycle.updatedAt.getTime(),
-        status: this._lifecycle.status,
       },
     };
   }
 
   /**
-   * 导出完整数据（用于序列化）
-   * 为了兼容 JSON.stringify()，委托给 toDTO()
+   * 从此元模板创建一个完整的任务模板
+   * 渲染进程可以调用此方法返回一个可以被直接修改的完整对象
    */
-  toJSON(): ITaskMetaTemplateDTO {
-    return this.toDTO();
+  createTaskTemplate(): TaskTemplate {
+    const taskTemplate = new TaskTemplate({
+      title: '',
+      description: '',
+      timeConfig: { ...this._defaultTimeConfig },
+      reminderConfig: { ...this._defaultReminderConfig },
+      importance: this._defaultMetadata.importance,
+      urgency: this._defaultMetadata.urgency,
+      category: this._defaultMetadata.category,
+      tags: this._defaultMetadata.tags,
+      estimatedDuration: this._defaultMetadata.estimatedDuration,
+      location: this._defaultMetadata.location,
+      schedulingPolicy: {
+        allowReschedule: true,
+        maxDelayDays: 7,
+        skipWeekends: false,
+      },
+    });
+
+    return taskTemplate;
   }
 }

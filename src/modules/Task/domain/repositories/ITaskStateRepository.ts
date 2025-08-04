@@ -73,6 +73,8 @@ export interface ITaskStateRepository {
    */
   setMetaTemplates(metaTemplates: any[]): Promise<void>;
 
+  getMetaTemplateByUuid(uuid: string): Promise<any | null>;
+
   // === 综合状态同步 ===
   
   /**

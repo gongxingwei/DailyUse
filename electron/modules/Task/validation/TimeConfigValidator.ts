@@ -12,7 +12,7 @@ import { isAfter } from 'date-fns';
 export class TimeConfigValidator implements ITemplateValidator {
   validate(template: ITaskTemplate): ValidationResult {
     const timeConfig = template.timeConfig;
-    
+
     if (!timeConfig) {
       return ValidationUtils.failure(['时间配置不能为空']);
     }
@@ -143,12 +143,12 @@ export class TimeConfigValidator implements ITemplateValidator {
     const errors: string[] = [];
 
     // 检查全天任务是否设置了具体时间
-    if (timeConfig.type === 'allDay' && (timeConfig.baseTime as any)?.start?.time) {
+    if (timeConfig.type === 'allDay' && (timeConfig.baseTime as any)?.start) {
       warnings.push('全天任务不需要设置具体时间');
     }
 
     // 检查定时任务是否缺少时间
-    if (timeConfig.type === 'timed' && !(timeConfig.baseTime as any)?.start?.time) {
+    if (timeConfig.type === 'timed' && !(timeConfig.baseTime as any)?.start) {
       errors.push('定时任务必须设置具体时间');
     }
 

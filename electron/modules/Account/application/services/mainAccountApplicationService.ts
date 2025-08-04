@@ -4,7 +4,7 @@ import { Account } from "../../domain/aggregates/account";
 import { User } from "../../domain/entities/user";
 import { Email } from "../../domain/valueObjects/email";
 import { PhoneNumber } from "../../domain/valueObjects/phoneNumber";
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 import { AccountRegistrationRequest, AccountType } from "../../../../../common/modules/account/types/account";
 import { generateUUID } from "@/shared/utils/uuid";
 import { eventBus } from "@common/shared/events/eventBus";
@@ -84,14 +84,15 @@ export class MainAccountApplicationService {
       });
 
       // 5. 创建 Account 聚合根（身份信息）
-      const account = new Account({
-        uuid: generateUUID(),
+      const account = Account.register({
         username: registerData.username,
+        password: registerData.password,
         accountType: registerData.accountType || AccountType.LOCAL,
-        user,
+        user: user,
         email: registerData.email ? new Email(registerData.email) : undefined,
-        phoneNumber: registerData.phone ? new PhoneNumber(registerData.phone) : undefined
-    });
+        phoneNumber: registerData.phone ? new PhoneNumber(registerData.phone) : undefined,
+      })
+      
 
       // 6. 保存 Account（包含 User）
       await this.accountRepository.save(account);

@@ -273,13 +273,10 @@ export class TaskMetaTemplate
    * 从此元模板创建一个完整的任务模板
    * 主进程可以直接调用此方法返回一个可以被渲染进程直接修改的完整对象
    */
-  createTaskTemplate(params: {
-    title: string;
-    description: string;
-  }): TaskTemplate {
+  createTaskTemplate(): TaskTemplate {
     const taskTemplate = new TaskTemplate({
-      title: params.title,
-      description: params.description,
+      title: '',
+      description: '',
       timeConfig: { ...this._defaultTimeConfig },
       reminderConfig: { ...this._defaultReminderConfig },
       importance: this._defaultMetadata.importance,

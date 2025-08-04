@@ -1,5 +1,5 @@
 import { TaskInstance } from "../aggregates/taskInstance";
-import { TResponse } from "../../../../../src/shared/types/response";
+import { TResponse } from "../../../../../common/shared/types/response";
 import { scheduleService } from "../../../../shared/schedule/services/scheduleService";
 import type { TaskReminderConfig } from '@common/modules/task/types/task';
 import { addMinutes } from "date-fns";

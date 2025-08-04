@@ -115,10 +115,7 @@ const timeConfigType = computed({
   set: (newType: "allDay" | "timed" | "timeRange") => {
     console.log('Setting timeConfigType to:', newType);
     updateTemplate((template) => {
-      template.updateTimeConfig({
-        ...template.timeConfig,
-        type: newType
-      });
+      template.switchTimeConfigType(newType);
     });
   }
 })

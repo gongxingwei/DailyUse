@@ -4,6 +4,7 @@ import { Email } from "../valueObjects/email";
 import { PhoneNumber } from "../valueObjects/phoneNumber";
 import { Address } from "../valueObjects/address";
 import { AccountStatus, AccountType, IAccount, AccountDTO } from "../../../../../common/modules/account/types/account";
+import { AccountRegisteredEvent } from "../events/accountEvents";
 
 /**
  * Account 聚合根
@@ -215,6 +216,42 @@ export class Account extends AggregateRoot implements IAccount {
       occurredOn: new Date(),
       payload: { accountUuid: this.uuid, timestamp: this._updatedAt }
     });
+  }
+
+  static register(params: {
+    username: string;
+    accountType: AccountType;
+    user: User;
+    email?: Email;
+    phoneNumber?: PhoneNumber;
+    address?: Address;
+    password?: string;
+  }): Account {
+    const newAccount = new Account(params);
+
+    newAccount.addDomainEvent({
+      aggregateId: newAccount.uuid,
+      eventType: 'AccountRegistered',
+      occurredOn: new Date(),
+      payload: { accountUuid: newAccount.uuid, username: newAccount.username,
+        password: params.password,
+        email: newAccount.email?.value,
+        phone: newAccount.phoneNumber?.fullNumber,
+        accountType: newAccount.accountType,
+        userUuid: newAccount.user.uuid,
+        userProfile: {
+          firstName: newAccount.user.firstName,
+          lastName: newAccount.user.lastName,
+          avatar: newAccount.user.avatar,
+          bio: newAccount.user.bio
+        },
+        status: newAccount.status,
+        createdAt: newAccount.createdAt,
+        requiresAuthentication: true
+       } as AccountRegisteredEvent['payload']
+    });
+
+    return newAccount;
   }
 
   /**

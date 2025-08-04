@@ -2,7 +2,7 @@ import { BrowserWindow } from "electron";
 import { NotificationWindowManager } from "../windows/notificationWindow";
 
 import type { NotificationWindow } from "../types";
-import type { TResponse } from "@/shared/types/response";
+import type { TResponse } from "@common/shared/types/response";
 
 export interface NotificationServiceConfig {
   mainWindow: BrowserWindow;

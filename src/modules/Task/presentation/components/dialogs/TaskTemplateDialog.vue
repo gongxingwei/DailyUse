@@ -1,4 +1,3 @@
-<!-- filepath: /d:/myPrograms/DailyUse/src/modules/Task/components/TaskTemplateDialog.vue -->
 <template>
   <v-dialog :model-value="props.visible" max-width="900" persistent scrollable>
     <v-card class="task-template-dialog">
@@ -28,7 +27,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
-import TaskTemplateForm from './TaskTemplateForm/TaskTemplateForm.vue';
+import TaskTemplateForm from '../TaskTemplateForm/TaskTemplateForm.vue';
 
 
 interface Props {

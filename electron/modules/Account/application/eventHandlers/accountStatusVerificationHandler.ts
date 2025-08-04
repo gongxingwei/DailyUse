@@ -24,13 +24,18 @@ export class AccountStatusVerificationHandler {
       let accountStatus: AccountStatusVerificationResponseEvent['payload']['accountStatus'];
       let isLoginAllowed = false;
       let statusMessage = '';
-
+      console.log('🔍 [Account] 查找账号结果:', response);
       if (!account) {
         // 账号不存在
         accountStatus = 'not_found';
         isLoginAllowed = false;
         statusMessage = '账号不存在';
         console.log('❌ [Account] 账号不存在:', accountUuid);
+      } else if (account.accountType === 'local') {
+        // 本地账号直接返回验证成功
+        accountStatus = 'active';
+        isLoginAllowed = true;
+        statusMessage = '账号状态正常';
       } else {
         // 检查账号状态
         switch (account.status) {

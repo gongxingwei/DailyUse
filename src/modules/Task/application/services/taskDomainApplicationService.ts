@@ -1,18 +1,16 @@
-import {
-  TaskTemplate
-} from "@/modules/Task/domain/aggregates/taskTemplate";
-import {
-  TaskInstance,
-  TaskInstanceMapper,
-} from "@/modules/Task/domain/aggregates/taskInstance";
+// domains
+import { TaskTemplate } from "@/modules/Task/domain/aggregates/taskTemplate";
+import { TaskInstance } from "@/modules/Task/domain/aggregates/taskInstance";
+import { TaskMetaTemplate } from "../../domain/aggregates/taskMetaTemplate";
+// ipcs
 import { taskIpcClient } from "@/modules/Task/infrastructure/ipc/taskIpcClient";
 import type { ITaskStateRepository } from "@/modules/Task/domain/repositories/ITaskStateRepository";
 import { PiniaTaskStateRepository } from "@/modules/Task/infrastructure/repositories/piniaTaskStateRepository";
 import type {
-  ITaskTemplate,
-  ITaskInstance,
   TaskStats,
   TaskTimeline,
+  ITaskTemplateDTO,
+  ITaskInstanceDTO,
 } from "@common/modules/task/types/task";
 
 /**
@@ -55,15 +53,26 @@ export class TaskDomainApplicationService {
         ]);
 
       // 批量同步所有数据
-      const templates = templatesResponse.success
-        ? templatesResponse.data || []
-        : [];
-      const instances = instancesResponse.success
-        ? instancesResponse.data || []
-        : [];
-      const metaTemplates = metaTemplatesResponse.success
-        ? metaTemplatesResponse.data || []
-        : [];
+      const templates =
+        templatesResponse.success && templatesResponse.data
+          ? await Promise.all(
+              templatesResponse.data.map((item) => TaskTemplate.fromDTO(item))
+            )
+          : [];
+      const instances =
+        instancesResponse.success && instancesResponse.data
+          ? await Promise.all(
+              instancesResponse.data.map((item) => TaskInstance.fromDTO(item))
+            )
+          : [];
+      const metaTemplates =
+        metaTemplatesResponse.success && metaTemplatesResponse.data
+          ? await Promise.all(
+              metaTemplatesResponse.data.map((item) =>
+                TaskMetaTemplate.fromDTO(item)
+              )
+            )
+          : [];
 
       await this.stateRepository.syncAllTaskData(
         templates,
@@ -79,20 +88,21 @@ export class TaskDomainApplicationService {
   /**
    * 同步单个任务模板
    */
-  private async syncTaskTemplate(templateId: string) {
+  private async syncTaskTemplate(templateUuid: string) {
     try {
       if (!this.stateRepository.isAvailable()) {
         console.warn("⚠️ 状态仓库不可用，跳过同步");
         return;
       }
 
-      const response = await taskIpcClient.getTaskTemplate(templateId);
+      const response = await taskIpcClient.getTaskTemplate(templateUuid);
       if (response.success && response.data) {
-        await this.stateRepository.updateTaskTemplate(response.data);
-        console.log(`✓ 同步任务模板: ${templateId}`);
+        const template = TaskTemplate.fromDTO(response.data);
+        await this.stateRepository.updateTaskTemplate(template);
+        console.log(`✓ 同步任务模板: ${templateUuid}`);
       }
     } catch (error) {
-      console.error(`❌ 同步任务模板失败: ${templateId}`, error);
+      console.error(`❌ 同步任务模板失败: ${templateUuid}`, error);
     }
   }
 
@@ -108,7 +118,8 @@ export class TaskDomainApplicationService {
 
       const response = await taskIpcClient.getTaskInstance(instanceId);
       if (response.success && response.data) {
-        await this.stateRepository.updateTaskInstance(response.data);
+        const taskInstance = TaskInstance.fromDTO(response.data);
+        await this.stateRepository.updateTaskInstance(taskInstance);
         console.log(`✓ 同步任务实例: ${instanceId}`);
       }
     } catch (error) {
@@ -119,17 +130,17 @@ export class TaskDomainApplicationService {
   /**
    * 从状态仓库中删除任务模板
    */
-  private async removeTaskTemplateFromState(templateId: string) {
+  private async removeTaskTemplateFromState(templateUuid: string) {
     try {
       if (!this.stateRepository.isAvailable()) {
         console.warn("⚠️ 状态仓库不可用，跳过删除");
         return;
       }
 
-      await this.stateRepository.removeTaskTemplate(templateId);
-      console.log(`✓ 从状态删除任务模板: ${templateId}`);
+      await this.stateRepository.removeTaskTemplate(templateUuid);
+      console.log(`✓ 从状态删除任务模板: ${templateUuid}`);
     } catch (error) {
-      console.error(`❌ 从状态删除任务模板失败: ${templateId}`, error);
+      console.error(`❌ 从状态删除任务模板失败: ${templateUuid}`, error);
     }
   }
 
@@ -203,9 +214,11 @@ export class TaskDomainApplicationService {
   /**
    * 根据ID获取任务模板（返回领域对象）
    */
-  async getTaskTemplate(taskTemplateId: string): Promise<TaskTemplate | null> {
+  async getTaskTemplate(
+    taskTemplateUuid: string
+  ): Promise<TaskTemplate | null> {
     try {
-      const response = await taskIpcClient.getTaskTemplate(taskTemplateId);
+      const response = await taskIpcClient.getTaskTemplate(taskTemplateUuid);
       if (response.success && response.data) {
         return TaskTemplate.fromDTO(response.data);
       }
@@ -257,35 +270,24 @@ export class TaskDomainApplicationService {
   /**
    * 创建任务模板
    */
-  async createTaskTemplate(dto: ITaskTemplate): Promise<{
-    success: boolean;
-    template?: TaskTemplate;
-    message?: string;
-  }> {
+  async createTaskTemplate(
+    dto: ITaskTemplateDTO
+  ): Promise<TResponse<TaskTemplate>> {
     try {
       const response = await taskIpcClient.createTaskTemplate(dto);
 
-      if (response.success) {
-        // 自动同步状态：将主进程创建并保存的模板同步到前端状态
-        if (response.data) {
-          await this.stateRepository.addTaskTemplate(response.data);
-          console.log(
-            `✅ 创建任务模板成功并同步到前端状态: ${response.data.uuid}`
-          );
-        }
-
-        return {
-          success: true,
-          template: response.data
-            ? TaskTemplate.fromDTO(response.data)
-            : undefined,
-          message: response.message,
-        };
+      if (!response.success || !response.data) {
+        return { success: false, message: response.message || "任务模板创建失败" };
       }
+      const templateDomain = TaskTemplate.fromDTO(response.data);
+      await this.stateRepository.addTaskTemplate(templateDomain);
+      console.log(`✅ 创建任务模板成功并同步到状态: ${response.data.uuid}`);
 
+      const createdTemplate = TaskTemplate.fromDTO(response.data);
       return {
-        success: false,
-        message: response.message,
+        success: true,
+        data: createdTemplate,
+        message: response.message || "任务模板创建成功",
       };
     } catch (error) {
       console.error("Failed to create task template:", error);
@@ -296,33 +298,22 @@ export class TaskDomainApplicationService {
   /**
    * 更新任务模板
    */
-  async updateTaskTemplate(dto: ITaskTemplate): Promise<{
-    success: boolean;
-    template?: TaskTemplate;
-    message?: string;
-  }> {
+  async updateTaskTemplate(dto: ITaskTemplateDTO): Promise<TResponse<TaskTemplate>> {
     try {
       const response = await taskIpcClient.updateTaskTemplate(dto);
 
-      if (response.success) {
-        // 自动同步状态：更新现有模板
-        if (response.data) {
-          await this.stateRepository.updateTaskTemplate(response.data);
-          console.log(`✅ 更新任务模板成功并同步到状态: ${response.data.uuid}`);
-        }
-
-        return {
-          success: true,
-          template: response.data
-            ? TaskTemplate.fromDTO(response.data)
-            : undefined,
-          message: response.message,
-        };
+      if (!response.success || !response.data) {
+        return { success: false, message: response.message || "任务模板更新失败" };
       }
 
+      const templateDomain = TaskTemplate.fromDTO(response.data);
+      await this.stateRepository.updateTaskTemplate(templateDomain);
+      console.log(`✅ 更新任务模板成功并同步到状态: ${response.data.uuid}`);
+
       return {
-        success: false,
-        message: response.message,
+        success: true,
+        data: templateDomain,
+        message: response.message || "任务模板更新成功",
       };
     } catch (error) {
       console.error("Failed to update task template:", error);
@@ -530,11 +521,11 @@ export class TaskDomainApplicationService {
   /**
    * 根据ID获取任务实例（返回领域对象）
    */
-  async getTaskInstance(taskInstanceId: string): Promise<TaskInstance | null> {
+  async getTaskInstance(taskInstanceUuid: string): Promise<TaskInstance | null> {
     try {
-      const response = await taskIpcClient.getTaskInstance(taskInstanceId);
+      const response = await taskIpcClient.getTaskInstance(taskInstanceUuid);
       if (response.success && response.data) {
-        return TaskInstanceMapper.fromDTO(response.data);
+        return TaskInstance.fromDTO(response.data);
       }
       return null;
     } catch (error) {
@@ -550,7 +541,7 @@ export class TaskDomainApplicationService {
     try {
       const response = await taskIpcClient.getAllTaskInstances();
       if (response.success && response.data) {
-        return TaskInstanceMapper.fromDTOArray(response.data);
+        return response.data.map(TaskInstance.fromDTO);
       }
       return [];
     } catch (error) {
@@ -566,7 +557,7 @@ export class TaskDomainApplicationService {
     try {
       const response = await taskIpcClient.getTodayTasks();
       if (response.success && response.data) {
-        return TaskInstanceMapper.fromDTOArray(response.data);
+        return response.data.map(TaskInstance.fromDTO);
       }
       return [];
     } catch (error) {
@@ -578,33 +569,22 @@ export class TaskDomainApplicationService {
   /**
    * 创建任务实例
    */
-  async createTaskInstance(dto: ITaskInstance): Promise<{
-    success: boolean;
-    instance?: TaskInstance;
-    message?: string;
-  }> {
+  async createTaskInstance(dto: ITaskInstanceDTO): Promise<TResponse<TaskInstance>> {
     try {
       const response = await taskIpcClient.createTaskInstance(dto);
 
-      if (response.success) {
-        // 自动同步状态：添加新创建的实例
-        if (response.data) {
-          await this.stateRepository.addTaskInstance(response.data);
-          console.log(`✅ 创建任务实例成功并同步到状态: ${response.data.uuid}`);
-        }
-
-        return {
-          success: true,
-          instance: response.data
-            ? TaskInstanceMapper.fromDTO(response.data)
-            : undefined,
-          message: response.message,
-        };
+      if (!response.success || !response.data) {
+        return { success: false, message: response.message || "任务实例创建失败" };
       }
 
+      const instanceDomain = TaskInstance.fromDTO(response.data);
+      await this.stateRepository.addTaskInstance(instanceDomain);
+      console.log(`✅ 创建任务实例成功并同步到状态: ${instanceDomain.uuid}`);
+
       return {
-        success: false,
-        message: response.message,
+        success: true,
+        data: instanceDomain,
+        message: response.message || "任务实例创建成功",
       };
     } catch (error) {
       console.error("Failed to create task instance:", error);
@@ -616,15 +596,15 @@ export class TaskDomainApplicationService {
    * 开始执行任务实例
    */
   async startTaskInstance(
-    taskInstanceId: string
+    taskInstanceUuid: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await taskIpcClient.startTaskInstance(taskInstanceId);
+      const response = await taskIpcClient.startTaskInstance(taskInstanceUuid);
 
       if (response.success) {
         // 自动同步状态：重新获取更新后的实例
-        await this.syncTaskInstance(taskInstanceId);
-        console.log(`✅ 开始任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.syncTaskInstance(taskInstanceUuid);
+        console.log(`✅ 开始任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -641,15 +621,15 @@ export class TaskDomainApplicationService {
    * 完成任务实例
    */
   async completeTaskInstance(
-    taskInstanceId: string
+    taskInstanceUuid: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await taskIpcClient.completeTaskInstance(taskInstanceId);
+      const response = await taskIpcClient.completeTaskInstance(taskInstanceUuid);
 
       if (response.success) {
         // 自动同步状态：重新获取更新后的实例
-        await this.syncTaskInstance(taskInstanceId);
-        console.log(`✅ 完成任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.syncTaskInstance(taskInstanceUuid);
+        console.log(`✅ 完成任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -666,17 +646,17 @@ export class TaskDomainApplicationService {
    * 撤销完成任务实例
    */
   async undoCompleteTaskInstance(
-    taskInstanceId: string
+    taskInstanceUuid: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await taskIpcClient.undoCompleteTaskInstance(
-        taskInstanceId
+        taskInstanceUuid
       );
 
       if (response.success) {
         // 自动同步状态：重新获取更新后的实例
-        await this.syncTaskInstance(taskInstanceId);
-        console.log(`✅ 撤销完成任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.syncTaskInstance(taskInstanceUuid);
+        console.log(`✅ 撤销完成任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -696,15 +676,15 @@ export class TaskDomainApplicationService {
    * 取消任务实例
    */
   async cancelTaskInstance(
-    taskInstanceId: string
+    taskInstanceUuid: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await taskIpcClient.cancelTaskInstance(taskInstanceId);
+      const response = await taskIpcClient.cancelTaskInstance(taskInstanceUuid);
 
       if (response.success) {
         // 自动同步状态：重新获取更新后的实例
-        await this.syncTaskInstance(taskInstanceId);
-        console.log(`✅ 取消任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.syncTaskInstance(taskInstanceUuid);
+        console.log(`✅ 取消任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -721,21 +701,21 @@ export class TaskDomainApplicationService {
    * 延期任务实例
    */
   async rescheduleTaskInstance(
-    taskInstanceId: string,
+    taskInstanceUuid: string,
     newScheduledTime: string,
     newEndTime?: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await taskIpcClient.rescheduleTaskInstance(
-        taskInstanceId,
+        taskInstanceUuid,
         newScheduledTime,
         newEndTime
       );
 
       if (response.success) {
         // 自动同步状态：重新获取更新后的实例
-        await this.syncTaskInstance(taskInstanceId);
-        console.log(`✅ 延期任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.syncTaskInstance(taskInstanceUuid);
+        console.log(`✅ 延期任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -752,15 +732,15 @@ export class TaskDomainApplicationService {
    * 删除任务实例
    */
   async deleteTaskInstance(
-    taskInstanceId: string
+    taskInstanceUuid: string
   ): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await taskIpcClient.deleteTaskInstance(taskInstanceId);
+      const response = await taskIpcClient.deleteTaskInstance(taskInstanceUuid);
 
       if (response.success) {
         // 自动同步状态：删除实例
-        await this.removeTaskInstanceFromState(taskInstanceId);
-        console.log(`✅ 删除任务实例成功并同步到状态: ${taskInstanceId}`);
+        await this.removeTaskInstanceFromState(taskInstanceUuid);
+        console.log(`✅ 删除任务实例成功并同步到状态: ${taskInstanceUuid}`);
       }
 
       return {
@@ -954,7 +934,25 @@ export class TaskDomainApplicationService {
       return [];
     }
   }
+
+  // ============ 渲染进程自我实现的业务 ============
+
+  async createTaskTemplateByMetaTemplate(
+    metaTemplateUuid: string
+  ): Promise<TaskTemplate | null> {
+    try {
+      const metaTemplate = await this.stateRepository.getMetaTemplateByUuid(
+        metaTemplateUuid
+      );
+      const createdTaskTemplate = metaTemplate.createTaskTemplate();
+      return createdTaskTemplate;
+    } catch (error) {
+      console.error("Failed to create task template:", error);
+      return null;
+    }
+  }
 }
+
 
 /**
  * 创建任务应用服务实例的工厂方法

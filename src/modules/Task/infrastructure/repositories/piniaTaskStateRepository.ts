@@ -147,6 +147,17 @@ export class PiniaTaskStateRepository implements ITaskStateRepository {
     }
   }
 
+  async getMetaTemplateByUuid(uuid: string): Promise<any | null> {
+    try {
+      const metaTemplate = this.taskStore.getMetaTemplateByUuid(uuid);
+      console.log(`✅ [StateRepo] 获取元模板状态: ${uuid}`);
+      return metaTemplate;
+    } catch (error) {
+      console.error('❌ [StateRepo] 获取元模板失败', error);
+      return null;
+    }
+  }
+
   // === 综合状态同步 ===
   
   async syncAllTaskData(

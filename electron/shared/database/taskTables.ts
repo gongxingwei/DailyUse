@@ -9,12 +9,9 @@ export class TaskTables {
    * 创建任务相关表
    */
   static createTables(db: Database): void {
-    db.exec(`
-      drop table if exists task_categories;
-      drop table if exists task_meta_templates;
-      drop table if exists task_templates;
-      drop table if exists task_instances;
-      `)
+    // db.exec(`
+    //   drop table if exists task_instances;
+    // `)
     // 任务分类表
     db.exec(`
       CREATE TABLE IF NOT EXISTS task_categories (
@@ -82,9 +79,7 @@ export class TaskTables {
         -- 关联配置
         key_result_links TEXT, -- JSON 格式存储关键结果链接
         version INTEGER NOT NULL DEFAULT 1,
-        FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (meta_template_uuid) REFERENCES task_meta_templates(uuid) ON DELETE SET NULL,
-        FOREIGN KEY (category_uuid) REFERENCES task_categories(uuid) ON DELETE SET NULL
+        FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE
       )
     `);
 
@@ -111,7 +106,7 @@ export class TaskTables {
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
         FOREIGN KEY (account_uuid) REFERENCES accounts(uuid) ON DELETE CASCADE,
-        FOREIGN KEY (template_uuid) REFERENCES task_templates(uuid) ON DELETE SET NULL,
+        FOREIGN KEY (template_uuid) REFERENCES task_templates(uuid) ON DELETE SET NULL
       )
     `);
 
@@ -171,22 +166,16 @@ export class TaskTables {
    */
   static createIndexes(db: Database): void {
     db.exec(`
-      CREATE INDEX IF NOT EXISTS idx_task_categories_account_uuid ON task_categories(account_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_categories_sort_order ON task_categories(sort_order);
-      CREATE INDEX IF NOT EXISTS idx_task_categories_is_system ON task_categories(is_system);
+
       
       CREATE INDEX IF NOT EXISTS idx_task_meta_templates_account_uuid ON task_meta_templates(account_uuid);
       
       
       CREATE INDEX IF NOT EXISTS idx_task_templates_account_uuid ON task_templates(account_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_templates_meta_template_uuid ON task_templates(meta_template_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_templates_lifecycle ON task_templates(lifecycle);
-      CREATE INDEX IF NOT EXISTS idx_task_templates_usage_count ON task_templates(usage_count);
       CREATE INDEX IF NOT EXISTS idx_task_templates_created_at ON task_templates(created_at);
       
       CREATE INDEX IF NOT EXISTS idx_task_instances_account_uuid ON task_instances(account_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_instances_template_uuid ON task_instances(template_uuid);
-      CREATE INDEX IF NOT EXISTS idx_task_instances_category_uuid ON task_instances(category_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_instances_reminder_status ON task_instances(reminder_status);
       CREATE INDEX IF NOT EXISTS idx_task_instances_lifecycle ON task_instances(lifecycle);
       CREATE INDEX IF NOT EXISTS idx_task_instances_created_at ON task_instances(created_at);
@@ -202,7 +191,6 @@ export class TaskTables {
       CREATE INDEX IF NOT EXISTS idx_task_dependencies_predecessor_uuid ON task_dependencies(predecessor_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_dependencies_successor_uuid ON task_dependencies(successor_uuid);
       CREATE INDEX IF NOT EXISTS idx_task_dependencies_dependency_type ON task_dependencies(dependency_type);
-      CREATE INDEX IF NOT EXISTS idx_task_dependencies_is_critical ON task_dependencies(is_critical);
     `);
   }
 
