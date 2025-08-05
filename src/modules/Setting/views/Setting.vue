@@ -381,52 +381,6 @@
         </div>
       </v-card-text>
     </v-card>
-
-    <!-- 关于 -->
-    <v-card class="settings-card" elevation="2">
-      <v-card-title class="settings-section-title">
-        <div class="d-flex align-center">
-          <v-icon color="primary" class="mr-3">mdi-information</v-icon>
-          <span>{{ t('settings.about.title') }}</span>
-        </div>
-      </v-card-title>
-      
-      <v-card-text class="pa-6">
-        <div class="d-flex align-center">
-          <v-avatar size="64" color="primary" variant="tonal" class="mr-6">
-            <v-icon size="32">mdi-application</v-icon>
-          </v-avatar>
-          <div class="flex-grow-1">
-            <h3 class="text-h6 font-weight-bold mb-2">DailyUse</h3>
-            <div class="text-body-1 mb-1">{{ t('settings.about.version') }}</div>
-            <div class="text-caption text-medium-emphasis">
-              {{ t('settings.about.description') }}
-            </div>
-          </div>
-        </div>
-        
-        <v-divider class="my-4"></v-divider>
-        
-        <div class="d-flex gap-3">
-          <v-btn 
-            variant="outlined" 
-            color="primary"
-            prepend-icon="mdi-github" 
-            href="https://github.com/yourusername/dailyuse"
-            target="_blank"
-          >
-            GitHub
-          </v-btn>
-          <v-btn 
-            variant="text" 
-            prepend-icon="mdi-heart"
-            color="error"
-          >
-            支持项目
-          </v-btn>
-        </div>
-      </v-card-text>
-    </v-card>
   </v-container>
 </template>
 

@@ -213,7 +213,6 @@ export function useTaskInstanceManagement() {
   // 日期导航方法
   const selectDay = async (date: string) => {
     selectedDate.value = date;
-    await refreshTasks();
   };
 
   const previousWeek = () => {

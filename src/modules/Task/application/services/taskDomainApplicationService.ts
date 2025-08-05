@@ -51,6 +51,7 @@ export class TaskDomainApplicationService {
           taskIpcClient.getAllTaskInstances(),
           taskIpcClient.getAllMetaTemplates(),
         ]);
+        console.log('instancesResponse', instancesResponse);
 
       // 批量同步所有数据
       const templates =
@@ -279,10 +280,10 @@ export class TaskDomainApplicationService {
       if (!response.success || !response.data) {
         return { success: false, message: response.message || "任务模板创建失败" };
       }
-      const templateDomain = TaskTemplate.fromDTO(response.data);
-      await this.stateRepository.addTaskTemplate(templateDomain);
-      console.log(`✅ 创建任务模板成功并同步到状态: ${response.data.uuid}`);
+      // const templateDomain = TaskTemplate.fromDTO(response.data);
+      // await this.stateRepository.addTaskTemplate(templateDomain);
 
+      await this.syncAllData(); // 确保状态同步
       const createdTemplate = TaskTemplate.fromDTO(response.data);
       return {
         success: true,

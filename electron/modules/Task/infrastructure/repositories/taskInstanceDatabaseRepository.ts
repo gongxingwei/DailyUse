@@ -65,7 +65,7 @@ export class TaskInstanceDatabaseRepository implements ITaskInstanceRepository {
       metadata: JSON.parse(record.metadata),
       version: record.version,
     };
-    return TaskInstance.fromCompleteData(dto);
+    return TaskInstance.fromDTO(dto);
   }
 
   /**

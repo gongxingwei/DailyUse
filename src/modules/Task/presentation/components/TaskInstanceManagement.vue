@@ -84,46 +84,45 @@
 
         <!-- 任务列表 - 占据剩余空间 -->
         <div class="task-sections">
-            <!-- 没有任务时 -->
-            <v-card v-if="totalCount === 0" class="empty-state-card" elevation="2">
-                <v-card-text class="text-center pa-8">
-                    <div class="empty-state-content">
-                        <v-icon color="success" size="80" class="mb-4 empty-icon">mdi-beach</v-icon>
-                        <h3 class="text-h5 mb-3">休息日</h3>
-                        <p class="text-body-1 text-medium-emphasis mb-4">今天没有安排任务，好好休息吧！</p>
-                    </div>
-                </v-card-text>
-            </v-card>
-
-            <!-- 完成所有任务时 -->
-            <v-card 
-                v-else-if="totalCount > 0 && incompleteTasks.length === 0" 
-                class="celebration-card"
-                :class="{ 'show': showCelebration }"
-                elevation="4"
+            <!-- 覆盖层：无任务 -->
+            <div
+                v-if="totalCount === 0"
+                class="overlay-card"
             >
-                <v-card-text class="text-center pa-8">
-                    <div class="celebration-content">
-                        <div class="celebration-background"></div>
-                        <v-icon color="warning" size="80" class="mb-4 celebration-icon">mdi-party-popper</v-icon>
-                        <h3 class="text-h4 mb-3">🎉 恭喜完成所有任务！</h3>
-                        <p class="text-body-1 text-medium-emphasis mb-4">今天的目标全部达成，表现很棒！</p>
-                        <div class="celebration-stats">
-                            <v-chip color="success" variant="elevated" class="mr-2">
-                                <v-icon start>mdi-check-all</v-icon>
-                                完成 {{ completedCount }} 个任务
-                            </v-chip>
-                            <v-chip color="primary" variant="elevated">
-                                <v-icon start>mdi-clock</v-icon>
-                                用时 {{ getCompletionTime }}
-                            </v-chip>
-                        </div>
-                    </div>
-                </v-card-text>
-            </v-card>
+                <div class="overlay-content">
+                    <v-icon color="success" size="80" class="mb-4 empty-icon">mdi-beach</v-icon>
+                    <h3 class="text-h5 mb-3">休息日</h3>
+                    <p class="text-body-1 text-medium-emphasis mb-4">今天没有安排任务，好好休息吧！</p>
+                </div>
+            </div>
 
-            <!-- 任务列表容器 -->
-            <div v-else class="task-lists-container">
+            <!-- 覆盖层：全部完成 -->
+            <div
+                v-else-if="totalCount > 0 && incompleteTasks.length === 0 && showCelebration"
+                class="overlay-card"
+                @click="showCelebration = false"
+                style="cursor:pointer"
+            >
+                <div class="overlay-content">
+                    <v-icon color="warning" size="80" class="mb-4 celebration-icon">mdi-party-popper</v-icon>
+                    <h3 class="text-h4 mb-3">🎉 恭喜完成所有任务！</h3>
+                    <p class="text-body-1 text-medium-emphasis mb-4">今天的目标全部达成，表现很棒！</p>
+                    <div class="celebration-stats">
+                        <v-chip color="success" variant="elevated" class="mr-2">
+                            <v-icon start>mdi-check-all</v-icon>
+                            完成 {{ completedCount }} 个任务
+                        </v-chip>
+                        <v-chip color="primary" variant="elevated">
+                            <v-icon start>mdi-clock</v-icon>
+                            用时 {{ getCompletionTime }}
+                        </v-chip>
+                    </div>
+                    <div class="mt-4 text-caption" style="color:rgba(var(--v-theme-on-surface),0.5)">点击关闭，查看任务列表</div>
+                </div>
+            </div>
+
+            <!-- 水平排列的任务列表 -->
+            <div class="task-lists-row">
                 <!-- 未完成任务 -->
                 <v-card class="task-section-card incomplete-tasks" elevation="3">
                     <v-card-title class="section-header">
@@ -191,7 +190,7 @@
                 </v-card>
 
                 <!-- 已完成任务 -->
-                <v-card v-if="completedTasks.length > 0" class="task-section-card completed-tasks" elevation="2">
+                <v-card class="task-section-card completed-tasks" elevation="2">
                     <v-card-title class="section-header">
                         <div class="header-left">
                             <v-icon color="success" class="mr-2">mdi-check-circle</v-icon>
@@ -226,7 +225,7 @@
 
                                         <v-list-item-subtitle class="task-meta">
                                             <v-icon size="small" class="mr-1">mdi-check</v-icon>
-                                            完成于 {{ format(task.completedAt!, 'yyyy-MM-dd HH:mm:ss') }}
+                                            完成于 {{ format(task.lifecycle.completedAt!, 'yyyy-MM-dd HH:mm:ss') }}
                                         </v-list-item-subtitle>
                                     </div>
 
@@ -351,6 +350,9 @@ watchEffect(() => {
     if (totalCount.value > 0 && incompleteTasks.value.length === 0) {
         showCelebration.value = true;
     }
+    if (totalCount.value === 0) {
+        showCelebration.value = false;
+    }
 });
 </script>
 
@@ -359,8 +361,6 @@ watchEffect(() => {
     height: 100%;
     display: flex;
     flex-direction: column;
-    padding: 1.5rem;
-    gap: 1.5rem;
 }
 
 /* 头部样式 */
@@ -494,17 +494,57 @@ watchEffect(() => {
 
 /* 任务区域样式 */
 .task-sections {
+    position: relative;
     flex: 1;
     min-height: 0;
     overflow: hidden;
 }
 
-.task-lists-container {
+.task-lists-row {
+    display: flex;
+    flex-direction: row;
+    gap: 1.5rem;
     height: 100%;
+    min-height: 0;
+}
+.incomplete-tasks, .completed-tasks {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
     display: flex;
     flex-direction: column;
-    gap: 1rem;
-    min-height: 0;
+}
+@media (max-width: 900px) {
+    .task-lists-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .incomplete-tasks, .completed-tasks {
+        min-height: 200px;
+    }
+}
+
+/* 覆盖层样式 */
+.overlay-card {
+    position: absolute;
+    z-index: 10;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(var(--v-theme-background), 0.95);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 20px;
+    flex-direction: column;
+    animation: fadeInOverlay 0.4s;
+}
+.overlay-content {
+    text-align: center;
+    max-width: 350px;
+    margin: 0 auto;
+}
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 .task-section-card {
@@ -743,6 +783,16 @@ watchEffect(() => {
 @media (max-width: 1024px) {
     .incomplete-tasks {
         flex: 1.5;
+    }
+}
+
+@media (max-width: 900px) {
+    .task-lists-row {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .incomplete-tasks, .completed-tasks {
+        min-height: 200px;
     }
 }
 
