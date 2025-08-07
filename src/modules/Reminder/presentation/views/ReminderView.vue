@@ -18,7 +18,7 @@
 
     <!-- ReminderTemplateGroupCard -->
     <reminder-template-group-card :show="reminderTemplateGroupCard.show"
-      :template-group-uuid="(reminderTemplateGroupCard.templateGroup?.uuid as string)" @back="handleBackFromReminderTemplateGroupCard" />
+      :template-group-uuid="(reminderTemplateGroupCard.templateGroupUuid as string)" @back="handleBackFromReminderTemplateGroupCard" />
 
     <!-- TemplateDialog -->
     <template-dialog :model-value="templateDialog.show"
@@ -171,7 +171,7 @@ const handleBackFromReminderTemplateCard = () => {
 // reminderTemplateGroupCard
 const reminderTemplateGroupCard = ref({
   show: false,
-  templateGroup: null as ReminderTemplateGroup | null
+  templateGroupUuid: null as string | null
 });
 
 // reminderTemplateDialog
@@ -183,14 +183,14 @@ const templateDialog = ref({
 const handleOpenGroup = (group: any) => {
   reminderTemplateGroupCard.value = {
     show: true,
-    templateGroup: group
+    templateGroupUuid: group.uuid
   };
   selectItem(group);
 };
 
 const handleBackFromReminderTemplateGroupCard = () => {
   reminderTemplateGroupCard.value.show = false;
-  reminderTemplateGroupCard.value.templateGroup = null;
+  reminderTemplateGroupCard.value.templateGroupUuid = null;
 };
 
 const startCreateTemplate = () => {

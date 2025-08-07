@@ -11,16 +11,8 @@
       <v-divider />
       <v-card-text>
         <v-form ref="formRef" v-model="isFormValid">
-          <v-select
-            v-model="groupUuidProxy"
-            :items="groupOptions"
-            label="选择目标分组"
-            item-title="title"
-            item-value="value"
-            :item-disabled="(item: any) => item.disabled"
-            :rules="[v => !!v || '请选择分组']"
-            required
-          />
+          <v-select v-model="groupUuidProxy" :items="groupOptions" label="选择目标分组" item-title="title" item-value="value"
+            :item-disabled="(item: any) => item.disabled" :rules="[v => !!v || '请选择分组']" required />
         </v-form>
       </v-card-text>
       <v-card-actions>
@@ -39,7 +31,7 @@ import type { ReminderTemplate } from '@/modules/Reminder/domain/entities/remind
 
 interface Props {
   modelValue: boolean;
-  template: ReminderTemplate;
+  template: ReminderTemplate | null;
 }
 
 const props = defineProps<Props>();
@@ -61,7 +53,7 @@ const reminderStore = useReminderStore();
 
 const groupOptions = computed(() =>
   reminderStore.getReminderGroups.map(g => {
-    if (!g) return null;
+    if (!g || !props.template) return null;
     return {
       title: g.uuid === props.template.groupUuid ? `${g.name}（当前所在组）` : g.name,
       value: g.uuid,
@@ -78,7 +70,7 @@ const closeDialog = () => {
 };
 
 const handleMove = () => {
-  if (isFormValid.value && groupUuidProxy.value) {
+  if (isFormValid.value && groupUuidProxy.value && props.template) {
     emit('move', { template: props.template, toGroupId: groupUuidProxy.value });
     closeDialog();
   }
@@ -86,7 +78,7 @@ const handleMove = () => {
 
 // 弹窗打开时重置校验
 watch(isOpen, (val) => {
-  if (val) {
+  if (val && props.template) {
     formRef.value?.resetValidation?.();
     console.log('传入模板所在分组:', props.template);
     groupUuidProxy.value = props.template.groupUuid; // 绑定到当前模板的分组
