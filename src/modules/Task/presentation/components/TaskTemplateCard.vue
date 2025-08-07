@@ -210,7 +210,6 @@ const timeConfigFormatted = computed(() => {
     return TaskTimeUtils.formatTimeConfig(props.template.timeConfig);
 });
 
-const dateRange = computed(() => timeConfigFormatted.value.dateRange);
 const timeRange = computed(() => timeConfigFormatted.value.timeRange);
 const recurrence = computed(() => timeConfigFormatted.value.recurrence);
 console.log('lifecycle', props.template.lifecycle);

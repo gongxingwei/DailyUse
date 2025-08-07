@@ -19,17 +19,11 @@
             <!-- 操作按钮组 -->
             <div class="action-buttons">
                 <!-- 删除所有模板按钮 -->
-                <v-btn 
-                    v-if="taskStore.getAllTaskTemplates.length > 0"
-                    color="error" 
-                    variant="outlined" 
-                    size="large" 
-                    prepend-icon="mdi-delete-sweep"
-                    @click="showDeleteAllDialog = true" 
-                    class="delete-all-button">
+                <v-btn v-if="taskStore.getAllTaskTemplates.length > 0" color="error" variant="outlined" size="large"
+                    prepend-icon="mdi-delete-sweep" @click="showDeleteAllDialog = true" class="delete-all-button">
                     删除所有模板
                 </v-btn>
-                
+
                 <!-- 创建按钮 -->
                 <v-btn color="primary" variant="elevated" size="large" prepend-icon="mdi-plus"
                     @click="startCreateTaskTemplate" class="create-button">
@@ -60,16 +54,9 @@
             </v-card>
 
             <!-- 使用 TaskTemplateCard 组件 -->
-            <TaskTemplateCard 
-                v-for="template in filteredTemplates" 
-                :key="template.uuid"
-                :template="template"
-                :status-filters="statusFilters"
-                @edit="startEditTaskTemplate"
-                @delete="deleteTemplate"
-                @pause="pauseTemplate"
-                @resume="resumeTemplate"
-            />
+            <TaskTemplateCard v-for="template in filteredTemplates" :key="template.uuid" :template="template"
+                :status-filters="statusFilters" @edit="startEditTaskTemplate" @delete="deleteTemplate"
+                @pause="pauseTemplate" @resume="resumeTemplate" />
         </div>
 
         <!-- 删除确认对话框 -->
@@ -105,14 +92,16 @@
                 </v-card-title>
                 <v-card-text>
                     <v-alert color="error" variant="tonal" class="mb-4">
-                        <v-icon slot="prepend">mdi-alert-circle</v-icon>
+                        <template v-slot:prepend>
+                            <v-icon>mdi-alert-circle</v-icon>
+                        </template>
                         <strong>警告：此操作将永久删除所有任务模板！</strong>
                     </v-alert>
-                    
+
                     <p class="mb-2">
                         您即将删除 <strong>{{ taskStore.getAllTaskTemplates.length }}</strong> 个任务模板，包括：
                     </p>
-                    
+
                     <ul class="mb-3">
                         <li v-for="status in statusFilters" :key="status.value" class="mb-1">
                             <v-chip :color="getStatusChipColor(status.value)" size="small" variant="flat" class="mr-2">
@@ -121,7 +110,7 @@
                             {{ status.label }}模板
                         </li>
                     </ul>
-                    
+
                     <v-alert color="warning" variant="tonal" density="compact">
                         所有相关的任务实例和提醒也会被删除，此操作不可恢复。
                     </v-alert>
@@ -199,13 +188,13 @@ const filteredTemplates = computed(() => {
     console.log('🔍 [filteredTemplates] 计算筛选结果...');
     console.log('📊 所有模板:', allTemplates.length);
     console.log('🎯 筛选状态:', currentStatus.value);
-    
+
     const filtered = allTemplates.filter(template => {
         const status = template.lifecycle?.status;
         console.log(`📋 模板 ${template.title}: status=${status}, 匹配=${status === currentStatus.value}`);
         return status === currentStatus.value;
     });
-    
+
     console.log('✅ 筛选结果:', filtered.length);
     return filtered;
 });
@@ -214,18 +203,18 @@ const filteredTemplates = computed(() => {
 watchEffect(() => {
     console.log('🔍 [TaskTemplateManagement] 数据变化检测:');
     console.log('📊 模板总数:', taskStore.getAllTaskTemplates.length);
-    
+
     // 详细检查每个模板的状态结构
     const templates = taskStore.getAllTaskTemplates;
-    console.log('📋 模板详情:', templates.map(t => ({ 
-        uuid: t.uuid, 
-        title: t.title, 
+    console.log('📋 模板详情:', templates.map(t => ({
+        uuid: t.uuid,
+        title: t.title,
         status: t.lifecycle?.status,
         lifecycleObj: t.lifecycle
     })));
-    
+
     console.log('🎯 当前筛选状态:', currentStatus.value);
-    
+
     // 检查状态分布
     const statusDistribution: Record<string, number> = templates.reduce((acc, t) => {
         const status = t.lifecycle?.status || 'unknown';
@@ -233,7 +222,7 @@ watchEffect(() => {
         return acc;
     }, {} as Record<string, number>);
     console.log('📊 状态分布:', statusDistribution);
-    
+
     console.log('📈 筛选后模板数:', filteredTemplates.value.length);
     console.log('🔍 筛选后的模板:', filteredTemplates.value.map(t => ({ uuid: t.uuid, title: t.title, status: t.lifecycle?.status })));
 });
@@ -302,13 +291,13 @@ const confirmDelete = async () => {
 const confirmDeleteAll = async () => {
     try {
         console.log('🔄 [组件] 开始删除所有任务模板');
-        
+
         // 从taskDomainApplicationService获取服务实例并调用删除所有方法
         const { getTaskDomainApplicationService } = await import('@/modules/Task/application/services/taskDomainApplicationService');
         const taskService = getTaskDomainApplicationService();
-        
+
         const result = await taskService.deleteAllTaskTemplates();
-        
+
         if (result.success) {
             snackbar.value = {
                 show: true,

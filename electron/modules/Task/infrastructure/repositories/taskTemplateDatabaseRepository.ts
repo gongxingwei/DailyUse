@@ -297,6 +297,10 @@ export class TaskTemplateDatabaseRepository implements ITaskTemplateRepository {
         record.uuid,
         record.account_uuid,
       );
+      if (result.changes === 0) {
+        console.warn("没有更新任何记录，可能是因为数据没有变化");
+        return null as any;
+      }
 
       return this.mapRowToTemplate(record);
     } catch (error) {

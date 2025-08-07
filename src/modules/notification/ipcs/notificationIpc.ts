@@ -1,4 +1,3 @@
-import { TResponse } from '@/shared/types/response';
 import { NotificationWindowOptions } from '../types/notification';
 import { serializeForIpc } from '@/shared/utils/ipcSerialization';
 

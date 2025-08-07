@@ -1,6 +1,6 @@
 import path from "path";
 import { BaseWindow } from "./baseWindow";
-import { WindowConfig, ILoginWindow, LoginWindowEvents } from "./types";
+import { WindowConfig, ILoginWindow } from "./types";
 
 /**
  * 登录窗口类
@@ -171,16 +171,4 @@ export class LoginWindow extends BaseWindow implements ILoginWindow {
   }): void {
     this.sendToRenderer("login:result", result);
   }
-}
-
-// 为了TypeScript类型检查，扩展EventEmitter的类型
-export declare interface LoginWindow {
-  on<U extends keyof LoginWindowEvents>(
-    event: U,
-    listener: LoginWindowEvents[U]
-  ): this;
-  emit<U extends keyof LoginWindowEvents>(
-    event: U,
-    ...args: Parameters<LoginWindowEvents[U]>
-  ): boolean;
 }

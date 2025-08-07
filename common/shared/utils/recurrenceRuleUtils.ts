@@ -11,9 +11,9 @@ export function recurrenceRuleToText(rule: RecurrenceRule): string {
   const weekMap = ["日", "一", "二", "三", "四", "五", "六"];
 
   // 处理小时和分钟
-  let hour = Array.isArray(rule.hour) ? rule.hour[0] : rule.hour;
-  let minute = Array.isArray(rule.minute) ? rule.minute[0] : rule.minute;
-  let timeText = (hour !== undefined && minute !== undefined)
+  const hour = Array.isArray(rule.hour) ? rule.hour[0] : rule.hour;
+  const minute = Array.isArray(rule.minute) ? rule.minute[0] : rule.minute;
+  const timeText = (hour !== undefined && minute !== undefined)
     ? `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
     : hour !== undefined ? `${String(hour).padStart(2, "0")}:00` : "";
 
@@ -39,6 +39,6 @@ export function recurrenceRuleToText(rule: RecurrenceRule): string {
   }
 
   // 优先显示星期，其次日期、月份
-  let result = [monthText, dateText, weekText, timeText].filter(Boolean).join(" ");
+  const result = [monthText, dateText, weekText, timeText].filter(Boolean).join(" ");
   return result || "时间未配置";
 }

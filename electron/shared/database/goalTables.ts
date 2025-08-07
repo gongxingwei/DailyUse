@@ -10,7 +10,7 @@ export class GoalTables {
    */
   static createTables(db: Database): void {
 
-    // 先删除所有相关表，避免外键依赖问题
+
     // db.exec(`
     //   DROP TABLE IF EXISTS goal_relationships;
     //   DROP TABLE IF EXISTS goal_reviews;
@@ -72,7 +72,7 @@ export class GoalTables {
       CREATE TABLE IF NOT EXISTS goals (
         uuid TEXT PRIMARY KEY,
         account_uuid TEXT NOT NULL,
-        directory_uuid TEXT NOT NULL,
+        directory_uuid TEXT,
         category_uuid TEXT,
         -- 基本信息
         name TEXT NOT NULL,

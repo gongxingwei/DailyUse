@@ -18,7 +18,7 @@ export class AccountLoggedService {
       const response = await accountIpcClient.getAccountByAccountUuid(accountUuid);
       console.log('获取账户信息响应:', response);
       if (response.success && response.data) {
-        let account = Account.fromDTO(response.data);
+        const account = Account.fromDTO(response.data);
         this.accountStore.setAccount(account);
        
         console.log('success to get account info', account)

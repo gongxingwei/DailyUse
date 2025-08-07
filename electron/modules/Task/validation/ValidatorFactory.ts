@@ -282,14 +282,6 @@ export class ValidationReportGenerator {
     ) {
       suggestions.push("每日重复任务建议启用提醒功能，帮助养成习惯");
     }
-
-    // 根据优先级给出建议
-    if (
-      template.metadata.priority === 5 &&
-      template.timeConfig?.recurrence?.type !== "none"
-    ) {
-      suggestions.push("高优先级的重复任务可能需要重新评估重要性和紧急性");
-    } // 基于警告提供改进建议
     if (result.warnings && result.warnings.length > 0) {
       suggestions.push("建议关注验证警告，这些可能影响任务的执行效果");
     }

@@ -1,7 +1,7 @@
 import path from "path";
 import { BaseWindow } from "./baseWindow";
-import { WindowConfig, IMainWindow, MainWindowEvents, UserData } from "./types";
-
+import { WindowConfig, IMainWindow, UserData } from "./types";
+import { app } from "electron";
 /**
  * 主窗口类
  * 负责处理主应用界面
@@ -195,8 +195,6 @@ export class MainWindow extends BaseWindow implements IMainWindow {
    */
   public setBadge(count: number): void {
     if (this.window && process.platform === "darwin") {
-      // macOS 支持应用图标徽章
-      const { app } = require("electron");
       app.setBadgeCount(count);
     }
   }
@@ -231,16 +229,4 @@ export class MainWindow extends BaseWindow implements IMainWindow {
       this.sendUserData(this.userData);
     }
   }
-}
-
-// 为了TypeScript类型检查，扩展EventEmitter的类型
-export declare interface MainWindow {
-  on<U extends keyof MainWindowEvents>(
-    event: U,
-    listener: MainWindowEvents[U]
-  ): this;
-  emit<U extends keyof MainWindowEvents>(
-    event: U,
-    ...args: Parameters<MainWindowEvents[U]>
-  ): boolean;
 }

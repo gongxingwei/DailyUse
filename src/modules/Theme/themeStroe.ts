@@ -38,7 +38,7 @@ export const useThemeStore = defineStore("theme", {
     getters: {
         currentThemeStyle(state) {
             if (state.currentTheme === 'system') {
-                let theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+                const theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
                 return theme
             } else {
                 return state.currentTheme
@@ -57,7 +57,7 @@ export const useThemeStore = defineStore("theme", {
 
         applyThemeSystem() {
             const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-            let theme = prefersDark ? 'dark' : 'light'
+            const theme = prefersDark ? 'dark' : 'light'
             this.applyTheme(theme)
         },
 

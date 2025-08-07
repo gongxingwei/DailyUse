@@ -298,7 +298,7 @@ function startEdit(key: string, initialValue: string = '') {
   })
 }
 
-async function handleEditComplete(_event?: Event) {
+async function handleEditComplete() {
   if (editingNode.value && editValue.value.trim()) {
     const oldPath = editingNode.value
     const newName = editValue.value.trim()

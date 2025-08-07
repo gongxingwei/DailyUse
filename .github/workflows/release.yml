@@ -44,10 +44,24 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Check version matches tag
+        run: |
+          PKG_VERSION=$(node -p "require('./package.json').version")
+          TAG_VERSION=${GITHUB_REF#refs/tags/v}
+          if [ "$PKG_VERSION" != "$TAG_VERSION" ]; then
+            echo "Version in package.json ($PKG_VERSION) does not match tag ($TAG_VERSION)"
+            exit 1
+          fi
+
       - name: Build
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm run build
+        
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum * > sha256sum.txt
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4

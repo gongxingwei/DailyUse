@@ -118,7 +118,7 @@ const onDragStart = () => {
   // Handle drag start
 };
 
-const onDragEnd = (_event: any) => {
+const onDragEnd = () => {
   // Handle drag end
 };
 

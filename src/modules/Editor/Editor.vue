@@ -77,7 +77,7 @@ onMounted(() => {
   document.documentElement.style.setProperty(
     '--sidebar-width', 
     `${editorLayoutStore.effectiveSidebarWidth}px`
-  ),
+  );
   window.addEventListener('resize', updateWindowWidth);
   editorLayoutStore.distributeEditorGroupWidths(window.innerWidth);
 })

@@ -37,7 +37,8 @@
             <div class="d-flex align-center gap-2 mb-3">
               <v-select v-model="timeHour" :items="hourOptions" label="小时" density="compact" style="width: 100px;" />
               <span>时</span>
-              <v-select v-model="timeMinute" :items="minuteOptions" label="分钟" density="compact" style="width: 100px;" />
+              <v-select v-model="timeMinute" :items="minuteOptions" label="分钟" density="compact"
+                style="width: 100px;" />
               <span>分</span>
             </div>
             <div class="text-caption text-medium-emphasis">
@@ -179,6 +180,7 @@ const selectedDaysText = computed(() => {
   if (timeDaysOfWeek.value.length === 0) return '无';
   if (timeDaysOfWeek.value.length === 7) return '每天';
   return timeDaysOfWeek.value
+    .slice()
     .sort()
     .map(day => weekDayOptions.find(opt => opt.value === day)?.title)
     .join('、');
@@ -298,6 +300,7 @@ watch(
 .scroll-area {
   flex: 1 1 auto;
   overflow: auto;
-  min-height: 0; /* 防止内容撑开父容器 */
+  min-height: 0;
+  /* 防止内容撑开父容器 */
 }
 </style>

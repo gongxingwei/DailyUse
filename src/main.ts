@@ -7,7 +7,6 @@ import router from './shared/router'
 import vuetify from './plugins/vuetify'
 import { PluginManager } from './plugins/core/PluginManager'
 import quickLauncherPlugin from './plugins/quickLauncher/renderer/renderer';
-import '@/shared/styles/icons.css'
 import { i18n } from './i18n'
 import { initializeApp } from './shared/initialization/appInitialization'
 

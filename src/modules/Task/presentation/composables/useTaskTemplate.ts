@@ -61,7 +61,7 @@ export function useTaskTemplate() {
       
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 创建成功`);
-        return { success: true, data: result.template };
+        return { success: true, data: result.data as TaskTemplate };
       } else {
         showError(result.message || '创建任务模板失败');
         return { success: false, message: result.message };
@@ -86,7 +86,7 @@ export function useTaskTemplate() {
       
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 更新成功`);
-        return { success: true, data: result.template };
+        return { success: true, data: result.data as TaskTemplate };
       } else {
         showError(result.message || '更新任务模板失败');
         return { success: false, message: result.message };

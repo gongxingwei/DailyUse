@@ -22,16 +22,24 @@
 </template>
 
 <script setup lang="ts">
-import { ReminderTemplateGroup } from "../../domain/aggregates/reminderTemplateGroup";
 import { computed, inject } from "vue";
+import { useReminderStore } from "@/modules/Reminder/presentation/stores/reminderStore";
+const reminderStore = useReminderStore();
 // components
 
 import ReminderGrid from "./grid/ReminderGrid.vue";
 
 const props = defineProps<{
     show: boolean;
-    templateGroup: ReminderTemplateGroup | null;
+    templateGroupUuid: string | null;
 }>();
+
+const templateGroup = computed(() => {
+    if (!props.templateGroupUuid) return null;
+    return reminderStore.getReminderGroupById(props.templateGroupUuid);
+});
+
+
 
 const onSetGroupEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>('onSetGroupEnabled');
 const onSetGroupEnableMode = inject<((uuid: string, mode: 'group' | 'individual') => void) | undefined>('onSetGroupEnableMode');
@@ -41,39 +49,32 @@ const emit = defineEmits<{
 
 }>();
 
-const name = computed({
-    get: () => props.templateGroup?.name ?? '',
-    set: (val) => {
-        if (props.templateGroup) {
-            props.templateGroup.name = val;
-        }
-    }
-});
+const name = computed(() =>templateGroup.value?.name || '未命名组');
 
 const enableMode = computed({
     get: () => {
-        return props.templateGroup?.enableMode === 'group' ? true : false;
+        return templateGroup.value?.enableMode === 'group' ? true : false;
     },
     set: (val) => {
-        if (props.templateGroup) {
-            onSetGroupEnableMode?.(props.templateGroup.uuid, val ? 'group' : 'individual');
-            props.templateGroup.enableMode = val ? 'group' : 'individual';
+        if (templateGroup.value) {
+            onSetGroupEnableMode?.(templateGroup.value.uuid, val ? 'group' : 'individual');
+
         }
     }
 })
 
 const enabled = computed({
-    get: () => props.templateGroup?.enabled ?? false,
+    get: () => templateGroup.value?.enabled ?? false,
     set: (val) => {
-        if (props.templateGroup) {
-            onSetGroupEnabled?.(props.templateGroup.uuid, val);
-            props.templateGroup.enabled = val;
+        if (templateGroup.value) {
+            onSetGroupEnabled?.(templateGroup.value.uuid, val);
+            templateGroup.value.enabled = val;
         }
     }
 });
 
 const templates = computed(() => {
-    return props.templateGroup?.templates || [];
+    return templateGroup.value?.templates || [];
 });
 
 
@@ -85,8 +86,9 @@ const handleBack = () => {
 
 <style scoped>
 .scroll-area {
-  flex: 1 1 auto;
-  overflow: auto;
-  min-height: 0; /* 防止内容撑开父容器 */
+    flex: 1 1 auto;
+    overflow: auto;
+    min-height: 0;
+    /* 防止内容撑开父容器 */
 }
 </style>

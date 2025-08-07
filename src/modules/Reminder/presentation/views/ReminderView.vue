@@ -18,23 +18,23 @@
 
     <!-- ReminderTemplateGroupCard -->
     <reminder-template-group-card :show="reminderTemplateGroupCard.show"
-      :template-group="reminderTemplateGroupCard.templateGroup" @back="handleBackFromReminderTemplateGroupCard" />
+      :template-group-uuid="(reminderTemplateGroupCard.templateGroup?.uuid as string)" @back="handleBackFromReminderTemplateGroupCard" />
 
     <!-- TemplateDialog -->
     <template-dialog :model-value="templateDialog.show"
-      :template="ReminderTemplate.ensureReminderTemplate(templateDialog.template)"
+      :template="(templateDialog.template as ReminderTemplate)"
       @update:modelValue="templateDialog.show = $event" @create-template="handleCreateReminderTemplate"
       @update-template="handleUpdateReminderTemplate" />
 
     <!-- GroupDialog -->
     <group-dialog :model-value="groupDialog.show"
-      :group="ReminderTemplateGroup.ensureReminderTemplateGroup(groupDialog.group)"
+      :group="(groupDialog.group as ReminderTemplateGroup)"
       @update:modelValue="groupDialog.show = $event" @create-group="handleCreateReminderGroup"
       @update-group="handleUpdateReminderGroup" />
 
     <!-- TemplateMoveDialog -->
     <template-move-dialog :model-value="moveTemplateDialog.show"
-      :template="ReminderTemplate.ensureReminderTemplateNeverNull(moveTemplateDialog.template)"
+      :template="(moveTemplateDialog.template as ReminderTemplate)"
       @update:modelValue="moveTemplateDialog.show = $event" @move="handleMoveTemplateToGroup" />
 
     <!-- snackbar -->
@@ -171,7 +171,7 @@ const handleBackFromReminderTemplateCard = () => {
 // reminderTemplateGroupCard
 const reminderTemplateGroupCard = ref({
   show: false,
-  templateGroup: null as any
+  templateGroup: null as ReminderTemplateGroup | null
 });
 
 // reminderTemplateDialog

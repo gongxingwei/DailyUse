@@ -52,7 +52,7 @@
               </v-row>
 
               <v-select v-model="goalModel.dirUuid" :items="directoryOptions" item-title="text" item-value="value"
-                label="目标文件夹" :disabled="directoryOptions.length === 1">
+                label="目标文件夹" :disabled="directoryOptions.length === 0">
                 <template v-slot:prepend-inner>
                   <v-icon>mdi-folder</v-icon>
                 </template>
@@ -305,15 +305,14 @@ const updateEndTime = (val: string) => { endTimeFormatted.value = val; };
 
 const allGoalDirs = computed(() => goalStore.getAllGoalDirs);
 
-const directoryOptions = ref([
-  ...allGoalDirs.value
-  .filter(dir => !goalStore.isSystemGoalDir(dir.uuid))
-  .map(
-    dir => ({
-    text: dir.name,      // 下拉显示的名称
-    value: dir.uuid      // 选中的值
-  }))
-]);
+const directoryOptions = computed(() =>
+  allGoalDirs.value
+    .filter(dir => !goalStore.isSystemGoalDir(dir.uuid))
+    .map(dir => ({
+      text: dir.name,
+      value: dir.uuid
+    }))
+);
 
 
 // 表单有效性

@@ -80,7 +80,7 @@ defineProps<{ avatarUrl?: string, size: string }>();
 const localAccount = computed(() => accountStore.currentAccount);
 
 const user = computed(() => {
-  if (localAccount && localAccount.value?.user) {
+  if (localAccount.value && localAccount.value?.user) {
     return localAccount.value.user;
   }
   return User.forCreate();

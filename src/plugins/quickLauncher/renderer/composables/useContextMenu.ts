@@ -11,13 +11,13 @@ export function useContextMenu() {
     const selectedItem = ref<any>(null);
     const store = useQuickLauncherStore();
 
-    const getCategoryListAreaContextMenuItems = (createCategory: Function) => [
+    const getCategoryListAreaContextMenuItems = (createCategory: (...args: any[]) => void) => [
         { value: 'newCategory', title: t('quickLauncher.category.new'), action: createCategory }
     ];
 
     const getCategoryListItemContextMenuItems = (
-        renameCategory: Function,
-        deleteCategory: Function
+        renameCategory: (...args: any[]) => void,
+        deleteCategory: (...args: any[]) => void
     ) => [
             { value: 'renameCategory', title: t('quickLauncher.category.rename'), action: renameCategory },
             { value: 'deleteCategory', title: t('quickLauncher.category.delete'), className: 'text-error', action: deleteCategory },
@@ -25,8 +25,8 @@ export function useContextMenu() {
         ];
 
     const getShortcutListAreaContextMenuItems = (
-        addShortcut: Function,
-        addTitle: Function
+        addShortcut: (...args: any[]) => void,
+        addTitle: (...args: any[]) => void
     ) => [
             { value: 'newTitle', title: t('quickLauncher.shortcut.newTitle'), action: addTitle },
             { value: 'newShortcut', title: t('quickLauncher.shortcut.new'), action: addShortcut },
@@ -35,16 +35,16 @@ export function useContextMenu() {
         ];
 
     const getShortcutListItemContextMenuItems = (
-        editShortcut: Function,
-        deleteShortcut: Function,
-        openShortcutLocation: Function
+        editShortcut: (...args: any[]) => void,
+        deleteShortcut: (...args: any[]) => void,
+        openShortcutLocation: (...args: any[]) => void
     ) => [
             { value: 'editShortcut', title: t('quickLauncher.shortcut.edit'), action: editShortcut },
             { value: 'deleteShortcut', title: t('quickLauncher.shortcut.delete'), className: 'text-error', action: deleteShortcut },
             { value: 'openShortcutLocation', title: t('quickLauncher.shortcut.openShortcutLocation'), action: openShortcutLocation },
             { divider: true },
         ];
-    // Show functions
+    // Show (...args: any[]) => voids
     const showCategoryListAreaContextMenu = (e: MouseEvent, items: any[]) => {
         contextMenuItems.value = items;
         showContextMenu.value = true;

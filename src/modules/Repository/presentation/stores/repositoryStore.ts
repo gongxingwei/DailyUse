@@ -14,7 +14,7 @@ export const useRepositoryStore = defineStore("Repository", {
     },
     // 获取关联指定目标的仓库
     getRelativeRepoBygoalUuid: (state) => (goalUuid: string) => {
-      let repos = state.repositories.filter((repo) => {
+      const repos = state.repositories.filter((repo) => {
         repo.relatedGoals?.includes(goalUuid);
       });
       if (!repos || repos.length === 0) {

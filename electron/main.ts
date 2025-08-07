@@ -5,7 +5,7 @@ import { PluginManager } from '../src/plugins/core/PluginManager';
 import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/main';
 import { initializeApp, cleanupApp } from './shared/initialization/appInitializer';
 import { WindowManager } from './windows/windowManager';
-
+import { getInitializationStatus } from './shared/initialization/appInitializer';
 
 // console.log = (...args) => { logToFile("info", ...args); };
 // console.error = (...args) => { logToFile("error", ...args); };
@@ -147,7 +147,6 @@ function registerIpcHandlers(): void {
 
   // 模块状态查询
   ipcMain.handle('get-module-status', () => {
-    const { getInitializationStatus } = require('./shared/initialization/appInitializer');
     return getInitializationStatus();
   });
 

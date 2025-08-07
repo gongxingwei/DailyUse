@@ -47,23 +47,26 @@ export const useTaskStore = defineStore("task", {
       },
 
     getTodayTaskInstances(): TaskInstance[] {
+      console.log("🔍 [TaskStore] 获取今日任务实例！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
+      console.log('当前任务实例列表:', this.taskInstances);
       const today = new Date();
       const todayStart = toDayStart(today);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayStart.getDate() + 1);
-
-      return (this.taskInstances as TaskInstance[]).filter((task) => {
+      const todayInstance = (this.taskInstances as TaskInstance[]).filter((task) => {
         if (
-          !task.scheduledTime ||
-          typeof task.scheduledTime.getTime() !== "number"
+          !task.timeConfig.scheduledTime ||
+          typeof task.timeConfig.scheduledTime.getTime() !== "number"
         ) {
           return false;
         }
         return (
-          task.scheduledTime.getTime() >= todayStart.getTime() &&
-          task.scheduledTime.getTime() < todayEnd.getTime()
+          task.timeConfig.scheduledTime.getTime() >= todayStart.getTime() &&
+          task.timeConfig.scheduledTime.getTime() < todayEnd.getTime()
         );
       });
+      console.log("📅 今日任务实例:", todayInstance);
+      return todayInstance;
     },
 
     getAllMetaTemplates: (state): TaskMetaTemplate[] => {

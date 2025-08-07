@@ -456,9 +456,9 @@ export class RecurrenceValidator implements ITemplateValidator {
 
     // 检查短时间重复任务
     if (recurrence.type === "daily" && recurrence.interval === 1) {
-      if (template.timeConfig.type === "timeRange") {
+      if (template.timeConfig.type === "timeRange" && template.timeConfig.baseTime.end && template.timeConfig.baseTime.start) {
         const duration =
-          template.timeConfig.baseTime.end?.getTime()! -
+          template.timeConfig.baseTime.end.getTime() -
           template.timeConfig.baseTime.start.getTime();
         const durationHours = duration / (1000 * 60 * 60);
 

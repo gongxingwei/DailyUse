@@ -107,7 +107,7 @@ export function useShortcutManagement() {
    * 删除快捷方式
    */
   function deleteShortcut() {
-    if (selectedCategoryId && selectedItemId) {
+    if (selectedCategoryId.value && selectedItemId) {
 
 
       store.removeShortcut(selectedCategoryId.value, selectedItemId.value);
@@ -117,7 +117,7 @@ export function useShortcutManagement() {
    * 编辑快捷方式
    */
   function editShortcut() {
-    if (!selectedItemId) return false;
+    if (!selectedItemId.value) return false;
 
     const item = store.getItemById(selectedItemId.value);
     if (!item) return false;
@@ -145,7 +145,7 @@ export function useShortcutManagement() {
    * 在资源管理器中打开快捷方式所在位置
    */
   function openShortcutLocation() {
-    if (!selectedItemId) return;
+    if (!selectedItemId.value) return;
     const item = store.getItemById(selectedItemId.value);
     if (!item) return;
     const path = item.path;

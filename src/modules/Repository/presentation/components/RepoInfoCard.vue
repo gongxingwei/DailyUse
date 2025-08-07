@@ -20,7 +20,7 @@
                 <div class="card-footer">
                     <div v-if="repository.updatedAt" class="visit-info">
                         <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                        <span class="text-caption">{{ t('common.14') }}: {{ formatDate(repository.updatedAt) }}</span>
+                        <span class="text-caption">{{ t('common.14') }}: {{ format(repository.updatedAt, 'yyyy-MM-dd') }}</span>
                     </div>
                     
                     <v-btn
@@ -39,7 +39,7 @@
 import { useRouter } from 'vue-router';
 import { Repository } from '../../domain/aggregates/repository'
 import { useI18n } from 'vue-i18n'
-import { formatDate } from '@/shared/utils/dateUtils'
+import { format } from 'date-fns';
 
 const { t } = useI18n()
 
