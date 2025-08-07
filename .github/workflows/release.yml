@@ -59,10 +59,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: pnpm run build
         
-      - name: Generate checksums
-        run: |
-          cd dist
-          sha256sum * > sha256sum.txt
+      # - name: Generate checksums
+      #   run: |
+      #     cd dist
+      #     sha256sum * > sha256sum.txt
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
