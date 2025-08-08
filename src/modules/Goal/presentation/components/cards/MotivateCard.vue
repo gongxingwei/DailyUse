@@ -75,8 +75,8 @@
   
   <script setup lang="ts">
   import { ref, onMounted } from 'vue';
-  import { useGoalStore } from '../stores/goalStore';
-  import { Goal } from '../../domain/aggregates/goal';
+  import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
+  import { Goal } from '@/modules/Goal/domain/aggregates/goal';
   
   const goalStore = useGoalStore();
   const isShowingMotive = ref(true);

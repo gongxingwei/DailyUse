@@ -169,10 +169,10 @@
     @create-key-result="handleCreateKeyResult(goalModel as Goal, $event as KeyResult)"
     @update-key-result="handleUpdateKeyResult(goalModel as Goal, $event as KeyResult)"
     @remove-key-result="handleRemoveKeyResult(goalModel as Goal, $event as string)" />
-     <!-- 确认对话框 -->
-    <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
-      confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
-      @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
+  <!-- 确认对话框 -->
+  <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
+    confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
+    @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
 </template>
 
 <script setup lang="ts">
@@ -181,11 +181,11 @@ import { ref, computed, watch } from 'vue';
 import KeyResultDialog from './KeyResultDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 // types
-import { useGoalStore } from '../stores/goalStore';
+import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { Goal } from '@/modules/Goal/domain/aggregates/goal';
-import { KeyResult } from '../../domain/entities/keyResult';
+import { KeyResult } from '@/modules/Goal/domain/entities/keyResult';
 // composables
-import { useGoalDialog } from '../composables/useGoalDialog';
+import { useGoalDialog } from '@/modules/Goal/presentation/composables/useGoalDialog';
 
 const { keyResultDialog, startCreateKeyResult, startEditKeyResult, handleCreateKeyResult, handleUpdateKeyResult, handleRemoveKeyResult } = useGoalDialog();
 
@@ -219,8 +219,8 @@ const confirmDialog = ref<{
   show: false,
   title: '',
   message: '',
-  onConfirm: () => {},
-  onCancel: () => {},
+  onConfirm: () => { },
+  onCancel: () => { },
 });
 
 const startRemoveKeyResult = (goal: Goal, keyResultUuid: string) => {

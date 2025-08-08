@@ -119,7 +119,7 @@ import { computed, watch, ref } from 'vue';
 // utils
 import { format } from 'date-fns';
 // domains
-import { GoalRecord } from '../../domain/entities/record';
+import { GoalRecord } from '@/modules/Goal/domain/entities/record';
 const props = defineProps<{
   modelValue: boolean;
   record: GoalRecord | null;

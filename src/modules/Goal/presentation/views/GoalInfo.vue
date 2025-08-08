@@ -210,7 +210,7 @@
             confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
             @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
         <GoalReviewCard :visible="goalReviewDialog.show" :goal="(goalReviewDialog.goal as Goal)"
-        @update:modelValue="goalReviewDialog.show = $event" />
+            @update:modelValue="goalReviewDialog.show = $event" />
     </v-container>
 </template>
 
@@ -229,7 +229,7 @@ import { Repository } from '@/modules/Repository';
 import GoalDialog from '../components/GoalDialog.vue';
 import GoalReviewCard from '../components/GoalReviewCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
-import KeyResultCard from '../components/KeyResultCard.vue';
+import KeyResultCard from '../components/cards/KeyResultCard.vue';
 import RepoInfoCard from '@/modules/Repository/presentation/components/RepoInfoCard.vue';
 // utils
 import { format } from 'date-fns';

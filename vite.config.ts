@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import path from 'node:path'
 import electron from 'vite-plugin-electron/simple'
@@ -65,6 +66,15 @@ export default defineConfig({
       // 在主构建中也排除原生模块
       external: nativeModules
     }
+  },
+  test: {
+    globals: true,
+    include: ['src/**/*.test.ts', 'electron/**/*.test.ts'],
+    environment: 'node', // 默认 node
+    environmentMatchGlobs: [
+      ['src/**/*.test.ts', 'jsdom'],      // src 下测试用 jsdom
+      ['electron/**/*.test.ts', 'node'],  // electron 下测试用 node
+    ],
   },
   plugins: [
     (monacoEditorPlugin as any).default({

@@ -95,7 +95,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { Goal } from '../../domain/aggregates/goal';
+import { Goal } from '@/modules/Goal/domain/aggregates/goal';
 import KeyResultCard from './KeyResultCard.vue';
 
 const props = defineProps<{

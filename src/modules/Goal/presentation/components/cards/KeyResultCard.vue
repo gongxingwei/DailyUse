@@ -1,6 +1,6 @@
 <template>
-  <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }" variant="outlined"
-    elevation="0" :hover="true" @click="navigateToKeyResultInfo">
+  <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
+    variant="outlined" elevation="0" :hover="true" @click="navigateToKeyResultInfo">
     <!-- 进度背景层 -->
     <div class="progress-background" :style="{
       background: `linear-gradient(90deg, ${goal?.color || '#FF5733'} 0%, ${goal?.color || '#FF5733'}88 100%)`,
@@ -74,8 +74,8 @@
     </div>
     <!-- 记录对话框 -->
     <GoalRecordDialog :model-value="recordDialog.show" :record="(recordDialog.record as GoalRecord)"
-      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid" @create-record="handleAddGoalRecordToGoal"
-      @update:model-value="recordDialog.show = $event" />
+      :goalUuid="recordDialog.goalUuid" :keyResultUuid="recordDialog.keyResultUuid"
+      @create-record="handleAddGoalRecordToGoal" @update:model-value="recordDialog.show = $event" />
   </v-card>
 
 
@@ -84,11 +84,11 @@
 <script lang="ts" setup>
 import { useRouter } from 'vue-router';
 
-import GoalRecordDialog from './GoalRecordDialog.vue';
-import { useGoalRecordDialog } from '../composables/useGoalRecordDialog';
-import { Goal } from '../../domain/aggregates/goal';
-import { GoalRecord } from '../../domain/entities/record';
-import { KeyResult } from '../../domain/entities/keyResult';
+import GoalRecordDialog from '@/modules/Goal/presentation/components/dialogs/GoalRecordDialog.vue';
+import { useGoalRecordDialog } from '@/modules/Goal/presentation/composables/useGoalRecordDialog';
+import { Goal } from '@/modules/Goal/domain/aggregates/goal';
+import { GoalRecord } from '@/modules/Goal/domain/entities/record';
+import { KeyResult } from '@/modules/Goal/domain/entities/keyResult';
 
 const router = useRouter();
 

@@ -111,7 +111,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { KeyResult } from '../../domain/entities/keyResult';
+import { KeyResult } from '@/modules/Goal/domain/entities/keyResult';
 
 // 定义 props
 const props = defineProps<{

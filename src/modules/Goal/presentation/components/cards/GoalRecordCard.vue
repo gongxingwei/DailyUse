@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { GoalRecord } from '../../domain/entities/record';
+import { GoalRecord } from '@/modules/Goal/domain/entities/record';
 import { format } from 'date-fns';
 
 defineProps<{

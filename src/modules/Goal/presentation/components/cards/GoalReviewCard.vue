@@ -114,8 +114,8 @@
 </template>
 
 <script setup lang="ts">
-import { GoalReview } from '../../domain/entities/goalReview';
-import { Goal } from '../../domain/aggregates/goal';
+import { GoalReview } from '@/modules/Goal/domain/entities/goalReview';
+import { Goal } from '@/modules/Goal/domain/aggregates/goal';
 import { format } from 'date-fns';
 
 // 允许 goal 为 null，防止类型校验警告

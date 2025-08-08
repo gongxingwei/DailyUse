@@ -112,7 +112,7 @@ import { useGoalDialog } from '../composables/useGoalDialog';
 import GoalCard from '../components/GoalCard.vue';
 import GoalDir from '../components/GoalDir.vue';
 import GoalDialog from '../components/GoalDialog.vue';
-import GoalDirDialog from '../components/GoalDirDialog.vue';
+import GoalDirDialog from '../components/dialogs/GoalDirDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import type { IGoal } from '@common/modules/goal/types/goal';
 // domain

@@ -12,10 +12,6 @@
         <template v-slot:activator="{ props }">
           <v-btn v-bind="props" icon="mdi-plus" size="small" variant="text" color="primary" class="add-btn">
             <v-icon>mdi-plus</v-icon>
-            <!-- <v-tooltip activator="parent" location="bottom" text="123" content-class="custom-tooltip-class text-center px-2">
-                <span class="text-caption">添加目标节点</span>
-                添加目标节点
-              </v-tooltip> -->
           </v-btn>
         </template>
 

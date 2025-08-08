@@ -92,7 +92,7 @@ import { useRoute, useRouter } from 'vue-router';
 import { useGoalStore } from '../stores/goalStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
-import KeyResultCard from '../components/KeyResultCard.vue';
+import KeyResultCard from '../components/cards/KeyResultCard.vue';
 import GoalRecordCard from '../components/GoalRecordCard.vue';
 // domain
 import { KeyResult } from '../../domain/entities/keyResult';
