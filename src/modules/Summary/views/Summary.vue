@@ -99,9 +99,9 @@ import { computed } from 'vue';
 import { useGoalStore } from '@/modules/Goal/presentation/stores/goalStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // components
-import GoalInfoShowCard from '@/modules/Goal/presentation/components/GoalInfoShowCard.vue';
-import MotivateCard from '@/modules/Goal/presentation/components/MotivateCard.vue';
-import GoalGanttChart from '@/modules/Goal/presentation/components/GoalGanttChart.vue';
+import GoalInfoShowCard from '@/modules/Goal/presentation/components/cards/GoalInfoShowCard.vue';
+import MotivateCard from '@/modules/Goal/presentation/components/cards/MotivateCard.vue';
+import GoalGanttChart from '@/modules/Goal/presentation/components/echarts/GoalGanttChart.vue';
 import TaskInSummaryCard from '@/modules/Task/presentation/components/TaskInSummaryCard.vue';
 // domains
 import { Goal } from '@/modules/Goal/index';

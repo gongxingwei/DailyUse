@@ -27,13 +27,13 @@ export class WindowManager extends EventEmitter {
    */
   public async initialize(): Promise<void> {
     console.log('🪟 [WindowManager] 初始化窗口管理器');
-    
+
     // 创建登录窗口
     await this.createLoginWindow();
-    
+
     // 创建系统托盘
     this.createTray();
-    
+
     console.log('✅ [WindowManager] 窗口管理器初始化完成');
   }
 
@@ -47,10 +47,10 @@ export class WindowManager extends EventEmitter {
     }
 
     console.log('🔐 [WindowManager] 创建登录窗口');
-    
+
     this.loginWindow = new LoginWindow();
     await this.loginWindow.initialize();
-    
+
     // 监听登录窗口事件
     this.loginWindow.on('login-success', (userData: any) => {
       console.log('✅ [WindowManager] 登录成功，切换到主窗口');
@@ -82,10 +82,10 @@ export class WindowManager extends EventEmitter {
     }
 
     console.log('🏠 [WindowManager] 创建主窗口');
-    
+
     this.mainWindow = new MainWindow();
     await this.mainWindow.initialize();
-    
+
     // 监听主窗口事件
     this.mainWindow.on('logout-requested', () => {
       console.log('🔐 [WindowManager] 注销请求，切换到登录窗口');
@@ -108,23 +108,23 @@ export class WindowManager extends EventEmitter {
    */
   private async switchToMainWindow(userData?: any): Promise<void> {
     console.log('🔄 [WindowManager] 切换到主窗口');
-    
+
     // 创建主窗口
     await this.createMainWindow();
-    
+
     // 隐藏登录窗口
     if (this.loginWindow) {
       this.loginWindow.hide();
     }
-    
+
     // 显示主窗口
     this.mainWindow?.show();
-    
+
     // 发送用户数据到主窗口
     if (userData) {
       this.mainWindow?.sendUserData(userData);
     }
-    
+
     this.currentWindow = WindowType.MAIN;
     this.emit('window-switched', WindowType.MAIN);
   }
@@ -134,17 +134,17 @@ export class WindowManager extends EventEmitter {
    */
   private async switchToLoginWindow(): Promise<void> {
     console.log('🔄 [WindowManager] 切换到登录窗口');
-    
+
     // 隐藏主窗口
     if (this.mainWindow) {
       this.mainWindow.close(); // 或 this.mainWindow.destroy();
-  this.mainWindow = null;
+      this.mainWindow = null;
     }
-    
+
     // 创建或显示登录窗口
     await this.createLoginWindow();
     this.loginWindow?.show();
-    
+
     this.currentWindow = WindowType.LOGIN;
     this.emit('window-switched', WindowType.LOGIN);
   }
@@ -183,7 +183,7 @@ export class WindowManager extends EventEmitter {
         label: '显示窗口',
         click: () => {
           this.showCurrentWindow();
-        }
+        },
       },
       {
         label: this.currentWindow === WindowType.LOGIN ? '登录' : '设置',
@@ -194,15 +194,15 @@ export class WindowManager extends EventEmitter {
             this.mainWindow?.show();
             this.mainWindow?.navigateTo('/setting');
           }
-        }
+        },
       },
       { type: 'separator' },
       {
         label: '退出',
         click: () => {
           this.quit();
-        }
-      }
+        },
+      },
     ]);
 
     this.tray.setContextMenu(contextMenu);
@@ -263,17 +263,17 @@ export class WindowManager extends EventEmitter {
    */
   public quit(): void {
     console.log('🛑 [WindowManager] 退出应用');
-    
+
     // 关闭所有窗口
     this.loginWindow?.close();
     this.mainWindow?.close();
-    
+
     // 销毁托盘
     if (this.tray) {
       this.tray.destroy();
       this.tray = null;
     }
-    
+
     app.quit();
   }
 
@@ -282,15 +282,15 @@ export class WindowManager extends EventEmitter {
    */
   public destroy(): void {
     console.log('🧹 [WindowManager] 清理资源');
-    
+
     this.loginWindow?.destroy();
     this.mainWindow?.destroy();
-    
+
     if (this.tray) {
       this.tray.destroy();
       this.tray = null;
     }
-    
+
     this.removeAllListeners();
   }
 }

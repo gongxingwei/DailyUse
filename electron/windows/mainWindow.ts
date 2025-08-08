@@ -52,7 +52,7 @@ export class MainWindow extends BaseWindow implements IMainWindow {
       return devServerUrl;
     }
 
-    return path.join(this.getRendererDistPath(), "index.html#/");
+    return path.join(this.getRendererDistPath(), "index.html");
   }
 
   /**

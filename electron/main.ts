@@ -6,20 +6,19 @@ import { QuickLauncherMainPlugin } from '../src/plugins/quickLauncher/electron/m
 import { initializeApp, cleanupApp } from './shared/initialization/appInitializer';
 import { WindowManager } from './windows/windowManager';
 import { getInitializationStatus } from './shared/initialization/appInitializer';
+import log from 'electron-log';
 
 // console.log = (...args) => { logToFile("info", ...args); };
 // console.error = (...args) => { logToFile("error", ...args); };
 // console.warn = (...args) => { logToFile("warn", ...args); };
 
-console.log('🎯 [Main] 主进程脚本开始执行');
-
 // 早期错误捕获
 process.on('uncaughtException', (error) => {
-  console.error('💥 [Main] 早期未捕获的异常:', error);
+  log.error('💥 [Main] 早期未捕获的异常:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('💥 [Main] 早期未处理的Promise拒绝:', reason, promise);
+  log.error('💥 [Main] 早期未处理的Promise拒绝:', reason, promise);
 });
 
 // 设置应用名称
@@ -65,8 +64,8 @@ let pluginManager: PluginManager | null = null;
  * 初始化插件管理器
  */
 function initializePlugins(): void {
-  console.log('🔌 [Main] 初始化插件管理器');
-  
+  log.info('🔌 [Main] 初始化插件管理器');
+
   pluginManager = new PluginManager();
   
   // 注册插件
@@ -75,22 +74,22 @@ function initializePlugins(): void {
   // 初始化所有插件
   pluginManager.initializeAll();
   
-  console.log('✅ [Main] 插件管理器初始化完成');
+  log.info('✅ [Main] 插件管理器初始化完成');
 }
 
 /**
  * 注册协议处理器
  */
 function registerProtocols(): void {
-  console.log('🔗 [Main] 注册协议处理器');
-  
+  log.info('🔗 [Main] 注册协议处理器');
+
   // 注册local协议用于本地文件访问
   protocol.registerFileProtocol('local', (request, callback) => {
     const url = request.url.replace('local://', '');
     try {
       return callback(decodeURIComponent(url));
     } catch (error) {
-      console.error('Protocol error:', error);
+      log.error('Protocol error:', error);
     }
   });
   
@@ -100,7 +99,7 @@ function registerProtocols(): void {
  * 注册IPC处理器
  */
 function registerIpcHandlers(): void {
-  console.log('📡 [Main] 注册IPC处理器');
+  log.info('📡 [Main] 注册IPC处理器');
   
   // 剪贴板操作
   ipcMain.handle('readClipboard', () => {
@@ -126,7 +125,7 @@ function registerIpcHandlers(): void {
     try {
       await shell.openExternal(url);
     } catch (error) {
-      console.error('Failed to open URL:', error);
+      log.error('Failed to open URL:', error);
     }
   });
 
@@ -172,31 +171,31 @@ function registerIpcHandlers(): void {
     }
   });
 
-  console.log('✅ [Main] IPC处理器注册完成');
+  log.info('✅ [Main] IPC处理器注册完成');
 }
 
 /**
  * 应用初始化
  */
 async function initializeApplication(): Promise<void> {
-  console.log('🚀 [Main] 开始应用初始化');
+  log.info('🚀 [Main] 开始应用初始化');
   
   try {
     // 初始化窗口管理器
-    console.log('🪟 [Main] 正在创建 WindowManager 实例...');
+    log.info('🪟 [Main] 正在创建 WindowManager 实例...');
     try {
       windowManager = new WindowManager();
-      console.log('🪟 [Main] WindowManager 实例创建完成，开始初始化...');
+      log.info('🪟 [Main] WindowManager 实例创建完成，开始初始化...');
     } catch (error) {
-      console.error('💥 [Main] WindowManager 实例创建失败:', error);
+      log.error('💥 [Main] WindowManager 实例创建失败:', error);
       throw error;
     }
     
     try {
       await windowManager.initialize();
-      console.log('🪟 [Main] WindowManager 初始化完成');
+      log.info('🪟 [Main] WindowManager 初始化完成');
     } catch (error) {
-      console.error('💥 [Main] WindowManager 初始化失败:', error);
+      log.error('💥 [Main] WindowManager 初始化失败:', error);
       throw error;
     }
     
@@ -212,9 +211,9 @@ async function initializeApplication(): Promise<void> {
     // 初始化应用模块
     await initializeApp();
     
-    console.log('✅ [Main] 应用初始化完成');
+    log.info('✅ [Main] 应用初始化完成');
   } catch (error) {
-    console.error('❌ [Main] 应用初始化失败:', error);
+    log.error('❌ [Main] 应用初始化失败:', error);
     app.quit();
   }
 }
@@ -223,7 +222,7 @@ async function initializeApplication(): Promise<void> {
  * 应用清理
  */
 async function cleanupApplication(): Promise<void> {
-  console.log('🧹 [Main] 开始应用清理');
+  log.info('🧹 [Main] 开始应用清理');
   
   try {
     // 清理应用模块
@@ -236,44 +235,44 @@ async function cleanupApplication(): Promise<void> {
     // 清理插件管理器
     pluginManager = null;
     
-    console.log('✅ [Main] 应用清理完成');
+    log.info('✅ [Main] 应用清理完成');
   } catch (error) {
-    console.error('❌ [Main] 应用清理失败:', error);
+    log.error('❌ [Main] 应用清理失败:', error);
   }
 }
 
-console.log('🎯 [Main] 准备设置应用事件监听器');
+log.info('🎯 [Main] 准备设置应用事件监听器');
 
 // 应用事件处理
 app.whenReady().then(async () => {
-  console.log('🎯 [Main] 应用就绪，开始初始化');
+  log.info('🎯 [Main] 应用就绪，开始初始化');
   try {
     await initializeApplication();
-    console.log('🎯 [Main] 主进程初始化完成');
+    log.info('🎯 [Main] 主进程初始化完成');
   } catch (error) {
-    console.error('💥 [Main] 主进程初始化失败:', error);
+    log.error('💥 [Main] 主进程初始化失败:', error);
   }
 });
 
 app.on('activate', () => {
-  console.log('🔄 [Main] 应用被激活');
+  log.info('🔄 [Main] 应用被激活');
   if (!windowManager) {
     initializeApplication();
   }
 });
 
 app.on('before-quit', async () => {
-  console.log('🛑 [Main] 应用即将退出');
+  log.info('🛑 [Main] 应用即将退出');
   await cleanupApplication();
 });
 
 // 错误处理
 process.on('uncaughtException', (error) => {
-  console.error('💥 [Main] 未捕获的异常:', error);
+  log.error('💥 [Main] 未捕获的异常:', error);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('💥 [Main] 未处理的Promise拒绝:', reason, promise);
+  log.error('💥 [Main] 未处理的Promise拒绝:', reason, promise);
 });
 
-console.log('🎯 [Main] 主进程脚本执行完成，等待应用就绪事件');
+log.info('🎯 [Main] 主进程脚本执行完成，等待应用就绪事件');

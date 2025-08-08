@@ -109,9 +109,9 @@ import { useI18n } from 'vue-i18n';
 import { useGoalServices } from '../composables/useGoalService';
 import { useGoalDialog } from '../composables/useGoalDialog';
 // components
-import GoalCard from '../components/GoalCard.vue';
+import GoalCard from '../components/cards/GoalCard.vue';
 import GoalDir from '../components/GoalDir.vue';
-import GoalDialog from '../components/GoalDialog.vue';
+import GoalDialog from '../components/dialogs/GoalDialog.vue';
 import GoalDirDialog from '../components/dialogs/GoalDirDialog.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import type { IGoal } from '@common/modules/goal/types/goal';

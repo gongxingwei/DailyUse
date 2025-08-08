@@ -93,7 +93,7 @@ import { useGoalStore } from '../stores/goalStore';
 import { useTaskStore } from '@/modules/Task/presentation/stores/taskStore';
 // 组件
 import KeyResultCard from '../components/cards/KeyResultCard.vue';
-import GoalRecordCard from '../components/GoalRecordCard.vue';
+import GoalRecordCard from '../components/cards/GoalRecordCard.vue';
 // domain
 import { KeyResult } from '../../domain/entities/keyResult';
 import { Goal } from '../../domain/aggregates/goal';

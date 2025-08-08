@@ -226,10 +226,10 @@ import { useGoalDialog } from '../composables/useGoalDialog';
 import { Goal } from '../../domain/aggregates/goal';
 import { Repository } from '@/modules/Repository';
 // 组件
-import GoalDialog from '../components/GoalDialog.vue';
-import GoalReviewCard from '../components/GoalReviewCard.vue';
+import GoalDialog from '@/modules/Goal/presentation/components/dialogs/GoalDialog.vue';
+import GoalReviewCard from '@/modules/Goal/presentation/components/cards/GoalReviewCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
-import KeyResultCard from '../components/cards/KeyResultCard.vue';
+import KeyResultCard from '@/modules/Goal/presentation/components/cards/KeyResultCard.vue';
 import RepoInfoCard from '@/modules/Repository/presentation/components/RepoInfoCard.vue';
 // utils
 import { format } from 'date-fns';
