@@ -1,143 +1,272 @@
-import { AuthCredentialCore } from '@dailyuse/domain-core';
+import {
+  AuthCredentialCore,
+  TokenType,
+  type ISessionCore,
+  type IMFADeviceCore,
+  type ITokenCore,
+} from '@dailyuse/domain-core';
+import { type IAuthCredentialClient } from './types';
+import { Password } from './valueObjects/Password';
+import { Token } from './valueObjects/Token';
+import { Session } from './entities/Session';
+import { MFADevice } from './entities/MFADevice';
 
 /**
- * 客户端认证凭据 - 专注于UI展示和客户端逻辑
- * 不包含敏感的密码验证等服务端逻辑
+ * 客户端认证凭据 - 包含UI相关的认证管理
  */
-export class AuthCredential extends AuthCredentialCore {
-  // ===== UI 专用方法 =====
-  getDisplayStatus(): 'active' | 'locked' | 'warning' {
-    if (this.isLocked) return 'locked';
-    if (this.failedAttempts >= 3) return 'warning';
-    return 'active';
-  }
-
-  getStatusMessage(): string {
-    if (this.isLocked) {
-      const minutes = Math.ceil(this.lockTimeRemaining / 1000 / 60);
-      return `Account locked. Try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`;
-    }
-
-    if (this.failedAttempts >= 3) {
-      const remaining = 5 - this.failedAttempts;
-      return `${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before account locks.`;
-    }
-
-    return 'Account active';
-  }
-
-  getStatusColor(): 'success' | 'warning' | 'error' {
-    const status = this.getDisplayStatus();
-    switch (status) {
-      case 'active':
-        return 'success';
-      case 'warning':
-        return 'warning';
-      case 'locked':
-        return 'error';
-    }
-  }
-
-  // ===== 表单验证帮助方法 =====
-  canShowLoginForm(): boolean {
-    return this.canAttemptLogin;
-  }
-
-  shouldShowCaptcha(): boolean {
-    return this.failedAttempts >= 3;
-  }
-
-  getFormValidationRules(): {
-    minPasswordLength: number;
-    requiresUppercase: boolean;
-    requiresLowercase: boolean;
-    requiresNumbers: boolean;
-    requiresSpecialChars: boolean;
-  } {
-    return {
-      minPasswordLength: 8,
-      requiresUppercase: true,
-      requiresLowercase: true,
-      requiresNumbers: true,
-      requiresSpecialChars: true,
-    };
-  }
-
-  // ===== 进度和状态指示器 =====
-  getSecurityLevel(): 'low' | 'medium' | 'high' {
-    // 基于失败次数和其他因素计算安全级别
-    if (this.failedAttempts === 0) return 'high';
-    if (this.failedAttempts <= 2) return 'medium';
-    return 'low';
-  }
-
-  getLockProgress(): number {
-    // 返回 0-100，表示距离锁定的进度
-    return Math.min(100, (this.failedAttempts / 5) * 100);
-  }
-
-  // ===== 时间格式化 =====
-  getFormattedCreatedAt(): string {
-    return new Intl.DateTimeFormat('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(this.createdAt);
-  }
-
-  getFormattedLockTime(): string | null {
-    if (!this.lockedUntil) return null;
-
-    return new Intl.DateTimeFormat('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(this.lockedUntil);
-  }
-
-  // ===== 响应式状态 =====
-  getReactiveState() {
-    return {
-      isLocked: this.isLocked,
-      canAttemptLogin: this.canAttemptLogin,
-      displayStatus: this.getDisplayStatus(),
-      statusMessage: this.getStatusMessage(),
-      statusColor: this.getStatusColor(),
-      lockProgress: this.getLockProgress(),
-      securityLevel: this.getSecurityLevel(),
-      shouldShowCaptcha: this.shouldShowCaptcha(),
-      formattedCreatedAt: this.getFormattedCreatedAt(),
-      formattedLockTime: this.getFormattedLockTime(),
-    };
-  }
-
-  // ===== 客户端专用工厂方法 =====
-  static fromDTO(dto: {
-    uuid: string;
+export class AuthCredential extends AuthCredentialCore implements IAuthCredentialClient {
+  constructor(params: {
+    uuid?: string;
     accountUuid: string;
-    failedAttempts: number;
-    lockedUntil?: string;
-    createdAt: string;
-    updatedAt: string;
-  }): AuthCredential {
-    return new AuthCredential({
-      uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
-      failedAttempts: dto.failedAttempts,
-      lockedUntil: dto.lockedUntil ? new Date(dto.lockedUntil) : undefined,
-      createdAt: new Date(dto.createdAt),
-      updatedAt: new Date(dto.updatedAt),
+    password: Password;
+    sessions?: Map<string, Session>;
+    mfaDevices?: Map<string, MFADevice>;
+    tokens?: Map<string, Token>;
+    failedAttempts?: number;
+    lockedUntil?: Date;
+    createdAt?: Date;
+    updatedAt?: Date;
+    lastAuthAt?: Date;
+  }) {
+    // 将具体类型转换为接口类型传递给父构造函数
+    const coreParams = {
+      ...params,
+      password: params.password as any,
+      sessions: (params.sessions as Map<string, ISessionCore>) || new Map(),
+      mfaDevices: (params.mfaDevices as Map<string, IMFADeviceCore>) || new Map(),
+      tokens: (params.tokens as Map<string, ITokenCore>) || new Map(),
+    };
+    super(coreParams);
+  }
+
+  // ===== 实现抽象方法 =====
+  authenticate(password: string): boolean {
+    if (this.isLocked) {
+      this.showAccountLockWarning();
+      return false;
+    }
+
+    const isValid = (this.password as Password).verify(password);
+
+    if (isValid) {
+      this.resetFailedAttempts();
+      this._lastAuthAt = new Date();
+      this._updatedAt = new Date();
+      this.cacheUserPreferences();
+      return true;
+    } else {
+      this.incrementFailedAttempts();
+      return false;
+    }
+  }
+
+  changePassword(oldPassword: string, newPassword: string): void {
+    const isOldValid = (this.password as Password).verify(oldPassword);
+    if (!isOldValid) {
+      throw new Error('Current password is incorrect');
+    }
+
+    // 显示密码强度指示器
+    const tempPassword = Password.createFromParams({
+      hashedValue: '',
+      salt: '',
+      algorithm: 'client',
+    });
+    tempPassword.showStrengthIndicator();
+
+    // 创建新密码替换旧密码
+    const newPasswordObj = new Password(newPassword);
+    (this as any)._password = newPasswordObj;
+    this._updatedAt = new Date();
+
+    // 密码更改后终止所有会话
+    this.terminateAllSessions();
+  }
+
+  createSession(deviceInfo: string, ipAddress: string): ISessionCore {
+    const session = new Session({
+      accountUuid: this.accountUuid,
+      token: Token.generateClientValue(),
+      deviceInfo,
+      ipAddress,
+    });
+
+    this.sessions.set(session.uuid, session as any);
+    session.saveToLocalStorage();
+    this._updatedAt = new Date();
+
+    return session;
+  }
+
+  terminateSession(sessionUuid: string): void {
+    const session = this.sessions.get(sessionUuid) as Session | undefined;
+    if (session) {
+      session.terminate();
+      // 清理本地存储
+      localStorage.removeItem(`session_${sessionUuid}`);
+      this._updatedAt = new Date();
+    }
+  }
+
+  terminateAllSessions(): void {
+    for (const [uuid, session] of this.sessions.entries()) {
+      (session as Session).terminate();
+      localStorage.removeItem(`session_${uuid}`);
+    }
+    this._updatedAt = new Date();
+  }
+
+  addMFADevice(device: IMFADeviceCore): void {
+    this.mfaDevices.set(device.uuid, device);
+    this._updatedAt = new Date();
+  }
+
+  removeMFADevice(deviceUuid: string): void {
+    const device = this.mfaDevices.get(deviceUuid) as MFADevice | undefined;
+    if (device) {
+      device.clearLocalCache();
+      this.mfaDevices.delete(deviceUuid);
+      this._updatedAt = new Date();
+    }
+  }
+
+  createToken(type: TokenType): ITokenCore {
+    let token: Token;
+
+    switch (type) {
+      case TokenType.ACCESS_TOKEN:
+        token = Token.createClientAccessToken(this.accountUuid);
+        break;
+      case TokenType.REFRESH_TOKEN:
+        token = new Token({
+          value: Token.generateClientValue(),
+          type: TokenType.REFRESH_TOKEN,
+          accountUuid: this.accountUuid,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天
+        });
+        break;
+      case TokenType.REMEMBER_ME:
+        token = Token.createClientRememberMe(this.accountUuid);
+        break;
+      default:
+        throw new Error(`Unsupported token type: ${type}`);
+    }
+
+    this.tokens.set(token.value, token as any);
+    token.saveToSecureStorage();
+    this._updatedAt = new Date();
+    return token;
+  }
+
+  revokeToken(tokenValue: string): void {
+    const token = this.tokens.get(tokenValue) as Token | undefined;
+    if (token) {
+      token.revoke();
+      token.removeFromSecureStorage();
+      this._updatedAt = new Date();
+    }
+  }
+
+  // ===== IAuthCredentialClient 方法 =====
+  async showLoginForm(): Promise<boolean> {
+    // 显示登录表单的客户端逻辑
+    return new Promise((resolve) => {
+      console.log('Showing login form for account:', this.accountUuid);
+      // 这里可以触发UI组件显示登录表单
+      // 模拟用户输入和验证
+      setTimeout(() => {
+        resolve(true);
+      }, 1000);
     });
   }
 
-  // ===== 客户端缓存方法 =====
-  getCacheKey(): string {
-    return `auth_credential_${this.accountUuid}`;
+  async displayMFAPrompt(): Promise<string> {
+    // 显示MFA验证提示
+    return new Promise((resolve) => {
+      console.log('Displaying MFA prompt');
+      // 这里可以显示MFA设备选择和验证UI
+      // 模拟用户输入验证码
+      setTimeout(() => {
+        resolve('123456');
+      }, 1000);
+    });
   }
 
-  shouldRefresh(): boolean {
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-    return this.updatedAt < fiveMinutesAgo;
+  cacheUserPreferences(): void {
+    // 缓存用户偏好设置
+    const preferences = {
+      accountUuid: this.accountUuid,
+      lastAuthAt: this.lastAuthAt?.toISOString(),
+      preferredMFADevices: Array.from(this.mfaDevices.keys()),
+      rememberLogin: true,
+    };
+
+    localStorage.setItem(`user_prefs_${this.accountUuid}`, JSON.stringify(preferences));
+  }
+
+  showAccountLockWarning(): void {
+    // 显示账户锁定警告
+    const remainingTime = Math.ceil(this.lockTimeRemaining / (1000 * 60));
+    console.log(`Account is locked. Time remaining: ${remainingTime} minutes`);
+    // 这里可以显示账户锁定的UI提示
+  }
+
+  isServer(): boolean {
+    return false;
+  }
+
+  isClient(): boolean {
+    return true;
+  }
+
+  // ===== 客户端特定的业务方法 =====
+  getActiveMFADevices(): MFADevice[] {
+    return Array.from(this.mfaDevices.values()).filter(
+      (device) => (device as MFADevice).isEnabled && (device as MFADevice).isVerified,
+    ) as MFADevice[];
+  }
+
+  loadUserPreferences(): any {
+    const prefsData = localStorage.getItem(`user_prefs_${this.accountUuid}`);
+    if (prefsData) {
+      try {
+        return JSON.parse(prefsData);
+      } catch (error) {
+        console.error('Failed to load user preferences:', error);
+      }
+    }
+    return null;
+  }
+
+  // ===== 静态工厂方法 =====
+  static async createWithLogin(params: {
+    accountUuid: string;
+    plainPassword: string;
+  }): Promise<AuthCredential> {
+    const password = new Password(params.plainPassword);
+
+    const authCredential = new AuthCredential({
+      accountUuid: params.accountUuid,
+      password,
+    });
+
+    // 显示登录表单
+    await authCredential.showLoginForm();
+
+    return authCredential;
+  }
+
+  static fromLocalStorage(accountUuid: string): AuthCredential | null {
+    try {
+      const prefsData = localStorage.getItem(`user_prefs_${accountUuid}`);
+      if (!prefsData) return null;
+
+      // 这里应该从本地存储恢复完整的认证凭据
+      // 为简化示例，返回基本实例
+      return null;
+    } catch (error) {
+      console.error('Failed to load from localStorage:', error);
+      return null;
+    }
   }
 }

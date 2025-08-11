@@ -1,133 +1,253 @@
+import { RoleCore } from '@dailyuse/domain-core';
+import { type IRoleClient } from '../types';
+import { Permission } from './Permission';
+
 /**
- * Role 实体
- * 角色实体
+ * 客户端角色实体 - 包含UI相关的角色操作
  */
-export interface RoleDTO {
-  uuid: string;
-  name: string;
-  description: string;
-  permissions: string[];
-}
+export class Role extends RoleCore implements IRoleClient {
+  // 在客户端缓存完整的 Permission 对象
+  private _permissionObjects: Map<string, Permission> = new Map();
 
-export class Role {
-  private _uuid: string;
-  private _name: string;
-  private _description: string;
-  private _permissions: Set<string>;
-
-  /**
-   * 构造函数
-   * @param params - 角色初始化参数
-   * @example
-   * new Role({ uuid: "xxx", name: "管理员", description: "系统管理员", permissions: ["p1", "p2"] })
-   */
   constructor(params: {
-    uuid: string;
+    uuid?: string;
     name: string;
     description?: string;
     permissions?: string[];
+    permissionObjects?: Permission[];
   }) {
-    this._uuid = params.uuid;
-    this._name = params.name;
-    this._description = params.description ?? "";
-    this._permissions = new Set(params.permissions ?? []);
+    super({
+      uuid: params.uuid,
+      name: params.name,
+      description: params.description,
+      permissions: params.permissions,
+    });
+
+    // 缓存权限对象
+    if (params.permissionObjects) {
+      params.permissionObjects.forEach((perm) => {
+        this._permissionObjects.set(perm.uuid, perm);
+      });
+    }
   }
 
-  get id(): string {
-    return this._uuid;
-  }
-
-  get name(): string {
-    return this._name;
-  }
-
-  get description(): string {
-    return this._description;
-  }
-
-  get permissions(): Set<string> {
-    return new Set(this._permissions);
-  }
-
-  // ======================== 辅助方法 ========================
-
-  /**
-   * 转为接口数据（DTO）
-   */
-  toDTO(): RoleDTO {
-    return {
-      uuid: this._uuid,
-      name: this._name,
-      description: this._description,
-      permissions: Array.from(this._permissions),
+  // ===== IRoleClient 方法 =====
+  displayRoleBadge(): string {
+    const roleIcons: { [key: string]: string } = {
+      admin: '👨‍💼',
+      administrator: '👨‍💼',
+      user: '👤',
+      guest: '👥',
+      moderator: '🛡️',
+      manager: '📊',
+      viewer: '👁️',
+      editor: '✏️',
     };
+
+    const roleName = this.name.toLowerCase();
+    const icon = roleIcons[roleName] || '🎭';
+
+    return `${icon} ${this.name}`;
   }
 
-  /**
-   * 从接口数据创建实例
-   */
-  static fromDTO(dto: RoleDTO): Role {
-    const role = new Role({
-      uuid: dto.uuid,
-      name: dto.name,
-      description: dto.description,
-      permissions: dto.permissions,
+  showRolePermissions(): void {
+    console.log(`Showing permissions for role: ${this.name}`);
+
+    const permissionList = Array.from(this._permissionObjects.values()).map((permission) => {
+      return {
+        code: permission.code,
+        name: permission.name,
+        module: permission.module,
+        badge: permission.getPermissionBadge(),
+      };
     });
-    return role;
+
+    console.log('Role permissions:', permissionList);
+
+    // 这里可以触发UI显示权限列表
+    this.cacheRoleData();
   }
 
-  /**
-   * 克隆当前对象
-   */
-  clone(): Role {
-    return Role.fromDTO(this.toDTO());
+  getUIPermissions(): string[] {
+    // 获取可以在UI中显示的权限列表
+    return Array.from(this._permissionObjects.values())
+      .filter((permission) => permission.checkUIVisibility())
+      .map((permission) => permission.code);
   }
 
-  /**
-   * 创建一个初始化对象（用于新建表单）
-   */
-  static forCreate(): Role {
-    return new Role({
-      uuid: "",
-      name: "",
-      description: "",
-      permissions: [],
-    });
+  isServer(): boolean {
+    return false;
   }
 
-  /**
-   * 判断对象是否为 Role 实例
-   */
-  static isRole(obj: any): obj is Role {
-    return (
-      obj instanceof Role ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "name" in obj &&
-        "permissions" in obj)
+  isClient(): boolean {
+    return true;
+  }
+
+  // ===== 客户端特定的业务方法 =====
+  cacheRoleData(): void {
+    const roleData = {
+      uuid: this.uuid,
+      name: this.name,
+      description: this.description,
+      permissionCodes: Array.from(this.permissions),
+      cachedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(`role_${this.uuid}`, JSON.stringify(roleData));
+    console.log('Role data cached:', this.name);
+  }
+
+  getDisplayName(): string {
+    return this.description || this.name;
+  }
+
+  hasPermissionCode(permissionCode: string): boolean {
+    return this.permissions.has(permissionCode);
+  }
+
+  hasAnyPermission(permissionCodes: string[]): boolean {
+    return permissionCodes.some((code) => this.hasPermissionCode(code));
+  }
+
+  hasAllPermissions(permissionCodes: string[]): boolean {
+    return permissionCodes.every((code) => this.hasPermissionCode(code));
+  }
+
+  getPermissionsByModule(module: string): Permission[] {
+    return Array.from(this._permissionObjects.values()).filter(
+      (permission) => permission.module === module,
     );
   }
 
-  /**
-   * 保证返回 Role 实例或 null
-   */
-  static ensureRole(role: RoleDTO | Role | null): Role | null {
-    if (Role.isRole(role)) {
-      return role instanceof Role ? role : Role.fromDTO(role);
-    } else {
+  canAccessModule(module: string): boolean {
+    return this.getPermissionsByModule(module).length > 0;
+  }
+
+  getAccessibleModules(): string[] {
+    const modules = new Set<string>();
+    Array.from(this._permissionObjects.values()).forEach((permission) => {
+      modules.add(permission.module);
+    });
+    return Array.from(modules);
+  }
+
+  isHighPrivilege(): boolean {
+    // 检查是否为高权限角色
+    const highPrivilegePermissions = ['admin:manage', 'user:delete', 'settings:write'];
+    return this.hasAnyPermission(highPrivilegePermissions);
+  }
+
+  // ===== 权限对象管理 =====
+  addPermissionObject(permission: Permission): void {
+    this._permissionObjects.set(permission.uuid, permission);
+  }
+
+  getPermissionObjects(): Permission[] {
+    return Array.from(this._permissionObjects.values());
+  }
+
+  // ===== 静态工厂方法 =====
+  static create(params: { name: string; description?: string; permissions?: Permission[] }): Role {
+    // 将 Permission 对象转换为权限代码数组
+    const permissionCodes: string[] = [];
+    const permissionObjects: Permission[] = [];
+
+    if (params.permissions) {
+      params.permissions.forEach((permission) => {
+        permissionCodes.push(permission.code);
+        permissionObjects.push(permission);
+      });
+    }
+
+    const role = new Role({
+      name: params.name,
+      description: params.description,
+      permissions: permissionCodes,
+      permissionObjects,
+    });
+
+    // 自动缓存新创建的角色
+    role.cacheRoleData();
+
+    return role;
+  }
+
+  static fromCache(uuid: string): Role | null {
+    try {
+      const cachedData = localStorage.getItem(`role_${uuid}`);
+      if (!cachedData) return null;
+
+      const data = JSON.parse(cachedData);
+
+      return new Role({
+        uuid: data.uuid,
+        name: data.name,
+        description: data.description,
+        permissions: data.permissionCodes || [],
+      });
+    } catch (error) {
+      console.error('Failed to load role from cache:', error);
       return null;
     }
   }
 
-  /**
-   * 保证返回 Role 实例，永不为 null
-   */
-  static ensureRoleNeverNull(role: RoleDTO | Role | null): Role {
-    if (Role.isRole(role)) {
-      return role instanceof Role ? role : Role.fromDTO(role);
-    } else {
-      return Role.forCreate();
-    }
+  static getPredefinedRoles(): Role[] {
+    const adminPermissions = Permission.getCommonPermissions();
+
+    const roles = [
+      {
+        name: '管理员',
+        description: '系统管理员，拥有所有权限',
+        permissions: adminPermissions,
+      },
+      {
+        name: '用户',
+        description: '普通用户，拥有基本权限',
+        permissions: adminPermissions.filter((p) => p.getAction() === 'read'),
+      },
+      {
+        name: '访客',
+        description: '访客用户，只能查看基本信息',
+        permissions: adminPermissions.filter(
+          (p) => p.getAction() === 'read' && p.module !== 'admin',
+        ),
+      },
+    ];
+
+    return roles.map((roleData) => Role.create(roleData));
+  }
+
+  static createAdminRole(): Role {
+    const adminPermissions = Permission.getCommonPermissions();
+
+    return Role.create({
+      name: '管理员',
+      description: '系统管理员角色，拥有所有系统权限',
+      permissions: adminPermissions,
+    });
+  }
+
+  static createUserRole(): Role {
+    const userPermissions = Permission.getCommonPermissions().filter(
+      (p) => p.getAction() !== 'delete' && p.module !== 'admin',
+    );
+
+    return Role.create({
+      name: '用户',
+      description: '普通用户角色，拥有基本操作权限',
+      permissions: userPermissions,
+    });
+  }
+
+  static createGuestRole(): Role {
+    const guestPermissions = Permission.getCommonPermissions().filter(
+      (p) => p.getAction() === 'read' && p.module !== 'admin',
+    );
+
+    return Role.create({
+      name: '访客',
+      description: '访客角色，只能查看公开信息',
+      permissions: guestPermissions,
+    });
   }
 }

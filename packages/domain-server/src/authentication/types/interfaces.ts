@@ -1,9 +1,9 @@
 import {
-  IMFADeviceCore,
-  ISessionCore,
-  ITokenCore,
-  IPasswordCore,
-  IAuthCredentialCore,
+  type IMFADeviceCore,
+  type ISessionCore,
+  type ITokenCore,
+  type IPasswordCore,
+  type IAuthCredentialCore,
 } from '@dailyuse/domain-core';
 
 // ======== MFA Device Server Interface ========

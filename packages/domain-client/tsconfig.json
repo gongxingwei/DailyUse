@@ -5,12 +5,12 @@
     "rootDir": "./src"
   },
   "include": ["src/**/*"],
-  "references": [
-    {
-      "path": "../domain-core"
-    },
-    {
-      "path": "../utils"
-    }
-  ]
+  // "references": [
+  //   {
+  //     "path": "../domain-core"
+  //   },
+  //   {
+  //     "path": "../utils"
+  //   }
+  // ]
 }

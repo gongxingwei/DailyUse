@@ -15,6 +15,7 @@ export * from './account/entities/PermissionCore';
 export * from './account/valueObjects/EmailCore';
 export * from './account/valueObjects/PhoneNumberCore';
 export * from './account/valueObjects/AddressCore';
+export * from './account/valueObjects/SexCore';
 
 // Goal domain exports
 export * from './goal/aggregates/GoalCore';

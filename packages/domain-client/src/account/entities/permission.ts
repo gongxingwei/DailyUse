@@ -1,161 +1,172 @@
+import { PermissionCore } from '@dailyuse/domain-core';
+import { type IPermissionClient } from '../types';
+
 /**
- * Permission 实体
- * 权限实体
+ * 客户端权限实体 - 包含UI相关的权限操作
  */
-export interface PermissionDTO {
-  uuid: string;
-  code: string;
-  name: string;
-  description: string;
-  module: string;
-}
-
-export class Permission {
-  private _uuid: string;
-  private _code: string; // 权限代码，如 'user:read', 'task:create'
-  private _name: string;
-  private _description: string;
-  private _module: string; // 所属模块
-
-  /**
-   * 构造函数
-   * @param params - 权限初始化参数
-   * @example
-   * new Permission({ uuid: "xxx", code: "user:read", name: "用户查看", description: "查看用户信息", module: "user" })
-   */
+export class Permission extends PermissionCore implements IPermissionClient {
   constructor(params: {
-    uuid: string;
+    uuid?: string;
     code: string;
     name: string;
     description?: string;
     module: string;
   }) {
-    this._uuid = params.uuid;
-    this._code = params.code;
-    this._name = params.name;
-    this._description = params.description ?? "";
-    this._module = params.module;
+    super(params);
   }
 
-  get id(): string {
-    return this._uuid;
-  }
-
-  get code(): string {
-    return this._code;
-  }
-
-  get name(): string {
-    return this._name;
-  }
-
-  get description(): string {
-    return this._description;
-  }
-
-  get module(): string {
-    return this._module;
-  }
-
-  /**
-   * 更新权限信息
-   */
-  updateInfo(name?: string, description?: string): void {
-    if (name) this._name = name;
-    if (description) this._description = description;
-  }
-
-  /**
-   * 检查权限代码格式是否正确
-   */
-  static isValidCode(code: string): boolean {
-    // 权限代码格式：module:action
-    const codeRegex = /^[a-z]+:[a-z]+$/;
-    return codeRegex.test(code);
-  }
-
-  // ======================== 辅助方法 ========================
-
-  /**
-   * 转为接口数据（DTO）
-   */
-  toDTO(): PermissionDTO {
-    return {
-      uuid: this._uuid,
-      code: this._code,
-      name: this._name,
-      description: this._description,
-      module: this._module,
+  // ===== IPermissionClient 方法 =====
+  checkUIVisibility(): boolean {
+    // 检查权限是否允许UI元素显示
+    // 根据权限代码判断UI可见性
+    const uiVisibilityMap: { [key: string]: boolean } = {
+      'user:read': true,
+      'user:write': true,
+      'admin:read': true,
+      'admin:write': false, // 需要特殊条件
+      'settings:read': true,
+      'settings:write': false,
     };
+
+    return uiVisibilityMap[this.code] ?? false;
   }
 
-  /**
-   * 从接口数据创建实例
-   */
-  static fromDTO(dto: PermissionDTO): Permission {
-    return new Permission({
-      uuid: dto.uuid,
-      code: dto.code,
-      name: dto.name,
-      description: dto.description,
-      module: dto.module,
+  async showPermissionDialog(): Promise<boolean> {
+    // 显示权限确认对话框
+    return new Promise((resolve) => {
+      console.log(`Showing permission dialog for: ${this.name}`);
+      console.log(`Code: ${this.code}, Module: ${this.module}`);
+
+      // 模拟用户确认权限
+      setTimeout(() => {
+        const userConfirmed = Math.random() > 0.2; // 80% 确认率
+
+        if (userConfirmed) {
+          console.log('Permission granted by user');
+          this.cachePermissions();
+          resolve(true);
+        } else {
+          console.log('Permission denied by user');
+          resolve(false);
+        }
+      }, 1000);
     });
   }
 
-  /**
-   * 克隆当前对象
-   */
-  clone(): Permission {
-    return Permission.fromDTO(this.toDTO());
+  cachePermissions(): void {
+    // 缓存权限信息到本地存储
+    const permissionData = {
+      uuid: this.uuid,
+      code: this.code,
+      name: this.name,
+      description: this.description,
+      module: this.module,
+      grantedAt: new Date().toISOString(),
+    };
+
+    localStorage.setItem(`permission_${this.uuid}`, JSON.stringify(permissionData));
+    console.log('Permission cached:', this.name);
   }
 
-  /**
-   * 创建一个初始化对象（用于新建表单）
-   */
-  static forCreate(): Permission {
-    return new Permission({
-      uuid: "",
-      code: "",
-      name: "",
-      description: "",
-      module: "",
-    });
+  isServer(): boolean {
+    return false;
   }
 
-  /**
-   * 判断对象是否为 Permission 实例
-   */
-  static isPermission(obj: any): obj is Permission {
-    return (
-      obj instanceof Permission ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "code" in obj &&
-        "name" in obj &&
-        "module" in obj)
-    );
+  isClient(): boolean {
+    return true;
   }
 
-  /**
-   * 保证返回 Permission 实例或 null
-   */
-  static ensurePermission(permission: PermissionDTO | Permission | null): Permission | null {
-    if (Permission.isPermission(permission)) {
-      return permission instanceof Permission ? permission : Permission.fromDTO(permission);
-    } else {
+  // ===== 客户端特定的业务方法 =====
+  getDisplayName(): string {
+    return this.description || this.name;
+  }
+
+  getPermissionBadge(): string {
+    const [, action] = this.code.split(':');
+    const actionIcons: { [key: string]: string } = {
+      read: '👁️',
+      write: '✏️',
+      delete: '🗑️',
+      create: '➕',
+      admin: '👨‍💼',
+      manage: '⚙️',
+    };
+
+    const icon = actionIcons[action?.toLowerCase()] || '🔐';
+    return `${icon} ${this.getDisplayName()}`;
+  }
+
+  getResourceType(): string {
+    const [resource] = this.code.split(':');
+    return resource || this.module;
+  }
+
+  getAction(): string {
+    const [, action] = this.code.split(':');
+    return action || '';
+  }
+
+  getAllowedActions(): string[] {
+    // 根据当前权限推断允许的其他动作
+    const resourceActions: { [key: string]: string[] } = {
+      user: ['read', 'write', 'delete'],
+      admin: ['read', 'write', 'manage'],
+      settings: ['read', 'write'],
+      data: ['read', 'write', 'export'],
+    };
+
+    const resourceType = this.getResourceType();
+    return resourceActions[resourceType] || [];
+  }
+
+  canPerform(action: string): boolean {
+    return this.getAllowedActions().includes(action);
+  }
+
+  // ===== 静态工厂方法 =====
+  static create(params: {
+    code: string;
+    name: string;
+    description?: string;
+    module: string;
+  }): Permission {
+    const permission = new Permission(params);
+
+    // 自动缓存新创建的权限
+    permission.cachePermissions();
+
+    return permission;
+  }
+
+  static fromCache(uuid: string): Permission | null {
+    try {
+      const cachedData = localStorage.getItem(`permission_${uuid}`);
+      if (!cachedData) return null;
+
+      const data = JSON.parse(cachedData);
+
+      return new Permission({
+        uuid: data.uuid,
+        code: data.code,
+        name: data.name,
+        description: data.description,
+        module: data.module,
+      });
+    } catch (error) {
+      console.error('Failed to load permission from cache:', error);
       return null;
     }
   }
 
-  /**
-   * 保证返回 Permission 实例，永不为 null
-   */
-  static ensurePermissionNeverNull(permission: PermissionDTO | Permission | null): Permission {
-    if (Permission.isPermission(permission)) {
-      return permission instanceof Permission ? permission : Permission.fromDTO(permission);
-    } else {
-      return Permission.forCreate();
-    }
+  static getCommonPermissions(): Permission[] {
+    const commonPermissions = [
+      { code: 'user:read', name: '查看用户', module: 'user' },
+      { code: 'user:write', name: '编辑用户', module: 'user' },
+      { code: 'settings:read', name: '查看设置', module: 'settings' },
+      { code: 'settings:write', name: '修改设置', module: 'settings' },
+      { code: 'admin:manage', name: '管理员权限', module: 'admin' },
+    ];
+
+    return commonPermissions.map((perm) => Permission.create(perm));
   }
 }

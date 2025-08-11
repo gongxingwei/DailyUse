@@ -1,4 +1,4 @@
-import {
+import type {
   IAccountCore,
   IUserCore,
   IPermissionCore,
@@ -8,7 +8,6 @@ import {
   IPhoneNumberCore,
   ISexCore,
 } from '@dailyuse/domain-core';
-
 
 /**
  * 账号核心接口
