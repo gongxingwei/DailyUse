@@ -3,8 +3,7 @@ import { TaskInstance } from '../../domain/aggregates/taskInstance';
 import { useTaskStore } from '../stores/taskStore';
 import { getTaskDomainApplicationService } from '../../application/services/taskDomainApplicationService';
 import { useNotification } from './useNotification';
-import { toDayStart } from '@common/shared/utils/dateUtils';
-
+import { toDayStart } from '@dailyuse/utils';
 
 /**
  * 任务实例管理 Composable
@@ -14,10 +13,10 @@ import { toDayStart } from '@common/shared/utils/dateUtils';
 export function useTaskInstanceManagement() {
   const taskStore = useTaskStore();
   const { showSuccess, showError, showInfo } = useNotification();
-  
+
   // Helper function to get task service
   const getTaskService = () => getTaskDomainApplicationService();
-  
+
   const selectedDate = ref(new Date().toISOString().split('T')[0]);
   const currentWeekStart = ref(new Date());
   const loading = ref(false);
@@ -30,7 +29,7 @@ export function useTaskInstanceManagement() {
     const nextDayStart = new Date(dayStart);
     nextDayStart.setDate(dayStart.getDate() + 1);
 
-    return taskInstances.value.filter(task => {
+    return taskInstances.value.filter((task) => {
       if (
         !task.timeConfig.scheduledTime ||
         typeof task.timeConfig.scheduledTime.getTime() !== 'number'
@@ -45,15 +44,14 @@ export function useTaskInstanceManagement() {
   });
 
   const completedTasks = computed(() =>
-    dayTasks.value.filter(task => task.status === 'completed' && task instanceof TaskInstance)
+    dayTasks.value.filter((task) => task.status === 'completed' && task instanceof TaskInstance),
   );
 
   const incompleteTasks = computed(() =>
     dayTasks.value.filter(
-      task =>
-        (task.status === 'pending' || task.status === 'inProgress') &&
-        task instanceof TaskInstance
-    )
+      (task) =>
+        (task.status === 'pending' || task.status === 'inProgress') && task instanceof TaskInstance,
+    ),
   );
 
   // 单个任务操作方法
@@ -153,9 +151,11 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => getTaskService().completeTaskInstance(task.uuid))
+        tasks.map((task) => getTaskService().completeTaskInstance(task.uuid)),
       );
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const successCount = results.filter(
+        (r) => r.status === 'fulfilled' && r.value.success,
+      ).length;
       const failCount = results.length - successCount;
       if (failCount === 0) {
         showSuccess(`成功完成 ${successCount} 个任务`);
@@ -176,9 +176,11 @@ export function useTaskInstanceManagement() {
     loading.value = true;
     try {
       const results = await Promise.allSettled(
-        tasks.map(task => getTaskService().deleteTaskInstance(task.uuid))
+        tasks.map((task) => getTaskService().deleteTaskInstance(task.uuid)),
       );
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.success).length;
+      const successCount = results.filter(
+        (r) => r.status === 'fulfilled' && r.value.success,
+      ).length;
       const failCount = results.length - successCount;
       if (failCount === 0) {
         showSuccess(`成功删除 ${successCount} 个任务`);
@@ -232,27 +234,27 @@ export function useTaskInstanceManagement() {
     selectedDate,
     currentWeekStart,
     loading,
-    
+
     // 计算属性
     dayTasks,
     completedTasks,
     incompleteTasks,
-    
+
     // 单个任务操作
     completeTask,
     undoCompleteTask,
     deleteTask,
     startTask,
     cancelTask,
-    
+
     // 批量操作
     batchCompleteTask,
     batchDeleteTask,
-    
+
     // 工具方法
     refreshTasks,
     selectDay,
     previousWeek,
-    nextWeek
+    nextWeek,
   };
 }

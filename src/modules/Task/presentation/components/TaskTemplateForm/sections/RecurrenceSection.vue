@@ -7,85 +7,50 @@
     </v-card-title>
     <v-card-text>
       <!-- 显示验证错误 -->
-      <v-alert 
-        v-if="validationErrors.length > 0" 
-        type="error" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="validationErrors.length > 0" type="error" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="error in validationErrors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
-      
+
       <!-- 显示重复规则描述 -->
-      <v-alert 
-        v-if="isValid && recurrenceRule.type !== 'none'" 
-        type="info" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="isValid && recurrenceRule.type !== 'none'" type="info" variant="tonal" class="mb-4">
         当前设置：{{ getRecurrenceDescription }}
       </v-alert>
       <v-row>
         <v-col cols="12" md="6">
-          <v-select 
-            v-model="recurrenceType" 
-            label="重复类型"
-            :items="recurrenceTypes" 
-            variant="outlined" 
-          />
+          <v-select v-model="recurrenceType" label="重复类型" :items="recurrenceTypes" variant="outlined" />
         </v-col>
-        
+
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.type !== 'none'">
-          <v-text-field 
-            v-model.number="recurrenceInterval" 
-            label="间隔"
-            type="number" 
-            variant="outlined" 
-            min="1" 
-            max="365" 
-          />
+          <v-text-field v-model.number="recurrenceInterval" label="间隔" type="number" variant="outlined" min="1"
+            max="365" />
         </v-col>
 
         <!-- 每周重复的星期选择 -->
         <v-col cols="12" v-if="props.modelValue.timeConfig.recurrence.type === 'weekly'">
-          <WeekdaySelector 
-            v-model="selectedWeekdays"
-            @update:model-value="updateWeekdays"
-          />
+          <WeekdaySelector v-model="selectedWeekdays" @update:model-value="updateWeekdays" />
         </v-col>
 
         <!-- 结束条件 -->
-        <v-col cols="12" v-if="props.modelValue.timeConfig.recurrence.type !== 'none' && props.modelValue.timeConfig.recurrence.endCondition">
-          <v-radio-group 
-            v-model="recurrenceEndConditionType" 
-            label="结束条件"
-          >
+        <v-col cols="12"
+          v-if="props.modelValue.timeConfig.recurrence.type !== 'none' && props.modelValue.timeConfig.recurrence.endCondition">
+          <v-radio-group v-model="recurrenceEndConditionType" label="结束条件">
             <v-radio label="永不结束" value="never" />
             <v-radio label="指定日期结束" value="date" />
             <v-radio label="指定次数结束" value="count" />
           </v-radio-group>
         </v-col>
-        
-        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'date'">
-          <v-text-field 
-            v-model="endConditionDateInput" 
-            label="结束日期" 
-            type="date" 
-            variant="outlined"
-          />
+
+        <v-col cols="12" md="6"
+          v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'date'">
+          <v-text-field v-model="endConditionDateInput" label="结束日期" type="date" variant="outlined" />
         </v-col>
-        
-        <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'count'">
-          <v-text-field 
-            v-model.number="recurrenceEndConditionCount"
-            label="重复次数" 
-            type="number" 
-            variant="outlined" 
-            min="1" 
-            max="999" 
-          />
+
+        <v-col cols="12" md="6"
+          v-if="props.modelValue.timeConfig.recurrence.endCondition && props.modelValue.timeConfig.recurrence.endCondition.type === 'count'">
+          <v-text-field v-model.number="recurrenceEndConditionCount" label="重复次数" type="number" variant="outlined"
+            min="1" max="999" />
         </v-col>
       </v-row>
     </v-card-text>
@@ -99,7 +64,7 @@ import { computed, ref, watch } from 'vue';
 import WeekdaySelector from '../widgets/WeekdaySelector.vue';
 import { useRecurrenceValidation } from '@/modules/Task/presentation/composables/useRecurrenceValidation';
 // utils
-import { formatDateToInput } from '@common/shared/utils/dateUtils';
+import { formatDateToInput } from '@dailyuse/utils';
 interface Props {
   modelValue: TaskTemplate;
 }

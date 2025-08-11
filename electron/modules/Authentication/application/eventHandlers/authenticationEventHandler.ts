@@ -1,27 +1,24 @@
-import { AccountRegisteredEvent } from "../../../Account/domain/events/accountEvents";
-import { AuthCredential } from "../../domain/aggregates/authCredential";
-import { Password } from "../../domain/valueObjects/password";
-import { IAuthCredentialRepository } from "../../domain/repositories/authenticationRepository";
-import { ipcMain } from "electron";
-import { generateUUID } from "@/shared/utils/uuid";
+import { AccountRegisteredEvent } from '../../../Account/domain/events/accountEvents';
+import { AuthCredential } from '../../domain/aggregates/authCredential';
+import { Password } from '../../domain/valueObjects/password';
+import { IAuthCredentialRepository } from '../../domain/repositories/authenticationRepository';
+import { ipcMain } from 'electron';
+import { generateUUID } from '@/shared/utils/uuid';
 
 /**
  * Authentication 模块的领域事件处理器
  * 负责处理来自其他模块的事件，特别是 Account 模块的注册事件
  */
 export class AuthenticationEventHandler {
-  constructor(
-    private authCredentialRepository: IAuthCredentialRepository
-  ) {}
+  constructor(private authCredentialRepository: IAuthCredentialRepository) {}
 
   static registerHandlers(): void {
     console.log('[Authentication] 注册事件处理器...');
 
-
     // 监听 Account 模块的注册事件
     ipcMain.on('AccountRegistered', async (_event, _data) => {
       console.log('[Authentication] 监听到 Account 模块的注册事件');
-    })
+    });
   }
 
   /**
@@ -60,11 +57,7 @@ export class AuthenticationEventHandler {
       const hashedPassword = new Password(password);
 
       // 创建认证凭证聚合根
-      const authCredential = new AuthCredential(
-        generateUUID(),
-        accountUuid,
-        hashedPassword
-      );
+      const authCredential = new AuthCredential(generateUUID(), accountUuid, hashedPassword);
 
       // 保存认证凭证
       await this.authCredentialRepository.save(authCredential);
@@ -72,7 +65,7 @@ export class AuthenticationEventHandler {
       console.log('✅ [Authentication] 认证凭证创建成功:', {
         accountUuid,
         username,
-        credentialId: authCredential.uuid
+        credentialId: authCredential.uuid,
       });
 
       // 发布认证凭证创建事件
@@ -83,14 +76,12 @@ export class AuthenticationEventHandler {
       }
 
       authCredential.clearDomainEvents();
-
     } catch (error) {
       console.error('❌ [Authentication] 处理账号注册事件失败:', error);
-      
+
       throw error;
     }
   }
-
 }
 
 /**

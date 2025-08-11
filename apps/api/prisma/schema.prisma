@@ -1,0 +1,82 @@
+// Prisma schema for DailyUse (initial minimal model)
+// Switch provider to postgresql if you plan to use PostgreSQL
+// and set DATABASE_URL in apps/api/.env
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String      @id @default(cuid())
+  username     String      @unique
+  password     String
+  email        String?     @unique
+  phone        String?     @unique
+  avatar       String?
+  accountType  String      @default("local")
+  createdAt    DateTime    @default(now()) @map("created_at")
+  updatedAt    DateTime    @updatedAt @map("updated_at")
+
+  profile      UserProfile?
+  tokens       AuthToken[]
+  userData     UserData[]
+
+  @@map("users")
+}
+
+model UserProfile {
+  id          String   @id @default(cuid())
+  userId      String   @unique @map("user_id")
+  firstName   String?
+  lastName    String?
+  displayName String?
+  avatarUrl   String?
+  bio         String?
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("user_profiles")
+}
+
+// Unified token table; we will store refresh tokens here with type = 'refresh_token'
+model AuthToken {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  value        String    @unique @map("token_value")
+  type         String    @map("token_type")
+  issuedAt     DateTime  @default(now()) @map("issued_at")
+  expiresAt    DateTime  @map("expires_at")
+  isRevoked    Boolean   @default(false) @map("is_revoked")
+  revokeReason String?   @map("revoke_reason")
+
+  user         User      @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([type])
+  @@index([expiresAt])
+  @@index([isRevoked])
+  @@map("auth_tokens")
+}
+
+// User data storage for per-user files with optimistic versioning
+model UserData {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  fileName     String   @map("file_name")
+  fileContent  Json     @map("file_content")
+  version      Int      @default(1)
+  lastModified DateTime @updatedAt @map("last_modified")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, fileName], name: "user_file_unique")
+  @@index([userId])
+  @@index([lastModified])
+  @@map("user_data")
+}

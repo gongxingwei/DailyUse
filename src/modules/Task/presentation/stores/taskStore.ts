@@ -1,13 +1,10 @@
-import { defineStore } from "pinia";
-import { TaskTemplate } from "../../domain/aggregates/taskTemplate";
-import { TaskInstance } from "../../domain/aggregates/taskInstance";
-import { TaskMetaTemplate } from "../../domain/aggregates/taskMetaTemplate";
-import {  toDayStart } from "@common/shared/utils/dateUtils";
+import { defineStore } from 'pinia';
+import { TaskTemplate } from '../../domain/aggregates/taskTemplate';
+import { TaskInstance } from '../../domain/aggregates/taskInstance';
+import { TaskMetaTemplate } from '../../domain/aggregates/taskMetaTemplate';
+import { toDayStart } from '@dailyuse/utils';
 
-
-
-
-export const useTaskStore = defineStore("task", {
+export const useTaskStore = defineStore('task', {
   state: () => ({
     taskInstances: [] as TaskInstance[],
     taskTemplates: [] as TaskTemplate[],
@@ -47,7 +44,9 @@ export const useTaskStore = defineStore("task", {
       },
 
     getTodayTaskInstances(): TaskInstance[] {
-      console.log("🔍 [TaskStore] 获取今日任务实例！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！");
+      console.log(
+        '🔍 [TaskStore] 获取今日任务实例！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！',
+      );
       console.log('当前任务实例列表:', this.taskInstances);
       const today = new Date();
       const todayStart = toDayStart(today);
@@ -56,7 +55,7 @@ export const useTaskStore = defineStore("task", {
       const todayInstance = (this.taskInstances as TaskInstance[]).filter((task) => {
         if (
           !task.timeConfig.scheduledTime ||
-          typeof task.timeConfig.scheduledTime.getTime() !== "number"
+          typeof task.timeConfig.scheduledTime.getTime() !== 'number'
         ) {
           return false;
         }
@@ -65,7 +64,7 @@ export const useTaskStore = defineStore("task", {
           task.timeConfig.scheduledTime.getTime() < todayEnd.getTime()
         );
       });
-      console.log("📅 今日任务实例:", todayInstance);
+      console.log('📅 今日任务实例:', todayInstance);
       return todayInstance;
     },
 
@@ -88,15 +87,12 @@ export const useTaskStore = defineStore("task", {
   },
 
   actions: {
-
     getTaskTemplatesByKeyResultUuid(keyResultUuid: string): TaskTemplate[] {
       const templates = this.taskTemplates.filter((t) => {
         if (!t.keyResultLinks || t.keyResultLinks.length === 0) {
           return false;
         }
-        return t.keyResultLinks.some(
-          (link) => link.keyResultId === keyResultUuid
-        );
+        return t.keyResultLinks.some((link) => link.keyResultId === keyResultUuid);
       });
       return templates as TaskTemplate[];
     },
@@ -105,26 +101,22 @@ export const useTaskStore = defineStore("task", {
     },
     // 当作数据库来操作
     // === 基础 CRUD 操作（确保类型安全）===
-    async addTaskTemplate(
-      template: TaskTemplate | any
-    ): Promise<TResponse<TaskTemplate>> {
+    async addTaskTemplate(template: TaskTemplate | any): Promise<TResponse<TaskTemplate>> {
       this.taskTemplates.push(template as TaskTemplate);
       return {
         success: true,
-        message: "任务模板添加成功",
+        message: '任务模板添加成功',
         data: template as TaskTemplate,
       };
     },
 
     async removeTaskTemplateById(templateId: string): Promise<TResponse<void>> {
-      const index = this.taskTemplates.findIndex(
-        (t) => t.uuid === templateId
-      );
+      const index = this.taskTemplates.findIndex((t) => t.uuid === templateId);
       if (index !== -1) {
         this.taskTemplates.splice(index, 1);
         return {
           success: true,
-          message: "任务模板删除成功",
+          message: '任务模板删除成功',
         };
       }
       return {
@@ -133,17 +125,13 @@ export const useTaskStore = defineStore("task", {
       };
     },
 
-    async updateTaskTemplate(
-      template: TaskTemplate | any
-    ): Promise<TResponse<TaskTemplate>> {
-      const index = this.taskTemplates.findIndex(
-        (t) => t.uuid === (template as TaskTemplate).uuid
-      );
+    async updateTaskTemplate(template: TaskTemplate | any): Promise<TResponse<TaskTemplate>> {
+      const index = this.taskTemplates.findIndex((t) => t.uuid === (template as TaskTemplate).uuid);
       if (index !== -1) {
         this.taskTemplates[index] = template as TaskTemplate;
         return {
           success: true,
-          message: "任务模板更新成功",
+          message: '任务模板更新成功',
           data: template as TaskTemplate,
         };
       }
@@ -153,20 +141,16 @@ export const useTaskStore = defineStore("task", {
       };
     },
 
-    async addTaskInstance(
-      instance: TaskInstance | any
-    ): Promise<TResponse<TaskInstance>> {
+    async addTaskInstance(instance: TaskInstance | any): Promise<TResponse<TaskInstance>> {
       this.taskInstances.push(instance as TaskInstance);
       return {
         success: true,
-        message: "任务实例添加成功",
+        message: '任务实例添加成功',
         data: instance as TaskInstance,
       };
     },
 
-    async addTaskInstances(
-      instances: (TaskInstance | any)[]
-    ): Promise<TResponse<TaskInstance[]>> {
+    async addTaskInstances(instances: (TaskInstance | any)[]): Promise<TResponse<TaskInstance[]>> {
       this.taskInstances.push(...(instances as TaskInstance[]));
       return {
         success: true,
@@ -175,17 +159,13 @@ export const useTaskStore = defineStore("task", {
       };
     },
 
-    async updateTaskInstance(
-      instance: TaskInstance | any
-    ): Promise<TResponse<TaskInstance>> {
-      const index = this.taskInstances.findIndex(
-        (t) => t.uuid === (instance as TaskInstance).uuid
-      );
+    async updateTaskInstance(instance: TaskInstance | any): Promise<TResponse<TaskInstance>> {
+      const index = this.taskInstances.findIndex((t) => t.uuid === (instance as TaskInstance).uuid);
       if (index !== -1) {
         this.taskInstances[index] = instance as TaskInstance;
         return {
           success: true,
-          message: "任务实例更新成功",
+          message: '任务实例更新成功',
           data: instance as TaskInstance,
         };
       }
@@ -196,13 +176,11 @@ export const useTaskStore = defineStore("task", {
     },
 
     async updateTaskInstances(
-      instances: (TaskInstance | any)[]
+      instances: (TaskInstance | any)[],
     ): Promise<TResponse<TaskInstance[]>> {
       const updatedInstances: TaskInstance[] = [];
       (instances as TaskInstance[]).forEach((instance) => {
-        const index = this.taskInstances.findIndex(
-          (t) => t.uuid === instance.uuid
-        );
+        const index = this.taskInstances.findIndex((t) => t.uuid === instance.uuid);
         if (index !== -1) {
           this.taskInstances[index] = instance;
           updatedInstances.push(instance);
@@ -217,14 +195,12 @@ export const useTaskStore = defineStore("task", {
 
     // ✅ 新增：删除单个任务实例
     async removeTaskInstanceById(instanceId: string): Promise<TResponse<void>> {
-      const index = this.taskInstances.findIndex(
-        (t) => t.uuid === instanceId
-      );
+      const index = this.taskInstances.findIndex((t) => t.uuid === instanceId);
       if (index !== -1) {
         this.taskInstances.splice(index, 1);
         return {
           success: true,
-          message: "任务实例删除成功",
+          message: '任务实例删除成功',
         };
       }
       return {
@@ -234,9 +210,7 @@ export const useTaskStore = defineStore("task", {
     },
 
     // ✅ 新增：批量删除任务实例
-    async removeTaskInstancesByIds(
-      instanceIds: string[]
-    ): Promise<TResponse<number>> {
+    async removeTaskInstancesByIds(instanceIds: string[]): Promise<TResponse<number>> {
       let removedCount = 0;
 
       // 从后往前删除，避免索引变化问题
@@ -255,12 +229,10 @@ export const useTaskStore = defineStore("task", {
     },
 
     // ✅ 新增：根据模板ID删除所有相关实例
-    async removeInstancesByTemplateId(
-      templateId: string
-    ): Promise<TResponse<number>> {
+    async removeInstancesByTemplateId(templateId: string): Promise<TResponse<number>> {
       const initialCount = this.taskInstances.length;
       this.taskInstances = this.taskInstances.filter(
-        (instance) => (instance as TaskInstance).templateUuid !== templateId
+        (instance) => (instance as TaskInstance).templateUuid !== templateId,
       );
       const removedCount = initialCount - this.taskInstances.length;
 
@@ -273,7 +245,7 @@ export const useTaskStore = defineStore("task", {
 
     // ✅ 新增：根据状态删除实例
     async removeInstancesByStatus(
-      status: "pending" | "inProgress" | "completed" | "cancelled" | "overdue"
+      status: 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue',
     ): Promise<TResponse<number>> {
       const initialCount = this.taskInstances.length;
       this.taskInstances = this.taskInstances.filter((instance) => {
@@ -289,29 +261,22 @@ export const useTaskStore = defineStore("task", {
     },
 
     // ✅ 修改：MetaTemplate 相关方法
-    async addMetaTemplate(
-      metaTemplate: TaskMetaTemplate
-    ): Promise<TResponse<TaskMetaTemplate>> {
+    async addMetaTemplate(metaTemplate: TaskMetaTemplate): Promise<TResponse<TaskMetaTemplate>> {
       this.metaTemplates.push(metaTemplate as TaskMetaTemplate);
       return {
         success: true,
-        message: "元模板添加成功",
+        message: '元模板添加成功',
         data: metaTemplate as TaskMetaTemplate,
       };
     },
 
-
-    async deleteMetaTemplateById(
-      metaTemplateId: string
-    ): Promise<TResponse<void>> {
-      const index = this.metaTemplates.findIndex(
-        (t) => t.uuid === metaTemplateId
-      );
+    async deleteMetaTemplateById(metaTemplateId: string): Promise<TResponse<void>> {
+      const index = this.metaTemplates.findIndex((t) => t.uuid === metaTemplateId);
       if (index !== -1) {
         this.metaTemplates.splice(index, 1);
         return {
           success: true,
-          message: "元模板删除成功",
+          message: '元模板删除成功',
         };
       }
       return {
@@ -333,7 +298,7 @@ export const useTaskStore = defineStore("task", {
      */
     clearAllTaskTemplates(): void {
       this.taskTemplates = [];
-      console.log("🧹 [TaskStore] 已清空所有任务模板");
+      console.log('🧹 [TaskStore] 已清空所有任务模板');
     },
 
     /**
@@ -348,7 +313,7 @@ export const useTaskStore = defineStore("task", {
      */
     clearAllTaskInstances(): void {
       this.taskInstances = [];
-      console.log("🧹 [TaskStore] 已清空所有任务实例");
+      console.log('🧹 [TaskStore] 已清空所有任务实例');
     },
 
     /**
@@ -361,13 +326,9 @@ export const useTaskStore = defineStore("task", {
     /**
      * 批量同步所有数据（从主进程同步时使用）
      */
-    syncAllData(
-      templates: any[],
-      instances: any[],
-      metaTemplates: any[]
-    ): void {
-      console.log("🔄 [TaskStore] syncAllData 开始同步数据...");
-      console.log("📊 输入数据:", {
+    syncAllData(templates: any[], instances: any[], metaTemplates: any[]): void {
+      console.log('🔄 [TaskStore] syncAllData 开始同步数据...');
+      console.log('📊 输入数据:', {
         templatesCount: templates.length,
         instancesCount: instances.length,
         metaTemplatesCount: metaTemplates.length,
@@ -380,8 +341,8 @@ export const useTaskStore = defineStore("task", {
         metaTemplates: metaTemplates as TaskMetaTemplate[],
       });
 
-      console.log("✅ [TaskStore] syncAllData 同步完成");
-      console.log("📈 最终状态:", {
+      console.log('✅ [TaskStore] syncAllData 同步完成');
+      console.log('📈 最终状态:', {
         templatesCount: this.taskTemplates.length,
         instancesCount: this.taskInstances.length,
         metaTemplatesCount: this.metaTemplates.length,
@@ -412,21 +373,14 @@ export const useTaskStore = defineStore("task", {
       instances: any[];
       timestamp?: number;
     }): void {
-      this.taskTemplates = snapshot.templates.map((data) =>
-        TaskTemplate.fromDTO(data)
-      );
-      this.taskInstances = snapshot.instances.map((data) =>
-        TaskInstance.fromDTO(data)
-      );
+      this.taskTemplates = snapshot.templates.map((data) => TaskTemplate.fromDTO(data));
+      this.taskInstances = snapshot.instances.map((data) => TaskInstance.fromDTO(data));
       console.log(
-        `✓ 从快照恢复数据成功 (${snapshot.templates.length} 模板, ${snapshot.instances.length} 实例)`
+        `✓ 从快照恢复数据成功 (${snapshot.templates.length} 模板, ${snapshot.instances.length} 实例)`,
       );
       if (snapshot.timestamp) {
-        console.log(
-          `✓ 快照时间: ${new Date(snapshot.timestamp).toLocaleString()}`
-        );
+        console.log(`✓ 快照时间: ${new Date(snapshot.timestamp).toLocaleString()}`);
       }
     },
-
   },
 });

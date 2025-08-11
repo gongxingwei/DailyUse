@@ -1,35 +1,30 @@
-import type { NotificationWindowOptions } from "../types/notification";
-import type { TResponse } from "@common/shared/types/response";
+import type { NotificationWindowOptions } from '../types/notification';
+import type { TResponse } from '@common/shared/types/response';
 
-import { serializeForIpc } from "@/shared/utils/ipcSerialization";
-import { ImportanceLevel } from "@common/shared/types/importance";
-import { generateUUID } from "@/shared/utils/uuid";
+import { serializeForIpc } from '@/shared/utils/ipcSerialization';
+import { ImportanceLevel } from '@common/shared/types/importance';
+import { generateUUID } from '@/shared/utils/uuid';
 export class NotificationService {
-
-
   /**
    * 显示通知
    * @param options 通知选项
    * @returns Promise<TResponse>
    */
-  public async showNotification(
-    options: NotificationWindowOptions
-  ): Promise<TResponse> {
-
+  public async showNotification(options: NotificationWindowOptions): Promise<TResponse> {
     try {
       const fullOptions: any = {
         ...options,
       };
       const response = await window.shared.ipcRenderer.invoke(
-        "show-notification",
-        serializeForIpc(fullOptions)
+        'show-notification',
+        serializeForIpc(fullOptions),
       );
       return response;
     } catch (error) {
-      console.error("NotificationService - showNotification Error:", error);
+      console.error('NotificationService - showNotification Error:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -40,16 +35,13 @@ export class NotificationService {
    */
   public async closeNotification(uuid: string): Promise<TResponse> {
     try {
-      const response = await window.shared.ipcRenderer.invoke(
-        "close-notification",
-        uuid
-      );
+      const response = await window.shared.ipcRenderer.invoke('close-notification', uuid);
       return response;
     } catch (error) {
-      console.error("NotificationService - closeNotification Error:", error);
+      console.error('NotificationService - closeNotification Error:', error);
       return {
         success: false,
-        message: error instanceof Error ? error.message : "Unknown error",
+        message: error instanceof Error ? error.message : 'Unknown error',
       };
     }
   }
@@ -57,10 +49,7 @@ export class NotificationService {
   /**
    * 发送通知操作
    */
-  public notificationAction(
-    uuid: string,
-    action: { text: string; type: string }
-  ): TResponse {
+  public notificationAction(uuid: string, action: { text: string; type: string }): TResponse {
     try {
       window.shared.ipcRenderer.send('notification-action', uuid, action);
       return {
@@ -79,7 +68,7 @@ export class NotificationService {
    * 监听通知操作
    */
   public onNotificationAction(
-    callback: (uuid: string, action: { text: string; type: string }) => void
+    callback: (uuid: string, action: { text: string; type: string }) => void,
   ): () => void {
     const handler = (_event: any, uuid: string, action: { text: string; type: string }) => {
       callback(uuid, action);
@@ -105,7 +94,6 @@ export class NotificationService {
       body: message,
       importance: ImportanceLevel.Moderate,
     });
-
   }
 
   /**
@@ -119,9 +107,7 @@ export class NotificationService {
       title,
       body: message,
       importance: ImportanceLevel.Vital,
-      actions: [
-        { text: '我知道了', type: 'confirm' }
-      ]
+      actions: [{ text: '我知道了', type: 'confirm' }],
     });
   }
 }

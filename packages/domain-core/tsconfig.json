@@ -1,0 +1,18 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "composite": false,
+    "declaration": true,
+    "preserveSymlinks": true,
+    "noEmit": false,
+    "moduleResolution": "node"  // 确保模块解析正确
+  },
+  "include": [
+    "src/**/*.ts",
+    "src/**/aggregates/*.ts",
+    "src/**/types.ts"
+  ],
+  "exclude": ["node_modules"],
+}

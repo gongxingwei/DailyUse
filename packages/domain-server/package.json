@@ -1,0 +1,23 @@
+{
+  "name": "@dailyuse/domain-server",
+  "version": "0.0.1",
+  "description": "Server-side domain models with business logic",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --target es2020",
+    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch"
+  },
+  "dependencies": {
+    "@dailyuse/domain-core": "workspace:*",
+    "@dailyuse/utils": "workspace:*",
+    "bcrypt": "^5.1.0",
+    "jsonwebtoken": "^9.0.2"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
+    "@types/jsonwebtoken": "^9.0.6",
+    "tsup": "^8.0.0",
+    "typescript": "^5.0.0"
+  }
+}

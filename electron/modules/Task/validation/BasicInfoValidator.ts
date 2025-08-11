@@ -43,7 +43,7 @@ export class BasicInfoValidator implements ITemplateValidator {
     const lengthResult = ValidationUtils.validateStringLength(title, '任务标题', {
       min: 1,
       max: 100,
-      required: true
+      required: true,
     });
     if (!lengthResult.isValid) {
       return lengthResult;
@@ -80,14 +80,14 @@ export class BasicInfoValidator implements ITemplateValidator {
 
     // 长度验证
     const lengthResult = ValidationUtils.validateStringLength(description, '任务描述', {
-      max: 1000
+      max: 1000,
     });
     if (!lengthResult.isValid) {
       return lengthResult;
     }
 
     const warnings: string[] = [];
-    
+
     // 建议：描述过短
     if (description.trim().length < 10) {
       warnings.push('建议任务描述更详细一些，以便更好地理解任务内容');
@@ -101,7 +101,6 @@ export class BasicInfoValidator implements ITemplateValidator {
     return ValidationUtils.success(warnings);
   }
 
-
   /**
    * 验证版本号
    */
@@ -109,7 +108,7 @@ export class BasicInfoValidator implements ITemplateValidator {
     return ValidationUtils.validateNumberRange(version, '版本号', {
       min: 1,
       required: true,
-      integer: true
+      integer: true,
     });
   }
 

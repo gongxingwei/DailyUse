@@ -17,9 +17,22 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "build:prod": "vue-tsc && vite build",
-    "start:prod": "pnpm run build:prod && electron dist-electron/main.js"
+    "start:prod": "pnpm run build:prod && electron dist-electron/main.js",
+    "build:packages": "pnpm -r --filter ./packages/* run build",
+    "dev:packages": "pnpm -r --filter ./packages/* run dev",
+    "dev:web": "pnpm --filter @dailyuse/web dev",
+    "build:web": "pnpm --filter @dailyuse/web build",
+    "preview:web": "pnpm --filter @dailyuse/web preview",
+    "dev:api": "pnpm --filter @dailyuse/api dev",
+    "build:api": "pnpm --filter @dailyuse/api build",
+    "start:api": "pnpm --filter @dailyuse/api start",
+    "dev:stack": "pwsh -NoLogo -NoProfile -Command \"Start-Job { pnpm dev:api } | Out-Null; pnpm dev:web\""
   },
   "dependencies": {
+    "@dailyuse/utils": "workspace:*",
+    "@dailyuse/domain": "workspace:*",
+    "@dailyuse/contracts": "workspace:*",
+    "@dailyuse/ui": "workspace:*",
     "@electron/rebuild": "^4.0.1",
     "@types/uuid": "^10.0.0",
     "axios": "^1.9.0",
@@ -59,7 +72,7 @@
     "@typescript-eslint/parser": "^8.39.0",
     "@vitejs/plugin-vue": "^5.2.4",
     "@vitest/ui": "^3.2.4",
-    "electron": "^30.0.1",
+    "electron": "^30.5.1",
     "electron-builder": "^26.0.12",
     "eslint": "^9.32.0",
     "eslint-config-prettier": "^10.1.8",
@@ -73,12 +86,14 @@
     "prettier": "^3.6.2",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.39.0",
-    "vite": "^5.1.6",
+    "vite": "^5.4.19",
     "vite-plugin-electron": "^0.28.8",
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vitest": "^3.2.4",
-    "vue-tsc": "^2.1.10"
+    "vue-tsc": "^2.1.10",
+    "tsup": "^8.5.0",
+    "rimraf": "^6.0.1"
   },
   "main": "dist-electron/main.js"
 }

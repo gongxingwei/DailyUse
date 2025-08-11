@@ -1,0 +1,19 @@
+{
+  "name": "@dailyuse/domain-client",
+  "version": "0.0.1",
+  "description": "Client-side domain models with UI-focused methods",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --target es2020",
+    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch"
+  },
+  "dependencies": {
+    "@dailyuse/domain-core": "workspace:*",
+    "@dailyuse/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsup": "^8.0.0"
+  }
+}

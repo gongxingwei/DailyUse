@@ -1,21 +1,17 @@
-import type { RecurrenceRule, RecurrenceSegment } from '@common/shared/types/recurrenceRule';
+import type { RecurrenceRule, RecurrenceSegment } from '@dailyuse/utils';
 
 export class RecurrenceRuleHelper {
   /**
    * 将UI选择器的值转换为RecurrenceRule
    */
-  static fromUISelectors(
-    hour: number,
-    minute: number,
-    daysOfWeek: number[]
-  ): RecurrenceRule {
+  static fromUISelectors(hour: number, minute: number, daysOfWeek: number[]): RecurrenceRule {
     return {
       second: 0,
       minute: minute,
       hour: hour,
       dayOfWeek: daysOfWeek.length > 0 ? daysOfWeek : undefined,
       month: undefined,
-      year: undefined
+      year: undefined,
     };
   }
 
@@ -37,7 +33,10 @@ export class RecurrenceRuleHelper {
   /**
    * 从RecurrenceSegment提取单个数字
    */
-  private static extractNumber(segment: RecurrenceSegment | undefined, defaultValue: number): number {
+  private static extractNumber(
+    segment: RecurrenceSegment | undefined,
+    defaultValue: number,
+  ): number {
     if (typeof segment === 'number') {
       return segment;
     }
@@ -69,7 +68,7 @@ export class RecurrenceRuleHelper {
       const hour = this.extractNumber(rule.hour, -1);
       if (hour < 0 || hour > 23) return false;
     }
-    
+
     if (rule.minute !== undefined) {
       const minute = this.extractNumber(rule.minute, -1);
       if (minute < 0 || minute > 59) return false;
@@ -88,7 +87,7 @@ export class RecurrenceRuleHelper {
       hour: 9,
       dayOfWeek: undefined,
       month: undefined,
-      year: undefined
+      year: undefined,
     };
   }
 }

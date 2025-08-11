@@ -7,23 +7,13 @@
     </v-card-title>
     <v-card-text>
       <!-- 显示验证错误 -->
-      <v-alert 
-        v-if="!isValid" 
-        type="error" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="!isValid" type="error" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="error in errors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
       <!-- 显示警告信息 -->
-      <v-alert 
-        v-if="hasWarnings" 
-        type="warning" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="hasWarnings" type="warning" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="warning in warnings" :key="warning">{{ warning }}</li>
         </ul>
@@ -40,47 +30,25 @@
 
         <!-- 开始时间 -->
         <v-col cols="12" md="6">
-          <v-text-field 
-            v-model="startDateInput" 
-            label="开始日期" 
-            type="date" 
-            variant="outlined" 
-            required
-            @update:model-value="updateStartDate" 
-          />
+          <v-text-field v-model="startDateInput" label="开始日期" type="date" variant="outlined" required
+            @update:model-value="updateStartDate" />
         </v-col>
-        
+
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type !== 'allDay'">
-          <v-text-field 
-            v-model="startTimeInput" 
-            label="开始时间" 
-            type="time" 
-            variant="outlined" 
-            required
-            @update:model-value="updateStartTime" 
-          />
+          <v-text-field v-model="startTimeInput" label="开始时间" type="time" variant="outlined" required
+            @update:model-value="updateStartTime" />
         </v-col>
 
         <!-- 结束时间（仅时间段类型） -->
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
-          <v-text-field 
-            v-model="endDateInput" 
-            label="结束日期" 
-            type="date" 
-            variant="outlined"
-            @update:model-value="updateEndDate" 
-          />
+          <v-text-field v-model="endDateInput" label="结束日期" type="date" variant="outlined"
+            @update:model-value="updateEndDate" />
         </v-col>
-        
+
         <v-col cols="12" md="6" v-if="props.modelValue.timeConfig.type === 'timeRange'">
-          <v-text-field 
-            v-model="endTimeInput" 
-            label="结束时间" 
-            type="time" 
-            variant="outlined"
-            @update:model-value="updateEndTime" 
-          />
-        </v-col> 
+          <v-text-field v-model="endTimeInput" label="结束时间" type="time" variant="outlined"
+            @update:model-value="updateEndTime" />
+        </v-col>
       </v-row>
     </v-card-text>
   </v-card>
@@ -91,7 +59,7 @@ import type { TaskTemplate } from '@/modules/Task/domain/aggregates/taskTemplate
 import { computed, ref, watch } from 'vue';
 import { useTimeConfigValidation } from '@/modules/Task/presentation/composables/useTimeConfigValidation';
 // utils
-import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@common/shared/utils/dateUtils';
+import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@dailyuse/utils';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -139,7 +107,7 @@ const endTimeInput = ref('');
 // 时间更新方法
 const updateStartDate = (date: string) => {
   if (!date) return;
-  
+
   const currentStart = props.modelValue.timeConfig.baseTime.start;
   const newStart = updateDateKeepTime(currentStart, date);
   const updatedTemplate = props.modelValue.clone();
@@ -155,10 +123,10 @@ const updateStartDate = (date: string) => {
 
 const updateStartTime = (time: string) => {
   if (!time) return;
-  
+
   const currentStart = props.modelValue.timeConfig.baseTime.start;
   const newStart = updateTimeKeepDate(currentStart, time);
-  
+
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
@@ -168,14 +136,14 @@ const updateStartTime = (time: string) => {
     }
   });
   emit('update:modelValue', updatedTemplate);
-};const updateEndDate = (date: string) => {
+}; const updateEndDate = (date: string) => {
   if (!date) return;
-  
+
   const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
-  
+
   const newEnd = updateDateKeepTime(currentEnd, date);
-  
+
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,
@@ -189,12 +157,12 @@ const updateStartTime = (time: string) => {
 
 const updateEndTime = (time: string) => {
   if (!time) return;
-  
+
   const currentEnd = props.modelValue.timeConfig.baseTime.end;
   if (!currentEnd) return;
-  
+
   const newEnd = updateTimeKeepDate(currentEnd, time);
-  
+
   const updatedTemplate = props.modelValue.clone();
   updatedTemplate.updateTimeConfig({
     ...updatedTemplate.timeConfig,

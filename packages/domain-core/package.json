@@ -1,0 +1,26 @@
+{
+  "name": "@dailyuse/domain-core",
+  "version": "0.0.1",
+  "description": "Core domain models shared between frontend and backend",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "module": "dist/index.mjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --dts --format esm --target es2020",
+    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch"
+  },
+  "dependencies": {
+    "@dailyuse/utils": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "tsup": "^8.5.0"
+  }
+}

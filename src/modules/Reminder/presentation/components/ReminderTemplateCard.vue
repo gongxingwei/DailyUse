@@ -5,13 +5,7 @@
         <v-icon class="mr-2" color="primary">mdi-bell</v-icon>
         <span>{{ template?.name || '未命名模板' }}</span>
         <v-spacer />
-        <v-switch
-          v-if="template"
-          v-model="isTemplateEnabled"
-          inset
-          hide-details
-          color="primary"
-        />
+        <v-switch v-if="template" v-model="isTemplateEnabled" inset hide-details color="primary" />
       </v-card-title>
       <v-card-text>
         <div class="mb-2" v-if="template?.description">
@@ -55,8 +49,7 @@ import type { ReminderTemplate } from "../../domain/entities/reminderTemplate";
 import { computed, inject } from "vue";
 import { useReminderStore } from "../stores/reminderStore";
 import { ImportanceLevel } from "@common/shared/types/importance";
-import { recurrenceRuleToText } from "@common/shared/utils/recurrenceRuleUtils";
-import { RecurrenceRule } from "@common/shared/types/recurrenceRule";
+import { recurrenceRuleToText, type RecurrenceRule } from "@dailyuse/utils";
 const reminderStore = useReminderStore();
 
 const onSetTemplateEnabled = inject<((uuid: string, enabled: boolean) => void) | undefined>('onSetTemplateEnabled');
