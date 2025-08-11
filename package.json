@@ -30,7 +30,9 @@
   },
   "dependencies": {
     "@dailyuse/utils": "workspace:*",
-    "@dailyuse/domain": "workspace:*",
+    "@dailyuse/domain-server": "workspace:*",
+    "@dailyuse/domain-client": "workspace:*",
+    "@dailyuse/domain-core": "workspace:*",
     "@dailyuse/contracts": "workspace:*",
     "@dailyuse/ui": "workspace:*",
     "@electron/rebuild": "^4.0.1",

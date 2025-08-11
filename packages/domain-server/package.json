@@ -2,8 +2,15 @@
   "name": "@dailyuse/domain-server",
   "version": "0.0.1",
   "description": "Server-side domain models with business logic",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "type": "module",
+  "main": "dist/index.mjs",
+  "types": "dist/index.d.mts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.mts"
+    }
+  },
   "scripts": {
     "build": "tsup src/index.ts --dts --format esm --target es2020",
     "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch"

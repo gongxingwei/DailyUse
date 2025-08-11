@@ -9,7 +9,12 @@
     "skipLibCheck": true,
     "resolveJsonModule": true,
     "types": ["node"],
-    "typeRoots": ["./src/modules/users/types", "./node_modules/@types"]
+    "typeRoots": ["./src/modules/users/types", "./node_modules/@types"],
+    "paths": {
+      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
+      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
+      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
+    }
   },
   "include": ["src/**/*"],
   "exclude": ["node_modules", "dist"]

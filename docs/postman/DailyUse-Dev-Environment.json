@@ -1,0 +1,47 @@
+{
+  "id": "dailyuse-dev-environment",
+  "name": "DailyUse Development",
+  "values": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000/api/v1",
+      "enabled": true
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "account_id",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "session_id",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "refresh_token",
+      "value": "",
+      "enabled": true
+    },
+    {
+      "key": "test_username",
+      "value": "testuser001",
+      "enabled": true
+    },
+    {
+      "key": "test_email",
+      "value": "testuser001@example.com",
+      "enabled": true
+    },
+    {
+      "key": "test_password",
+      "value": "SecurePassword123!",
+      "enabled": true
+    }
+  ],
+  "_postman_variable_scope": "environment"
+}

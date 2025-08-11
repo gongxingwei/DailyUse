@@ -16,7 +16,7 @@
     "vuetify": "^3.7.5",
     "axios": "^1.9.0",
     "@dailyuse/utils": "workspace:*",
-    "@dailyuse/domain": "workspace:*",
+    "@dailyuse/domain-client": "workspace:*",
     "@dailyuse/contracts": "workspace:*",
     "@dailyuse/ui": "workspace:*"
   },

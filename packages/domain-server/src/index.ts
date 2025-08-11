@@ -5,6 +5,7 @@ export * from './authentication/entities/MFADevice';
 export * from './authentication/entities/Session';
 export * from './authentication/valueObjects/Password';
 export * from './authentication/valueObjects/Token';
+export * from './authentication/repositories/IAuthenticationRepository';
 
 // Account domain exports
 export * from './account/types';
@@ -15,6 +16,7 @@ export * from './account/entities/Permission';
 export * from './account/valueObjects/Email';
 export * from './account/valueObjects/PhoneNumber';
 export * from './account/valueObjects/Address';
+export * from './account/repositories/IAccountRepository';
 
 // Goal domain exports
 export * from './goal/aggregates/Goal';

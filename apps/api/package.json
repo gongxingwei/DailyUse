@@ -21,7 +21,7 @@
     "jsonwebtoken": "^9.0.2",
     "zod": "^3.25.76",
     "@prisma/client": "^5.22.0",
-    "@dailyuse/domain": "workspace:*"
+    "@dailyuse/domain-server": "workspace:*"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -299,12 +299,20 @@ export class Account extends AccountCore implements IAccount {
   static register(params: {
     username: string;
     accountType: AccountType;
-    user: User;
     email?: Email;
     phoneNumber?: PhoneNumber;
     password?: string;
   }): Account {
-    const newAccount = new Account(params);
+    const user = User.create({});
+    const accountParams = {
+      username: params.username,
+      accountType: params.accountType,
+      email: params.email,
+      phoneNumber: params.phoneNumber,
+      password: params.password,
+      user: user,
+    };
+    const newAccount = new Account(accountParams);
 
     newAccount.addDomainEvent({
       aggregateId: newAccount.uuid,
@@ -331,6 +339,13 @@ export class Account extends AccountCore implements IAccount {
     });
 
     return newAccount;
+  }
+
+  /**
+   * 从DTO数据创建实例
+   */
+  static fromDTO(data: any): Account {
+    return Account.fromPersistence(data);
   }
 
   /**

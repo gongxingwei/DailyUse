@@ -2,6 +2,7 @@
   "name": "@dailyuse/domain-core",
   "version": "0.0.1",
   "description": "Core domain models shared between frontend and backend",
+  "type": "module",
   "main": "dist/index.mjs",
   "types": "dist/index.d.mts",
   "module": "dist/index.mjs",

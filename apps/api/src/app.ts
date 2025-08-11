@@ -9,13 +9,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-
-// Module routes (keep your existing route modules)
-import userRoutes from './modules/users/user.routes';
-import syncRoutes from './modules/sync/sync.routes';
-import authRoutes from './modules/auth/auth.routes';
-import dataRoutes from './modules/data/data.routes';
-import taskRoutes from './modules/task/task.routes';
+import accountRoute from './modules/account/interface/http/routes';
 
 const app: Express = express();
 
@@ -49,11 +43,9 @@ const api = Router();
 api.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
-api.use(userRoutes);
-api.use(syncRoutes);
-api.use(authRoutes);
-api.use('/data', dataRoutes);
-api.use(taskRoutes);
+
+// 挂载账户路由到api路由器
+api.use('', accountRoute);
 
 app.use('/api/v1', api);
 
