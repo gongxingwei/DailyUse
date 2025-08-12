@@ -29,12 +29,12 @@
     "dev:stack": "pwsh -NoLogo -NoProfile -Command \"Start-Job { pnpm dev:api } | Out-Null; pnpm dev:web\""
   },
   "dependencies": {
-    "@dailyuse/utils": "workspace:*",
-    "@dailyuse/domain-server": "workspace:*",
+    "@dailyuse/contracts": "workspace:*",
     "@dailyuse/domain-client": "workspace:*",
     "@dailyuse/domain-core": "workspace:*",
-    "@dailyuse/contracts": "workspace:*",
+    "@dailyuse/domain-server": "workspace:*",
     "@dailyuse/ui": "workspace:*",
+    "@dailyuse/utils": "workspace:*",
     "@electron/rebuild": "^4.0.1",
     "@types/uuid": "^10.0.0",
     "axios": "^1.9.0",
@@ -66,6 +66,7 @@
     "@eslint/js": "^9.32.0",
     "@eslint/markdown": "^7.1.0",
     "@mdi/font": "^7.4.47",
+    "@rollup/rollup-win32-x64-msvc": "^4.46.2",
     "@types/bcrypt": "^5.0.2",
     "@types/better-sqlite3": "^7.6.13",
     "@types/markdown-it": "^14.1.2",
@@ -86,6 +87,8 @@
     "node-gyp": "^11.2.0",
     "prebuild-install": "^7.1.3",
     "prettier": "^3.6.2",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.39.0",
     "vite": "^5.4.19",
@@ -93,9 +96,7 @@
     "vite-plugin-electron-renderer": "^0.14.5",
     "vite-plugin-monaco-editor": "^1.1.0",
     "vitest": "^3.2.4",
-    "vue-tsc": "^2.1.10",
-    "tsup": "^8.5.0",
-    "rimraf": "^6.0.1"
+    "vue-tsc": "^2.1.10"
   },
   "main": "dist-electron/main.js"
 }

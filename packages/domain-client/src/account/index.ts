@@ -14,3 +14,6 @@ export * from './valueObjects/Email';
 export * from './valueObjects/PhoneNumber';
 export * from './valueObjects/Address';
 export * from './valueObjects/Sex';
+
+// Repositories
+export * from './repositories/IUserRepository';

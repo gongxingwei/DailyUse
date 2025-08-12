@@ -3,7 +3,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "@dailyuse/domain-client": ["../../packages/domain-client/src/index.ts"],
+      "@dailyuse/domain-client/*": ["../../packages/domain-client/src/*"],
+      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
+      "@dailyuse/domain-core/*": ["../../packages/domain-core/src/*"]
     },
     "types": ["vite/client"]
   },

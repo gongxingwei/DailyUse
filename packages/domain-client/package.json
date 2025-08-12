@@ -2,11 +2,20 @@
   "name": "@dailyuse/domain-client",
   "version": "0.0.1",
   "description": "Client-side domain models with UI-focused methods",
+  "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm --target es2020",
-    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch"
+    "build": "npx tsc --project tsconfig.build.json",
+    "dev": "npx tsc --project tsconfig.build.json --watch"
   },
   "dependencies": {
     "@dailyuse/domain-core": "workspace:*",

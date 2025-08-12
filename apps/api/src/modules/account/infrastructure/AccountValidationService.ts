@@ -52,16 +52,16 @@ export class AccountValidationService {
     }
 
     // 验证用户信息
-    if (!createDto.user) {
-      errors.push('用户信息不能为空');
-    } else {
-      if (!createDto.user.firstName || createDto.user.firstName.trim().length === 0) {
-        errors.push('名字不能为空');
-      }
-      if (!createDto.user.lastName || createDto.user.lastName.trim().length === 0) {
-        errors.push('姓氏不能为空');
-      }
-    }
+    // if (!createDto.user) {
+    //   errors.push('用户信息不能为空');
+    // } else {
+    //   if (!createDto.user.firstName || createDto.user.firstName.trim().length === 0) {
+    //     errors.push('名字不能为空');
+    //   }
+    //   if (!createDto.user.lastName || createDto.user.lastName.trim().length === 0) {
+    //     errors.push('姓氏不能为空');
+    //   }
+    // }
 
     // 验证账户类型
     if (!createDto.accountType) {

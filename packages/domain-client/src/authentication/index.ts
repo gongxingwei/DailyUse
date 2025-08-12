@@ -9,3 +9,6 @@ export * from './entities/MFADevice';
 // Value Objects
 export * from './valueObjects/Password';
 export * from './valueObjects/Token';
+
+// Repositories
+export * from './repositories/IAuthRepository';

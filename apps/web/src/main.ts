@@ -2,7 +2,7 @@ import { createApp } from 'vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
-import router from './router';
+import router from './shared/router';
 import { api } from './plugins/axios';
 import 'vuetify/styles';
 import { createVuetify } from 'vuetify';
