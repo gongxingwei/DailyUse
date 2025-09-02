@@ -38,7 +38,6 @@ model Account {
   repositories    Repository[]
   goals           Goal[]
   tasks           Task[]
-  userData        UserData[]
 
   @@map("accounts")
 }
@@ -50,7 +49,7 @@ model UserProfile {
   firstName      String    @map("first_name")
   lastName       String    @map("last_name")
   displayName    String?   @map("display_name")
-  sex            String? // '0' = female, '1' = male, '2' = other
+  sex            Int       @map("sex") // '0' = female, '1' = male, '2' = other
   dateOfBirth    DateTime? @map("date_of_birth")
   avatarUrl      String?   @map("avatar_url")
   bio            String?
@@ -203,26 +202,4 @@ model Task {
   goal    Goal?   @relation(fields: [goalUuid], references: [uuid], onDelete: SetNull)
 
   @@map("tasks")
-}
-
-// User data storage for modular data
-model UserData {
-  uuid        String   @id @default(cuid())
-  accountUuid String   @map("account_uuid")
-  storeName   String   @map("store_name")
-  dataKey     String   @map("data_key")
-  dataValue   String   @map("data_value")
-  dataType    String   @default("string") @map("data_type") // 'string', 'number', 'boolean', 'json', 'binary'
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-
-  @@unique([accountUuid, storeName, dataKey])
-  @@index([accountUuid])
-  @@index([storeName])
-  @@index([dataKey])
-  @@index([dataType])
-  @@index([createdAt])
-  @@map("user_store_data")
 }

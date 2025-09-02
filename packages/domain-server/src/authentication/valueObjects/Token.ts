@@ -1,88 +1,32 @@
 import { ValueObject } from '@dailyuse/utils';
-import { TokenType } from '@dailyuse/domain-core';
+import { TokenType, TokenCore } from '@dailyuse/domain-core';
 import { type ITokenServer } from '../types';
 import * as jwt from 'jsonwebtoken';
 
 /**
  * Token值对象 - JWT令牌管理
  */
-export class Token extends ValueObject implements ITokenServer {
-  private readonly _value: string;
-  private readonly _type: TokenType;
-  private readonly _accountUuid: string;
-  private readonly _issuedAt: Date;
-  private readonly _expiresAt: Date;
-  private readonly _deviceInfo?: string;
-  private _isRevoked: boolean;
-
-  constructor(params: {
-    value: string;
-    type: TokenType;
-    accountUuid: string;
-    issuedAt?: Date;
-    expiresAt: Date;
-    deviceInfo?: string;
-    isRevoked?: boolean;
-  }) {
-    super();
-    this._value = params.value;
-    this._type = params.type;
-    this._accountUuid = params.accountUuid;
-    this._issuedAt = params.issuedAt || new Date();
-    this._expiresAt = params.expiresAt;
-    this._deviceInfo = params.deviceInfo;
-    this._isRevoked = params.isRevoked || false;
-  }
-
-  // ===== ITokenCore 属性访问器 =====
-  get value(): string {
-    return this._value;
-  }
-
-  get type(): TokenType {
-    return this._type;
-  }
-
-  get accountUuid(): string {
-    return this._accountUuid;
-  }
-
-  get issuedAt(): Date {
-    return this._issuedAt;
-  }
-
-  get expiresAt(): Date {
-    return this._expiresAt;
-  }
-
-  get deviceInfo(): string | undefined {
-    return this._deviceInfo;
-  }
-
-  get isRevoked(): boolean {
-    return this._isRevoked;
-  }
-
+export class Token extends TokenCore implements ITokenServer {
   // ===== ITokenCore 方法 =====
   isValid(): boolean {
-    return !this.isExpired() && !this._isRevoked;
+    return !this.isExpired() && !this.isRevoked;
   }
 
   isExpired(): boolean {
-    return new Date() > this._expiresAt;
+    return new Date() > this.expiresAt;
   }
 
   revoke(): void {
-    this._isRevoked = true;
+    super.revoke();
   }
 
   isNearExpiry(): boolean {
     const fiveMinutes = 5 * 60 * 1000;
-    return this._expiresAt.getTime() - Date.now() < fiveMinutes;
+    return this.expiresAt.getTime() - Date.now() < fiveMinutes;
   }
 
   getRemainingTime(): number {
-    return Math.max(0, this._expiresAt.getTime() - Date.now());
+    return Math.max(0, this.expiresAt.getTime() - Date.now());
   }
 
   // ===== ITokenServer 方法 =====
@@ -93,8 +37,8 @@ export class Token extends ValueObject implements ITokenServer {
   async validateWithJWT(): Promise<boolean> {
     try {
       const secret = process.env.JWT_SECRET || 'default-secret';
-      const decoded = jwt.verify(this._value, secret) as any;
-      return decoded.accountUuid === this._accountUuid && decoded.type === this._type;
+      const decoded = jwt.verify(this.value, secret) as any;
+      return decoded.accountUuid === this.accountUuid && decoded.type === this.type;
     } catch {
       return false;
     }
@@ -103,11 +47,6 @@ export class Token extends ValueObject implements ITokenServer {
   async refreshToken(): Promise<ITokenServer> {
     // TODO: 实现令牌刷新
     throw new Error('Not implemented');
-  }
-
-  async blacklistToken(): Promise<void> {
-    this._isRevoked = true;
-    await this.saveToDatabase();
   }
 
   isServer(): boolean {
@@ -123,7 +62,7 @@ export class Token extends ValueObject implements ITokenServer {
     if (!(other instanceof Token)) {
       return false;
     }
-    return this._value === other._value;
+    return this.value === other.value;
   }
 
   // ===== 静态工厂方法 =====
@@ -199,6 +138,30 @@ export class Token extends ValueObject implements ITokenServer {
       type: TokenType.EMAIL_VERIFICATION,
       accountUuid,
       expiresAt,
+    });
+  }
+
+  static createRememberToken(
+    accountUuid: string,
+    deviceInfo?: string,
+    secret: string = 'default-secret',
+  ): Token {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30天
+    const payload = {
+      accountUuid,
+      type: TokenType.REMEMBER_ME,
+      exp: Math.floor(expiresAt.getTime() / 1000),
+      deviceInfo,
+    };
+
+    const value = jwt.sign(payload, secret);
+
+    return new Token({
+      value,
+      type: TokenType.REMEMBER_ME,
+      accountUuid,
+      expiresAt,
+      deviceInfo,
     });
   }
 

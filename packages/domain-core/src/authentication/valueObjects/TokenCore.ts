@@ -45,61 +45,6 @@ export class TokenCore extends ValueObject implements ITokenCore {
   }
 
   /**
-   * 创建记住我令牌
-   */
-  static createRememberToken(
-    accountUuid: string,
-    deviceInfo: string,
-    daysToExpire: number = 30,
-  ): TokenCore {
-    const value = TokenCore.generateTokenValue();
-    const expiresAt = addDays(new Date(), daysToExpire);
-    return new TokenCore({
-      value,
-      type: TokenType.REMEMBER_ME,
-      accountUuid,
-      expiresAt,
-      deviceInfo,
-    });
-  }
-
-  /**
-   * 创建访问令牌
-   */
-  static createAccessToken(accountUuid: string, minutesToExpire: number = 60): TokenCore {
-    const value = TokenCore.generateTokenValue();
-    const expiresAt = addMinutes(new Date(), minutesToExpire);
-    return new TokenCore({ value, type: TokenType.ACCESS_TOKEN, accountUuid, expiresAt });
-  }
-
-  /**
-   * 创建刷新令牌
-   */
-  static createRefreshToken(accountUuid: string, daysToExpire: number = 7): TokenCore {
-    const value = TokenCore.generateTokenValue();
-    const expiresAt = addDays(new Date(), daysToExpire);
-    return new TokenCore({ value, type: TokenType.REFRESH_TOKEN, accountUuid, expiresAt });
-  }
-
-  /**
-   * 创建邮箱验证令牌
-   */
-  static createEmailVerificationToken(accountUuid: string, hoursToExpire: number = 24): TokenCore {
-    const value = TokenCore.generateTokenValue();
-    const expiresAt = addHours(new Date(), hoursToExpire);
-    return new TokenCore({ value, type: TokenType.EMAIL_VERIFICATION, accountUuid, expiresAt });
-  }
-
-  /**
-   * 创建密码重置令牌
-   */
-  static createPasswordResetToken(accountUuid: string, hoursToExpire: number = 2): TokenCore {
-    const value = TokenCore.generateTokenValue();
-    const expiresAt = addHours(new Date(), hoursToExpire);
-    return new TokenCore({ value, type: TokenType.PASSWORD_RESET, accountUuid, expiresAt });
-  }
-
-  /**
    * 检查令牌是否有效
    */
   isValid(): boolean {
@@ -143,19 +88,19 @@ export class TokenCore extends ValueObject implements ITokenCore {
     return Math.max(0, this._expiresAt.getTime() - now.getTime());
   }
 
-  extendExpiry(days: number = 30): TokenCore {
-    // 值对象是不可变的，需要创建新的实例
-    const newExpiresAt = addDays(new Date(), days);
-    return new TokenCore({
-      value: this._value,
-      type: this._type,
-      accountUuid: this._accountUuid,
-      issuedAt: this._issuedAt,
-      expiresAt: newExpiresAt,
-      deviceInfo: this._deviceInfo,
-      isRevoked: this._isRevoked,
-    });
-  }
+  // extendExpiry(days: number = 30): TokenCore {
+  //   // 值对象是不可变的，需要创建新的实例
+  //   const newExpiresAt = addDays(new Date(), days);
+  //   return new TokenCore({
+  //     value: this._value,
+  //     type: this._type,
+  //     accountUuid: this._accountUuid,
+  //     issuedAt: this._issuedAt,
+  //     expiresAt: newExpiresAt,
+  //     deviceInfo: this._deviceInfo,
+  //     isRevoked: this._isRevoked,
+  //   });
+  // }
 
   // Getters
   get value(): string {
@@ -225,6 +170,19 @@ export class TokenCore extends ValueObject implements ITokenCore {
       expiresAt: isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date(),
       deviceInfo: dto.deviceInfo,
       isRevoked: dto.isRevoked,
+    });
+  }
+
+  /**
+   * 创建记住我令牌
+   */
+  static createRememberToken(accountUuid: string, deviceInfo?: string): TokenCore {
+    const expiresAt = addDays(new Date(), 30); // 30天有效期
+    return new TokenCore({
+      type: TokenType.REMEMBER_ME,
+      accountUuid,
+      expiresAt,
+      deviceInfo,
     });
   }
 }

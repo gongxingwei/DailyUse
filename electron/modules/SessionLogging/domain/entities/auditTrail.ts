@@ -1,12 +1,17 @@
-import { IPLocation } from "../valueObjects/ipLocation";
-import { Entity } from "@common/shared/domain/entity";
-import { IMainProcessAuditTrail, IAuditTrailDTO, OperationType, RiskLevel } from "@common/modules/sessionLog/types/sessionLog";
+import { IPLocation } from '../valueObjects/ipLocation';
+import { Entity } from '@common/shared/domain/entity';
+import {
+  IMainProcessAuditTrail,
+  IAuditTrailDTO,
+  OperationType,
+  RiskLevel,
+} from '@common/modules/sessionLog/types/sessionLog';
 /**
  * 审计轨迹实体
  * 记录系统中的重要操作和安全事件
  */
 export class AuditTrail extends Entity implements IMainProcessAuditTrail {
-  private _accountUuUuid: string;
+  private _accountUuid: string;
   private _operationType: OperationType;
   private _description: string;
   private _riskLevel: RiskLevel;
@@ -31,7 +36,7 @@ export class AuditTrail extends Entity implements IMainProcessAuditTrail {
     alertLevel?: 'info' | 'warning' | 'error' | 'critical';
   }) {
     super(params.uuid || AuditTrail.generateId());
-    this._accountUuUuid = params.accountUuid;
+    this._accountUuid = params.accountUuid;
     this._operationType = params.operationType;
     this._description = params.description;
     this._riskLevel = params.riskLevel;
@@ -49,7 +54,7 @@ export class AuditTrail extends Entity implements IMainProcessAuditTrail {
   }
 
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
   }
 
   get operationType(): OperationType {
@@ -170,7 +175,7 @@ export class AuditTrail extends Entity implements IMainProcessAuditTrail {
   toDTO(): IAuditTrailDTO {
     return {
       uuid: this._uuid,
-      accountUuid: this._accountUuUuid,
+      accountUuid: this._accountUuid,
       operationType: this._operationType,
       description: this._description,
       riskLevel: this._riskLevel,
@@ -179,7 +184,7 @@ export class AuditTrail extends Entity implements IMainProcessAuditTrail {
       metadata: JSON.stringify(this._metadata),
       timestamp: this._timestamp.toISOString(),
       isAlertTriggered: this._isAlertTriggered ? 1 : 0,
-      alertLevel: this._alertLevel
+      alertLevel: this._alertLevel,
     };
   }
 
@@ -195,7 +200,7 @@ export class AuditTrail extends Entity implements IMainProcessAuditTrail {
       metadata: JSON.parse(dto.metadata),
       timestamp: new Date(dto.timestamp),
       isAlertTriggered: dto.isAlertTriggered === 1,
-      alertLevel: dto.alertLevel
+      alertLevel: dto.alertLevel,
     });
   }
 }

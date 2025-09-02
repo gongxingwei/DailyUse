@@ -1,6 +1,6 @@
 // Authentication Client exports
 export * from './types';
-export * from './AuthCredential';
+export * from './aggregates/AuthCredential';
 
 // Entities
 export * from './entities/Session';

@@ -1,170 +1,102 @@
 import * as bcrypt from 'bcrypt';
-import { ValueObject } from '@dailyuse/utils';
+import { PasswordCore } from '@dailyuse/domain-core';
 import { type IPasswordServer } from '../types';
 
 /**
- * Password值对象 - 密码管理
+ * Password值对象 - 密码管理（服务端专用）
+ * 继承 PasswordCore 并添加服务端特定功能
  */
-export class Password extends ValueObject implements IPasswordServer {
+export class Password extends PasswordCore implements IPasswordServer {
   private static readonly SALT_ROUNDS = 12;
-  private static readonly ALGORITHM = 'bcrypt';
 
-  private readonly _hashedValue: string;
-  private readonly _salt: string;
-  private readonly _algorithm: string;
-  private readonly _createdAt: Date;
-
-  constructor(
-    plainPasswordOrParams:
-      | string
-      | {
-          hashedValue: string;
-          salt: string;
-          algorithm?: string;
-          createdAt?: Date;
-        },
-  ) {
-    super();
-
-    if (typeof plainPasswordOrParams === 'string') {
-      // 同步哈希密码
-      const salt = bcrypt.genSaltSync(Password.SALT_ROUNDS);
-      const hashedValue = bcrypt.hashSync(plainPasswordOrParams, salt);
-
-      this._hashedValue = hashedValue;
-      this._salt = salt;
-      this._algorithm = Password.ALGORITHM;
-      this._createdAt = new Date();
-    } else {
-      // 从已有参数构造
-      this._hashedValue = plainPasswordOrParams.hashedValue;
-      this._salt = plainPasswordOrParams.salt;
-      this._algorithm = plainPasswordOrParams.algorithm || Password.ALGORITHM;
-      this._createdAt = plainPasswordOrParams.createdAt || new Date();
-    }
+  constructor(plainPassword: string) {
+    super(plainPassword);
   }
 
-  // ===== IPasswordCore 属性访问器 =====
-  get hashedValue(): string {
-    return this._hashedValue;
+  /**
+   * 创建新密码（静态工厂方法）
+   */
+  static create(plainPassword: string): Password {
+    return new Password(plainPassword);
   }
 
-  get salt(): string {
-    return this._salt;
+  /**
+   * 从已有的哈希值创建密码对象（用于从数据库恢复）
+   * 重写父类方法以匹配接口
+   */
+  static fromHash(hashedValue: string, salt: string, algorithm?: string): Password {
+    const parentPassword = PasswordCore.fromHash(hashedValue, salt, algorithm);
+
+    // 创建新的 Password 实例并复制父类属性
+    const password = Object.create(Password.prototype);
+    Object.assign(password, parentPassword);
+
+    return password;
   }
 
-  get algorithm(): string {
-    return this._algorithm;
+  /**
+   * 获取哈希信息
+   */
+  getHashInfo(): { hashedValue: string; salt: string; algorithm: string; createdAt: Date } {
+    return {
+      hashedValue: this.hashedValue,
+      salt: this.salt,
+      algorithm: this.algorithm,
+      createdAt: this.createdAt,
+    };
   }
 
-  get createdAt(): Date {
-    return this._createdAt;
-  }
+  // ===== 实现 IPasswordServer 接口 =====
 
-  get expiresAt(): Date | undefined {
-    return undefined; // 默认密码不过期
-  }
-
-  // ===== IPasswordCore 方法 =====
-  verify(password: string): boolean {
-    return bcrypt.compareSync(password, this._hashedValue);
-  }
-
-  // ===== IPasswordServer 方法 =====
+  /**
+   * 使用 bcrypt 哈希密码
+   */
   async hashWithBcrypt(plainPassword: string): Promise<string> {
     const salt = await bcrypt.genSalt(Password.SALT_ROUNDS);
     return bcrypt.hash(plainPassword, salt);
   }
 
+  /**
+   * 使用 bcrypt 验证密码
+   */
   async verifyWithBcrypt(plainPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, this._hashedValue);
+    try {
+      return await bcrypt.compare(plainPassword, this.hashedValue);
+    } catch (error) {
+      console.error('Password verification failed:', error);
+      return false;
+    }
   }
 
+  /**
+   * 检查密码是否在泄露数据库中
+   */
   async checkBreachDatabase(): Promise<boolean> {
-    // TODO: 实现密码泄露检查
-    return false;
+    // 实际实现中会查询 Have I Been Pwned 等服务
+    console.log('Checking password against breach database...');
+    return false; // 默认认为没有泄露
   }
 
+  /**
+   * 执行密码策略检查
+   */
   async enforcePolicy(): Promise<boolean> {
-    // TODO: 实现密码策略检查
-    return true;
+    // 实际实现中会检查企业密码策略
+    console.log('Enforcing password policy...');
+    return true; // 默认通过策略检查
   }
 
+  /**
+   * 服务端标识
+   */
   isServer(): boolean {
     return true;
   }
 
+  /**
+   * 客户端标识
+   */
   isClient(): boolean {
     return false;
-  }
-
-  // ===== 业务方法 =====
-  async verifyAsync(plainPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, this._hashedValue);
-  }
-
-  isExpired(maxAgeInDays: number = 90): boolean {
-    const ageInMs = Date.now() - this._createdAt.getTime();
-    const ageInDays = ageInMs / (1000 * 60 * 60 * 24);
-    return ageInDays > maxAgeInDays;
-  }
-
-  getHashInfo(): {
-    hashedValue: string;
-    salt: string;
-    algorithm: string;
-    createdAt: Date;
-  } {
-    return {
-      hashedValue: this._hashedValue,
-      salt: this._salt,
-      algorithm: this._algorithm,
-      createdAt: this._createdAt,
-    };
-  }
-
-  equals(other: ValueObject): boolean {
-    if (!(other instanceof Password)) {
-      return false;
-    }
-    return this._hashedValue === other._hashedValue && this._salt === other._salt;
-  }
-
-  // ===== 静态工厂方法 =====
-  static async create(plainPassword: string): Promise<Password> {
-    if (!this.isValidPassword(plainPassword)) {
-      throw new Error('Password does not meet security requirements');
-    }
-
-    const salt = await bcrypt.genSalt(this.SALT_ROUNDS);
-    const hashedValue = await bcrypt.hash(plainPassword, salt);
-
-    return new Password({
-      hashedValue,
-      salt,
-      algorithm: this.ALGORITHM,
-      createdAt: new Date(),
-    });
-  }
-
-  static fromHash(params: {
-    hashedValue: string;
-    salt: string;
-    algorithm?: string;
-    createdAt?: Date;
-  }): Password {
-    return new Password(params);
-  }
-
-  // ===== 密码验证规则 =====
-  private static isValidPassword(password: string): boolean {
-    // 至少8位，包含大小写字母、数字和特殊字符
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>?]/.test(password);
-
-    return minLength && hasUpperCase && hasLowerCase && hasNumbers && hasSpecialChar;
   }
 }

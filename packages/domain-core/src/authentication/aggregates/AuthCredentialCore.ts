@@ -7,17 +7,21 @@ import {
   type ITokenCore,
   TokenType,
 } from '../types';
-
+import { PasswordCore } from '../valueObjects/PasswordCore';
+import { TokenCore } from '../valueObjects/TokenCore';
+import { SessionCore } from '../entities/SessionCore';
+import { MFADeviceCore } from '../entities/MFADeviceCore';
+import type { ClientInfo } from '../../shared/types';
 /**
  * 核心认证凭据 - 仅包含数据和基础计算
  * 前后端共享的基础模型
  */
 export abstract class AuthCredentialCore extends AggregateRoot implements IAuthCredentialCore {
   protected _accountUuid: string;
-  protected _password: IPasswordCore;
-  protected _sessions: Map<string, ISessionCore>;
-  protected _mfaDevices: Map<string, IMFADeviceCore>;
-  protected _tokens: Map<string, ITokenCore>;
+  protected _password: PasswordCore;
+  protected _sessions: Map<string, SessionCore>;
+  protected _mfaDevices: Map<string, MFADeviceCore>;
+  protected _tokens: Map<string, TokenCore>;
   protected _failedAttempts: number;
   protected _maxAttempts: number;
   protected _lockedUntil?: Date;
@@ -28,10 +32,10 @@ export abstract class AuthCredentialCore extends AggregateRoot implements IAuthC
   constructor(params: {
     uuid?: string;
     accountUuid: string;
-    password: IPasswordCore;
-    sessions?: Map<string, ISessionCore>;
-    mfaDevices?: Map<string, IMFADeviceCore>;
-    tokens?: Map<string, ITokenCore>;
+    password: PasswordCore;
+    sessions?: Map<string, SessionCore>;
+    mfaDevices?: Map<string, MFADeviceCore>;
+    tokens?: Map<string, TokenCore>;
     failedAttempts?: number;
     lockedUntil?: Date;
     createdAt?: Date;
@@ -111,6 +115,37 @@ export abstract class AuthCredentialCore extends AggregateRoot implements IAuthC
     return !this.isLocked && this._failedAttempts < 5;
   }
 
+  // ===== 记住我令牌相关方法 =====
+  getRememberTokens(): ITokenCore[] {
+    const rememberTokens: ITokenCore[] = [];
+    for (const token of this._tokens.values()) {
+      if (token.type === TokenType.REMEMBER_ME && token.isValid()) {
+        rememberTokens.push(token);
+      }
+    }
+    return rememberTokens;
+  }
+
+  getRememberTokenForDevice(deviceInfo: string): ITokenCore | undefined {
+    for (const token of this._tokens.values()) {
+      if (
+        token.type === TokenType.REMEMBER_ME &&
+        token.isValid() &&
+        token.deviceInfo === deviceInfo
+      ) {
+        return token;
+      }
+    }
+    return undefined;
+  }
+
+  hasValidRememberToken(deviceInfo?: string): boolean {
+    if (deviceInfo) {
+      return this.getRememberTokenForDevice(deviceInfo) !== undefined;
+    }
+    return this.getRememberTokens().length > 0;
+  }
+
   // ===== 共享业务规则 =====
   protected incrementFailedAttempts(): void {
     this._failedAttempts++;
@@ -127,13 +162,14 @@ export abstract class AuthCredentialCore extends AggregateRoot implements IAuthC
   }
 
   // ===== 抽象方法 - 需要具体实现 =====
-  abstract authenticate(password: string): boolean;
-  abstract changePassword(oldPassword: string, newPassword: string): void;
-  abstract createSession(deviceInfo: string, ipAddress: string): ISessionCore;
-  abstract terminateSession(sessionUuid: string): void;
-  abstract terminateAllSessions(): void;
-  abstract addMFADevice(device: IMFADeviceCore): void;
-  abstract removeMFADevice(deviceUuid: string): void;
-  abstract createToken(type: TokenType): ITokenCore;
-  abstract revokeToken(tokenValue: string): void;
+  // abstract authenticate(password: string): boolean;
+  // abstract changePassword(oldPassword: string, newPassword: string): void;
+  // abstract createSession(deviceInfo: ClientInfo): ISessionCore;
+  // abstract terminateSession(sessionUuid: string): void;
+  // abstract terminateAllSessions(): void;
+  // abstract addMFADevice(device: IMFADeviceCore): void;
+  // abstract removeMFADevice(deviceUuid: string): void;
+  // abstract createToken(type: TokenType): ITokenCore;
+  // abstract createRememberToken(deviceInfo?: string): ITokenCore;
+  // abstract revokeToken(tokenValue: string): void;
 }

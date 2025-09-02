@@ -37,7 +37,6 @@ export interface ITokenServer extends ITokenCore {
   saveToDatabase(): Promise<void>;
   validateWithJWT(): Promise<boolean>;
   refreshToken(): Promise<ITokenServer>;
-  blacklistToken(): Promise<void>;
 
   // Server identification
   isServer(): boolean;
@@ -65,6 +64,9 @@ export interface IAuthCredentialServer extends IAuthCredentialCore {
   sendAuthNotification(): Promise<void>;
   auditLogin(ipAddress: string, userAgent: string): Promise<void>;
   enforceSecurityPolicies(): Promise<void>;
+
+  // Remember token methods
+  createRememberToken(deviceInfo?: string): ITokenServer;
 
   // Server identification
   isServer(): boolean;

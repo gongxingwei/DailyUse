@@ -3,16 +3,14 @@ import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
 import router from './shared/router';
-import 'vuetify/styles';
-import { createVuetify } from 'vuetify';
-
-const vuetify = createVuetify();
+import vuetify from './shared/vuetify';
+import { i18n } from './shared/i18n';
 
 const app = createApp(App);
 const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 
-app.use(pinia).use(router).use(vuetify);
+app.use(pinia).use(router).use(vuetify).use(i18n);
 
 // app.config.globalProperties.$api = api as any;
 
@@ -22,7 +20,6 @@ app.use(pinia).use(router).use(vuetify);
 //   }
 // }
 
-app.mount('#app')
-.$nextTick(() => { 
+app.mount('#app').$nextTick(() => {
   console.log('🚀 App mounted successfully');
 });

@@ -1,7 +1,7 @@
 <template>
     <div class="sidebar">
         <button class="sidebar-btn" @click="toggleRail" title="Logo">
-            <img src="/DailyUse-24.png" alt="logo" width="36" />
+            <img src="../../../assets/DailyUse-24.png" alt="logo" width="36" />
         </button>
         <button class="sidebar-avatar" title="Profile">
             <profile-avatar size="36" />
@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import ProfileAvatar from '@/modules/Account/presentation/components/ProfileAvatar.vue'
+import ProfileAvatar from '@/modules/account/presentation/components/ProfileAvatar.vue'
 import SidebarMoreMenu from './SidebarMoreMenu.vue';
 import { useI18n } from 'vue-i18n';
 const router = useRouter()

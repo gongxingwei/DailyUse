@@ -9,7 +9,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import accountRoute from './modules/account/interface/http/routes';
+import accountRoutes from './modules/account/interface/http/routes';
+import { authenticationRoutes } from './modules/authentication';
 
 const app: Express = express();
 
@@ -45,7 +46,10 @@ api.get('/health', (_req: Request, res: Response) => {
 });
 
 // 挂载账户路由到api路由器
-api.use('', accountRoute);
+api.use('', accountRoutes);
+
+// 挂载认证路由到 api 路由器 (登录/登出/刷新等)
+api.use('', authenticationRoutes);
 
 app.use('/api/v1', api);
 

@@ -1,5 +1,5 @@
 import type { Session } from '../entities/Session';
-import type { AuthCredential } from '../AuthCredential';
+import type { AuthCredential } from '../aggregates/AuthCredential';
 
 /**
  * 认证仓储接口 - 客户端

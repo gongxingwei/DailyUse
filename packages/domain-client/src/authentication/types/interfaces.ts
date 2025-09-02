@@ -66,6 +66,9 @@ export interface IAuthCredentialClient extends IAuthCredentialCore {
   cacheUserPreferences(): void;
   showAccountLockWarning(): void;
 
+  // Remember token methods
+  createRememberToken(deviceInfo?: string): ITokenClient;
+
   // Client identification
   isServer(): boolean;
   isClient(): boolean;

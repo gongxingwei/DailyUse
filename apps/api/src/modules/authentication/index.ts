@@ -6,18 +6,9 @@ export type {
   IMFADeviceRepository,
 } from '@dailyuse/domain-server';
 
-export type {
-  LoginRequest,
-  LoginResponse,
-  MFAVerificationRequest,
-  MFAVerificationResponse,
-  CreateMFADeviceRequest,
-  CreateMFADeviceResponse,
-} from './application/AuthenticationApplicationService';
-
 // Export main classes
-export { AuthenticationApplicationService } from './application/AuthenticationApplicationService';
-export { AuthenticationController } from './presentation/AuthenticationController';
+export { AuthenticationApplicationService } from './application/services/AuthenticationApplicationService';
+export { AuthenticationController } from './interface/controller';
 
 // Export infrastructure
 export {
@@ -26,7 +17,10 @@ export {
   PrismaTokenRepository,
   PrismaMFADeviceRepository,
 } from './infrastructure/repositories/prisma';
-export { authenticationContainer } from './infrastructure/container';
+export { authenticationContainer } from './infrastructure/di/container';
 
 // Export routes
-export { authenticationRoutes } from './interface/http/routes';
+export { authenticationRoutes } from './interface/routes';
+
+// Export initialization
+export { registerAuthenticationInitializationTasks } from './initialization/authenticationInitialization';

@@ -1,11 +1,5 @@
 import { Entity } from './entity';
-
-export interface DomainEvent {
-  aggregateId: string;
-  eventType: string;
-  occurredOn: Date;
-  payload: any;
-}
+import type { DomainEvent } from './eventBus';
 
 export abstract class AggregateRoot extends Entity {
   private _domainEvents: DomainEvent[] = [];

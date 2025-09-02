@@ -18,7 +18,7 @@
   ],
   "scripts": {
     "clean": "rimraf dist",
-    "build": "vite build && vue-tsc --emitDeclarationOnly",
+    "build": "vite build && vue-tsc --emitDeclarationOnly --outDir dist",
     "dev": "vite",
     "type-check": "vue-tsc --noEmit"
   },

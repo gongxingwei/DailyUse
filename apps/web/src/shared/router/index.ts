@@ -1,8 +1,20 @@
 import { createRouter, createWebHistory } from 'vue-router';
-
+import MainLayout from '@/modules/app/MainLayout.vue';
 const routes = [
-  { path: '/', component: () => import('../../modules/account/presentation/views/TestView.vue') },
-
+  {
+    path: '/auth',
+    component: () => import('@/views/AuthView.vue'),
+  },
+  {
+    path: '/',
+    component: MainLayout,
+    children: [
+      {
+        path: '/',
+        component: () => import('@/modules/account/presentation/views/TestView.vue'),
+      },
+    ],
+  },
 ];
 
 const router = createRouter({

@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance } from 'axios';
 import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
+import { AccountType } from '@dailyuse/domain-client';
 import { AuthDomainService } from '../../domain/services/AuthDomainService';
 import {
   AuthCredential,
@@ -13,18 +14,37 @@ import type {
   AuthOperationResultDto,
 } from '../dtos/AuthDtos';
 import type { TResponse } from '../../../../shared/types/response';
+import type { AuthByPasswordRequestDTO, AuthResponseDTO, AuthByPasswordForm } from '@/tempTypes';
 /**
  * Authentication Application Service
  * 认证应用服务 - 协调领域对象和基础设施，实现认证相关用例
  */
 export class AuthApplicationService {
+  private static instance: AuthApplicationService | null = null;
+  // private readonly authRepository: IAuthRepository | null = null;
+  // private readonly registrationRepository: IRegistrationRepository | null = null;
+  // private readonly authDomainService: AuthDomainService | null = null;
   private readonly apiClient: ApiClient;
-  constructor(
-    private readonly authRepository: IAuthRepository,
-    private readonly registrationRepository: IRegistrationRepository,
-    private readonly authDomainService: AuthDomainService,
-  ) {
+  private constructor() {
     this.apiClient = new ApiClient();
+  }
+
+  static async createInstance(
+    authRepository?: IAuthRepository,
+    registrationRepository?: IRegistrationRepository,
+    authDomainService?: AuthDomainService,
+  ): Promise<AuthApplicationService> {
+    if (!AuthApplicationService.instance) {
+      AuthApplicationService.instance = new AuthApplicationService();
+    }
+    return AuthApplicationService.instance;
+  }
+
+  static async getInstance(): Promise<AuthApplicationService> {
+    if (!AuthApplicationService.instance) {
+      AuthApplicationService.instance = new AuthApplicationService();
+    }
+    return AuthApplicationService.instance;
   }
 
   // ===== Login Use Cases =====
@@ -33,9 +53,13 @@ export class AuthApplicationService {
    * User Login
    * 用户登录用例
    */
-  async login(request: LoginRequestDto): Promise<TResponse<LoginResponseDto | null>> {
+  async login(request: AuthByPasswordForm): Promise<TResponse<AuthResponseDTO | null>> {
     try {
-      const response = await this.apiClient.login(request);
+      const authRequest: AuthByPasswordRequestDTO = {
+        ...request,
+        accountType: AccountType.GUEST,
+      };
+      const response = await this.apiClient.login(authRequest);
       if (!response.success) {
         throw new Error(response.message);
       }

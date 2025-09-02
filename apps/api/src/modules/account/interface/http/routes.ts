@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { AccountController } from '../../application/AccountController';
+import { AccountController } from '../../application/controllers/AccountController';
 
 // 如果认证中间件存在，取消注释下面的行
 // import { authenticateToken } from '../auth/middlewares/auth.middleware';

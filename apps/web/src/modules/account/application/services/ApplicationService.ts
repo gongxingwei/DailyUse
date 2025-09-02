@@ -10,7 +10,7 @@ import type {
 } from '../dtos/UserDtos';
 import type { AccountDTO, UserDTO } from '@dailyuse/domain-client';
 import { ApiClient } from '../../infrastructure/api/ApiClient';
-
+import type { RegistrationRequestDTO, RegistrationResponseDTO } from '@/tempTypes';
 // 定义响应类型
 type TResponse<T = any> = {
   success: boolean;
@@ -23,11 +23,30 @@ type TResponse<T = any> = {
  * 协调领域对象和基础设施，实现具体的业务用例
  */
 export class ApplicationService {
+  private static instance: ApplicationService;
+  private accountApiClient: ApiClient;
   constructor(
-    private userRepository: IUserRepository,
+    private userRepository?: IUserRepository,
     // private userDomainService: UserDomainService,
-  ) {}
-  private accountApiClient = new ApiClient();
+  ) {
+    this.accountApiClient = new ApiClient();
+  }
+
+  static async createApplicationServiceInstance(): Promise<ApplicationService> {
+    if (!ApplicationService.instance) {
+      ApplicationService.instance = new ApplicationService(
+       
+      );
+    }
+    return ApplicationService.instance;
+  }
+
+  static async getInstance(): Promise<ApplicationService> {
+    if (!ApplicationService.instance) {
+      ApplicationService.instance = await ApplicationService.createApplicationServiceInstance();
+    }
+    return ApplicationService.instance;
+  }
 
   async testConnection(): Promise<string> {
     const response = await this.accountApiClient.testConnection();
@@ -37,12 +56,12 @@ export class ApplicationService {
   /**
    * 创建新用户账号
    */
-  async createAccount(
-    accountData: CreateAccountDto,
-  ): Promise<AccountResponseDto> {
+  async register(
+    accountData: RegistrationRequestDTO,
+  ): Promise<RegistrationResponseDTO> {
     try {
-      const response = await this.accountApiClient.createAccount(accountData);
-      console.log('createAccount response:', response);
+      const response = await this.accountApiClient.register(accountData);
+      console.log('register response:', response);
       if (!response.data) {
         throw new Error('创建账号失败，未返回数据');
       }

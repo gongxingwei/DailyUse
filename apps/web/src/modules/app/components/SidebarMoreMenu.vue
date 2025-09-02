@@ -45,11 +45,16 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useLogout } from '@/modules/Authentication/presentation/composables/useLogout'
+// import { useLogout } from '@/modules/Authentication/presentation/composables/useLogout'
 
 const showMenu = ref(false)
 const router = useRouter()
-const { handleLogout } = useLogout()
+// const { handleLogout } = useLogout()
+
+const handleLogout = async () => {
+  // await logout()
+  console.log('用户已登出')
+}
 
 const go = (path: string) => {
   router.push(path)

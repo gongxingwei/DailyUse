@@ -1,12 +1,12 @@
 import { Entity } from '@dailyuse/utils';
-import { type IUserCore, type ISexCore  } from '../types';
+import { type IUserCore, type ISexCore, type UserDTO  } from '../types';
 import { SexCore } from '../valueObjects/SexCore';
 /**
  * 用户核心实体
  */
 export class UserCore extends Entity implements IUserCore {
-  protected _firstName: string;
-  protected _lastName: string;
+  protected _firstName?: string;
+  protected _lastName?: string;
   protected _sex: ISexCore;
   protected _avatar?: string;
   protected _bio?: string;
@@ -16,8 +16,8 @@ export class UserCore extends Entity implements IUserCore {
 
   constructor(params: {
     uuid?: string;
-    firstName: string;
-    lastName: string;
+    firstName?: string;
+    lastName?: string;
     avatar?: string;
     bio?: string;
     sex?: number | ISexCore;
@@ -37,10 +37,10 @@ export class UserCore extends Entity implements IUserCore {
   }
 
   // ===== 共享只读属性 =====
-  get firstName(): string {
+  get firstName(): string | undefined {
     return this._firstName;
   }
-  get lastName(): string {
+  get lastName(): string | undefined {
     return this._lastName;
   }
   get sex(): ISexCore {
@@ -76,25 +76,29 @@ export class UserCore extends Entity implements IUserCore {
   }
 
   // ===== 序列化方法 =====
-  toDTO() {
+  toDTO(): UserDTO {
     return {
       uuid: this._uuid,
       firstName: this._firstName,
       lastName: this._lastName,
       avatar: this._avatar,
       bio: this._bio,
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt,
+      sex: this._sex.value,
+      socialAccounts: this._socialAccounts,
+      createdAt: this._createdAt.getTime(),
+      updatedAt: this._updatedAt.getTime(),
     };
   }
 
-  static fromDTO(dto: any): UserCore {
+  static fromDTO(dto: UserDTO): UserCore {
     return new UserCore({
       uuid: dto.uuid,
       firstName: dto.firstName,
       lastName: dto.lastName,
       avatar: dto.avatar,
       bio: dto.bio,
+      sex: dto.sex,
+      socialAccounts: dto.socialAccounts,
       createdAt: dto.createdAt ? new Date(dto.createdAt) : new Date(),
       updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : new Date(),
     });

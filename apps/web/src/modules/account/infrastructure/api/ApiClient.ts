@@ -8,6 +8,7 @@ import type {
 } from '../../application/dtos/UserDtos';
 import type { Account } from '@dailyuse/domain-client';
 import type { TResponse } from '../../../../shared/types/response';
+import { type RegistrationRequestDTO, type RegistrationResponseDTO } from '../../../../tempTypes';
 /**
  * 用户API客户端
  * 负责与后端API的通信
@@ -29,9 +30,9 @@ export class ApiClient {
       throw error;
     }
   }
-  async createAccount(accountData: CreateAccountDto): Promise<TResponse<AccountResponseDto>> {
+  async register(accountData: RegistrationRequestDTO): Promise<TResponse<RegistrationResponseDTO>> {
     try {
-      const response = await this.client.post('/users/register', accountData);
+      const response = await this.client.post('/accounts', accountData);
       return response.data;
     } catch (error) {
       throw error;

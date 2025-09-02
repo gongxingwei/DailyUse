@@ -1,15 +1,16 @@
-import { AggregateRoot } from "@common/shared/domain/aggregateRoot";
+import { AggregateRoot } from '@common/shared/domain/aggregateRoot';
 // domains
-import { Password } from "../valueObjects/password";
-import { Token } from "../valueObjects/token";
-import { Session } from "../entities/session";
-import { MFADevice } from "../entities/mfaDevice";
+import { Password } from '../valueObjects/password';
+import { Token } from '../valueObjects/token';
+import { Session } from '../entities/session';
+import { MFADevice } from '../entities/mfaDevice';
 // types
 import {
-  IMainProcessAuthCredential, TokenType
-} from "@common/modules/authentication/types/authentication";
+  IMainProcessAuthCredential,
+  TokenType,
+} from '@common/modules/authentication/types/authentication';
 // utils
-import { addMinutes } from "date-fns";
+import { addMinutes } from 'date-fns';
 
 /**
  * 认证凭证聚合根
@@ -20,11 +21,8 @@ import { addMinutes } from "date-fns";
  * - 实现"记住我"等快速登录功能
  * - 不直接引用Account对象，通过accountUuid关联
  */
-export class AuthCredential
-  extends AggregateRoot
-  implements IMainProcessAuthCredential
-{
-  private _accountUuUuid: string; // 关联的账号ID
+export class AuthCredential extends AggregateRoot implements IMainProcessAuthCredential {
+  private _accountUuid: string; // 关联的账号ID
   private _password: Password;
   private _sessions: Map<string, Session>; // 活跃会话
   private _mfaDevices: Map<string, MFADevice>; // MFA设备
@@ -39,7 +37,7 @@ export class AuthCredential
 
   constructor(uuid: string, accountUuid: string, password: Password) {
     super(uuid);
-    this._accountUuUuid = accountUuid;
+    this._accountUuid = accountUuid;
     this._password = password;
     this._sessions = new Map();
     this._mfaDevices = new Map();
@@ -54,7 +52,7 @@ export class AuthCredential
 
   // Getters
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
   }
 
   get createdAt(): Date {
@@ -70,9 +68,7 @@ export class AuthCredential
   }
 
   get activeSessions(): Session[] {
-    return Array.from(this._sessions.values()).filter(
-      (session) => session.isActive
-    );
+    return Array.from(this._sessions.values()).filter((session) => session.isActive);
   }
 
   get mfaDevices(): Map<string, MFADevice> {
@@ -117,18 +113,18 @@ export class AuthCredential
 
   getAccessToken(): Token | undefined {
     const token = this._tokens.get(TokenType.ACCESS_TOKEN);
-  if (token) {
-    if (token.isValid()) {
-      return token;
-    } else {
-      token.revoke();
+    if (token) {
+      if (token.isValid()) {
+        return token;
+      } else {
+        token.revoke();
+      }
     }
-  }
-  // 创建新 access_token（有效期可自定义）
-  const newToken = Token.createAccessToken(this.accountUuid, 3600); // 1小时有效
-  this._tokens.set(TokenType.ACCESS_TOKEN, newToken);
-  this._updatedAt = new Date();
-  return newToken;
+    // 创建新 access_token（有效期可自定义）
+    const newToken = Token.createAccessToken(this.accountUuid, 3600); // 1小时有效
+    this._tokens.set(TokenType.ACCESS_TOKEN, newToken);
+    this._updatedAt = new Date();
+    return newToken;
   }
 
   /**
@@ -140,7 +136,7 @@ export class AuthCredential
   } {
     let accessToken: Token | undefined;
     if (this.isAccountLocked()) {
-      throw new Error("Account is locked. Please try again later.");
+      throw new Error('Account is locked. Please try again later.');
     }
 
     const isValid = this._password.verify(password);
@@ -152,10 +148,10 @@ export class AuthCredential
       accessToken = this.getAccessToken();
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "PasswordVerified",
+        eventType: 'PasswordVerified',
         occurredOn: new Date(),
         payload: {
-          accountUuid: this._accountUuUuid,
+          accountUuid: this._accountUuid,
           timestamp: this._lastAuthAt,
         },
       });
@@ -165,16 +161,16 @@ export class AuthCredential
         this._lockedUntil = addMinutes(new Date(), 30); // 锁定30分钟
         this.addDomainEvent({
           aggregateId: this.uuid,
-          eventType: "AccountLocked",
+          eventType: 'AccountLocked',
           occurredOn: new Date(),
-          payload: { accountUuid: this._accountUuUuid, timestamp: new Date() },
+          payload: { accountUuid: this._accountUuid, timestamp: new Date() },
         });
       }
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "PasswordVerificationFailed",
+        eventType: 'PasswordVerificationFailed',
         occurredOn: new Date(),
-        payload: { accountUuid: this._accountUuUuid, timestamp: new Date() },
+        payload: { accountUuid: this._accountUuid, timestamp: new Date() },
       });
     }
 
@@ -189,11 +185,11 @@ export class AuthCredential
    */
   changePassword(oldPassword: string, newPassword: string): void {
     if (!this._password.verify(oldPassword)) {
-      throw new Error("原密码不正确");
+      throw new Error('原密码不正确');
     }
 
     if (!Password.validateStrength(newPassword)) {
-      throw new Error("新密码强度不足");
+      throw new Error('新密码强度不足');
     }
 
     this._password = new Password(newPassword);
@@ -204,9 +200,9 @@ export class AuthCredential
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: "PasswordChanged",
+      eventType: 'PasswordChanged',
       occurredOn: new Date(),
-      payload: { accountUuid: this._accountUuUuid, timestamp: this._updatedAt },
+      payload: { accountUuid: this._accountUuid, timestamp: this._updatedAt },
     });
   }
 
@@ -217,10 +213,10 @@ export class AuthCredential
     tokenValue: string,
     deviceInfo: string,
     ipAddress: string,
-    userAgent?: string
+    userAgent?: string,
   ): Session {
     const session = new Session({
-      accountUuid: this._accountUuUuid,
+      accountUuid: this._accountUuid,
       token: tokenValue,
       deviceInfo,
       ipAddress,
@@ -233,10 +229,10 @@ export class AuthCredential
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: "SessionCreated",
+      eventType: 'SessionCreated',
       occurredOn: new Date(),
       payload: {
-        accountUuid: this._accountUuUuid,
+        accountUuid: this._accountUuid,
         sessionId: session.uuid,
         deviceInfo,
         ipAddress,
@@ -258,10 +254,10 @@ export class AuthCredential
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "SessionTerminated",
+        eventType: 'SessionTerminated',
         occurredOn: new Date(),
         payload: {
-          accountUuid: this._accountUuUuid,
+          accountUuid: this._accountUuid,
           sessionId: sessionId,
           timestamp: this._updatedAt,
         },
@@ -283,10 +279,10 @@ export class AuthCredential
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: "AllSessionsTerminated",
+      eventType: 'AllSessionsTerminated',
       occurredOn: new Date(),
       payload: {
-        accountUuid: this._accountUuUuid,
+        accountUuid: this._accountUuid,
         timestamp: this._updatedAt,
       },
     });
@@ -314,10 +310,10 @@ export class AuthCredential
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: "MFADeviceBound",
+      eventType: 'MFADeviceBound',
       occurredOn: new Date(),
       payload: {
-        accountUuid: this._accountUuUuid,
+        accountUuid: this._accountUuid,
         deviceId: device.uuid,
         deviceType: device.type,
         timestamp: this._updatedAt,
@@ -336,10 +332,10 @@ export class AuthCredential
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "MFADeviceUnbound",
+        eventType: 'MFADeviceUnbound',
         occurredOn: new Date(),
         payload: {
-          accountUuid: this._accountUuUuid,
+          accountUuid: this._accountUuid,
           deviceId: deviceId,
           timestamp: this._updatedAt,
         },
@@ -358,10 +354,10 @@ export class AuthCredential
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "MFAVerified",
+        eventType: 'MFAVerified',
         occurredOn: new Date(),
         payload: {
-          accountUuid: this._accountUuUuid,
+          accountUuid: this._accountUuid,
           deviceId: deviceId,
           timestamp: this._lastAuthAt,
         },
@@ -377,16 +373,16 @@ export class AuthCredential
    * 创建记住我令牌
    */
   createRememberToken(deviceInfo: string): Token {
-    const token = Token.createRememberToken(this._accountUuUuid, deviceInfo);
+    const token = Token.createRememberToken(this._accountUuid, deviceInfo);
     this._rememberTokens.set(token.value, token);
     this._updatedAt = new Date();
 
     this.addDomainEvent({
       aggregateId: this.uuid,
-      eventType: "RememberTokenCreated",
+      eventType: 'RememberTokenCreated',
       occurredOn: new Date(),
       payload: {
-        accountUuid: this._accountUuUuid,
+        accountUuid: this._accountUuid,
         tokenId: token.value,
         deviceInfo,
         timestamp: this._updatedAt,
@@ -431,10 +427,10 @@ export class AuthCredential
 
       this.addDomainEvent({
         aggregateId: this.uuid,
-        eventType: "RememberTokenRevoked",
+        eventType: 'RememberTokenRevoked',
         occurredOn: new Date(),
         payload: {
-          accountUuid: this._accountUuUuid,
+          accountUuid: this._accountUuid,
           tokenId: tokenValue,
           timestamp: this._updatedAt,
         },
@@ -500,30 +496,30 @@ export class AuthCredential
    * 用于仓库层重建对象时设置私有属性
    */
   static restoreFromPersistenceWithEntities(params: {
-    uuid: string,
-    accountUuid: string,
-    passwordHash: string,
-    passwordSalt: string,
-    passwordAlgorithm: string,
-    passwordCreatedAt: Date,
-    createdAt: Date,
-    updatedAt: Date,
-    lastAuthAt?: Date,
-    passwordExpiresAt?: Date,
-    failedAttempts?: number,
-    maxAttempts?: number,
-    lockedUntil?: Date,
-    tokens: Map<string, Token>,
-    rememberTokens: Map<string, Token>,
-    sessions: Map<string, Session>,
-    mfaDevices: Map<string, MFADevice>
+    uuid: string;
+    accountUuid: string;
+    passwordHash: string;
+    passwordSalt: string;
+    passwordAlgorithm: string;
+    passwordCreatedAt: Date;
+    createdAt: Date;
+    updatedAt: Date;
+    lastAuthAt?: Date;
+    passwordExpiresAt?: Date;
+    failedAttempts?: number;
+    maxAttempts?: number;
+    lockedUntil?: Date;
+    tokens: Map<string, Token>;
+    rememberTokens: Map<string, Token>;
+    sessions: Map<string, Session>;
+    mfaDevices: Map<string, MFADevice>;
   }): AuthCredential {
     const password = Password.fromHashWithTimestamp(
       params.passwordHash,
       params.passwordSalt,
       params.passwordAlgorithm,
       params.passwordCreatedAt,
-      params.passwordExpiresAt
+      params.passwordExpiresAt,
     );
     const credential = new AuthCredential(params.uuid, params.accountUuid, password);
 
@@ -543,5 +539,4 @@ export class AuthCredential
 
     return credential;
   }
-
 }

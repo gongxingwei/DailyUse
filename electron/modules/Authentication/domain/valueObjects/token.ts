@@ -1,7 +1,6 @@
-
-import { IToken, TokenType, ITokenDTO } from "@common/modules/authentication/types/authentication";
-import { isValid, addDays, addMinutes, addHours } from "date-fns";
-import { ValueObject } from "@common/shared/domain/valueObject";
+import { IToken, TokenType, ITokenDTO } from '@common/modules/authentication/types/authentication';
+import { isValid, addDays, addMinutes, addHours } from 'date-fns';
+import { ValueObject } from '@common/shared/domain/valueObject';
 
 /**
  * 令牌值对象
@@ -9,7 +8,7 @@ import { ValueObject } from "@common/shared/domain/valueObject";
  */
 export class Token extends ValueObject<string> implements IToken {
   private _type: TokenType;
-  private _accountUuUuid: string;
+  private _accountUuid: string;
   private _issuedAt: Date;
   private _expiresAt: Date;
   private _deviceInfo?: string;
@@ -26,7 +25,7 @@ export class Token extends ValueObject<string> implements IToken {
   }) {
     super(params.value || Token.generateTokenValue());
     this._type = params.type;
-    this._accountUuUuid = params.accountUuid;
+    this._accountUuid = params.accountUuid;
     this._issuedAt = params.issuedAt ?? new Date();
     this._expiresAt = params.expiresAt;
     this._deviceInfo = params.deviceInfo;
@@ -36,7 +35,11 @@ export class Token extends ValueObject<string> implements IToken {
   /**
    * 创建记住我令牌
    */
-  static createRememberToken(accountUuid: string, deviceInfo: string, daysToExpire: number = 30): Token {
+  static createRememberToken(
+    accountUuid: string,
+    deviceInfo: string,
+    daysToExpire: number = 30,
+  ): Token {
     const value = Token.generateTokenValue();
     const expiresAt = addDays(new Date(), daysToExpire);
     return new Token({ value, type: TokenType.REMEMBER_ME, accountUuid, expiresAt, deviceInfo });
@@ -111,7 +114,7 @@ export class Token extends ValueObject<string> implements IToken {
     const now = new Date();
     const totalLifetime = this._expiresAt.getTime() - this._issuedAt.getTime();
     const remainingTime = this._expiresAt.getTime() - now.getTime();
-    return remainingTime < (totalLifetime * 0.2);
+    return remainingTime < totalLifetime * 0.2;
   }
 
   /**
@@ -136,7 +139,7 @@ export class Token extends ValueObject<string> implements IToken {
   }
 
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
   }
 
   get issuedAt(): Date {
@@ -174,11 +177,11 @@ export class Token extends ValueObject<string> implements IToken {
     return {
       value: this._value,
       type: this._type,
-      accountUuid: this._accountUuUuid,
+      accountUuid: this._accountUuid,
       issuedAt: this._issuedAt.toISOString(),
       expiresAt: this._expiresAt.toISOString(),
       deviceInfo: this._deviceInfo,
-      isRevoked: this._isRevoked
+      isRevoked: this._isRevoked,
     };
   }
 
@@ -193,7 +196,7 @@ export class Token extends ValueObject<string> implements IToken {
       issuedAt: isValid(dto.issuedAt) ? new Date(dto.issuedAt) : new Date(),
       expiresAt: isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date(),
       deviceInfo: dto.deviceInfo,
-      isRevoked: dto.isRevoked
+      isRevoked: dto.isRevoked,
     });
   }
 }

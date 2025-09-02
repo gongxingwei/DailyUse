@@ -4,3 +4,4 @@ export * from './uuid';
 export * from './date';
 export * from './recurrence';
 export * from './domain';
+export * from './initializationManager';

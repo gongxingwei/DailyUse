@@ -6,6 +6,7 @@ export * from './authentication/entities/Session';
 export * from './authentication/valueObjects/Password';
 export * from './authentication/valueObjects/Token';
 export * from './authentication/repositories/IAuthenticationRepository';
+export * from './authentication/events';
 
 // Account domain exports
 export * from './account/types';
@@ -17,6 +18,7 @@ export * from './account/valueObjects/Email';
 export * from './account/valueObjects/PhoneNumber';
 export * from './account/valueObjects/Address';
 export * from './account/repositories/IAccountRepository';
+export * from './account/events';
 
 // Goal domain exports
 export * from './goal/aggregates/Goal';

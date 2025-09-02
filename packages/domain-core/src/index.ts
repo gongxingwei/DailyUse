@@ -28,3 +28,6 @@ export * from './repository/aggregates/RepositoryCore';
 
 // Reminder domain exports
 export * from './reminder/aggregates/ReminderCore';
+
+// shared/types
+export * from './shared/types'

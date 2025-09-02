@@ -3,12 +3,12 @@
   "version": "0.0.1",
   "description": "Server-side domain models with business logic",
   "type": "module",
-  "main": "dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
     ".": {
-      "import": "./dist/index.mjs",
-      "types": "./dist/index.d.mts"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     }
   },
   "scripts": {

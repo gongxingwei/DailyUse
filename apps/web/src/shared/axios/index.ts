@@ -1,7 +1,7 @@
 import axios, { type AxiosInstance } from 'axios';
 
 // 创建专用实例而不是修改全局defaults
-const apiInstance = axios.create({
+const duAxios = axios.create({
   baseURL: 'http://localhost:3000/api/v1',
   timeout: 10000,
   headers: {
@@ -11,7 +11,7 @@ const apiInstance = axios.create({
 });
 
 // 请求拦截器 - 动态添加认证token
-apiInstance.interceptors.request.use(
+duAxios.interceptors.request.use(
   (config) => {
     // 动态获取token，而不是在模块加载时获取
     const token = localStorage.getItem('auth_token');
@@ -24,7 +24,7 @@ apiInstance.interceptors.request.use(
 );
 
 // 响应拦截器 - 统一错误处理
-apiInstance.interceptors.response.use(
+duAxios.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
@@ -36,4 +36,4 @@ apiInstance.interceptors.response.use(
   },
 );
 
-export default apiInstance;
+export default duAxios;

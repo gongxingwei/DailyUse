@@ -1,12 +1,16 @@
-import { Entity } from "@common/shared/domain/entity";
-import { IMainProcessMFADevice, MFADeviceType, IMFADeviceDTO } from "@common/modules/authentication/types/authentication";
+import { Entity } from '@common/shared/domain/entity';
+import {
+  IMainProcessMFADevice,
+  MFADeviceType,
+  IMFADeviceDTO,
+} from '@common/modules/authentication/types/authentication';
 
 /**
  * MFA设备实体
  * 管理多因素认证设备的绑定、验证和管理
  */
 export class MFADevice extends Entity implements IMainProcessMFADevice {
-  private _accountUuUuid: string;
+  private _accountUuid: string;
   private _type: MFADeviceType;
   private _name: string;
   private _secretKey?: string; // TOTP密钥
@@ -21,14 +25,14 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
   private _maxAttempts: number;
 
   constructor(params: {
-    uuid?: string,
-    accountUuid: string,
-    type: MFADeviceType,
-    name: string,
-    maxAttempts: number
+    uuid?: string;
+    accountUuid: string;
+    type: MFADeviceType;
+    name: string;
+    maxAttempts: number;
   }) {
     super(params.uuid || MFADevice.generateId());
-    this._accountUuUuid = params.accountUuid;
+    this._accountUuid = params.accountUuid;
     this._type = params.type;
     this._name = params.name;
     this._isVerified = false;
@@ -37,7 +41,6 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
     this._maxAttempts = params.maxAttempts;
     this._verificationAttempts = 0;
   }
-    
 
   // Getters
   get uuid(): string {
@@ -45,7 +48,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
   }
 
   get accountUuid(): string {
-    return this._accountUuUuid;
+    return this._accountUuid;
   }
 
   get type(): MFADeviceType {
@@ -167,7 +170,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
     if (isValid) {
       this._lastUsedAt = new Date();
       this._verificationAttempts = 0; // 重置失败次数
-      
+
       if (!this._isVerified) {
         this._isVerified = true;
         this._isEnabled = true;
@@ -236,17 +239,17 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
 
     // 检查当前时间窗口和前后一个时间窗口
     const currentTimeStep = Math.floor(Date.now() / 30000);
-    
+
     for (let i = -1; i <= 1; i++) {
       const timeStep = currentTimeStep + i;
       const hash = this.simpleHash(this._secretKey + timeStep.toString());
       const expectedCode = (hash % 1000000).toString().padStart(6, '0');
-      
+
       if (code === expectedCode) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -271,7 +274,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
       this._backupCodes.splice(index, 1);
       return true;
     }
-    
+
     return false;
   }
 
@@ -291,7 +294,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
       const char = input.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 转换为32位整数
     }
     return Math.abs(hash);
@@ -315,7 +318,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
   toDTO(): IMFADeviceDTO {
     return {
       uuid: this._uuid,
-      accountUuid: this._accountUuUuid,
+      accountUuid: this._accountUuid,
       type: this._type,
       name: this._name,
       isVerified: this._isVerified === true ? 1 : 0,
@@ -351,8 +354,8 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
       accountUuid: row.account_uuid,
       type: row.type as MFADeviceType,
       name: row.name,
-      maxAttempts: row.max_attempts
-  });
+      maxAttempts: row.max_attempts,
+    });
 
     // 设置从数据库读取的属性
     (device as any)._secretKey = row.secret_key;
@@ -389,7 +392,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
   } {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuUuid,
+      account_uuid: this._accountUuid,
       type: this._type,
       name: this._name,
       secret_key: this._secretKey,
@@ -401,7 +404,7 @@ export class MFADevice extends Entity implements IMainProcessMFADevice {
       verification_attempts: this._verificationAttempts,
       max_attempts: this._maxAttempts,
       created_at: this._createdAt.getTime(),
-      last_used_at: this._lastUsedAt?.getTime()
+      last_used_at: this._lastUsedAt?.getTime(),
     };
   }
 }

@@ -1,6 +1,6 @@
 import { SessionCore } from '@dailyuse/domain-core';
 import { type ISessionServer } from '../types';
-
+import type { ClientInfo } from '@dailyuse/domain-core';
 /**
  * 服务端会话实体
  * 继承核心会话实体，添加服务端特定的业务逻辑
@@ -154,20 +154,15 @@ export class Session extends SessionCore implements ISessionServer {
   /**
    * 创建服务端会话（工厂方法）
    */
-  static create(params: {
-    accountUuid: string;
-    deviceInfo: string;
-    ipAddress: string;
-    userAgent?: string;
-  }): Session {
+  static create(params: { accountUuid: string; clientInfo: ClientInfo }): Session {
     const token = this.generateSessionToken();
 
     return new Session({
       accountUuid: params.accountUuid,
       token,
-      deviceInfo: params.deviceInfo,
-      ipAddress: params.ipAddress,
-      userAgent: params.userAgent,
+      deviceInfo: params.clientInfo.deviceId || 'unknown',
+      ipAddress: params.clientInfo.ipAddress || 'unknown',
+      userAgent: params.clientInfo.userAgent || 'unknown',
     });
   }
 

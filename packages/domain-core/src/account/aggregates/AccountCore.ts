@@ -1,9 +1,10 @@
 import { AggregateRoot } from '@dailyuse/utils';
+import type { IAccountCore, AccountDTO } from '@dailyuse/contracts';
+import { AccountStatus, AccountType } from '@dailyuse/contracts';
 import { UserCore } from '../entities/UserCore';
 import { EmailCore } from '../valueObjects/EmailCore';
 import { PhoneNumberCore } from '../valueObjects/PhoneNumberCore';
 import { AddressCore } from '../valueObjects/AddressCore';
-import { AccountStatus, AccountType, type IAccountCore } from '../types';
 
 /**
  * Account 核心基类 - 包含共享属性和基础计算
@@ -179,20 +180,20 @@ export abstract class AccountCore extends AggregateRoot implements IAccountCore 
   }
 
   // ===== 序列化方法 =====
-  toDTO() {
+  toDTO(): AccountDTO {
     return {
       uuid: this.uuid,
       username: this._username,
       status: this._status,
       accountType: this._accountType,
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt,
-      lastLoginAt: this._lastLoginAt,
+      createdAt: this._createdAt.getTime(),
+      updatedAt: this._updatedAt.getTime(),
+      lastLoginAt: this._lastLoginAt?.getTime(),
       email: this._email?.value,
       phone: this._phoneNumber?.fullNumber,
       emailVerificationToken: this._emailVerificationToken,
       phoneVerificationCode: this._phoneVerificationCode,
-      roleIds: this.roleIds,
+      roleIds: Array.from(this.roleIds),
       isEmailVerified: this._isEmailVerified,
       isPhoneVerified: this._isPhoneVerified,
       user: this._user.toDTO(),

@@ -1,4 +1,5 @@
-import axios, { type AxiosInstance,  } from 'axios';
+import { type AxiosInstance,  } from 'axios';
+import duAxios from '@/shared/axios';
 import {
   AuthCredential,
   Session,
@@ -8,25 +9,37 @@ import {
 import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
 import { type TResponse } from '../../../../shared/types/response';
 import type { LoginRequestDto, LoginResponseDto } from '../../application/dtos/AuthDtos';
-
+import type { AuthByPasswordRequestDTO, AuthResponseDTO, AuthByPasswordForm } from '@/tempTypes'
 /**
  * Authentication API Client
  * 认证API客户端 - 封装与认证相关的HTTP请求
  */
 export class ApiClient {
+  private static instance: ApiClient;
   private readonly client: AxiosInstance;
 
   constructor() {
-    this.client = axios.create({});
+    this.client = duAxios;
   }
+
+  public static getInstance(): ApiClient {
+    if (!ApiClient.instance) {
+      ApiClient.instance = new ApiClient();
+    }
+    return ApiClient.instance;
+  }
+
+
 
   /**
    * 用户登录API调用
    */
-  async login(credentials: LoginRequestDto): Promise<TResponse<LoginResponseDto>> {
+  async login(credentials: AuthByPasswordRequestDTO): Promise<TResponse<AuthResponseDTO>> {
     const response = await this.client.post('/login', {
       username: credentials.username,
       password: credentials.password,
+      remember: credentials.remember,
+      accountType: credentials.accountType,
     });
 
     if (response.status !== 200) {

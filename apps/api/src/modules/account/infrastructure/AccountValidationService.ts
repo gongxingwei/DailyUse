@@ -1,11 +1,14 @@
 import { Account } from '@dailyuse/domain-server';
-import type { CreateAccountDto, UpdateAccountDto } from '../application/AccountApplicationService';
+import type { UpdateAccountDto } from '../application/services/AccountApplicationService';
+import { type RegistrationByUsernameAndPasswordRequestDTO } from '../../../tempTypes';
 
 export class AccountValidationService {
   /**
    * 验证账户创建数据
    */
-  async validateAccountCreation(createDto: CreateAccountDto): Promise<void> {
+  async validateAccountCreation(
+    createDto: RegistrationByUsernameAndPasswordRequestDTO,
+  ): Promise<void> {
     const errors: string[] = [];
 
     // 验证用户名
@@ -19,21 +22,21 @@ export class AccountValidationService {
       errors.push('用户名只能包含字母、数字、下划线和连字符');
     }
 
-    // 验证邮箱格式
-    if (createDto.email && typeof createDto.email === 'string') {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(createDto.email)) {
-        errors.push('邮箱格式不正确');
-      }
-    }
+    // // 验证邮箱格式
+    // if (createDto.email && typeof createDto.email === 'string') {
+    //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    //   if (!emailRegex.test(createDto.email)) {
+    //     errors.push('邮箱格式不正确');
+    //   }
+    // }
 
-    // 验证手机号格式
-    if (createDto.phoneNumber && typeof createDto.phoneNumber === 'string') {
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-      if (!phoneRegex.test(createDto.phoneNumber)) {
-        errors.push('手机号格式不正确');
-      }
-    }
+    // // 验证手机号格式
+    // if (createDto.phoneNumber && typeof createDto.phoneNumber === 'string') {
+    //   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    //   if (!phoneRegex.test(createDto.phoneNumber)) {
+    //     errors.push('手机号格式不正确');
+    //   }
+    // }
 
     // 验证密码强度
     if (createDto.password) {

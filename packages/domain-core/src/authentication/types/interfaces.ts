@@ -1,3 +1,4 @@
+import type { ClientInfo } from '../../shared/types';
 // ======== MFA Device Types ========
 export enum MFADeviceType {
   TOTP = 'totp', // Time-based One-Time Password (Google Authenticator等)
@@ -164,15 +165,16 @@ export interface IAuthCredentialCore {
   canAttemptLogin: boolean;
 
   // Core methods
-  authenticate(password: string): boolean;
-  changePassword(oldPassword: string, newPassword: string): void;
-  createSession(deviceInfo: string, ipAddress: string): ISessionCore;
-  terminateSession(sessionUuid: string): void;
-  terminateAllSessions(): void;
-  addMFADevice(device: IMFADeviceCore): void;
-  removeMFADevice(deviceUuid: string): void;
-  createToken(type: TokenType): ITokenCore;
-  revokeToken(tokenValue: string): void;
+  // authenticate(password: string): boolean;
+  // changePassword(oldPassword: string, newPassword: string): void;
+  // createSession(ClientInfo: ClientInfo): ISessionCore;
+  // terminateSession(sessionUuid: string): void;
+  // terminateAllSessions(): void;
+  // addMFADevice(device: IMFADeviceCore): void;
+  // removeMFADevice(deviceUuid: string): void;
+  // createToken(type: TokenType): ITokenCore;
+  // createRememberToken(deviceInfo?: string): ITokenCore;
+  // revokeToken(tokenValue: string): void;
 }
 
 export interface IAuthCredentialDTO {
