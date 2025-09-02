@@ -29,8 +29,8 @@ duAxios.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       // 处理认证失败
-      localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      // localStorage.removeItem('auth_token');
+      // window.location.href = '/auth';
     }
     return Promise.reject(error);
   },

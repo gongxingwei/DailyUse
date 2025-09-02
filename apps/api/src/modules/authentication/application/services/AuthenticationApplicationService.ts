@@ -134,7 +134,7 @@ export class AuthenticationApplicationService {
         plainPassword,
       });
 
-      // 2. 保存（repo 层应处理并发/唯一约束）
+      // 2. 保存
       await this.authCredentialRepository.save(authCredential);
 
       // 3. 发布事件
@@ -155,11 +155,14 @@ export class AuthenticationApplicationService {
 
   // =================== event services ===================
   
-  async handleAccountRegistered(event: AccountRegisteredEvent): Promise<void> {
-    const { accountUuid, email, password: plainPassword, requiresAuthentication } = event.payload;
+  async handleAccountRegistered(
+    accountUuid: string,
+    plainPassword: string,
+    requiresAuthentication: boolean = true
+  ): Promise<boolean> {
     if (!requiresAuthentication) {
       console.log('⏭️ [Authentication] 账号不需要认证凭证，跳过处理');
-      return;
+      return false;
     }
     if (!plainPassword) {
       throw new Error('密码不能为空');
@@ -168,18 +171,16 @@ export class AuthenticationApplicationService {
     const existingCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
     if (existingCredential) {
       console.log('⚠️ [Authentication] 认证凭证已存在，跳过创建');
-      return;
+      return false;
     }
     // 1. 创建认证凭证
     const authCredential = await this.createCredentialForAccount(accountUuid, plainPassword);
 
-    await this.authCredentialRepository.save(authCredential);
-
-    const domainEvents = authCredential.getDomainEvents();
-    for (const domainEvent of domainEvents) {
-      await eventBus.publish(domainEvent);
+    if (!authCredential) {
+      return false;
     }
-    authCredential.clearDomainEvents();
+
+    return true;
     // // 2. 发送欢迎邮件
     // await this.sendWelcomeEmail(email);
 

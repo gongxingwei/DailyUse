@@ -1,5 +1,5 @@
-import { Entity } from "@dailyuse/utils";
-import { type IMFADeviceCore, MFADeviceType, type IMFADeviceDTO } from "../types";
+import { Entity } from '@dailyuse/utils';
+import { type IMFADeviceCore, MFADeviceType, type MFADeviceDTO } from '../types';
 
 /**
  * MFA设备实体
@@ -21,11 +21,11 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
   private _maxAttempts: number;
 
   constructor(params: {
-    uuid?: string,
-    accountUuid: string,
-    type: MFADeviceType,
-    name: string,
-    maxAttempts: number
+    uuid?: string;
+    accountUuid: string;
+    type: MFADeviceType;
+    name: string;
+    maxAttempts: number;
   }) {
     super(params.uuid || Entity.generateUUID());
     this._accountUuid = params.accountUuid;
@@ -37,7 +37,6 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     this._maxAttempts = params.maxAttempts;
     this._verificationAttempts = 0;
   }
-    
 
   // Getters
   get uuid(): string {
@@ -167,7 +166,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     if (isValid) {
       this._lastUsedAt = new Date();
       this._verificationAttempts = 0; // 重置失败次数
-      
+
       if (!this._isVerified) {
         this._isVerified = true;
         this._isEnabled = true;
@@ -236,17 +235,17 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
 
     // 检查当前时间窗口和前后一个时间窗口
     const currentTimeStep = Math.floor(Date.now() / 30000);
-    
+
     for (let i = -1; i <= 1; i++) {
       const timeStep = currentTimeStep + i;
       const hash = this.simpleHash(this._secretKey + timeStep.toString());
       const expectedCode = (hash % 1000000).toString().padStart(6, '0');
-      
+
       if (code === expectedCode) {
         return true;
       }
     }
-    
+
     return false;
   }
 
@@ -271,7 +270,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
       this._backupCodes.splice(index, 1);
       return true;
     }
-    
+
     return false;
   }
 
@@ -291,7 +290,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     let hash = 0;
     for (let i = 0; i < input.length; i++) {
       const char = input.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // 转换为32位整数
     }
     return Math.abs(hash);
@@ -312,14 +311,17 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
   /**
    * 转换为DTO对象
    */
-  toDTO(): IMFADeviceDTO {
+  toDTO(): MFADeviceDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,
       type: this._type,
       name: this._name,
-      isVerified: this._isVerified === true ? 1 : 0,
-      isEnabled: this._isEnabled === true ? 1 : 0,
+      secret: this._secretKey,
+      phoneNumber: this._phoneNumber,
+      email: this._emailAddress,
+      isVerified: this._isVerified,
+      isEnabled: this._isEnabled,
       createdAt: this._createdAt.getTime(),
       lastUsedAt: this._lastUsedAt?.getTime(),
       verificationAttempts: this._verificationAttempts,
@@ -351,8 +353,8 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
       accountUuid: row.account_uuid,
       type: row.type as MFADeviceType,
       name: row.name,
-      maxAttempts: row.max_attempts
-  });
+      maxAttempts: row.max_attempts,
+    });
 
     // 设置从数据库读取的属性
     (device as any)._secretKey = row.secret_key;
@@ -401,7 +403,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
       verification_attempts: this._verificationAttempts,
       max_attempts: this._maxAttempts,
       created_at: this._createdAt.getTime(),
-      last_used_at: this._lastUsedAt?.getTime()
+      last_used_at: this._lastUsedAt?.getTime(),
     };
   }
 }

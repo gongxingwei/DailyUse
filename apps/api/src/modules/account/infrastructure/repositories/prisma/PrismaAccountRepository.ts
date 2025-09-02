@@ -33,6 +33,18 @@ export class PrismaAccountRepository implements IAccountRepository {
     };
 
     await prisma.$transaction(async (tx) => {
+      // 首先检查是否是新账户（通过uuid）还是现有账户（通过username）
+      const existingAccount = await tx.account.findFirst({
+        where: {
+          OR: [{ uuid: account.uuid }, { username: account.username }],
+        },
+      });
+
+      if (existingAccount && existingAccount.uuid !== account.uuid) {
+        // 如果找到了不同uuid但相同用户名的账户，说明用户名冲突
+        throw new Error(`用户名 "${account.username}" 已被使用`);
+      }
+
       // 使用 upsert 来处理账户的创建和更新
       await tx.account.upsert({
         where: { uuid: account.uuid },
@@ -232,8 +244,8 @@ export class PrismaAccountRepository implements IAccountRepository {
     switch (type) {
       case AccountType.LOCAL:
         return 'local';
-      case AccountType.ADMIN:
-        return 'admin';
+      case AccountType.ONLINE:
+        return 'online';
       case AccountType.GUEST:
         return 'guest';
       default:
@@ -245,8 +257,8 @@ export class PrismaAccountRepository implements IAccountRepository {
     switch (type) {
       case 'local':
         return AccountType.LOCAL;
-      case 'admin':
-        return AccountType.ADMIN;
+      case 'online':
+        return AccountType.ONLINE;
       case 'guest':
         return AccountType.GUEST;
       default:

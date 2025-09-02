@@ -14,13 +14,16 @@ import type {
   LoginCredentialVerificationEvent,
   LoginAttemptEvent,
   UserLoggedInEvent,
-  AccountStatusVerificationResponseEvent
+  AccountStatusVerificationResponseEvent,
 } from '@dailyuse/domain-server';
 
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
 // utils
 import { eventBus } from '@dailyuse/utils';
+// 新的 EventEmitter 事件客户端
+import { authenticationEventClient } from '../clients/AuthenticationEventClient';
+import type { IAccountCore } from '@dailyuse/contracts';
 
 export interface AuthenticationResponsePayload {
   username?: string;
@@ -173,19 +176,11 @@ export class AuthenticationLoginService {
   ): Promise<TResponse<AuthResponseDTO>> {
     const { username, password, remember, clientInfo } = request;
     try {
-      // 1. 获取账号UUID（异步事件驱动）
-      const { accountUuid } = await this.getAccountUuidByUsername(username);
-      if (!accountUuid) {
-        return {
-          success: false,
-          message: '账号不存在',
-          data: undefined,
-        };
-      }
+      console.log(`🔐 [AuthenticationLoginService] 开始登录流程 - 用户名: ${username}`);
 
-      // 2. 查询认证凭证
-      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
-      if (!authCredential) {
+      // 1. 使用新的 EventEmitter 事件总线获取完整的账户信息
+      const account = await authenticationEventClient.getAccountByUsername(username);
+      if (!account) {
         await this.publishLoginAttemptEvent({
           username,
           result: 'account_not_found',
@@ -200,20 +195,44 @@ export class AuthenticationLoginService {
         };
       }
 
-      // 3. 验证账号状态（异步事件驱动）
-      const accountStatusResponse = await this.verifyAccountStatus(accountUuid, username);
-      if (!accountStatusResponse.payload.isLoginAllowed) {
+      console.log(`👤 [AuthenticationLoginService] 找到账户: ${account.uuid}`);
+      const accountUuid = account.uuid;
+
+      // 2. 使用新的 EventEmitter 事件总线验证账户状态
+      const statusCheck = await authenticationEventClient.verifyAccountStatus(accountUuid);
+      console.log('statusCheck:', statusCheck);
+      if (!statusCheck.isValid) {
         await this.publishLoginAttemptEvent({
           username,
           accountUuid,
-          result: accountStatusResponse.payload.accountStatus as any,
-          failureReason: accountStatusResponse.payload.statusMessage || '账号状态异常',
+          result: statusCheck.status as any,
+          failureReason: `账户状态异常: ${statusCheck.status}`,
           attemptedAt: new Date(),
           clientInfo,
         });
         return {
           success: false,
-          message: accountStatusResponse.payload.statusMessage || '账号状态异常，无法登录',
+          message: `账户状态异常: ${statusCheck.status}，无法登录`,
+        };
+      }
+
+      console.log(`✅ [AuthenticationLoginService] 账户状态正常: ${statusCheck.status}`);
+
+      // 3. 查询认证凭证
+      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
+      if (!authCredential) {
+        await this.publishLoginAttemptEvent({
+          username,
+          accountUuid,
+          result: 'account_not_found',
+          failureReason: '认证凭证不存在',
+          attemptedAt: new Date(),
+          clientInfo,
+        });
+        return {
+          success: false,
+          message: '认证凭证不存在',
+          data: undefined,
         };
       }
 
@@ -243,6 +262,8 @@ export class AuthenticationLoginService {
         };
       }
 
+      console.log(`🔑 [AuthenticationLoginService] 密码验证成功`);
+
       // 5. 创建刷新令牌
       const refreshToken = authCredential.createToken(TokenType.REFRESH_TOKEN) as Token;
       await this.tokenRepository.save(refreshToken);
@@ -270,7 +291,9 @@ export class AuthenticationLoginService {
       const newAuthSession = authCredential.createSession(newClientInfo);
       await this.sessionRepository.save(newAuthSession);
 
-      // 8. 发布相关事件
+      console.log(`📱 [AuthenticationLoginService] 创建会话成功: ${newAuthSession.uuid}`);
+
+      // 9. 发布相关事件
       await this.publishCredentialVerificationEvent({
         accountUuid,
         username,
@@ -295,7 +318,7 @@ export class AuthenticationLoginService {
         clientInfo,
       });
 
-      // 9. 返回登录结果，包含所有必要的令牌
+      // 10. 返回登录结果，包含所有必要的令牌
       const responseData: AuthResponseDTO = {
         username,
         accountUuid,
@@ -311,12 +334,15 @@ export class AuthenticationLoginService {
         responseData.rememberToken = rememberToken.value;
       }
 
+      console.log(`🎉 [AuthenticationLoginService] 登录成功完成 - 用户: ${username}`);
+
       return {
         success: true,
         message: '登录成功',
         data: responseData,
       };
     } catch (error) {
+      console.error(`❌ [AuthenticationLoginService] 登录失败:`, error);
       await this.publishLoginAttemptEvent({
         username,
         result: 'failed',
@@ -342,25 +368,34 @@ export class AuthenticationLoginService {
     TResponse<Array<{ accountUuid: string; username: string; token: string }>>
   > {
     try {
+      console.log(`📋 [AuthenticationLoginService] 获取快速登录账号列表`);
+
       const tokens: Array<Token> = await this.tokenRepository.findByType(TokenType.REMEMBER_ME);
       const accounts = [];
+
       for (const t of tokens) {
         if (t.isExpired()) continue;
-        const { accountDTO } = await this.getAccountByAccountUuid(t.accountUuid);
-        if (accountDTO) {
+
+        // 使用新的 EventEmitter 事件总线获取账户信息
+        const account = await authenticationEventClient.getAccountByUuid(t.accountUuid);
+        if (account) {
           accounts.push({
             accountUuid: t.accountUuid,
-            username: accountDTO.username,
+            username: account.username,
             token: t.value,
           });
         }
       }
+
+      console.log(`✅ [AuthenticationLoginService] 找到 ${accounts.length} 个可快速登录的账号`);
+
       return {
         success: true,
         message: '获取快速登录账号列表成功',
         data: accounts,
       };
     } catch (error) {
+      console.error(`❌ [AuthenticationLoginService] 获取快速登录账号失败:`, error);
       return {
         success: false,
         message: '获取快速登录账号失败，请稍后重试',
@@ -387,112 +422,138 @@ export class AuthenticationLoginService {
   ): Promise<TResponse<RememberMeTokenAuthenticationResponse>> {
     const { username, accountUuid, rememberMeToken, clientInfo } = request;
 
-    // 1. 验证账号状态
-    const accountStatusResponse = await this.verifyAccountStatus(accountUuid, username);
-    if (!accountStatusResponse.payload.isLoginAllowed) {
+    try {
+      console.log(`🔐 [AuthenticationLoginService] 开始记住我登录流程 - 用户名: ${username}`);
+
+      // 1. 使用新的 EventEmitter 事件总线验证账户状态
+      const statusCheck = await authenticationEventClient.verifyAccountStatus(accountUuid);
+      if (!statusCheck.isValid) {
+        await this.publishLoginAttemptEvent({
+          username,
+          accountUuid,
+          result: statusCheck.status as any,
+          failureReason: `账户状态异常: ${statusCheck.status}`,
+          attemptedAt: new Date(),
+          clientInfo,
+        });
+        return {
+          success: false,
+          message: `账户状态异常: ${statusCheck.status}，无法登录`,
+        };
+      }
+
+      console.log(`✅ [AuthenticationLoginService] 账户状态正常: ${statusCheck.status}`);
+
+      // 2. 验证 rememberMeToken
+      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
+      if (!authCredential) {
+        return {
+          success: false,
+          message: '账号认证凭证不存在',
+        };
+      }
+      const { success: isRememberMeTokenValid, accessToken } =
+        authCredential.verifyRememberToken(rememberMeToken);
+      if (!isRememberMeTokenValid || !accessToken) {
+        await this.publishLoginAttemptEvent({
+          username,
+          accountUuid,
+          result: 'invalid_credentials',
+          failureReason: '无效的记住我令牌',
+          attemptedAt: new Date(),
+          clientInfo,
+        });
+        return {
+          success: false,
+          message: '无效的记住我令牌',
+        };
+      }
+
+      console.log(`🔑 [AuthenticationLoginService] 记住我令牌验证成功`);
+
+      // 3. 创建新的访问令牌和刷新令牌
+      const newAccessToken = authCredential.createToken(TokenType.ACCESS_TOKEN) as Token;
+      const refreshToken = authCredential.createToken(TokenType.REFRESH_TOKEN) as Token;
+
+      // 4. 保存令牌
+      await this.tokenRepository.save(newAccessToken);
+      await this.tokenRepository.save(refreshToken);
+
+      // 5. 保存更新后的认证凭证
+      await this.authCredentialRepository.save(authCredential);
+
+      const newClientInfo: ClientInfo = {
+        deviceId: clientInfo?.deviceId || 'unknown',
+        deviceName: 'unknown',
+        userAgent: clientInfo?.userAgent || 'unknown',
+        ipAddress: clientInfo?.ip || 'unknown',
+      };
+
+      // 6. 创建新的会话
+      const newSession = authCredential.createSession(newClientInfo);
+      await this.sessionRepository.save(newSession);
+
+      console.log(`📱 [AuthenticationLoginService] 创建会话成功: ${newSession.uuid}`);
+
+      // 7. 发布相关事件
+      await this.publishCredentialVerificationEvent({
+        accountUuid,
+        username,
+        credentialId: authCredential.uuid,
+        verificationResult: 'success',
+        verifiedAt: new Date(),
+        clientInfo,
+      });
+      await this.publishUserLoggedInEvent({
+        accountUuid,
+        username,
+        credentialId: authCredential.uuid,
+        sessionUuid: newSession.uuid,
+        loginAt: new Date(),
+        clientInfo,
+      });
       await this.publishLoginAttemptEvent({
         username,
         accountUuid,
-        result: accountStatusResponse.payload.accountStatus as any,
-        failureReason: accountStatusResponse.payload.statusMessage || '账号状态异常',
+        result: 'success',
+        attemptedAt: new Date(),
+        clientInfo,
+      });
+
+      // 8. 返回成功响应，包含完整的令牌信息
+      const responseData: AuthResponseDTO = {
+        accountUuid,
+        username,
+        sessionUuid: newSession.uuid,
+        accessToken: newAccessToken.value,
+        refreshToken: refreshToken.value,
+        rememberToken: rememberMeToken, // 保持原有的记住我令牌
+        tokenType: 'Bearer',
+        expiresIn: Math.floor(newAccessToken.getRemainingTime() / 1000),
+      };
+
+      console.log(`🎉 [AuthenticationLoginService] 记住我登录成功完成 - 用户: ${username}`);
+
+      return {
+        success: true,
+        message: '登录成功',
+        data: responseData,
+      };
+    } catch (error) {
+      console.error(`❌ [AuthenticationLoginService] 记住我登录失败:`, error);
+      await this.publishLoginAttemptEvent({
+        username,
+        accountUuid,
+        result: 'failed',
+        failureReason: error instanceof Error ? error.message : '系统异常',
         attemptedAt: new Date(),
         clientInfo,
       });
       return {
         success: false,
-        message: accountStatusResponse.payload.statusMessage || '账号状态异常，无法登录',
+        message: '登录失败，请稍后重试',
       };
     }
-
-    // 2. 验证 rememberMeToken
-    const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
-    if (!authCredential) {
-      return {
-        success: false,
-        message: '账号认证凭证不存在',
-      };
-    }
-    const { success: isRememberMeTokenValid, accessToken } =
-      authCredential.verifyRememberToken(rememberMeToken);
-    if (!isRememberMeTokenValid || !accessToken) {
-      await this.publishLoginAttemptEvent({
-        username,
-        accountUuid,
-        result: 'invalid_credentials',
-        failureReason: '无效的记住我令牌',
-        attemptedAt: new Date(),
-        clientInfo,
-      });
-      return {
-        success: false,
-        message: '无效的记住我令牌',
-      };
-    }
-
-    // 3. 创建新的访问令牌和刷新令牌
-    const newAccessToken = authCredential.createToken(TokenType.ACCESS_TOKEN) as Token;
-    const refreshToken = authCredential.createToken(TokenType.REFRESH_TOKEN) as Token;
-
-    // 4. 保存令牌
-    await this.tokenRepository.save(newAccessToken);
-    await this.tokenRepository.save(refreshToken);
-
-    // 5. 保存更新后的认证凭证
-    await this.authCredentialRepository.save(authCredential);
-
-    const newClientInfo: ClientInfo = {
-      deviceId: clientInfo?.deviceId || 'unknown',
-      deviceName: 'unknown',
-      userAgent: clientInfo?.userAgent || 'unknown',
-      ipAddress: clientInfo?.ip || 'unknown',
-    };
-
-    // 6. 创建新的会话
-    const newSession = authCredential.createSession(newClientInfo);
-    await this.sessionRepository.save(newSession);
-
-    // 7. 发布相关事件
-    await this.publishCredentialVerificationEvent({
-      accountUuid,
-      username,
-      credentialId: authCredential.uuid,
-      verificationResult: 'success',
-      verifiedAt: new Date(),
-      clientInfo,
-    });
-    await this.publishUserLoggedInEvent({
-      accountUuid,
-      username,
-      credentialId: authCredential.uuid,
-      sessionUuid: newSession.uuid,
-      loginAt: new Date(),
-      clientInfo,
-    });
-    await this.publishLoginAttemptEvent({
-      username,
-      accountUuid,
-      result: 'success',
-      attemptedAt: new Date(),
-      clientInfo,
-    });
-
-    // 8. 返回成功响应，包含完整的令牌信息
-    const responseData: AuthResponseDTO = {
-      accountUuid,
-      username,
-      sessionUuid: newSession.uuid,
-      accessToken: newAccessToken.value,
-      refreshToken: refreshToken.value,
-      rememberToken: rememberMeToken, // 保持原有的记住我令牌
-      tokenType: 'Bearer',
-      expiresIn: Math.floor(newAccessToken.getRemainingTime() / 1000),
-    };
-
-    return {
-      success: true,
-      message: '登录成功',
-      data: responseData,
-    };
   }
 
   /**
@@ -509,8 +570,11 @@ export class AuthenticationLoginService {
 
   // ===================== 私有方法（事件/异步/内部工具） =====================
 
+  // 注意：以下方法已被新的 EventEmitter 事件总线替代，保留用于向后兼容
+
   /**
    * 通过 accountUuid 异步获取账号信息（事件驱动，带超时）
+   * @deprecated 已被 authenticationEventClient.getAccountByUuid() 替代
    * @param accountUuid 账号UUID
    * @returns Promise<{ accountDTO: AccountDTO }>
    * @example
@@ -540,6 +604,7 @@ export class AuthenticationLoginService {
 
   /**
    * 通过用户名异步获取账号UUID（事件驱动，带超时）
+   * @deprecated 已被 authenticationEventClient.getAccountByUsername() 替代
    * @param username 用户名
    * @returns Promise<{ accountUuid?: string }>
    * @example
@@ -582,6 +647,7 @@ export class AuthenticationLoginService {
 
   /**
    * 异步验证账号状态（事件驱动，带超时）
+   * @deprecated 已被 authenticationEventClient.verifyAccountStatus() 替代
    * @param accountUuid 账号UUID
    * @param username 用户名
    * @returns Promise<AccountStatusVerificationResponseEvent>

@@ -1,17 +1,8 @@
 import { z } from 'zod';
+import { AccountStatus, AccountType } from '../core/account';
 
-export enum AccountStatus {
-  ACTIVE = 'active',
-  DISABLED = 'disabled',
-  SUSPENDED = 'suspended',
-  PENDING_VERIFICATION = 'pending_verification',
-}
-
-export enum AccountType {
-  LOCAL = 'local',
-  ONLINE = 'online',
-  GUEST = 'guest',
-}
+// 重新导出枚举以保持向后兼容
+export { AccountStatus, AccountType };
 
 export const AccountDTO = z.object({
   uuid: z.string(),
@@ -49,15 +40,4 @@ export const RegisterRequest = z.object({
 });
 export type RegisterRequest = z.infer<typeof RegisterRequest>;
 
-export const LoginRequest = z.object({
-  username: z.string(),
-  password: z.string(),
-});
-export type LoginRequest = z.infer<typeof LoginRequest>;
 
-export const AuthResponse = z.object({
-  user: z.any(),
-  accessToken: z.string(),
-  refreshToken: z.string(),
-});
-export type AuthResponse = z.infer<typeof AuthResponse>;

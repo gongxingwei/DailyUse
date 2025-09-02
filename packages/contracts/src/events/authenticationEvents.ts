@@ -1,6 +1,6 @@
 import { DomainEvent, ClientInfo, LoginResult } from './types';
 import { EVENT_TYPES } from './constants';
-import { AccountEntity, AuthSession } from '../entities';
+import { IAccount, ISessionCore } from '../core';
 
 // =================== 认证请求事件 ===================
 export interface AccountInfoGetterByUuidRequested
@@ -30,7 +30,7 @@ export interface AccountStatusVerificationRequested
 // =================== 登录相关事件 ===================
 export interface LoginCredentialVerificationEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     providedPassword: string;
     clientInfo: ClientInfo;
   }> {
@@ -40,7 +40,7 @@ export interface LoginCredentialVerificationEvent
 export interface LoginAttemptEvent
   extends DomainEvent<{
     username: string;
-    account: AccountEntity | null;
+    account: IAccount | null;
     success: boolean;
     loginResult: LoginResult;
     clientInfo: ClientInfo;
@@ -52,8 +52,8 @@ export interface LoginAttemptEvent
 
 export interface UserLoggedInEvent
   extends DomainEvent<{
-    account: AccountEntity;
-    session: AuthSession;
+    account: IAccount;
+    session: ISessionCore;
     clientInfo: ClientInfo;
   }> {
   eventType: typeof EVENT_TYPES.AUTH.USER_LOGGED_IN;
@@ -62,7 +62,7 @@ export interface UserLoggedInEvent
 // =================== 账户注销事件 ===================
 export interface AccountDeactivationVerificationRequested
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     providedPassword: string;
     requestReason: string;
     clientInfo: ClientInfo;
@@ -81,7 +81,7 @@ export interface AccountDeactivationVerificationResponse
 
 export interface AccountDeactivationConfirmedEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     deactivationReason: string;
     deactivatedAt: Date;
     deactivatedBy: string; // 通常是账户本身
@@ -92,7 +92,7 @@ export interface AccountDeactivationConfirmedEvent
 // =================== 登出和会话管理事件 ===================
 export interface UserLoggedOutEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     sessionId: string;
     logoutReason: 'USER_REQUEST' | 'SESSION_EXPIRED' | 'SECURITY_LOGOUT' | 'ADMIN_LOGOUT';
     clientInfo: ClientInfo;
@@ -103,7 +103,7 @@ export interface UserLoggedOutEvent
 
 export interface SessionTerminatedEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     sessionId: string;
     terminationReason: 'EXPIRED' | 'INVALID' | 'SECURITY' | 'USER_REQUEST';
     terminatedAt: Date;
@@ -113,7 +113,7 @@ export interface SessionTerminatedEvent
 
 export interface AllSessionsTerminatedEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
     terminationReason: 'PASSWORD_CHANGED' | 'ACCOUNT_COMPROMISED' | 'USER_REQUEST' | 'ADMIN_ACTION';
     terminatedSessionCount: number;
     terminatedAt: Date;

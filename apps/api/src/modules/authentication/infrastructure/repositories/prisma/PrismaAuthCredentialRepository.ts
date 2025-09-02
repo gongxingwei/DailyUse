@@ -127,7 +127,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
 
     // 获取数据库中已存在的 MFA 设备
     const existingDeviceUuids = (
-      await tx.mfaDevice.findMany({
+      await tx.MFADevice.findMany({
         where: { accountUuid: credential.accountUuid },
         select: { uuid: true },
       })
@@ -141,7 +141,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       (uuid: string) => !currentDeviceUuids.includes(uuid),
     );
     if (devicesToDelete.length > 0) {
-      await tx.mfaDevice.deleteMany({
+      await tx.MFADevice.deleteMany({
         where: { uuid: { in: devicesToDelete } },
       });
     }
@@ -149,7 +149,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     // upsert 聚合中的所有 MFA 设备
     for (const device of mfaDevices) {
       const deviceData = this.mapMFADeviceToPersistence(device as any);
-      await tx.mfaDevice.upsert({
+      await tx.MFADevice.upsert({
         where: { uuid: deviceData.uuid },
         update: deviceData,
         create: deviceData,

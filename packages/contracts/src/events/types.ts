@@ -1,4 +1,4 @@
-import { AccountType, AccountStatus } from '../domain';
+import { AccountType, AccountStatus } from '../core/account';
 
 /**
  * 基础领域事件接口

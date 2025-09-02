@@ -1,16 +1,14 @@
-export * as TaskContracts from './task';
+
 export * from './shared';
-export * as AccountContracts from './account';
-export { AccountStatus, AccountType } from './account';
-export * as AuthContracts from './auth';
 
-// 导出所有领域类型定义 (Core Contracts)
-export * from './domain';
-export * as DomainContracts from './domain';
+// 导出API层面的验证模式 (Zod schemas)
+export * as AccountContracts from './schemas/account';
+export { AccountStatus, AccountType } from './core/account';
+export * as AuthContracts from './schemas/auth';
 
-// 导出所有实体类型定义
-export * from './entities';
-export * as EntityContracts from './entities';
+// 导出所有领域核心类型定义 (Core Contracts)
+export * from './core';
+export * as CoreContracts from './core';
 
 // 导出所有事件相关的定义
 export * from './events/index';

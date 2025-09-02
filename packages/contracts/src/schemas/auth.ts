@@ -1,19 +1,19 @@
 import { z } from 'zod';
 
 // 注册请求 Schema
-export const RegisterRequestSchema = z
-  .object({
-    username: z.string().min(3).max(30),
-    email: z.string().email(),
-    password: z.string().min(6).max(100),
-    confirmPassword: z.string().min(6).max(100),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ['confirmPassword'],
-  });
+// export const RegisterRequestSchema = z
+//   .object({
+//     username: z.string().min(3).max(30),
+//     email: z.string().email(),
+//     password: z.string().min(6).max(100),
+//     confirmPassword: z.string().min(6).max(100),
+//     firstName: z.string().optional(),
+//     lastName: z.string().optional(),
+//   })
+//   .refine((data) => data.password === data.confirmPassword, {
+//     message: "Passwords don't match",
+//     path: ['confirmPassword'],
+//   });
 
 // 登录请求 Schema
 export const LoginRequestSchema = z.object({
@@ -63,7 +63,6 @@ export const ErrorResponseSchema = z.object({
 });
 
 // TypeScript 类型导出
-export type RegisterRequest = z.infer<typeof RegisterRequestSchema>;
 export type LoginRequest = z.infer<typeof LoginRequestSchema>;
 export type UserResponse = z.infer<typeof UserResponseSchema>;
 export type AccountResponse = z.infer<typeof AccountResponseSchema>;

@@ -1,5 +1,5 @@
 import { Entity } from '@dailyuse/utils';
-import { type ISessionCore, type ISessionDTO } from '../types';
+import { type ISessionCore, type SessionDTO } from '../types';
 import { isValid } from 'date-fns';
 
 /**
@@ -200,7 +200,7 @@ export class SessionCore extends Entity implements ISessionCore {
   /**
    * 转换为DTO对象
    */
-  toDTO(): ISessionDTO {
+  toDTO(): SessionDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,
@@ -217,7 +217,7 @@ export class SessionCore extends Entity implements ISessionCore {
     };
   }
 
-  static fromDTO(dto: ISessionDTO): SessionCore {
+  static fromDTO(dto: SessionDTO): SessionCore {
     const session = new SessionCore({
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,

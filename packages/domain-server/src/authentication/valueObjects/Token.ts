@@ -1,7 +1,7 @@
 import { ValueObject } from '@dailyuse/utils';
 import { TokenType, TokenCore } from '@dailyuse/domain-core';
 import { type ITokenServer } from '../types';
-import * as jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 /**
  * Token值对象 - JWT令牌管理

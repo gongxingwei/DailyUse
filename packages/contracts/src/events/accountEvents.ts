@@ -1,9 +1,9 @@
 import { DomainEvent, AccountStatus } from './types';
 import { EVENT_TYPES } from './constants';
-import { AccountEntity, AccountBasicInfo } from '../entities';
+import { IAccount } from '../core';
 
 // =================== 账户状态验证事件 ===================
-export interface AccountStatusVerificationEvent
+export interface AccountStatusVerificationResponse
   extends DomainEvent<{
     requestId: string;
     accountUuid: string;
@@ -16,8 +16,7 @@ export interface AccountStatusVerificationEvent
 export interface AccountInfoGetterByUuidResponse
   extends DomainEvent<{
     requestId: string;
-    accountUuid: string;
-    account: AccountEntity | null;
+    account: IAccount | null;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.INFO_GETTER_BY_UUID_RESPONSE;
 }
@@ -25,8 +24,7 @@ export interface AccountInfoGetterByUuidResponse
 export interface AccountInfoGetterByUsernameResponse
   extends DomainEvent<{
     requestId: string;
-    username: string;
-    account: AccountEntity | null;
+    account: IAccount | null;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.INFO_GETTER_BY_USERNAME_RESPONSE;
 }
@@ -34,7 +32,6 @@ export interface AccountInfoGetterByUsernameResponse
 export interface AccountUuidGetterResponse
   extends DomainEvent<{
     requestId: string;
-    username: string;
     accountUuid: string | null;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.UUID_GETTER_RESPONSE;
@@ -55,14 +52,14 @@ export interface AccountStatusChangedEvent
 // =================== 账户创建和注册事件 ===================
 export interface AccountRegisteredEvent
   extends DomainEvent<{
-    account: AccountEntity;
+    account: IAccount;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.REGISTERED;
 }
 
 export interface AccountCreatedEvent
   extends DomainEvent<{
-    account: AccountBasicInfo;
+    account: IAccount;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.CREATED;
 }
@@ -71,7 +68,7 @@ export interface AccountCreatedEvent
 export interface AccountUpdatedEvent
   extends DomainEvent<{
     accountUuid: string;
-    updatedFields: Partial<AccountEntity>;
+    updatedFields: Partial<IAccount>;
     updatedBy: string | null; // 操作者UUID
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.UPDATED;

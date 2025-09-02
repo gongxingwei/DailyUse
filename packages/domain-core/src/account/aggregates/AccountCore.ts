@@ -1,6 +1,9 @@
 import { AggregateRoot } from '@dailyuse/utils';
 import type { IAccountCore, AccountDTO } from '@dailyuse/contracts';
-import { AccountStatus, AccountType } from '@dailyuse/contracts';
+import {
+  AccountStatus,
+  AccountType,
+} from '@dailyuse/contracts';
 import { UserCore } from '../entities/UserCore';
 import { EmailCore } from '../valueObjects/EmailCore';
 import { PhoneNumberCore } from '../valueObjects/PhoneNumberCore';

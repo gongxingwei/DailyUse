@@ -10,7 +10,7 @@ export * from './authenticationEvents';
 
 // =================== 所有事件类型的联合类型 ===================
 import type {
-  AccountStatusVerificationEvent,
+  AccountStatusVerificationResponse,
   AccountInfoGetterByUuidResponse,
   AccountInfoGetterByUsernameResponse,
   AccountUuidGetterResponse,
@@ -39,7 +39,7 @@ import type {
  * 所有账户相关事件的联合类型
  */
 export type AccountEvent =
-  | AccountStatusVerificationEvent
+  | AccountStatusVerificationResponse
   | AccountInfoGetterByUuidResponse
   | AccountInfoGetterByUsernameResponse
   | AccountUuidGetterResponse
@@ -76,7 +76,7 @@ export type DailyUseEvent = AccountEvent | AuthenticationEvent;
  */
 export interface EventMap {
   // Account Events
-  AccountStatusVerificationResponse: AccountStatusVerificationEvent;
+  AccountStatusVerificationResponse: AccountStatusVerificationResponse;
   AccountUuidGetterResponse: AccountUuidGetterResponse;
   AccountInfoGetterByUsernameResponse: AccountInfoGetterByUsernameResponse;
   AccountInfoGetterByUuidResponse: AccountInfoGetterByUuidResponse;

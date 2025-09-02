@@ -1,5 +1,5 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type ITokenCore, TokenType, type ITokenDTO } from '../types';
+import { type ITokenCore, TokenType, type TokenDTO } from '../types';
 import { isValid, addDays, addMinutes, addHours } from 'date-fns';
 
 /**
@@ -146,13 +146,13 @@ export class TokenCore extends ValueObject implements ITokenCore {
   /**
    * 转换为DTO对象
    */
-  toDTO(): ITokenDTO {
+  toDTO(): TokenDTO {
     return {
       value: this._value,
       type: this._type,
       accountUuid: this._accountUuid,
-      issuedAt: this._issuedAt.toISOString(),
-      expiresAt: this._expiresAt.toISOString(),
+      issuedAt: this._issuedAt.getTime(),
+      expiresAt: this._expiresAt.getTime(),
       deviceInfo: this._deviceInfo,
       isRevoked: this._isRevoked,
     };
@@ -161,7 +161,7 @@ export class TokenCore extends ValueObject implements ITokenCore {
   /**
    * 从DTO对象创建 Token
    */
-  static fromDTO(dto: ITokenDTO): TokenCore {
+  static fromDTO(dto: TokenDTO): TokenCore {
     return new TokenCore({
       value: dto.value,
       type: dto.type,

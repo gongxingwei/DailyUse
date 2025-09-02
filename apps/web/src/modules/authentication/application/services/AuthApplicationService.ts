@@ -2,9 +2,7 @@ import axios, { type AxiosInstance } from 'axios';
 import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
 import { AccountType } from '@dailyuse/domain-client';
 import { AuthDomainService } from '../../domain/services/AuthDomainService';
-import {
-  AuthCredential,
-} from '@dailyuse/domain-client';
+import { AuthCredential } from '@dailyuse/domain-client';
 import { ApiClient } from '../../infrastructure/api/ApiClient';
 import type {
   LoginRequestDto,
@@ -63,6 +61,7 @@ export class AuthApplicationService {
       if (!response.success) {
         throw new Error(response.message);
       }
+      console.log('登录成功，你好', response.data);
       return {
         success: true,
         message: 'Login successful',

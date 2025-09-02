@@ -100,7 +100,7 @@ export class HttpInterceptors {
     } else {
       // 默认处理
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      window.location.href = '/auth';
     }
   }
 

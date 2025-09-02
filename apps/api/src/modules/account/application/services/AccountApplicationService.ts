@@ -13,7 +13,7 @@ import type {
   AccountInfoGetterByUuidRequested,
   AccountInfoGetterByUuidResponse,
   AccountStatusVerificationRequested,
-  AccountStatusVerificationEvent,
+  AccountStatusVerificationResponse,
 } from '@dailyuse/contracts';
 import type {
   RegistrationByUsernameAndPasswordRequestDTO,
@@ -21,6 +21,7 @@ import type {
 } from '../../../../tempTypes';
 // utils
 import { eventBus } from '@dailyuse/utils';
+import { requestResponseEventBus } from '../../../../../../../common/shared/events';
 
 export interface UpdateAccountDto {
   email?: string;
@@ -94,12 +95,57 @@ export class AccountApplicationService {
 
     // 保存到数据库
     const savedAccount = await this.accountRepository.save(account);
+    console.log(`✅ [Account] 账户已保存到数据库: ${savedAccount.uuid}`);
+
+    try {
+      // 向认证模块发送请求，为该账号生成认证凭证
+      console.log(`🔄 [Account] 正在为账户 ${savedAccount.uuid} 请求生成认证凭证...`);
+      const credentialCreationResult = await requestResponseEventBus.invoke<{
+        success: boolean;
+        message: string;
+      }>(
+        'CreateAuthCredentialRequest',
+        {
+          accountUuid: savedAccount.uuid,
+          username: savedAccount.username,
+          password: createDto.password,
+        },
+        { timeout: 10000 }, // 10秒超时
+      );
+
+      if (!credentialCreationResult.success) {
+        console.error(`❌ [Account] 认证凭证生成失败: ${credentialCreationResult.message}`);
+
+        // 使用软删除方式删除先前保存的账户
+        console.log(`🗑️ [Account] 正在删除账户 ${savedAccount.uuid}...`);
+        savedAccount.disable(); // 禁用账户
+        await this.accountRepository.save(savedAccount);
+
+        throw new Error(`账户注册失败: ${credentialCreationResult.message}`);
+      }
+
+      console.log(`✅ [Account] 认证凭证生成成功: ${credentialCreationResult.message}`);
+    } catch (error) {
+      console.error(`❌ [Account] 处理认证凭证时发生错误:`, error);
+
+      // 使用软删除方式删除先前保存的账户
+      console.log(`🗑️ [Account] 正在删除账户 ${savedAccount.uuid}...`);
+      try {
+        savedAccount.disable(); // 禁用账户
+        await this.accountRepository.save(savedAccount);
+      } catch (deleteError) {
+        console.error(`❌ [Account] 删除账户失败:`, deleteError);
+      }
+
+      throw new Error(`账户注册失败: ${(error as Error).message}`);
+    }
 
     // 发送欢迎邮件
     if (savedAccount.email) {
-      console.log('发送邮件');
+      console.log('发送欢迎邮件');
     }
 
+    // 处理领域事件
     const domainEvents = account.getDomainEvents();
     for (const event of domainEvents) {
       console.log(`📢 [领域事件] ${event.eventType}:`, event.payload);
@@ -115,17 +161,17 @@ export class AccountApplicationService {
   /**
    * 根据ID获取账户
    */
-  async getAccountById(id: string): Promise<AccountResponseDto | null> {
+  async getAccountById(id: string): Promise<Account | null> {
     const account = await this.accountRepository.findById(id);
-    return account ? this.toResponseDto(account) : null;
+    return account || null;
   }
 
   /**
    * 根据邮箱获取账户
    */
-  async getAccountByEmail(email: string): Promise<AccountResponseDto | null> {
+  async getAccountByEmail(email: string): Promise<Account | null> {
     const account = await this.accountRepository.findByEmail(email);
-    return account ? this.toResponseDto(account) : null;
+    return account || null;
   }
 
   /**
@@ -360,7 +406,6 @@ export class AccountApplicationService {
           occurredOn: new Date(),
           payload: {
             requestId,
-            username,
             account: null,
           },
         };
@@ -373,7 +418,6 @@ export class AccountApplicationService {
         occurredOn: new Date(),
         payload: {
           requestId,
-          username,
           account: account,
         },
       };
@@ -395,9 +439,7 @@ export class AccountApplicationService {
     }
   }
 
-  async handleAccountInfoGetterByUuidEvent(
-    event: AccountInfoGetterByUuidRequestedEvent,
-  ): Promise<void> {
+  async handleAccountInfoGetterByUuidEvent(event: AccountInfoGetterByUuidRequested): Promise<void> {
     const { accountUuid, requestId } = event.payload;
     console.log(
       '开始处理事件AccountInfoGetterByUuidRequested，从载荷中获取accountUuid数据',
@@ -407,7 +449,7 @@ export class AccountApplicationService {
       const account = await this.accountRepository.findById(accountUuid);
       console.log('获取account结果', account);
       if (!account) {
-        const responseEvent: AccountInfoGetterByUuidResponseEvent = {
+        const responseEvent: AccountInfoGetterByUuidResponse = {
           eventType: 'AccountInfoGetterByUuidResponse',
           aggregateId: accountUuid,
           occurredOn: new Date(),
@@ -419,7 +461,7 @@ export class AccountApplicationService {
         eventBus.publish(responseEvent);
         return;
       }
-      const responseEvent: AccountInfoGetterByUuidResponseEvent = {
+      const responseEvent: AccountInfoGetterByUuidResponse = {
         eventType: 'AccountInfoGetterByUuidResponse',
         aggregateId: account.uuid,
         occurredOn: new Date(),
@@ -432,7 +474,7 @@ export class AccountApplicationService {
       eventBus.publish(responseEvent);
       console.log('发送AccountInfoGetterByUuidResponse事件', responseEvent);
     } catch (error) {
-      const responseEvent: AccountInfoGetterByUuidResponseEvent = {
+      const responseEvent: AccountInfoGetterByUuidResponse = {
         eventType: 'AccountInfoGetterByUuidResponse',
         aggregateId: accountUuid,
         occurredOn: new Date(),
@@ -451,107 +493,48 @@ export class AccountApplicationService {
    * @param event 账户状态验证请求事件
    * @returns {Promise<void>}
    */
-  async handleAccountStatusVerificationEvent(
-    event: AccountStatusVerificationRequestedEvent,
-  ): Promise<void> {
-    const { accountUuid, username, requestId } = event.payload;
-    console.log('🔍 [Account] 处理账号状态验证请求:', username);
-
+  async handleAccountStatusVerification(
+    accountUuid: string,
+  ): Promise<{ isValid: boolean; status: AccountStatus | null }> {
     try {
       // 查找账号
-      const account = await this.getAccountByUsername(username);
-      console.log('🔍 [Account] 查找账号结果:', account);
+      const account = await this.getAccountById(accountUuid);
 
-      let accountStatus: AccountStatusVerificationResponseEvent['payload']['accountStatus'];
+      let accountStatus: AccountStatusVerificationResponse['payload']['accountStatus'];
       let isLoginAllowed = false;
       let statusMessage = '';
 
       if (!account) {
         // 账号不存在
-        accountStatus = 'not_found';
+        accountStatus = null;
         isLoginAllowed = false;
         statusMessage = '账号不存在';
         console.log('❌ [Account] 账号不存在:', accountUuid);
-      } else if (account.accountType === AccountType.LOCAL) {
-        // 本地账号直接返回验证成功
-        accountStatus = 'active';
+      } else if (
+        account.accountType === AccountType.LOCAL ||
+        account.accountType === AccountType.GUEST
+      ) {
+        // 本地账号和游客账号直接返回验证成功
+        accountStatus = AccountStatus.ACTIVE;
         isLoginAllowed = true;
         statusMessage = '账号状态正常';
       } else {
-        // 检查账号状态
-        switch (account.status) {
-          case AccountStatus.ACTIVE:
-            accountStatus = 'active';
-            isLoginAllowed = true;
-            statusMessage = '账号状态正常';
-            break;
-          case AccountStatus.PENDING_VERIFICATION:
-            accountStatus = 'inactive';
-            isLoginAllowed = false;
-            statusMessage = '账号待验证';
-            break;
-          case AccountStatus.DISABLED:
-            accountStatus = 'inactive';
-            isLoginAllowed = false;
-            statusMessage = '账号已禁用';
-            break;
-          case AccountStatus.SUSPENDED:
-            accountStatus = 'suspended';
-            isLoginAllowed = false;
-            statusMessage = '账号已被暂停';
-            break;
-          default:
-            accountStatus = 'inactive';
-            isLoginAllowed = false;
-            statusMessage = '账号状态异常';
-        }
-
+        accountStatus = account.status;
         console.log('✓ [Account] 账号状态检查完成:', {
           accountUuid,
-          username,
           status: accountStatus,
           loginAllowed: isLoginAllowed,
         });
       }
-
-      // 发布状态验证响应事件
-      const responseEvent: AccountStatusVerificationResponseEvent = {
-        eventType: 'AccountStatusVerificationResponse',
-        aggregateId: accountUuid,
-        occurredOn: new Date(),
-        payload: {
-          accountUuid,
-          username,
-          requestId,
-          accountStatus,
-          isLoginAllowed,
-          statusMessage,
-          verifiedAt: new Date(),
-        },
+      return {
+        isValid: isLoginAllowed,
+        status: accountStatus,
       };
-
-      await eventBus.publish(responseEvent);
-      console.log('📤 [Account] 已发送账号状态验证响应:', requestId);
     } catch (error) {
-      console.error('❌ [Account] 处理账号状态验证请求失败:', error);
-
-      // 发送错误响应
-      const errorResponseEvent: AccountStatusVerificationResponseEvent = {
-        eventType: 'AccountStatusVerificationResponse',
-        aggregateId: accountUuid,
-        occurredOn: new Date(),
-        payload: {
-          accountUuid,
-          username,
-          requestId,
-          accountStatus: 'not_found',
-          isLoginAllowed: false,
-          statusMessage: '系统异常，无法验证账号状态',
-          verifiedAt: new Date(),
-        },
+      return {
+        isValid: false,
+        status: null,
       };
-
-      await eventBus.publish(errorResponseEvent);
     }
   }
 

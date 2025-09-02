@@ -1,4 +1,4 @@
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { PasswordCore } from '@dailyuse/domain-core';
 import { type IPasswordServer } from '../types';
 
