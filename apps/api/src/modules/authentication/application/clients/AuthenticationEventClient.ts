@@ -1,9 +1,9 @@
-import { requestResponseEventBus } from '../../../../../../../common/shared/events';
+import { eventBus } from '@dailyuse/utils';
 import type { IAccountCore } from '@dailyuse/contracts';
 
 /**
  * 认证模块的事件请求客户端
- * 使用 Node.js EventEmitter 的 invoke 模式
+ * 使用统一的跨平台事件总线系统
  */
 export class AuthenticationEventClient {
   /**
@@ -15,8 +15,8 @@ export class AuthenticationEventClient {
     try {
       console.log(`📤 [AuthenticationEventClient] 请求获取账户信息 - 用户名: ${username}`);
 
-      const account = await requestResponseEventBus.invoke<IAccountCore | null>(
-        'AccountInfoGetterByUsername',
+      const account = await eventBus.invoke<IAccountCore | null>(
+        'account.info.getByUsername',
         { username },
         { timeout: 5000 },
       );
@@ -38,8 +38,8 @@ export class AuthenticationEventClient {
     try {
       console.log(`📤 [AuthenticationEventClient] 请求获取账户信息 - UUID: ${accountUuid}`);
 
-      const account = await requestResponseEventBus.invoke<IAccountCore | null>(
-        'AccountInfoGetterByUuid',
+      const account = await eventBus.invoke<IAccountCore | null>(
+        'account.info.getByUuid',
         { accountUuid },
         { timeout: 5000 },
       );
@@ -61,8 +61,8 @@ export class AuthenticationEventClient {
     try {
       console.log(`📤 [AuthenticationEventClient] 请求验证账户状态 - UUID: ${accountUuid}`);
 
-      const result = await requestResponseEventBus.invoke<{ isValid: boolean; status: string }>(
-        'AccountStatusVerification',
+      const result = await eventBus.invoke<{ isValid: boolean; status: string }>(
+        'account.status.verify',
         { accountUuid },
         { timeout: 5000 },
       );

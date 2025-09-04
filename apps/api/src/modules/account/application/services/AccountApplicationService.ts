@@ -21,7 +21,6 @@ import type {
 } from '../../../../tempTypes';
 // utils
 import { eventBus } from '@dailyuse/utils';
-import { requestResponseEventBus } from '../../../../../../../common/shared/events';
 
 export interface UpdateAccountDto {
   email?: string;
@@ -100,11 +99,11 @@ export class AccountApplicationService {
     try {
       // 向认证模块发送请求，为该账号生成认证凭证
       console.log(`🔄 [Account] 正在为账户 ${savedAccount.uuid} 请求生成认证凭证...`);
-      const credentialCreationResult = await requestResponseEventBus.invoke<{
+      const credentialCreationResult = await eventBus.invoke<{
         success: boolean;
         message: string;
       }>(
-        'CreateAuthCredentialRequest',
+        'auth.credential.create',
         {
           accountUuid: savedAccount.uuid,
           username: savedAccount.username,

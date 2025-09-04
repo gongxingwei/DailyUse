@@ -22,3 +22,6 @@ export { default as accountRoutes } from './interface/http/routes';
 
 // Initialization
 export { registerAccountInitializationTasks } from './initialization/accountInitialization';
+
+// event system
+export { registerAccountEventHandlers } from './application/events/accountHandlers';

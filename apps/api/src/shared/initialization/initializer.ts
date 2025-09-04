@@ -4,6 +4,7 @@ import { InitializationManager, InitializationPhase, type InitializationTask } f
 
 import { registerAccountInitializationTasks } from '../../modules/account';
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
+import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem'
 // import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 // import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
 // import { registerSessionLoggingInitializationTasks } from '../../modules/SessionLogging/initialization/sessionLoggingInitialization';
@@ -25,11 +26,22 @@ import { registerAuthenticationInitializationTasks } from '../../modules/authent
 //   }
 // };
 
+const eventSystemInitTask: InitializationTask = {
+  name: 'eventSystem',
+  phase: InitializationPhase.APP_STARTUP,
+  priority: 10,
+  initialize: async () => {
+    await initializeUnifiedEventHandlers();
+    console.log('✓ Event system initialized');
+  }
+};
+
 /**
  * 注册所有模块的初始化任务
  */
 export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
+  manager.registerTask(eventSystemInitTask);
   
   // 注册各模块的任务
   registerAccountInitializationTasks();
