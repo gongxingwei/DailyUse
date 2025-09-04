@@ -5,7 +5,7 @@ export type {
   AccountResponseDto,
 } from './application/services/AccountApplicationService';
 
-export { AccountController } from './application/controllers/AccountController';
+export { AccountController } from './interface/http/controllers/AccountController';
 export {
   PrismaAccountRepository,
   PrismaUserRepository,

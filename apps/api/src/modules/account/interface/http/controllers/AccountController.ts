@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { AccountApplicationService } from '../services/AccountApplicationService';
+import { AccountApplicationService } from '../../../application/services/AccountApplicationService';
 import { Account } from '@dailyuse/domain-server';
 
 // 定义响应类型

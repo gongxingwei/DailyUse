@@ -4,8 +4,7 @@ import {
   type InitializationTask,
 } from '@dailyuse/utils';
 import { registerAccountEventHandlers } from '../../modules/account';
-import { registerAuthenticationEventHandler } from '../../modules/authentication/application/events/EventHandler';
-import { initializeAuthenticationEventHandlers } from '../../modules/authentication/application/handlers/AuthenticationRequestHandlers';
+import { initializeAuthenticationEventHandlers } from '../../modules/authentication/application/events/EventHandler';
 import { eventBus } from '@dailyuse/utils';
 
 /**
@@ -18,13 +17,10 @@ export async function initializeUnifiedEventHandlers(): Promise<void> {
   try {
     // ===================== 账户模块 =====================
     console.log('📦 [EventSystem] 注册账户模块事件处理器...');
-    await registerAccountEventHandlers();
+    registerAccountEventHandlers();
 
     // ===================== 认证模块 =====================
     console.log('🔐 [EventSystem] 注册认证模块事件处理器...');
-    await registerAuthenticationEventHandler();
-
-    // 初始化认证模块的请求处理器
     initializeAuthenticationEventHandlers();
 
     // ===================== 其他模块 =====================
