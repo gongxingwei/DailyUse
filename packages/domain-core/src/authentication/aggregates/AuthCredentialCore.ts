@@ -6,12 +6,13 @@ import {
   type IMFADeviceCore,
   type ITokenCore,
   TokenType,
+  type ClientInfo,
 } from '../types';
 import { PasswordCore } from '../valueObjects/PasswordCore';
 import { TokenCore } from '../valueObjects/TokenCore';
 import { SessionCore } from '../entities/SessionCore';
 import { MFADeviceCore } from '../entities/MFADeviceCore';
-import type { ClientInfo } from '../../shared/types';
+
 /**
  * 核心认证凭据 - 仅包含数据和基础计算
  * 前后端共享的基础模型

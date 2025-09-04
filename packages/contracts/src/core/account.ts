@@ -1,3 +1,4 @@
+import { ClientInfo, UserAgreement } from './shared';
 /**
  * 账户领域的核心接口定义
  * 包含账户、用户、权限、角色等核心概念的抽象定义
@@ -205,10 +206,10 @@ export interface AccountDTO {
   lastLoginAt?: number;
   email?: string;
   emailVerificationToken?: string;
-  isEmailVerified: boolean;
+  isEmailVerified?: boolean;
   phone?: string;
   phoneVerificationCode?: string;
-  isPhoneVerified: boolean;
+  isPhoneVerified?: boolean;
   roleIds?: string[];
   user: UserDTO;
 }
@@ -220,6 +221,7 @@ export interface UserDTO {
   uuid: string;
   firstName?: string;
   lastName?: string;
+  displayName?: string;
   sex: number;
   avatar?: string;
   bio?: string;
@@ -242,7 +244,34 @@ export interface PermissionDTO {
 // =================== 请求和响应类型 ===================
 
 /**
- * 账号注册请求
+ * 注册表单 - 用户名和密码
+ */
+export interface RegistrationByUsernameAndPasswordForm {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  agree: boolean;
+}
+
+export interface RegistrationByUsernameAndPasswordRequestDTO {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  accountType: AccountType;
+  agreement: UserAgreement; // 详细的同意信息
+  clientInfo?: ClientInfo;
+}
+
+/**
+ * 注册响应DTO
+ */
+export type RegistrationResponseDTO = {
+  account: AccountDTO;
+  requiresVerification?: boolean;
+};
+
+/**
+ * 账号注册请求(暂时没用)
  */
 export interface AccountRegistrationRequest {
   username: string;
@@ -277,4 +306,123 @@ export interface AccountDeactivationRequest {
   reason: string;
   confirmDeletion: boolean;
   feedback?: string;
+}
+
+// =================== 数据库 DTO (Persistence DTOs) ===================
+
+/**
+ * 账户数据库 DTO - 直接对应数据库表结构
+ */
+export interface AccountPersistenceDTO {
+  uuid: string;
+  username: string;
+  email?: string;
+  phone?: string;
+  accountType: string;
+  status: string;
+  roleIds?: string; // JSON string
+  lastLoginAt?: Date;
+  emailVerificationToken?: string;
+  phoneVerificationCode?: string;
+  emailVerified: boolean;
+  phoneVerified: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  // 关联的用户资料
+  userProfile?: UserProfilePersistenceDTO;
+}
+
+/**
+ * 用户资料数据库 DTO - 直接对应 UserProfile 表结构
+ */
+export interface UserProfilePersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  firstName: string;
+  lastName: string;
+  displayName?: string;
+  sex: number;
+  avatarUrl?: string;
+  bio?: string;
+  socialAccounts?: string; // JSON string
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * 认证凭证数据库 DTO - 直接对应 AuthCredential 表结构
+ */
+export interface AuthCredentialPersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  passwordHash: string;
+  passwordSalt: string;
+  passwordAlgorithm: string;
+  passwordCreatedAt: Date;
+  passwordExpiresAt?: Date;
+  isLocked: boolean;
+  lockReason?: string;
+  failedAttempts: number;
+  lastFailedAt?: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  // 关联的会话、令牌等
+  sessions?: UserSessionPersistenceDTO[];
+  tokens?: AuthTokenPersistenceDTO[];
+  mfaDevices?: MFADevicePersistenceDTO[];
+}
+
+/**
+ * 用户会话数据库 DTO
+ */
+export interface UserSessionPersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  sessionId: string;
+  accessToken?: string;
+  refreshToken?: string;
+  deviceInfo?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  isActive: boolean;
+  createdAt: Date;
+  lastAccessedAt?: Date;
+  expiresAt?: Date;
+}
+
+/**
+ * 认证令牌数据库 DTO
+ */
+export interface AuthTokenPersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  tokenValue: string;
+  tokenType: string;
+  issuedAt: Date;
+  expiresAt?: Date;
+  isRevoked: boolean;
+  revokeReason?: string;
+  metadata?: string; // JSON string
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+/**
+ * MFA 设备数据库 DTO
+ */
+export interface MFADevicePersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  type: string;
+  name: string;
+  secretKey?: string;
+  phoneNumber?: string;
+  emailAddress?: string;
+  backupCodes?: string; // JSON string
+  isVerified: boolean;
+  isEnabled: boolean;
+  verificationAttempts: number;
+  maxAttempts: number;
+  createdAt: Date;
+  lastUsedAt?: Date;
 }

@@ -1,9 +1,16 @@
+import { AccountType } from './account';
 /**
  * 认证领域的核心接口定义
  * 包含认证凭据、密码、会话、令牌等核心概念的抽象定义
  */
 
 // =================== 认证核心枚举 ===================
+
+export enum AuthMethod {
+  PASSWORD = 'password',
+  OTP = 'otp',
+  BIOMETRIC = 'biometric',
+}
 
 /**
  * 令牌类型枚举
@@ -223,6 +230,47 @@ export interface MFADeviceDTO {
 }
 
 // =================== 认证请求类型 ===================
+
+/**
+ * 通过密码进行身份验证的表单
+ */
+export interface AuthByPasswordForm {
+  username: string;
+  password: string;
+  remember: boolean;
+}
+
+/**
+ * 密码认证请求DTO - 表单数据 + 设备信息
+ */
+export type AuthByPasswordRequestDTO = AuthByPasswordForm & {
+  accountType: AccountType;
+};
+
+/**
+ * 通过记住我令牌进行身份验证的表单
+ */
+export interface AuthByRememberMeTokenRequestDTO {
+  username: string;
+  accountUuid: string;
+  rememberMeToken: string;
+  accountType: AccountType;
+}
+
+/**
+ * 认证响应DTO
+ */
+export type AuthResponseDTO = {
+  accountUuid: string;
+  username: string;
+  sessionUuid: string;
+  rememberToken?: string;
+  accessToken?: string;
+  refreshToken?: string;
+  expiresIn?: number;
+  tokenType?: string;
+};
+
 
 /**
  * 登录请求

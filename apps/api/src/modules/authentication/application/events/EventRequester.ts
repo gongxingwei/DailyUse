@@ -5,7 +5,7 @@ import type { IAccountCore } from '@dailyuse/contracts';
  * 认证模块的事件请求客户端
  * 使用统一的跨平台事件总线系统
  */
-export class AuthenticationEventClient {
+export class EventRequester {
   /**
    * 通过用户名获取账户信息
    * @param username 用户名
@@ -13,7 +13,7 @@ export class AuthenticationEventClient {
    */
   async getAccountByUsername(username: string): Promise<IAccountCore | null> {
     try {
-      console.log(`📤 [AuthenticationEventClient] 请求获取账户信息 - 用户名: ${username}`);
+      console.log(`📤 [AuthenticationEventRequester] 请求获取账户信息 - 用户名: ${username}`);
 
       const account = await eventBus.invoke<IAccountCore | null>(
         'account.info.getByUsername',
@@ -21,10 +21,10 @@ export class AuthenticationEventClient {
         { timeout: 5000 },
       );
 
-      console.log(`📨 [AuthenticationEventClient] 收到账户信息响应:`, account?.uuid);
+      console.log(`📨 [AuthenticationEventRequester] 收到账户信息响应:`, account?.uuid);
       return account;
     } catch (error) {
-      console.error(`❌ [AuthenticationEventClient] 获取账户信息失败:`, error);
+      console.error(`❌ [AuthenticationEventRequester] 获取账户信息失败:`, error);
       return null;
     }
   }
@@ -36,7 +36,7 @@ export class AuthenticationEventClient {
    */
   async getAccountByUuid(accountUuid: string): Promise<IAccountCore | null> {
     try {
-      console.log(`📤 [AuthenticationEventClient] 请求获取账户信息 - UUID: ${accountUuid}`);
+      console.log(`📤 [AuthenticationEventRequester] 请求获取账户信息 - UUID: ${accountUuid}`);
 
       const account = await eventBus.invoke<IAccountCore | null>(
         'account.info.getByUuid',
@@ -44,10 +44,10 @@ export class AuthenticationEventClient {
         { timeout: 5000 },
       );
 
-      console.log(`📨 [AuthenticationEventClient] 收到账户信息响应:`, account?.uuid);
+      console.log(`📨 [AuthenticationEventRequester] 收到账户信息响应:`, account?.uuid);
       return account;
     } catch (error) {
-      console.error(`❌ [AuthenticationEventClient] 获取账户信息失败:`, error);
+      console.error(`❌ [AuthenticationEventRequester] 获取账户信息失败:`, error);
       return null;
     }
   }
@@ -59,7 +59,7 @@ export class AuthenticationEventClient {
    */
   async verifyAccountStatus(accountUuid: string): Promise<{ isValid: boolean; status: string }> {
     try {
-      console.log(`📤 [AuthenticationEventClient] 请求验证账户状态 - UUID: ${accountUuid}`);
+      console.log(`📤 [AuthenticationEventRequester] 请求验证账户状态 - UUID: ${accountUuid}`);
 
       const result = await eventBus.invoke<{ isValid: boolean; status: string }>(
         'account.status.verify',
@@ -67,10 +67,10 @@ export class AuthenticationEventClient {
         { timeout: 5000 },
       );
 
-      console.log(`📨 [AuthenticationEventClient] 收到状态验证响应:`, result);
+      console.log(`📨 [AuthenticationEventRequester] 收到状态验证响应:`, result);
       return result;
     } catch (error) {
-      console.error(`❌ [AuthenticationEventClient] 验证账户状态失败:`, error);
+      console.error(`❌ [AuthenticationEventRequester] 验证账户状态失败:`, error);
       return { isValid: false, status: 'error' };
     }
   }
@@ -79,4 +79,4 @@ export class AuthenticationEventClient {
 /**
  * 全局认证事件客户端实例
  */
-export const authenticationEventClient = new AuthenticationEventClient();
+export const authenticationEventRequester = new EventRequester();

@@ -12,6 +12,7 @@ import { Session } from '../entities/Session';
 import { Token } from '../valueObjects/Token';
 import { MFADevice } from '../entities/MFADevice';
 import { addMinutes } from 'date-fns';
+import type { AuthCredentialPersistenceDTO } from '@dailyuse/contracts';
 
 /**
  * 服务端认证凭据 - 包含完整的业务逻辑
@@ -327,6 +328,60 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     createdAt: Date;
   } {
     return (this.password as Password).getHashInfo();
+  }
+
+  /**
+   * 从持久化 DTO 创建认证凭据领域对象
+   * 处理复杂的聚合重构逻辑，确保数据一致性
+   */
+  static fromPersistenceDTO(dto: AuthCredentialPersistenceDTO): AuthCredential {
+    // 1. 重构密码对象
+    const password = Password.fromHash(dto.passwordHash, dto.passwordSalt);
+
+    // 2. 重构会话映射
+    const sessionsMap = new Map<string, Session>();
+    if (dto.sessions) {
+      for (const sessionDto of dto.sessions) {
+        const session = Session.fromPersistenceDTO(sessionDto);
+        sessionsMap.set(session.uuid, session);
+      }
+    }
+
+    // 3. 重构令牌映射
+    const tokensMap = new Map<string, Token>();
+    if (dto.tokens) {
+      for (const tokenDto of dto.tokens) {
+        const token = Token.fromPersistenceDTO(tokenDto);
+        tokensMap.set(token.value, token);
+      }
+    }
+
+    // 4. 重构 MFA 设备映射
+    const mfaDevicesMap = new Map<string, MFADevice>();
+    if (dto.mfaDevices) {
+      for (const deviceDto of dto.mfaDevices) {
+        const device = MFADevice.fromPersistenceDTO(deviceDto);
+        mfaDevicesMap.set(device.uuid, device);
+      }
+    }
+
+    // 5. 构造聚合根，处理锁定状态
+    const lockedUntil =
+      dto.lockReason && dto.failedAttempts >= 5 ? addMinutes(new Date(), 30) : undefined;
+
+    return new AuthCredential({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      password,
+      sessions: sessionsMap,
+      tokens: tokensMap,
+      mfaDevices: mfaDevicesMap,
+      failedAttempts: dto.failedAttempts,
+      lockedUntil,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      lastAuthAt: dto.lastFailedAt || undefined, // 暂用 lastFailedAt 字段
+    });
   }
 
   // ===== 工厂方法 =====

@@ -4,68 +4,28 @@ import type {
   IAuthCredentialRepository,
   ITokenRepository,
   ISessionRepository,
-  ClientInfo,
 } from '@dailyuse/domain-server';
-// events
-import type {
-  AccountInfoGetterByUsernameRequestedEvent,
-  AccountInfoGetterByUuidRequestedEvent,
-  AccountStatusVerificationRequestedEvent,
-  LoginCredentialVerificationEvent,
-  LoginAttemptEvent,
-  UserLoggedInEvent,
-  AccountStatusVerificationResponseEvent,
-} from '@dailyuse/domain-server';
-
+import type { ClientInfo } from '@dailyuse/domain-core';
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
 // utils
 import { eventBus } from '@dailyuse/utils';
 // 新的 EventEmitter 事件客户端
-import { authenticationEventClient } from '../clients/AuthenticationEventClient';
-import type { IAccountCore } from '@dailyuse/contracts';
-
-export interface AuthenticationResponsePayload {
-  username?: string;
-  accountUuid?: string;
-  sessionUuid?: string;
-  token?: string;
-}
-
-export interface AuthenticationRequest {
-  clientInfo?: {
-    ip: string;
-    userAgent: string;
-    deviceId: string;
-    location: string;
-    country: string;
-    city: string;
-  };
-}
-
-export interface PasswordAuthenticationRequest extends AuthenticationRequest {
-  username: string;
-  password: string;
-  remember?: boolean;
-}
-export interface PasswordAuthenticationResponse extends AuthenticationResponsePayload {
-  type?: 'passwordAuthentication';
-}
-
-export interface RememberMeTokenAuthenticationRequest extends AuthenticationRequest {
-  username: string;
-  accountUuid: string;
-  rememberMeToken: string;
-}
-
-export interface RememberMeTokenAuthenticationResponse extends AuthResponseDTO {
-  type?: 'rememberMeTokenAuthentication';
-}
-
-import crypto from 'crypto';
-import type { AccountDTO } from '@dailyuse/domain-server';
-import { Token, TokenType } from '@dailyuse/domain-server';
-import type { TResponse, AuthResponseDTO } from '../../../../tempTypes';
+import { authenticationEventRequester } from '../events/EventRequester';
+import type {
+  IAccountCore,
+  AuthTokenPersistenceDTO,
+  AuthCredentialPersistenceDTO,
+} from '@dailyuse/contracts';
+import { TokenType } from '@dailyuse/domain-core';
+import { Token } from '@dailyuse/domain-server';
+// 请求和响应类型（api/form）
+import type {
+  AuthResponseDTO,
+  AuthByPasswordRequestDTO,
+  AuthByRememberMeTokenRequestDTO,
+} from '@dailyuse/contracts';
+import type { TResponse } from '../../../../tempTypes';
 /**
  * AuthenticationLoginService
  *
@@ -78,28 +38,6 @@ export class AuthenticationLoginService {
   private authCredentialRepository: IAuthCredentialRepository;
   private tokenRepository: ITokenRepository;
   private sessionRepository: ISessionRepository;
-
-  // 异步事件请求的 pending 控制器
-  private pendingAccountRequests = new Map<
-    string,
-    { resolve: (value: any) => void; reject: (reason?: any) => void; timeout: NodeJS.Timeout }
-  >();
-  private pendingAccountUuidRequests = new Map<
-    string,
-    {
-      resolve: (response: { accountUuid?: string }) => void;
-      reject: (error: Error) => void;
-      timeout: NodeJS.Timeout;
-    }
-  >();
-  private pendingStatusVerifications = new Map<
-    string,
-    {
-      resolve: (response: AccountStatusVerificationResponseEvent) => void;
-      reject: (error: Error) => void;
-      timeout: NodeJS.Timeout;
-    }
-  >();
 
   /**
    * 构造函数
@@ -172,22 +110,15 @@ export class AuthenticationLoginService {
    * // resp: { success: true, message: "登录成功", data: { username, accountUuid, token, sessionUuid } }
    */
   async PasswordAuthentication(
-    request: PasswordAuthenticationRequest,
+    request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo },
   ): Promise<TResponse<AuthResponseDTO>> {
     const { username, password, remember, clientInfo } = request;
     try {
       console.log(`🔐 [AuthenticationLoginService] 开始登录流程 - 用户名: ${username}`);
 
       // 1. 使用新的 EventEmitter 事件总线获取完整的账户信息
-      const account = await authenticationEventClient.getAccountByUsername(username);
+      const account = await authenticationEventRequester.getAccountByUsername(username);
       if (!account) {
-        await this.publishLoginAttemptEvent({
-          username,
-          result: 'account_not_found',
-          failureReason: '账号不存在',
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: '账号不存在',
@@ -199,17 +130,9 @@ export class AuthenticationLoginService {
       const accountUuid = account.uuid;
 
       // 2. 使用新的 EventEmitter 事件总线验证账户状态
-      const statusCheck = await authenticationEventClient.verifyAccountStatus(accountUuid);
+      const statusCheck = await authenticationEventRequester.verifyAccountStatus(accountUuid);
       console.log('statusCheck:', statusCheck);
       if (!statusCheck.isValid) {
-        await this.publishLoginAttemptEvent({
-          username,
-          accountUuid,
-          result: statusCheck.status as any,
-          failureReason: `账户状态异常: ${statusCheck.status}`,
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: `账户状态异常: ${statusCheck.status}，无法登录`,
@@ -221,14 +144,6 @@ export class AuthenticationLoginService {
       // 3. 查询认证凭证
       const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
       if (!authCredential) {
-        await this.publishLoginAttemptEvent({
-          username,
-          accountUuid,
-          result: 'account_not_found',
-          failureReason: '认证凭证不存在',
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: '认证凭证不存在',
@@ -236,26 +151,13 @@ export class AuthenticationLoginService {
         };
       }
 
-      // 4. 验证登录凭证（密码）
-      const { success: credentialValid, accessToken } = authCredential.verifyPassword(password);
+      // 4. 将 DTO 转换为领域对象以进行业务操作
+      const authCredentialEntity = AuthCredential.fromPersistenceDTO(authCredential);
+
+      // 5. 验证登录凭证（密码）
+      const { success: credentialValid, accessToken } =
+        authCredentialEntity.verifyPassword(password);
       if (!credentialValid || !accessToken) {
-        await this.publishCredentialVerificationEvent({
-          accountUuid,
-          username,
-          credentialId: authCredential.uuid,
-          verificationResult: 'failed',
-          failureReason: '密码错误',
-          verifiedAt: new Date(),
-          clientInfo,
-        });
-        await this.publishLoginAttemptEvent({
-          username,
-          accountUuid,
-          result: 'invalid_credentials',
-          failureReason: '密码错误',
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: '用户名或密码错误',
@@ -265,7 +167,7 @@ export class AuthenticationLoginService {
       console.log(`🔑 [AuthenticationLoginService] 密码验证成功`);
 
       // 5. 创建刷新令牌
-      const refreshToken = authCredential.createToken(TokenType.REFRESH_TOKEN) as Token;
+      const refreshToken = authCredentialEntity.createToken(TokenType.REFRESH_TOKEN) as Token;
       await this.tokenRepository.save(refreshToken);
 
       // 6. 创建记住我令牌（如果勾选了记住我）
@@ -274,49 +176,24 @@ export class AuthenticationLoginService {
         const deviceInfo = clientInfo
           ? `${clientInfo.deviceId}-${clientInfo.userAgent}`
           : 'unknown-device';
-        rememberToken = authCredential.createRememberToken(deviceInfo) as Token;
+        rememberToken = authCredentialEntity.createRememberToken(deviceInfo) as Token;
         await this.tokenRepository.save(rememberToken);
       }
 
       // 7. 保存更新后的认证凭证
-      await this.authCredentialRepository.save(authCredential);
+      await this.authCredentialRepository.save(authCredentialEntity);
 
       // 8. 创建会话
       const newClientInfo: ClientInfo = {
         deviceId: clientInfo?.deviceId || 'unknown',
         deviceName: 'unknown',
         userAgent: clientInfo?.userAgent || 'unknown',
-        ipAddress: clientInfo?.ip || 'unknown',
+        ipAddress: clientInfo?.ipAddress || 'unknown',
       };
-      const newAuthSession = authCredential.createSession(newClientInfo);
+      const newAuthSession = authCredentialEntity.createSession(newClientInfo);
       await this.sessionRepository.save(newAuthSession);
 
       console.log(`📱 [AuthenticationLoginService] 创建会话成功: ${newAuthSession.uuid}`);
-
-      // 9. 发布相关事件
-      await this.publishCredentialVerificationEvent({
-        accountUuid,
-        username,
-        credentialId: authCredential.uuid,
-        verificationResult: 'success',
-        verifiedAt: new Date(),
-        clientInfo,
-      });
-      await this.publishUserLoggedInEvent({
-        accountUuid,
-        username,
-        credentialId: authCredential.uuid,
-        sessionUuid: newAuthSession.uuid,
-        loginAt: new Date(),
-        clientInfo,
-      });
-      await this.publishLoginAttemptEvent({
-        username,
-        accountUuid,
-        result: 'success',
-        attemptedAt: new Date(),
-        clientInfo,
-      });
 
       // 10. 返回登录结果，包含所有必要的令牌
       const responseData: AuthResponseDTO = {
@@ -343,13 +220,6 @@ export class AuthenticationLoginService {
       };
     } catch (error) {
       console.error(`❌ [AuthenticationLoginService] 登录失败:`, error);
-      await this.publishLoginAttemptEvent({
-        username,
-        result: 'failed',
-        failureReason: error instanceof Error ? error.message : '系统异常',
-        attemptedAt: new Date(),
-        clientInfo,
-      });
       return {
         success: false,
         message: '登录失败，请稍后重试',
@@ -370,19 +240,23 @@ export class AuthenticationLoginService {
     try {
       console.log(`📋 [AuthenticationLoginService] 获取快速登录账号列表`);
 
-      const tokens: Array<Token> = await this.tokenRepository.findByType(TokenType.REMEMBER_ME);
+      const tokenDtos: Array<AuthTokenPersistenceDTO> = await this.tokenRepository.findByType(
+        TokenType.REMEMBER_ME,
+      );
       const accounts = [];
 
-      for (const t of tokens) {
-        if (t.isExpired()) continue;
+      for (const tokenDto of tokenDtos) {
+        // 转换为领域对象以检查有效性
+        const token = Token.fromPersistenceDTO(tokenDto);
+        if (token.isExpired()) continue;
 
         // 使用新的 EventEmitter 事件总线获取账户信息
-        const account = await authenticationEventClient.getAccountByUuid(t.accountUuid);
+        const account = await authenticationEventRequester.getAccountByUuid(token.accountUuid);
         if (account) {
           accounts.push({
-            accountUuid: t.accountUuid,
+            accountUuid: token.accountUuid,
             username: account.username,
-            token: t.value,
+            token: token.value,
           });
         }
       }
@@ -418,24 +292,16 @@ export class AuthenticationLoginService {
    * // resp: { success: true, message: "登录成功", data: { accountUuid, username, sessionUuid, token } }
    */
   async rememberMeTokenAuthentication(
-    request: RememberMeTokenAuthenticationRequest,
-  ): Promise<TResponse<RememberMeTokenAuthenticationResponse>> {
+    request: AuthByRememberMeTokenRequestDTO & { clientInfo: ClientInfo },
+  ): Promise<TResponse<AuthResponseDTO>> {
     const { username, accountUuid, rememberMeToken, clientInfo } = request;
 
     try {
       console.log(`🔐 [AuthenticationLoginService] 开始记住我登录流程 - 用户名: ${username}`);
 
       // 1. 使用新的 EventEmitter 事件总线验证账户状态
-      const statusCheck = await authenticationEventClient.verifyAccountStatus(accountUuid);
+      const statusCheck = await authenticationEventRequester.verifyAccountStatus(accountUuid);
       if (!statusCheck.isValid) {
-        await this.publishLoginAttemptEvent({
-          username,
-          accountUuid,
-          result: statusCheck.status as any,
-          failureReason: `账户状态异常: ${statusCheck.status}`,
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: `账户状态异常: ${statusCheck.status}，无法登录`,
@@ -445,24 +311,20 @@ export class AuthenticationLoginService {
       console.log(`✅ [AuthenticationLoginService] 账户状态正常: ${statusCheck.status}`);
 
       // 2. 验证 rememberMeToken
-      const authCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
-      if (!authCredential) {
+      const authCredentialDto = await this.authCredentialRepository.findByAccountUuid(accountUuid);
+      if (!authCredentialDto) {
         return {
           success: false,
           message: '账号认证凭证不存在',
         };
       }
+
+      // 转换为领域对象以进行业务操作
+      const authCredential = AuthCredential.fromPersistenceDTO(authCredentialDto);
+
       const { success: isRememberMeTokenValid, accessToken } =
         authCredential.verifyRememberToken(rememberMeToken);
       if (!isRememberMeTokenValid || !accessToken) {
-        await this.publishLoginAttemptEvent({
-          username,
-          accountUuid,
-          result: 'invalid_credentials',
-          failureReason: '无效的记住我令牌',
-          attemptedAt: new Date(),
-          clientInfo,
-        });
         return {
           success: false,
           message: '无效的记住我令牌',
@@ -486,7 +348,7 @@ export class AuthenticationLoginService {
         deviceId: clientInfo?.deviceId || 'unknown',
         deviceName: 'unknown',
         userAgent: clientInfo?.userAgent || 'unknown',
-        ipAddress: clientInfo?.ip || 'unknown',
+        ipAddress: clientInfo?.ipAddress || 'unknown',
       };
 
       // 6. 创建新的会话
@@ -494,31 +356,6 @@ export class AuthenticationLoginService {
       await this.sessionRepository.save(newSession);
 
       console.log(`📱 [AuthenticationLoginService] 创建会话成功: ${newSession.uuid}`);
-
-      // 7. 发布相关事件
-      await this.publishCredentialVerificationEvent({
-        accountUuid,
-        username,
-        credentialId: authCredential.uuid,
-        verificationResult: 'success',
-        verifiedAt: new Date(),
-        clientInfo,
-      });
-      await this.publishUserLoggedInEvent({
-        accountUuid,
-        username,
-        credentialId: authCredential.uuid,
-        sessionUuid: newSession.uuid,
-        loginAt: new Date(),
-        clientInfo,
-      });
-      await this.publishLoginAttemptEvent({
-        username,
-        accountUuid,
-        result: 'success',
-        attemptedAt: new Date(),
-        clientInfo,
-      });
 
       // 8. 返回成功响应，包含完整的令牌信息
       const responseData: AuthResponseDTO = {
@@ -541,14 +378,6 @@ export class AuthenticationLoginService {
       };
     } catch (error) {
       console.error(`❌ [AuthenticationLoginService] 记住我登录失败:`, error);
-      await this.publishLoginAttemptEvent({
-        username,
-        accountUuid,
-        result: 'failed',
-        failureReason: error instanceof Error ? error.message : '系统异常',
-        attemptedAt: new Date(),
-        clientInfo,
-      });
       return {
         success: false,
         message: '登录失败，请稍后重试',
@@ -556,183 +385,5 @@ export class AuthenticationLoginService {
     }
   }
 
-  /**
-   * 销毁服务，清理资源
-   * 用于关闭服务时释放所有pending请求
-   */
-  destroy(): void {
-    for (const [, pending] of this.pendingStatusVerifications.entries()) {
-      clearTimeout(pending.timeout);
-      pending.reject(new Error('服务正在关闭'));
-    }
-    this.pendingStatusVerifications.clear();
-  }
-
   // ===================== 私有方法（事件/异步/内部工具） =====================
-
-  // 注意：以下方法已被新的 EventEmitter 事件总线替代，保留用于向后兼容
-
-  /**
-   * 通过 accountUuid 异步获取账号信息（事件驱动，带超时）
-   * @deprecated 已被 authenticationEventClient.getAccountByUuid() 替代
-   * @param accountUuid 账号UUID
-   * @returns Promise<{ accountDTO: AccountDTO }>
-   * @example
-   * const { accountDTO } = await service.getAccountByAccountUuid("uuid");
-   * // accountDTO: { username, ... }
-   */
-  private async getAccountByAccountUuid(accountUuid: string): Promise<{ accountDTO: AccountDTO }> {
-    const requestId = crypto.randomUUID();
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pendingAccountRequests.delete(requestId);
-        reject(new Error('获取账号信息超时'));
-      }, 10000);
-      this.pendingAccountRequests.set(requestId, { resolve, reject, timeout });
-      const event: AccountInfoGetterByUuidRequestedEvent = {
-        eventType: 'AccountInfoGetterByUuidRequested',
-        aggregateId: accountUuid,
-        occurredOn: new Date(),
-        payload: {
-          accountUuid: accountUuid,
-          requestId,
-        },
-      };
-      eventBus.publish(event);
-    });
-  }
-
-  /**
-   * 通过用户名异步获取账号UUID（事件驱动，带超时）
-   * @deprecated 已被 authenticationEventClient.getAccountByUsername() 替代
-   * @param username 用户名
-   * @returns Promise<{ accountUuid?: string }>
-   * @example
-   * const { accountUuid } = await service.getAccountUuidByUsername("user1");
-   */
-  private async getAccountUuidByUsername(username: string): Promise<{ accountUuid?: string }> {
-    // Fast path: try local repository lookup to resolve username -> accountUuid immediately.
-    try {
-      const local = await this.authCredentialRepository.findByUsername(username);
-      if (local && (local as any).accountUuid) {
-        return { accountUuid: (local as any).accountUuid };
-      }
-    } catch (err) {
-      // ignore repository errors and fall back to event-driven lookup
-    }
-
-    const requestId = crypto.randomUUID();
-    return new Promise((resolve, reject) => {
-      const timeout = setTimeout(() => {
-        this.pendingAccountUuidRequests.delete(requestId);
-        reject(new Error('获取账号ID超时'));
-      }, 10000);
-      this.pendingAccountUuidRequests.set(requestId, {
-        resolve,
-        reject,
-        timeout,
-      });
-      const event: AccountInfoGetterByUsernameRequestedEvent = {
-        eventType: 'AccountInfoGetterByUsernameRequested',
-        aggregateId: username,
-        occurredOn: new Date(),
-        payload: {
-          username,
-          requestId,
-        },
-      };
-      eventBus.publish(event);
-    });
-  }
-
-  /**
-   * 异步验证账号状态（事件驱动，带超时）
-   * @deprecated 已被 authenticationEventClient.verifyAccountStatus() 替代
-   * @param accountUuid 账号UUID
-   * @param username 用户名
-   * @returns Promise<AccountStatusVerificationResponseEvent>
-   * @example
-   * const resp = await service.verifyAccountStatus("uuid", "user1");
-   */
-  private async verifyAccountStatus(
-    accountUuid: string,
-    username: string,
-  ): Promise<AccountStatusVerificationResponseEvent> {
-    return new Promise((resolve, reject) => {
-      const requestId = crypto.randomUUID();
-      const timeout = setTimeout(() => {
-        this.pendingStatusVerifications.delete(requestId);
-        reject(new Error('账号状态验证超时'));
-      }, 10000);
-      this.pendingStatusVerifications.set(requestId, {
-        resolve,
-        reject,
-        timeout,
-      });
-      const verificationRequestEvent: AccountStatusVerificationRequestedEvent = {
-        eventType: 'AccountStatusVerificationRequested',
-        aggregateId: accountUuid,
-        occurredOn: new Date(),
-        payload: {
-          accountUuid,
-          username,
-          requestId,
-        },
-      };
-      eventBus.publish(verificationRequestEvent);
-    });
-  }
-
-  /**
-   * 发布登录凭证验证事件
-   * @param payload 事件负载
-   */
-  private async publishCredentialVerificationEvent(
-    payload: LoginCredentialVerificationEvent['payload'],
-  ): Promise<void> {
-    const event: LoginCredentialVerificationEvent = {
-      eventType: 'LoginCredentialVerification',
-      aggregateId: payload.accountUuid,
-      occurredOn: new Date(),
-      payload,
-    };
-    await eventBus.publish(event);
-  }
-
-  /**
-   * 发布登录尝试事件
-   * @param payload 事件负载
-   */
-  private async publishLoginAttemptEvent(payload: LoginAttemptEvent['payload']): Promise<void> {
-    const event: LoginAttemptEvent = {
-      eventType: 'LoginAttempt',
-      aggregateId: payload.accountUuid || 'unknown',
-      occurredOn: new Date(),
-      payload,
-    };
-    await eventBus.publish(event);
-  }
-
-  /**
-   * 发布用户登录成功事件
-   * @param payload 事件负载
-   */
-  private async publishUserLoggedInEvent(payload: UserLoggedInEvent['payload']): Promise<void> {
-    const event: UserLoggedInEvent = {
-      eventType: 'UserLoggedIn',
-      aggregateId: payload.accountUuid,
-      occurredOn: new Date(),
-      payload,
-    };
-    await eventBus.publish(event);
-  }
 }
-
-/**
- * TResponse<T> 结构示例
- * {
- *   success: boolean,
- *   message: string,
- *   data?: T
- * }
- */

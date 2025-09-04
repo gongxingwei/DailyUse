@@ -1,6 +1,7 @@
 import { UserCore } from '@dailyuse/domain-core';
 import { type IUser } from '../types';
 import { Sex } from '../valueObjects/Sex';
+import type { UserProfilePersistenceDTO } from '@dailyuse/contracts';
 
 export class User extends UserCore implements IUser {
   isClient(): boolean {
@@ -37,6 +38,33 @@ export class User extends UserCore implements IUser {
   }
 
   /**
+   * 从持久化 DTO 创建用户领域对象
+   * 仅处理数据转换逻辑，确保领域对象构造的完整性
+   */
+  static fromPersistenceDTO(dto: UserProfilePersistenceDTO): User {
+    // Parse social accounts from JSON string
+    let socialAccounts = {};
+    if (dto.socialAccounts) {
+      try {
+        socialAccounts = JSON.parse(dto.socialAccounts);
+      } catch (error) {
+        console.warn('Failed to parse social accounts:', error);
+        socialAccounts = {};
+      }
+    }
+
+    return new User({
+      uuid: dto.uuid,
+      firstName: dto.firstName || '',
+      lastName: dto.lastName || '',
+      avatar: dto.avatarUrl || undefined,
+      bio: dto.bio || undefined,
+      sex: new Sex(dto.sex || 2), // 默认 'other'
+      socialAccounts,
+    });
+  }
+
+  /**
    * 更新用户资料信息
    */
   updateProfile(firstName?: string, lastName?: string, bio?: string): void {
@@ -59,8 +87,6 @@ export class User extends UserCore implements IUser {
     (this as any)._avatar = avatar;
     (this as any)._updatedAt = new Date();
   }
-
-
 
   /**
    * 从DTO数据创建实例

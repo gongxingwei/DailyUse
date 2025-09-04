@@ -3,6 +3,7 @@ import MainLayout from '@/modules/app/MainLayout.vue';
 const routes = [
   {
     path: '/auth',
+    name: 'auth',
     component: () => import('@/views/AuthView.vue'),
   },
   {
@@ -11,6 +12,7 @@ const routes = [
     children: [
       {
         path: '/',
+        name: 'home',
         component: () => import('@/modules/account/presentation/views/TestView.vue'),
       },
     ],

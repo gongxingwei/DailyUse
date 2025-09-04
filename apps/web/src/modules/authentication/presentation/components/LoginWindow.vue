@@ -71,7 +71,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 // types
-import type { AuthByPasswordForm } from '@/tempTypes';
+import type { AuthByPasswordForm } from '@dailyuse/contracts';
 // components
 import { useAuthenticationService } from '../composables/useAuthenticationService';
 // utils

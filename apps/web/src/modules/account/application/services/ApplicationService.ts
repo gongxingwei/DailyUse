@@ -1,16 +1,10 @@
 // 现在可以使用@dailyuse/domain-client包导入
 import type { IUserRepository } from '@dailyuse/domain-client';
 // import type { UserDomainService } from '../../domain/services/UserDomainService';
-import type { User } from '../adapters/UserAdapter';
-import { UserAdapter } from '../adapters/UserAdapter';
-import type {
-  CreateAccountDto,
-  UpdateAccountDto,
-  AccountResponseDto
-} from '../dtos/UserDtos';
+
 import type { AccountDTO, UserDTO } from '@dailyuse/domain-client';
 import { ApiClient } from '../../infrastructure/api/ApiClient';
-import type { RegistrationRequestDTO, RegistrationResponseDTO } from '@/tempTypes';
+import type { RegistrationByUsernameAndPasswordRequestDTO, RegistrationResponseDTO } from '@dailyuse/contracts';
 // 定义响应类型
 type TResponse<T = any> = {
   success: boolean;
@@ -57,7 +51,7 @@ export class ApplicationService {
    * 创建新用户账号
    */
   async register(
-    accountData: RegistrationRequestDTO,
+    accountData: RegistrationByUsernameAndPasswordRequestDTO,
   ): Promise<RegistrationResponseDTO> {
     try {
       const response = await this.accountApiClient.register(accountData);

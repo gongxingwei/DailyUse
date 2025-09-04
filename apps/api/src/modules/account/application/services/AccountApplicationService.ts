@@ -1,9 +1,28 @@
-import { Account, User, type AccountDTO } from '@dailyuse/domain-server';
+import { Account, User } from '@dailyuse/domain-server';
+import type { AccountDTO } from '@dailyuse/contracts';
+
+// Temporary types - should be moved to contracts
+export interface UpdateAccountDto {
+  email?: string;
+  phoneNumber?: string;
+  userProfile?: {
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    avatar?: string;
+  };
+}
+
+export interface AccountResponseDto {
+  accounts: AccountDTO[];
+  total: number;
+}
 import type { IAccountRepository } from '@dailyuse/domain-server';
 import { PrismaAccountRepository } from '../../infrastructure/repositories/prisma';
 import { EmailService } from '../../domain/EmailService';
 import { AccountValidationService } from '../../infrastructure/AccountValidationService';
 import { AccountStatus, AccountType } from '@dailyuse/domain-core';
+import type { AccountPersistenceDTO } from '@dailyuse/contracts';
 // insfrastructure
 import { accountContainer } from '../../infrastructure/di/container';
 // events types
@@ -15,52 +34,18 @@ import type {
   AccountStatusVerificationRequested,
   AccountStatusVerificationResponse,
 } from '@dailyuse/contracts';
+// 请求和响应（form/api）类型
 import type {
   RegistrationByUsernameAndPasswordRequestDTO,
   RegistrationResponseDTO,
-} from '../../../../tempTypes';
+} from '@dailyuse/contracts';
 // utils
 import { eventBus } from '@dailyuse/utils';
-
-export interface UpdateAccountDto {
-  email?: string;
-  phoneNumber?: string;
-  address?: any;
-  userProfile?: {
-    firstName?: string;
-    lastName?: string;
-    avatar?: string;
-    bio?: string;
-  };
-}
-
-export interface AccountResponseDto {
-  id: string;
-  username: string;
-  email?: string;
-  phoneNumber?: string;
-  status: any;
-  accountType: any;
-  isEmailVerified: boolean;
-  isPhoneVerified: boolean;
-  lastLoginAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  user: {
-    id: string;
-    firstName?: string;
-    lastName?: string;
-    displayName: string;
-    avatar?: string;
-    bio?: string;
-    socialAccounts: { [key: string]: string };
-  };
-  roleIds: string[];
-}
 
 export class AccountApplicationService {
   private static instance: AccountApplicationService | null = null;
   private readonly accountRepository: IAccountRepository;
+
   private constructor(accountRepository?: PrismaAccountRepository) {
     this.accountRepository = accountRepository || accountContainer.resolve('accountRepository');
   }
@@ -93,20 +78,20 @@ export class AccountApplicationService {
     });
 
     // 保存到数据库
-    const savedAccount = await this.accountRepository.save(account);
-    console.log(`✅ [Account] 账户已保存到数据库: ${savedAccount.uuid}`);
+    await this.accountRepository.save(account);
+    console.log(`✅ [Account] 账户已保存到数据库: ${account.uuid}`);
 
     try {
       // 向认证模块发送请求，为该账号生成认证凭证
-      console.log(`🔄 [Account] 正在为账户 ${savedAccount.uuid} 请求生成认证凭证...`);
+      console.log(`🔄 [Account] 正在为账户 ${account.uuid} 请求生成认证凭证...`);
       const credentialCreationResult = await eventBus.invoke<{
         success: boolean;
         message: string;
       }>(
         'auth.credential.create',
         {
-          accountUuid: savedAccount.uuid,
-          username: savedAccount.username,
+          accountUuid: account.uuid,
+          username: account.username,
           password: createDto.password,
         },
         { timeout: 10000 }, // 10秒超时
@@ -116,9 +101,9 @@ export class AccountApplicationService {
         console.error(`❌ [Account] 认证凭证生成失败: ${credentialCreationResult.message}`);
 
         // 使用软删除方式删除先前保存的账户
-        console.log(`🗑️ [Account] 正在删除账户 ${savedAccount.uuid}...`);
-        savedAccount.disable(); // 禁用账户
-        await this.accountRepository.save(savedAccount);
+        console.log(`🗑️ [Account] 正在删除账户 ${account.uuid}...`);
+        account.disable(); // 禁用账户
+        await this.accountRepository.save(account);
 
         throw new Error(`账户注册失败: ${credentialCreationResult.message}`);
       }
@@ -128,10 +113,10 @@ export class AccountApplicationService {
       console.error(`❌ [Account] 处理认证凭证时发生错误:`, error);
 
       // 使用软删除方式删除先前保存的账户
-      console.log(`🗑️ [Account] 正在删除账户 ${savedAccount.uuid}...`);
+      console.log(`🗑️ [Account] 正在删除账户 ${account.uuid}...`);
       try {
-        savedAccount.disable(); // 禁用账户
-        await this.accountRepository.save(savedAccount);
+        account.disable(); // 禁用账户
+        await this.accountRepository.save(account);
       } catch (deleteError) {
         console.error(`❌ [Account] 删除账户失败:`, deleteError);
       }
@@ -140,7 +125,7 @@ export class AccountApplicationService {
     }
 
     // 发送欢迎邮件
-    if (savedAccount.email) {
+    if (account.email) {
       console.log('发送欢迎邮件');
     }
 
@@ -154,41 +139,44 @@ export class AccountApplicationService {
 
     account.clearDomainEvents();
 
-    return { account: savedAccount.toDTO() as AccountDTO } as RegistrationResponseDTO;
+    return { account: account.toDTO() as AccountDTO } as RegistrationResponseDTO;
   }
 
   /**
    * 根据ID获取账户
    */
   async getAccountById(id: string): Promise<Account | null> {
-    const account = await this.accountRepository.findById(id);
-    return account || null;
+    const accountDTO = await this.accountRepository.findById(id);
+    return accountDTO ? Account.fromPersistenceDTO(accountDTO) : null;
   }
 
   /**
    * 根据邮箱获取账户
    */
   async getAccountByEmail(email: string): Promise<Account | null> {
-    const account = await this.accountRepository.findByEmail(email);
-    return account || null;
+    const accountDTO = await this.accountRepository.findByEmail(email);
+    return accountDTO ? Account.fromPersistenceDTO(accountDTO) : null;
   }
 
   /**
    * 根据用户名获取账户
    */
   async getAccountByUsername(username: string): Promise<Account | null> {
-    const account = await this.accountRepository.findByUsername(username);
-    return account ? account : null;
+    const accountDTO = await this.accountRepository.findByUsername(username);
+    return accountDTO ? Account.fromPersistenceDTO(accountDTO) : null;
   }
 
   /**
    * 更新账户信息
    */
-  async updateAccount(id: string, updateDto: UpdateAccountDto): Promise<AccountResponseDto | null> {
-    const account = await this.accountRepository.findById(id);
-    if (!account) {
+  async updateAccount(id: string, updateDto: AccountDTO): Promise<AccountDTO | null> {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO) {
       return null;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     // 更新账户信息
     if (updateDto.email && updateDto.email !== account.email?.value) {
@@ -197,47 +185,22 @@ export class AccountApplicationService {
       console.log('发送验证邮件');
     }
 
-    if (updateDto.phoneNumber) {
-      account.updatePhone(updateDto.phoneNumber);
-    }
-
-    if (updateDto.address) {
-      account.updateAddress(updateDto.address);
-    }
-
-    if (updateDto.userProfile) {
-      // 更新用户信息 - 使用User实体的更新方法
-      const user = account.user as User;
-
-      if (
-        updateDto.userProfile.firstName ||
-        updateDto.userProfile.lastName ||
-        updateDto.userProfile.bio
-      ) {
-        user.updateProfile(
-          updateDto.userProfile.firstName,
-          updateDto.userProfile.lastName,
-          updateDto.userProfile.bio,
-        );
-      }
-
-      if (updateDto.userProfile.avatar) {
-        user.updateAvatar(updateDto.userProfile.avatar);
-      }
-    }
-
-    const updatedAccount = await this.accountRepository.save(account);
-    return this.toResponseDto(updatedAccount);
+    // 保存更新后的账户
+    await this.accountRepository.save(account);
+    return account.toDTO();
   }
 
   /**
    * 激活账户
    */
   async activateAccount(id: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.enable();
     await this.accountRepository.save(account);
@@ -248,10 +211,13 @@ export class AccountApplicationService {
    * 停用账户
    */
   async deactivateAccount(id: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.disable();
     await this.accountRepository.save(account);
@@ -262,10 +228,13 @@ export class AccountApplicationService {
    * 暂停账户
    */
   async suspendAccount(id: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.suspend();
     await this.accountRepository.save(account);
@@ -276,10 +245,13 @@ export class AccountApplicationService {
    * 验证邮箱
    */
   async verifyEmail(id: string, token: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account || account.emailVerificationToken !== token) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO || accountDTO.emailVerificationToken !== token) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.verifyEmail();
     await this.accountRepository.save(account);
@@ -290,10 +262,13 @@ export class AccountApplicationService {
    * 验证手机号
    */
   async verifyPhone(id: string, code: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account || account.phoneVerificationCode !== code) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO || accountDTO.phoneVerificationCode !== code) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.verifyPhone();
     await this.accountRepository.save(account);
@@ -304,10 +279,13 @@ export class AccountApplicationService {
    * 为账户添加角色
    */
   async addRole(accountId: string, roleId: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(accountId);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(accountId);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.addRole(roleId);
     await this.accountRepository.save(account);
@@ -318,10 +296,13 @@ export class AccountApplicationService {
    * 移除账户角色
    */
   async removeRole(accountId: string, roleId: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(accountId);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(accountId);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     account.removeRole(roleId);
     await this.accountRepository.save(account);
@@ -335,16 +316,16 @@ export class AccountApplicationService {
     page: number = 1,
     limit: number = 10,
   ): Promise<{
-    accounts: AccountResponseDto[];
+    accounts: AccountDTO[];
     total: number;
     page: number;
     totalPages: number;
   }> {
-    const { accounts, total } = await this.accountRepository.findAll(page, limit);
+    const { accounts: accountDTOs, total } = await this.accountRepository.findAll(page, limit);
     const totalPages = Math.ceil(total / limit);
 
     return {
-      accounts: accounts.map((account) => this.toResponseDto(account)),
+      accounts: accountDTOs.map((accountDTO) => Account.fromPersistenceDTO(accountDTO).toDTO()),
       total,
       page,
       totalPages,
@@ -371,10 +352,13 @@ export class AccountApplicationService {
    * 删除账户（软删除）
    */
   async deleteAccount(id: string): Promise<boolean> {
-    const account = await this.accountRepository.findById(id);
-    if (!account) {
+    const accountDTO = await this.accountRepository.findById(id);
+    if (!accountDTO) {
       return false;
     }
+
+    // 转换为领域对象以便进行业务操作
+    const account = Account.fromPersistenceDTO(accountDTO);
 
     // 执行软删除
     account.disable();
@@ -445,9 +429,9 @@ export class AccountApplicationService {
       accountUuid,
     );
     try {
-      const account = await this.accountRepository.findById(accountUuid);
-      console.log('获取account结果', account);
-      if (!account) {
+      const accountDTO = await this.accountRepository.findById(accountUuid);
+      console.log('获取account结果', accountDTO);
+      if (!accountDTO) {
         const responseEvent: AccountInfoGetterByUuidResponse = {
           eventType: 'AccountInfoGetterByUuidResponse',
           aggregateId: accountUuid,
@@ -460,6 +444,10 @@ export class AccountApplicationService {
         eventBus.publish(responseEvent);
         return;
       }
+
+      // 转换为领域对象
+      const account = Account.fromPersistenceDTO(accountDTO);
+
       const responseEvent: AccountInfoGetterByUuidResponse = {
         eventType: 'AccountInfoGetterByUuidResponse',
         aggregateId: account.uuid,
@@ -535,34 +523,5 @@ export class AccountApplicationService {
         status: null,
       };
     }
-  }
-
-  /**
-   * 转换为响应DTO
-   */
-  private toResponseDto(account: Account): AccountResponseDto {
-    return {
-      id: account.uuid,
-      username: account.username,
-      email: account.email?.value,
-      phoneNumber: account.phoneNumber?.fullNumber,
-      status: account.status,
-      accountType: account.accountType,
-      isEmailVerified: account.isEmailVerified,
-      isPhoneVerified: account.isPhoneVerified,
-      lastLoginAt: account.lastLoginAt?.toISOString(),
-      createdAt: account.createdAt.toISOString(),
-      updatedAt: account.updatedAt.toISOString(),
-      user: {
-        id: account.user.uuid,
-        firstName: account.user.firstName,
-        lastName: account.user.lastName,
-        displayName: account.user.displayName,
-        avatar: account.user.avatar,
-        bio: account.user.bio,
-        socialAccounts: account.user.socialAccounts,
-      },
-      roleIds: Array.from(account.roleIds),
-    };
   }
 }

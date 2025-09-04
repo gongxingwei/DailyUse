@@ -1,5 +1,6 @@
 import { MFADeviceCore, MFADeviceType } from '@dailyuse/domain-core';
 import { type IMFADeviceServer } from '../types';
+import type { MFADevicePersistenceDTO } from '@dailyuse/contracts';
 
 /**
  * 服务端MFA设备实体
@@ -204,6 +205,44 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
    */
   isClient(): boolean {
     return false;
+  }
+
+  /**
+   * 从持久化 DTO 创建 MFA 设备实体
+   * 处理数据库数据到领域对象的转换
+   */
+  static fromPersistenceDTO(dto: MFADevicePersistenceDTO): MFADevice {
+    // 解析备用码
+    let backupCodes: string[] | undefined;
+    if (dto.backupCodes) {
+      try {
+        backupCodes = JSON.parse(dto.backupCodes);
+      } catch (error) {
+        console.warn('Failed to parse backup codes:', error);
+        backupCodes = [];
+      }
+    }
+
+    const device = new MFADevice({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      type: dto.type as MFADeviceType,
+      name: dto.name,
+      maxAttempts: dto.maxAttempts || 5,
+    });
+
+    // 设置私有属性
+    (device as any)._secretKey = dto.secretKey;
+    (device as any)._phoneNumber = dto.phoneNumber;
+    (device as any)._emailAddress = dto.emailAddress;
+    (device as any)._backupCodes = backupCodes;
+    (device as any)._isVerified = dto.isVerified;
+    (device as any)._isEnabled = dto.isEnabled;
+    (device as any)._verificationAttempts = dto.verificationAttempts || 0;
+    (device as any)._createdAt = dto.createdAt;
+    (device as any)._lastUsedAt = dto.lastUsedAt;
+
+    return device;
   }
 
   /**

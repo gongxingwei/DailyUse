@@ -1,5 +1,6 @@
 import { User } from '@dailyuse/domain-server';
 import type { IUserRepository } from '@dailyuse/domain-server';
+import type { UserProfilePersistenceDTO } from '@dailyuse/contracts';
 import { prisma } from '../../../../../config/prisma';
 
 export class PrismaUserRepository implements IUserRepository {
@@ -25,7 +26,7 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  async findById(uuid: string): Promise<User | null> {
+  async findById(uuid: string): Promise<UserProfilePersistenceDTO | null> {
     const userData = await prisma.userProfile.findUnique({
       where: { uuid },
     });
@@ -34,10 +35,10 @@ export class PrismaUserRepository implements IUserRepository {
       return null;
     }
 
-    return this.mapToUser(userData);
+    return this.mapToPersistenceDTO(userData);
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<User | null> {
+  async findByAccountUuid(accountUuid: string): Promise<UserProfilePersistenceDTO | null> {
     const userData = await prisma.userProfile.findUnique({
       where: { accountUuid },
     });
@@ -46,15 +47,15 @@ export class PrismaUserRepository implements IUserRepository {
       return null;
     }
 
-    return this.mapToUser(userData);
+    return this.mapToPersistenceDTO(userData);
   }
 
-  async findAll(): Promise<User[]> {
+  async findAll(): Promise<UserProfilePersistenceDTO[]> {
     const usersData = await prisma.userProfile.findMany({
       orderBy: { createdAt: 'desc' },
     });
 
-    return usersData.map((data) => this.mapToUser(data));
+    return usersData.map((data) => this.mapToPersistenceDTO(data));
   }
 
   async delete(uuid: string): Promise<void> {
@@ -63,24 +64,23 @@ export class PrismaUserRepository implements IUserRepository {
     });
   }
 
-  private mapToUser(data: any): User {
-    // Parse social accounts
-    let socialAccounts = {};
-    if (data.socialAccounts) {
-      try {
-        socialAccounts = JSON.parse(data.socialAccounts);
-      } catch (error) {
-        console.warn('Failed to parse social accounts:', error);
-      }
-    }
-
-    return new User({
+  /**
+   * 将数据库原始数据映射为持久化 DTO
+   * 仅负责数据格式转换，不包含业务逻辑
+   */
+  private mapToPersistenceDTO(data: any): UserProfilePersistenceDTO {
+    return {
       uuid: data.uuid,
+      accountUuid: data.accountUuid,
       firstName: data.firstName,
       lastName: data.lastName,
-      avatar: data.avatarUrl,
+      displayName: data.displayName,
+      sex: data.sex,
+      avatarUrl: data.avatarUrl,
       bio: data.bio,
-      socialAccounts,
-    });
+      socialAccounts: data.socialAccounts,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    };
   }
 }

@@ -4,6 +4,7 @@ import { Email } from '../valueObjects/Email';
 import { PhoneNumber } from '../valueObjects/PhoneNumber';
 import { Address } from '../valueObjects/Address';
 import { type IAccount } from '../types';
+import type { AccountPersistenceDTO } from '@dailyuse/contracts';
 /**
  * 服务端账号聚合根 - 包含完整的业务逻辑
  * 数据持久化、业务规则验证、安全策略等
@@ -346,6 +347,94 @@ export class Account extends AccountCore implements IAccount {
    */
   static fromDTO(data: any): Account {
     return Account.fromPersistence(data);
+  }
+
+  /**
+   * 从持久化 DTO 创建实例
+   * 专门处理来自仓储层的持久化 DTO 数据
+   */
+  static fromPersistenceDTO(persistenceDTO: AccountPersistenceDTO): Account {
+    // Parse social accounts
+    let socialAccounts = {};
+    if (persistenceDTO.userProfile?.socialAccounts) {
+      try {
+        socialAccounts = JSON.parse(persistenceDTO.userProfile.socialAccounts);
+      } catch (error) {
+        console.warn('Failed to parse social accounts:', error);
+      }
+    }
+
+    // Parse role IDs
+    let roleIds: string[] = [];
+    if (persistenceDTO.roleIds) {
+      try {
+        roleIds = JSON.parse(persistenceDTO.roleIds);
+      } catch (error) {
+        console.warn('Failed to parse role IDs:', error);
+      }
+    }
+
+    // 创建 User 实体
+    const user = persistenceDTO.userProfile
+      ? new User({
+          firstName: persistenceDTO.userProfile.firstName || '',
+          lastName: persistenceDTO.userProfile.lastName || '',
+          avatar: persistenceDTO.userProfile.avatarUrl,
+          bio: persistenceDTO.userProfile.bio,
+        })
+      : new User({ firstName: '', lastName: '' });
+
+    return new Account({
+      uuid: persistenceDTO.uuid,
+      username: persistenceDTO.username,
+      accountType: Account.mapStringToAccountType(persistenceDTO.accountType),
+      user,
+      email: persistenceDTO.email ? Email.fromValue(persistenceDTO.email) : undefined,
+      phoneNumber: persistenceDTO.phone ? PhoneNumber.fromValue(persistenceDTO.phone) : undefined,
+      status: Account.mapStringToAccountStatus(persistenceDTO.status),
+      isEmailVerified: persistenceDTO.emailVerified,
+      isPhoneVerified: persistenceDTO.phoneVerified,
+      createdAt: persistenceDTO.createdAt,
+      updatedAt: persistenceDTO.updatedAt,
+      lastLoginAt: persistenceDTO.lastLoginAt,
+      emailVerificationToken: persistenceDTO.emailVerificationToken,
+      phoneVerificationCode: persistenceDTO.phoneVerificationCode,
+      roleUuids: new Set(roleIds),
+    });
+  }
+
+  /**
+   * 字符串账户类型转换为枚举
+   */
+  private static mapStringToAccountType(type: string): AccountType {
+    switch (type) {
+      case 'local':
+        return AccountType.LOCAL;
+      case 'online':
+        return AccountType.ONLINE;
+      case 'guest':
+        return AccountType.GUEST;
+      default:
+        return AccountType.LOCAL;
+    }
+  }
+
+  /**
+   * 字符串账户状态转换为枚举
+   */
+  private static mapStringToAccountStatus(status: string): AccountStatus {
+    switch (status) {
+      case 'active':
+        return AccountStatus.ACTIVE;
+      case 'disabled':
+        return AccountStatus.DISABLED;
+      case 'suspended':
+        return AccountStatus.SUSPENDED;
+      case 'pending_verification':
+        return AccountStatus.PENDING_VERIFICATION;
+      default:
+        return AccountStatus.ACTIVE;
+    }
   }
 
   /**

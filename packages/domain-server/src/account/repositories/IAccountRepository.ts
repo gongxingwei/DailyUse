@@ -1,28 +1,39 @@
 import type { Account } from '../aggregates/Account';
 import type { User } from '../entities/User';
+import type { AccountPersistenceDTO, UserProfilePersistenceDTO } from '@dailyuse/contracts';
 
 /**
  * 账户存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface IAccountRepository {
-  // 账户基本操作
-  save(account: Account): Promise<Account>;
-  findById(uuid: string): Promise<Account | null>;
-  findByEmail(email: string): Promise<Account | null>;
-  findByUsername(username: string): Promise<Account | null>;
+  // 账户基本操作 - 保存时接受领域对象，返回时提供 DTO
+  save(account: Account): Promise<void>;
+  findById(uuid: string): Promise<AccountPersistenceDTO | null>;
+  findByEmail(email: string): Promise<AccountPersistenceDTO | null>;
+  findByUsername(username: string): Promise<AccountPersistenceDTO | null>;
 
-  // 查询操作
-  findAll(page?: number, limit?: number): Promise<{ accounts: Account[]; total: number }>;
+  // 查询操作 - 返回 DTO
+  findAll(
+    page?: number,
+    limit?: number,
+  ): Promise<{
+    accounts: AccountPersistenceDTO[];
+    total: number;
+  }>;
+  findByStatus(status: string): Promise<AccountPersistenceDTO[]>;
+  search(query: string): Promise<AccountPersistenceDTO[]>;
 }
 
 /**
  * 用户存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface IUserRepository {
   save(user: User): Promise<void>;
-  findById(uuid: string): Promise<User | null>;
-  findByAccountUuid(accountUuid: string): Promise<User | null>;
+  findById(uuid: string): Promise<UserProfilePersistenceDTO | null>;
+  findByAccountUuid(accountUuid: string): Promise<UserProfilePersistenceDTO | null>;
 
-  // 查询操作
-  findAll(): Promise<User[]>;
+  // 查询操作 - 返回 DTO
+  findAll(): Promise<UserProfilePersistenceDTO[]>;
 }

@@ -1,10 +1,11 @@
 import { Account, User } from '@dailyuse/domain-server';
 import type { IAccountRepository } from '@dailyuse/domain-server';
 import { AccountStatus, AccountType } from '@dailyuse/domain-core';
+import type { AccountPersistenceDTO } from '@dailyuse/contracts';
 import { prisma } from '../../../../../config/prisma';
 
 export class PrismaAccountRepository implements IAccountRepository {
-  async save(account: Account): Promise<Account> {
+  async save(account: Account): Promise<void> {
     const accountData = {
       uuid: account.uuid,
       username: account.username,
@@ -79,11 +80,9 @@ export class PrismaAccountRepository implements IAccountRepository {
         },
       });
     });
-
-    return account;
   }
 
-  async findById(id: string): Promise<Account | null> {
+  async findById(id: string): Promise<AccountPersistenceDTO | null> {
     const accountData = await prisma.account.findUnique({
       where: { uuid: id },
       include: {
@@ -95,10 +94,10 @@ export class PrismaAccountRepository implements IAccountRepository {
       return null;
     }
 
-    return this.mapToAccount(accountData);
+    return this.mapToPersistenceDTO(accountData);
   }
 
-  async findByEmail(email: string): Promise<Account | null> {
+  async findByEmail(email: string): Promise<AccountPersistenceDTO | null> {
     const accountData = await prisma.account.findFirst({
       where: { email },
       include: {
@@ -110,10 +109,10 @@ export class PrismaAccountRepository implements IAccountRepository {
       return null;
     }
 
-    return this.mapToAccount(accountData);
+    return this.mapToPersistenceDTO(accountData);
   }
 
-  async findByUsername(username: string): Promise<Account | null> {
+  async findByUsername(username: string): Promise<AccountPersistenceDTO | null> {
     const accountData = await prisma.account.findFirst({
       where: { username },
       include: {
@@ -125,14 +124,14 @@ export class PrismaAccountRepository implements IAccountRepository {
       return null;
     }
 
-    return this.mapToAccount(accountData);
+    return this.mapToPersistenceDTO(accountData);
   }
 
   async findAll(
     page: number = 1,
     limit: number = 10,
   ): Promise<{
-    accounts: Account[];
+    accounts: AccountPersistenceDTO[];
     total: number;
   }> {
     const offset = (page - 1) * limit;
@@ -152,25 +151,25 @@ export class PrismaAccountRepository implements IAccountRepository {
     ]);
 
     return {
-      accounts: accounts.map((account) => this.mapToAccount(account)),
+      accounts: accounts.map((account) => this.mapToPersistenceDTO(account)),
       total,
     };
   }
 
-  async findByStatus(status: AccountStatus): Promise<Account[]> {
+  async findByStatus(status: string): Promise<AccountPersistenceDTO[]> {
     const accounts = await prisma.account.findMany({
       where: {
-        status: status.toString(),
+        status: status,
       },
       include: {
         userProfile: true,
       },
     });
 
-    return accounts.map((account) => this.mapToAccount(account));
+    return accounts.map((account) => this.mapToPersistenceDTO(account));
   }
 
-  async search(query: string): Promise<Account[]> {
+  async search(query: string): Promise<AccountPersistenceDTO[]> {
     const accounts = await prisma.account.findMany({
       where: {
         OR: [
@@ -192,52 +191,45 @@ export class PrismaAccountRepository implements IAccountRepository {
       },
     });
 
-    return accounts.map((account) => this.mapToAccount(account));
+    return accounts.map((account) => this.mapToPersistenceDTO(account));
   }
 
-  private mapToAccount(accountData: any): Account {
-    // Parse social accounts
-    let socialAccounts = {};
-    if (accountData.userProfile?.socialAccounts) {
-      try {
-        socialAccounts = JSON.parse(accountData.userProfile.socialAccounts);
-      } catch (error) {
-        console.warn('Failed to parse social accounts:', error);
-      }
-    }
-
-    // Parse role IDs
-    let roleIds: string[] = [];
-    if (accountData.roleIds) {
-      try {
-        roleIds = JSON.parse(accountData.roleIds);
-      } catch (error) {
-        console.warn('Failed to parse role IDs:', error);
-      }
-    }
-
-    const user = new User({
-      firstName: accountData.userProfile.firstName || '',
-      lastName: accountData.userProfile.lastName || '',
-      avatar: accountData.userProfile.avatarUrl,
-      bio: accountData.userProfile.bio,
-    });
-
-    return Account.fromDTO({
+  /**
+   * 将数据库原始数据映射为持久化 DTO
+   * 仅负责数据格式转换，不包含业务逻辑
+   */
+  private mapToPersistenceDTO(accountData: any): AccountPersistenceDTO {
+    return {
       uuid: accountData.uuid,
       username: accountData.username,
-      accountType: this.mapStringToAccountType(accountData.accountType),
-      user,
       email: accountData.email,
-      phoneNumber: accountData.phone,
-      status: this.mapAccountStatus(accountData.status),
-      isEmailVerified: accountData.emailVerified,
-      isPhoneVerified: accountData.phoneVerified,
+      phone: accountData.phone,
+      accountType: accountData.accountType,
+      status: accountData.status,
+      roleIds: accountData.roleIds,
+      lastLoginAt: accountData.lastLoginAt,
+      emailVerificationToken: accountData.emailVerificationToken,
+      phoneVerificationCode: accountData.phoneVerificationCode,
+      emailVerified: accountData.emailVerified,
+      phoneVerified: accountData.phoneVerified,
       createdAt: accountData.createdAt,
       updatedAt: accountData.updatedAt,
-      lastLoginAt: accountData.lastLoginAt,
-      roleUuids: roleIds,
-    });
+      userProfile: accountData.userProfile
+        ? {
+            uuid: accountData.userProfile.uuid,
+            accountUuid: accountData.userProfile.accountUuid,
+            firstName: accountData.userProfile.firstName,
+            lastName: accountData.userProfile.lastName,
+            displayName: accountData.userProfile.displayName,
+            sex: accountData.userProfile.sex,
+            avatarUrl: accountData.userProfile.avatarUrl,
+            bio: accountData.userProfile.bio,
+            socialAccounts: accountData.userProfile.socialAccounts,
+            createdAt: accountData.userProfile.createdAt,
+            updatedAt: accountData.userProfile.updatedAt,
+          }
+        : undefined,
+    };
   }
 
   private mapAccountTypeToString(type: AccountType): string {
@@ -250,34 +242,6 @@ export class PrismaAccountRepository implements IAccountRepository {
         return 'guest';
       default:
         return 'local';
-    }
-  }
-
-  private mapStringToAccountType(type: string): AccountType {
-    switch (type) {
-      case 'local':
-        return AccountType.LOCAL;
-      case 'online':
-        return AccountType.ONLINE;
-      case 'guest':
-        return AccountType.GUEST;
-      default:
-        return AccountType.LOCAL;
-    }
-  }
-
-  private mapAccountStatus(status: string): AccountStatus {
-    switch (status) {
-      case 'active':
-        return AccountStatus.ACTIVE;
-      case 'disabled':
-        return AccountStatus.DISABLED;
-      case 'suspended':
-        return AccountStatus.SUSPENDED;
-      case 'pending_verification':
-        return AccountStatus.PENDING_VERIFICATION;
-      default:
-        return AccountStatus.ACTIVE;
     }
   }
 }

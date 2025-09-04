@@ -1,6 +1,7 @@
 import { SessionCore } from '@dailyuse/domain-core';
 import { type ISessionServer } from '../types';
 import type { ClientInfo } from '@dailyuse/domain-core';
+import type { UserSessionPersistenceDTO } from '@dailyuse/contracts';
 /**
  * 服务端会话实体
  * 继承核心会话实体，添加服务端特定的业务逻辑
@@ -149,6 +150,29 @@ export class Session extends SessionCore implements ISessionServer {
    */
   isClient(): boolean {
     return false;
+  }
+
+  /**
+   * 从持久化 DTO 创建会话实体
+   * 仅负责数据转换，确保领域对象构造完整性
+   */
+  static fromPersistenceDTO(dto: UserSessionPersistenceDTO): Session {
+    const session = new Session({
+      uuid: dto.uuid,
+      accountUuid: dto.accountUuid,
+      token: dto.sessionId, // sessionId 对应 token
+      deviceInfo: dto.deviceInfo || 'unknown',
+      ipAddress: dto.ipAddress || 'unknown',
+      userAgent: dto.userAgent || 'unknown',
+    });
+
+    // 手动设置创建时间相关的属性
+    (session as any)._createdAt = dto.createdAt;
+    (session as any)._lastActiveAt = dto.lastAccessedAt || dto.createdAt;
+    (session as any)._expiresAt = dto.expiresAt;
+    (session as any)._isActive = dto.isActive;
+
+    return session;
   }
 
   /**

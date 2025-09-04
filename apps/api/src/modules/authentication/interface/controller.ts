@@ -7,9 +7,9 @@ import {
 import type {
   AuthByPasswordRequestDTO,
   AuthResponseDTO,
-  TResponse,
   ClientInfo,
-} from '../../../tempTypes';
+} from '@dailyuse/contracts';
+import type { TResponse } from '../../../tempTypes';
 import { AccountType } from '@dailyuse/domain-core';
 /**
  * Authentication Controller

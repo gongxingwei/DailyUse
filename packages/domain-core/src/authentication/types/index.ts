@@ -17,6 +17,7 @@ export {
   type SessionDTO,
   type TokenDTO,
   type MFADeviceDTO,
+  type ClientInfo,
   type LoginRequest,
   type PasswordChangeRequest,
   type MFADeviceRegistrationRequest,

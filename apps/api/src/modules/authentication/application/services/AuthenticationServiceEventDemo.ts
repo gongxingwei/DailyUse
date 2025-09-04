@@ -1,4 +1,4 @@
-import { authenticationEventClient } from '../clients/AuthenticationEventClient';
+import { authenticationEventRequester } from '../events/EventRequester';
 import type { IAccountCore } from '@dailyuse/contracts';
 
 /**
@@ -18,7 +18,7 @@ export class AuthenticationServiceEventDemo {
       console.log(`🔐 [AuthenticationServiceEventDemo] 开始登录流程 - 用户名: ${username}`);
 
       // 1. 通过用户名获取账户信息（使用新的 EventEmitter 模式）
-      const account = await authenticationEventClient.getAccountByUsername(username);
+      const account = await authenticationEventRequester.getAccountByUsername(username);
 
       if (!account) {
         return {
@@ -30,7 +30,7 @@ export class AuthenticationServiceEventDemo {
       console.log(`👤 [AuthenticationServiceEventDemo] 找到账户: ${account.uuid}`);
 
       // 2. 验证账户状态（使用新的 EventEmitter 模式）
-      const statusCheck = await authenticationEventClient.verifyAccountStatus(account.uuid);
+      const statusCheck = await authenticationEventRequester.verifyAccountStatus(account.uuid);
 
       if (!statusCheck.isValid) {
         return {
@@ -67,7 +67,7 @@ export class AuthenticationServiceEventDemo {
       console.log(`🔍 [AuthenticationServiceEventDemo] 获取用户详细信息 - UUID: ${accountUuid}`);
 
       // 使用新的 EventEmitter 模式获取账户信息
-      const account = await authenticationEventClient.getAccountByUuid(accountUuid);
+      const account = await authenticationEventRequester.getAccountByUuid(accountUuid);
 
       if (account) {
         console.log(`✅ [AuthenticationServiceEventDemo] 成功获取用户信息: ${account.username}`);

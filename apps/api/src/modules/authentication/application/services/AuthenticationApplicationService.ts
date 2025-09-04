@@ -4,14 +4,16 @@ import type {
   ITokenRepository,
   ISessionRepository,
   AccountRegisteredEvent,
-  ClientInfo
 } from '@dailyuse/domain-server';
+import type { ClientInfo } from '@dailyuse/domain-core';
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
 // utils
 import { eventBus } from '@dailyuse/utils';
 import { AuthenticationLoginService } from './AuthenticationLoginService';
-import type { AuthByPasswordRequestDTO, AuthResponseDTO, TResponse } from '../../../../tempTypes';
+// 请求和响应（form/api）类型
+import type { AuthByPasswordRequestDTO, AuthResponseDTO } from '@dailyuse/contracts';
+import type { TResponse } from '../../../../tempTypes';
 /**
  * AuthenticationApplicationService
  *
@@ -94,27 +96,10 @@ export class AuthenticationApplicationService {
    * @param request 登录请求参数
    * @returns 登录响应对象
    */
-  async loginByPassword(request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo }): Promise<TResponse<AuthResponseDTO>> {
-    const { username, password, remember, clientInfo } = request;
-
-    // 构造 AuthenticationLoginService 需要的请求格式
-    const loginRequest = {
-      username,
-      password,
-      remember,
-      clientInfo: clientInfo
-        ? {
-            ip: clientInfo.ipAddress || 'unknown',
-            userAgent: clientInfo.userAgent,
-            deviceId: clientInfo.deviceId,
-            location: 'unknown',
-            country: 'unknown',
-            city: 'unknown',
-          }
-        : undefined,
-    };
-
-    return await this.loginService.PasswordAuthentication(loginRequest);
+  async loginByPassword(
+    request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo },
+  ): Promise<TResponse<AuthResponseDTO>> {
+    return await this.loginService.PasswordAuthentication(request);
   }
 
   async function() {
@@ -154,11 +139,11 @@ export class AuthenticationApplicationService {
   }
 
   // =================== event services ===================
-  
+
   async handleAccountRegistered(
     accountUuid: string,
     plainPassword: string,
-    requiresAuthentication: boolean = true
+    requiresAuthentication: boolean = true,
   ): Promise<boolean> {
     if (!requiresAuthentication) {
       console.log('⏭️ [Authentication] 账号不需要认证凭证，跳过处理');

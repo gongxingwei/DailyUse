@@ -1,5 +1,5 @@
 import type { Request } from 'express';
-import type { ClientInfo } from '../../tempTypes';
+import type { ClientInfo } from '@dailyuse/domain-core';
 import crypto from 'crypto';
 
 /**

@@ -4,6 +4,7 @@ import type { IAuthCredentialRepository } from '@dailyuse/domain-server';
 import type { Session } from '@dailyuse/domain-server';
 import type { Token } from '@dailyuse/domain-server';
 import type { MFADevice } from '@dailyuse/domain-server';
+import type { AuthCredentialPersistenceDTO } from '@dailyuse/contracts';
 
 export class PrismaAuthCredentialRepository implements IAuthCredentialRepository {
   async save(credential: AuthCredential): Promise<void> {
@@ -218,19 +219,35 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     };
   }
 
-  async findById(uuid: string): Promise<AuthCredential | null> {
+  async findById(uuid: string): Promise<AuthCredentialPersistenceDTO | null> {
     const credentialData = await prisma.authCredential.findUnique({
       where: { uuid },
+      include: {
+        account: {
+          include: {
+            sessions: {
+              where: { isActive: true },
+            },
+            tokens: {
+              where: {
+                isRevoked: false,
+                expiresAt: { gt: new Date() },
+              },
+            },
+            mfaDevices: true,
+          },
+        },
+      },
     });
 
     if (!credentialData) {
       return null;
     }
 
-    return this.mapToAuthCredential(credentialData);
+    return this.mapToPersistenceDTO(credentialData);
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<AuthCredential | null> {
+  async findByAccountUuid(accountUuid: string): Promise<AuthCredentialPersistenceDTO | null> {
     const credentialData = await prisma.authCredential.findFirst({
       where: { accountUuid },
       include: {
@@ -255,10 +272,10 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       return null;
     }
 
-    return this.mapToAuthCredential(credentialData);
+    return this.mapToPersistenceDTO(credentialData);
   }
 
-  async findByUsername(username: string): Promise<AuthCredential | null> {
+  async findByUsername(username: string): Promise<AuthCredentialPersistenceDTO | null> {
     const credentialData = await prisma.authCredential.findFirst({
       where: {
         account: {
@@ -287,7 +304,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       return null;
     }
 
-    return this.mapToAuthCredential(credentialData);
+    return this.mapToPersistenceDTO(credentialData);
   }
 
   async delete(uuid: string): Promise<void> {
@@ -296,12 +313,28 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     });
   }
 
-  async findAll(): Promise<AuthCredential[]> {
+  async findAll(): Promise<AuthCredentialPersistenceDTO[]> {
     const credentialsData = await prisma.authCredential.findMany({
+      include: {
+        account: {
+          include: {
+            sessions: {
+              where: { isActive: true },
+            },
+            tokens: {
+              where: {
+                isRevoked: false,
+                expiresAt: { gt: new Date() },
+              },
+            },
+            mfaDevices: true,
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
-    return credentialsData.map((data) => this.mapToAuthCredential(data));
+    return credentialsData.map((data) => this.mapToPersistenceDTO(data));
   }
 
   async existsByAccountUuid(accountUuid: string): Promise<boolean> {
@@ -312,104 +345,71 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     return count > 0;
   }
 
-  private mapToAuthCredential(data: any): AuthCredential {
-    // 创建基本的 AuthCredential
-    const credential = AuthCredential.fromPersistence({
+  /**
+   * 将数据库原始数据映射为持久化 DTO
+   * 仅负责数据格式转换，不包含业务逻辑
+   */
+  private mapToPersistenceDTO(data: any): AuthCredentialPersistenceDTO {
+    return {
       uuid: data.uuid,
       accountUuid: data.accountUuid,
       passwordHash: data.passwordHash,
       passwordSalt: data.passwordSalt,
+      passwordAlgorithm: data.passwordAlgorithm,
+      passwordCreatedAt: data.passwordCreatedAt,
+      passwordExpiresAt: data.passwordExpiresAt,
+      isLocked: data.isLocked,
+      lockReason: data.lockReason,
       failedAttempts: data.failedAttempts,
-      lockedUntil: data.lockedUntil,
+      lastFailedAt: data.lastFailedAt,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
-    });
-
-    // 如果有关联的账户数据，重建子实体
-    if (data.account) {
-      // 重建 Sessions
-      if (data.account.sessions) {
-        for (const sessionData of data.account.sessions) {
-          const session = this.mapToSession(sessionData);
-          credential.sessions.set(session.uuid, session as any);
-        }
-      }
-
-      // 重建 Tokens
-      if (data.account.tokens) {
-        for (const tokenData of data.account.tokens) {
-          const token = this.mapToToken(tokenData);
-          credential.tokens.set(token.value, token as any);
-        }
-      }
-
-      // 重建 MFA Devices
-      if (data.account.mfaDevices) {
-        for (const deviceData of data.account.mfaDevices) {
-          const device = this.mapToMFADevice(deviceData);
-          credential.mfaDevices.set(device.uuid, device as any);
-        }
-      }
-    }
-
-    return credential;
-  }
-
-  /**
-   * 从持久化数据重建 Session 对象
-   */
-  private mapToSession(data: any): Session {
-    // 由于我们需要导入 Session，先创建一个临时实现
-    // 实际中需要根据 Session 的具体构造函数调整
-    return {
-      uuid: data.uuid,
-      accountUuid: data.accountUuid,
-      token: data.sessionId,
-      deviceInfo: data.deviceInfo,
-      ipAddress: data.ipAddress,
-      userAgent: data.userAgent,
-      isActive: data.isActive,
-      createdAt: data.createdAt,
-      lastActiveAt: data.lastAccessedAt,
-      expiresAt: data.expiresAt,
-    } as any;
-  }
-
-  /**
-   * 从持久化数据重建 Token 对象
-   */
-  private mapToToken(data: any): Token {
-    // 使用 Token.fromPersistence 方法
-    return {
-      value: data.tokenValue,
-      type: data.tokenType,
-      accountUuid: data.accountUuid,
-      issuedAt: data.issuedAt,
-      expiresAt: data.expiresAt,
-      deviceInfo: data.metadata ? JSON.parse(data.metadata).deviceInfo : undefined,
-      isRevoked: data.isRevoked,
-    } as any;
-  }
-
-  /**
-   * 从持久化数据重建 MFADevice 对象
-   */
-  private mapToMFADevice(data: any): MFADevice {
-    return {
-      uuid: data.uuid,
-      accountUuid: data.accountUuid,
-      type: data.type,
-      name: data.name,
-      secretKey: data.secretKey,
-      phoneNumber: data.phoneNumber,
-      emailAddress: data.emailAddress,
-      backupCodes: data.backupCodes ? JSON.parse(data.backupCodes) : undefined,
-      isVerified: data.isVerified,
-      isEnabled: data.isEnabled,
-      verificationAttempts: data.verificationAttempts,
-      maxAttempts: data.maxAttempts,
-      createdAt: data.createdAt,
-      lastUsedAt: data.lastUsedAt,
-    } as any;
+      sessions:
+        data.account?.sessions?.map((sessionData: any) => ({
+          uuid: sessionData.uuid,
+          accountUuid: sessionData.accountUuid,
+          sessionId: sessionData.sessionId,
+          accessToken: sessionData.accessToken,
+          refreshToken: sessionData.refreshToken,
+          deviceInfo: sessionData.deviceInfo,
+          ipAddress: sessionData.ipAddress,
+          userAgent: sessionData.userAgent,
+          isActive: sessionData.isActive,
+          createdAt: sessionData.createdAt,
+          lastAccessedAt: sessionData.lastAccessedAt,
+          expiresAt: sessionData.expiresAt,
+        })) || [],
+      tokens:
+        data.account?.tokens?.map((tokenData: any) => ({
+          uuid: tokenData.uuid,
+          accountUuid: tokenData.accountUuid,
+          tokenValue: tokenData.tokenValue,
+          tokenType: tokenData.tokenType,
+          issuedAt: tokenData.issuedAt,
+          expiresAt: tokenData.expiresAt,
+          isRevoked: tokenData.isRevoked,
+          revokeReason: tokenData.revokeReason,
+          metadata: tokenData.metadata,
+          createdAt: tokenData.createdAt,
+          updatedAt: tokenData.updatedAt,
+        })) || [],
+      mfaDevices:
+        data.account?.mfaDevices?.map((deviceData: any) => ({
+          uuid: deviceData.uuid,
+          accountUuid: deviceData.accountUuid,
+          type: deviceData.type,
+          name: deviceData.name,
+          secretKey: deviceData.secretKey,
+          phoneNumber: deviceData.phoneNumber,
+          emailAddress: deviceData.emailAddress,
+          backupCodes: deviceData.backupCodes,
+          isVerified: deviceData.isVerified,
+          isEnabled: deviceData.isEnabled,
+          verificationAttempts: deviceData.verificationAttempts,
+          maxAttempts: deviceData.maxAttempts,
+          createdAt: deviceData.createdAt,
+          lastUsedAt: deviceData.lastUsedAt,
+        })) || [],
+    };
   }
 }

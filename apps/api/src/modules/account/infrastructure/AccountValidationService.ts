@@ -1,6 +1,17 @@
 import { Account } from '@dailyuse/domain-server';
-import type { UpdateAccountDto } from '../application/services/AccountApplicationService';
-import { type RegistrationByUsernameAndPasswordRequestDTO } from '../../../tempTypes';
+import type { RegistrationByUsernameAndPasswordRequestDTO } from '@dailyuse/contracts';
+
+// Temporary type for account updates - should be properly defined in contracts
+interface UpdateAccountDto {
+  email?: string;
+  phoneNumber?: string;
+  userProfile?: {
+    firstName?: string;
+    lastName?: string;
+    bio?: string;
+    avatar?: string;
+  };
+}
 
 export class AccountValidationService {
   /**

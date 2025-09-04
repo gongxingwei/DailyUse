@@ -1,6 +1,8 @@
 import { Session } from '@dailyuse/domain-server';
 import { prisma } from '../../../../../config/prisma';
-import type { ISessionRepository, ClientInfo } from '@dailyuse/domain-server';
+import type { ISessionRepository } from '@dailyuse/domain-server';
+import type { ClientInfo } from '@dailyuse/domain-core';
+import type { UserSessionPersistenceDTO } from '@dailyuse/contracts';
 
 /**
  * Prisma Session Repository - 处理独立的 Session 操作
@@ -26,7 +28,7 @@ export class PrismaSessionRepository implements ISessionRepository {
     });
   }
 
-  async findById(sessionId: string): Promise<Session | null> {
+  async findById(sessionId: string): Promise<UserSessionPersistenceDTO | null> {
     const sessionData = await prisma.userSession.findUnique({
       where: { sessionId },
     });
@@ -35,7 +37,7 @@ export class PrismaSessionRepository implements ISessionRepository {
       return null;
     }
 
-    return this.mapToSession(sessionData);
+    return this.mapToPersistenceDTO(sessionData);
   }
 
   async findByUuid(sessionUuid: string): Promise<Session | null> {
@@ -50,20 +52,20 @@ export class PrismaSessionRepository implements ISessionRepository {
     return this.mapToSession(sessionData);
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<Session[]> {
+  async findByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]> {
     return this.findAllByAccountUuid(accountUuid);
   }
 
-  async findAllByAccountUuid(accountUuid: string): Promise<Session[]> {
+  async findAllByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]> {
     const sessionsData = await prisma.userSession.findMany({
       where: { accountUuid },
       orderBy: { createdAt: 'desc' },
     });
 
-    return sessionsData.map((data) => this.mapToSession(data));
+    return sessionsData.map((data) => this.mapToPersistenceDTO(data));
   }
 
-  async findActiveByAccountUuid(accountUuid: string): Promise<Session[]> {
+  async findActiveByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]> {
     const sessionsData = await prisma.userSession.findMany({
       where: {
         accountUuid,
@@ -73,7 +75,7 @@ export class PrismaSessionRepository implements ISessionRepository {
       orderBy: { lastAccessedAt: 'desc' },
     });
 
-    return sessionsData.map((data) => this.mapToSession(data));
+    return sessionsData.map((data) => this.mapToPersistenceDTO(data));
   }
 
   async terminateSession(sessionId: string): Promise<void> {
@@ -150,6 +152,27 @@ export class PrismaSessionRepository implements ISessionRepository {
       createdAt: session.createdAt,
       lastAccessedAt: session.lastActiveAt,
       expiresAt: session.expiresAt,
+    };
+  }
+
+  /**
+   * 将数据库原始数据映射为持久化 DTO
+   * 仅负责数据格式转换，不包含业务逻辑
+   */
+  private mapToPersistenceDTO(data: any): UserSessionPersistenceDTO {
+    return {
+      uuid: data.uuid,
+      accountUuid: data.accountUuid,
+      sessionId: data.sessionId,
+      accessToken: data.accessToken,
+      refreshToken: data.refreshToken,
+      deviceInfo: data.deviceInfo,
+      ipAddress: data.ipAddress,
+      userAgent: data.userAgent,
+      isActive: data.isActive,
+      createdAt: data.createdAt,
+      lastAccessedAt: data.lastAccessedAt,
+      expiresAt: data.expiresAt,
     };
   }
 

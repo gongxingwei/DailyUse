@@ -1,6 +1,7 @@
 import { Token } from '@dailyuse/domain-server';
 import { prisma } from '../../../../../config/prisma';
 import type { ITokenRepository } from '@dailyuse/domain-server';
+import type { AuthTokenPersistenceDTO } from '@dailyuse/contracts';
 import { generateUUID } from '@dailyuse/utils';
 
 /**
@@ -38,7 +39,7 @@ export class PrismaTokenRepository implements ITokenRepository {
     return this.mapToToken(tokenData);
   }
 
-  async findByValue(tokenValue: string): Promise<Token | null> {
+  async findByValue(tokenValue: string): Promise<AuthTokenPersistenceDTO | null> {
     const tokenData = await prisma.authToken.findFirst({
       where: { tokenValue },
     });
@@ -47,10 +48,10 @@ export class PrismaTokenRepository implements ITokenRepository {
       return null;
     }
 
-    return this.mapToToken(tokenData);
+    return this.mapToPersistenceDTO(tokenData);
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<Token[]> {
+  async findByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]> {
     const tokensData = await prisma.authToken.findMany({
       where: {
         accountUuid,
@@ -60,10 +61,10 @@ export class PrismaTokenRepository implements ITokenRepository {
       orderBy: { issuedAt: 'desc' },
     });
 
-    return tokensData.map((data) => this.mapToToken(data));
+    return tokensData.map((data) => this.mapToPersistenceDTO(data));
   }
 
-  async findByType(tokenType: string): Promise<Token[]> {
+  async findByType(tokenType: string): Promise<AuthTokenPersistenceDTO[]> {
     const tokensData = await prisma.authToken.findMany({
       where: {
         tokenType: tokenType.toLowerCase(),
@@ -73,10 +74,10 @@ export class PrismaTokenRepository implements ITokenRepository {
       orderBy: { issuedAt: 'desc' },
     });
 
-    return tokensData.map((data) => this.mapToToken(data));
+    return tokensData.map((data) => this.mapToPersistenceDTO(data));
   }
 
-  async findActiveByAccountUuid(accountUuid: string): Promise<Token[]> {
+  async findActiveByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]> {
     return this.findByAccountUuid(accountUuid); // 已经过滤了有效的令牌
   }
 
@@ -165,6 +166,26 @@ export class PrismaTokenRepository implements ITokenRepository {
       metadata: JSON.stringify({
         deviceInfo: token.deviceInfo,
       }),
+    };
+  }
+
+  /**
+   * 将数据库原始数据映射为持久化 DTO
+   * 仅负责数据格式转换，不包含业务逻辑
+   */
+  private mapToPersistenceDTO(data: any): AuthTokenPersistenceDTO {
+    return {
+      uuid: data.uuid,
+      accountUuid: data.accountUuid,
+      tokenValue: data.tokenValue,
+      tokenType: data.tokenType,
+      issuedAt: data.issuedAt,
+      expiresAt: data.expiresAt,
+      isRevoked: data.isRevoked,
+      revokeReason: data.revokeReason,
+      metadata: data.metadata,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     };
   }
 

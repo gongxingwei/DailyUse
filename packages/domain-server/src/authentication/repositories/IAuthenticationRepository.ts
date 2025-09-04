@@ -2,35 +2,43 @@ import type { AuthCredential } from '../aggregates/AuthCredential';
 import type { Session } from '../entities/Session';
 import type { MFADevice } from '../entities/MFADevice';
 import type { Token } from '../valueObjects/Token';
+import type {
+  AuthCredentialPersistenceDTO,
+  UserSessionPersistenceDTO,
+  AuthTokenPersistenceDTO,
+  MFADevicePersistenceDTO,
+} from '@dailyuse/contracts';
 
 /**
  * 认证凭证存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface IAuthCredentialRepository {
-  // 认证凭证基本操作
+  // 认证凭证基本操作 - 保存时接受领域对象，返回时提供 DTO
   save(credential: AuthCredential): Promise<void>;
-  findById(uuid: string): Promise<AuthCredential | null>;
-  findByAccountUuid(accountUuid: string): Promise<AuthCredential | null>;
+  findById(uuid: string): Promise<AuthCredentialPersistenceDTO | null>;
+  findByAccountUuid(accountUuid: string): Promise<AuthCredentialPersistenceDTO | null>;
   delete(uuid: string): Promise<void>;
 
-  // 查询操作
-  findAll(): Promise<AuthCredential[]>;
+  // 查询操作 - 返回 DTO
+  findAll(): Promise<AuthCredentialPersistenceDTO[]>;
   existsByAccountUuid(accountUuid: string): Promise<boolean>;
 
   /**
-   * 根据用户名查找认证凭据
+   * 根据用户名查找认证凭据 - 返回 DTO
    */
-  findByUsername(username: string): Promise<AuthCredential | null>;
+  findByUsername(username: string): Promise<AuthCredentialPersistenceDTO | null>;
 }
 
 /**
  * 会话存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface ISessionRepository {
   save(session: Session): Promise<void>;
-  findById(sessionId: string): Promise<Session | null>;
-  findByAccountUuid(accountUuid: string): Promise<Session[]>;
-  findActiveByAccountUuid(accountUuid: string): Promise<Session[]>;
+  findById(sessionId: string): Promise<UserSessionPersistenceDTO | null>;
+  findByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]>;
+  findActiveByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]>;
   delete(sessionId: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredSessions(): Promise<number>;
@@ -38,13 +46,14 @@ export interface ISessionRepository {
 
 /**
  * 令牌存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface ITokenRepository {
   save(token: Token): Promise<void>;
-  findByValue(tokenValue: string): Promise<Token | null>;
-  findByAccountUuid(accountUuid: string): Promise<Token[]>;
-  findByType(type: string): Promise<Token[]>;
-  findActiveByAccountUuid(accountUuid: string): Promise<Token[]>;
+  findByValue(tokenValue: string): Promise<AuthTokenPersistenceDTO | null>;
+  findByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]>;
+  findByType(type: string): Promise<AuthTokenPersistenceDTO[]>;
+  findActiveByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]>;
   delete(tokenValue: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredTokens(): Promise<number>;
@@ -52,14 +61,15 @@ export interface ITokenRepository {
 
 /**
  * MFA设备存储库接口
+ * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface IMFADeviceRepository {
   save(device: MFADevice): Promise<void>;
-  findById(deviceId: string): Promise<MFADevice | null>;
-  findByAccountUuid(accountUuid: string): Promise<MFADevice[]>;
-  findEnabledByAccountUuid(accountUuid: string): Promise<MFADevice[]>;
-  findVerifiedByAccountUuid(accountUuid: string): Promise<MFADevice[]>;
-  findByAccountUuidAndType(accountUuid: string, type: string): Promise<MFADevice[]>;
+  findById(deviceId: string): Promise<MFADevicePersistenceDTO | null>;
+  findByAccountUuid(accountUuid: string): Promise<MFADevicePersistenceDTO[]>;
+  findEnabledByAccountUuid(accountUuid: string): Promise<MFADevicePersistenceDTO[]>;
+  findVerifiedByAccountUuid(accountUuid: string): Promise<MFADevicePersistenceDTO[]>;
+  findByAccountUuidAndType(accountUuid: string, type: string): Promise<MFADevicePersistenceDTO[]>;
   delete(deviceId: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   existsEnabledByAccountUuid(accountUuid: string): Promise<boolean>;

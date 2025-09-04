@@ -1,5 +1,4 @@
 // Authentication domain exports
-export * from './authentication/types';
 export * from './authentication/aggregates/AuthCredential';
 export * from './authentication/entities/MFADevice';
 export * from './authentication/entities/Session';
@@ -7,6 +6,15 @@ export * from './authentication/valueObjects/Password';
 export * from './authentication/valueObjects/Token';
 export * from './authentication/repositories/IAuthenticationRepository';
 export * from './authentication/events';
+
+// Authentication types - specific exports to avoid conflicts
+export type {
+  IMFADeviceServer,
+  ISessionServer,
+  ITokenServer,
+  IPasswordServer,
+  IAuthCredentialServer,
+} from './authentication/types/interfaces';
 
 // Account domain exports
 export * from './account/types';

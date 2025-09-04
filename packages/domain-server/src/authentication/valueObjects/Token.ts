@@ -1,6 +1,7 @@
 import { ValueObject } from '@dailyuse/utils';
 import { TokenType, TokenCore } from '@dailyuse/domain-core';
 import { type ITokenServer } from '../types';
+import type { AuthTokenPersistenceDTO } from '@dailyuse/contracts';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -162,6 +163,36 @@ export class Token extends TokenCore implements ITokenServer {
       accountUuid,
       expiresAt,
       deviceInfo,
+    });
+  }
+
+  /**
+   * 从持久化 DTO 创建令牌值对象
+   * 处理数据库类型到领域类型的转换
+   */
+  static fromPersistenceDTO(dto: AuthTokenPersistenceDTO): Token {
+    // 解析 metadata 中的 deviceInfo
+    let deviceInfo: string | undefined;
+    if (dto.metadata) {
+      try {
+        const metadata = JSON.parse(dto.metadata);
+        deviceInfo = metadata.deviceInfo;
+      } catch (error) {
+        console.warn('Failed to parse token metadata:', error);
+      }
+    }
+
+    // 将字符串类型转换为 TokenType 枚举
+    const tokenType = dto.tokenType.toUpperCase() as TokenType;
+
+    return new Token({
+      value: dto.tokenValue,
+      type: tokenType,
+      accountUuid: dto.accountUuid,
+      issuedAt: dto.issuedAt,
+      expiresAt: dto.expiresAt || new Date(Date.now() + 60 * 60 * 1000), // 默认1小时
+      deviceInfo,
+      isRevoked: dto.isRevoked,
     });
   }
 
