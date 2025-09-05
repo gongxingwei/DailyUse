@@ -258,7 +258,7 @@ export interface AuthByRememberMeTokenRequestDTO {
 }
 
 /**
- * 认证响应DTO
+ * 认证响应DTO - 业务数据部分
  */
 export type AuthResponseDTO = {
   accountUuid: string;
@@ -271,6 +271,34 @@ export type AuthResponseDTO = {
   tokenType?: string;
 };
 
+/**
+ * 用户信息DTO - 用于前端显示
+ */
+export interface UserInfoDTO {
+  id: string;
+  uuid: string;
+  username: string;
+  email: string;
+  nickname?: string;
+  avatar?: string;
+  roles: string[];
+  permissions: string[];
+  status: string;
+  lastLoginAt?: string;
+}
+
+/**
+ * 完整登录响应DTO - 包含用户信息的认证响应
+ */
+export interface LoginResponseDTO {
+  user: UserInfoDTO;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
+  rememberToken?: string;
+  sessionUuid?: string;
+}
 
 /**
  * 登录请求

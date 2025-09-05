@@ -3,14 +3,13 @@ import type { IUserRepository } from '@dailyuse/domain-client';
 // import type { UserDomainService } from '../../domain/services/UserDomainService';
 
 import type { AccountDTO, UserDTO } from '@dailyuse/domain-client';
-import { ApiClient } from '../../infrastructure/api/ApiClient';
-import type { RegistrationByUsernameAndPasswordRequestDTO, RegistrationResponseDTO } from '@dailyuse/contracts';
-// 定义响应类型
-type TResponse<T = any> = {
-  success: boolean;
-  message: string;
-  data?: T;
-};
+import { AccountApiService } from '../../infrastructure/api/ApiClient';
+import type {
+  RegistrationByUsernameAndPasswordRequestDTO,
+  RegistrationResponseDTO,
+  SuccessResponse,
+  ApiResponse,
+} from '@dailyuse/contracts';
 
 /**
  * 用户应用服务
@@ -18,19 +17,16 @@ type TResponse<T = any> = {
  */
 export class ApplicationService {
   private static instance: ApplicationService;
-  private accountApiClient: ApiClient;
   constructor(
     private userRepository?: IUserRepository,
     // private userDomainService: UserDomainService,
   ) {
-    this.accountApiClient = new ApiClient();
+    // 不再需要实例化ApiClient，直接使用静态方法
   }
 
   static async createApplicationServiceInstance(): Promise<ApplicationService> {
     if (!ApplicationService.instance) {
-      ApplicationService.instance = new ApplicationService(
-       
-      );
+      ApplicationService.instance = new ApplicationService();
     }
     return ApplicationService.instance;
   }
@@ -43,7 +39,7 @@ export class ApplicationService {
   }
 
   async testConnection(): Promise<string> {
-    const response = await this.accountApiClient.testConnection();
+    const response = await AccountApiService.testConnection();
     return response;
   }
 
@@ -54,12 +50,12 @@ export class ApplicationService {
     accountData: RegistrationByUsernameAndPasswordRequestDTO,
   ): Promise<RegistrationResponseDTO> {
     try {
-      const response = await this.accountApiClient.register(accountData);
+      const response = await AccountApiService.register(accountData);
       console.log('register response:', response);
-      if (!response.data) {
+      if (!response) {
         throw new Error('创建账号失败，未返回数据');
       }
-      return response.data;
+      return response;
     } catch (error) {
       throw new Error(`创建账号失败：${(error as Error).message}`);
     }
@@ -79,10 +75,10 @@ export class ApplicationService {
   //           errors: ['Passwords must be identical'],
   //         };
   //       }
-  
+
   //       // 2. Create credentials for validation
   //       const credentials = new AuthCredentials(request.username, request.password);
-  
+
   //       // 3. Validate credentials using domain service
   //       const credentialValidation = this.authDomainService.validateCredentialsSecurity(credentials);
   //       if (!credentialValidation.isSecure) {
@@ -92,17 +88,17 @@ export class ApplicationService {
   //           errors: credentialValidation.issues,
   //         };
   //       }
-  
+
   //       // 4. Check username and email availability
   //       const [usernameAvailable, emailAvailable] = await Promise.all([
   //         this.registrationRepository.checkUsernameAvailability(request.username),
   //         this.registrationRepository.checkEmailAvailability(request.email),
   //       ]);
-  
+
   //       const errors: string[] = [];
   //       if (!usernameAvailable) errors.push('Username is already taken');
   //       if (!emailAvailable) errors.push('Email is already registered');
-  
+
   //       if (errors.length > 0) {
   //         return {
   //           success: false,
@@ -110,7 +106,7 @@ export class ApplicationService {
   //           errors,
   //         };
   //       }
-  
+
   //       // 5. Perform registration
   //       const registrationResponse = await this.registrationRepository.register({
   //         username: request.username,
@@ -119,7 +115,7 @@ export class ApplicationService {
   //         firstName: request.displayName?.split(' ')[0],
   //         lastName: request.displayName?.split(' ').slice(1).join(' '),
   //       });
-  
+
   //       if (!registrationResponse.success) {
   //         return {
   //           success: false,
@@ -127,12 +123,12 @@ export class ApplicationService {
   //           errors: [registrationResponse.message],
   //         };
   //       }
-  
+
   //       // 6. Send verification code if required
   //       if (registrationResponse.requiresVerification) {
   //         await this.authRepository.sendVerificationCode(request.email, 'email');
   //       }
-  
+
   //       const response: RegistrationResponseDto = {
   //         success: true,
   //         message: 'Registration successful',
@@ -143,7 +139,7 @@ export class ApplicationService {
   //           ? new Date(Date.now() + 15 * 60 * 1000)
   //           : undefined, // 15 minutes
   //       };
-  
+
   //       return {
   //         success: true,
   //         message: 'Registration successful',

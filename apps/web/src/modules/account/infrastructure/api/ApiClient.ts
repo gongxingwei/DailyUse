@@ -1,183 +1,203 @@
-import axios, { type AxiosInstance } from 'axios';
-// 使用修正后的axios配置实例
-import { publicApiClient } from '../../../../shared/http/instances';
-import type { Account } from '@dailyuse/domain-client';
-import type { TResponse } from '../../../../shared/types/response';
-// types
-import type { RegistrationByUsernameAndPasswordRequestDTO, RegistrationResponseDTO } from '@dailyuse/contracts';
+/**
+ * 账户管理API服务
+ * 基于新的API客户端系统，提供类型安全的账户相关API调用
+ */
+
+import { api, publicApiClient } from '../../../../shared/api/instances';
+import type {
+  RequestOptions,
+  PaginatedData,
+  UploadOptions,
+} from '../../../../shared/api/core/types';
+import type {
+  FrontendAccountInfo,
+  FrontendCreateAccountRequest,
+  FrontendUpdateAccountRequest,
+  FrontendAccountQueryParams,
+  EmailVerifyRequest,
+  PhoneVerifyRequest,
+  RegistrationByUsernameAndPasswordRequestDTO,
+  RegistrationResponseDTO,
+  SuccessResponse,
+  ApiResponse,
+} from '@dailyuse/contracts';
+
+// 重新导出常用类型
+export type AccountInfo = FrontendAccountInfo;
+export type CreateAccountRequest = FrontendCreateAccountRequest;
+export type UpdateAccountRequest = FrontendUpdateAccountRequest;
+export type AccountQueryParams = FrontendAccountQueryParams;
+export type { EmailVerifyRequest, PhoneVerifyRequest };
 
 /**
- * 用户API客户端
- * 负责与后端API的通信
+ * 账户管理API服务
+ * 负责与后端API的通信，提供完整的账户管理功能
+ */
+export class AccountApiService {
+  /**
+   * 测试连接
+   */
+  static async testConnection(): Promise<string> {
+    return publicApiClient.get('/health');
+  }
+
+  /**
+   * 用户注册
+   */
+  static async register(
+    accountData: RegistrationByUsernameAndPasswordRequestDTO,
+    options?: RequestOptions,
+  ): Promise<RegistrationResponseDTO> {
+    return publicApiClient.post('/accounts', accountData, options);
+  }
+
+  /**
+   * 创建账户
+   */
+  static async createAccount(
+    data: CreateAccountRequest,
+    options?: RequestOptions,
+  ): Promise<AccountInfo> {
+    return api.post('/accounts', data, options);
+  }
+
+  /**
+   * 根据ID获取账户
+   */
+  static async getAccountById(id: string, options?: RequestOptions): Promise<AccountInfo> {
+    return api.get(`/accounts/${id}`, options);
+  }
+
+  /**
+   * 根据用户名获取账户
+   */
+  static async getAccountByUsername(
+    username: string,
+    options?: RequestOptions,
+  ): Promise<AccountInfo> {
+    return api.get(`/accounts/username/${username}`, options);
+  }
+
+  /**
+   * 更新账户信息
+   */
+  static async updateAccount(
+    id: string,
+    data: UpdateAccountRequest,
+    options?: RequestOptions,
+  ): Promise<AccountInfo> {
+    return api.put(`/accounts/${id}`, data, options);
+  }
+
+  /**
+   * 激活账户
+   */
+  static async activateAccount(id: string, options?: RequestOptions): Promise<void> {
+    return api.post(`/accounts/${id}/activate`, {}, options);
+  }
+
+  /**
+   * 停用账户
+   */
+  static async deactivateAccount(id: string, options?: RequestOptions): Promise<void> {
+    return api.post(`/accounts/${id}/deactivate`, {}, options);
+  }
+
+  /**
+   * 暂停账户
+   */
+  static async suspendAccount(id: string, options?: RequestOptions): Promise<void> {
+    return api.post(`/accounts/${id}/suspend`, {}, options);
+  }
+
+  /**
+   * 验证邮箱
+   */
+  static async verifyEmail(
+    id: string,
+    data: EmailVerifyRequest,
+    options?: RequestOptions,
+  ): Promise<void> {
+    return api.post(`/accounts/${id}/verify-email`, data, options);
+  }
+
+  /**
+   * 验证手机号
+   */
+  static async verifyPhone(
+    id: string,
+    data: PhoneVerifyRequest,
+    options?: RequestOptions,
+  ): Promise<void> {
+    return api.post(`/accounts/${id}/verify-phone`, data, options);
+  }
+
+  /**
+   * 获取账户列表（分页）
+   */
+  static async getAccounts(
+    params?: Partial<AccountQueryParams>,
+    options?: RequestOptions,
+  ): Promise<PaginatedData<AccountInfo>> {
+    const queryString = params ? new URLSearchParams(params as any).toString() : '';
+    const url = queryString ? `/accounts?${queryString}` : '/accounts';
+    return api.get(url, options);
+  }
+
+  /**
+   * 搜索账户
+   */
+  static async searchAccounts(keyword: string, options?: RequestOptions): Promise<AccountInfo[]> {
+    return api.get(`/accounts/search?q=${encodeURIComponent(keyword)}`, options);
+  }
+
+  /**
+   * 删除账户（软删除）
+   */
+  static async deleteAccount(id: string, options?: RequestOptions): Promise<void> {
+    return api.delete(`/accounts/${id}`, options);
+  }
+
+  /**
+   * 上传头像
+   */
+  static async uploadAvatar(
+    id: string,
+    file: File,
+    options?: UploadOptions,
+  ): Promise<{ avatarUrl: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    return api.upload(`/accounts/${id}/avatar`, formData, {
+      maxFileSize: 5 * 1024 * 1024, // 5MB
+      allowedTypes: ['image/jpeg', 'image/png', 'image/gif'],
+      ...options,
+    });
+  }
+}
+
+/**
+ * @deprecated 旧的ApiClient类已废弃，请使用AccountApiService
  */
 export class ApiClient {
-  private client: AxiosInstance;
-
-  constructor() {
-    // 使用配置好的api实例，包含正确的 baseURL 和拦截器
-    this.client = publicApiClient;
+  static async testConnection(): Promise<string> {
+    return AccountApiService.testConnection();
   }
 
-  async testConnection(): Promise<string> {
-    try {
-      const response = await this.client.get('health');
-      console.log('[API Client]API connection test successful:', response.data);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+  static async register(
+    accountData: RegistrationByUsernameAndPasswordRequestDTO,
+  ): Promise<SuccessResponse<RegistrationResponseDTO>> {
+    const result = await AccountApiService.register(accountData);
+    // 包装成标准响应格式以保持兼容性
+    return {
+      status: 'SUCCESS',
+      success: true,
+      message: 'Registration successful',
+      data: result,
+      metadata: {
+        timestamp: Date.now(),
+      },
+    } as SuccessResponse<RegistrationResponseDTO>;
   }
-  async register(accountData: RegistrationByUsernameAndPasswordRequestDTO): Promise<TResponse<RegistrationResponseDTO>> {
-    try {
-      const response = await this.client.post('/accounts', accountData);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  // /**
-  //  * 获取当前用户信息
-  //  */
-  // async getCurrentUser(): Promise<UserResponseDto> {
-  //   const response = await this.client.get('/users/me');
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 根据ID获取用户
-  //  */
-  // async getUserById(userId: string): Promise<UserResponseDto> {
-  //   const response = await this.client.get(`/users/${userId}`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 根据用户名获取用户
-  //  */
-  // async getUserByUsername(username: string): Promise<UserResponseDto> {
-  //   const response = await this.client.get(`/users/username/${username}`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 根据邮箱获取用户
-  //  */
-  // async getUserByEmail(email: string): Promise<UserResponseDto> {
-  //   const response = await this.client.get(`/users/email/${encodeURIComponent(email)}`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 更新用户资料
-  //  */
-  // async updateUserProfile(
-  //   userId: string,
-  //   profileData: UpdateUserProfileDto,
-  // ): Promise<UserResponseDto> {
-  //   const response = await this.client.put(`/users/${userId}/profile`, profileData);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 上传用户头像
-  //  */
-  // async uploadAvatar(userId: string, file: File): Promise<{ avatarUrl: string }> {
-  //   const formData = new FormData();
-  //   formData.append('avatar', file);
-
-  //   const response = await this.client.post(`/users/${userId}/avatar`, formData, {
-  //     headers: {
-  //       'Content-Type': 'multipart/form-data',
-  //     },
-  //   });
-
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 更新用户头像URL
-  //  */
-  // async updateAvatarUrl(userId: string, avatarUrl: string): Promise<UserResponseDto> {
-  //   const response = await this.client.patch(`/users/${userId}/avatar`, { avatarUrl });
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 停用用户
-  //  */
-  // async deactivateUser(userId: string): Promise<{ success: boolean; message: string }> {
-  //   const response = await this.client.patch(`/users/${userId}/deactivate`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 激活用户
-  //  */
-  // async activateUser(userId: string): Promise<{ success: boolean; message: string }> {
-  //   const response = await this.client.patch(`/users/${userId}/activate`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 检查用户名可用性
-  //  */
-  // async checkUsernameAvailability(username: string): Promise<{ available: boolean }> {
-  //   const response = await this.client.get(`/users/check-username/${username}`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 检查邮箱是否已被使用
-  //  */
-  // async checkEmailAvailability(email: string): Promise<{ available: boolean }> {
-  //   const response = await this.client.get(`/users/check-email/${encodeURIComponent(email)}`);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 修改密码
-  //  */
-  // async changePassword(
-  //   userId: string,
-  //   data: {
-  //     currentPassword: string;
-  //     newPassword: string;
-  //   },
-  // ): Promise<{ success: boolean; message: string }> {
-  //   const response = await this.client.post(`/users/${userId}/change-password`, data);
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 获取用户统计信息
-  //  */
-  // async getUserStats(): Promise<{
-  //   totalUsers: number;
-  //   activeUsers: number;
-  //   newUsersToday: number;
-  //   profileCompletionRate: number;
-  // }> {
-  //   const response = await this.client.get('/users/stats');
-  //   return response.data;
-  // }
-
-  // /**
-  //  * 搜索用户
-  //  */
-  // async searchUsers(params: {
-  //   query?: string;
-  //   status?: string;
-  //   page?: number;
-  //   limit?: number;
-  // }): Promise<{
-  //   users: UserResponseDto[];
-  //   total: number;
-  //   page: number;
-  //   limit: number;
-  //   hasMore: boolean;
-  // }> {
-  //   const response = await this.client.get('/users/search', { params });
-  //   return response.data;
-  // }
 }

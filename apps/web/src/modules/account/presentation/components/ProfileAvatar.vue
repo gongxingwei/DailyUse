@@ -48,7 +48,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 import { Account, User } from '@dailyuse/domain-client';
-import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
+import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
 
 // components
 import ProfileDialog from './ProfileDialog.vue';

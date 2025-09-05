@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserInfoDTO, LoginResponseDTO } from '../core/authentication';
 
 /**
  * 前端API客户端相关类型定义
@@ -125,7 +126,7 @@ export const FrontendLoginRequestSchema = z.object({
 export type FrontendLoginRequest = z.infer<typeof FrontendLoginRequestSchema>;
 
 /**
- * 前端用户信息（简化版）
+ * 前端用户信息（重用核心类型）
  */
 export const FrontendUserInfoSchema = z.object({
   id: z.string(),
@@ -140,10 +141,10 @@ export const FrontendUserInfoSchema = z.object({
   lastLoginAt: z.string().optional(),
 });
 
-export type FrontendUserInfo = z.infer<typeof FrontendUserInfoSchema>;
+export type FrontendUserInfo = UserInfoDTO; // 重用核心类型
 
 /**
- * 前端登录响应
+ * 前端登录响应（重用核心类型）
  */
 export const FrontendLoginResponseSchema = z.object({
   user: FrontendUserInfoSchema,
@@ -151,9 +152,20 @@ export const FrontendLoginResponseSchema = z.object({
   refreshToken: z.string(),
   expiresIn: z.number(),
   tokenType: z.string().default('Bearer'),
+  rememberToken: z.string().optional(),
+  sessionUuid: z.string().optional(),
 });
 
-export type FrontendLoginResponse = z.infer<typeof FrontendLoginResponseSchema>;
+export type FrontendLoginResponse = LoginResponseDTO; // 重用核心类型
+
+/**
+ * 创建前端登录成功响应的Schema
+ */
+export const FrontendLoginSuccessResponseSchema = createSuccessResponseSchema(
+  FrontendLoginResponseSchema,
+);
+
+export type FrontendLoginSuccessResponse = SuccessResponse<FrontendLoginResponse>;
 
 /**
  * 刷新令牌请求
@@ -265,6 +277,54 @@ export const PhoneVerifyRequestSchema = z.object({
 });
 
 export type PhoneVerifyRequest = z.infer<typeof PhoneVerifyRequestSchema>;
+
+// =================== API响应封装 ===================
+
+/**
+ * 成功响应的通用格式
+ */
+export const SuccessResponseSchema = z.object({
+  status: z.literal('success'),
+  message: z.string().optional(),
+  data: z.any(),
+  timestamp: z.string(),
+  path: z.string().optional(),
+});
+
+export type SuccessResponse<T = any> = Omit<z.infer<typeof SuccessResponseSchema>, 'data'> & {
+  data: T;
+};
+
+/**
+ * 创建成功响应的Schema工厂函数
+ */
+export function createSuccessResponseSchema<T extends z.ZodType>(dataSchema: T) {
+  return z.object({
+    status: z.literal('success'),
+    message: z.string().optional(),
+    data: dataSchema,
+    timestamp: z.string(),
+    path: z.string().optional(),
+  });
+}
+
+/**
+ * 分页成功响应
+ */
+export const PaginatedSuccessResponseSchema = z.object({
+  status: z.literal('success'),
+  message: z.string().optional(),
+  data: PaginatedDataSchema,
+  timestamp: z.string(),
+  path: z.string().optional(),
+});
+
+export type PaginatedSuccessResponse<T = any> = Omit<
+  z.infer<typeof PaginatedSuccessResponseSchema>,
+  'data'
+> & {
+  data: PaginatedData<T>;
+};
 
 // =================== API错误相关 ===================
 
