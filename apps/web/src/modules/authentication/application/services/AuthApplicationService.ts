@@ -1,18 +1,9 @@
-import axios, { type AxiosInstance } from 'axios';
+import { type AuthByPasswordForm, type AuthResponseDTO, type AuthByPasswordRequestDTO } from '@dailyuse/contracts';
 import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
 import { AccountType } from '@dailyuse/domain-client';
-import { AuthDomainService } from '../../domain/services/AuthDomainService';
-import { AuthCredential } from '@dailyuse/domain-client';
 import { ApiClient } from '../../infrastructure/api/ApiClient';
-import type {
-  LoginRequestDto,
-  LoginResponseDto,
-  TokenRefreshRequestDto,
-  TokenRefreshResponseDto,
-  AuthOperationResultDto,
-} from '../dtos/AuthDtos';
 import type { TResponse } from '../../../../shared/types/response';
-import type { AuthByPasswordRequestDTO, AuthResponseDTO, AuthByPasswordForm } from '@/tempTypes';
+
 /**
  * Authentication Application Service
  * 认证应用服务 - 协调领域对象和基础设施，实现认证相关用例
@@ -21,7 +12,6 @@ export class AuthApplicationService {
   private static instance: AuthApplicationService | null = null;
   // private readonly authRepository: IAuthRepository | null = null;
   // private readonly registrationRepository: IRegistrationRepository | null = null;
-  // private readonly authDomainService: AuthDomainService | null = null;
   private readonly apiClient: ApiClient;
   private constructor() {
     this.apiClient = new ApiClient();
@@ -30,7 +20,6 @@ export class AuthApplicationService {
   static async createInstance(
     authRepository?: IAuthRepository,
     registrationRepository?: IRegistrationRepository,
-    authDomainService?: AuthDomainService,
   ): Promise<AuthApplicationService> {
     if (!AuthApplicationService.instance) {
       AuthApplicationService.instance = new AuthApplicationService();

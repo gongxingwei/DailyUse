@@ -1,14 +1,11 @@
 import axios, { type AxiosInstance } from 'axios';
 // 使用修正后的axios配置实例
 import { publicApiClient } from '../../../../shared/http/instances';
-import type {
-  CreateAccountDto,
-  UpdateAccountDto,
-  AccountResponseDto,
-} from '../../application/dtos/UserDtos';
 import type { Account } from '@dailyuse/domain-client';
 import type { TResponse } from '../../../../shared/types/response';
-import { type RegistrationRequestDTO, type RegistrationResponseDTO } from '../../../../tempTypes';
+// types
+import type { RegistrationByUsernameAndPasswordRequestDTO, RegistrationResponseDTO } from '@dailyuse/contracts';
+
 /**
  * 用户API客户端
  * 负责与后端API的通信
@@ -30,7 +27,7 @@ export class ApiClient {
       throw error;
     }
   }
-  async register(accountData: RegistrationRequestDTO): Promise<TResponse<RegistrationResponseDTO>> {
+  async register(accountData: RegistrationByUsernameAndPasswordRequestDTO): Promise<TResponse<RegistrationResponseDTO>> {
     try {
       const response = await this.client.post('/accounts', accountData);
       return response.data;

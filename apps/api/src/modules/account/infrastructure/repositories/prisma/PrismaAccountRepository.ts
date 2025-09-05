@@ -6,20 +6,21 @@ import { prisma } from '../../../../../config/prisma';
 
 export class PrismaAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
-    const accountData = {
-      uuid: account.uuid,
-      username: account.username,
-      email: account.email?.value,
-      phone: account.phoneNumber?.fullNumber,
-      accountType: this.mapAccountTypeToString(account.accountType),
-      status: account.status.toString(),
-      roleIds: JSON.stringify(Array.from(account.roleIds)),
-      lastLoginAt: account.lastLoginAt,
-      emailVerificationToken: account.emailVerificationToken,
-      phoneVerificationCode: account.phoneVerificationCode,
-      emailVerified: account.isEmailVerified,
-      phoneVerified: account.isPhoneVerified,
-    };
+    const accountData = account.toPersistence();
+    // const accountData = {
+    //   uuid: account.uuid,
+    //   username: account.username,
+    //   email: account.email?.value,
+    //   phone: account.phoneNumber?.fullNumber,
+    //   accountType: this.mapAccountTypeToString(account.accountType),
+    //   status: account.status.toString(),
+    //   roleIds: JSON.stringify(Array.from(account.roleIds)),
+    //   lastLoginAt: account.lastLoginAt,
+    //   emailVerificationToken: account.emailVerificationToken,
+    //   phoneVerificationCode: account.phoneVerificationCode,
+    //   emailVerified: account.isEmailVerified,
+    //   phoneVerified: account.isPhoneVerified,
+    // };
 
     // 保存用户配置信息 - 匹配实际的UserProfile schema
     const userProfileData = {
@@ -53,15 +54,15 @@ export class PrismaAccountRepository implements IAccountRepository {
         update: {
           username: accountData.username,
           email: accountData.email,
-          phone: accountData.phone,
+          phone: accountData.phoneNumber,
           accountType: accountData.accountType,
           status: accountData.status,
-          roleIds: accountData.roleIds,
+          roleIds: JSON.stringify(accountData.roleUuids),
           lastLoginAt: accountData.lastLoginAt,
           emailVerificationToken: accountData.emailVerificationToken,
           phoneVerificationCode: accountData.phoneVerificationCode,
-          emailVerified: accountData.emailVerified,
-          phoneVerified: accountData.phoneVerified,
+          emailVerified: accountData.isEmailVerified,
+          phoneVerified: accountData.isPhoneVerified,
         },
       });
 

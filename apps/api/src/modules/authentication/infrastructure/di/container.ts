@@ -1,4 +1,4 @@
-import { AuthenticationController } from '../../interface/controller';
+import { AuthenticationController } from '../../interface/http/controller';
 import {
   PrismaAuthCredentialRepository,
   PrismaSessionRepository,
@@ -30,7 +30,6 @@ class AuthenticationContainer {
     this.tokenRepository = new PrismaTokenRepository();
     this.mfaDeviceRepository = new PrismaMFADeviceRepository();
   }
-
 
   resolve(serviceName: string): any {
     switch (serviceName) {

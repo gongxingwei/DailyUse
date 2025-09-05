@@ -494,7 +494,7 @@ export class Account extends AccountCore implements IAccount {
       roleUuids: Array.from(this._roleUuids),
       isEmailVerified: this._isEmailVerified,
       isPhoneVerified: this._isPhoneVerified,
-      user: this._user.toDTO(),
+      user: (this._user as User).toPersistence(this.uuid),
     };
   }
 

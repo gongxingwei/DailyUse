@@ -37,6 +37,22 @@ export class User extends UserCore implements IUser {
     });
   }
 
+  toPersistence(accountUuid: string): UserProfilePersistenceDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid,
+      firstName: this.firstName || '',
+      lastName: this.lastName || '',
+      displayName: this.displayName || '',
+      avatarUrl: this.avatar || '',
+      bio: this.bio || '',
+      sex: this.sex.value,
+      socialAccounts: JSON.stringify(this.socialAccounts) || '{}',
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
+  }
+
   /**
    * 从持久化 DTO 创建用户领域对象
    * 仅处理数据转换逻辑，确保领域对象构造的完整性

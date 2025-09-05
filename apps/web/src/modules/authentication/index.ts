@@ -25,7 +25,7 @@ export type {
 } from './domain/repositories/IAuthRepository';
 
 // Domain Services - 领域服务
-export { AuthDomainService } from './domain/services/AuthDomainService';
+
 
 // ============================================================================
 // Application Layer Exports - 应用层导出
@@ -33,42 +33,6 @@ export { AuthDomainService } from './domain/services/AuthDomainService';
 
 // Application Services - 应用服务
 export { AuthApplicationService } from './application/services/AuthApplicationService';
-
-// DTOs - 数据传输对象
-export type {
-  // Basic DTOs
-  LoginRequestDto,
-  LoginResponseDto,
-  RegistrationRequestDto,
-  RegistrationResponseDto,
-  SessionDto,
-
-  // Token Management DTOs
-  TokenRefreshRequestDto,
-  TokenRefreshResponseDto,
-
-  // Password Management DTOs
-  PasswordChangeRequestDto,
-  PasswordResetRequestDto,
-  PasswordResetResponseDto,
-  PasswordResetConfirmDto,
-
-  // Verification DTOs
-  VerificationCodeRequestDto,
-  VerificationCodeResponseDto,
-  VerificationCodeConfirmDto,
-
-  // Session Management DTOs
-  SessionListDto,
-  LogoutRequestDto,
-
-  // Security & Operation DTOs
-  SecurityCheckDto,
-  AuthOperationResultDto,
-  AuthStateDto,
-  LoginAttemptDto,
-  LoginAttemptSummaryDto,
-} from './application/dtos/AuthDtos';
 
 // ============================================================================
 // Infrastructure Layer Exports - 基础设施层导出
@@ -78,8 +42,7 @@ export type {
 export { ApiClient } from './infrastructure/api/ApiClient';
 
 // Repository Implementations - 仓储实现
-export { AuthRepositoryImpl } from './infrastructure/repositories/AuthRepositoryImpl';
-export { RegistrationRepositoryImpl } from './infrastructure/repositories/RegistrationRepositoryImpl';
+// 暂不考虑
 
 // ============================================================================
 // Presentation Layer Exports - 表现层导出

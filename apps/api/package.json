@@ -12,6 +12,8 @@
     "prisma:studio": "prisma studio"
   },
   "dependencies": {
+    "@dailyuse/contracts": "workspace:*",
+    "@dailyuse/utils": "workspace:*",
     "@dailyuse/domain-server": "workspace:*",
     "@prisma/client": "^6.15.0",
     "bcryptjs": "^2.4.3",

@@ -1,1 +1,0 @@
-// Re-export authentication models directly from domain-client// domain-client中的认证模型就是渲染进程/web端使用的最终domain对象export {   Session as AuthSession,  AuthCredential as AuthCredentials,  Password as PasswordResetRequest,  Session as VerificationCode} from '../../../../../../../packages/domain-client/src/authentication';

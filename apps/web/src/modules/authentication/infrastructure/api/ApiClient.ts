@@ -1,15 +1,7 @@
-import { type AxiosInstance,  } from 'axios';
+import { type AxiosInstance } from 'axios';
 import duAxios from '@/shared/axios';
-import {
-  AuthCredential,
-  Session,
-  Account,
-  type AccountDTO,
-} from '@dailyuse/domain-client';
-import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
 import { type TResponse } from '../../../../shared/types/response';
-import type { LoginRequestDto, LoginResponseDto } from '../../application/dtos/AuthDtos';
-import type { AuthByPasswordRequestDTO, AuthResponseDTO, AuthByPasswordForm } from '@/tempTypes'
+import type { AuthByPasswordRequestDTO, AuthResponseDTO, AuthByPasswordForm } from '@dailyuse/contracts'
 /**
  * Authentication API Client
  * 认证API客户端 - 封装与认证相关的HTTP请求

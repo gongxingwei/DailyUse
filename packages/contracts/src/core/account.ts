@@ -43,8 +43,8 @@ export interface IAccountCore {
   readonly username: string;
   readonly email?: IEmailCore;
   readonly phoneNumber?: IPhoneNumberCore;
-  readonly address?: IAddressCore;
-  readonly status: AccountStatus;
+  readonly address?: IAddressCore; // 没使用
+  readonly status: AccountStatus; // 账号状态（'active', 'disabled', 'suspended', 'pending_verification'）
   readonly accountType: AccountType;
   readonly user: IUserCore;
   readonly roleIds: Set<string>;

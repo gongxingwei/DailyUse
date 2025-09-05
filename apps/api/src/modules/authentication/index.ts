@@ -8,7 +8,7 @@ export type {
 
 // Export main classes
 export { AuthenticationApplicationService } from './application/services/AuthenticationApplicationService';
-export { AuthenticationController } from './interface/controller';
+export { AuthenticationController } from './interface/http/controller';
 
 // Export infrastructure
 export {
@@ -20,7 +20,7 @@ export {
 export { authenticationContainer } from './infrastructure/di/container';
 
 // Export routes
-export { authenticationRoutes } from './interface/routes';
+export { authenticationRoutes } from './interface/http/routes';
 
 // Export initialization
 export { registerAuthenticationInitializationTasks } from './initialization/authenticationInitialization';

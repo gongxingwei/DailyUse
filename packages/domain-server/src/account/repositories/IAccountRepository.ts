@@ -30,7 +30,7 @@ export interface IAccountRepository {
  * 仓储层返回数据库 DTO，由应用层负责转换为领域对象
  */
 export interface IUserRepository {
-  save(user: User): Promise<void>;
+  save(user: User, accountUuid: string): Promise<void>;
   findById(uuid: string): Promise<UserProfilePersistenceDTO | null>;
   findByAccountUuid(accountUuid: string): Promise<UserProfilePersistenceDTO | null>;
 

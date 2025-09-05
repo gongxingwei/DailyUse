@@ -4,24 +4,15 @@ import type { UserProfilePersistenceDTO } from '@dailyuse/contracts';
 import { prisma } from '../../../../../config/prisma';
 
 export class PrismaUserRepository implements IUserRepository {
-  async save(user: User): Promise<void> {
-    const userData = {
-      uuid: user.uuid,
-      firstName: user.firstName || '',
-      lastName: user.lastName || '',
-      displayName: user.displayName,
-      sex: 2, // 默认设置为 'other'
-      avatarUrl: user.avatar,
-      bio: user.bio,
-      socialAccounts: JSON.stringify(user.socialAccounts || {}),
-    };
+  async save(user: User, accountUuid: string): Promise<void> {
+    const userData = user.toPersistence(accountUuid);
 
     await prisma.userProfile.upsert({
       where: { uuid: user.uuid },
       update: userData,
       create: {
         ...userData,
-        accountUuid: user.uuid, // 假设 User uuid 和 Account uuid 相同，实际情况可能需要调整
+        accountUuid,
       },
     });
   }

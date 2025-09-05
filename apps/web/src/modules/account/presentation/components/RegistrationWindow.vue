@@ -106,12 +106,12 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue';
-import { type RegistrationForm } from '@/tempTypes';
+import { type RegistrationByUsernameAndPasswordForm, AccountType } from '@dailyuse/contracts';
 // composables
 import { useAccountService } from '../composables/useAccountService';
 // utils
 import { passwordRules, usernameRules } from '@/shared/utils/validations/rules';
-import { AccountType } from '@dailyuse/domain-client';
+
 const { snackbar, handleRegistration } = useAccountService();
 const valid = ref(false);
 const loading = ref(false);
@@ -120,11 +120,10 @@ const showTerms = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-const form = reactive<RegistrationForm>({
+const form = reactive<RegistrationByUsernameAndPasswordForm>({
     username: '',
     password: '',
     confirmPassword: '',
-    accountType: AccountType.GUEST, // 默认注册为访客账号
     agree: false,
 });
 
