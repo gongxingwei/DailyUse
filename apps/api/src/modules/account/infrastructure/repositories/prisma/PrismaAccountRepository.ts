@@ -6,32 +6,41 @@ import { prisma } from '../../../../../config/prisma';
 
 export class PrismaAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
-    const accountData = account.toPersistence();
-    // const accountData = {
-    //   uuid: account.uuid,
-    //   username: account.username,
-    //   email: account.email?.value,
-    //   phone: account.phoneNumber?.fullNumber,
-    //   accountType: this.mapAccountTypeToString(account.accountType),
-    //   status: account.status.toString(),
-    //   roleIds: JSON.stringify(Array.from(account.roleIds)),
-    //   lastLoginAt: account.lastLoginAt,
-    //   emailVerificationToken: account.emailVerificationToken,
-    //   phoneVerificationCode: account.phoneVerificationCode,
-    //   emailVerified: account.isEmailVerified,
-    //   phoneVerified: account.isPhoneVerified,
-    // };
+    const rawAccountData = account.toPersistence();
+
+    // 准备账户数据 - 移除不存在于数据库schema中的字段
+    const accountData = {
+      uuid: rawAccountData.uuid,
+      username: rawAccountData.username,
+      email: rawAccountData.email,
+      phone: rawAccountData.phoneNumber,
+      accountType: rawAccountData.accountType,
+      status: rawAccountData.status,
+      createdAt: rawAccountData.createdAt,
+      updatedAt: rawAccountData.updatedAt,
+      lastLoginAt: rawAccountData.lastLoginAt,
+      emailVerificationToken: rawAccountData.emailVerificationToken,
+      phoneVerificationCode: rawAccountData.phoneVerificationCode,
+      roleIds: JSON.stringify(rawAccountData.roleUuids),
+      emailVerified: rawAccountData.isEmailVerified,
+      phoneVerified: rawAccountData.isPhoneVerified,
+    };
 
     // 保存用户配置信息 - 匹配实际的UserProfile schema
     const userProfileData = {
+      uuid: rawAccountData.user.uuid,
       accountUuid: account.uuid,
-      firstName: account.user.firstName || '',
-      lastName: account.user.lastName || '',
-      displayName: account.user.displayName,
-      sex: 2, // 默认设置为 'other'，可以后续由用户更新
-      avatarUrl: account.user.avatar,
-      bio: account.user.bio,
-      socialAccounts: JSON.stringify(account.user.socialAccounts || {}),
+      firstName: rawAccountData.user.firstName || '',
+      lastName: rawAccountData.user.lastName || '',
+      displayName: rawAccountData.user.displayName,
+      sex: rawAccountData.user.sex ?? 2, // 默认设置为 'other'，可以后续由用户更新
+      avatarUrl: rawAccountData.user.avatarUrl,
+      bio: rawAccountData.user.bio,
+      socialAccounts: JSON.stringify(rawAccountData.user.socialAccounts || {}),
+      // 如果有地址信息，将其作为location字符串存储
+      location: rawAccountData.address
+        ? `${rawAccountData.address.street}, ${rawAccountData.address.city}, ${rawAccountData.address.state}, ${rawAccountData.address.country} ${rawAccountData.address.postalCode}`.trim()
+        : undefined,
     };
 
     await prisma.$transaction(async (tx) => {
@@ -54,15 +63,15 @@ export class PrismaAccountRepository implements IAccountRepository {
         update: {
           username: accountData.username,
           email: accountData.email,
-          phone: accountData.phoneNumber,
+          phone: accountData.phone,
           accountType: accountData.accountType,
           status: accountData.status,
-          roleIds: JSON.stringify(accountData.roleUuids),
+          roleIds: accountData.roleIds,
           lastLoginAt: accountData.lastLoginAt,
           emailVerificationToken: accountData.emailVerificationToken,
           phoneVerificationCode: accountData.phoneVerificationCode,
-          emailVerified: accountData.isEmailVerified,
-          phoneVerified: accountData.isPhoneVerified,
+          emailVerified: accountData.emailVerified,
+          phoneVerified: accountData.phoneVerified,
         },
       });
 
@@ -78,6 +87,7 @@ export class PrismaAccountRepository implements IAccountRepository {
           avatarUrl: userProfileData.avatarUrl,
           bio: userProfileData.bio,
           socialAccounts: userProfileData.socialAccounts,
+          location: userProfileData.location,
         },
       });
     });
