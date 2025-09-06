@@ -19,8 +19,8 @@ export interface EnvironmentConfig {
  */
 export function getEnvironmentConfig(): EnvironmentConfig {
   const config: EnvironmentConfig = {
-    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
-    uploadBaseUrl: import.meta.env.VITE_UPLOAD_BASE_URL || 'http://localhost:3000/api/v1/upload',
+    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3888/api/v1',
+    uploadBaseUrl: import.meta.env.VITE_UPLOAD_BASE_URL || 'http://localhost:3888/api/v1/upload',
     timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
     enableMock: import.meta.env.VITE_ENABLE_MOCK === 'true',
     logLevel: (import.meta.env.VITE_LOG_LEVEL as any) || 'info',

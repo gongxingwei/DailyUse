@@ -19,20 +19,23 @@ interface ExtendedAxiosRequestConfig extends InternalAxiosRequestConfig {
     requestId: string;
     startTime: number;
   };
+  _retry?: boolean;
 }
 
 /**
  * 认证管理器
  */
 class AuthManager {
-  private static readonly TOKEN_KEY = 'auth_token';
+  private static readonly TOKEN_KEY = 'access_token';
   private static readonly REFRESH_TOKEN_KEY = 'refresh_token';
+  private static readonly REMEMBER_TOKEN_KEY = 'remember_token';
+  private static readonly TOKEN_EXPIRY_KEY = 'token_expiry';
 
   /**
    * 获取访问令牌
    */
   static getAccessToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
+    return localStorage.getItem(this.TOKEN_KEY) || sessionStorage.getItem(this.TOKEN_KEY);
   }
 
   /**
@@ -43,12 +46,54 @@ class AuthManager {
   }
 
   /**
+   * 获取记住我令牌
+   */
+  static getRememberToken(): string | null {
+    return localStorage.getItem(this.REMEMBER_TOKEN_KEY);
+  }
+
+  /**
+   * 获取令牌过期时间
+   */
+  static getTokenExpiry(): number | null {
+    const expiry = localStorage.getItem(this.TOKEN_EXPIRY_KEY);
+    return expiry ? parseInt(expiry) : null;
+  }
+
+  /**
    * 设置令牌
    */
-  static setTokens(accessToken: string, refreshToken?: string): void {
+  static setTokens(
+    accessToken: string,
+    refreshToken?: string,
+    rememberToken?: string,
+    expiresIn?: number,
+  ): void {
     localStorage.setItem(this.TOKEN_KEY, accessToken);
+    sessionStorage.setItem(this.TOKEN_KEY, accessToken);
+
     if (refreshToken) {
       localStorage.setItem(this.REFRESH_TOKEN_KEY, refreshToken);
+    }
+    if (rememberToken) {
+      localStorage.setItem(this.REMEMBER_TOKEN_KEY, rememberToken);
+    }
+    if (expiresIn) {
+      const expiryTime = Date.now() + expiresIn * 1000;
+      localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString());
+    }
+  }
+
+  /**
+   * 更新访问令牌
+   */
+  static updateAccessToken(accessToken: string, expiresIn?: number): void {
+    localStorage.setItem(this.TOKEN_KEY, accessToken);
+    sessionStorage.setItem(this.TOKEN_KEY, accessToken);
+
+    if (expiresIn) {
+      const expiryTime = Date.now() + expiresIn * 1000;
+      localStorage.setItem(this.TOKEN_EXPIRY_KEY, expiryTime.toString());
     }
   }
 
@@ -58,6 +103,9 @@ class AuthManager {
   static clearTokens(): void {
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+    localStorage.removeItem(this.REMEMBER_TOKEN_KEY);
+    localStorage.removeItem(this.TOKEN_EXPIRY_KEY);
+    sessionStorage.removeItem(this.TOKEN_KEY);
   }
 
   /**
@@ -65,6 +113,32 @@ class AuthManager {
    */
   static isAuthenticated(): boolean {
     return !!this.getAccessToken();
+  }
+
+  /**
+   * 检查 Token 是否过期
+   */
+  static isTokenExpired(): boolean {
+    const expiry = this.getTokenExpiry();
+    if (!expiry) return false;
+    return Date.now() >= expiry;
+  }
+
+  /**
+   * 检查是否需要刷新 Token
+   */
+  static needsRefresh(): boolean {
+    const expiry = this.getTokenExpiry();
+    if (!expiry) return false;
+    return Date.now() >= expiry - 5 * 60 * 1000; // 提前5分钟
+  }
+
+  /**
+   * 获取 Authorization Header 值
+   */
+  static getAuthorizationHeader(): string | null {
+    const token = this.getAccessToken();
+    return token ? `Bearer ${token}` : null;
   }
 }
 
@@ -113,6 +187,11 @@ export class InterceptorManager {
   private instance: AxiosInstance;
   private config: HttpClientConfig;
   private requestId = 0;
+  private isRefreshing = false;
+  private failedQueue: Array<{
+    resolve: (value: any) => void;
+    reject: (error: any) => void;
+  }> = [];
 
   constructor(instance: AxiosInstance, config: HttpClientConfig) {
     this.instance = instance;
@@ -218,7 +297,41 @@ export class InterceptorManager {
           data: error.response?.data,
         });
 
-        // 处理特定错误状态
+        // 401 错误处理 - Token 过期或无效
+        if (error.response?.status === 401 && !config._retry) {
+          if (this.isRefreshing) {
+            // 如果正在刷新，将请求加入队列
+            return new Promise((resolve, reject) => {
+              this.failedQueue.push({ resolve, reject });
+            }).then((token) => {
+              if (config.headers) {
+                config.headers.Authorization = `Bearer ${token}`;
+              }
+              return this.instance(config);
+            });
+          }
+
+          config._retry = true;
+          this.isRefreshing = true;
+
+          try {
+            const newToken = await this.refreshAccessToken();
+            this.processQueue(null, newToken);
+
+            if (config.headers) {
+              config.headers.Authorization = `Bearer ${newToken}`;
+            }
+            return this.instance(config);
+          } catch (refreshError) {
+            this.processQueue(refreshError, null);
+            await this.handleUnauthorized();
+            return Promise.reject(refreshError);
+          } finally {
+            this.isRefreshing = false;
+          }
+        }
+
+        // 处理其他错误状态
         await this.handleErrorStatus(error);
 
         // 重试逻辑
@@ -237,20 +350,90 @@ export class InterceptorManager {
   }
 
   /**
+   * 刷新访问令牌
+   */
+  private async refreshAccessToken(): Promise<string> {
+    const refreshToken = AuthManager.getRefreshToken();
+
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
+    }
+
+    try {
+      // 使用原始 axios 实例避免拦截器循环
+      const response = await this.instance.post(
+        '/api/auth/refresh',
+        {
+          refreshToken,
+        },
+        {
+          headers: {
+            'X-Skip-Auth': 'true', // 标记为刷新请求，避免重复拦截
+          },
+        } as any,
+      );
+
+      const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+
+      // 更新 AuthManager
+      AuthManager.updateAccessToken(accessToken, expiresIn);
+      if (newRefreshToken) {
+        AuthManager.setTokens(accessToken, newRefreshToken, undefined, expiresIn);
+      }
+
+      return accessToken;
+    } catch (error) {
+      LogManager.error('Token refresh failed', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 处理队列中的请求
+   */
+  private processQueue(error: any, token: string | null): void {
+    this.failedQueue.forEach(({ resolve, reject }) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve(token);
+      }
+    });
+
+    this.failedQueue = [];
+  }
+
+  /**
    * 处理错误状态
    */
   private async handleErrorStatus(error: AxiosError): Promise<void> {
     const status = error.response?.status;
 
-    if (status === 401) {
-      // 未授权，尝试刷新令牌或跳转登录
-      await this.handleUnauthorized();
-    } else if (status === 403) {
+    if (status === 403) {
       // 禁止访问
       LogManager.warn('访问被禁止', error.response?.data);
+      // 通知应用显示权限不足提示
+      window.dispatchEvent(
+        new CustomEvent('api:forbidden', {
+          detail: { message: '访问被禁止' },
+        }),
+      );
     } else if (status === 429) {
       // 请求过于频繁
       LogManager.warn('请求过于频繁，请稍后再试', error.response?.data);
+      window.dispatchEvent(
+        new CustomEvent('api:rate_limit', {
+          detail: { message: '请求过于频繁，请稍后再试' },
+        }),
+      );
+    } else if (status === 500) {
+      // 服务器错误
+      LogManager.error('服务器内部错误', error.response?.data);
+      window.dispatchEvent(
+        new CustomEvent('api:server_error', {
+          detail: { message: '服务器错误，请稍后再试' },
+        }),
+      );
     }
   }
 
