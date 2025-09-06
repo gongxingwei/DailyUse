@@ -25,7 +25,7 @@ export class AuthenticationController {
   constructor(private readonly authenticationService: AuthenticationApplicationService) {}
 
   /**
-   * POST /api/auth/login
+   * POST /api/v1/auth/login
    * 用户登录
    */
   async login(req: Request, res: Response): Promise<void> {
