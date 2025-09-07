@@ -20,5 +20,12 @@ export * as EventContracts from './events/index';
 export * from './frontend';
 export * as FrontendContracts from './frontend';
 
+// 导出模块相关的类型定义
+export * as TaskContracts from './modules/task';
+export * as GoalContracts from './modules/goal';
+export * as ReminderContracts from './modules/reminder';
+export * as EditorContracts from './modules/editor';
+export * as RepositoryContracts from './modules/repository';
+
 // 确保导出新的认证类型
 export type { LoginResponseDTO, UserInfoDTO } from './core/authentication';

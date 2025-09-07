@@ -1,3 +1,4 @@
+<!-- 侧边栏组件 -->
 <template>
     <div class="sidebar">
         <button class="sidebar-btn" @click="toggleRail" title="Logo">
@@ -6,45 +7,78 @@
         <button class="sidebar-avatar" title="Profile">
             <profile-avatar size="36" />
         </button>
-        <button class="sidebar-btn" v-for="item in navItems" :key="item.to" :title="item.title" @click="go(item.to)">
-            <span :class="item.icon" style="font-size: 24px;"></span>
+
+        <!-- 主导航项 -->
+        <button class="sidebar-btn" v-for="item in navigationItems" :key="item.name" :title="item.title"
+            :class="{ active: isActiveRoute(item.path) }" @click="navigateTo(item.path)">
+            <v-icon :icon="item.icon" size="24" />
         </button>
+
         <div class="sidebar-divider"></div>
+
         <div class="sidebar-bottom">
-            <button class="sidebar-btn bottom-button" v-for="item in bottomItems" :key="item.to" :title="item.title"
-                @click="go(item.to)">
-                <span :class="item.icon" style="font-size: 24px;"></span>
+            <button class="sidebar-btn bottom-button" v-for="item in bottomItems" :key="item.name" :title="item.title"
+                :class="{ active: isActiveRoute(item.path) }" @click="navigateTo(item.path)">
+                <v-icon :icon="item.icon" size="24" />
             </button>
             <SidebarMoreMenu />
         </div>
-
     </div>
 </template>
 
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import ProfileAvatar from '@/modules/account/presentation/components/ProfileAvatar.vue'
-import SidebarMoreMenu from './SidebarMoreMenu.vue';
+import { computed } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { useI18n } from 'vue-i18n';
-const router = useRouter()
+import ProfileAvatar from '@/modules/account/presentation/components/ProfileAvatar.vue';
+import SidebarMoreMenu from './SidebarMoreMenu.vue';
+import { getNavigationRoutes } from '@/shared/router/routes';
+
+const router = useRouter();
+const route = useRoute();
 const { t } = useI18n();
-const toggleRail = () => {
-    // 这里可以实现收缩/展开逻辑
-}
-const go = (path: string) => {
-    router.push(path)
-}
-const navItems = [
-    { icon: 'mdi mdi-credit-card-outline', title: t('mainLayout.navigation.summary'), to: '/summary' },
-    { icon: 'mdi mdi-fencing', title: t('mainLayout.navigation.goal'), to: '/goal-management' },
-    { icon: 'mdi mdi-list-box', title: t('mainLayout.navigation.task'), to: '/task-management' },
-    { icon: 'mdi mdi-database', title: t('mainLayout.navigation.repository'), to: '/repository' },
-    { icon: 'mdi mdi-bell', title: t('mainLayout.navigation.reminder'), to: '/reminder' },
-    { icon: 'mdi mdi-bell', title: t('mainLayout.navigation.test'), to: '/test' },
-]
+
+// 获取导航路由
+const navigationItems = computed(() => {
+    const navRoutes = getNavigationRoutes();
+    return navRoutes.map(navRoute => ({
+        name: navRoute.name,
+        path: navRoute.path === '' ? '/' : navRoute.path,
+        title: navRoute.title || '',
+        icon: navRoute.icon || 'mdi-circle'
+    }));
+});
+
+// 底部导航项
 const bottomItems = [
-    { icon: 'mdi mdi-cog', title: t('mainLayout.navigation.settings'), to: '/setting' },
-]
+    {
+        name: 'account',
+        path: '/account',
+        title: '账户设置',
+        icon: 'mdi-account-cog'
+    }
+];
+
+// 切换收缩/展开
+const toggleRail = () => {
+    // TODO: 实现收缩/展开逻辑
+    console.log('Toggle sidebar rail');
+};
+
+// 导航到指定路径
+const navigateTo = (path: string) => {
+    if (route.path !== path) {
+        router.push(path);
+    }
+};
+
+// 检查路由是否激活
+const isActiveRoute = (path: string) => {
+    if (path === '/') {
+        return route.path === '/';
+    }
+    return route.path.startsWith(path);
+};
 </script>
 
 <style scoped>
@@ -71,17 +105,36 @@ const bottomItems = [
     justify-content: center;
     transition: background 0.2s;
     position: relative;
+    border-radius: 8px;
 }
 
 .sidebar-btn:hover {
     background-color: rgba(var(--v-theme-on-surface), 0.1);
-    border-radius: 8px;
+}
+
+.sidebar-btn.active {
+    background-color: rgba(var(--v-theme-primary), 0.1);
+    color: rgb(var(--v-theme-primary));
+}
+
+.sidebar-avatar {
+    width: 44px;
+    height: 44px;
+    margin: 8px 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    overflow: hidden;
 }
 
 .sidebar-divider {
     width: 80%;
     height: 1px;
-    background: #e0e0e0;
+    background: rgba(var(--v-theme-on-surface), 0.12);
     margin: 12px 0;
 }
 
@@ -90,5 +143,9 @@ const bottomItems = [
     flex-direction: column;
     flex: 1;
     justify-content: flex-end;
+}
+
+.bottom-button {
+    margin-bottom: 8px;
 }
 </style>

@@ -11,6 +11,15 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import accountRoutes from './modules/account/interface/http/routes';
 import { authenticationRoutes } from './modules/authentication';
+import { taskRouter } from './modules/task';
+import { goalRouter } from './modules/goal';
+import { reminderRouter } from './modules/reminder';
+import { createEditorRoutes, EditorController } from './modules/editor';
+import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
+import { EditorDomainService } from './modules/editor/domain/services/EditorDomainService.js';
+import { RepositoryController, createRepositoryRoutes } from './modules/repository';
+import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
+import { RepositoryDomainService } from './modules/repository/domain/services/RepositoryDomainService.js';
 
 const app: Express = express();
 
@@ -50,6 +59,29 @@ api.use('', accountRoutes);
 
 // 挂载认证路由到 api 路由器 (登录/登出/刷新等)
 api.use('', authenticationRoutes);
+
+// 挂载任务管理路由
+api.use('/tasks', taskRouter);
+
+// 挂载目标管理路由
+api.use('/goals', goalRouter);
+
+// 挂载提醒管理路由
+api.use('/reminders', reminderRouter);
+
+// 挂载编辑器路由
+const editorDomainService = new EditorDomainService();
+const editorApplicationService = new EditorApplicationService(editorDomainService);
+const editorController = new EditorController(editorApplicationService);
+const editorRoutes = createEditorRoutes(editorController);
+api.use('/editor', editorRoutes);
+
+// 挂载仓储路由
+const repositoryDomainService = new RepositoryDomainService();
+const repositoryApplicationService = new RepositoryApplicationService(repositoryDomainService);
+const repositoryController = new RepositoryController(repositoryApplicationService);
+const repositoryRoutes = createRepositoryRoutes(repositoryController);
+api.use('/repositories', repositoryRoutes);
 
 app.use('/api/v1', api);
 

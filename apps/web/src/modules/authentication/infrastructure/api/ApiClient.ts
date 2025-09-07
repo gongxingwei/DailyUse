@@ -54,27 +54,41 @@ export class AuthApiService {
       },
     };
 
-    const result = await this.login(loginData);
+    try {
+      // 由于API实际返回的是AuthResponseDTO格式而不是LoginResponseDTO格式
+      // 我们需要直接调用底层的API客户端，绕过类型检查
+      const result = await api.post('/auth/login', loginData);
 
-    // 转换为标准响应格式以保持兼容性
-    return {
-      status: 'SUCCESS',
-      success: true,
-      message: 'Login successful',
-      data: {
-        accountUuid: result.user.uuid,
-        username: result.user.username,
-        sessionUuid: '', // 新API中没有sessionUuid
-        rememberToken: undefined, // 新API中没有rememberToken
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-        expiresIn: result.expiresIn,
-        tokenType: result.tokenType,
-      },
-      metadata: {
-        timestamp: Date.now(),
-      },
-    } as SuccessResponse<AuthResponseDTO>;
+      // 检查result的结构，API返回的是AuthResponseDTO格式
+      if (result && typeof result === 'object' && 'accountUuid' in result) {
+        const authResponse = result as AuthResponseDTO;
+
+        // 转换为标准响应格式以保持兼容性
+        return {
+          status: 'SUCCESS',
+          success: true,
+          message: 'Login successful',
+          data: {
+            accountUuid: authResponse.accountUuid,
+            username: authResponse.username,
+            sessionUuid: authResponse.sessionUuid || '',
+            rememberToken: authResponse.rememberToken,
+            accessToken: authResponse.accessToken,
+            refreshToken: authResponse.refreshToken,
+            expiresIn: authResponse.expiresIn,
+            tokenType: authResponse.tokenType || 'Bearer',
+          },
+          metadata: {
+            timestamp: Date.now(),
+          },
+        } as SuccessResponse<AuthResponseDTO>;
+      } else {
+        throw new Error('Invalid response format from login API');
+      }
+    } catch (error) {
+      console.error('Login API error:', error);
+      throw error;
+    }
   }
 
   /**
