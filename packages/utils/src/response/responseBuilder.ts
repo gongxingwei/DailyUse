@@ -33,7 +33,7 @@ export class ResponseBuilder {
       timestamp: Date.now(),
       version: this.options.version || '1.0.0',
       duration: Date.now() - this.startTime,
-      nodeId: this.options.nodeId || process.env.NODE_ID || 'default',
+      nodeId: this.options.nodeId || 'default',
     };
   }
 

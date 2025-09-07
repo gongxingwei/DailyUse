@@ -1,0 +1,1 @@
+export * from "@common/modules/notification/types/notification";

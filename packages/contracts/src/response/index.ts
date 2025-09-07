@@ -143,6 +143,11 @@ export interface ApiErrorResponse extends BaseResponse {
 export type ApiResponse<T = any> = SuccessResponse<T> | ApiErrorResponse;
 
 /**
+ * 通用响应类型别名（向后兼容）
+ */
+export type TResponse<T = any> = ApiResponse<T>;
+
+/**
  * 响应构建器选项
  */
 export interface ResponseBuilderOptions {

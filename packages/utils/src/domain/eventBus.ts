@@ -189,14 +189,14 @@ class EventBus extends CrossPlatformEventBus {
     registeredHandlers: string[];
     registeredEvents: string[];
     uptime: number;
-    memoryUsage: NodeJS.MemoryUsage;
+    memoryUsage: any;
   } {
     const baseStats = this.getStats();
 
     return {
       ...baseStats,
-      uptime: process.uptime(),
-      memoryUsage: process.memoryUsage(),
+      uptime: typeof process !== 'undefined' ? process.uptime() : Date.now(),
+      memoryUsage: typeof process !== 'undefined' ? process.memoryUsage() : {},
     };
   }
 

@@ -1,0 +1,1 @@
+export * from '@common/modules/repository/types/repository';

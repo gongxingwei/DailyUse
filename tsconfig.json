@@ -1,31 +1,30 @@
 {
+  "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "preserve",
-
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@electron/*": ["electron/*"],
-      "@common/*": ["common/*"],
+      "@desktop/*": ["apps/desktop/src/*"],
+      "@web/*": ["apps/web/src/*"],
+      "@api/*": ["apps/api/src/*"],
+      "@packages/*": ["packages/*/src"],
+      "@contracts/*": ["packages/contracts/src/*"],
+      "@domain-core/*": ["packages/domain-core/src/*"],
+      "@domain-client/*": ["packages/domain-client/src/*"],
+      "@domain-server/*": ["packages/domain-server/src/*"],
+      "@ui/*": ["packages/ui/src/*"],
+      "@utils/*": ["packages/utils/src/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron", "common/modules/goal/types/goal.ts", "common/modules/reminder/types/reminder.ts", "common/shared/types/recurrenceRule.ts", "common/modules/account/types/account.ts", "common/modules/task/utils/taskTimeUtils.ts", "common/modules/task/utils/taskMetaTemplateFactory.ts", "common/shared/types/urgency.ts", "common/shared/types/importance.ts", "common/shared/types/response.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "files": [],
+  "references": [
+    { "path": "./apps/desktop" },
+    { "path": "./apps/web" },
+    { "path": "./apps/api" },
+    // { "path": "./packages/contracts" },
+    { "path": "./packages/domain-core" },
+    { "path": "./packages/domain-client" },
+    { "path": "./packages/domain-server" },
+    { "path": "./packages/ui" },
+    // { "path": "./packages/utils" }
+  ]
 }

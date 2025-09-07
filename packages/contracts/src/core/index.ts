@@ -8,3 +8,7 @@
 export * from './account';
 // 重新导出认证领域类型
 export * from './authentication';
+// 重新导出重要性级别类型
+export * from './importance';
+// 重新导出紧急性级别类型
+export * from './urgency';

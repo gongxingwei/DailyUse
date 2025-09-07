@@ -41,6 +41,14 @@ Copy-Item -Path "D:\myPrograms\DailyUse\electron" -Destination "D:\myPrograms\Da
 
 # 复制并显示进度
 Copy-Item -Path "D:\myPrograms\DailyUse\electron" -Destination "D:\myPrograms\DailyUse\apps\desktop\src\main" -Recurse -Force -Verbose
+
+# 移动 electron 文件夹内容到指定目录（正确方式）
+# 确保目标目录存在
+New-Item -Path "D:\myPrograms\DailyUse\apps\desktop\src\main" -ItemType Directory -Force
+# 移动内容而不是整个文件夹
+Move-Item -Path "D:\myPrograms\DailyUse\electron\*" -Destination "D:\myPrograms\DailyUse\apps\desktop\src\main" -Force
+# 删除空的源文件夹
+Remove-Item -Path "D:\myPrograms\DailyUse\electron" -Force
 ```
 
 #### 3. 删除文件夹 (Remove-Item)
