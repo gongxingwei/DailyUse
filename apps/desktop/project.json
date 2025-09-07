@@ -6,11 +6,12 @@
   "tags": ["scope:desktop", "type:app", "platform:electron"],
   "targets": {
     "build": {
-      "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/apps/desktop/dist"],
       "defaultConfiguration": "production",
       "options": {
-        "outputPath": "apps/desktop/dist"
+        "command": "pnpm build",
+        "cwd": "apps/desktop"
       },
       "configurations": {
         "development": {

@@ -1,4 +1,4 @@
-import { ClientInfo, UserAgreement } from './shared';
+import type { ClientInfo, UserAgreement } from './shared';
 /**
  * 账户领域的核心接口定义
  * 包含账户、用户、权限、角色等核心概念的抽象定义

@@ -18,7 +18,9 @@
     "@dailyuse/utils": "workspace:*",
     "@dailyuse/domain-client": "workspace:*",
     "@dailyuse/contracts": "workspace:*",
-    "@dailyuse/ui": "workspace:*"
+    "@dailyuse/ui": "workspace:*",
+    "vue-i18n": "^10.0.4",
+    "@mdi/font": "^7.4.47"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

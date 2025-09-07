@@ -15,8 +15,7 @@
 // ============================================================================
 
 // Domain Models - 领域模型
-export {
-} from './domain/models/Auth';
+export {} from './domain/models/Auth';
 
 // Domain Repository Interfaces - 领域仓储接口
 export type {
@@ -25,7 +24,6 @@ export type {
 } from './domain/repositories/IAuthRepository';
 
 // Domain Services - 领域服务
-
 
 // ============================================================================
 // Application Layer Exports - 应用层导出
@@ -49,7 +47,7 @@ export { ApiClient } from './infrastructure/api/ApiClient';
 // ============================================================================
 
 // Pinia Stores - 状态管理
-export { useAuthStore } from './presentation/stores/authStore';
+export { useAuthStore } from './presentation/stores/useAuthStore';
 
 // Vue Components - Vue组件
 export { default as LoginView } from './presentation/views/LoginView.vue';

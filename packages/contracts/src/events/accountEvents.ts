@@ -1,6 +1,6 @@
-import { DomainEvent, AccountStatus } from './types';
+import type { DomainEvent, AccountStatus } from './types';
 import { EVENT_TYPES } from './constants';
-import { IAccount } from '../core';
+import type { IAccount } from '../core';
 
 // =================== 账户状态验证事件 ===================
 export interface AccountStatusVerificationResponse

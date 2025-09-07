@@ -12,10 +12,11 @@
       }
     },
     "build": {
-      "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/web"],
       "options": {
-        "outputPath": "dist/apps/web"
+        "command": "pnpm build",
+        "cwd": "apps/web"
       }
     },
     "preview": {

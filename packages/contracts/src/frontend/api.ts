@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { UserInfoDTO, LoginResponseDTO } from '../core/authentication';
+import type { UserInfoDTO, LoginResponseDTO } from '../core/authentication';
 
 /**
  * 前端API客户端相关类型定义
@@ -161,11 +161,11 @@ export type FrontendLoginResponse = LoginResponseDTO; // 重用核心类型
 /**
  * 创建前端登录成功响应的Schema
  */
-export const FrontendLoginSuccessResponseSchema = createSuccessResponseSchema(
+export const FrontendLoginSuccessResponseSchema = createFrontendSuccessResponseSchema(
   FrontendLoginResponseSchema,
 );
 
-export type FrontendLoginSuccessResponse = SuccessResponse<FrontendLoginResponse>;
+export type FrontendLoginSuccessResponse = FrontendSuccessResponse<FrontendLoginResponse>;
 
 /**
  * 刷新令牌请求
@@ -283,7 +283,7 @@ export type PhoneVerifyRequest = z.infer<typeof PhoneVerifyRequestSchema>;
 /**
  * 成功响应的通用格式
  */
-export const SuccessResponseSchema = z.object({
+export const FrontendSuccessResponseSchema = z.object({
   status: z.literal('success'),
   message: z.string().optional(),
   data: z.any(),
@@ -291,14 +291,17 @@ export const SuccessResponseSchema = z.object({
   path: z.string().optional(),
 });
 
-export type SuccessResponse<T = any> = Omit<z.infer<typeof SuccessResponseSchema>, 'data'> & {
+export type FrontendSuccessResponse<T = any> = Omit<
+  z.infer<typeof FrontendSuccessResponseSchema>,
+  'data'
+> & {
   data: T;
 };
 
 /**
  * 创建成功响应的Schema工厂函数
  */
-export function createSuccessResponseSchema<T extends z.ZodType>(dataSchema: T) {
+export function createFrontendSuccessResponseSchema<T extends z.ZodType>(dataSchema: T) {
   return z.object({
     status: z.literal('success'),
     message: z.string().optional(),

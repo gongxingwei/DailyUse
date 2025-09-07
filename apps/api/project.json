@@ -21,11 +21,10 @@
     },
     "build": {
       "executor": "nx:run-commands",
-      "outputs": ["{options.outputPath}"],
+      "outputs": ["{workspaceRoot}/dist/apps/api"],
       "options": {
         "command": "pnpm build",
-        "cwd": "apps/api",
-        "outputPath": "dist/apps/api"
+        "cwd": "apps/api"
       }
     },
     "start": {

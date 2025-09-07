@@ -17,7 +17,7 @@ export * from './events/index';
 export * as EventContracts from './events/index';
 
 // 导出前端相关的类型定义
-// export * from './frontend';
+export * from './frontend';
 export * as FrontendContracts from './frontend';
 
 // 确保导出新的认证类型

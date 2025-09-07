@@ -1,6 +1,6 @@
-import { DomainEvent, ClientInfo, LoginResult } from './types';
+import type { DomainEvent, ClientInfo, LoginResult } from './types';
 import { EVENT_TYPES } from './constants';
-import { IAccount, ISessionCore } from '../core';
+import type { IAccount, ISessionCore } from '../core';
 
 // =================== 认证请求事件 ===================
 export interface AccountInfoGetterByUuidRequested

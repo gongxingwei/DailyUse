@@ -17,12 +17,15 @@ export interface EnvironmentConfig {
  * 获取当前环境配置
  */
 export function getEnvironmentConfig(): EnvironmentConfig {
+  // 安全地访问环境变量，在构建时避免 TypeScript 错误
+  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+
   const config: EnvironmentConfig = {
-    apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
-    uploadBaseUrl: import.meta.env.VITE_UPLOAD_BASE_URL || 'http://localhost:3000/api/v1/upload',
-    timeout: Number(import.meta.env.VITE_API_TIMEOUT) || 10000,
-    enableMock: import.meta.env.VITE_ENABLE_MOCK === 'true',
-    logLevel: (import.meta.env.VITE_LOG_LEVEL as any) || 'info',
+    apiBaseUrl: env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
+    uploadBaseUrl: env.VITE_UPLOAD_BASE_URL || 'http://localhost:3000/api/v1/upload',
+    timeout: Number(env.VITE_API_TIMEOUT) || 10000,
+    enableMock: env.VITE_ENABLE_MOCK === 'true',
+    logLevel: env.VITE_LOG_LEVEL || 'info',
   };
 
   return config;
@@ -41,14 +44,16 @@ export function createAuthHeader(token: string): Record<string, string> {
  * 检查是否为开发环境
  */
 export function isDevelopment(): boolean {
-  return import.meta.env.DEV || import.meta.env.NODE_ENV === 'development';
+  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+  return env.DEV || env.NODE_ENV === 'development';
 }
 
 /**
  * 检查是否为生产环境
  */
 export function isProduction(): boolean {
-  return import.meta.env.PROD || import.meta.env.NODE_ENV === 'production';
+  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+  return env.PROD || env.NODE_ENV === 'production';
 }
 
 /**

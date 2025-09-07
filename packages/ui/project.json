@@ -6,10 +6,11 @@
   "tags": ["scope:shared", "type:lib"],
   "targets": {
     "build": {
-      "executor": "@nx/vite:build",
-      "outputs": ["{options.outputPath}"],
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/packages/ui/dist"],
       "options": {
-        "outputPath": "dist/packages/ui"
+        "command": "pnpm build",
+        "cwd": "packages/ui"
       }
     },
     "dev": {
