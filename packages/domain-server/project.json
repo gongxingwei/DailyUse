@@ -1,0 +1,35 @@
+{
+  "name": "domain-server",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/domain-server/src",
+  "tags": ["scope:shared", "type:lib"],
+  "targets": {
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "command": "pnpm build",
+        "cwd": "packages/domain-server",
+        "outputPath": "dist/packages/domain-server"
+      }
+    },
+    "dev": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm dev",
+        "cwd": "packages/domain-server"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint",
+      "outputs": ["{options.outputFile}"],
+      "options": {
+        "lintFilePatterns": [
+          "packages/domain-server/**/*.{ts,js}"
+        ]
+      }
+    }
+  },
+  "implicitDependencies": ["contracts", "domain-core"]
+}
