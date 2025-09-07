@@ -19,7 +19,8 @@
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
-    "@dailyuse/utils": "workspace:*"
+    "@dailyuse/utils": "workspace:*",
+    "date-fns": "^4.1.0"
   },
   "devDependencies": {
     "tsup": "^8.5.0",

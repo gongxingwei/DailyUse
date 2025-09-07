@@ -5,6 +5,13 @@
   "sourceRoot": "apps/api/src",
   "tags": ["scope:api", "type:app"],
   "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm dev",
+        "cwd": "apps/api"
+      }
+    },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
