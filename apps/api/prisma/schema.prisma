@@ -36,7 +36,10 @@ model Account {
   mfaDevices      MFADevice[]
   tokens          AuthToken[]
   repositories    Repository[]
-  goals           Goal[]
+  goalDirs        GoalDir[]
+  goalCategories  GoalCategory[]
+  keyResults      KeyResult[]
+  goalRecords     GoalRecord[]
   tasks           Task[]
 
   @@map("accounts")
@@ -168,20 +171,223 @@ model Repository {
 
 // Goal aggregate
 model Goal {
-  uuid        String    @id @default(cuid())
-  accountUuid String    @map("account_uuid")
-  title       String
+  uuid    String  @id @default(cuid())
+  dirUuid String? @map("dir_uuid")
+
+  // 基本信息
+  name        String
   description String?
-  status      String    @default("active") // 'active', 'completed', 'paused'
-  priority    String    @default("medium") // 'low', 'medium', 'high'
-  dueDate     DateTime? @map("due_date")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  color       String
 
-  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  tasks   Task[]
+  // 时间信息
+  startTime DateTime @map("start_time")
+  endTime   DateTime @map("end_time")
+  note      String?
 
+  // 分析信息 (JSON存储)
+  analysis String @default("{}") // 包含 motive, feasibility, importanceLevel, urgencyLevel
+
+  // 生命周期 (JSON存储)
+  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+
+  // 元数据 (JSON存储)
+  metadata String @default("{}") // 包含 tags, category
+
+  // 版本控制
+  version Int @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  directory           GoalDir?           @relation(fields: [dirUuid], references: [uuid], onDelete: SetNull)
+  keyResults          KeyResult[]
+  records             GoalRecord[]
+  reviews             GoalReview[]
+  tasks               Task[]
+  sourceRelationships GoalRelationship[] @relation("SourceGoal")
+  targetRelationships GoalRelationship[] @relation("TargetGoal")
+
+  @@index([dirUuid])
+  @@index([startTime])
+  @@index([endTime])
+  @@index([createdAt])
   @@map("goals")
+}
+
+// Goal Directory
+model GoalDir {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  parentUuid  String? @map("parent_uuid")
+
+  name        String
+  description String?
+  icon        String
+  color       String
+
+  // 排序配置 (JSON存储)
+  sortConfig String @default("{}") @map("sort_config") // 包含 sortKey, sortOrder
+
+  // 生命周期 (JSON存储)
+  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account  Account   @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parent   GoalDir?  @relation("GoalDirHierarchy", fields: [parentUuid], references: [uuid], onDelete: Cascade)
+  children GoalDir[] @relation("GoalDirHierarchy")
+  goals    Goal[]
+
+  @@index([accountUuid])
+  @@index([parentUuid])
+  @@map("goal_directories")
+}
+
+// Goal Category
+model GoalCategory {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  parentUuid  String? @map("parent_uuid")
+
+  name        String
+  description String?
+  icon        String?
+  color       String?
+
+  sortOrder Int     @default(0) @map("sort_order")
+  isSystem  Boolean @default(false) @map("is_system")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account  Account        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parent   GoalCategory?  @relation("GoalCategoryHierarchy", fields: [parentUuid], references: [uuid], onDelete: Cascade)
+  children GoalCategory[] @relation("GoalCategoryHierarchy")
+
+  @@index([accountUuid])
+  @@index([parentUuid])
+  @@index([sortOrder])
+  @@index([isSystem])
+  @@map("goal_categories")
+}
+
+// Key Result (OKR)
+model KeyResult {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+  goalUuid    String @map("goal_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+
+  // 数值信息
+  startValue        Float  @default(0) @map("start_value")
+  targetValue       Float  @map("target_value")
+  currentValue      Float  @default(0) @map("current_value")
+  unit              String
+  weight            Float  @default(1.0)
+  calculationMethod String @default("sum") @map("calculation_method") // 'sum', 'average', 'max', 'min', 'custom'
+
+  // 生命周期 (JSON存储)
+  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  goal    Goal         @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  records GoalRecord[]
+
+  @@index([accountUuid])
+  @@index([goalUuid])
+  @@index([weight])
+  @@index([createdAt])
+  @@map("key_results")
+}
+
+// Goal Record
+model GoalRecord {
+  uuid          String @id @default(cuid())
+  accountUuid   String @map("account_uuid")
+  goalUuid      String @map("goal_uuid")
+  keyResultUuid String @map("key_result_uuid")
+
+  value Float
+  note  String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  account   Account   @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  goal      Goal      @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  keyResult KeyResult @relation(fields: [keyResultUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@index([goalUuid])
+  @@index([keyResultUuid])
+  @@index([createdAt])
+  @@map("goal_records")
+}
+
+// Goal Review
+model GoalReview {
+  uuid       String   @id @default(cuid())
+  goalUuid   String   @map("goal_uuid")
+  title      String
+  type       String   @default("weekly") // 'weekly', 'monthly', 'midterm', 'final', 'custom'
+  reviewDate DateTime @map("review_date")
+
+  // 复盘内容 (JSON存储)
+  content String @default("{}") // 包含 achievements, challenges, learnings, nextSteps, adjustments
+
+  // 快照数据 (JSON存储)
+  snapshot String @default("{}") // 包含进度快照信息
+
+  // 评分 (JSON存储)
+  rating String @default("{}") // 包含各种评分
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  goal Goal @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([goalUuid])
+  @@index([type])
+  @@index([reviewDate])
+  @@index([createdAt])
+  @@map("goal_reviews")
+}
+
+// Goal Relationships
+model GoalRelationship {
+  uuid           String @id @default(cuid())
+  sourceGoalUuid String @map("source_goal_uuid")
+  targetGoalUuid String @map("target_goal_uuid")
+
+  relationshipType String  @map("relationship_type") // 'depends_on', 'supports', 'conflicts_with', 'similar_to', 'parent_of', 'child_of'
+  strength         Float   @default(1.0) // 0.0-1.0
+  description      String?
+  isActive         Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  sourceGoal Goal @relation("SourceGoal", fields: [sourceGoalUuid], references: [uuid], onDelete: Cascade)
+  targetGoal Goal @relation("TargetGoal", fields: [targetGoalUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([sourceGoalUuid, targetGoalUuid, relationshipType])
+  @@index([sourceGoalUuid])
+  @@index([targetGoalUuid])
+  @@index([relationshipType])
+  @@map("goal_relationships")
 }
 
 // Task aggregate

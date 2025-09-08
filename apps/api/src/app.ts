@@ -12,7 +12,7 @@ import compression from 'compression';
 import accountRoutes from './modules/account/interface/http/routes';
 import { authenticationRoutes } from './modules/authentication';
 import { taskRouter } from './modules/task';
-import { goalRouter } from './modules/goal';
+import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
 import { createEditorRoutes, EditorController } from './modules/editor';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
@@ -65,6 +65,9 @@ api.use('/tasks', taskRouter);
 
 // 挂载目标管理路由
 api.use('/goals', goalRouter);
+
+// 挂载目标目录管理路由
+api.use('/goal-dirs', goalDirRouter);
 
 // 挂载提醒管理路由
 api.use('/reminders', reminderRouter);

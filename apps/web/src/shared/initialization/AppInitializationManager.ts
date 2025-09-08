@@ -12,6 +12,7 @@ import {
 } from '@dailyuse/utils';
 import { registerAccountInitializationTasks } from '../../modules/account';
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
+import { registerGoalInitializationTasks } from '../../modules/goal';
 
 /**
  * 注册基础设施的初始化任务
@@ -65,10 +66,10 @@ function registerAllInitializationTasks(): void {
   // 2. 注册各个模块的初始化任务
   registerAuthenticationInitializationTasks();
   registerAccountInitializationTasks();
+  registerGoalInitializationTasks();
 
   // 3. 可以在这里添加其他模块的初始化
   // registerTaskInitializationTasks();
-  // registerGoalInitializationTasks();
   // registerReminderInitializationTasks();
 
   console.log('✅ [AppInitialization] 所有初始化任务注册完成');

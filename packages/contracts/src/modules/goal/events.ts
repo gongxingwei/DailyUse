@@ -1,3 +1,5 @@
+// ============ 目标领域事件 ============
+
 /**
  * 目标创建事件
  */
@@ -11,6 +13,44 @@ export interface GoalCreatedEvent {
     name: string;
     startTime: Date;
     endTime: Date;
+    dirUuid?: string;
+  };
+}
+
+/**
+ * 目标更新事件
+ */
+export interface GoalUpdatedEvent {
+  eventType: 'GoalUpdated';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalId: string;
+    changes: {
+      name?: string;
+      description?: string;
+      color?: string;
+      dirUuid?: string;
+      startTime?: Date;
+      endTime?: Date;
+      note?: string;
+    };
+  };
+}
+
+/**
+ * 目标状态变更事件
+ */
+export interface GoalStatusChangedEvent {
+  eventType: 'GoalStatusChanged';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalId: string;
+    oldStatus: 'active' | 'completed' | 'paused' | 'archived';
+    newStatus: 'active' | 'completed' | 'paused' | 'archived';
   };
 }
 
@@ -26,6 +66,40 @@ export interface GoalCompletedEvent {
     goalId: string;
     completedAt: Date;
     finalProgress: number;
+    keyResultsCompleted: number;
+    totalKeyResults: number;
+  };
+}
+
+/**
+ * 目标删除事件
+ */
+export interface GoalDeletedEvent {
+  eventType: 'GoalDeleted';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalId: string;
+    name: string;
+  };
+}
+
+// ============ 关键结果事件 ============
+
+/**
+ * 关键结果创建事件
+ */
+export interface KeyResultCreatedEvent {
+  eventType: 'KeyResultCreated';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    goalId: string;
+    keyResultId: string;
+    name: string;
+    targetValue: number;
+    weight: number;
   };
 }
 
@@ -48,6 +122,25 @@ export interface KeyResultProgressUpdatedEvent {
 }
 
 /**
+ * 关键结果完成事件
+ */
+export interface KeyResultCompletedEvent {
+  eventType: 'KeyResultCompleted';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    goalId: string;
+    keyResultId: string;
+    name: string;
+    finalValue: number;
+    targetValue: number;
+    completedAt: Date;
+  };
+}
+
+// ============ 目标记录事件 ============
+
+/**
  * 目标记录添加事件
  */
 export interface GoalRecordAddedEvent {
@@ -60,20 +153,115 @@ export interface GoalRecordAddedEvent {
     recordId: string;
     value: number;
     recordDate: Date;
+    note?: string;
   };
 }
 
+// ============ 目标复盘事件 ============
+
 /**
- * 目标复盘添加事件
+ * 目标复盘创建事件
  */
-export interface GoalReviewAddedEvent {
-  eventType: 'GoalReviewAdded';
+export interface GoalReviewCreatedEvent {
+  eventType: 'GoalReviewCreated';
   aggregateId: string;
   occurredOn: Date;
   payload: {
     goalId: string;
     reviewId: string;
-    rating: number;
+    title: string;
+    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
     reviewDate: Date;
+    rating: {
+      progressSatisfaction: number;
+      executionEfficiency: number;
+      goalReasonableness: number;
+    };
   };
 }
+
+// ============ 目标目录事件 ============
+
+/**
+ * 目标目录创建事件
+ */
+export interface GoalDirCreatedEvent {
+  eventType: 'GoalDirCreated';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalDirId: string;
+    name: string;
+    parentUuid?: string;
+  };
+}
+
+/**
+ * 目标目录更新事件
+ */
+export interface GoalDirUpdatedEvent {
+  eventType: 'GoalDirUpdated';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalDirId: string;
+    changes: {
+      name?: string;
+      description?: string;
+      icon?: string;
+      color?: string;
+      parentUuid?: string;
+    };
+  };
+}
+
+/**
+ * 目标目录删除事件
+ */
+export interface GoalDirDeletedEvent {
+  eventType: 'GoalDirDeleted';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    accountUuid: string;
+    goalDirId: string;
+    name: string;
+  };
+}
+
+/**
+ * 目标移动到目录事件
+ */
+export interface GoalMovedToDirEvent {
+  eventType: 'GoalMovedToDir';
+  aggregateId: string;
+  occurredOn: Date;
+  payload: {
+    goalId: string;
+    oldDirUuid?: string;
+    newDirUuid?: string;
+  };
+}
+
+// ============ 联合类型 ============
+
+/**
+ * 所有目标相关事件的联合类型
+ */
+export type GoalDomainEvent =
+  | GoalCreatedEvent
+  | GoalUpdatedEvent
+  | GoalStatusChangedEvent
+  | GoalCompletedEvent
+  | GoalDeletedEvent
+  | KeyResultCreatedEvent
+  | KeyResultProgressUpdatedEvent
+  | KeyResultCompletedEvent
+  | GoalRecordAddedEvent
+  | GoalReviewCreatedEvent
+  | GoalDirCreatedEvent
+  | GoalDirUpdatedEvent
+  | GoalDirDeletedEvent
+  | GoalMovedToDirEvent;

@@ -29,3 +29,9 @@ export * as RepositoryContracts from './modules/repository';
 
 // 确保导出新的认证类型
 export type { LoginResponseDTO, UserInfoDTO } from './core/authentication';
+
+// 直接导出常用的接口类型
+export type { IGoal, IGoalDir, IKeyResult, IGoalRecord, IGoalReview } from './modules/goal/types';
+export type { IRepository } from './modules/repository/types';
+export type { ITaskTemplate, ITaskInstance } from './modules/task/types';
+export type { IReminderTemplate, IReminderInstance } from './modules/reminder/types';

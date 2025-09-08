@@ -1,9 +1,12 @@
 import { AggregateRoot } from '@dailyuse/utils';
+import { type GoalContracts } from '@dailyuse/contracts';
+import type { IGoal, IGoalDir, IKeyResult, IGoalRecord, IGoalReview } from '@dailyuse/contracts';
+import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 /**
  * Goal核心基类 - 包含共享属性和基础计算
  */
-export abstract class GoalCore extends AggregateRoot {
+export abstract class GoalCore extends AggregateRoot implements IGoal {
   protected _name: string;
   protected _description?: string;
   protected _color: string;
@@ -11,9 +14,24 @@ export abstract class GoalCore extends AggregateRoot {
   protected _startTime: Date;
   protected _endTime: Date;
   protected _note?: string;
-  protected _status: 'active' | 'completed' | 'paused' | 'archived';
-  protected _createdAt: Date;
-  protected _updatedAt: Date;
+  keyResults: IKeyResult[];
+  records: IGoalRecord[];
+  reviews: IGoalReview[];
+  protected _analysis: {
+    motive: string;
+    feasibility: string;
+    importanceLevel: ImportanceLevel;
+    urgencyLevel: UrgencyLevel;
+  };
+  protected _lifecycle: {
+    createdAt: Date;
+    updatedAt: Date;
+    status: 'active' | 'completed' | 'paused' | 'archived';
+  };
+  protected _metadata: {
+    tags: string[];
+    category: string;
+  };
   protected _version: number;
 
   constructor(params: {
@@ -25,9 +43,18 @@ export abstract class GoalCore extends AggregateRoot {
     startTime?: Date;
     endTime?: Date;
     note?: string;
+    motive?: string;
+    feasibility?: string;
+    importanceLevel?: ImportanceLevel;
+    urgencyLevel?: UrgencyLevel;
     status?: 'active' | 'completed' | 'paused' | 'archived';
     createdAt?: Date;
     updatedAt?: Date;
+    keyResults?: IKeyResult[];
+    records?: IGoalRecord[];
+    reviews?: IGoalReview[];
+    tags?: string[];
+    category?: string;
     version?: number;
   }) {
     super(params.uuid || AggregateRoot.generateUUID());
@@ -40,9 +67,24 @@ export abstract class GoalCore extends AggregateRoot {
     this._startTime = params.startTime || now;
     this._endTime = params.endTime || new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30天后
     this._note = params.note;
-    this._status = params.status || 'active';
-    this._createdAt = params.createdAt || now;
-    this._updatedAt = params.updatedAt || now;
+    this._lifecycle = {
+      createdAt: params.createdAt || now,
+      updatedAt: params.updatedAt || now,
+      status: params.status || 'active',
+    };
+    this._analysis = {
+      motive: params.motive || '',
+      feasibility: params.feasibility || '',
+      importanceLevel: params.importanceLevel || ImportanceLevel.Moderate,
+      urgencyLevel: params.urgencyLevel || UrgencyLevel.Medium,
+    };
+    this._metadata = {
+      tags: params.tags || [],
+      category: params.category || '',
+    };
+    this.keyResults = params.keyResults || [];
+    this.records = params.records || [];
+    this.reviews = params.reviews || [];
     this._version = params.version || 0;
   }
 
@@ -68,14 +110,38 @@ export abstract class GoalCore extends AggregateRoot {
   get note(): string | undefined {
     return this._note;
   }
+  get analysis(): {
+    motive: string;
+    feasibility: string;
+    importanceLevel: ImportanceLevel;
+    urgencyLevel: UrgencyLevel;
+  } {
+    return this._analysis;
+  }
+
+  get lifecycle(): {
+    createdAt: Date;
+    updatedAt: Date;
+    status: 'active' | 'completed' | 'paused' | 'archived';
+  } {
+    return this._lifecycle;
+  }
+
+  get metadata(): {
+    tags: string[];
+    category: string;
+  } {
+    return this._metadata;
+  }
+
   get status(): 'active' | 'completed' | 'paused' | 'archived' {
-    return this._status;
+    return this._lifecycle.status;
   }
   get createdAt(): Date {
-    return this._createdAt;
+    return this._lifecycle.createdAt;
   }
   get updatedAt(): Date {
-    return this._updatedAt;
+    return this._lifecycle.updatedAt;
   }
   get version(): number {
     return this._version;
@@ -91,23 +157,23 @@ export abstract class GoalCore extends AggregateRoot {
   }
 
   get isActive(): boolean {
-    return this._status === 'active';
+    return this._lifecycle.status === 'active';
   }
 
   get isCompleted(): boolean {
-    return this._status === 'completed';
+    return this._lifecycle.status === 'completed';
   }
 
   get isPaused(): boolean {
-    return this._status === 'paused';
+    return this._lifecycle.status === 'paused';
   }
 
   get isArchived(): boolean {
-    return this._status === 'archived';
+    return this._lifecycle.status === 'archived';
   }
 
   get isOverdue(): boolean {
-    return new Date() > this._endTime && this._status === 'active';
+    return new Date() > this._endTime && this._lifecycle.status === 'active';
   }
 
   get timeRemaining(): number {
@@ -117,6 +183,32 @@ export abstract class GoalCore extends AggregateRoot {
 
   get daysRemaining(): number {
     return Math.ceil(this.timeRemaining / (1000 * 60 * 60 * 24));
+  }
+
+  get overallProgress(): number {
+    if (this.keyResults.length === 0) return 0;
+
+    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
+    if (totalWeight === 0) return 0;
+
+    const weightedProgress = this.keyResults.reduce((sum, kr) => {
+      const progress = Math.min(kr.currentValue / kr.targetValue, 1) * 100;
+      return sum + progress * kr.weight;
+    }, 0);
+
+    return weightedProgress / totalWeight;
+  }
+
+  get weightedProgress(): number {
+    return this.overallProgress;
+  }
+
+  get completedKeyResults(): number {
+    return this.keyResults.filter((kr) => kr.currentValue >= kr.targetValue).length;
+  }
+
+  get totalKeyResults(): number {
+    return this.keyResults.length;
   }
 
   // ===== 共享验证方法 =====
@@ -142,34 +234,157 @@ export abstract class GoalCore extends AggregateRoot {
     }
   }
 
+  // ===== 共享业务方法 =====
+
+  /**
+   * 更新目标信息
+   */
+  updateInfo(params: {
+    name?: string;
+    description?: string;
+    color?: string;
+    dirUuid?: string;
+    startTime?: Date;
+    endTime?: Date;
+    note?: string;
+    analysis?: {
+      motive?: string;
+      feasibility?: string;
+      importanceLevel?: ImportanceLevel;
+      urgencyLevel?: UrgencyLevel;
+    };
+    metadata?: {
+      tags?: string[];
+      category?: string;
+    };
+  }): void {
+    if (params.name !== undefined) {
+      this.validateName(params.name);
+      this._name = params.name;
+    }
+
+    if (params.description !== undefined) {
+      this._description = params.description;
+    }
+
+    if (params.color !== undefined) {
+      this.validateColor(params.color);
+      this._color = params.color;
+    }
+
+    if (params.dirUuid !== undefined) {
+      this._dirUuid = params.dirUuid;
+    }
+
+    if (params.startTime !== undefined || params.endTime !== undefined) {
+      const newStartTime = params.startTime || this._startTime;
+      const newEndTime = params.endTime || this._endTime;
+      this.validateTimeRange(newStartTime, newEndTime);
+      this._startTime = newStartTime;
+      this._endTime = newEndTime;
+    }
+
+    if (params.note !== undefined) {
+      this._note = params.note;
+    }
+
+    if (params.analysis) {
+      this._analysis = {
+        ...this._analysis,
+        ...params.analysis,
+      };
+    }
+
+    if (params.metadata) {
+      this._metadata = {
+        ...this._metadata,
+        ...params.metadata,
+      };
+    }
+
+    this.updateVersion();
+  }
+
+  /**
+   * 添加关键结果
+   */
+  addKeyResult(keyResult: IKeyResult): void {
+    // 验证权重总和不超过100
+    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0) + keyResult.weight;
+    if (totalWeight > 100) {
+      throw new Error('关键结果权重总和不能超过100%');
+    }
+
+    this.keyResults.push(keyResult);
+    this.updateVersion();
+  }
+
+  /**
+   * 更新关键结果进度
+   */
+  updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void {
+    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
+    if (!keyResult) {
+      throw new Error('关键结果不存在');
+    }
+
+    const oldValue = keyResult.currentValue;
+    keyResult.currentValue = Math.max(0, oldValue + increment);
+    // 注意：IKeyResult接口没有直接的updatedAt，需要在实现中处理
+
+    // 添加记录
+    const record: IGoalRecord = {
+      uuid: AggregateRoot.generateUUID(),
+      accountUuid: keyResult.accountUuid,
+      goalUuid: this.uuid,
+      keyResultUuid,
+      value: increment,
+      note,
+      createdAt: new Date(),
+    };
+
+    this.records.push(record);
+    this.updateVersion();
+  }
+
+  /**
+   * 添加复盘
+   */
+  addReview(review: IGoalReview): void {
+    this.reviews.push(review);
+    this.updateVersion();
+  }
+
   // ===== 共享辅助方法 =====
   protected updateVersion(): void {
     this._version++;
-    this._updatedAt = new Date();
+    this._lifecycle.updatedAt = new Date();
   }
 
   // ===== 序列化方法 =====
-  toDTO() {
+  toDTO(): GoalContracts.GoalDTO {
     return {
       uuid: this.uuid,
       name: this._name,
       description: this._description,
       color: this._color,
       dirUuid: this._dirUuid,
-      startTime: this._startTime,
-      endTime: this._endTime,
+      startTime: this._startTime.getTime(),
+      endTime: this._endTime.getTime(),
       note: this._note,
-      status: this._status,
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt,
+      analysis: this._analysis,
+      lifecycle: {
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+        status: this._lifecycle.status,
+      },
+      metadata: this._metadata,
       version: this._version,
-      // 计算属性
-      duration: this.duration,
-      durationInDays: this.durationInDays,
-      isOverdue: this.isOverdue,
-      timeRemaining: this.timeRemaining,
-      daysRemaining: this.daysRemaining,
     };
+  }
+
+  static fromDTO(dto: GoalContracts.GoalDTO): GoalCore {
+    throw new Error('Method not implemented. Use subclass implementations.');
   }
 
   // ===== 抽象方法（由子类实现）=====
@@ -177,4 +392,185 @@ export abstract class GoalCore extends AggregateRoot {
   abstract activate(): void;
   abstract complete(): void;
   abstract archive(): void;
+}
+
+/**
+ * GoalDir核心基类 - 目标目录
+ */
+export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
+  protected _accountUuid: string;
+  protected _name: string;
+  protected _description?: string;
+  protected _icon: string;
+  protected _color: string;
+  protected _parentUuid?: string;
+  protected _sortConfig: {
+    sortKey: string;
+    sortOrder: number;
+  };
+  protected _lifecycle: {
+    createdAt: Date;
+    updatedAt: Date;
+    status: 'active' | 'archived';
+  };
+
+  constructor(params: {
+    uuid?: string;
+    accountUuid: string;
+    name: string;
+    description?: string;
+    icon: string;
+    color: string;
+    parentUuid?: string;
+    sortConfig?: {
+      sortKey: string;
+      sortOrder: number;
+    };
+    status?: 'active' | 'archived';
+    createdAt?: Date;
+    updatedAt?: Date;
+  }) {
+    super(params.uuid || AggregateRoot.generateUUID());
+    const now = new Date();
+
+    this._accountUuid = params.accountUuid;
+    this._name = params.name;
+    this._description = params.description;
+    this._icon = params.icon;
+    this._color = params.color;
+    this._parentUuid = params.parentUuid;
+    this._sortConfig = params.sortConfig || {
+      sortKey: 'createdAt',
+      sortOrder: 0,
+    };
+    this._lifecycle = {
+      createdAt: params.createdAt || now,
+      updatedAt: params.updatedAt || now,
+      status: params.status || 'active',
+    };
+  }
+
+  // ===== 共享只读属性 =====
+  get accountUuid(): string {
+    return this._accountUuid;
+  }
+  get name(): string {
+    return this._name;
+  }
+  get description(): string | undefined {
+    return this._description;
+  }
+  get icon(): string {
+    return this._icon;
+  }
+  get color(): string {
+    return this._color;
+  }
+  get parentUuid(): string | undefined {
+    return this._parentUuid;
+  }
+  get sortConfig(): { sortKey: string; sortOrder: number } {
+    return this._sortConfig;
+  }
+  get lifecycle(): { createdAt: Date; updatedAt: Date; status: 'active' | 'archived' } {
+    return this._lifecycle;
+  }
+  get status(): 'active' | 'archived' {
+    return this._lifecycle.status;
+  }
+  get createdAt(): Date {
+    return this._lifecycle.createdAt;
+  }
+  get updatedAt(): Date {
+    return this._lifecycle.updatedAt;
+  }
+
+  // ===== 共享业务方法 =====
+
+  /**
+   * 更新目录信息
+   */
+  updateInfo(params: {
+    name?: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    parentUuid?: string;
+    sortConfig?: {
+      sortKey: string;
+      sortOrder: number;
+    };
+  }): void {
+    if (params.name !== undefined) {
+      this.validateName(params.name);
+      this._name = params.name;
+    }
+
+    if (params.description !== undefined) {
+      this._description = params.description;
+    }
+
+    if (params.icon !== undefined) {
+      this._icon = params.icon;
+    }
+
+    if (params.color !== undefined) {
+      this.validateColor(params.color);
+      this._color = params.color;
+    }
+
+    if (params.parentUuid !== undefined) {
+      this._parentUuid = params.parentUuid;
+    }
+
+    if (params.sortConfig !== undefined) {
+      this._sortConfig = params.sortConfig;
+    }
+
+    this._lifecycle.updatedAt = new Date();
+  }
+
+  // ===== 共享验证方法 =====
+  protected validateName(name: string): void {
+    if (!name || name.trim().length === 0) {
+      throw new Error('目录名称不能为空');
+    }
+    if (name.length > 50) {
+      throw new Error('目录名称不能超过50个字符');
+    }
+  }
+
+  protected validateColor(color: string): void {
+    const colorRegex = /^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/;
+    if (!colorRegex.test(color)) {
+      throw new Error('颜色格式不正确');
+    }
+  }
+
+  // ===== 序列化方法 =====
+  toDTO(): GoalContracts.GoalDirDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this._accountUuid,
+      name: this._name,
+      description: this._description,
+      icon: this._icon,
+      color: this._color,
+      parentUuid: this._parentUuid,
+      sortConfig: this._sortConfig,
+      lifecycle: {
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+        status: this._lifecycle.status,
+      },
+    };
+  }
+
+  static fromDTO(dto: GoalContracts.GoalDirDTO): GoalDirCore {
+    throw new Error('Method not implemented. Use subclass implementations.');
+  }
+
+  // ===== 抽象方法（由子类实现）=====
+  abstract archive(): void;
+  abstract activate(): void;
 }

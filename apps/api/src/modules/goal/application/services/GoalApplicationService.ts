@@ -1,11 +1,6 @@
 import type { GoalContracts } from '@dailyuse/contracts';
 import { GoalDomainService } from '../../domain/index.js';
 
-type CreateGoalRequest = GoalContracts.CreateGoalRequest;
-type UpdateGoalRequest = GoalContracts.UpdateGoalRequest;
-type GoalResponse = GoalContracts.GoalResponse;
-type GoalListResponse = GoalContracts.GoalListResponse;
-
 export class GoalApplicationService {
   private goalDomainService: GoalDomainService;
 
@@ -13,70 +8,52 @@ export class GoalApplicationService {
     this.goalDomainService = new GoalDomainService();
   }
 
-  // 目标相关方法
-  async createGoal(request: CreateGoalRequest): Promise<GoalResponse> {
-    return this.goalDomainService.createGoal(request);
+  // ===== Goal 管理 =====
+
+  async createGoal(request: GoalContracts.CreateGoalRequest): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.createGoal(request);
   }
 
-  async getGoals(queryParams: any): Promise<GoalListResponse> {
-    return this.goalDomainService.getGoals(queryParams);
+  async getGoals(queryParams: any): Promise<GoalContracts.GoalListResponse> {
+    return await this.goalDomainService.getGoals(queryParams);
   }
 
-  async getGoalById(id: string): Promise<GoalResponse | null> {
-    return this.goalDomainService.getGoalById(id);
+  async getGoalById(uuid: string): Promise<GoalContracts.GoalResponse | null> {
+    return await this.goalDomainService.getGoalById(uuid);
   }
 
-  async updateGoal(id: string, request: UpdateGoalRequest): Promise<GoalResponse> {
-    return this.goalDomainService.updateGoal(id, request);
+  async updateGoal(
+    uuid: string,
+    request: GoalContracts.UpdateGoalRequest,
+  ): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.updateGoal(uuid, request);
   }
 
-  async deleteGoal(id: string): Promise<void> {
-    return this.goalDomainService.deleteGoal(id);
+  async deleteGoal(uuid: string): Promise<void> {
+    return await this.goalDomainService.deleteGoal(uuid);
   }
 
-  async activateGoal(id: string): Promise<GoalResponse> {
-    return this.goalDomainService.activateGoal(id);
+  // ===== Goal 状态管理 =====
+
+  async activateGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.activateGoal(uuid);
   }
 
-  async pauseGoal(id: string): Promise<GoalResponse> {
-    return this.goalDomainService.pauseGoal(id);
+  async pauseGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.pauseGoal(uuid);
   }
 
-  async completeGoal(id: string): Promise<GoalResponse> {
-    return this.goalDomainService.completeGoal(id);
+  async completeGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.completeGoal(uuid);
   }
 
-  async archiveGoal(id: string): Promise<GoalResponse> {
-    return this.goalDomainService.archiveGoal(id);
+  async archiveGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+    return await this.goalDomainService.archiveGoal(uuid);
   }
 
-  // 进度相关方法
-  async updateProgress(id: string, progress: number): Promise<GoalResponse> {
-    return this.goalDomainService.updateProgress(id, progress);
-  }
+  // ===== 搜索和过滤 =====
 
-  async recordMilestone(goalId: string, milestoneData: any): Promise<GoalResponse> {
-    return this.goalDomainService.recordMilestone(goalId, milestoneData);
-  }
-
-  // 统计和查询方法
-  async getGoalStats(queryParams: any): Promise<any> {
-    return this.goalDomainService.getGoalStats(queryParams);
-  }
-
-  async getGoalTimeline(goalId: string): Promise<any> {
-    return this.goalDomainService.getGoalTimeline(goalId);
-  }
-
-  async searchGoals(queryParams: any): Promise<GoalListResponse> {
-    return this.goalDomainService.searchGoals(queryParams);
-  }
-
-  async getActiveGoals(accountUuid: string): Promise<GoalListResponse> {
-    return this.goalDomainService.getActiveGoals(accountUuid);
-  }
-
-  async getCompletedGoals(accountUuid: string, from?: Date, to?: Date): Promise<GoalListResponse> {
-    return this.goalDomainService.getCompletedGoals(accountUuid, from, to);
+  async searchGoals(queryParams: any): Promise<GoalContracts.GoalListResponse> {
+    return await this.goalDomainService.searchGoals(queryParams);
   }
 }

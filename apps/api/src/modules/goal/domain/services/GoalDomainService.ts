@@ -20,7 +20,83 @@ export class GoalDomainService {
 
   async getGoals(queryParams: any): Promise<GoalListResponse> {
     // TODO: 实现获取目标列表逻辑
-    throw new Error('Method not implemented');
+    // 临时返回模拟数据，使用正确的响应格式
+    const now = Date.now();
+    const mockGoals: GoalContracts.GoalDTO[] = [
+      {
+        uuid: 'goal-1',
+        name: '学习 TypeScript',
+        description: '深入学习 TypeScript 相关知识',
+        color: '#1976D2',
+        startTime: now,
+        endTime: now + 365 * 24 * 60 * 60 * 1000, // 一年后
+        note: '这是一个测试目标',
+        analysis: {
+          motive: '提升技术能力',
+          feasibility: '高',
+          importanceLevel: 'important' as any,
+          urgencyLevel: 'medium' as any,
+        },
+        lifecycle: {
+          createdAt: now,
+          updatedAt: now,
+          status: 'active',
+        },
+        metadata: {
+          tags: ['编程', '学习'],
+          category: '技能提升',
+        },
+        version: 1,
+        dirUuid: 'dir-default',
+      },
+      {
+        uuid: 'goal-2',
+        name: '健身计划',
+        description: '制定并执行健身计划',
+        color: '#FF5722',
+        startTime: now,
+        endTime: now + 365 * 24 * 60 * 60 * 1000,
+        note: '每周至少3次',
+        analysis: {
+          motive: '保持健康',
+          feasibility: '中',
+          importanceLevel: 'moderate' as any,
+          urgencyLevel: 'low' as any,
+        },
+        lifecycle: {
+          createdAt: now,
+          updatedAt: now,
+          status: 'active',
+        },
+        metadata: {
+          tags: ['健康', '运动'],
+          category: '个人发展',
+        },
+        version: 1,
+        dirUuid: 'dir-default',
+      },
+    ];
+
+    return {
+      goals: mockGoals.map((goal) => ({
+        ...goal,
+        keyResults: [],
+        records: [],
+        reviews: [],
+        analytics: {
+          overallProgress: 0,
+          weightedProgress: 0,
+          completedKeyResults: 0,
+          totalKeyResults: 0,
+          daysRemaining: Math.ceil((goal.endTime - now) / (24 * 60 * 60 * 1000)),
+          isOverdue: false,
+        },
+      })),
+      total: mockGoals.length,
+      page: 1,
+      limit: 100,
+      hasMore: false,
+    };
   }
 
   async getGoalById(id: string): Promise<GoalResponse | null> {

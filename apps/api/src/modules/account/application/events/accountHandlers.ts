@@ -1,4 +1,5 @@
 import type {
+  AccountDTO,
   AccountInfoGetterByUsernameRequested,
   AccountInfoGetterByUuidRequested,
   AccountStatusVerificationRequested,
@@ -64,22 +65,22 @@ export class AccountEventHandlers {
     // ===================== 双向请求处理 (invoke/handle) =====================
 
     // 处理通过用户名获取账户信息的请求
-    eventBus.handle<{ username: string }, IAccountCore | null>(
+    eventBus.handle<{ username: string }, AccountDTO | null>(
       'account.info.getByUsername',
       async (payload) => {
         console.log(`🔍 [Account] 处理获取账户请求 - 用户名: ${payload.username}`);
-        const account = await accountApplicationService.getAccountByUsername(payload.username);
-        return account ? this.convertAccountToCore(account) : null;
+        const accountDTO = await accountApplicationService.getAccountByUsername(payload.username);
+        return accountDTO ? accountDTO : null;
       },
     );
 
     // 处理通过UUID获取账户信息的请求
-    eventBus.handle<{ accountUuid: string }, IAccountCore | null>(
+    eventBus.handle<{ accountUuid: string }, AccountDTO | null>(
       'account.info.getByUuid',
       async (payload) => {
         console.log(`🔍 [Account] 处理获取账户请求 - UUID: ${payload.accountUuid}`);
-        const account = await accountApplicationService.getAccountById(payload.accountUuid);
-        return account ? this.convertAccountToCore(account) : null;
+        const accountDTO = await accountApplicationService.getAccountById(payload.accountUuid);
+        return accountDTO ? accountDTO : null;
       },
     );
 
