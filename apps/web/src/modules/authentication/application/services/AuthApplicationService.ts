@@ -9,6 +9,8 @@ import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-
 import { AccountType } from '@dailyuse/domain-client';
 import { AuthApiService } from '../../infrastructure/api/ApiClient';
 import { AuthManager } from '../../../../shared/api/core/interceptors';
+import { publishUserLoggedInEvent, publishUserLoggedOutEvent } from '../events/authEvents';
+import { AppInitializationManager } from '../../../../shared/initialization/AppInitializationManager';
 
 /**
  * Authentication Application Service
@@ -68,6 +70,28 @@ export class AuthApplicationService {
       }
 
       console.log('登录成功，你好', response.data);
+
+      // 发布用户登录成功事件，让 account 模块监听并获取完整账户信息
+      if (response.data?.accountUuid) {
+        publishUserLoggedInEvent({
+          accountUuid: response.data.accountUuid,
+          username: response.data.username,
+          sessionUuid: response.data.sessionUuid,
+          accessToken: response.data.accessToken || '',
+          refreshToken: response.data.refreshToken,
+          expiresIn: response.data.expiresIn,
+          loginTime: new Date(),
+        });
+
+        // 初始化用户会话
+        try {
+          await AppInitializationManager.initializeUserSession(response.data.accountUuid);
+          console.log('🎯 [AuthService] 用户会话初始化完成');
+        } catch (error) {
+          console.warn('⚠️ [AuthService] 用户会话初始化失败，但不影响登录', error);
+        }
+      }
+
       return {
         status: 'SUCCESS',
         success: true,
@@ -87,6 +111,23 @@ export class AuthApplicationService {
    * 用户登出用例
    */
   async logout(): Promise<void> {
+    // 获取当前用户信息用于事件发布
+    const currentToken = AuthManager.getAccessToken();
+    let accountUuid: string | undefined;
+    let username: string | undefined;
+
+    // 如果有 token，尝试从中解析用户信息（可选）
+    if (currentToken) {
+      try {
+        // 这里可以解析 JWT token 获取用户信息，暂时跳过
+        // const tokenPayload = parseJWT(currentToken);
+        // accountUuid = tokenPayload.accountUuid;
+        // username = tokenPayload.username;
+      } catch (error) {
+        console.warn('解析 token 失败:', error);
+      }
+    }
+
     try {
       // 调用后端登出API
       // TODO: 实现登出API调用
@@ -94,6 +135,22 @@ export class AuthApplicationService {
     } catch (err: any) {
       console.warn('登出API调用失败:', err.message);
     } finally {
+      // 发布登出事件
+      publishUserLoggedOutEvent({
+        accountUuid: accountUuid,
+        username: username,
+        reason: 'manual',
+        logoutTime: new Date(),
+      });
+
+      // 清理用户会话
+      try {
+        await AppInitializationManager.cleanupUserSession();
+        console.log('🧹 [AuthService] 用户会话清理完成');
+      } catch (error) {
+        console.warn('⚠️ [AuthService] 用户会话清理失败', error);
+      }
+
       // 清除所有令牌
       AuthManager.clearTokens();
     }

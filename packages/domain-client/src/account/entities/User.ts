@@ -1,3 +1,4 @@
+import { type AccountDTO, type UserDTO } from '@dailyuse/domain-core';
 import { UserCore } from '@dailyuse/domain-core';
 import { type IUserClient } from '../types';
 import { Sex } from '../valueObjects/Sex';
@@ -138,6 +139,21 @@ export class User extends UserCore implements IUserClient {
 
   getUserDisplayName(): string {
     return this.displayName || 'Unknown User';
+  }
+
+  // ===== DTO方法 =====
+  static fromDTO(dto: UserDTO): User {
+    return new User({
+      uuid: dto.uuid,
+      firstName: dto.firstName || '',
+      lastName: dto.lastName || '',
+      avatar: dto.avatar,
+      bio: dto.bio,
+      sex: new Sex(dto.sex),
+      socialAccounts: dto.socialAccounts || {},
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
+    });
   }
 
   // ===== 静态工厂方法 =====

@@ -51,55 +51,55 @@ export const authGuard = async (
   // 检查路由是否需要认证
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 
-  if (requiresAuth) {
-    // 检查用户是否已认证
-    if (!authStore.isAuthenticated) {
-      console.log('Route requires auth but user is not authenticated, redirecting to login');
-      next({
-        name: 'auth',
-        query: {
-          redirect: to.fullPath,
-          reason: 'login_required',
-        },
-      });
-      return;
-    }
+  if (!requiresAuth) {
+    // 如果不需要认证，直接继续导航
+    next();
+    return;
+  }
 
-    // 检查token是否过期
-    if (authStore.isTokenExpired) {
-      console.log('Token expired, redirecting to login');
-      authStore.clearAuth();
-      next({
-        name: 'auth',
-        query: {
-          redirect: to.fullPath,
-          reason: 'token_expired',
-        },
-      });
-      return;
-    }
+  // 等待应用初始化完成（包括认证状态恢复）
+  const { AppInitializationManager } = await import('../initialization/AppInitializationManager');
 
-    // 检查是否需要刷新token
-    if (authStore.needsRefresh && authStore.refreshToken) {
-      try {
-        // TODO: 实现token刷新逻辑
-        console.log('Token needs refresh, attempting to refresh...');
-        // await authService.refreshToken();
-      } catch (error) {
-        console.error('Token refresh failed:', error);
-        authStore.clearAuth();
-        next({
-          name: 'auth',
-          query: {
-            redirect: to.fullPath,
-            reason: 'refresh_failed',
-          },
-        });
-        return;
-      }
+  // 如果应用还没初始化完成，稍等一下
+  if (!AppInitializationManager.isInitialized()) {
+    console.log('⏳ 等待应用初始化完成...');
+    // 等待最多3秒
+    let attempts = 0;
+    while (!AppInitializationManager.isInitialized() && attempts < 30) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      attempts++;
     }
   }
 
+  // 检查用户是否已认证
+  if (!authStore.isAuthenticated) {
+    console.log('🔒 路由需要认证，但用户未登录，重定向到登录页');
+    next({
+      name: 'auth',
+      query: {
+        redirect: to.fullPath,
+        reason: 'login_required',
+      },
+    });
+    return;
+  }
+
+  // 检查token是否过期
+  if (authStore.isTokenExpired) {
+    console.log('⏰ Token已过期，重定向到登录页');
+    authStore.clearAuth();
+    next({
+      name: 'auth',
+      query: {
+        redirect: to.fullPath,
+        reason: 'token_expired',
+      },
+    });
+    return;
+  }
+
+  // 如果认证有效，继续导航
+  console.log('✅ 认证检查通过，继续导航');
   next();
 };
 
@@ -185,6 +185,7 @@ export const loginRedirectGuard = (
     return;
   }
 
+  // 如果未认证或访问的不是认证页面，继续导航
   next();
 };
 
@@ -207,10 +208,9 @@ export const applyRouterGuards = (router: any) => {
         }
 
         // 2. 认证检查
-        authGuard(to, from, next);
+        await authGuard(to, from, next);
 
-        // 如果认证检查没有调用next()，说明被重定向了
-        // 这里不再继续后续检查
+        // authGuard 会处理所有情况并调用 next()
       } catch (error) {
         console.error('Router guard error:', error);
         next({ name: 'error', query: { message: 'Navigation failed' } });

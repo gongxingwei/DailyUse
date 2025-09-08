@@ -15,7 +15,7 @@
 // ============================================================================
 
 // Domain Models - 领域模型
-export {} from './domain/models/Auth';
+export {} from './domain/entities';
 
 // Domain Repository Interfaces - 领域仓储接口
 export type {
@@ -31,6 +31,25 @@ export type {
 
 // Application Services - 应用服务
 export { AuthApplicationService } from './application/services/AuthApplicationService';
+
+// Initialization Functions - 初始化函数
+export { registerAuthenticationInitializationTasks } from './initialization/authenticationInitialization';
+
+// Event System - 事件系统
+export {
+  AUTH_EVENTS,
+  publishUserLoggedInEvent,
+  publishUserLoggedOutEvent,
+  publishAuthStateChangedEvent,
+  publishTokenRefreshedEvent,
+} from './application/events/authEvents';
+
+export type {
+  UserLoggedInEventPayload,
+  UserLoggedOutEventPayload,
+  AuthStateChangedEventPayload,
+  TokenRefreshedEventPayload,
+} from './application/events/authEvents';
 
 // ============================================================================
 // Infrastructure Layer Exports - 基础设施层导出
@@ -50,8 +69,6 @@ export { ApiClient } from './infrastructure/api/ApiClient';
 export { useAuthStore } from './presentation/stores/useAuthStore';
 
 // Vue Components - Vue组件
-export { default as LoginView } from './presentation/views/LoginView.vue';
-export { default as RegisterView } from './presentation/views/RegisterView.vue';
 
 // ============================================================================
 // Module Configuration & Factory Functions

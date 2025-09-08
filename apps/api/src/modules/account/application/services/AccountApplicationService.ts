@@ -145,9 +145,14 @@ export class AccountApplicationService {
   /**
    * 根据ID获取账户
    */
-  async getAccountById(id: string): Promise<Account | null> {
-    const accountDTO = await this.accountRepository.findById(id);
-    return accountDTO ? Account.fromPersistenceDTO(accountDTO) : null;
+  async getAccountById(id: string): Promise<AccountDTO | null> {
+    const accountPersistenceDTO = await this.accountRepository.findById(id);
+    if (!accountPersistenceDTO) {
+      return null;
+    }
+    const account = Account.fromPersistenceDTO(accountPersistenceDTO);
+    const accountDTO = account.toDTO();
+    return accountDTO;
   }
 
   /**
@@ -161,9 +166,14 @@ export class AccountApplicationService {
   /**
    * 根据用户名获取账户
    */
-  async getAccountByUsername(username: string): Promise<Account | null> {
-    const accountDTO = await this.accountRepository.findByUsername(username);
-    return accountDTO ? Account.fromPersistenceDTO(accountDTO) : null;
+  async getAccountByUsername(username: string): Promise<AccountDTO | null> {
+    const accountPersistenceDTO = await this.accountRepository.findByUsername(username);
+    if (!accountPersistenceDTO) {
+      return null;
+    }
+    const account = Account.fromPersistenceDTO(accountPersistenceDTO);
+    const accountDTO = account.toDTO();
+    return accountDTO;
   }
 
   /**
@@ -429,9 +439,9 @@ export class AccountApplicationService {
       accountUuid,
     );
     try {
-      const accountDTO = await this.accountRepository.findById(accountUuid);
-      console.log('获取account结果', accountDTO);
-      if (!accountDTO) {
+      const accountPersistenceDTO = await this.accountRepository.findById(accountUuid);
+      console.log('获取account结果', accountPersistenceDTO);
+      if (!accountPersistenceDTO) {
         const responseEvent: AccountInfoGetterByUuidResponse = {
           eventType: 'AccountInfoGetterByUuidResponse',
           aggregateId: accountUuid,
@@ -446,7 +456,9 @@ export class AccountApplicationService {
       }
 
       // 转换为领域对象
-      const account = Account.fromPersistenceDTO(accountDTO);
+      const account = Account.fromPersistenceDTO(accountPersistenceDTO);
+
+      const accountDTO = account.toDTO();
 
       const responseEvent: AccountInfoGetterByUuidResponse = {
         eventType: 'AccountInfoGetterByUuidResponse',
@@ -454,7 +466,7 @@ export class AccountApplicationService {
         occurredOn: new Date(),
         payload: {
           requestId,
-          account: account,
+          account: accountDTO,
         },
       };
 

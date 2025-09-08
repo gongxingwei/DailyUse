@@ -4,11 +4,12 @@ import { useSnackbar } from '@/shared/composables/useSnackbar';
 import { type AuthByPasswordForm, type AuthResponseDTO } from '@dailyuse/contracts';
 import { AuthApplicationService } from '../../application/services/AuthApplicationService';
 import { useAuthStore } from '../stores/useAuthStore';
-
+import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
 export function useAuthenticationService() {
   const { showError, showSuccess, showInfo, snackbar } = useSnackbar();
   const router = useRouter();
   const authStore = useAuthStore();
+  const accountStore = useAccountStore();
 
   /**
    * 处理登录
@@ -24,6 +25,7 @@ export function useAuthenticationService() {
 
       if (response.data && response.data.accessToken && response.data.refreshToken) {
         // 更新store状态，包括tokens
+        // accountStore.setAccountUuid(response.data.accountUuid);
         authStore.setUser(response.data);
         authStore.setTokens({
           accessToken: response.data.accessToken,
@@ -32,7 +34,7 @@ export function useAuthenticationService() {
           expiresIn: response.data.expiresIn || 3600,
         });
         showSuccess('登录成功');
-        router.push({ name: 'home' });
+        router.push({ name: 'dashboard' });
       }
     } catch (error: any) {
       const errorMessage = error.message || '登录失败';

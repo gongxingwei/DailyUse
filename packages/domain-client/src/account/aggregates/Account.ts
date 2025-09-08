@@ -4,6 +4,7 @@ import { User } from '../entities/User';
 import { Email } from '../valueObjects/Email';
 import { PhoneNumber } from '../valueObjects/PhoneNumber';
 import { Address } from '../valueObjects/Address';
+import { type AccountDTO } from '@dailyuse/domain-core';
 
 /**
  * 客户端账户聚合根 - 包含UI相关的账户管理
@@ -177,6 +178,24 @@ export class Account extends AccountCore implements IAccountClient {
     const email = this.email?.value || 'No email';
 
     return `账户: ${this.username} | 用户: ${userInfo} | 邮箱: ${email}`;
+  }
+
+  // ===== DTO方法
+  static fromDTO(dto: AccountDTO): Account {
+    const account = new Account({
+      uuid: dto.uuid,
+      username: dto.username,
+      accountType: dto.accountType,
+      roleUuids: new Set(dto.roleIds || []),
+      email: dto.email ? new Email(dto.email) : undefined,
+      phoneNumber: dto.phone ? new PhoneNumber(dto.phone) : undefined,
+      address: undefined,
+      user: User.fromDTO(dto.user),
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
+    });
+
+    return account;
   }
 
   // ===== 静态工厂方法 =====

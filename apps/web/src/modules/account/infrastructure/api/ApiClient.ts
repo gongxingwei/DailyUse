@@ -20,6 +20,7 @@ import type {
   RegistrationResponseDTO,
   SuccessResponse,
   ApiResponse,
+  AccountDTO,
 } from '@dailyuse/contracts';
 
 // 重新导出常用类型
@@ -64,7 +65,7 @@ export class AccountApiService {
   /**
    * 根据ID获取账户
    */
-  static async getAccountById(id: string, options?: RequestOptions): Promise<AccountInfo> {
+  static async getAccountById(id: string, options?: RequestOptions): Promise<AccountDTO | null> {
     return api.get(`/accounts/${id}`, options);
   }
 

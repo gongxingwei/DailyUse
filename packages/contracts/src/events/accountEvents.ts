@@ -1,6 +1,6 @@
 import type { DomainEvent, AccountStatus } from './types';
 import { EVENT_TYPES } from './constants';
-import type { IAccount } from '../core';
+import type { AccountDTO } from '../core';
 
 // =================== 账户状态验证事件 ===================
 export interface AccountStatusVerificationResponse
@@ -16,7 +16,7 @@ export interface AccountStatusVerificationResponse
 export interface AccountInfoGetterByUuidResponse
   extends DomainEvent<{
     requestId: string;
-    account: IAccount | null;
+    account: AccountDTO | null;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.INFO_GETTER_BY_UUID_RESPONSE;
 }
@@ -24,7 +24,7 @@ export interface AccountInfoGetterByUuidResponse
 export interface AccountInfoGetterByUsernameResponse
   extends DomainEvent<{
     requestId: string;
-    account: IAccount | null;
+    account: AccountDTO | null;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.INFO_GETTER_BY_USERNAME_RESPONSE;
 }
@@ -52,14 +52,14 @@ export interface AccountStatusChangedEvent
 // =================== 账户创建和注册事件 ===================
 export interface AccountRegisteredEvent
   extends DomainEvent<{
-    account: IAccount;
+    account: AccountDTO;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.REGISTERED;
 }
 
 export interface AccountCreatedEvent
   extends DomainEvent<{
-    account: IAccount;
+    account: AccountDTO;
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.CREATED;
 }
@@ -68,7 +68,7 @@ export interface AccountCreatedEvent
 export interface AccountUpdatedEvent
   extends DomainEvent<{
     accountUuid: string;
-    updatedFields: Partial<IAccount>;
+    updatedFields: Partial<AccountDTO>;
     updatedBy: string | null; // 操作者UUID
   }> {
   eventType: typeof EVENT_TYPES.ACCOUNT.UPDATED;
