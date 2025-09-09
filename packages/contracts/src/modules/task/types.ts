@@ -1,6 +1,131 @@
 import { ImportanceLevel, UrgencyLevel } from '../../core';
 
 /**
+ * 任务执行时间类型
+ */
+export enum TaskTimeType {
+  /** 全天任务 */
+  ALL_DAY = 'allDay',
+  /** 指定时间点 */
+  SPECIFIC_TIME = 'specificTime',
+  /** 时间范围 */
+  TIME_RANGE = 'timeRange',
+}
+
+/**
+ * 任务调度模式
+ */
+export enum TaskScheduleMode {
+  /** 单次任务 */
+  ONCE = 'once',
+  /** 每日 */
+  DAILY = 'daily',
+  /** 每周 */
+  WEEKLY = 'weekly',
+  /** 每月 */
+  MONTHLY = 'monthly',
+  /** 间隔天数 */
+  INTERVAL_DAYS = 'intervalDays',
+}
+
+/**
+ * 任务时间配置 - 简化版
+ */
+export interface TaskTimeConfig {
+  /** 具体时间设置 */
+  time: {
+    /** 任务时间类型 */
+    timeType: TaskTimeType;
+    /** 开始时间 (对于 specificTime 和 timeRange) */
+    startTime?: string; // HH:mm 格式
+    /** 结束时间 (仅对于 timeRange) */
+    endTime?: string; // HH:mm 格式
+  };
+  date: {
+    /** 开始日期 */
+    startDate: Date;
+    /** 结束日期 (可选，无限期则不设置) */
+    endDate?: Date;
+  };
+  /** 调度配置 */
+  schedule: {
+    /** 调度模式 */
+    mode: TaskScheduleMode;
+    /** 间隔天数 (当 mode 为 INTERVAL_DAYS 时) */
+    intervalDays?: number;
+    /** 每周的哪些天 (当 mode 为 WEEKLY 时) 0=周日, 1=周一, ... */
+    weekdays?: number[];
+    /** 每月的哪些天 (当 mode 为 MONTHLY 时) 1-31 */
+    monthDays?: number[];
+  };
+  /** 时区 */
+  timezone: string;
+}
+
+/**
+ * 任务模板接口 - 优化版
+ */
+export interface ITaskTemplate {
+  /** 模板ID */
+  uuid: string;
+  accountUuid: string;
+
+  /** 任务标题 */
+  title: string;
+  /** 任务描述 */
+  description?: string;
+  /** 时间配置 */
+  timeConfig: TaskTimeConfig;
+
+  /** 提醒配置 */
+  reminderConfig: {
+    /** 是否启用提醒 */
+    enabled: boolean;
+    /** 提前多少分钟提醒 */
+    minutesBefore: number;
+    /** 提醒方式 */
+    methods: ('notification' | 'sound')[];
+  };
+
+  /** 基本属性 */
+  properties: {
+    /** 重要性 */
+    importance: ImportanceLevel;
+    /** 紧急性 */
+    urgency: UrgencyLevel;
+    /** 地点 */
+    location?: string;
+    /** 标签 */
+    tags: string[];
+  };
+
+  /** 生命周期 */
+  lifecycle: {
+    /** 状态 */
+    status: 'draft' | 'active' | 'paused' | 'completed' | 'archived';
+    /** 创建时间 */
+    createdAt: Date;
+    /** 更新时间 */
+    updatedAt: Date;
+  };
+
+  /** 统计信息 */
+  stats: {
+    /** 总生成实例数 */
+    totalInstances: number;
+    /** 已完成实例数 */
+    completedInstances: number;
+    /** 完成率 */
+    completionRate: number;
+    /** 最后生成实例时间 */
+    lastInstanceDate?: Date;
+  };
+
+  /** 关联目标 (可选) */
+  goalLinks?: KeyResultLink[];
+}
+
+/**
  * 关键结果关联
  */
 export interface KeyResultLink {
@@ -32,75 +157,39 @@ export interface TaskReminderConfig {
 }
 
 /**
- * 重复规则
- */
-export interface RecurrenceRule {
-  type: 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly' | 'custom';
-  interval?: number;
-  endCondition?: {
-    type: 'never' | 'date' | 'count';
-    endDate?: Date;
-    count?: number;
-  };
-  config?: {
-    weekdays?: number[];
-    monthDays?: number[];
-    monthWeekdays?: Array<{
-      week: number;
-      weekday: number;
-    }>;
-    months?: number[];
-  };
-}
-
-/**
- * 任务时间配置
- */
-export interface TaskTimeConfig {
-  type: 'allDay' | 'timed' | 'timeRange';
-  baseTime: {
-    start: Date;
-    end?: Date;
-    duration?: number;
-  };
-  recurrence: RecurrenceRule;
-  timezone: string;
-  dstHandling?: 'auto' | 'ignore';
-}
-
-/**
- * 任务实例时间配置
+ * 任务实例时间配置 - 简化版
  */
 export interface TaskInstanceTimeConfig {
-  type: 'allDay' | 'timed' | 'timeRange';
-  scheduledTime: Date;
-  endTime?: Date;
+  /** 任务时间类型 */
+  timeType: TaskTimeType;
+  /** 计划执行日期 */
+  scheduledDate: Date;
+  /** 开始时间 (HH:mm 格式，对于 specificTime 和 timeRange) */
+  startTime?: string;
+  /** 结束时间 (HH:mm 格式，仅对于 timeRange) */
+  endTime?: string;
+  /** 预估时长(分钟) */
   estimatedDuration?: number;
+  /** 时区 */
   timezone: string;
-  allowReschedule: boolean;
-  maxDelayDays?: number;
 }
 
 /**
- * 任务实例提醒状态
+ * 任务实例提醒状态 - 简化版
  */
 export interface TaskInstanceReminderStatus {
+  /** 是否启用提醒 */
   enabled: boolean;
-  alerts: Array<{
-    uuid: string;
-    alertConfig: TaskReminderConfig['alerts'][number];
-    status: 'pending' | 'triggered' | 'dismissed' | 'snoozed';
-    scheduledTime: Date;
-    triggeredAt?: Date;
-    dismissedAt?: Date;
-    snoozeHistory: Array<{
-      snoozedAt: Date;
-      snoozeUntil: Date;
-      reason?: string;
-    }>;
-  }>;
-  globalSnoozeCount: number;
-  lastTriggeredAt?: Date;
+  /** 提醒状态 */
+  status: 'pending' | 'triggered' | 'dismissed' | 'snoozed';
+  /** 计划提醒时间 */
+  scheduledTime?: Date;
+  /** 实际触发时间 */
+  triggeredAt?: Date;
+  /** 稍后提醒次数 */
+  snoozeCount: number;
+  /** 稍后提醒到期时间 */
+  snoozeUntil?: Date;
 }
 
 /**
@@ -126,102 +215,150 @@ export interface TaskInstanceLifecycleEvent {
 }
 
 /**
- * 任务模板接口
- */
-export interface ITaskTemplate {
-  uuid: string;
-  title: string;
-  description?: string;
-  timeConfig: TaskTimeConfig;
-  reminderConfig: TaskReminderConfig;
-  schedulingPolicy: {
-    allowReschedule: boolean;
-    maxDelayDays: number;
-    skipWeekends: boolean;
-    skipHolidays: boolean;
-    workingHoursOnly: boolean;
-  };
-  metadata: {
-    category: string;
-    tags: string[];
-    estimatedDuration?: number;
-    importance: ImportanceLevel;
-    urgency: UrgencyLevel;
-    location?: string;
-  };
-  lifecycle: {
-    status: 'draft' | 'active' | 'paused' | 'archived';
-    createdAt: Date;
-    updatedAt: Date;
-    activatedAt?: Date;
-    pausedAt?: Date;
-  };
-  analytics: {
-    totalInstances: number;
-    completedInstances: number;
-    averageCompletionTime?: number;
-    successRate: number;
-    lastInstanceDate?: Date;
-  };
-  keyResultLinks?: KeyResultLink[];
-  version: number;
-}
-
-/**
- * 任务实例接口
+ * 任务实例接口 - 优化版
  */
 export interface ITaskInstance {
+  /** 实例ID */
   uuid: string;
+  /** 关联的模板ID */
   templateUuid: string;
-  title: string;
-  description?: string;
-  timeConfig: TaskInstanceTimeConfig;
-  reminderStatus: TaskInstanceReminderStatus;
-  lifecycle: {
-    status: 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue';
-    createdAt: Date;
-    updatedAt: Date;
-    startedAt?: Date;
-    completedAt?: Date;
-    cancelledAt?: Date;
-    events: TaskInstanceLifecycleEvent[];
-  };
-  metadata: {
-    estimatedDuration?: number;
-    actualDuration?: number;
-    category: string;
-    tags: string[];
-    location?: string;
-    urgency: UrgencyLevel;
-    importance: ImportanceLevel;
-  };
-  keyResultLinks?: KeyResultLink[];
-  version: number;
-}
+  /** 所属账户 */
+  accountUuid: string;
 
-/**
- * 任务元模板接口
+  /** 任务标题 (可以修改，不一定和模板一致) */
+  title: string;
+  /** 任务描述 (可以修改) */
+  description?: string;
+
+  /** 时间配置 */
+  timeConfig: TaskInstanceTimeConfig;
+
+  /** 提醒状态 */
+  reminderStatus: TaskInstanceReminderStatus;
+
+  /** 执行状态 */
+  execution: {
+    /** 任务状态 */
+    status: 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue';
+    /** 实际开始时间 */
+    actualStartTime?: Date;
+    /** 实际完成时间 */
+    actualEndTime?: Date;
+    /** 实际耗时(分钟) */
+    actualDuration?: number;
+    /** 完成度百分比 (0-100) */
+    progressPercentage: number;
+    /** 执行备注 */
+    notes?: string;
+  };
+
+  /** 基本属性 (继承自模板，但可以调整) */
+  properties: {
+    /** 重要性 */
+    importance: ImportanceLevel;
+    /** 紧急性 */
+    urgency: UrgencyLevel;
+    /** 地点 */
+    location?: string;
+    /** 标签 */
+    tags: string[];
+  };
+
+  /** 生命周期 */
+  lifecycle: {
+    /** 创建时间 */
+    createdAt: Date;
+    /** 更新时间 */
+    updatedAt: Date;
+    /** 关键事件记录 */
+    events: Array<{
+      type:
+        | 'created'
+        | 'started'
+        | 'paused'
+        | 'resumed'
+        | 'completed'
+        | 'cancelled'
+        | 'rescheduled';
+      timestamp: Date;
+      note?: string;
+    }>;
+  };
+
+  /** 关联目标 (继承自模板) */
+  goalLinks?: KeyResultLink[];
+} /**
+ * 任务元模板接口 - 优化版
  */
 export interface ITaskMetaTemplate {
+  /** 元模板ID */
   uuid: string;
+  /** 所属账户 */
+  accountUuid: string;
+
+  /** 元模板名称 */
   name: string;
+  /** 元模板描述 */
   description?: string;
-  category: string;
-  icon?: string;
-  color?: string;
-  defaultTimeConfig: TaskTimeConfig;
-  defaultReminderConfig: TaskReminderConfig;
-  defaultMetadata: {
+
+  /** 外观设置 */
+  appearance: {
+    /** 图标 */
+    icon?: string;
+    /** 颜色 */
+    color?: string;
+    /** 分类标签 */
     category: string;
+  };
+
+  /** 默认时间配置模板 */
+  defaultTimeConfig: {
+    /** 默认时间类型 */
+    timeType: TaskTimeType;
+    /** 默认调度模式 */
+    scheduleMode: TaskScheduleMode;
+    /** 默认时区 */
+    timezone: string;
+    /** 常用时间设置 */
+    commonTimeSettings?: {
+      startTime?: string;
+      endTime?: string;
+    };
+  };
+
+  /** 默认提醒配置 */
+  defaultReminderConfig: {
+    enabled: boolean;
+    minutesBefore: number;
+    methods: ('notification' | 'sound')[];
+  };
+
+  /** 默认属性配置 */
+  defaultProperties: {
+    importance: ImportanceLevel;
+    urgency: UrgencyLevel;
     tags: string[];
-    estimatedDuration?: number;
-    importance?: ImportanceLevel;
-    urgency?: UrgencyLevel;
     location?: string;
   };
+
+  /** 使用统计 */
+  usage: {
+    /** 使用次数 */
+    usageCount: number;
+    /** 最后使用时间 */
+    lastUsedAt?: Date;
+    /** 是否为常用模板 */
+    isFavorite: boolean;
+  };
+
+  /** 生命周期 */
   lifecycle: {
+    /** 创建时间 */
     createdAt: Date;
+    /** 更新时间 */
     updatedAt: Date;
+    /** 是否激活 */
+    isActive: boolean;
   };
 }
 

@@ -1,7 +1,12 @@
 import { Router } from 'express';
 import { GoalController } from './controllers/GoalController.js';
+import { KeyResultController } from './controllers/KeyResultController.js';
+import { GoalRecordController } from './controllers/GoalRecordController.js';
+import { GoalReviewController } from './controllers/GoalReviewController.js';
 
 const router = Router();
+
+// ============ Goal 路由 ============
 
 // 基础 CRUD 路由
 router.post('/', GoalController.createGoal);
@@ -16,5 +21,29 @@ router.post('/:id/activate', GoalController.activateGoal);
 router.post('/:id/pause', GoalController.pauseGoal);
 router.post('/:id/complete', GoalController.completeGoal);
 router.post('/:id/archive', GoalController.archiveGoal);
+
+// ============ KeyResult 路由 ============
+
+router.post('/key-results', KeyResultController.createKeyResult);
+router.get('/:goalId/key-results', KeyResultController.getKeyResultsByGoal);
+router.put('/key-results/:id', KeyResultController.updateKeyResult);
+router.put('/key-results/:id/progress', KeyResultController.updateKeyResultProgress);
+router.delete('/key-results/:id', KeyResultController.deleteKeyResult);
+
+// ============ GoalRecord 路由 ============
+
+router.post('/records', GoalRecordController.createGoalRecord);
+router.get('/:goalId/records', GoalRecordController.getGoalRecordsByGoal);
+router.get('/key-results/:keyResultId/records', GoalRecordController.getGoalRecordsByKeyResult);
+router.get('/records/:id', GoalRecordController.getGoalRecordById);
+router.delete('/records/:id', GoalRecordController.deleteGoalRecord);
+
+// ============ GoalReview 路由 ============
+
+router.post('/:goalId/reviews', GoalReviewController.createGoalReview);
+router.get('/:goalId/reviews', GoalReviewController.getGoalReviewsByGoal);
+router.get('/reviews/:id', GoalReviewController.getGoalReviewById);
+router.put('/reviews/:id', GoalReviewController.updateGoalReview);
+router.delete('/reviews/:id', GoalReviewController.deleteGoalReview);
 
 export default router;

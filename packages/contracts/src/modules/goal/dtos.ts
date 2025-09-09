@@ -15,6 +15,8 @@ import { ImportanceLevel, UrgencyLevel } from '../../core';
  */
 export interface KeyResultDTO {
   uuid: string;
+  accountUuid: string;
+  goalUuid: string;
   name: string;
   description?: string;
   startValue: number;
@@ -23,19 +25,38 @@ export interface KeyResultDTO {
   unit: string;
   weight: number;
   calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
-  createdAt: number; // 时间戳
-  updatedAt: number; // 时间戳
-  status: 'active' | 'completed' | 'archived';
+  lifecycle: {
+    createdAt: number; // 时间戳
+    updatedAt: number; // 时间戳
+    status: 'active' | 'completed' | 'archived';
+  };
 }
 
 /**
- * 创建关键结果请求 DTO
+ * 关键结果响应 DTO
  */
+export interface KeyResultResponse extends KeyResultDTO {
+  progress: number; // 完成百分比
+  isCompleted: boolean;
+  remaining: number; // 剩余数量
+}
+
+/**
+ * 关键结果列表响应 DTO
+ */
+export interface KeyResultListResponse {
+  data: KeyResultResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
 export interface CreateKeyResultRequest {
+  goalUuid: string;
   name: string;
   description?: string;
   startValue: number;
   targetValue: number;
+  currentValue?: number;
   unit: string;
   weight: number;
   calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
@@ -62,12 +83,70 @@ export interface UpdateKeyResultProgressRequest {
  */
 export interface GoalRecordDTO {
   uuid: string;
+  accountUuid: string;
   goalUuid: string;
   keyResultUuid: string;
   value: number;
   note?: string;
-  recordDate: number; // 时间戳
   createdAt: number; // 时间戳
+}
+
+/**
+ * 目标记录响应 DTO
+ */
+export interface GoalRecordResponse extends GoalRecordDTO {
+  xxxx: string; // 预留字段
+}
+
+export interface GoalReviewDTO {
+  uuid: string;
+  goalUuid: string;
+  title: string;
+  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  reviewDate: number; // timestamp
+  content: {
+    achievements: string;
+    challenges: string;
+    learnings: string;
+    nextSteps: string;
+    adjustments?: string;
+  };
+  snapshot: {
+    snapshotDate: number; // timestamp
+    overallProgress: number;
+    weightedProgress: number;
+    completedKeyResults: number;
+    totalKeyResults: number;
+    keyResultsSnapshot: Array<{
+      uuid: string;
+      name: string;
+      progress: number;
+      currentValue: number;
+      targetValue: number;
+    }>;
+  };
+  rating: {
+    progressSatisfaction: number; // 1-10
+    executionEfficiency: number; // 1-10
+    goalReasonableness: number; // 1-10
+  };
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
+}
+
+export interface GoalReviewResponse extends GoalReviewDTO {
+  overallRating: number;
+  isPositiveReview: boolean;
+}
+
+/**
+ * 目标记录列表响应 DTO
+ */
+export interface GoalRecordListResponse {
+  data: GoalRecordResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
 }
 
 /**
@@ -142,6 +221,24 @@ export interface CreateGoalReviewRequest {
   reviewDate?: string; // ISO date string, defaults to now
 }
 
+/**
+ * 目标复盘响应 DTO
+ */
+export interface GoalReviewResponse extends GoalReviewDTO {
+  overallRating: number;
+  isPositiveReview: boolean;
+}
+
+/**
+ * 目标复盘列表响应 DTO
+ */
+export interface GoalReviewListResponse {
+  reviews: GoalReviewResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
+
 // ============ 目标 DTOs ============
 
 /**
@@ -188,6 +285,12 @@ export interface CreateGoalRequest {
   analysis: {
     motive: string;
     feasibility: string;
+    importanceLevel: ImportanceLevel;
+    urgencyLevel: UrgencyLevel;
+  };
+  metadata: {
+    tags: string[];
+    category: string;
   };
   keyResults?: CreateKeyResultRequest[];
 }

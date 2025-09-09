@@ -1,5 +1,4 @@
-import { UrgencyLevel } from "../../core";
-import { ImportanceLevel } from "../../core";
+import { ImportanceLevel, UrgencyLevel } from '../../core';
 
 /**
  * 关键结果接口
@@ -89,7 +88,7 @@ export interface IGoal {
   name: string;
   description?: string;
   color: string;
-  
+
   startTime: Date;
   endTime: Date;
   note?: string;
@@ -126,7 +125,7 @@ export interface IGoalDir {
   description?: string;
   icon: string;
   color: string;
- 
+
   sortConfig: {
     sortKey: string;
     sortOrder: number;
@@ -172,18 +171,35 @@ export interface IGoalStats {
 }
 
 /**
- * 目标查询参数
+ * 查询参数接口
  */
 export interface GoalQueryParams {
-  status?: 'active' | 'completed' | 'paused' | 'archived';
-  dateRange?: {
-    start: Date;
-    end: Date;
-  };
-  dirUuid?: string;
-  tags?: string[];
+  page?: number;
   limit?: number;
+  search?: string;
+  status?: 'active' | 'completed' | 'paused' | 'archived';
+  sortBy?: 'name' | 'createdAt' | 'endTime' | 'progress';
+  sortOrder?: 'asc' | 'desc';
+  dirUuid?: string;
   offset?: number;
+  tags?: string[];
+  category?: string;
+  importanceLevel?: ImportanceLevel;
+  urgencyLevel?: UrgencyLevel;
+  startTime?: number;
+  endTime?: number;
+  dateRange?: {
+    start?: Date;
+    end?: Date;
+  };
+}
+
+export interface GoalDirQueryParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  parentUuid?: string;
+  includeSubDirs?: boolean;
 }
 
 /**

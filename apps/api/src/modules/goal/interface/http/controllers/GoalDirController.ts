@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express';
-import { GoalDirApplicationService } from '../../../application/services/GoalDirApplicationService.js';
+import { GoalDirApplicationService } from '../../../application/services/GoalDirApplicationService';
 import type { GoalContracts } from '@dailyuse/contracts';
 
 export class GoalDirController {

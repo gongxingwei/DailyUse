@@ -36,6 +36,7 @@ model Account {
   mfaDevices      MFADevice[]
   tokens          AuthToken[]
   repositories    Repository[]
+  goals           Goal[]
   goalDirs        GoalDir[]
   goalCategories  GoalCategory[]
   keyResults      KeyResult[]
@@ -171,8 +172,9 @@ model Repository {
 
 // Goal aggregate
 model Goal {
-  uuid    String  @id @default(cuid())
-  dirUuid String? @map("dir_uuid")
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  dirUuid     String? @map("dir_uuid")
 
   // 基本信息
   name        String
@@ -184,14 +186,18 @@ model Goal {
   endTime   DateTime @map("end_time")
   note      String?
 
-  // 分析信息 (JSON存储)
-  analysis String @default("{}") // 包含 motive, feasibility, importanceLevel, urgencyLevel
+  // 分析信息 - 展开存储
+  motive          String @default("") // 动机
+  feasibility     String @default("") // 可行性分析
+  importanceLevel String @default("moderate") @map("importance_level") // 'low', 'moderate', 'high', 'critical'
+  urgencyLevel    String @default("medium") @map("urgency_level") // 'low', 'medium', 'high', 'urgent'
 
-  // 生命周期 (JSON存储)
-  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+  // 元数据 - 展开存储
+  tags     String @default("[]") // JSON数组存储标签
+  category String @default("") // 分类
 
-  // 元数据 (JSON存储)
-  metadata String @default("{}") // 包含 tags, category
+  // 生命周期 - 展开存储
+  status String @default("active") // 'active', 'completed', 'paused', 'archived'
 
   // 版本控制
   version Int @default(1)
@@ -200,6 +206,7 @@ model Goal {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
+  account             Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   directory           GoalDir?           @relation(fields: [dirUuid], references: [uuid], onDelete: SetNull)
   keyResults          KeyResult[]
   records             GoalRecord[]
@@ -208,10 +215,15 @@ model Goal {
   sourceRelationships GoalRelationship[] @relation("SourceGoal")
   targetRelationships GoalRelationship[] @relation("TargetGoal")
 
+  @@index([accountUuid])
   @@index([dirUuid])
   @@index([startTime])
   @@index([endTime])
   @@index([createdAt])
+  @@index([status])
+  @@index([importanceLevel])
+  @@index([urgencyLevel])
+  @@index([category])
   @@map("goals")
 }
 
@@ -226,11 +238,12 @@ model GoalDir {
   icon        String
   color       String
 
-  // 排序配置 (JSON存储)
-  sortConfig String @default("{}") @map("sort_config") // 包含 sortKey, sortOrder
+  // 排序配置 - 展开存储
+  sortKey   String @default("createdAt") @map("sort_key") // 排序字段
+  sortOrder Int    @default(0) @map("sort_order") // 排序顺序
 
-  // 生命周期 (JSON存储)
-  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+  // 生命周期 - 展开存储
+  status String @default("active") // 'active', 'archived'
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -243,6 +256,8 @@ model GoalDir {
 
   @@index([accountUuid])
   @@index([parentUuid])
+  @@index([status])
+  @@index([sortOrder])
   @@map("goal_directories")
 }
 
@@ -293,8 +308,8 @@ model KeyResult {
   weight            Float  @default(1.0)
   calculationMethod String @default("sum") @map("calculation_method") // 'sum', 'average', 'max', 'min', 'custom'
 
-  // 生命周期 (JSON存储)
-  lifecycle String @default("{}") // 包含 createdAt, updatedAt, status
+  // 生命周期 - 展开存储
+  status String @default("active") // 'active', 'completed', 'archived'
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -308,6 +323,7 @@ model KeyResult {
   @@index([goalUuid])
   @@index([weight])
   @@index([createdAt])
+  @@index([status])
   @@map("key_results")
 }
 

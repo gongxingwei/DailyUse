@@ -1,432 +1,621 @@
-/**
- * Goal 模块 Prisma 仓储实现
- * 基于 PostgreSQL + Prisma 的数据持久化实现
- */
-
 import { PrismaClient } from '@prisma/client';
-import { Goal, GoalDir } from '@dailyuse/domain-server';
+import { randomUUID } from 'crypto';
+import type { IGoalRepository } from '@dailyuse/domain-server';
 import type { GoalContracts } from '@dailyuse/contracts';
-import { IGoalRepository } from '../../domain/repositories/iGoalRepository';
 
 export class PrismaGoalRepository implements IGoalRepository {
   constructor(private prisma: PrismaClient) {}
 
-  // ========================= Goal 相关 =========================
+  // ===== 数据库实体到DTO的转换 =====
 
-  async createGoal(accountUuid: string, goal: Goal): Promise<Goal> {
-    const goalData = goal.toDTO();
+  private mapGoalToDTO(goal: any): GoalContracts.GoalDTO {
+    return {
+      uuid: goal.uuid,
+      name: goal.name,
+      description: goal.description,
+      color: goal.color,
+      dirUuid: goal.dirUuid,
+      startTime: goal.startTime.getTime(),
+      endTime: goal.endTime.getTime(),
+      note: goal.note,
+      analysis: {
+        motive: goal.motive || '',
+        feasibility: goal.feasibility || '',
+        importanceLevel: goal.importanceLevel || 'moderate',
+        urgencyLevel: goal.urgencyLevel || 'medium',
+      },
+      lifecycle: {
+        createdAt: goal.createdAt.getTime(),
+        updatedAt: goal.updatedAt.getTime(),
+        status: goal.status || 'active',
+      },
+      metadata: {
+        tags: goal.tags ? JSON.parse(goal.tags) : [],
+        category: goal.category || '',
+      },
+      version: goal.version || 1,
+    };
+  }
+
+  private mapGoalDirToDTO(dir: any): GoalContracts.GoalDirDTO {
+    return {
+      uuid: dir.uuid,
+      accountUuid: dir.accountUuid,
+      name: dir.name,
+      description: dir.description,
+      color: dir.color,
+      icon: dir.icon,
+      parentUuid: dir.parentUuid,
+      sortConfig: {
+        sortKey: dir.sortKey || 'createdAt',
+        sortOrder: dir.sortOrder || 0,
+      },
+      lifecycle: {
+        createdAt: dir.createdAt.getTime(),
+        updatedAt: dir.updatedAt.getTime(),
+        status: dir.status || 'active',
+      },
+    };
+  }
+
+  private mapKeyResultToDTO(keyResult: any): GoalContracts.KeyResultDTO {
+    return {
+      uuid: keyResult.uuid,
+      accountUuid: keyResult.accountUuid,
+      goalUuid: keyResult.goalUuid,
+      name: keyResult.name,
+      description: keyResult.description,
+      startValue: keyResult.startValue,
+      targetValue: keyResult.targetValue,
+      currentValue: keyResult.currentValue,
+      unit: keyResult.unit,
+      weight: keyResult.weight,
+      calculationMethod: keyResult.calculationMethod,
+      lifecycle: {
+        createdAt: keyResult.createdAt.getTime(),
+        updatedAt: keyResult.updatedAt.getTime(),
+        status: keyResult.status || 'active',
+      },
+    };
+  }
+
+  // ===== Goal CRUD 操作 =====
+
+  async createGoal(
+    accountUuid: string,
+    goalData: Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'>,
+  ): Promise<GoalContracts.GoalDTO> {
+    const uuid = randomUUID();
+    const now = new Date();
 
     const created = await this.prisma.goal.create({
       data: {
-        uuid: goalData.uuid,
+        uuid,
         accountUuid,
-        directoryUuid: goalData.dirUuid,
         name: goalData.name,
         description: goalData.description,
         color: goalData.color,
-        icon: goalData.icon,
+        dirUuid: goalData.dirUuid,
         startTime: new Date(goalData.startTime),
         endTime: new Date(goalData.endTime),
-        notes: goalData.note,
-        analysis: JSON.stringify(goalData.analysis),
-        status: goalData.lifecycle.status,
-        version: goalData.lifecycle.version,
-      },
-      include: {
-        directory: true,
-        keyResults: true,
+        note: goalData.note,
+        // 展开analysis字段
+        motive: goalData.analysis?.motive || '',
+        feasibility: goalData.analysis?.feasibility || '',
+        importanceLevel: goalData.analysis?.importanceLevel || 'moderate',
+        urgencyLevel: goalData.analysis?.urgencyLevel || 'medium',
+        // 展开metadata字段
+        tags: JSON.stringify(goalData.metadata?.tags || []),
+        category: goalData.metadata?.category || '',
+        // 生命周期状态
+        status: 'active',
+        version: goalData.version || 1,
+        createdAt: now,
+        updatedAt: now,
       },
     });
 
-    return Goal.fromDTO({
-      ...goalData,
-      uuid: created.uuid,
-      startTime: created.startTime.toISOString(),
-      endTime: created.endTime.toISOString(),
-      lifecycle: {
-        status: created.status as any,
-        version: created.version,
-        createdAt: created.createdAt.toISOString(),
-        updatedAt: created.updatedAt.toISOString(),
-      },
-    });
+    return this.mapGoalToDTO(created);
   }
 
-  async getGoalByUuid(accountUuid: string, uuid: string): Promise<Goal | null> {
+  async getGoalByUuid(accountUuid: string, uuid: string): Promise<GoalContracts.GoalDTO | null> {
     const goal = await this.prisma.goal.findFirst({
       where: {
         uuid,
         accountUuid,
       },
-      include: {
-        directory: true,
-        keyResults: true,
-      },
     });
 
-    if (!goal) return null;
-
-    return Goal.fromDTO({
-      uuid: goal.uuid,
-      name: goal.name,
-      description: goal.description,
-      color: goal.color,
-      icon: goal.icon,
-      dirUuid: goal.directoryUuid,
-      startTime: goal.startTime.toISOString(),
-      endTime: goal.endTime.toISOString(),
-      note: goal.notes,
-      analysis: JSON.parse(goal.analysis || '{}'),
-      lifecycle: {
-        status: goal.status as any,
-        version: goal.version,
-        createdAt: goal.createdAt.toISOString(),
-        updatedAt: goal.updatedAt.toISOString(),
-      },
-    });
+    return goal ? this.mapGoalToDTO(goal) : null;
   }
 
   async getAllGoals(
     accountUuid: string,
-    params?: { limit?: number; offset?: number },
-  ): Promise<Goal[]> {
-    const goals = await this.prisma.goal.findMany({
-      where: {
-        accountUuid,
-      },
-      include: {
-        directory: true,
-        keyResults: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: params?.limit || 1000,
-      skip: params?.offset || 0,
-    });
-
-    return goals.map((goal) =>
-      Goal.fromDTO({
-        uuid: goal.uuid,
-        name: goal.name,
-        description: goal.description,
-        color: goal.color,
-        icon: goal.icon,
-        dirUuid: goal.directoryUuid,
-        startTime: goal.startTime.toISOString(),
-        endTime: goal.endTime.toISOString(),
-        note: goal.notes,
-        analysis: JSON.parse(goal.analysis || '{}'),
-        lifecycle: {
-          status: goal.status as any,
-          version: goal.version,
-          createdAt: goal.createdAt.toISOString(),
-          updatedAt: goal.updatedAt.toISOString(),
+    params?: GoalContracts.GoalQueryParams,
+  ): Promise<{ goals: GoalContracts.GoalDTO[]; total: number }> {
+    const where = {
+      accountUuid,
+      ...(params?.status && { status: params.status }),
+      ...(params?.dirUuid && { dirUuid: params.dirUuid }),
+      ...(params?.category && { category: { contains: params.category } }),
+      ...(params?.importanceLevel && { importanceLevel: params.importanceLevel }),
+      ...(params?.urgencyLevel && { urgencyLevel: params.urgencyLevel }),
+      ...(params?.tags && {
+        tags: {
+          contains: JSON.stringify(params.tags).slice(1, -1), // 移除方括号进行部分匹配
         },
       }),
-    );
+      ...(params?.startTime && { startTime: { gte: new Date(params.startTime) } }),
+      ...(params?.endTime && { endTime: { lte: new Date(params.endTime) } }),
+    };
+
+    const [goals, total] = await Promise.all([
+      this.prisma.goal.findMany({
+        where,
+        skip: params?.offset || 0,
+        take: params?.limit || 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.goal.count({ where }),
+    ]);
+
+    return {
+      goals: goals.map((goal) => this.mapGoalToDTO(goal)),
+      total,
+    };
   }
 
-  async updateGoal(accountUuid: string, goal: Goal): Promise<Goal> {
-    const goalData = goal.toDTO();
+  async updateGoal(
+    accountUuid: string,
+    uuid: string,
+    updateData: Partial<Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'>>,
+  ): Promise<GoalContracts.GoalDTO> {
+    const now = new Date();
+
+    // 获取现有数据以合并更新
+    const existing = await this.prisma.goal.findFirst({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    if (!existing) {
+      throw new Error('Goal not found');
+    }
 
     const updated = await this.prisma.goal.update({
       where: {
-        uuid: goalData.uuid,
-        accountUuid,
+        uuid,
       },
       data: {
-        name: goalData.name,
-        description: goalData.description,
-        color: goalData.color,
-        icon: goalData.icon,
-        directoryUuid: goalData.dirUuid,
-        startTime: new Date(goalData.startTime),
-        endTime: new Date(goalData.endTime),
-        notes: goalData.note,
-        analysis: JSON.stringify(goalData.analysis),
-        status: goalData.lifecycle.status,
-        version: goalData.lifecycle.version,
-      },
-      include: {
-        directory: true,
-        keyResults: true,
+        ...(updateData.name && { name: updateData.name }),
+        ...(updateData.description !== undefined && { description: updateData.description }),
+        ...(updateData.color && { color: updateData.color }),
+        ...(updateData.dirUuid !== undefined && { dirUuid: updateData.dirUuid }),
+        ...(updateData.startTime && { startTime: new Date(updateData.startTime) }),
+        ...(updateData.endTime && { endTime: new Date(updateData.endTime) }),
+        ...(updateData.note !== undefined && { note: updateData.note }),
+        // 更新分解后的字段
+        ...(updateData.analysis?.motive !== undefined && { motive: updateData.analysis.motive }),
+        ...(updateData.analysis?.feasibility !== undefined && {
+          feasibility: updateData.analysis.feasibility,
+        }),
+        ...(updateData.analysis?.importanceLevel !== undefined && {
+          importanceLevel: updateData.analysis.importanceLevel,
+        }),
+        ...(updateData.analysis?.urgencyLevel !== undefined && {
+          urgencyLevel: updateData.analysis.urgencyLevel,
+        }),
+        ...(updateData.metadata?.category !== undefined && {
+          category: updateData.metadata.category,
+        }),
+        ...(updateData.metadata?.tags !== undefined && {
+          tags: JSON.stringify(updateData.metadata.tags),
+        }),
+        updatedAt: now,
+        ...(updateData.version && { version: updateData.version }),
       },
     });
 
-    return Goal.fromDTO({
-      ...goalData,
-      lifecycle: {
-        status: updated.status as any,
-        version: updated.version,
-        createdAt: updated.createdAt.toISOString(),
-        updatedAt: updated.updatedAt.toISOString(),
-      },
-    });
+    return this.mapGoalToDTO(updated);
   }
 
   async deleteGoal(accountUuid: string, uuid: string): Promise<boolean> {
-    try {
-      await this.prisma.goal.delete({
-        where: {
-          uuid,
-          accountUuid,
-        },
-      });
-      return true;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  async getGoalsByDirectoryUuid(accountUuid: string, directoryUuid: string): Promise<Goal[]> {
-    const goals = await this.prisma.goal.findMany({
+    const result = await this.prisma.goal.deleteMany({
       where: {
+        uuid,
         accountUuid,
-        directoryUuid,
-      },
-      include: {
-        directory: true,
-        keyResults: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
       },
     });
 
-    return goals.map((goal) =>
-      Goal.fromDTO({
-        uuid: goal.uuid,
-        name: goal.name,
-        description: goal.description,
-        color: goal.color,
-        icon: goal.icon,
-        dirUuid: goal.directoryUuid,
-        startTime: goal.startTime.toISOString(),
-        endTime: goal.endTime.toISOString(),
-        note: goal.notes,
-        analysis: JSON.parse(goal.analysis || '{}'),
-        lifecycle: {
-          status: goal.status as any,
-          version: goal.version,
-          createdAt: goal.createdAt.toISOString(),
-          updatedAt: goal.updatedAt.toISOString(),
-        },
-      }),
-    );
+    return result.count > 0;
   }
 
-  async getGoalsByStatus(accountUuid: string, status: string): Promise<Goal[]> {
-    const goals = await this.prisma.goal.findMany({
-      where: {
-        accountUuid,
-        status,
-      },
-      include: {
-        directory: true,
-        keyResults: true,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
+  // ===== Goal Directory CRUD 操作 =====
 
-    return goals.map((goal) =>
-      Goal.fromDTO({
-        uuid: goal.uuid,
-        name: goal.name,
-        description: goal.description,
-        color: goal.color,
-        icon: goal.icon,
-        dirUuid: goal.directoryUuid,
-        startTime: goal.startTime.toISOString(),
-        endTime: goal.endTime.toISOString(),
-        note: goal.notes,
-        analysis: JSON.parse(goal.analysis || '{}'),
-        lifecycle: {
-          status: goal.status as any,
-          version: goal.version,
-          createdAt: goal.createdAt.toISOString(),
-          updatedAt: goal.updatedAt.toISOString(),
-        },
-      }),
-    );
-  }
-
-  // ========================= GoalDir 相关 =========================
-
-  async createGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir> {
-    const dirData = goalDir.toDTO();
+  async createGoalDirectory(
+    accountUuid: string,
+    dirData: Omit<GoalContracts.GoalDirDTO, 'uuid' | 'lifecycle'>,
+  ): Promise<GoalContracts.GoalDirDTO> {
+    const uuid = randomUUID();
+    const now = new Date();
 
     const created = await this.prisma.goalDir.create({
       data: {
-        uuid: dirData.uuid,
-        accountUuid,
-        parentUuid: dirData.parentUuid,
+        uuid,
         name: dirData.name,
         description: dirData.description,
-        icon: dirData.icon,
         color: dirData.color,
-        sortOrder: dirData.sortConfig?.order || 0,
+        icon: dirData.icon,
+        parentUuid: dirData.parentUuid,
+        sortKey: dirData.sortConfig?.sortKey || 'createdAt',
+        sortOrder: dirData.sortConfig?.sortOrder || 0,
         status: 'active',
-      },
-      include: {
-        parent: true,
-        children: true,
-        goals: true,
+        createdAt: now,
+        updatedAt: now,
+        accountUuid,
       },
     });
 
-    return GoalDir.fromDTO({
-      ...dirData,
-      uuid: created.uuid,
-      goalCount: created.goals.length,
-    });
+    return this.mapGoalDirToDTO(created);
   }
 
-  async getGoalDirectoryByUuid(accountUuid: string, uuid: string): Promise<GoalDir | null> {
+  async getGoalDirectoryByUuid(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<GoalContracts.GoalDirDTO | null> {
     const dir = await this.prisma.goalDir.findFirst({
       where: {
         uuid,
         accountUuid,
       },
-      include: {
-        parent: true,
-        children: true,
-        goals: true,
-      },
     });
 
-    if (!dir) return null;
-
-    return GoalDir.fromDTO({
-      uuid: dir.uuid,
-      name: dir.name,
-      description: dir.description,
-      icon: dir.icon,
-      color: dir.color,
-      parentUuid: dir.parentUuid,
-      sortConfig: {
-        key: dir.sortKey,
-        order: dir.sortOrder,
-      },
-      goalCount: dir.goals.length,
-      isSystemDir: false, // 根据业务需要设置
-    });
+    return dir ? this.mapGoalDirToDTO(dir) : null;
   }
 
   async getAllGoalDirectories(
     accountUuid: string,
-    params?: { limit?: number; offset?: number },
-  ): Promise<GoalDir[]> {
-    const dirs = await this.prisma.goalDir.findMany({
-      where: {
-        accountUuid,
-      },
-      include: {
-        parent: true,
-        children: true,
-        goals: true,
-      },
-      orderBy: {
-        sortOrder: 'asc',
-      },
-      take: params?.limit || 1000,
-      skip: params?.offset || 0,
-    });
+    params?: { parentUuid?: string },
+  ): Promise<{ goalDirs: GoalContracts.GoalDirDTO[]; total: number }> {
+    const where = {
+      accountUuid,
+      ...(params?.parentUuid !== undefined && { parentUuid: params.parentUuid }),
+    };
 
-    return dirs.map((dir) =>
-      GoalDir.fromDTO({
-        uuid: dir.uuid,
-        name: dir.name,
-        description: dir.description,
-        icon: dir.icon,
-        color: dir.color,
-        parentUuid: dir.parentUuid,
-        sortConfig: {
-          key: dir.sortKey,
-          order: dir.sortOrder,
+    const [directories, total] = await Promise.all([
+      this.prisma.goalDir.findMany({
+        where,
+        orderBy: {
+          createdAt: 'desc',
         },
-        goalCount: dir.goals.length,
-        isSystemDir: false,
       }),
-    );
+      this.prisma.goalDir.count({ where }),
+    ]);
+
+    return {
+      goalDirs: directories.map((dir) => this.mapGoalDirToDTO(dir)),
+      total,
+    };
   }
 
-  async updateGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir> {
-    const dirData = goalDir.toDTO();
+  async updateGoalDirectory(
+    accountUuid: string,
+    uuid: string,
+    updateData: Partial<Omit<GoalContracts.GoalDirDTO, 'uuid' | 'lifecycle'>>,
+  ): Promise<GoalContracts.GoalDirDTO> {
+    const now = new Date();
 
     const updated = await this.prisma.goalDir.update({
       where: {
-        uuid: dirData.uuid,
-        accountUuid,
+        uuid,
       },
       data: {
-        name: dirData.name,
-        description: dirData.description,
-        icon: dirData.icon,
-        color: dirData.color,
-        parentUuid: dirData.parentUuid,
-        sortOrder: dirData.sortConfig?.order || 0,
-      },
-      include: {
-        parent: true,
-        children: true,
-        goals: true,
+        ...(updateData.name && { name: updateData.name }),
+        ...(updateData.description !== undefined && { description: updateData.description }),
+        ...(updateData.color && { color: updateData.color }),
+        ...(updateData.icon && { icon: updateData.icon }),
+        ...(updateData.parentUuid !== undefined && { parentUuid: updateData.parentUuid }),
+        ...(updateData.sortConfig?.sortKey && { sortKey: updateData.sortConfig.sortKey }),
+        ...(updateData.sortConfig?.sortOrder !== undefined && {
+          sortOrder: updateData.sortConfig.sortOrder,
+        }),
+        updatedAt: now,
       },
     });
 
-    return GoalDir.fromDTO({
-      ...dirData,
-      goalCount: updated.goals.length,
-    });
+    return this.mapGoalDirToDTO(updated);
   }
 
   async deleteGoalDirectory(accountUuid: string, uuid: string): Promise<boolean> {
-    try {
-      await this.prisma.goalDir.delete({
-        where: {
-          uuid,
-          accountUuid,
-        },
-      });
-      return true;
-    } catch (error) {
-      return false;
-    }
+    const result = await this.prisma.goalDir.deleteMany({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return result.count > 0;
   }
 
-  // ========================= 其他方法的简单实现 =========================
+  // ===== KeyResult CRUD 操作 =====
 
-  async createKeyResult(): Promise<any> {
-    throw new Error('KeyResult not implemented yet');
+  async createKeyResult(
+    accountUuid: string,
+    keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'>,
+  ): Promise<GoalContracts.KeyResultDTO> {
+    const uuid = randomUUID();
+    const now = new Date();
+
+    const created = await this.prisma.keyResult.create({
+      data: {
+        uuid,
+        accountUuid,
+        goalUuid: keyResultData.goalUuid,
+        name: keyResultData.name,
+        description: keyResultData.description,
+        startValue: keyResultData.startValue,
+        targetValue: keyResultData.targetValue,
+        currentValue: keyResultData.currentValue,
+        unit: keyResultData.unit,
+        weight: keyResultData.weight,
+        calculationMethod: keyResultData.calculationMethod,
+        status: 'active',
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    return this.mapKeyResultToDTO(created);
   }
 
-  async getKeyResultsByGoalUuid(): Promise<any[]> {
-    return [];
+  async getKeyResultByUuid(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<GoalContracts.KeyResultDTO | null> {
+    const keyResult = await this.prisma.keyResult.findFirst({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return keyResult ? this.mapKeyResultToDTO(keyResult) : null;
   }
 
-  async updateKeyResult(): Promise<any> {
-    throw new Error('KeyResult not implemented yet');
+  async getKeyResultsByGoalUuid(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<GoalContracts.KeyResultDTO[]> {
+    const keyResults = await this.prisma.keyResult.findMany({
+      where: {
+        accountUuid,
+        goalUuid,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return keyResults.map((kr) => this.mapKeyResultToDTO(kr));
   }
 
-  async deleteKeyResult(): Promise<boolean> {
-    return false;
+  async updateKeyResult(
+    accountUuid: string,
+    uuid: string,
+    keyResultData: Partial<GoalContracts.KeyResultDTO>,
+  ): Promise<GoalContracts.KeyResultDTO> {
+    const now = new Date();
+
+    const updated = await this.prisma.keyResult.update({
+      where: { uuid },
+      data: {
+        ...(keyResultData.name && { name: keyResultData.name }),
+        ...(keyResultData.description !== undefined && { description: keyResultData.description }),
+        ...(keyResultData.startValue !== undefined && { startValue: keyResultData.startValue }),
+        ...(keyResultData.targetValue !== undefined && { targetValue: keyResultData.targetValue }),
+        ...(keyResultData.currentValue !== undefined && {
+          currentValue: keyResultData.currentValue,
+        }),
+        ...(keyResultData.unit && { unit: keyResultData.unit }),
+        ...(keyResultData.weight !== undefined && { weight: keyResultData.weight }),
+        ...(keyResultData.calculationMethod && {
+          calculationMethod: keyResultData.calculationMethod,
+        }),
+        updatedAt: now,
+      },
+    });
+
+    return this.mapKeyResultToDTO(updated);
   }
 
+  async deleteKeyResult(accountUuid: string, uuid: string): Promise<boolean> {
+    const result = await this.prisma.keyResult.deleteMany({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return result.count > 0;
+  }
+
+  // ===== 额外的 Goal 方法 =====
+
+  async getGoalsByDirectoryUuid(
+    accountUuid: string,
+    directoryUuid: string,
+  ): Promise<GoalContracts.GoalDTO[]> {
+    const goals = await this.prisma.goal.findMany({
+      where: {
+        accountUuid,
+        dirUuid: directoryUuid,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return goals.map((goal) => this.mapGoalToDTO(goal));
+  }
+
+  async getGoalsByStatus(
+    accountUuid: string,
+    status: 'active' | 'completed' | 'paused' | 'archived',
+  ): Promise<GoalContracts.GoalDTO[]> {
+    const goals = await this.prisma.goal.findMany({
+      where: {
+        accountUuid,
+        status,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return goals.map((goal) => this.mapGoalToDTO(goal));
+  }
+
+  async batchUpdateGoalStatus(
+    accountUuid: string,
+    uuids: string[],
+    status: 'active' | 'completed' | 'paused' | 'archived',
+  ): Promise<boolean> {
+    const now = new Date();
+
+    const result = await this.prisma.goal.updateMany({
+      where: {
+        uuid: { in: uuids },
+        accountUuid,
+      },
+      data: {
+        status,
+        updatedAt: now,
+      },
+    });
+
+    return result.count > 0;
+  }
+
+  async updateKeyResultProgress(
+    accountUuid: string,
+    uuid: string,
+    value: number,
+  ): Promise<GoalContracts.KeyResultDTO> {
+    const now = new Date();
+
+    const updated = await this.prisma.keyResult.update({
+      where: { uuid },
+      data: {
+        currentValue: value,
+        updatedAt: now,
+      },
+    });
+
+    return this.mapKeyResultToDTO(updated);
+  }
+
+  // ===== 其他必需方法的基础实现 =====
+
+  async getGoalDirectoryTree(accountUuid: string): Promise<GoalContracts.GoalDirDTO[]> {
+    const dirs = await this.prisma.goalDir.findMany({
+      where: {
+        accountUuid,
+        parentUuid: null, // 只获取根级目录
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return dirs.map((dir) => this.mapGoalDirToDTO(dir));
+  }
+
+  // 以下方法暂时抛出未实现错误，后续可以根据需要实现
   async createGoalRecord(): Promise<any> {
-    throw new Error('GoalRecord not implemented yet');
+    throw new Error('Method not implemented');
   }
 
-  async getGoalRecordsByGoalUuid(): Promise<any[]> {
-    return [];
+  async getGoalRecordByUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalRecordsByGoalUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async updateGoalRecord(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async deleteGoalRecord(): Promise<any> {
+    throw new Error('Method not implemented');
   }
 
   async createGoalReview(): Promise<any> {
-    throw new Error('GoalReview not implemented yet');
+    throw new Error('Method not implemented');
   }
 
-  async getGoalReviewsByGoalUuid(): Promise<any[]> {
-    return [];
+  async getGoalReviewByUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalReviewsByGoalUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async updateGoalReview(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async deleteGoalReview(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async createGoalRelationship(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalRelationshipsByGoalUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async deleteGoalRelationship(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async searchGoals(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalStatistics(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getUpcomingGoals(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getOverdueGoals(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalRecordsByKeyResultUuid(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getGoalStats(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getProgressTrend(): Promise<any> {
+    throw new Error('Method not implemented');
+  }
+
+  async getUpcomingDeadlines(): Promise<any> {
+    throw new Error('Method not implemented');
   }
 }

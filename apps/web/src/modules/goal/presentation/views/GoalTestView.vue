@@ -169,7 +169,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { useGoalStore, getGoalWebService } from '@/modules/goal';
-import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts, ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 // Store 和 Service
 const goalStore = useGoalStore();
@@ -242,9 +242,15 @@ const createTestGoal = async () => {
             endTime: endTime.toISOString(),
             analysis: {
                 motive: '测试目标',
-                feasibility: '高'
+                feasibility: '高',
+                importanceLevel: ImportanceLevel.Moderate,
+                urgencyLevel: UrgencyLevel.Medium
             },
             dirUuid: undefined, // 使用默认目录
+            metadata: {
+                tags: [],
+                category: 'test'
+            }
         };
 
         await goalService.createGoal(goalData);

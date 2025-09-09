@@ -220,6 +220,8 @@ export class Goal extends GoalCore {
       ...baseDTO,
       keyResults: this.keyResults.map((kr) => ({
         uuid: kr.uuid,
+        accountUuid: kr.accountUuid,
+        goalUuid: kr.goalUuid,
         name: kr.name,
         description: kr.description,
         startValue: kr.startValue,
