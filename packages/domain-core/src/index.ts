@@ -18,10 +18,16 @@ export * from './account/valueObjects/AddressCore';
 export * from './account/valueObjects/SexCore';
 
 // Goal domain exports
-export * from './goal/aggregates/GoalCore';
+export * from './goal/aggregates/Goal';
+export * from './goal/aggregates/GoalDir';
+export * from './goal/entities/KeyResult';
+export * from './goal/entities/GoalRecord';
+export * from './goal/entities/GoalReview';
 
 // Task domain exports
-export * from './task/aggregates/TaskCore';
+export * from './task/aggregates/TaskTemplate';
+export * from './task/entities/TaskInstance';
+export * from './task/entities/TaskMetaTemplate';
 
 // Repository domain exports
 export * from './repository/aggregates/RepositoryCore';

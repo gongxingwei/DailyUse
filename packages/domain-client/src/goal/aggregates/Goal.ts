@@ -1,5 +1,5 @@
-import { GoalCore, GoalDirCore } from '@dailyuse/domain-core';
-import { type GoalContracts, type IGoal, type IGoalDir } from '@dailyuse/contracts';
+import { GoalCore } from '@dailyuse/domain-core';
+import { type GoalContracts, type IGoal } from '@dailyuse/contracts';
 
 /**
  * 客户端 Goal 实体
@@ -379,49 +379,52 @@ export class Goal extends GoalCore {
   static fromResponse(response: GoalContracts.GoalResponse): Goal {
     const goal = Goal.fromDTO(response);
 
-    // 设置关键结果
-    goal.keyResults = response.keyResults.map((kr) => ({
-      uuid: kr.uuid,
-      name: kr.name,
-      description: kr.description,
-      startValue: kr.startValue,
-      targetValue: kr.targetValue,
-      currentValue: kr.currentValue,
-      unit: kr.unit,
-      weight: kr.weight,
-      calculationMethod: kr.calculationMethod,
-      createdAt: new Date(kr.createdAt),
-      updatedAt: new Date(kr.updatedAt),
-      status: kr.status,
-    }));
+    // // 设置关键结果
+    // goal.keyResults = response.keyResults.map((kr) => ({
+    //   uuid: kr.uuid,
+    //   goalUuid: kr.goalUuid,
+    //   accountUuid: kr.accountUuid,
+    //   name: kr.name,
+    //   description: kr.description,
+    //   startValue: kr.startValue,
+    //   targetValue: kr.targetValue,
+    //   currentValue: kr.currentValue,
+    //   unit: kr.unit,
+    //   weight: kr.weight,
+    //   calculationMethod: kr.calculationMethod,
+    //   createdAt: new Date(kr.createdAt),
+    //   updatedAt: new Date(kr.updatedAt),
+    //   status: kr.status,
+    // }));
 
-    // 设置记录
-    goal.records = response.records.map((record) => ({
-      uuid: record.uuid,
-      goalUuid: record.goalUuid,
-      keyResultUuid: record.keyResultUuid,
-      value: record.value,
-      note: record.note,
-      recordDate: new Date(record.recordDate),
-      createdAt: new Date(record.createdAt),
-    }));
+    // // 设置记录
+    // goal.records = response.records.map((record) => ({
+    //   uuid: record.uuid,
+    //   accountUuid: record.accountUuid,
+    //   goalUuid: record.goalUuid,
+    //   keyResultUuid: record.keyResultUuid,
+    //   value: record.value,
+    //   note: record.note,
+    //   recordDate: new Date(record.recordDate),
+    //   createdAt: new Date(record.createdAt),
+    // }));
 
-    // 设置复盘
-    goal.reviews = response.reviews.map((review) => ({
-      uuid: review.uuid,
-      goalUuid: review.goalUuid,
-      title: review.title,
-      type: review.type,
-      reviewDate: new Date(review.reviewDate),
-      content: review.content,
-      snapshot: {
-        ...review.snapshot,
-        snapshotDate: new Date(review.snapshot.snapshotDate),
-      },
-      rating: review.rating,
-      createdAt: new Date(review.createdAt),
-      updatedAt: new Date(review.updatedAt),
-    }));
+    // // 设置复盘
+    // goal.reviews = response.reviews.map((review) => ({
+    //   uuid: review.uuid,
+    //   goalUuid: review.goalUuid,
+    //   title: review.title,
+    //   type: review.type,
+    //   reviewDate: new Date(review.reviewDate),
+    //   content: review.content,
+    //   snapshot: {
+    //     ...review.snapshot,
+    //     snapshotDate: new Date(review.snapshot.snapshotDate),
+    //   },
+    //   rating: review.rating,
+    //   createdAt: new Date(review.createdAt),
+    //   updatedAt: new Date(review.updatedAt),
+    // }));
 
     return goal;
   }
@@ -461,135 +464,3 @@ export class Goal extends GoalCore {
  * 客户端 GoalDir 实体
  * 继承核心 GoalDir 类，添加客户端特有功能
  */
-export class GoalDir extends GoalDirCore {
-  constructor(params: {
-    uuid?: string;
-    name: string;
-    description?: string;
-    icon: string;
-    color: string;
-    parentUuid?: string;
-    sortConfig?: {
-      sortKey: string;
-      sortOrder: number;
-    };
-    status?: 'active' | 'archived';
-    createdAt?: Date;
-    updatedAt?: Date;
-  }) {
-    super(params);
-  }
-
-  // ===== 客户端特有方法 =====
-
-  /**
-   * 归档目录
-   */
-  archive(): void {
-    this._lifecycle.status = 'archived';
-    this._lifecycle.updatedAt = new Date();
-  }
-
-  /**
-   * 激活目录
-   */
-  activate(): void {
-    this._lifecycle.status = 'active';
-    this._lifecycle.updatedAt = new Date();
-  }
-
-  // ===== 客户端特有计算属性 =====
-
-  /**
-   * 是否为系统目录
-   */
-  get isSystemDir(): boolean {
-    return this.uuid.startsWith('system_');
-  }
-
-  /**
-   * 是否可以编辑
-   */
-  get canEdit(): boolean {
-    return !this.isSystemDir && this._lifecycle.status === 'active';
-  }
-
-  /**
-   * 是否可以删除
-   */
-  get canDelete(): boolean {
-    return !this.isSystemDir && this._lifecycle.status === 'archived';
-  }
-
-  /**
-   * 获取显示图标
-   */
-  get displayIcon(): string {
-    return this._icon || 'mdi-folder';
-  }
-
-  /**
-   * 获取显示颜色
-   */
-  get displayColor(): string {
-    return this._color || '#2196F3';
-  }
-
-  /**
-   * 获取状态文本
-   */
-  get statusText(): string {
-    return this._lifecycle.status === 'active' ? '活跃' : '已归档';
-  }
-
-  /**
-   * 转换为表单数据（用于编辑表单）
-   */
-  toFormData(): {
-    name: string;
-    description: string;
-    icon: string;
-    color: string;
-    parentUuid: string;
-  } {
-    return {
-      name: this._name,
-      description: this._description || '',
-      icon: this._icon,
-      color: this._color,
-      parentUuid: this._parentUuid || '',
-    };
-  }
-
-  // ===== 序列化方法 =====
-
-  static fromDTO(dto: GoalContracts.GoalDirDTO): GoalDir {
-    return new GoalDir({
-      uuid: dto.uuid,
-      name: dto.name,
-      description: dto.description,
-      icon: dto.icon,
-      color: dto.color,
-      parentUuid: dto.parentUuid,
-      sortConfig: dto.sortConfig,
-      status: dto.lifecycle.status,
-      createdAt: new Date(dto.lifecycle.createdAt),
-      updatedAt: new Date(dto.lifecycle.updatedAt),
-    });
-  }
-
-  static fromResponse(response: GoalContracts.GoalDirResponse): GoalDir {
-    return GoalDir.fromDTO(response);
-  }
-
-  /**
-   * 创建一个空的目录实例（用于新建表单）
-   */
-  static forCreate(): GoalDir {
-    return new GoalDir({
-      name: '',
-      icon: 'mdi-folder',
-      color: '#2196F3',
-    });
-  }
-}

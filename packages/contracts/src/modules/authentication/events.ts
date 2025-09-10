@@ -4,7 +4,7 @@
  * 定义认证授权相关的领域事件，用于模块间通信
  */
 
-import { AuthContextDTO, SessionDataDTO, AuthAuditDTO } from './dtos';
+import type { AuthContextDTO, SessionDataDTO, AuthAuditDTO } from './dtos';
 import { LoginResult, LogoutType } from './types';
 
 // ========== 认证事件 ==========

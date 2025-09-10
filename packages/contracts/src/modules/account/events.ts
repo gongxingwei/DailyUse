@@ -4,7 +4,7 @@
  * 定义账户管理相关的领域事件，用于模块间通信
  */
 
-import { AccountDTO, UserDTO, SessionDTO, MFADeviceDTO } from './dtos';
+import { type AccountDTO, type UserDTO, type SessionDTO, type MFADeviceDTO } from './dtos';
 
 // ========== 账户事件 ==========
 

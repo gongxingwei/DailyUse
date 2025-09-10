@@ -5,5 +5,7 @@ export * from './authentication';
 export * from './account';
 
 // Goal domain client exports
-export * from './goal/aggregates/Goal';
-export * from './goal/GoalService';
+export * from './goal';
+
+// Explicit re-export to resolve GoalReview ambiguity
+export { GoalReview } from './goal';

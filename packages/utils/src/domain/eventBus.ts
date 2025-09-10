@@ -6,6 +6,7 @@ export interface DomainEvent<T = unknown> {
   aggregateId: string;
   eventType: string;
   occurredOn: Date;
+  accountUuid?: string;
   payload: T;
 }
 

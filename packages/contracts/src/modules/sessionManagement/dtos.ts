@@ -9,8 +9,8 @@ import {
   SessionType,
   SessionTerminationReason,
   DeviceType,
-  DeviceInfo,
-  SessionSecurityConfig,
+  type DeviceInfo,
+  type SessionSecurityConfig,
 } from './types';
 
 // ========== 请求 DTO ==========

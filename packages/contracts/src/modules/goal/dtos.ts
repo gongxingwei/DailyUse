@@ -269,6 +269,10 @@ export interface GoalDTO {
     category: string;
   };
   version: number;
+
+  keyResults?: KeyResultDTO[];
+  records?: GoalRecordDTO[];
+  reviews?: GoalReviewDTO[];
 }
 
 /**
@@ -350,22 +354,7 @@ export type UpdateGoalDirRequest = Partial<CreateGoalDirRequest>;
  * 目标响应 DTO
  */
 export interface GoalResponse extends GoalDTO {
-  keyResults: Array<
-    KeyResultDTO & {
-      progress: number;
-      isCompleted: boolean;
-    }
-  >;
-  records: GoalRecordDTO[];
-  reviews: GoalReviewDTO[];
-  analytics: {
-    overallProgress: number;
-    weightedProgress: number;
-    completedKeyResults: number;
-    totalKeyResults: number;
-    daysRemaining: number;
-    isOverdue: boolean;
-  };
+  xxxx?: string; // 预留字段
 }
 
 /**
