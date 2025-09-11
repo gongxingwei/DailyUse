@@ -70,6 +70,34 @@ export interface IEditorLayout {
 }
 
 /**
+ * 编辑器会话
+ */
+export interface IEditorSession {
+  /** 唯一标识符 */
+  uuid: string;
+  /** 所属账户UUID */
+  accountUuid: string;
+  /** 会话名称 */
+  name: string;
+  /** 编辑器组列表 */
+  groups: IEditorGroup[];
+  /** 活动编辑器组ID */
+  activeGroupId: string | null;
+  /** 布局配置 */
+  layout: IEditorLayout;
+  /** 是否自动保存 */
+  autoSave: boolean;
+  /** 自动保存间隔（秒） */
+  autoSaveInterval: number;
+  /** 最后保存时间 */
+  lastSavedAt?: Date;
+  /** 创建时间 */
+  createdAt: Date;
+  /** 更新时间 */
+  updatedAt: Date;
+}
+
+/**
  * 文件操作类型
  */
 export enum FileOperationType {

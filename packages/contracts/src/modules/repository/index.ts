@@ -3,4 +3,6 @@
  * 仓储模块契约定义
  */
 
-export * from './types.js';
+export * from './types';
+export * from './dtos';
+export * from './events';

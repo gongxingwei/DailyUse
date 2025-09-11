@@ -43,3 +43,12 @@ export * from './task/repositories/iTaskRepository';
 
 // Reminder domain exports
 export * from './reminder/aggregates/Reminder';
+
+// Repository domain exports
+export * from './repository';
+
+// Editor domain exports
+export * from './editor';
+
+// Setting domain exports
+export * from './setting/aggregates/SettingDefinition';

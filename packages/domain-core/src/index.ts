@@ -31,6 +31,13 @@ export * from './task/entities/TaskMetaTemplate';
 
 // Repository domain exports
 export * from './repository/aggregates/RepositoryCore';
+export * from './repository/entities/Resource';
+
+// Editor domain exports
+export * from './editor/aggregates/EditorCore';
 
 // Reminder domain exports
 export * from './reminder/aggregates/ReminderCore';
+
+// Setting domain exports
+export * from './setting/SettingCore';
