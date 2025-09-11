@@ -5,12 +5,11 @@
 
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
-import type { SettingContracts } from '@dailyuse/contracts';
 
-// 使用类型别名来简化类型引用（根据实际的Setting contracts调整）
-// 假设Setting module有类似的contracts结构
+// 根据实际Prisma模式定义的接口
 interface ISettingDefinition {
   uuid: string;
+  accountUuid: string;
   key: string;
   title: string;
   description?: string;
@@ -39,6 +38,7 @@ export class PrismaSettingDefinitionRepository {
   private mapSettingDefinitionToDTO(definition: any): ISettingDefinition {
     return {
       uuid: definition.uuid,
+      accountUuid: definition.accountUuid,
       key: definition.key,
       title: definition.title,
       description: definition.description,
@@ -81,16 +81,7 @@ export class PrismaSettingDefinitionRepository {
   async findByAccountUuid(accountUuid: string): Promise<ISettingDefinition[]> {
     const definitions = await this.prisma.settingDefinition.findMany({
       where: { accountUuid },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
-    });
-
-    return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
-  }
-
-  async findByGroupUuid(groupUuid: string): Promise<ISettingDefinition[]> {
-    const definitions = await this.prisma.settingDefinition.findMany({
-      where: { groupUuid },
-      orderBy: [{ metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
@@ -102,28 +93,33 @@ export class PrismaSettingDefinitionRepository {
         accountUuid,
         category,
       },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
   }
 
-  async findSystemSettings(): Promise<ISettingDefinition[]> {
+  async findSystemSettings(accountUuid: string): Promise<ISettingDefinition[]> {
+    // 使用category来识别系统设置
     const definitions = await this.prisma.settingDefinition.findMany({
-      where: { isSystem: true },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      where: {
+        accountUuid,
+        category: 'system',
+      },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
   }
 
   async findRequiredSettings(accountUuid: string): Promise<ISettingDefinition[]> {
+    // 使用hidden=false来表示必需设置
     const definitions = await this.prisma.settingDefinition.findMany({
       where: {
         accountUuid,
-        isRequired: true,
+        hidden: false,
       },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
@@ -132,31 +128,24 @@ export class PrismaSettingDefinitionRepository {
   async save(accountUuid: string, settingDefinition: ISettingDefinition): Promise<void> {
     const data = {
       accountUuid,
-      name: settingDefinition.name,
-      description: settingDefinition.description,
       key: settingDefinition.key,
-      dataType: settingDefinition.dataType,
-      defaultValue: JSON.stringify(settingDefinition.defaultValue),
-      schema: settingDefinition.schema ? JSON.stringify(settingDefinition.schema) : null,
+      title: settingDefinition.title,
+      description: settingDefinition.description,
+      type: settingDefinition.type,
+      scope: settingDefinition.scope,
       category: settingDefinition.category,
-      groupUuid: settingDefinition.groupUuid,
-      isRequired: settingDefinition.isRequired,
-      isReadonly: settingDefinition.isReadonly,
-      isSystem: settingDefinition.isSystem,
-      // 验证规则展开
-      validationMin: settingDefinition.validation?.min,
-      validationMax: settingDefinition.validation?.max,
-      validationPattern: settingDefinition.validation?.pattern,
-      validationOptions: settingDefinition.validation?.options
-        ? JSON.stringify(settingDefinition.validation.options)
+      defaultValue: JSON.stringify(settingDefinition.defaultValue),
+      currentValue: settingDefinition.currentValue
+        ? JSON.stringify(settingDefinition.currentValue)
         : null,
-      // 元数据展开
-      metadataTags: JSON.stringify(settingDefinition.metadata.tags),
-      metadataPriority: settingDefinition.metadata.priority,
-      metadataOrder: settingDefinition.metadata.order,
-      // 生命周期信息
-      deprecatedAt: settingDefinition.lifecycle.deprecatedAt,
-      version: settingDefinition.lifecycle.version,
+      options: JSON.stringify(settingDefinition.options),
+      validationRules: JSON.stringify(settingDefinition.validationRules),
+      readonly: settingDefinition.readonly,
+      hidden: settingDefinition.hidden,
+      requiresRestart: settingDefinition.requiresRestart,
+      sortOrder: settingDefinition.sortOrder,
+      dependsOn: JSON.stringify(settingDefinition.dependsOn),
+      tags: JSON.stringify(settingDefinition.tags),
     };
 
     await this.prisma.settingDefinition.upsert({
@@ -176,13 +165,13 @@ export class PrismaSettingDefinitionRepository {
   }
 
   async deprecate(uuid: string): Promise<void> {
+    // 由于没有deprecatedAt字段，我们可以使用hidden字段来表示废弃状态
     await this.prisma.settingDefinition.update({
       where: { uuid },
       data: {
-        deprecatedAt: new Date(),
-        version: {
-          increment: 1,
-        },
+        hidden: true,
+        // 如果有version字段，可以增加版本号
+        // version: { increment: 1 },
       },
     });
   }
@@ -194,39 +183,51 @@ export class PrismaSettingDefinitionRepository {
       where: {
         accountUuid,
         OR: [
-          { name: { contains: searchTerm, mode: 'insensitive' } },
+          { title: { contains: searchTerm, mode: 'insensitive' } },
           { description: { contains: searchTerm, mode: 'insensitive' } },
           { key: { contains: searchTerm, mode: 'insensitive' } },
         ],
       },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
   }
 
-  async findByDataType(accountUuid: string, dataType: string): Promise<ISettingDefinition[]> {
+  async findByType(accountUuid: string, type: string): Promise<ISettingDefinition[]> {
     const definitions = await this.prisma.settingDefinition.findMany({
       where: {
         accountUuid,
-        dataType,
+        type,
       },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
+    });
+
+    return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
+  }
+
+  async findByScope(accountUuid: string, scope: string): Promise<ISettingDefinition[]> {
+    const definitions = await this.prisma.settingDefinition.findMany({
+      where: {
+        accountUuid,
+        scope,
+      },
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     return definitions.map((definition) => this.mapSettingDefinitionToDTO(definition));
   }
 
   async findByTags(accountUuid: string, tags: string[]): Promise<ISettingDefinition[]> {
-    // 由于tags存储为JSON，需要使用原始SQL查询或者在应用层过滤
+    // 由于tags存储为JSON，需要在应用层过滤
     const definitions = await this.prisma.settingDefinition.findMany({
       where: { accountUuid },
-      orderBy: [{ metadataPriority: 'desc' }, { metadataOrder: 'asc' }, { name: 'asc' }],
+      orderBy: [{ sortOrder: 'asc' }, { title: 'asc' }],
     });
 
     // 在应用层过滤包含指定标签的定义
     const filtered = definitions.filter((def) => {
-      const defTags = def.metadataTags ? JSON.parse(def.metadataTags) : [];
+      const defTags = def.tags ? JSON.parse(def.tags) : [];
       return tags.some((tag) => defTags.includes(tag));
     });
 
@@ -250,16 +251,16 @@ export class PrismaSettingDefinitionRepository {
     return result;
   }
 
-  async getCountByDataType(accountUuid: string): Promise<Record<string, number>> {
+  async getCountByType(accountUuid: string): Promise<Record<string, number>> {
     const counts = await this.prisma.settingDefinition.groupBy({
-      by: ['dataType'],
+      by: ['type'],
       where: { accountUuid },
-      _count: { dataType: true },
+      _count: { type: true },
     });
 
     const result: Record<string, number> = {};
     counts.forEach((count) => {
-      result[count.dataType] = count._count.dataType;
+      result[count.type] = count._count.type;
     });
 
     return result;
@@ -275,14 +276,17 @@ export class PrismaSettingDefinitionRepository {
     return await this.prisma.settingDefinition.count({
       where: {
         accountUuid,
-        isRequired: true,
+        hidden: false, // 使用hidden=false来表示必需设置
       },
     });
   }
 
-  async getSystemCount(): Promise<number> {
+  async getSystemCount(accountUuid: string): Promise<number> {
     return await this.prisma.settingDefinition.count({
-      where: { isSystem: true },
+      where: {
+        accountUuid,
+        category: 'system',
+      },
     });
   }
 
@@ -301,10 +305,10 @@ export class PrismaSettingDefinitionRepository {
     });
   }
 
-  async batchUpdateGroup(uuids: string[], groupUuid: string): Promise<void> {
+  async batchUpdateScope(uuids: string[], scope: string): Promise<void> {
     await this.prisma.settingDefinition.updateMany({
       where: { uuid: { in: uuids } },
-      data: { groupUuid },
+      data: { scope },
     });
   }
 
@@ -332,22 +336,28 @@ export class PrismaSettingDefinitionRepository {
     }
 
     // 检查必填字段
-    if (!definition.name?.trim()) {
-      errors.push('Name is required');
+    if (!definition.title?.trim()) {
+      errors.push('Title is required');
     }
 
     if (!definition.key?.trim()) {
       errors.push('Key is required');
     }
 
-    if (!definition.dataType) {
-      errors.push('Data type is required');
+    if (!definition.type) {
+      errors.push('Type is required');
     }
 
     // 检查数据类型有效性
-    const validDataTypes = ['string', 'number', 'boolean', 'object', 'array'];
-    if (!validDataTypes.includes(definition.dataType)) {
-      errors.push(`Invalid data type: ${definition.dataType}`);
+    const validTypes = ['string', 'number', 'boolean', 'object', 'array', 'enum'];
+    if (!validTypes.includes(definition.type)) {
+      errors.push(`Invalid type: ${definition.type}`);
+    }
+
+    // 检查作用域有效性
+    const validScopes = ['global', 'user', 'workspace', 'session'];
+    if (!validScopes.includes(definition.scope)) {
+      errors.push(`Invalid scope: ${definition.scope}`);
     }
 
     return {

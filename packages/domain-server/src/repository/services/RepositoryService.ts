@@ -124,8 +124,8 @@ export class RepositoryService {
    * 搜索仓库
    */
   async searchRepositories(accountUuid: string, searchTerm: string): Promise<RepositoryDTO[]> {
-    const repositories = await this.repositoryRepository.findByNamePattern(accountUuid, searchTerm);
-    return repositories.map((repo) => repo.toDTO());
+    // 仓储层直接返回DTO，不需要转换
+    return await this.repositoryRepository.findByNamePattern(accountUuid, searchTerm);
   }
 
   // ============ Git 操作 ============
@@ -364,15 +364,12 @@ export class RepositoryService {
     repositoryName: string,
   ): Promise<RepositoryDTO> {
     // 创建本地仓库
-    const repository = await Repository.createLocal(
-      {
-        accountUuid,  
-        name: repositoryName,
-        path: folderPath,
-        description: `Imported from ${folderPath}`,
-      },
-      
-    );
+    const repository = await Repository.createLocal({
+      accountUuid,
+      name: repositoryName,
+      path: folderPath,
+      description: `Imported from ${folderPath}`,
+    });
 
     // 保存仓库
     await this.repositoryRepository.save(repository);
@@ -393,16 +390,13 @@ export class RepositoryService {
     repositoryName: string,
   ): Promise<RepositoryDTO> {
     // 创建远程仓库
-    const repository = await Repository.createRemote(
-      {
-        accountUuid,
-        name: repositoryName,
-        path: localPath,
-        remoteUrl,
-        description: `Cloned from ${remoteUrl}`,
-      },
-      
-    );
+    const repository = await Repository.createRemote({
+      accountUuid,
+      name: repositoryName,
+      path: localPath,
+      remoteUrl,
+      description: `Cloned from ${remoteUrl}`,
+    });
 
     // 保存仓库
     await this.repositoryRepository.save(repository);

@@ -6,13 +6,17 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-// 简化的设置值接口
+// 简化的设置值接口，匹配Prisma模式
 interface ISettingValue {
   uuid: string;
+  accountUuid: string;
   settingKey: string;
+  definitionUuid: string;
   value: any;
   scope: 'global' | 'user' | 'workspace' | 'session';
   isDefault: boolean;
+  lastModified: Date;
+  modifiedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -25,10 +29,14 @@ export class PrismaSettingValueRepository {
   private mapSettingValueToDTO(value: any): ISettingValue {
     return {
       uuid: value.uuid,
+      accountUuid: value.accountUuid,
       settingKey: value.settingKey,
+      definitionUuid: value.definitionUuid,
       value: value.value ? JSON.parse(value.value) : null,
       scope: value.scope,
       isDefault: value.isDefault,
+      lastModified: value.lastModified,
+      modifiedBy: value.modifiedBy,
       createdAt: value.createdAt,
       updatedAt: value.updatedAt,
     };
@@ -80,9 +88,12 @@ export class PrismaSettingValueRepository {
     const data = {
       accountUuid,
       settingKey: settingValue.settingKey,
+      definitionUuid: settingValue.definitionUuid,
       value: JSON.stringify(settingValue.value),
       scope: settingValue.scope,
       isDefault: settingValue.isDefault,
+      lastModified: new Date(),
+      modifiedBy: settingValue.modifiedBy,
     };
 
     await this.prisma.settingValue.upsert({
@@ -119,6 +130,15 @@ export class PrismaSettingValueRepository {
     value: any,
     scope = 'user',
   ): Promise<void> {
+    // 首先查找设置定义以获取definitionUuid
+    const definition = await this.prisma.settingDefinition.findUnique({
+      where: { key: settingKey },
+    });
+
+    if (!definition) {
+      throw new Error(`Setting definition not found for key: ${settingKey}`);
+    }
+
     // 查找是否已存在该设置
     const existing = await this.prisma.settingValue.findFirst({
       where: {
@@ -134,6 +154,7 @@ export class PrismaSettingValueRepository {
         data: {
           value: JSON.stringify(value),
           scope,
+          lastModified: new Date(),
         },
       });
     } else {
@@ -143,9 +164,11 @@ export class PrismaSettingValueRepository {
           uuid: randomUUID(),
           accountUuid,
           settingKey,
+          definitionUuid: definition.uuid,
           value: JSON.stringify(value),
           scope,
           isDefault: false,
+          lastModified: new Date(),
         },
       });
     }

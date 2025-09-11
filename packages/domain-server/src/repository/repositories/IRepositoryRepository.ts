@@ -1,6 +1,11 @@
 /**
  * IRepositoryRepository - 仓库聚合根的存储接口
  * 定义仓库相关的数据访问操作
+ *
+ * 架构说明:
+ * - 数据层接口，返回DTO对象而非领域实体
+ * - 遵循DDD分层架构：Database → [Repository] → DTO → [Application] → Entity
+ * - 应用层负责DTO到领域实体的转换
  */
 
 import { Repository } from '../aggregates/Repository';
@@ -12,20 +17,20 @@ export interface IRepositoryRepository {
   /**
    * 根据UUID查找仓库
    */
-  findByUuid(uuid: string): Promise<Repository | null>;
+  findByUuid(uuid: string): Promise<RepositoryContracts.RepositoryDTO | null>;
 
   /**
    * 根据账户UUID查找所有仓库
    */
-  findByAccountUuid(accountUuid: string): Promise<Repository[]>;
+  findByAccountUuid(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 根据路径查找仓库
    */
-  findByPath(path: string): Promise<Repository | null>;
+  findByPath(accountUuid: string, path: string): Promise<RepositoryContracts.RepositoryDTO | null>;
 
   /**
-   * 保存仓库
+   * 保存仓库 (接受领域实体，存储为DTO格式)
    */
   save(repository: Repository): Promise<void>;
 
@@ -52,7 +57,7 @@ export interface IRepositoryRepository {
     type?: RepositoryContracts.RepositoryType;
     searchTerm?: string;
   }): Promise<{
-    repositories: Repository[];
+    repositories: RepositoryContracts.RepositoryDTO[];
     total: number;
     page: number;
     limit: number;
@@ -61,22 +66,28 @@ export interface IRepositoryRepository {
   /**
    * 根据名称模糊查询
    */
-  findByNamePattern(accountUuid: string, namePattern: string): Promise<Repository[]>;
+  findByNamePattern(
+    accountUuid: string,
+    namePattern: string,
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 查找关联特定目标的仓库
    */
-  findByRelatedGoal(goalUuid: string): Promise<Repository[]>;
+  findByRelatedGoal(goalUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 查找需要同步的仓库
    */
-  findPendingSync(): Promise<Repository[]>;
+  findPendingSync(): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 查找最近访问的仓库
    */
-  findRecentlyAccessed(accountUuid: string, limit: number): Promise<Repository[]>;
+  findRecentlyAccessed(
+    accountUuid: string,
+    limit: number,
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 根据状态查找仓库
@@ -84,12 +95,15 @@ export interface IRepositoryRepository {
   findByStatus(
     accountUuid: string,
     status: RepositoryContracts.RepositoryStatus,
-  ): Promise<Repository[]>;
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 根据类型查找仓库
    */
-  findByType(accountUuid: string, type: RepositoryContracts.RepositoryType): Promise<Repository[]>;
+  findByType(
+    accountUuid: string,
+    type: RepositoryContracts.RepositoryType,
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   // ============ 统计操作 ============
 
@@ -121,7 +135,7 @@ export interface IRepositoryRepository {
   // ============ 批量操作 ============
 
   /**
-   * 批量保存仓库
+   * 批量保存仓库 (接受领域实体，存储为DTO格式)
    */
   saveMany(repositories: Repository[]): Promise<void>;
 
@@ -147,17 +161,17 @@ export interface IRepositoryRepository {
       autoSync?: boolean;
       enableVersionControl?: boolean;
     },
-  ): Promise<Repository[]>;
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 查找具有Git配置的仓库
    */
-  findGitRepositories(accountUuid: string): Promise<Repository[]>;
+  findGitRepositories(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 查找有变更的Git仓库
    */
-  findRepositoriesWithChanges(accountUuid: string): Promise<Repository[]>;
+  findRepositoriesWithChanges(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 根据资源数量范围查找仓库
@@ -166,7 +180,7 @@ export interface IRepositoryRepository {
     accountUuid: string,
     minCount: number,
     maxCount?: number,
-  ): Promise<Repository[]>;
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   /**
    * 根据最后访问时间查找仓库
@@ -175,7 +189,7 @@ export interface IRepositoryRepository {
     accountUuid: string,
     startDate: Date,
     endDate?: Date,
-  ): Promise<Repository[]>;
+  ): Promise<RepositoryContracts.RepositoryDTO[]>;
 
   // ============ 维护操作 ============
 

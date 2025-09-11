@@ -8,13 +8,17 @@ import { PrismaSettingValueRepository } from '../../infrastructure/repositories/
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 
-// 使用仓储定义的接口
+// 使用仓储定义的接口，匹配Prisma模式
 interface ISettingValue {
   uuid: string;
+  accountUuid: string;
   settingKey: string;
+  definitionUuid: string;
   value: any;
   scope: 'global' | 'user' | 'workspace' | 'session';
   isDefault: boolean;
+  lastModified: Date;
+  modifiedBy?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -56,12 +60,20 @@ export class SettingValueApplicationService {
   ): Promise<string> {
     const uuid = randomUUID();
 
+    // 获取设置定义UUID - 这里需要实际查询设置定义
+    // TODO: 添加设置定义仓储来查询definitionUuid
+    const definitionUuid = 'placeholder-definition-uuid'; // 临时占位符
+
     const settingValue: ISettingValue = {
       uuid,
+      accountUuid,
       settingKey: key,
+      definitionUuid,
       value,
       scope,
       isDefault: false,
+      lastModified: new Date(),
+      modifiedBy: undefined, // 可以从上下文获取当前用户
       createdAt: new Date(),
       updatedAt: new Date(),
     };
@@ -84,6 +96,7 @@ export class SettingValueApplicationService {
         ...existing,
         value,
         scope: scope || existing.scope,
+        lastModified: new Date(),
         updatedAt: new Date(),
       };
       await this.repository.save(accountUuid, updatedSetting);
@@ -119,7 +132,7 @@ export class SettingValueApplicationService {
 
   async getScopes(accountUuid: string): Promise<string[]> {
     const settings = await this.repository.findByAccountUuid(accountUuid);
-    const scopes = [...new Set(settings.map((s) => s.scope))];
+    const scopes = Array.from(new Set(settings.map((s) => s.scope)));
     return scopes;
   }
 

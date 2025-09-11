@@ -9,13 +9,21 @@ import { randomUUID } from 'crypto';
 // 简化的编辑器会话接口
 interface IEditorSession {
   uuid: string;
-  sessionName: string;
-  description?: string;
-  isActive: boolean;
-  windowState: any;
+  name: string;
+  activeGroupId?: string;
+  activityBarWidth: number;
+  sidebarWidth: number;
+  minSidebarWidth: number;
+  resizeHandleWidth: number;
+  minEditorWidth: number;
+  editorTabWidth: number;
+  windowWidth: number;
+  windowHeight: number;
+  autoSave: boolean;
+  autoSaveInterval: number;
+  lastSavedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
-  lastAccessedAt: Date;
 }
 
 export class PrismaEditorSessionRepository {
@@ -26,13 +34,21 @@ export class PrismaEditorSessionRepository {
   private mapEditorSessionToDTO(session: any): IEditorSession {
     return {
       uuid: session.uuid,
-      sessionName: session.sessionName,
-      description: session.description,
-      isActive: session.isActive,
-      windowState: session.windowState ? JSON.parse(session.windowState) : null,
+      name: session.name,
+      activeGroupId: session.activeGroupId,
+      activityBarWidth: session.activityBarWidth,
+      sidebarWidth: session.sidebarWidth,
+      minSidebarWidth: session.minSidebarWidth,
+      resizeHandleWidth: session.resizeHandleWidth,
+      minEditorWidth: session.minEditorWidth,
+      editorTabWidth: session.editorTabWidth,
+      windowWidth: session.windowWidth,
+      windowHeight: session.windowHeight,
+      autoSave: session.autoSave,
+      autoSaveInterval: session.autoSaveInterval,
+      lastSavedAt: session.lastSavedAt,
       createdAt: session.createdAt,
       updatedAt: session.updatedAt,
-      lastAccessedAt: session.lastAccessedAt,
     };
   }
 
@@ -49,7 +65,7 @@ export class PrismaEditorSessionRepository {
   async findByAccountUuid(accountUuid: string): Promise<IEditorSession[]> {
     const sessions = await this.prisma.editorSession.findMany({
       where: { accountUuid },
-      orderBy: { lastAccessedAt: 'desc' },
+      orderBy: { lastSavedAt: 'desc' },
     });
 
     return sessions.map((session) => this.mapEditorSessionToDTO(session));
@@ -59,7 +75,7 @@ export class PrismaEditorSessionRepository {
     const session = await this.prisma.editorSession.findFirst({
       where: {
         accountUuid,
-        isActive: true,
+        activeGroupId: { not: null },
       },
     });
 
@@ -69,7 +85,7 @@ export class PrismaEditorSessionRepository {
   async findRecentSessions(accountUuid: string, limit = 10): Promise<IEditorSession[]> {
     const sessions = await this.prisma.editorSession.findMany({
       where: { accountUuid },
-      orderBy: { lastAccessedAt: 'desc' },
+      orderBy: { lastSavedAt: 'desc' },
       take: limit,
     });
 
@@ -79,11 +95,19 @@ export class PrismaEditorSessionRepository {
   async save(accountUuid: string, editorSession: IEditorSession): Promise<void> {
     const data = {
       accountUuid,
-      sessionName: editorSession.sessionName,
-      description: editorSession.description,
-      isActive: editorSession.isActive,
-      windowState: JSON.stringify(editorSession.windowState),
-      lastAccessedAt: editorSession.lastAccessedAt,
+      name: editorSession.name,
+      activeGroupId: editorSession.activeGroupId,
+      activityBarWidth: editorSession.activityBarWidth,
+      sidebarWidth: editorSession.sidebarWidth,
+      minSidebarWidth: editorSession.minSidebarWidth,
+      resizeHandleWidth: editorSession.resizeHandleWidth,
+      minEditorWidth: editorSession.minEditorWidth,
+      editorTabWidth: editorSession.editorTabWidth,
+      windowWidth: editorSession.windowWidth,
+      windowHeight: editorSession.windowHeight,
+      autoSave: editorSession.autoSave,
+      autoSaveInterval: editorSession.autoSaveInterval,
+      lastSavedAt: editorSession.lastSavedAt || new Date(),
     };
 
     await this.prisma.editorSession.upsert({
@@ -103,35 +127,43 @@ export class PrismaEditorSessionRepository {
   }
 
   async setActiveSession(accountUuid: string, sessionUuid: string): Promise<void> {
-    // 首先将所有会话设为非活跃
+    // 首先将所有会话的activeGroupId设为null
     await this.prisma.editorSession.updateMany({
       where: { accountUuid },
-      data: { isActive: false },
+      data: { activeGroupId: null },
     });
 
-    // 然后设置指定会话为活跃
+    // 然后设置指定会话为活跃（这里需要指定一个活跃的组ID）
+    // 注意：这个方法可能需要重新设计，因为activeGroupId是具体的组ID
     await this.prisma.editorSession.update({
       where: { uuid: sessionUuid },
       data: {
-        isActive: true,
-        lastAccessedAt: new Date(),
+        lastSavedAt: new Date(),
       },
     });
   }
 
-  async updateLastAccessed(uuid: string): Promise<void> {
+  async updateLastSaved(uuid: string): Promise<void> {
     await this.prisma.editorSession.update({
       where: { uuid },
-      data: { lastAccessedAt: new Date() },
+      data: { lastSavedAt: new Date() },
     });
   }
 
-  async updateWindowState(uuid: string, windowState: any): Promise<void> {
+  async updateLayoutConfig(
+    uuid: string,
+    layoutConfig: {
+      activityBarWidth?: number;
+      sidebarWidth?: number;
+      windowWidth?: number;
+      windowHeight?: number;
+    },
+  ): Promise<void> {
     await this.prisma.editorSession.update({
       where: { uuid },
       data: {
-        windowState: JSON.stringify(windowState),
-        lastAccessedAt: new Date(),
+        ...layoutConfig,
+        lastSavedAt: new Date(),
       },
     });
   }
@@ -148,7 +180,7 @@ export class PrismaEditorSessionRepository {
     return await this.prisma.editorSession.count({
       where: {
         accountUuid,
-        isActive: true,
+        activeGroupId: { not: null },
       },
     });
   }
@@ -162,8 +194,8 @@ export class PrismaEditorSessionRepository {
     const result = await this.prisma.editorSession.deleteMany({
       where: {
         accountUuid,
-        isActive: false,
-        lastAccessedAt: { lt: cutoffDate },
+        activeGroupId: null,
+        lastSavedAt: { lt: cutoffDate },
       },
     });
 
@@ -177,10 +209,10 @@ export class PrismaEditorSessionRepository {
     const result = await this.prisma.editorSession.updateMany({
       where: {
         accountUuid,
-        isActive: true,
-        lastAccessedAt: { lt: cutoffDate },
+        activeGroupId: { not: null },
+        lastSavedAt: { lt: cutoffDate },
       },
-      data: { isActive: false },
+      data: { activeGroupId: null },
     });
 
     return result.count;
