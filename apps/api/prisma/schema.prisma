@@ -30,18 +30,33 @@ model Account {
   phoneVerified          Boolean   @default(false) @map("phone_verified")
 
   // Relations
-  userProfile     UserProfile?
-  authCredentials AuthCredential[]
-  sessions        UserSession[]
-  mfaDevices      MFADevice[]
-  tokens          AuthToken[]
-  repositories    Repository[]
-  goals           Goal[]
-  goalDirs        GoalDir[]
-  goalCategories  GoalCategory[]
-  keyResults      KeyResult[]
-  goalRecords     GoalRecord[]
-  tasks           Task[]
+  userProfile            UserProfile?
+  authCredentials        AuthCredential[]
+  sessions               UserSession[]
+  mfaDevices             MFADevice[]
+  tokens                 AuthToken[]
+  repositories           Repository[]
+  goals                  Goal[]
+  goalDirs               GoalDir[]
+  goalCategories         GoalCategory[]
+  keyResults             KeyResult[]
+  goalRecords            GoalRecord[]
+  taskTemplates          TaskTemplate[]
+  taskInstances          TaskInstance[]
+  taskMetaTemplates      TaskMetaTemplate[]
+  reminderTemplateGroups ReminderTemplateGroup[]
+  reminderTemplates      ReminderTemplate[]
+  reminderInstances      ReminderInstance[]
+  reminderSchedules      ReminderSchedule[]
+  settingDefinitions     SettingDefinition[]
+  settingGroups          SettingGroup[]
+  settingValues          SettingValue[]
+  settingChangeRecords   SettingChangeRecord[]
+  settingBackups         SettingBackup[]
+  editorSessions         EditorSession[]
+  editorGroups           EditorGroup[]
+  editorTabs             EditorTab[]
+  editorFileContents     EditorFileContent[]
 
   @@map("accounts")
 }
@@ -211,7 +226,6 @@ model Goal {
   keyResults          KeyResult[]
   records             GoalRecord[]
   reviews             GoalReview[]
-  tasks               Task[]
   sourceRelationships GoalRelationship[] @relation("SourceGoal")
   targetRelationships GoalRelationship[] @relation("TargetGoal")
 
@@ -406,22 +420,693 @@ model GoalRelationship {
   @@map("goal_relationships")
 }
 
-// Task aggregate
-model Task {
-  uuid        String    @id @default(cuid())
-  accountUuid String    @map("account_uuid")
-  goalUuid    String?   @map("goal_uuid")
+// Task Template aggregate
+model TaskTemplate {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
   title       String
   description String?
-  status      String    @default("pending") // 'pending', 'in_progress', 'completed', 'cancelled'
-  priority    String    @default("medium") // 'low', 'medium', 'high'
-  dueDate     DateTime? @map("due_date")
-  completedAt DateTime? @map("completed_at")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
 
+  // 时间配置 - 展开存储
+  timeType     String    @default("allDay") @map("time_type") // 'allDay', 'specificTime', 'timeRange'
+  startTime    String?   @map("start_time") // HH:mm 格式
+  endTime      String?   @map("end_time") // HH:mm 格式
+  startDate    DateTime  @map("start_date")
+  endDate      DateTime? @map("end_date")
+  scheduleMode String    @default("once") @map("schedule_mode") // 'once', 'daily', 'weekly', 'monthly', 'intervalDays'
+  intervalDays Int?      @map("interval_days")
+  weekdays     String    @default("[]") // JSON数组
+  monthDays    String    @default("[]") @map("month_days") // JSON数组
+  timezone     String    @default("UTC")
+
+  // 提醒配置 - 展开存储
+  reminderEnabled       Boolean @default(false) @map("reminder_enabled")
+  reminderMinutesBefore Int     @default(15) @map("reminder_minutes_before")
+  reminderMethods       String  @default("[]") @map("reminder_methods") // JSON数组
+
+  // 属性 - 展开存储
+  importance String  @default("moderate") // 'low', 'moderate', 'high', 'critical'
+  urgency    String  @default("medium") // 'low', 'medium', 'high', 'urgent'
+  location   String?
+  tags       String  @default("[]") // JSON数组
+
+  // 生命周期 - 展开存储
+  status String @default("draft") // 'draft', 'active', 'paused', 'completed', 'archived'
+
+  // 统计信息 - 展开存储
+  totalInstances     Int       @default(0) @map("total_instances")
+  completedInstances Int       @default(0) @map("completed_instances")
+  completionRate     Float     @default(0.0) @map("completion_rate")
+  lastInstanceDate   DateTime? @map("last_instance_date")
+
+  // 目标关联 - 展开存储
+  goalLinks String @default("[]") @map("goal_links") // JSON数组
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account   Account        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  instances TaskInstance[]
+
+  @@index([accountUuid])
+  @@index([status])
+  @@index([scheduleMode])
+  @@index([startDate])
+  @@index([endDate])
+  @@index([importance])
+  @@index([urgency])
+  @@map("task_templates")
+}
+
+// Task Instance aggregate
+model TaskInstance {
+  uuid         String @id @default(cuid())
+  templateUuid String @map("template_uuid")
+  accountUuid  String @map("account_uuid")
+
+  // 基本信息 (可修改)
+  title       String
+  description String?
+
+  // 时间配置 - 展开存储
+  timeType          String   @map("time_type") // 'allDay', 'specificTime', 'timeRange'
+  scheduledDate     DateTime @map("scheduled_date")
+  startTime         String?  @map("start_time") // HH:mm 格式
+  endTime           String?  @map("end_time") // HH:mm 格式
+  estimatedDuration Int?     @map("estimated_duration") // 分钟
+  timezone          String
+
+  // 提醒状态 - 展开存储
+  reminderEnabled       Boolean   @default(false) @map("reminder_enabled")
+  reminderStatus        String    @default("pending") @map("reminder_status") // 'pending', 'triggered', 'dismissed', 'snoozed'
+  reminderScheduledTime DateTime? @map("reminder_scheduled_time")
+  reminderTriggeredAt   DateTime? @map("reminder_triggered_at")
+  reminderSnoozeCount   Int       @default(0) @map("reminder_snooze_count")
+  reminderSnoozeUntil   DateTime? @map("reminder_snooze_until")
+
+  // 执行状态 - 展开存储
+  executionStatus    String    @default("pending") @map("execution_status") // 'pending', 'inProgress', 'completed', 'cancelled', 'overdue'
+  actualStartTime    DateTime? @map("actual_start_time")
+  actualEndTime      DateTime? @map("actual_end_time")
+  actualDuration     Int?      @map("actual_duration") // 分钟
+  progressPercentage Int       @default(0) @map("progress_percentage") // 0-100
+  executionNotes     String?   @map("execution_notes")
+
+  // 属性 - 展开存储
+  importance String  @default("moderate") // 'low', 'moderate', 'high', 'critical'
+  urgency    String  @default("medium") // 'low', 'medium', 'high', 'urgent'
+  location   String?
+  tags       String  @default("[]") // JSON数组
+
+  // 生命周期事件 - JSON存储
+  lifecycleEvents String @default("[]") @map("lifecycle_events") // JSON数组
+
+  // 目标关联 - 展开存储
+  goalLinks String @default("[]") @map("goal_links") // JSON数组
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  template TaskTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
+  account  Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([templateUuid])
+  @@index([accountUuid])
+  @@index([executionStatus])
+  @@index([scheduledDate])
+  @@index([reminderStatus])
+  @@index([importance])
+  @@index([urgency])
+  @@map("task_instances")
+}
+
+// Task Meta Template aggregate
+model TaskMetaTemplate {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+
+  // 外观设置 - 展开存储
+  icon     String?
+  color    String?
+  category String
+
+  // 默认时间配置 - 展开存储
+  defaultTimeType     String  @default("allDay") @map("default_time_type")
+  defaultScheduleMode String  @default("once") @map("default_schedule_mode")
+  defaultTimezone     String  @default("UTC") @map("default_timezone")
+  defaultStartTime    String? @map("default_start_time")
+  defaultEndTime      String? @map("default_end_time")
+
+  // 默认提醒配置 - 展开存储
+  defaultReminderEnabled       Boolean @default(false) @map("default_reminder_enabled")
+  defaultReminderMinutesBefore Int     @default(15) @map("default_reminder_minutes_before")
+  defaultReminderMethods       String  @default("[]") @map("default_reminder_methods") // JSON数组
+
+  // 默认属性 - 展开存储
+  defaultImportance String  @default("moderate") @map("default_importance")
+  defaultUrgency    String  @default("medium") @map("default_urgency")
+  defaultTags       String  @default("[]") @map("default_tags") // JSON数组
+  defaultLocation   String? @map("default_location")
+
+  // 使用统计 - 展开存储
+  usageCount Int       @default(0) @map("usage_count")
+  lastUsedAt DateTime? @map("last_used_at")
+  isFavorite Boolean   @default(false) @map("is_favorite")
+
+  // 生命周期 - 展开存储
+  isActive Boolean @default(true) @map("is_active")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
   account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  goal    Goal?   @relation(fields: [goalUuid], references: [uuid], onDelete: SetNull)
 
-  @@map("tasks")
+  @@index([accountUuid])
+  @@index([category])
+  @@index([isActive])
+  @@index([isFavorite])
+  @@index([usageCount])
+  @@map("task_meta_templates")
+}
+
+// Reminder Template Group aggregate
+model ReminderTemplateGroup {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  parentUuid  String? @map("parent_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+
+  // 状态 - 展开存储
+  enabled    Boolean @default(true)
+  enableMode String  @default("group") @map("enable_mode") // 'group', 'individual'
+
+  // 外观设置 - 展开存储
+  icon      String?
+  color     String?
+  sortOrder Int     @default(0) @map("sort_order")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account   Account                 @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parent    ReminderTemplateGroup?  @relation("GroupHierarchy", fields: [parentUuid], references: [uuid], onDelete: Cascade)
+  children  ReminderTemplateGroup[] @relation("GroupHierarchy")
+  templates ReminderTemplate[]
+
+  @@index([accountUuid])
+  @@index([parentUuid])
+  @@index([enabled])
+  @@index([sortOrder])
+  @@map("reminder_template_groups")
+}
+
+// Reminder Template aggregate
+model ReminderTemplate {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  groupUuid   String? @map("group_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+  message     String
+
+  // 启用状态 - 展开存储
+  enabled     Boolean @default(true)
+  selfEnabled Boolean @default(true) @map("self_enabled")
+
+  // 重要性和优先级 - 展开存储
+  importanceLevel String @default("moderate") @map("importance_level") // 'low', 'moderate', 'high', 'critical'
+  priority        String @default("normal") // 'low', 'normal', 'high', 'urgent'
+
+  // 分类和标签 - 展开存储
+  category String
+  tags     String @default("[]") // JSON数组
+
+  // 时间配置 - 展开存储
+  timeConfigType      String @default("daily") @map("time_config_type") // 'daily', 'weekly', 'monthly', 'custom', 'absolute', 'relative'
+  timeConfigTimes     String @default("[]") @map("time_config_times") // JSON数组，HH:mm格式
+  timeConfigWeekdays  String @default("[]") @map("time_config_weekdays") // JSON数组，0-6
+  timeConfigMonthDays String @default("[]") @map("time_config_month_days") // JSON数组，1-31
+  timeConfigDuration  Int?   @map("time_config_duration") // 秒，用于相对时间
+  timeConfigSchedule  String @default("{}") @map("time_config_schedule") // JSON对象，重复规则
+
+  // 通知设置 - 展开存储
+  notificationSound      Boolean @default(true) @map("notification_sound")
+  notificationVibration  Boolean @default(true) @map("notification_vibration")
+  notificationPopup      Boolean @default(true) @map("notification_popup")
+  notificationSoundFile  String? @map("notification_sound_file")
+  notificationCustomIcon String? @map("notification_custom_icon")
+
+  // 稍后提醒配置 - 展开存储
+  snoozeEnabled        Boolean @default(true) @map("snooze_enabled")
+  snoozeDefaultMinutes Int     @default(10) @map("snooze_default_minutes")
+  snoozeMaxCount       Int     @default(5) @map("snooze_max_count")
+  snoozePresetOptions  String  @default("[]") @map("snooze_preset_options") // JSON数组
+
+  // 生命周期信息 - 展开存储
+  lastTriggered DateTime? @map("last_triggered")
+  triggerCount  Int       @default(0) @map("trigger_count")
+
+  // 统计信息 - 展开存储
+  totalTriggers     Int    @default(0) @map("total_triggers")
+  acknowledgedCount Int    @default(0) @map("acknowledged_count")
+  dismissedCount    Int    @default(0) @map("dismissed_count")
+  snoozeCountTotal  Int    @default(0) @map("snooze_count_total")
+  avgResponseTime   Float? @map("avg_response_time")
+
+  // 版本控制
+  version Int @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account   Account                @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  group     ReminderTemplateGroup? @relation(fields: [groupUuid], references: [uuid], onDelete: SetNull)
+  instances ReminderInstance[]
+  schedules ReminderSchedule[]
+
+  @@index([accountUuid])
+  @@index([groupUuid])
+  @@index([enabled])
+  @@index([category])
+  @@index([priority])
+  @@index([lastTriggered])
+  @@map("reminder_templates")
+}
+
+// Reminder Instance aggregate
+model ReminderInstance {
+  uuid         String @id @default(cuid())
+  templateUuid String @map("template_uuid")
+  accountUuid  String @map("account_uuid")
+
+  // 基本信息
+  title   String?
+  message String
+
+  // 时间信息 - 展开存储
+  scheduledTime    DateTime  @map("scheduled_time")
+  triggeredTime    DateTime? @map("triggered_time")
+  acknowledgedTime DateTime? @map("acknowledged_time")
+  dismissedTime    DateTime? @map("dismissed_time")
+  snoozedUntil     DateTime? @map("snoozed_until")
+
+  // 状态 - 展开存储
+  status   String @default("pending") // 'pending', 'triggered', 'acknowledged', 'dismissed', 'snoozed', 'expired', 'cancelled'
+  priority String @default("normal") // 'low', 'normal', 'high', 'urgent'
+
+  // 元数据 - 展开存储
+  category   String
+  tags       String  @default("[]") // JSON数组
+  sourceType String? @map("source_type") // 'template', 'task', 'goal', 'manual'
+  sourceId   String? @map("source_id")
+
+  // 稍后提醒信息 - 展开存储
+  snoozeHistory      String @default("[]") @map("snooze_history") // JSON数组
+  currentSnoozeCount Int    @default(0) @map("current_snooze_count")
+
+  // 版本控制
+  version Int @default(1)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  template ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
+  account  Account          @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([templateUuid])
+  @@index([accountUuid])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledTime])
+  @@index([category])
+  @@map("reminder_instances")
+}
+
+// Reminder Schedule aggregate
+model ReminderSchedule {
+  uuid         String @id @default(cuid())
+  templateUuid String @map("template_uuid")
+  accountUuid  String @map("account_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+
+  // 状态 - 展开存储
+  enabled Boolean @default(true)
+
+  // 执行信息 - 展开存储
+  nextExecutionTime DateTime  @map("next_execution_time")
+  lastExecutionTime DateTime? @map("last_execution_time")
+  executionCount    Int       @default(0) @map("execution_count")
+  maxExecutions     Int?      @map("max_executions")
+
+  // 重复规则 - JSON存储（复杂对象）
+  recurrenceRule String @map("recurrence_rule") // JSON对象
+
+  // 时区
+  timezone String @default("UTC")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  template ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
+  account  Account          @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([templateUuid])
+  @@index([accountUuid])
+  @@index([enabled])
+  @@index([nextExecutionTime])
+  @@map("reminder_schedules")
+}
+
+// Setting Definition aggregate
+model SettingDefinition {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  key         String  @unique
+  title       String
+  description String?
+
+  // 类型和范围 - 展开存储
+  type     String @default("string") // 'string', 'number', 'boolean', 'object', 'array', 'enum'
+  scope    String @default("user") // 'global', 'user', 'workspace', 'session'
+  category String @default("general") // 'general', 'appearance', 'editor', 'notifications', etc.
+
+  // 默认值和当前值 - JSON存储（支持复杂类型）
+  defaultValue String  @map("default_value") // JSON字符串
+  currentValue String? @map("current_value") // JSON字符串
+
+  // 选项配置 - JSON存储（用于枚举类型）
+  options String @default("[]") // JSON数组
+
+  // 验证规则 - JSON存储
+  validationRules String @default("[]") @map("validation_rules") // JSON数组
+
+  // 属性标志 - 展开存储
+  readonly        Boolean @default(false)
+  hidden          Boolean @default(false)
+  requiresRestart Boolean @default(false) @map("requires_restart")
+
+  // 排序和依赖 - 展开存储
+  sortOrder Int    @default(0) @map("sort_order")
+  dependsOn String @default("[]") @map("depends_on") // JSON数组
+  tags      String @default("[]") // JSON数组
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account               @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  values  SettingValue[]
+  changes SettingChangeRecord[]
+
+  @@index([accountUuid])
+  @@index([type])
+  @@index([scope])
+  @@index([category])
+  @@index([sortOrder])
+  @@map("setting_definitions")
+}
+
+// Setting Group aggregate
+model SettingGroup {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  id          String  @unique
+  title       String
+  description String?
+
+  // 分类和外观 - 展开存储
+  category String  @default("general")
+  icon     String?
+
+  // 显示属性 - 展开存储
+  collapsible     Boolean @default(true)
+  defaultExpanded Boolean @default(true) @map("default_expanded")
+  sortOrder       Int     @default(0) @map("sort_order")
+
+  // 设置键列表 - JSON存储
+  settingKeys String @default("[]") @map("setting_keys") // JSON数组
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@index([category])
+  @@index([sortOrder])
+  @@map("setting_groups")
+}
+
+// Setting Value aggregate
+model SettingValue {
+  uuid           String @id @default(cuid())
+  accountUuid    String @map("account_uuid")
+  settingKey     String @map("setting_key")
+  definitionUuid String @map("definition_uuid")
+
+  // 值信息 - JSON存储（支持复杂类型）
+  value String // JSON字符串
+
+  // 范围和状态 - 展开存储
+  scope     String  @default("user")
+  isDefault Boolean @default(false) @map("is_default")
+
+  // 修改信息 - 展开存储
+  lastModified DateTime @map("last_modified")
+  modifiedBy   String?  @map("modified_by")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account    Account           @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  definition SettingDefinition @relation(fields: [definitionUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([accountUuid, settingKey, scope])
+  @@index([accountUuid])
+  @@index([settingKey])
+  @@index([scope])
+  @@index([isDefault])
+  @@map("setting_values")
+}
+
+// Setting Change Record aggregate
+model SettingChangeRecord {
+  uuid           String @id @default(cuid())
+  accountUuid    String @map("account_uuid")
+  settingKey     String @map("setting_key")
+  definitionUuid String @map("definition_uuid")
+
+  // 变更信息 - JSON存储（支持复杂类型）
+  oldValue String @map("old_value") // JSON字符串
+  newValue String @map("new_value") // JSON字符串
+
+  // 范围和变更信息 - 展开存储
+  scope     String   @default("user")
+  changedAt DateTime @map("changed_at")
+  changedBy String   @map("changed_by")
+  reason    String?
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  account    Account           @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  definition SettingDefinition @relation(fields: [definitionUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@index([settingKey])
+  @@index([scope])
+  @@index([changedAt])
+  @@map("setting_change_records")
+}
+
+// Setting Backup aggregate
+model SettingBackup {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  name        String
+  description String?
+
+  // 备份数据 - JSON存储
+  settingsData String @map("settings_data") // JSON字符串
+
+  // 版本信息 - 展开存储
+  appVersion      String @map("app_version")
+  settingsVersion String @map("settings_version")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@index([createdAt])
+  @@map("setting_backups")
+}
+
+// Editor Session aggregate
+model EditorSession {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  name String
+
+  // 状态 - 展开存储
+  activeGroupId String? @map("active_group_id")
+
+  // 布局配置 - 展开存储
+  activityBarWidth  Int @default(48) @map("activity_bar_width")
+  sidebarWidth      Int @default(300) @map("sidebar_width")
+  minSidebarWidth   Int @default(200) @map("min_sidebar_width")
+  resizeHandleWidth Int @default(4) @map("resize_handle_width")
+  minEditorWidth    Int @default(300) @map("min_editor_width")
+  editorTabWidth    Int @default(120) @map("editor_tab_width")
+  windowWidth       Int @default(1200) @map("window_width")
+  windowHeight      Int @default(800) @map("window_height")
+
+  // 自动保存配置 - 展开存储
+  autoSave         Boolean @default(true) @map("auto_save")
+  autoSaveInterval Int     @default(30) @map("auto_save_interval") // 秒
+
+  // 最后保存时间
+  lastSavedAt DateTime? @map("last_saved_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account       @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  groups  EditorGroup[]
+
+  @@index([accountUuid])
+  @@index([activeGroupId])
+  @@map("editor_sessions")
+}
+
+// Editor Group aggregate
+model EditorGroup {
+  uuid        String @id @default(cuid())
+  sessionUuid String @map("session_uuid")
+  accountUuid String @map("account_uuid")
+
+  // 状态 - 展开存储
+  active Boolean @default(false)
+  width  Int     @default(400)
+
+  // 当前激活的标签页
+  activeTabId String? @map("active_tab_id")
+
+  // 组信息 - 展开存储
+  title        String?
+  lastAccessed DateTime? @map("last_accessed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  session EditorSession @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
+  account Account       @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  tabs    EditorTab[]
+
+  @@index([sessionUuid])
+  @@index([accountUuid])
+  @@index([active])
+  @@map("editor_groups")
+}
+
+// Editor Tab aggregate
+model EditorTab {
+  uuid        String @id @default(cuid())
+  groupUuid   String @map("group_uuid")
+  accountUuid String @map("account_uuid")
+
+  // 基本信息
+  title String
+  path  String
+
+  // 状态 - 展开存储
+  active    Boolean @default(false)
+  isPreview Boolean @default(false) @map("is_preview")
+  isDirty   Boolean @default(false) @map("is_dirty")
+
+  // 文件信息 - 展开存储
+  fileType     String?   @map("file_type")
+  lastModified DateTime? @map("last_modified")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  group   EditorGroup @relation(fields: [groupUuid], references: [uuid], onDelete: Cascade)
+  account Account     @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([groupUuid])
+  @@index([accountUuid])
+  @@index([active])
+  @@index([path])
+  @@map("editor_tabs")
+}
+
+// Editor File Content (for caching and auto-save)
+model EditorFileContent {
+  uuid        String @id @default(cuid())
+  accountUuid String @map("account_uuid")
+
+  // 文件信息
+  path String @unique
+
+  // 内容信息
+  content     String // 文件内容
+  contentHash String @map("content_hash") // 内容哈希值，用于检测变化
+  fileSize    Int    @map("file_size") // 文件大小
+  encoding    String @default("utf8") // 文件编码
+
+  // 状态 - 展开存储
+  isTemporary Boolean @default(false) @map("is_temporary") // 是否为临时文件
+  isCached    Boolean @default(false) @map("is_cached") // 是否为缓存文件
+
+  // 时间信息
+  lastModified DateTime @map("last_modified")
+  lastAccessed DateTime @map("last_accessed")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@index([path])
+  @@index([isTemporary])
+  @@index([lastAccessed])
+  @@map("editor_file_contents")
 }

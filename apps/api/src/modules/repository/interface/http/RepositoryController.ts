@@ -1,633 +1,409 @@
-/**
- * Repository HTTP Controller
- * 仓储HTTP控制器 - 处理REST API请求
- */
-
 import type { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import { RepositoryApplicationService } from '../../application/services/RepositoryApplicationService';
 import { RepositoryContracts } from '@dailyuse/contracts';
-import { RepositoryApplicationService } from '../../application/services/RepositoryApplicationService.js';
-
-// 使用类型别名来简化类型引用
-type ICreateRepositoryCommand = RepositoryContracts.ICreateRepositoryCommand;
-type IUpdateRepositoryCommand = RepositoryContracts.IUpdateRepositoryCommand;
-type IDeleteRepositoryCommand = RepositoryContracts.IDeleteRepositoryCommand;
-type IRepositoryQuery = RepositoryContracts.IRepositoryQuery;
-type IGitInitCommand = RepositoryContracts.IGitInitCommand;
-type IGitAddCommand = RepositoryContracts.IGitAddCommand;
-type IGitCommitCommand = RepositoryContracts.IGitCommitCommand;
 
 export class RepositoryController {
-  constructor(private readonly repositoryApplicationService: RepositoryApplicationService) {}
+  private static repositoryService: RepositoryApplicationService;
+
+  static initialize(repositoryService: RepositoryApplicationService) {
+    this.repositoryService = repositoryService;
+  }
+
+  /**
+   * 从请求中提取用户账户UUID
+   */
+  private static extractAccountUuid(req: Request): string {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new Error('Authentication required');
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.decode(token) as any;
+
+    if (!decoded?.accountUuid) {
+      throw new Error('Invalid token: missing accountUuid');
+    }
+
+    return decoded.accountUuid;
+  }
 
   /**
    * 创建仓储
    * POST /api/v1/repositories
    */
-  async createRepository(req: Request, res: Response): Promise<void> {
+  static async createRepository(req: Request, res: Response) {
     try {
-      const command: ICreateRepositoryCommand = req.body;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const request: RepositoryContracts.CreateRepositoryRequestDTO = req.body;
 
-      // 基本验证
-      if (!command.name || !command.path) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository name and path are required',
-        });
-        return;
-      }
+      const repository = await RepositoryController.repositoryService.createRepository(
+        accountUuid,
+        request,
+      );
 
-      const repository = await this.repositoryApplicationService.createRepository(command);
-      res.status(201).json({ repository });
+      res.status(201).json({
+        success: true,
+        data: repository,
+        message: 'Repository created successfully',
+      });
     } catch (error) {
-      console.error('Failed to create repository:', error);
-
-      if (error instanceof RepositoryContracts.RepositoryError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          details: error.details,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to create repository',
-        });
-      }
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to create repository',
+      });
     }
   }
 
   /**
-   * 获取所有仓储
+   * 获取仓储列表
    * GET /api/v1/repositories
    */
-  async getAllRepositories(req: Request, res: Response): Promise<void> {
+  static async getRepositories(req: Request, res: Response) {
     try {
-      const repositories = await this.repositoryApplicationService.getAllRepositories();
-      res.json({ repositories });
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const queryParams: RepositoryContracts.RepositoryQueryParamsDTO = {
+        type: req.query.type as RepositoryContracts.RepositoryType,
+        status: req.query.status as RepositoryContracts.RepositoryStatus,
+        keyword: req.query.keyword as string,
+        pagination: {
+          page: req.query.page ? parseInt(req.query.page as string) : 1,
+          limit: req.query.limit ? parseInt(req.query.limit as string) : 10,
+        },
+      };
+
+      const repositories = await RepositoryController.repositoryService.getRepositories(
+        accountUuid,
+        queryParams,
+      );
+
+      res.json({
+        success: true,
+        data: repositories,
+        message: 'Repositories retrieved successfully',
+      });
     } catch (error) {
-      console.error('Failed to get all repositories:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repositories',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve repositories',
       });
     }
   }
 
   /**
    * 根据ID获取仓储
-   * GET /api/v1/repositories/:uuid
+   * GET /api/v1/repositories/:id
    */
-  async getRepository(req: Request, res: Response): Promise<void> {
+  static async getRepositoryById(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
-
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
-
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const repository = await RepositoryController.repositoryService.getRepositoryById(
+        accountUuid,
+        id,
+      );
 
       if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
+        return res.status(404).json({
+          success: false,
           message: 'Repository not found',
         });
-        return;
       }
 
-      res.json({ repository });
+      res.json({
+        success: true,
+        data: repository,
+        message: 'Repository retrieved successfully',
+      });
     } catch (error) {
-      console.error('Failed to get repository:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repository',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve repository',
       });
     }
   }
 
   /**
    * 更新仓储
-   * PUT /api/v1/repositories/:uuid
+   * PUT /api/v1/repositories/:id
    */
-  async updateRepository(req: Request, res: Response): Promise<void> {
+  static async updateRepository(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
-      const command: IUpdateRepositoryCommand = {
-        uuid,
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const request: RepositoryContracts.UpdateRepositoryRequestDTO = {
+        uuid: id,
         ...req.body,
       };
 
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
+      const repository = await RepositoryController.repositoryService.updateRepository(
+        accountUuid,
+        id,
+        request,
+      );
 
-      const repository = await this.repositoryApplicationService.updateRepository(command);
-      res.json({ repository });
+      res.json({
+        success: true,
+        data: repository,
+        message: 'Repository updated successfully',
+      });
     } catch (error) {
-      console.error('Failed to update repository:', error);
-
-      if (error instanceof RepositoryContracts.RepositoryError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          details: error.details,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to update repository',
-        });
-      }
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to update repository',
+      });
     }
   }
 
   /**
    * 删除仓储
-   * DELETE /api/v1/repositories/:uuid
+   * DELETE /api/v1/repositories/:id
    */
-  async deleteRepository(req: Request, res: Response): Promise<void> {
+  static async deleteRepository(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
-      const { deleteFiles } = req.query;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
 
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
+      await RepositoryController.repositoryService.deleteRepository(accountUuid, id);
 
-      const command: IDeleteRepositoryCommand = {
-        uuid,
-        deleteFiles: deleteFiles === 'true',
-      };
-
-      await this.repositoryApplicationService.deleteRepository(command);
-      res.status(204).send();
+      res.json({
+        success: true,
+        message: 'Repository deleted successfully',
+      });
     } catch (error) {
-      console.error('Failed to delete repository:', error);
-
-      if (error instanceof RepositoryContracts.RepositoryError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          details: error.details,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to delete repository',
-        });
-      }
-    }
-  }
-
-  /**
-   * 查询仓储
-   * GET /api/v1/repositories/query
-   */
-  async queryRepositories(req: Request, res: Response): Promise<void> {
-    try {
-      const query: IRepositoryQuery = {
-        keyword: req.query.searchText as string,
-        status: req.query.status as RepositoryContracts.RepositoryStatus,
-        goalId: req.query.goalId as string,
-        isGitRepo: req.query.isGitRepo ? req.query.isGitRepo === 'true' : undefined,
-        sortBy: req.query.sortBy as 'name' | 'createdAt' | 'updatedAt' | 'lastAccessedAt',
-        sortOrder: req.query.sortDirection as 'asc' | 'desc',
-        offset: req.query.offset ? parseInt(req.query.offset as string) : undefined,
-        limit: req.query.limit ? parseInt(req.query.limit as string) : undefined,
-      };
-
-      const result = await this.repositoryApplicationService.queryRepositories(query);
-      res.json(result);
-    } catch (error) {
-      console.error('Failed to query repositories:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to query repositories',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete repository',
       });
     }
   }
 
   /**
-   * 根据名称获取仓储
-   * GET /api/v1/repositories/by-name/:name
+   * 激活仓储
+   * POST /api/v1/repositories/:id/activate
    */
-  async getRepositoryByName(req: Request, res: Response): Promise<void> {
+  static async activateRepository(req: Request, res: Response) {
     try {
-      const { name } = req.params;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const repository = await RepositoryController.repositoryService.activateRepository(
+        accountUuid,
+        id,
+      );
 
-      if (!name) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository name is required',
-        });
-        return;
-      }
-
-      const repository = await this.repositoryApplicationService.getRepositoryByName(name);
-
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      res.json({ repository });
+      res.json({
+        success: true,
+        data: repository,
+        message: 'Repository activated successfully',
+      });
     } catch (error) {
-      console.error('Failed to get repository by name:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repository by name',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to activate repository',
       });
     }
   }
 
   /**
-   * 根据路径获取仓储
-   * POST /api/v1/repositories/by-path
+   * 归档仓储
+   * POST /api/v1/repositories/:id/archive
    */
-  async getRepositoryByPath(req: Request, res: Response): Promise<void> {
+  static async archiveRepository(req: Request, res: Response) {
     try {
-      const { path } = req.body;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const repository = await RepositoryController.repositoryService.archiveRepository(
+        accountUuid,
+        id,
+      );
 
-      if (!path) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository path is required',
-        });
-        return;
-      }
-
-      const repository = await this.repositoryApplicationService.getRepositoryByPath(path);
-
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      res.json({ repository });
-    } catch (error) {
-      console.error('Failed to get repository by path:', error);
-      res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repository by path',
+      res.json({
+        success: true,
+        data: repository,
+        message: 'Repository archived successfully',
       });
-    }
-  }
-
-  /**
-   * 根据目标获取相关仓储
-   * GET /api/v1/repositories/by-goal/:goalId
-   */
-  async getRepositoriesByGoal(req: Request, res: Response): Promise<void> {
-    try {
-      const { goalId } = req.params;
-
-      if (!goalId) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Goal ID is required',
-        });
-        return;
-      }
-
-      const repositories = await this.repositoryApplicationService.getRepositoriesByGoal(goalId);
-      res.json({ repositories });
     } catch (error) {
-      console.error('Failed to get repositories by goal:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repositories by goal',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to archive repository',
       });
-    }
-  }
-
-  /**
-   * 获取仓储统计
-   * GET /api/v1/repositories/stats
-   */
-  async getRepositoryStats(req: Request, res: Response): Promise<void> {
-    try {
-      const stats = await this.repositoryApplicationService.getRepositoryStats();
-      res.json(stats);
-    } catch (error) {
-      console.error('Failed to get repository stats:', error);
-      res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get repository stats',
-      });
-    }
-  }
-
-  /**
-   * 验证仓储路径
-   * POST /api/v1/repositories/validate-path
-   */
-  async validatePath(req: Request, res: Response): Promise<void> {
-    try {
-      const { path } = req.body;
-
-      if (!path) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Path is required',
-        });
-        return;
-      }
-
-      const isValid = await this.repositoryApplicationService.validateRepositoryPath(path);
-      res.json({ isValid });
-    } catch (error) {
-      console.error('Failed to validate path:', error);
-      res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to validate path',
-      });
-    }
-  }
-
-  /**
-   * 检查仓储是否存在
-   * GET /api/v1/repositories/exists/:name
-   */
-  async repositoryExists(req: Request, res: Response): Promise<void> {
-    try {
-      const { name } = req.params;
-
-      if (!name) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository name is required',
-        });
-        return;
-      }
-
-      const exists = await this.repositoryApplicationService.repositoryExists(name);
-      res.json({ exists });
-    } catch (error) {
-      console.error('Failed to check repository existence:', error);
-      res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to check repository existence',
-      });
-    }
-  }
-
-  // ============ Git 相关端点 ============
-
-  /**
-   * 初始化Git仓储
-   * POST /api/v1/repositories/:uuid/git/init
-   */
-  async initGit(req: Request, res: Response): Promise<void> {
-    try {
-      const { uuid } = req.params;
-
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
-
-      // 获取仓储以获取路径
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      const command: IGitInitCommand = {
-        repositoryPath: repository.path,
-      };
-
-      await this.repositoryApplicationService.initGitRepository(command);
-      res.status(204).send();
-    } catch (error) {
-      console.error('Failed to initialize Git:', error);
-
-      if (error instanceof RepositoryContracts.GitOperationError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          operation: error.operation,
-          repositoryPath: error.repositoryPath,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to initialize Git',
-        });
-      }
     }
   }
 
   /**
    * 获取Git状态
-   * GET /api/v1/repositories/:uuid/git/status
+   * GET /api/v1/repositories/:id/git/status
    */
-  async getGitStatus(req: Request, res: Response): Promise<void> {
+  static async getGitStatus(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const status = await RepositoryController.repositoryService.getGitStatus(accountUuid, id);
 
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
-
-      // 获取仓储以获取路径
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      const status = await this.repositoryApplicationService.getGitStatus(repository.path);
-      res.json({ status });
+      res.json({
+        success: true,
+        data: status,
+        message: 'Git status retrieved successfully',
+      });
     } catch (error) {
-      console.error('Failed to get Git status:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get Git status',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to get git status',
       });
     }
   }
 
   /**
-   * 添加文件到Git
-   * POST /api/v1/repositories/:uuid/git/add
-   */
-  async addToGit(req: Request, res: Response): Promise<void> {
-    try {
-      const { uuid } = req.params;
-      const { files } = req.body;
-
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
-
-      // 获取仓储以获取路径
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      const command: IGitAddCommand = {
-        repositoryPath: repository.path,
-        files: files || ['.'], // 默认添加所有文件
-      };
-
-      await this.repositoryApplicationService.addFilesToGit(command);
-      res.status(204).send();
-    } catch (error) {
-      console.error('Failed to add files to Git:', error);
-
-      if (error instanceof RepositoryContracts.GitOperationError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          operation: error.operation,
-          repositoryPath: error.repositoryPath,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to add files to Git',
-        });
-      }
-    }
-  }
-
-  /**
    * Git提交
-   * POST /api/v1/repositories/:uuid/git/commit
+   * POST /api/v1/repositories/:id/git/commit
    */
-  async commitToGit(req: Request, res: Response): Promise<void> {
+  static async commitChanges(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
-      const { message } = req.body;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const request: RepositoryContracts.GitCommitRequestDTO = req.body;
 
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
+      const commit = await RepositoryController.repositoryService.commitChanges(
+        accountUuid,
+        id,
+        request,
+      );
 
-      if (!message) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Commit message is required',
-        });
-        return;
-      }
-
-      // 获取仓储以获取路径
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      const command: IGitCommitCommand = {
-        repositoryPath: repository.path,
-        message,
-      };
-
-      const commit = await this.repositoryApplicationService.commitToGit(command);
-      res.json({ commit });
+      res.json({
+        success: true,
+        data: commit,
+        message: 'Changes committed successfully',
+      });
     } catch (error) {
-      console.error('Failed to commit to Git:', error);
-
-      if (error instanceof RepositoryContracts.GitOperationError) {
-        res.status(400).json({
-          error: error.code,
-          message: error.message,
-          operation: error.operation,
-          repositoryPath: error.repositoryPath,
-        });
-      } else {
-        res.status(500).json({
-          error: 'INTERNAL_SERVER_ERROR',
-          message: 'Failed to commit to Git',
-        });
-      }
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to commit changes',
+      });
     }
   }
 
   /**
-   * 获取Git提交历史
-   * GET /api/v1/repositories/:uuid/git/log
+   * 获取资源列表
+   * GET /api/v1/repositories/:id/resources
    */
-  async getGitLog(req: Request, res: Response): Promise<void> {
+  static async getResources(req: Request, res: Response) {
     try {
-      const { uuid } = req.params;
-      const { limit } = req.query;
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const queryParams: RepositoryContracts.ResourceQueryParamsDTO = {
+        type: req.query.type as RepositoryContracts.ResourceType,
+        status: req.query.status as RepositoryContracts.ResourceStatus,
+        keyword: req.query.keyword as string,
+        tags: req.query.tags ? (req.query.tags as string).split(',') : undefined,
+        pagination: {
+          page: req.query.page ? parseInt(req.query.page as string) : 1,
+          limit: req.query.limit ? parseInt(req.query.limit as string) : 20,
+        },
+      };
 
-      if (!uuid) {
-        res.status(400).json({
-          error: 'INVALID_REQUEST',
-          message: 'Repository UUID is required',
-        });
-        return;
-      }
+      const resources = await RepositoryController.repositoryService.getResources(
+        accountUuid,
+        id,
+        queryParams,
+      );
 
-      // 获取仓储以获取路径
-      const repository = await this.repositoryApplicationService.getRepository(uuid);
-      if (!repository) {
-        res.status(404).json({
-          error: 'REPOSITORY_NOT_FOUND',
-          message: 'Repository not found',
-        });
-        return;
-      }
-
-      const logLimit = limit ? parseInt(limit as string) : undefined;
-      const log = await this.repositoryApplicationService.getGitLog(repository.path, logLimit);
-      res.json(log);
+      res.json({
+        success: true,
+        data: resources,
+        message: 'Resources retrieved successfully',
+      });
     } catch (error) {
-      console.error('Failed to get Git log:', error);
       res.status(500).json({
-        error: 'INTERNAL_SERVER_ERROR',
-        message: 'Failed to get Git log',
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to retrieve resources',
+      });
+    }
+  }
+
+  /**
+   * 创建资源
+   * POST /api/v1/repositories/:id/resources
+   */
+  static async createResource(req: Request, res: Response) {
+    try {
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { id } = req.params;
+      const request: RepositoryContracts.CreateResourceRequestDTO = {
+        repositoryUuid: id,
+        ...req.body,
+      };
+
+      const resource = await RepositoryController.repositoryService.createResource(
+        accountUuid,
+        id,
+        request,
+      );
+
+      res.status(201).json({
+        success: true,
+        data: resource,
+        message: 'Resource created successfully',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to create resource',
+      });
+    }
+  }
+
+  /**
+   * 更新资源
+   * PUT /api/v1/resources/:resourceId
+   */
+  static async updateResource(req: Request, res: Response) {
+    try {
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { resourceId } = req.params;
+      const request: RepositoryContracts.UpdateResourceRequestDTO = {
+        uuid: resourceId,
+        ...req.body,
+      };
+
+      const resource = await RepositoryController.repositoryService.updateResource(
+        accountUuid,
+        resourceId,
+        request,
+      );
+
+      res.json({
+        success: true,
+        data: resource,
+        message: 'Resource updated successfully',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to update resource',
+      });
+    }
+  }
+
+  /**
+   * 删除资源
+   * DELETE /api/v1/resources/:resourceId
+   */
+  static async deleteResource(req: Request, res: Response) {
+    try {
+      const accountUuid = RepositoryController.extractAccountUuid(req);
+      const { resourceId } = req.params;
+
+      await RepositoryController.repositoryService.deleteResource(accountUuid, resourceId);
+
+      res.json({
+        success: true,
+        message: 'Resource deleted successfully',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        message: error instanceof Error ? error.message : 'Failed to delete resource',
       });
     }
   }

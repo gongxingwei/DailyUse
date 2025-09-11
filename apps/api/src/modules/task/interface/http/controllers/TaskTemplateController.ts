@@ -1,12 +1,15 @@
 import type { Request, Response } from 'express';
-import { TaskApplicationService } from '../../../application/services/TaskApplicationService';
+import { TaskTemplateApplicationService } from '../../../application/services/TaskTemplateApplicationService';
+import { PrismaClient } from '@prisma/client';
 import type { TaskContracts } from '@dailyuse/contracts';
 
 type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
 type UpdateTaskTemplateRequest = TaskContracts.UpdateTaskTemplateRequest;
 
+const prisma = new PrismaClient();
+
 export class TaskTemplateController {
-  private static taskService = new TaskApplicationService();
+  private static taskService = new TaskTemplateApplicationService(prisma);
 
   /**
    * 创建任务模板
@@ -14,11 +17,12 @@ export class TaskTemplateController {
   static async createTemplate(req: Request, res: Response) {
     try {
       const request: CreateTaskTemplateRequest = req.body;
-      const template = await TaskTemplateController.taskService.createTemplate(request);
+      const { accountUuid } = req.params; // 假设 accountUuid 从路径参数获取
+      const templateUuid = await TaskTemplateController.taskService.create(accountUuid, request);
 
       res.status(201).json({
         success: true,
-        data: template,
+        data: { uuid: templateUuid },
         message: '任务模板创建成功',
       });
     } catch (error) {
@@ -34,8 +38,20 @@ export class TaskTemplateController {
    */
   static async getTemplates(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const templates = await TaskTemplateController.taskService.getTemplates(queryParams);
+      const { accountUuid } = req.params;
+      const { limit, offset, sortBy, sortOrder } = req.query;
+
+      const options = {
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+        sortBy: sortBy as 'createdAt' | 'updatedAt' | 'title' | undefined,
+        sortOrder: sortOrder as 'asc' | 'desc' | undefined,
+      };
+
+      const templates = await TaskTemplateController.taskService.getAllByAccount(
+        accountUuid,
+        options,
+      );
 
       res.json({
         success: true,
@@ -55,7 +71,7 @@ export class TaskTemplateController {
   static async getTemplateById(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const template = await TaskTemplateController.taskService.getTemplateById(id);
+      const template = await TaskTemplateController.taskService.getById(id);
 
       if (!template) {
         return res.status(404).json({
@@ -83,7 +99,10 @@ export class TaskTemplateController {
     try {
       const { id } = req.params;
       const request: UpdateTaskTemplateRequest = req.body;
-      const template = await TaskTemplateController.taskService.updateTemplate(id, request);
+      await TaskTemplateController.taskService.update(id, request);
+
+      // 获取更新后的模板
+      const template = await TaskTemplateController.taskService.getById(id);
 
       res.json({
         success: true,
@@ -104,7 +123,7 @@ export class TaskTemplateController {
   static async deleteTemplate(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      await TaskTemplateController.taskService.deleteTemplate(id);
+      await TaskTemplateController.taskService.delete(id);
 
       res.json({
         success: true,
@@ -124,7 +143,10 @@ export class TaskTemplateController {
   static async activateTemplate(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const template = await TaskTemplateController.taskService.activateTemplate(id);
+      await TaskTemplateController.taskService.activate(id);
+
+      // 获取更新后的模板
+      const template = await TaskTemplateController.taskService.getById(id);
 
       res.json({
         success: true,
@@ -145,7 +167,10 @@ export class TaskTemplateController {
   static async pauseTemplate(req: Request, res: Response) {
     try {
       const { id } = req.params;
-      const template = await TaskTemplateController.taskService.pauseTemplate(id);
+      await TaskTemplateController.taskService.pause(id);
+
+      // 获取更新后的模板
+      const template = await TaskTemplateController.taskService.getById(id);
 
       res.json({
         success: true,

@@ -75,16 +75,20 @@ api.use('/reminders', reminderRouter);
 // 挂载编辑器路由
 const editorDomainService = new EditorDomainService();
 const editorApplicationService = new EditorApplicationService(editorDomainService);
-const editorController = new EditorController(editorApplicationService);
-const editorRoutes = createEditorRoutes(editorController);
+EditorController.initialize(editorApplicationService);
+const editorRoutes = createEditorRoutes();
 api.use('/editor', editorRoutes);
 
-// 挂载仓储路由
-const repositoryDomainService = new RepositoryDomainService();
-const repositoryApplicationService = new RepositoryApplicationService(repositoryDomainService);
-const repositoryController = new RepositoryController(repositoryApplicationService);
-const repositoryRoutes = createRepositoryRoutes(repositoryController);
-api.use('/repositories', repositoryRoutes);
+// TODO: 挂载仓储路由 - 待完整实现
+// import { RepositoryController, createRepositoryRoutes } from './modules/repository';
+// import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
+// import { RepositoryDomainService } from './modules/repository/domain/services/RepositoryDomainService.js';
+//
+// const repositoryDomainService = new RepositoryDomainService();
+// const repositoryApplicationService = new RepositoryApplicationService(repositoryDomainService);
+// RepositoryController.initialize(repositoryApplicationService);
+// const repositoryRoutes = createRepositoryRoutes();
+// api.use('/repositories', repositoryRoutes);
 
 app.use('/api/v1', api);
 

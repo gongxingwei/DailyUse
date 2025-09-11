@@ -16,6 +16,7 @@ export * as Reminder from './reminder';
 export * as Repository from './repository';
 export * as Editor from './editor';
 export * as Notification from './notification';
+export * as Schedule from './schedule';
 
 // 应用模块
 export * as App from './app';

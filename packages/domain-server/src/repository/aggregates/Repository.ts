@@ -29,6 +29,22 @@ export class Repository extends RepositoryCore {
     super(params);
   }
 
+  /**
+   * 更新关联目标
+   */
+  updateRelatedGoals(relatedGoals: string[]): void {
+    this._relatedGoals = [...relatedGoals];
+    this.updateTimestamp();
+  }
+
+  /**
+   * 更新状态
+   */
+  updateStatus(status: RepositoryContracts.RepositoryStatus): void {
+    this._status = status;
+    this.updateTimestamp();
+  }
+
   // ============ 抽象方法实现 ============
 
   updateName(name: string): void {

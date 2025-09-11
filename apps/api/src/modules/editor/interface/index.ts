@@ -4,4 +4,4 @@
  */
 
 export { EditorController } from './http/EditorController.js';
-export { createEditorRoutes } from './http/editorRoutes.js';
+export { createEditorRoutes } from './http/routes.js';

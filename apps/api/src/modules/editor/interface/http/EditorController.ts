@@ -4,6 +4,7 @@
  */
 
 import type { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import { EditorContracts } from '@dailyuse/contracts';
 import { EditorApplicationService } from '../../application/services/EditorApplicationService.js';
 
@@ -14,15 +15,39 @@ type ISplitEditorCommand = EditorContracts.ISplitEditorCommand;
 type IResizeEditorCommand = EditorContracts.IResizeEditorCommand;
 
 export class EditorController {
-  constructor(private readonly editorApplicationService: EditorApplicationService) {}
+  private static editorService: EditorApplicationService;
+
+  static initialize(editorService: EditorApplicationService) {
+    this.editorService = editorService;
+  }
+
+  /**
+   * 从请求中提取用户账户UUID
+   */
+  private static extractAccountUuid(req: Request): string {
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      throw new Error('Authentication required');
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.decode(token) as any;
+
+    if (!decoded?.accountUuid) {
+      throw new Error('Invalid token: missing accountUuid');
+    }
+
+    return decoded.accountUuid;
+  }
 
   /**
    * 获取编辑器状态
    * GET /api/v1/editor/state
    */
-  async getEditorState(req: Request, res: Response): Promise<void> {
+  static async getEditorState(req: Request, res: Response): Promise<void> {
     try {
-      const state = await this.editorApplicationService.getEditorState();
+      const accountUuid = EditorController.extractAccountUuid(req);
+      const state = await EditorController.editorService.getEditorState();
 
       res.status(200).json({
         success: true,
@@ -43,9 +68,10 @@ export class EditorController {
    * 获取所有编辑器组
    * GET /api/v1/editor/groups
    */
-  async getEditorGroups(req: Request, res: Response): Promise<void> {
+  static async getEditorGroups(req: Request, res: Response): Promise<void> {
     try {
-      const groups = await this.editorApplicationService.getEditorGroups();
+      const accountUuid = EditorController.extractAccountUuid(req);
+      const groups = await EditorController.editorService.getEditorGroups();
 
       res.status(200).json({
         success: true,
@@ -66,8 +92,9 @@ export class EditorController {
    * 获取指定编辑器组
    * GET /api/v1/editor/groups/:groupId
    */
-  async getEditorGroup(req: Request, res: Response): Promise<void> {
+  static async getEditorGroup(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
 
       if (!groupId) {
@@ -79,7 +106,7 @@ export class EditorController {
         return;
       }
 
-      const group = await this.editorApplicationService.getEditorGroup(groupId);
+      const group = await EditorController.editorService.getEditorGroup(groupId);
 
       if (!group) {
         res.status(404).json({
@@ -109,9 +136,10 @@ export class EditorController {
    * 获取活动编辑器组
    * GET /api/v1/editor/groups/active
    */
-  async getActiveEditorGroup(req: Request, res: Response): Promise<void> {
+  static async getActiveEditorGroup(req: Request, res: Response): Promise<void> {
     try {
-      const group = await this.editorApplicationService.getActiveEditorGroup();
+      const accountUuid = EditorController.extractAccountUuid(req);
+      const group = await EditorController.editorService.getActiveEditorGroup();
 
       res.status(200).json({
         success: true,
@@ -132,8 +160,9 @@ export class EditorController {
    * 设置活动编辑器组
    * PUT /api/v1/editor/groups/:groupId/activate
    */
-  async setActiveEditorGroup(req: Request, res: Response): Promise<void> {
+  static async setActiveEditorGroup(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
 
       if (!groupId) {
@@ -145,7 +174,7 @@ export class EditorController {
         return;
       }
 
-      await this.editorApplicationService.setActiveEditorGroup(groupId);
+      await EditorController.editorService.setActiveEditorGroup(groupId);
 
       res.status(200).json({
         success: true,
@@ -166,8 +195,9 @@ export class EditorController {
    * 打开文件
    * POST /api/v1/editor/files/open
    */
-  async openFile(req: Request, res: Response): Promise<void> {
+  static async openFile(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const command: IOpenFileCommand = req.body;
 
       if (!command.path) {
@@ -179,7 +209,7 @@ export class EditorController {
         return;
       }
 
-      const tab = await this.editorApplicationService.openFile(command);
+      const tab = await EditorController.editorService.openFile(command);
 
       res.status(201).json({
         success: true,
@@ -200,8 +230,9 @@ export class EditorController {
    * 关闭标签页
    * DELETE /api/v1/editor/groups/:groupId/tabs/:tabId
    */
-  async closeTab(req: Request, res: Response): Promise<void> {
+  static async closeTab(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId, tabId } = req.params;
       const { saveChanges } = req.body;
 
@@ -220,7 +251,7 @@ export class EditorController {
         saveChanges: saveChanges || false,
       };
 
-      await this.editorApplicationService.closeTab(command);
+      await EditorController.editorService.closeTab(command);
 
       res.status(200).json({
         success: true,
@@ -242,11 +273,12 @@ export class EditorController {
    * DELETE /api/v1/editor/tabs
    * DELETE /api/v1/editor/groups/:groupId/tabs
    */
-  async closeAllTabs(req: Request, res: Response): Promise<void> {
+  static async closeAllTabs(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
 
-      await this.editorApplicationService.closeAllTabs(groupId);
+      await EditorController.editorService.closeAllTabs(groupId);
 
       res.status(200).json({
         success: true,
@@ -267,8 +299,9 @@ export class EditorController {
    * 保存文件
    * PUT /api/v1/editor/groups/:groupId/tabs/:tabId/save
    */
-  async saveFile(req: Request, res: Response): Promise<void> {
+  static async saveFile(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId, tabId } = req.params;
 
       if (!groupId || !tabId) {
@@ -280,7 +313,7 @@ export class EditorController {
         return;
       }
 
-      await this.editorApplicationService.saveFile(groupId, tabId);
+      await EditorController.editorService.saveFile(groupId, tabId);
 
       res.status(200).json({
         success: true,
@@ -302,11 +335,12 @@ export class EditorController {
    * PUT /api/v1/editor/files/save-all
    * PUT /api/v1/editor/groups/:groupId/files/save-all
    */
-  async saveAllFiles(req: Request, res: Response): Promise<void> {
+  static async saveAllFiles(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
 
-      await this.editorApplicationService.saveAllFiles(groupId);
+      await EditorController.editorService.saveAllFiles(groupId);
 
       res.status(200).json({
         success: true,
@@ -327,8 +361,9 @@ export class EditorController {
    * 分割编辑器
    * POST /api/v1/editor/groups/:groupId/split
    */
-  async splitEditor(req: Request, res: Response): Promise<void> {
+  static async splitEditor(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
       const { direction, copyCurrentTab } = req.body;
 
@@ -356,7 +391,7 @@ export class EditorController {
         copyCurrentTab: copyCurrentTab || false,
       };
 
-      const newGroup = await this.editorApplicationService.splitEditor(command);
+      const newGroup = await EditorController.editorService.splitEditor(command);
 
       res.status(201).json({
         success: true,
@@ -377,8 +412,9 @@ export class EditorController {
    * 调整编辑器大小
    * PUT /api/v1/editor/groups/:groupId/resize
    */
-  async resizeEditor(req: Request, res: Response): Promise<void> {
+  static async resizeEditor(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { groupId } = req.params;
       const { width, height } = req.body;
 
@@ -406,7 +442,7 @@ export class EditorController {
         height,
       };
 
-      await this.editorApplicationService.resizeEditor(command);
+      await EditorController.editorService.resizeEditor(command);
 
       res.status(200).json({
         success: true,
@@ -427,8 +463,9 @@ export class EditorController {
    * 获取文件内容
    * GET /api/v1/editor/files/content
    */
-  async getFileContent(req: Request, res: Response): Promise<void> {
+  static async getFileContent(req: Request, res: Response): Promise<void> {
     try {
+      const accountUuid = EditorController.extractAccountUuid(req);
       const { path } = req.query;
 
       if (!path || typeof path !== 'string') {
@@ -440,7 +477,7 @@ export class EditorController {
         return;
       }
 
-      const content = await this.editorApplicationService.getFileContent(path);
+      const content = await EditorController.editorService.getFileContent(path);
 
       res.status(200).json({
         success: true,

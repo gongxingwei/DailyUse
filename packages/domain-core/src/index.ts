@@ -41,3 +41,9 @@ export * from './reminder/aggregates/ReminderCore';
 
 // Setting domain exports
 export * from './setting/SettingCore';
+
+// Schedule domain exports
+export * from './schedule';
+
+// Notification domain exports
+// export * from './notification/NotificationCore';

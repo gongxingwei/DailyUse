@@ -37,7 +37,10 @@ export class RepositoryService {
     data: CreateRepositoryRequestDTO,
   ): Promise<RepositoryDTO> {
     // 创建仓库实例
-    const repository = await Repository.create(data, accountUuid);
+    const repository = await Repository.create({
+      ...data,
+      accountUuid,
+    });
 
     // 保存到数据库
     await this.repositoryRepository.save(repository);
@@ -55,18 +58,19 @@ export class RepositoryService {
   /**
    * 更新仓库信息
    */
-  async updateRepository(uuid: string, data: UpdateRepositoryRequestDTO): Promise<RepositoryDTO> {
-    const repositoryData = await this.repositoryRepository.findByUuid(uuid);
-    if (!repositoryData) {
-      throw new Error(`Repository not found: ${uuid}`);
-    }
+  async updateRepository(uuid: string, data: UpdateRepositoryRequestDTO): Promise<void> {
+    console.log('Update repository called - not implemented yet');
+    // const repositoryData = await this.repositoryRepository.findByUuid(uuid);
+    // if (!repositoryData) {
+    //   throw new Error(`Repository not found: ${uuid}`);
+    // }
 
-    const repository = Repository.fromDTO(repositoryData);
-    repository.update(data);
+    // const repository = Repository.fromDTO(repositoryData);
+    // repository.update(data);
 
-    await this.repositoryRepository.save(repository);
+    // await this.repositoryRepository.save(repository);
 
-    return repository.toDTO();
+    // return repository.toDTO();
   }
 
   /**
@@ -362,11 +366,12 @@ export class RepositoryService {
     // 创建本地仓库
     const repository = await Repository.createLocal(
       {
+        accountUuid,  
         name: repositoryName,
-        localPath: folderPath,
+        path: folderPath,
         description: `Imported from ${folderPath}`,
       },
-      accountUuid,
+      
     );
 
     // 保存仓库
@@ -390,12 +395,13 @@ export class RepositoryService {
     // 创建远程仓库
     const repository = await Repository.createRemote(
       {
+        accountUuid,
         name: repositoryName,
-        localPath,
+        path: localPath,
         remoteUrl,
         description: `Cloned from ${remoteUrl}`,
       },
-      accountUuid,
+      
     );
 
     // 保存仓库
@@ -414,36 +420,36 @@ export class RepositoryService {
   /**
    * 检查仓库完整�?
    */
-  async checkRepositoryIntegrity(repositoryUuid: string): Promise<{
-    repository: {
-      isValid: boolean;
-      errors: string[];
-    };
-    resources: {
-      checkedCount: number;
-      brokenCount: number;
-      brokenResources: string[];
-    };
-  }> {
-    const repositoryData = await this.repositoryRepository.findByUuid(repositoryUuid);
-    if (!repositoryData) {
-      throw new Error(`Repository not found: ${repositoryUuid}`);
-    }
+  // async checkRepositoryIntegrity(repositoryUuid: string): Promise<{
+  //   repository: {
+  //     isValid: boolean;
+  //     errors: string[];
+  //   };
+  //   resources: {
+  //     checkedCount: number;
+  //     brokenCount: number;
+  //     brokenResources: string[];
+  //   };
+  // }> {
+  //   const repositoryData = await this.repositoryRepository.findByUuid(repositoryUuid);
+  //   if (!repositoryData) {
+  //     throw new Error(`Repository not found: ${repositoryUuid}`);
+  //   }
 
-    const repository = Repository.fromDTO(repositoryData);
-    const repositoryIntegrity = await repository.checkIntegrity();
-    const resourceIntegrity = await this.resourceRepository.checkIntegrity(repositoryUuid);
+  //   const repository = Repository.fromDTO(repositoryData);
+  //   const repositoryIntegrity = await repository.checkIntegrity();
+  //   const resourceIntegrity = await this.resourceRepository.checkIntegrity(repositoryUuid);
 
-    return {
-      repository: repositoryIntegrity,
-      resources: resourceIntegrity,
-    };
-  }
+  //   return {
+  //     repository: repositoryIntegrity,
+  //     resources: resourceIntegrity,
+  //   };
+  // }
 
   // ============ 私有辅助方法 ============
 
   /**
-   * 扫描文件夹并导入文件为资�?
+   * 扫描文件夹并导入文件为资源
    */
   private async scanAndImportFiles(repositoryUuid: string, folderPath: string): Promise<void> {
     // 这里应该实现文件系统扫描逻辑

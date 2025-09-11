@@ -35,7 +35,8 @@
     "@dailyuse/domain-core": "workspace:*",
     "@dailyuse/domain-server": "workspace:*",
     "@dailyuse/ui": "workspace:*",
-    "@dailyuse/utils": "workspace:*"
+    "@dailyuse/utils": "workspace:*",
+    "node-schedule": "^2.1.1"
   },
   "devDependencies": {
     "@nx/eslint": "^21.4.1",
@@ -43,6 +44,7 @@
     "@nx/vite": "^21.4.1",
     "@nx/web": "^21.4.1",
     "@nx/workspace": "^21.4.1",
+    "@types/node-schedule": "^2.1.8",
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.0.0",
