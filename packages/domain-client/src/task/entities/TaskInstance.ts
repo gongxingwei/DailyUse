@@ -1,11 +1,5 @@
-import {
-  TaskTemplateCore,
-  TaskInstanceCore,
-  TaskMetaTemplateCore,
-} from '@dailyuse/domain-core';
-import type {
-  TaskContracts,
-} from '@dailyuse/contracts';
+import { TaskTemplateCore, TaskInstanceCore, TaskMetaTemplateCore } from '@dailyuse/domain-core';
+import type { TaskContracts } from '@dailyuse/contracts';
 
 /**
  * 任务实例客户端实现 - 添加客户端特有功能
@@ -274,5 +268,70 @@ export class TaskInstanceClient extends TaskInstanceCore {
     }
 
     this.updateVersion();
+  }
+
+  /**
+   * 转换为 DTO
+   */
+  toDTO(): TaskContracts.TaskInstanceDTO {
+    const execution = (this as any)._execution;
+    const reminderStatus = (this as any)._reminderStatus;
+    const lifecycle = (this as any)._lifecycle;
+
+    return {
+      uuid: this.uuid,
+      templateUuid: this._templateUuid,
+      accountUuid: this._accountUuid,
+      title: this._title,
+      description: this._description,
+      timeConfig: {
+        timeType: this._timeConfig.timeType,
+        scheduledDate: this._timeConfig.scheduledDate.toISOString(),
+        startTime: this._timeConfig.startTime,
+        endTime: this._timeConfig.endTime,
+        estimatedDuration: this._timeConfig.estimatedDuration,
+        timezone: this._timeConfig.timezone,
+      },
+      properties: {
+        importance: this._properties.importance,
+        urgency: this._properties.urgency,
+        location: this._properties.location,
+        tags: [...this._properties.tags],
+      },
+      goalLinks: this._goalLinks ? [...this._goalLinks] : [],
+      reminderStatus: {
+        enabled: reminderStatus.enabled,
+        status: reminderStatus.status,
+        scheduledTime: reminderStatus.scheduledTime?.toISOString(),
+        triggeredAt: reminderStatus.triggeredAt?.toISOString(),
+        snoozeCount: reminderStatus.snoozeCount,
+        snoozeUntil: reminderStatus.snoozeUntil?.toISOString(),
+      },
+      execution: {
+        status: execution.status,
+        actualStartTime: execution.actualStartTime?.toISOString(),
+        actualEndTime: execution.actualEndTime?.toISOString(),
+        actualDuration: execution.actualDuration,
+        progressPercentage: execution.progressPercentage,
+        notes: execution.notes,
+      },
+      lifecycle: {
+        createdAt: lifecycle.createdAt.toISOString(),
+        updatedAt: lifecycle.updatedAt.toISOString(),
+        events: lifecycle.events.map((event: any) => ({
+          type: event.type,
+          timestamp: event.timestamp.toISOString(),
+          note: event.note,
+        })),
+      },
+    };
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): TaskInstanceClient {
+    return TaskInstanceClient.fromDTO(this.toDTO());
   }
 }

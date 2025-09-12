@@ -43,7 +43,7 @@
                         <div class="color-grid">
                           <v-btn v-for="colorOption in predefinedColors" :key="colorOption"
                             :style="{ backgroundColor: colorOption }" class="color-option" icon
-                            @click="goalModel.color = colorOption" />
+                            @click="goalModel.updateInfo({ color: colorOption })" />
                         </div>
                       </v-card-text>
                     </v-card>
@@ -99,7 +99,7 @@
                     </v-list-item-subtitle>
                     <template v-slot:append>
                       <v-btn icon="mdi-pencil" variant="text" :color="goalModel.color" size="small"
-                        @click="startEditKeyResult(KeyResult.ensureKeyResultNeverNull(kr))" />
+                        @click="startEditKeyResult((kr as KeyResult))" />
                       <v-btn icon="mdi-delete" variant="text" color="error" size="small"
                         @click="startRemoveKeyResult(props.goal as Goal, kr.uuid)" />
                     </template>
@@ -164,7 +164,7 @@
 
   <!-- 内嵌的关键结果对话框 -->
   <KeyResultDialog :model-value="keyResultDialog.show"
-    :key-result="KeyResult.ensureKeyResult(keyResultDialog.keyResult)"
+    :key-result="(keyResultDialog.keyResult as KeyResult) || null"
     @update:model-value="keyResultDialog.show = $event"
     @create-key-result="handleCreateKeyResult(goalModel as Goal, $event as KeyResult)"
     @update-key-result="handleUpdateKeyResult(goalModel as Goal, $event as KeyResult)"
@@ -181,11 +181,9 @@ import { ref, computed, watch } from 'vue';
 import KeyResultDialog from './KeyResultDialog.vue';
 import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue';
 // types
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal';
-import { KeyResult } from '@renderer/modules/Goal/domain/entities/keyResult';
+import { useGoalStore } from '../../stores/goalStore';
+import { KeyResult, Goal } from '@dailyuse/domain-client';
 // composables
-import { useGoalDialog } from '@renderer/modules/Goal/presentation/composables/useGoalDialog';
 
 const { keyResultDialog, startCreateKeyResult, startEditKeyResult, handleCreateKeyResult, handleUpdateKeyResult, handleRemoveKeyResult } = useGoalDialog();
 
@@ -291,13 +289,13 @@ const minDate = computed(() => {
 const startTimeFormatted = computed({
   get: () => goalModel.value.startTime ? goalModel.value.startTime.toISOString().split('T')[0] : '',
   set: (val: string) => {
-    if (val) goalModel.value.startTime = new Date(val);
+    if (val) goalModel.value.updateInfo({ startTime: new Date(val) });
   }
 });
 const endTimeFormatted = computed({
   get: () => goalModel.value.endTime ? goalModel.value.endTime.toISOString().split('T')[0] : '',
   set: (val: string) => {
-    if (val) goalModel.value.endTime = new Date(val);
+    if (val) goalModel.value.updateInfo({ endTime: new Date(val) });
   }
 });
 const updateStartTime = (val: string) => { startTimeFormatted.value = val; };
@@ -323,9 +321,9 @@ const isFormValid = computed(() => {
 const handleSave = () => {
   if (!isFormValid.value) return;
   if (isEditing.value) {
-    emit('update-goal', Goal.ensureGoalNeverNull(goalModel.value));
+    emit('update-goal', goalModel.value as Goal);
   } else {
-    emit('create-goal', Goal.ensureGoalNeverNull(goalModel.value));
+    emit('create-goal', goalModel.value as Goal);
   }
   closeDialog();
 };

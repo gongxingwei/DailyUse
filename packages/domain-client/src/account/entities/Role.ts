@@ -1,6 +1,7 @@
 import { RoleCore } from '@dailyuse/domain-core';
 import { type IRoleClient } from '../types';
 import { Permission } from './Permission';
+import { type AccountModuleContracts } from '@dailyuse/contracts';
 
 /**
  * 客户端角色实体 - 包含UI相关的角色操作
@@ -248,6 +249,77 @@ export class Role extends RoleCore implements IRoleClient {
       name: '访客',
       description: '访客角色，只能查看公开信息',
       permissions: guestPermissions,
+    });
+  }
+
+  // ===== DTO 方法 =====
+  /**
+   * 转换为 DTO
+   */
+  toDTO(): AccountModuleContracts.RoleDTO {
+    return {
+      uuid: this.uuid,
+      name: this.name,
+      description: this.description,
+      isSystem: false, // 客户端创建的角色默认为非系统角色
+      createdAt: new Date().toISOString(), // 客户端没有创建时间，使用当前时间
+      updatedAt: new Date().toISOString(), // 客户端没有更新时间，使用当前时间
+      permissions: Array.from(this._permissionObjects.values()).map((p) => {
+        const coreDTO = p.toDTO();
+        return {
+          uuid: coreDTO.uuid,
+          name: coreDTO.name,
+          description: coreDTO.description,
+          resource: coreDTO.module,
+          action: coreDTO.code.split(':')[1] || 'unknown',
+          conditions: undefined,
+        } as AccountModuleContracts.PermissionDTO;
+      }),
+    };
+  }
+
+  /**
+   * 从 DTO 创建角色实例
+   */
+  static fromDTO(dto: AccountModuleContracts.RoleDTO): Role {
+    const permissions = dto.permissions
+      ? dto.permissions.map((p: AccountModuleContracts.PermissionDTO) => {
+          // 将模块DTO转换为核心DTO格式
+          const coreDTO = {
+            uuid: p.uuid,
+            code: `${p.resource}:${p.action}`,
+            name: p.name,
+            description: p.description || '',
+            module: p.resource,
+          };
+          return Permission.fromDTO(coreDTO);
+        })
+      : [];
+
+    return new Role({
+      uuid: dto.uuid,
+      name: dto.name,
+      description: dto.description,
+      permissions: dto.permissions
+        ? dto.permissions.map((p: AccountModuleContracts.PermissionDTO) => p.uuid)
+        : [],
+      permissionObjects: permissions,
+    });
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): Role {
+    const permissionObjects = Array.from(this._permissionObjects.values()).map((p) => p.clone());
+
+    return new Role({
+      uuid: this.uuid,
+      name: this.name,
+      description: this.description,
+      permissions: Array.from(this.permissions),
+      permissionObjects,
     });
   }
 }

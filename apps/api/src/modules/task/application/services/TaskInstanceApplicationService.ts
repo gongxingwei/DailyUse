@@ -276,6 +276,24 @@ export class TaskInstanceApplicationService {
     }
   }
 
+  async undoComplete(uuid: string): Promise<void> {
+    const instance = await this.repository.findById(uuid);
+    if (instance && instance.execution.status === 'completed') {
+      instance.execution.status = 'inProgress';
+      instance.execution.actualEndTime = undefined;
+      instance.execution.actualDuration = undefined;
+      instance.lifecycle.updatedAt = new Date().toISOString();
+
+      instance.lifecycle.events.push({
+        type: 'resumed',
+        timestamp: new Date().toISOString(),
+        note: '撤销完成状态',
+      });
+
+      await this.repository.save(instance);
+    }
+  }
+
   async cancel(uuid: string, reason?: string): Promise<void> {
     const instance = await this.repository.findById(uuid);
     if (instance) {

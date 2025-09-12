@@ -40,7 +40,7 @@
 
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue';
-import { GoalDir } from '@renderer/modules/Goal/domain/aggregates/goalDir';
+import { GoalDir } from '@dailyuse/domain-client';
 
 const props = defineProps<{
     modelValue: boolean;
@@ -87,10 +87,10 @@ const handleSave = () => {
     if (!isFormValid.value) return;
     if (props.goalDir) {
         // 编辑模式
-        emit('edit-goal-dir', GoalDir.ensureGoalDirNeverNull(localGoalDir.value));
+        emit('edit-goal-dir', localGoalDir.value as GoalDir);
     } else {
         // 创建模式
-        emit('create-goal-dir', GoalDir.ensureGoalDirNeverNull(localGoalDir.value));
+        emit('create-goal-dir', localGoalDir.value as GoalDir);
     }
     closeDialog();
 };

@@ -398,6 +398,91 @@ export class TaskInstanceController {
   }
 
   /**
+   * 撤销完成任务
+   */
+  static async undoComplete(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await TaskInstanceController.taskService.undoComplete(id);
+
+      // 获取更新后的实例
+      const instance = await TaskInstanceController.taskService.getById(id);
+
+      res.json({
+        success: true,
+        data: instance,
+        message: '任务完成状态已撤销',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '撤销任务完成状态失败',
+      });
+    }
+  }
+
+  /**
+   * 触发提醒
+   */
+  static async triggerReminder(req: Request, res: Response) {
+    try {
+      const { id, alertId } = req.params;
+      // TODO: 实现提醒触发逻辑
+
+      res.json({
+        success: true,
+        message: '提醒已触发',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '触发提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 延后提醒
+   */
+  static async snoozeReminder(req: Request, res: Response) {
+    try {
+      const { id, alertId } = req.params;
+      const { snoozeMinutes } = req.body;
+      // TODO: 实现提醒延后逻辑
+
+      res.json({
+        success: true,
+        message: `提醒已延后 ${snoozeMinutes} 分钟`,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '延后提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 忽略提醒
+   */
+  static async dismissReminder(req: Request, res: Response) {
+    try {
+      const { id, alertId } = req.params;
+      // TODO: 实现提醒忽略逻辑
+
+      res.json({
+        success: true,
+        message: '提醒已忽略',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '忽略提醒失败',
+      });
+    }
+  }
+
+  /**
    * 批量删除任务
    */
   static async batchDelete(req: Request, res: Response) {

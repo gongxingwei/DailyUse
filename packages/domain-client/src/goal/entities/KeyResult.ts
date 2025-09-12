@@ -65,6 +65,14 @@ export class KeyResult extends KeyResultCore implements IKeyResult {
     });
   }
 
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): KeyResult {
+    return KeyResult.fromDTO(this.toDTO());
+  }
+
   // ===== 抽象方法实现=====
   complete(): void {
     this._lifecycle.status = 'completed';

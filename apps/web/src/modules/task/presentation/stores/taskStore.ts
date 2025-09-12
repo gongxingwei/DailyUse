@@ -17,9 +17,13 @@ export const useTaskStore = defineStore('task', {
     // ===== 状态管理 =====
     isLoading: false,
     error: null as string | null,
-    isInitialized: false,
-
-    // ===== UI 状态 =====
+    isInitialized: false /**
+     * @deprecated 使用 getTaskTemplateByUuid 替代
+     */,
+    getTaskTemplateById(uuid: string) {
+      console.warn('[TaskStore] getTaskTemplateById 已废弃，请使用 getTaskTemplateByUuid');
+      return this.taskTemplates.find((t) => t.uuid === uuid) || null;
+    }, // ===== UI 状态 =====
     selectedTaskTemplate: null as string | null,
     selectedTaskInstance: null as string | null,
     taskTemplateBeingEdited: null as any | null,
@@ -125,7 +129,7 @@ export const useTaskStore = defineStore('task', {
 
       return state.taskInstances.filter((task) => {
         if (!task.timeConfig?.scheduledDate) return false;
-        const scheduledDate = new Date(task.timeConfig.scheduledDate);
+        const scheduledDate = new Date(task.timeConfig?.scheduledDate);
         return (
           scheduledDate.getTime() >= todayStart.getTime() &&
           scheduledDate.getTime() < todayEnd.getTime()
@@ -568,17 +572,17 @@ export const useTaskStore = defineStore('task', {
     /**
      * @deprecated 使用 getTaskTemplateByUuid 替代
      */
-    getTaskTemplateById: (uuid: string) => {
+    getTaskTemplateById(uuid: string) {
       console.warn('[TaskStore] getTaskTemplateById 已废弃，请使用 getTaskTemplateByUuid');
-      return this.getTaskTemplateByUuid(uuid);
+      return this.taskTemplates.find((t) => t.uuid === uuid) || null;
     },
 
     /**
      * @deprecated 使用 getTaskInstanceByUuid 替代
      */
-    getTaskInstanceById: (uuid: string) => {
+    getTaskInstanceById(uuid: string) {
       console.warn('[TaskStore] getTaskInstanceById 已废弃，请使用 getTaskInstanceByUuid');
-      return this.getTaskInstanceByUuid(uuid);
+      return this.taskInstances.find((i) => i.uuid === uuid) || null;
     },
 
     /**

@@ -186,6 +186,7 @@ onMounted(() => {
 }
 
 .goal-dir-list {
+    background-color: rgba(var(--v-theme-surface), 0.8);
     min-height: 200px;
 }
 

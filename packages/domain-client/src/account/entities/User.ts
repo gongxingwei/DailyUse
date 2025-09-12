@@ -156,6 +156,38 @@ export class User extends UserCore implements IUserClient {
     });
   }
 
+  toDTO(): UserDTO {
+    return {
+      uuid: this.uuid,
+      firstName: this.firstName || '',
+      lastName: this.lastName || '',
+      sex: this.sex ? (this.sex as Sex).value : 0,
+      avatar: this.avatar,
+      bio: this.bio,
+      socialAccounts: { ...this.socialAccounts },
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
+    };
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): User {
+    return new User({
+      uuid: this.uuid,
+      firstName: this.firstName || '',
+      lastName: this.lastName || '',
+      avatar: this.avatar,
+      bio: this.bio,
+      sex: this.sex ? new Sex((this.sex as Sex).value) : undefined,
+      socialAccounts: { ...this.socialAccounts },
+      createdAt: new Date(this.createdAt.getTime()),
+      updatedAt: new Date(this.updatedAt.getTime()),
+    });
+  }
+
   // ===== 静态工厂方法 =====
   static fromCache(uuid: string): User | null {
     try {

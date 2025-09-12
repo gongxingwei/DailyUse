@@ -445,6 +445,14 @@ export class Goal extends GoalCore {
   }
 
   /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): Goal {
+    return Goal.fromDTO(this.toDTO());
+  }
+
+  /**
    * 客户端缓存键
    */
   getCacheKey(): string {

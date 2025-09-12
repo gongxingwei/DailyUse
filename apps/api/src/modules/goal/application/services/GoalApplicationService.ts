@@ -44,17 +44,39 @@ export class GoalApplicationService {
 
   async getGoals(
     accountUuid: string,
-    queryParams: GoalContracts.GoalQueryParams,
+    queryParams: any, // Use any since req.query provides strings
   ): Promise<GoalContracts.GoalListResponse> {
-    const result = await this.goalRepository.getAllGoals(accountUuid, queryParams);
+    // Parse query parameters properly
+    const parsedParams: GoalContracts.GoalQueryParams = {
+      page: queryParams.page ? parseInt(queryParams.page, 10) : 1,
+      limit: queryParams.limit ? parseInt(queryParams.limit, 10) : 10,
+      offset: queryParams.offset ? parseInt(queryParams.offset, 10) : undefined,
+      search: queryParams.search,
+      status: queryParams.status,
+      sortBy: queryParams.sortBy,
+      sortOrder: queryParams.sortOrder,
+      dirUuid: queryParams.dirUuid,
+      tags: queryParams.tags
+        ? Array.isArray(queryParams.tags)
+          ? queryParams.tags
+          : [queryParams.tags]
+        : undefined,
+      category: queryParams.category,
+      importanceLevel: queryParams.importanceLevel,
+      urgencyLevel: queryParams.urgencyLevel,
+      startTime: queryParams.startTime ? parseInt(queryParams.startTime, 10) : undefined,
+      endTime: queryParams.endTime ? parseInt(queryParams.endTime, 10) : undefined,
+    };
+
+    const result = await this.goalRepository.getAllGoals(accountUuid, parsedParams);
 
     const goals = result.goals.map((goalDTO) => {
       const goal = Goal.fromDTO(goalDTO);
       return goal.toResponse();
     });
 
-    const page = queryParams.page || 1;
-    const limit = queryParams.limit || 10;
+    const page = parsedParams.page || 1;
+    const limit = parsedParams.limit || 10;
 
     return {
       goals,
@@ -162,7 +184,7 @@ export class GoalApplicationService {
 
   async searchGoals(
     accountUuid: string,
-    queryParams: GoalContracts.GoalQueryParams,
+    queryParams: any, // Use any since req.query provides strings
   ): Promise<GoalContracts.GoalListResponse> {
     return this.getGoals(accountUuid, queryParams);
   }

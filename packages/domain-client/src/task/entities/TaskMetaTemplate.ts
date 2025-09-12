@@ -1,11 +1,5 @@
-import {
-  TaskTemplateCore,
-  TaskInstanceCore,
-  TaskMetaTemplateCore,
-} from '@dailyuse/domain-core';
-import type {
-  TaskContracts,
-} from '@dailyuse/contracts';
+import { TaskTemplateCore, TaskInstanceCore, TaskMetaTemplateCore } from '@dailyuse/domain-core';
+import type { TaskContracts } from '@dailyuse/contracts';
 
 /**
  * 任务元模板客户端实现 - 添加客户端特有功能
@@ -117,5 +111,65 @@ export class TaskMetaTemplateClient extends TaskMetaTemplateCore {
   updateAppearance(newAppearance: any): void {
     this._appearance = { ...this._appearance, ...newAppearance };
     this.updateVersion();
+  }
+
+  /**
+   * 转换为 DTO
+   */
+  toDTO(): TaskContracts.TaskMetaTemplateDTO {
+    const usage = (this as any)._usage;
+    const lifecycle = (this as any)._lifecycle;
+
+    return {
+      uuid: this.uuid,
+      accountUuid: this._accountUuid,
+      name: this._name,
+      description: this._description,
+      appearance: {
+        icon: this._appearance.icon,
+        color: this._appearance.color,
+        category: this._appearance.category,
+      },
+      defaultTimeConfig: {
+        timeType: this._defaultTimeConfig.timeType,
+        scheduleMode: this._defaultTimeConfig.scheduleMode,
+        timezone: this._defaultTimeConfig.timezone,
+        commonTimeSettings: this._defaultTimeConfig.commonTimeSettings
+          ? {
+              startTime: this._defaultTimeConfig.commonTimeSettings.startTime,
+              endTime: this._defaultTimeConfig.commonTimeSettings.endTime,
+            }
+          : undefined,
+      },
+      defaultReminderConfig: {
+        enabled: this._defaultReminderConfig.enabled,
+        minutesBefore: this._defaultReminderConfig.minutesBefore,
+        methods: [...this._defaultReminderConfig.methods],
+      },
+      defaultProperties: {
+        importance: this._defaultProperties.importance,
+        urgency: this._defaultProperties.urgency,
+        tags: [...this._defaultProperties.tags],
+        location: this._defaultProperties.location,
+      },
+      usage: {
+        usageCount: usage.usageCount,
+        lastUsedAt: usage.lastUsedAt?.toISOString(),
+        isFavorite: usage.isFavorite,
+      },
+      lifecycle: {
+        createdAt: lifecycle.createdAt.toISOString(),
+        updatedAt: lifecycle.updatedAt.toISOString(),
+        isActive: lifecycle.isActive,
+      },
+    };
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): TaskMetaTemplateClient {
+    return TaskMetaTemplateClient.fromDTO(this.toDTO());
   }
 }

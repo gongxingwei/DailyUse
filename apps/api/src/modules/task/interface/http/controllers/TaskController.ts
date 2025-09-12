@@ -1,17 +1,38 @@
 import type { Request, Response } from 'express';
 import { TaskApplicationService } from '../../../application/services/TaskApplicationService';
+import { PrismaClient } from '@prisma/client';
+import {
+  PrismaTaskTemplateRepository,
+  PrismaTaskInstanceRepository,
+  PrismaTaskMetaTemplateRepository,
+  PrismaTaskStatsRepository,
+} from '../../../infrastructure/repositories/prisma';
 import type { TaskContracts } from '@dailyuse/contracts';
 
+const prisma = new PrismaClient();
+
 export class TaskController {
-  private static taskService = new TaskApplicationService();
+  private static taskService = new TaskApplicationService(
+    new PrismaTaskTemplateRepository(prisma),
+    new PrismaTaskInstanceRepository(prisma),
+    new PrismaTaskMetaTemplateRepository(prisma),
+    new PrismaTaskStatsRepository(prisma),
+  );
 
   /**
    * 获取任务统计
    */
   static async getTaskStats(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const stats = await TaskController.taskService.getTaskStats(queryParams);
+      const { accountUuid } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      const stats = await TaskController.taskService.getTaskStats(accountUuid as string);
 
       res.json({
         success: true,
@@ -30,12 +51,22 @@ export class TaskController {
    */
   static async getTaskTimeline(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const timeline = await TaskController.taskService.getTaskTimeline(queryParams);
+      const { accountUuid, timezone = 'Asia/Shanghai' } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      const tasks = await TaskController.taskService.getThisWeekTasks(
+        accountUuid as string,
+        timezone as string,
+      );
 
       res.json({
         success: true,
-        data: timeline,
+        data: tasks,
       });
     } catch (error) {
       res.status(500).json({
@@ -50,8 +81,18 @@ export class TaskController {
    */
   static async searchTasks(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const tasks = await TaskController.taskService.searchTasks(queryParams);
+      const { accountUuid, q: query = '' } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      const tasks = await TaskController.taskService.searchTasks(
+        accountUuid as string,
+        query as string,
+      );
 
       res.json({
         success: true,
@@ -70,8 +111,18 @@ export class TaskController {
    */
   static async getUpcomingTasks(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const tasks = await TaskController.taskService.getUpcomingTasks(queryParams);
+      const { accountUuid, timezone = 'Asia/Shanghai' } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      const tasks = await TaskController.taskService.getTodayTasks(
+        accountUuid as string,
+        timezone as string,
+      );
 
       res.json({
         success: true,
@@ -90,8 +141,15 @@ export class TaskController {
    */
   static async getOverdueTasks(req: Request, res: Response) {
     try {
-      const queryParams = req.query;
-      const tasks = await TaskController.taskService.getOverdueTasks(queryParams);
+      const { accountUuid } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      const tasks = await TaskController.taskService.getOverdueTasks(accountUuid as string);
 
       res.json({
         success: true,

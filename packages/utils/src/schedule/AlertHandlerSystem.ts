@@ -5,7 +5,7 @@
  * @date 2025-01-09
  */
 
-import { EventEmitter } from 'events';
+import { CrossPlatformEventBus } from '../domain/CrossPlatformEventBus';
 import { AlertMethod, SchedulePriority } from '@dailyuse/contracts';
 
 /**
@@ -75,12 +75,12 @@ export interface IAlertHandler {
  * 弹窗提醒处理器
  */
 export class PopupAlertHandler implements IAlertHandler {
-  constructor(private eventEmitter: EventEmitter) {}
+  constructor(private eventEmitter: CrossPlatformEventBus) {}
 
   async handle(data: PopupAlertData): Promise<{ success: boolean; error?: string }> {
     try {
       // 发送弹窗显示事件
-      this.eventEmitter.emit('show-popup-notification', {
+      this.eventEmitter.send('show-popup-notification', {
         uuid: data.uuid,
         title: data.title,
         message: data.message,
@@ -154,7 +154,7 @@ export class PopupAlertHandler implements IAlertHandler {
  * 声音提醒处理器
  */
 export class SoundAlertHandler implements IAlertHandler {
-  constructor(private eventEmitter: EventEmitter) {}
+  constructor(private eventEmitter: CrossPlatformEventBus) {}
 
   async handle(data: SoundAlertData): Promise<{ success: boolean; error?: string }> {
     try {
@@ -166,7 +166,7 @@ export class SoundAlertHandler implements IAlertHandler {
       };
 
       // 发送声音播放事件
-      this.eventEmitter.emit('play-alert-sound', soundConfig);
+      this.eventEmitter.send('play-alert-sound', soundConfig);
 
       console.log(`声音提醒已触发: ${soundConfig.soundFile}`);
       return { success: true };
@@ -231,12 +231,12 @@ export class SoundAlertHandler implements IAlertHandler {
  * 系统通知处理器
  */
 export class SystemNotificationHandler implements IAlertHandler {
-  constructor(private eventEmitter: EventEmitter) {}
+  constructor(private eventEmitter: CrossPlatformEventBus) {}
 
   async handle(data: SystemNotificationData): Promise<{ success: boolean; error?: string }> {
     try {
       // 发送系统通知事件
-      this.eventEmitter.emit('show-system-notification', {
+      this.eventEmitter.send('show-system-notification', {
         uuid: data.uuid,
         title: data.title,
         body: data.message,
@@ -268,7 +268,7 @@ export class SystemNotificationHandler implements IAlertHandler {
  * 桌面闪烁处理器
  */
 export class DesktopFlashHandler implements IAlertHandler {
-  constructor(private eventEmitter: EventEmitter) {}
+  constructor(private eventEmitter: CrossPlatformEventBus) {}
 
   async handle(data: DesktopFlashData): Promise<{ success: boolean; error?: string }> {
     try {
@@ -279,7 +279,7 @@ export class DesktopFlashHandler implements IAlertHandler {
       };
 
       // 发送桌面闪烁事件
-      this.eventEmitter.emit('flash-window', flashConfig);
+      this.eventEmitter.send('flash-window', flashConfig);
 
       console.log(`桌面闪烁已触发: ${flashConfig.flashCount}次`);
       return { success: true };
@@ -321,9 +321,10 @@ export class DesktopFlashHandler implements IAlertHandler {
 /**
  * 提醒处理系统
  */
-export class AlertHandlerSystem extends EventEmitter {
+export class AlertHandlerSystem {
   private static instance: AlertHandlerSystem;
-  private handlers = new Map<AlertMethod, IAlertHandler>();
+  private eventBus = new CrossPlatformEventBus();
+  private alertHandlers = new Map<AlertMethod, IAlertHandler>();
   private globalConfig = {
     enabled: true,
     muteUntil: null as Date | null,
@@ -335,7 +336,6 @@ export class AlertHandlerSystem extends EventEmitter {
   };
 
   private constructor() {
-    super();
     this.initializeDefaultHandlers();
   }
 
@@ -353,10 +353,13 @@ export class AlertHandlerSystem extends EventEmitter {
    * 初始化默认处理器
    */
   private initializeDefaultHandlers(): void {
-    this.handlers.set(AlertMethod.POPUP, new PopupAlertHandler(this));
-    this.handlers.set(AlertMethod.SOUND, new SoundAlertHandler(this));
-    this.handlers.set(AlertMethod.SYSTEM_NOTIFICATION, new SystemNotificationHandler(this));
-    this.handlers.set(AlertMethod.DESKTOP_FLASH, new DesktopFlashHandler(this));
+    this.alertHandlers.set(AlertMethod.POPUP, new PopupAlertHandler(this.eventBus));
+    this.alertHandlers.set(AlertMethod.SOUND, new SoundAlertHandler(this.eventBus));
+    this.alertHandlers.set(
+      AlertMethod.SYSTEM_NOTIFICATION,
+      new SystemNotificationHandler(this.eventBus),
+    );
+    this.alertHandlers.set(AlertMethod.DESKTOP_FLASH, new DesktopFlashHandler(this.eventBus));
   }
 
   /**
@@ -381,7 +384,7 @@ export class AlertHandlerSystem extends EventEmitter {
     }
 
     // 获取处理器
-    const handler = this.handlers.get(method);
+    const handler = this.alertHandlers.get(method);
     if (!handler) {
       return { success: false, error: `未找到 ${method} 的处理器` };
     }
@@ -425,7 +428,7 @@ export class AlertHandlerSystem extends EventEmitter {
    * 注册自定义处理器
    */
   public registerHandler(method: AlertMethod, handler: IAlertHandler): void {
-    this.handlers.set(method, handler);
+    this.alertHandlers.set(method, handler);
     console.log(`已注册 ${method} 处理器`);
   }
 
@@ -433,7 +436,7 @@ export class AlertHandlerSystem extends EventEmitter {
    * 移除处理器
    */
   public removeHandler(method: AlertMethod): boolean {
-    const removed = this.handlers.delete(method);
+    const removed = this.alertHandlers.delete(method);
     if (removed) {
       console.log(`已移除 ${method} 处理器`);
     }
@@ -513,7 +516,7 @@ export class AlertHandlerSystem extends EventEmitter {
    * 获取支持的提醒方式
    */
   public getSupportedMethods(): AlertMethod[] {
-    return Array.from(this.handlers.keys());
+    return Array.from(this.alertHandlers.keys());
   }
 
   /**
@@ -532,6 +535,34 @@ export class AlertHandlerSystem extends EventEmitter {
 
     const result = await this.handleAlert(method, testData, priority);
     return result.success;
+  }
+
+  /**
+   * 获取事件总线实例（用于外部事件监听）
+   */
+  public getEventBus(): CrossPlatformEventBus {
+    return this.eventBus;
+  }
+
+  /**
+   * 注册事件监听器
+   */
+  public on(eventType: string, listener: (payload?: any) => void): void {
+    this.eventBus.on(eventType, listener);
+  }
+
+  /**
+   * 移除事件监听器
+   */
+  public off(eventType: string, listener?: (payload?: any) => void): void {
+    this.eventBus.off(eventType, listener);
+  }
+
+  /**
+   * 发送事件
+   */
+  public send(eventType: string, payload?: any): void {
+    this.eventBus.send(eventType, payload);
   }
 }
 

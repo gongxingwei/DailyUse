@@ -27,7 +27,7 @@ export class GoalWebApplicationService {
 
       // 创建客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -55,7 +55,7 @@ export class GoalWebApplicationService {
 
       // 批量创建客户端实体并同步到 store
       const goals = response.goals.map((goalData) => Goal.fromDTO(goalData));
-      this.goalStore.syncGoals(goals);
+      this.goalStore.setGoals(goals);
 
       // 更新分页信息
       if (response.page) {
@@ -85,7 +85,7 @@ export class GoalWebApplicationService {
 
       // 创建客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -109,7 +109,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -150,7 +150,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -171,7 +171,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -192,7 +192,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -213,7 +213,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goal = Goal.fromResponse(response);
-      this.goalStore.syncGoal(goal);
+      this.goalStore.addOrUpdateGoal(goal);
 
       return response;
     } catch (error) {
@@ -238,7 +238,7 @@ export class GoalWebApplicationService {
 
       // 创建客户端实体并同步到 store
       const goalDir = GoalDir.fromResponse(response);
-      this.goalStore.syncGoalDir(goalDir);
+      this.goalStore.addOrUpdateGoalDir(goalDir);
 
       return response;
     } catch (error) {
@@ -264,7 +264,7 @@ export class GoalWebApplicationService {
 
       // 批量创建客户端实体并同步到 store
       const goalDirs = response.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
-      this.goalStore.syncGoalDirs(goalDirs);
+      this.goalStore.setGoalDirs(goalDirs);
 
       return response;
     } catch (error) {
@@ -288,7 +288,7 @@ export class GoalWebApplicationService {
 
       // 更新客户端实体并同步到 store
       const goalDir = GoalDir.fromResponse(response);
-      this.goalStore.syncGoalDir(goalDir);
+      this.goalStore.addOrUpdateGoalDir(goalDir);
 
       return response;
     } catch (error) {
@@ -383,8 +383,8 @@ export class GoalWebApplicationService {
       const goalDirs = goalDirsResponse.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
 
       // 批量同步到 store
-      this.goalStore.syncGoals(goals);
-      this.goalStore.syncGoalDirs(goalDirs);
+      this.goalStore.setGoals(goals);
+      this.goalStore.setGoalDirs(goalDirs);
 
       // 更新分页信息（如果有）
       if (goalsResponse.page) {
@@ -441,8 +441,8 @@ export class GoalWebApplicationService {
       const goalDirs = goalDirsResponse.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
 
       // 逐个同步到 store（保持现有数据）
-      goals.forEach((goal) => this.goalStore.syncGoal(goal));
-      goalDirs.forEach((goalDir) => this.goalStore.syncGoalDir(goalDir));
+      goals.forEach((goal) => this.goalStore.addOrUpdateGoal(goal));
+      goalDirs.forEach((goalDir) => this.goalStore.addOrUpdateGoalDir(goalDir));
 
       console.log(`增量同步完成: ${goals.length} 个目标, ${goalDirs.length} 个目录`);
 
@@ -487,7 +487,7 @@ export class GoalWebApplicationService {
   async initialize(): Promise<void> {
     try {
       // 先初始化 store（加载本地缓存）
-      await this.goalStore.initialize();
+      this.goalStore.initialize();
 
       // 检查是否需要从服务器同步数据
       if (this.shouldSyncData()) {
@@ -500,7 +500,7 @@ export class GoalWebApplicationService {
       console.error('Goal 服务初始化失败:', error);
       // 即使同步失败，也要完成 store 的初始化
       if (!this.goalStore.isInitialized) {
-        await this.goalStore.initialize();
+        this.goalStore.initialize();
       }
       throw error;
     }
@@ -513,7 +513,7 @@ export class GoalWebApplicationService {
   async initializeModule(): Promise<void> {
     try {
       // 只初始化 store（加载本地缓存），不进行网络同步
-      await this.goalStore.initialize();
+      this.goalStore.initialize();
       console.log('Goal 模块基础初始化完成（仅本地缓存）');
     } catch (error) {
       console.error('Goal 模块初始化失败:', error);

@@ -169,4 +169,26 @@ export class Permission extends PermissionCore implements IPermissionClient {
 
     return commonPermissions.map((perm) => Permission.create(perm));
   }
+
+  // ===== DTO 方法 =====
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): Permission {
+    return Permission.fromDTO(this.toDTO());
+  }
+
+  /**
+   * 从 DTO 创建权限实例（覆盖父类方法以返回 Permission 类型）
+   */
+  static fromDTO(dto: import('@dailyuse/domain-core').PermissionDTO): Permission {
+    return new Permission({
+      uuid: dto.uuid,
+      code: dto.code,
+      name: dto.name,
+      description: dto.description,
+      module: dto.module,
+    });
+  }
 }

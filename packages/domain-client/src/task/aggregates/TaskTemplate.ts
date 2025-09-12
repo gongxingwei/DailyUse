@@ -30,14 +30,16 @@ export class TaskTemplate extends TaskTemplateCore {
       reminderConfig: dto.reminderConfig,
       properties: dto.properties,
       goalLinks: dto.goalLinks,
-        lifecycle: {
+      lifecycle: {
         status: dto.lifecycle.status,
         createdAt: new Date(dto.lifecycle.createdAt),
         updatedAt: new Date(dto.lifecycle.updatedAt),
       },
       stats: {
         ...dto.stats,
-        lastInstanceDate: dto.stats.lastInstanceDate ? new Date(dto.stats.lastInstanceDate) : undefined,
+        lastInstanceDate: dto.stats.lastInstanceDate
+          ? new Date(dto.stats.lastInstanceDate)
+          : undefined,
       },
     });
   }
@@ -309,5 +311,70 @@ export class TaskTemplate extends TaskTemplateCore {
       this._properties.tags.splice(index, 1);
       this.updateVersion();
     }
+  }
+
+  /**
+   * 转换为 DTO
+   */
+  toDTO(): TaskContracts.TaskTemplateDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      title: this.title,
+      description: this.description,
+      timeConfig: {
+        time: {
+          timeType: this.timeConfig.time.timeType,
+          startTime: this.timeConfig.time.startTime,
+          endTime: this.timeConfig.time.endTime,
+        },
+        date: {
+          startDate: this.timeConfig.date.startDate.toISOString(),
+          endDate: this.timeConfig.date.endDate?.toISOString(),
+        },
+        schedule: {
+          mode: this.timeConfig.schedule.mode,
+          intervalDays: this.timeConfig.schedule.intervalDays,
+          weekdays: this.timeConfig.schedule.weekdays
+            ? [...this.timeConfig.schedule.weekdays]
+            : undefined,
+          monthDays: this.timeConfig.schedule.monthDays
+            ? [...this.timeConfig.schedule.monthDays]
+            : undefined,
+        },
+        timezone: this.timeConfig.timezone,
+      },
+      reminderConfig: {
+        enabled: this.reminderConfig.enabled,
+        minutesBefore: this.reminderConfig.minutesBefore,
+        methods: [...this.reminderConfig.methods],
+      },
+      properties: {
+        importance: this.properties.importance,
+        urgency: this.properties.urgency,
+        location: this.properties.location,
+        tags: [...this.properties.tags],
+      },
+      lifecycle: {
+        status: this.lifecycle.status,
+        createdAt: this.lifecycle.createdAt.toISOString(),
+        updatedAt: this.lifecycle.updatedAt.toISOString(),
+      },
+      stats: {
+        totalInstances: this.stats.totalInstances,
+        completedInstances: this.stats.completedInstances,
+        completionRate: this.stats.completionRate,
+        lastInstanceDate: this.stats.lastInstanceDate?.toISOString(),
+      },
+      goalLinks: this.goalLinks ? [...this.goalLinks] : undefined,
+    };
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): TaskTemplate {
+    return TaskTemplate.fromDTO(this.toDTO());
   }
 }

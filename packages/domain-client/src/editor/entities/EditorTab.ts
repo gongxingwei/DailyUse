@@ -425,4 +425,57 @@ export class EditorTab extends EditorTabCore {
     this.addToLocalHistory('ui_reset', {});
     this.updateTimestamp();
   }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): EditorTab {
+    const dto = this.toDTO();
+    return new EditorTab({
+      uuid: dto.uuid,
+      title: dto.title,
+      path: dto.path,
+      active: dto.active,
+      isPreview: dto.isPreview,
+      fileType: dto.fileType,
+      isDirty: dto.isDirty,
+      content: dto.content,
+      lastModified: dto.lastModified,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      // 深拷贝UI状态
+      uiState: this._uiState
+        ? {
+            isHighlighted: this._uiState.isHighlighted,
+            isLoading: this._uiState.isLoading,
+            hasError: this._uiState.hasError,
+            errorMessage: this._uiState.errorMessage,
+            cursorPosition: this._uiState.cursorPosition
+              ? { ...this._uiState.cursorPosition }
+              : undefined,
+            scrollPosition: this._uiState.scrollPosition
+              ? { ...this._uiState.scrollPosition }
+              : undefined,
+            selection: this._uiState.selection
+              ? {
+                  start: { ...this._uiState.selection.start },
+                  end: { ...this._uiState.selection.end },
+                }
+              : undefined,
+            foldedRanges: this._uiState.foldedRanges
+              ? this._uiState.foldedRanges.map((range) => ({ ...range }))
+              : undefined,
+            bookmarks: this._uiState.bookmarks ? [...this._uiState.bookmarks] : undefined,
+          }
+        : undefined,
+      localHistory: this._localHistory
+        ? this._localHistory.map((entry) => ({
+            timestamp: new Date(entry.timestamp),
+            action: entry.action,
+            data: entry.data,
+          }))
+        : undefined,
+    });
+  }
 }

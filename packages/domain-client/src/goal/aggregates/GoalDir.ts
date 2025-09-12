@@ -139,4 +139,12 @@ export class GoalDir extends GoalDirCore {
       color: '#2196F3',
     });
   }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): GoalDir {
+    return GoalDir.fromDTO(this.toDTO());
+  }
 }

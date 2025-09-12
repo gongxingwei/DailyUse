@@ -47,4 +47,34 @@ export class GoalRecord extends GoalRecordCore {
       value: dto.value,
     });
   }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): GoalRecord {
+    return GoalRecord.fromDTO(this.toDTO()) as GoalRecord;
+  }
+
+  static forCreate({
+    accountUuid,
+    goalUuid,
+    keyResultUuid,
+    value,
+    note,
+  }: {
+    accountUuid: string;
+    goalUuid: string;
+    keyResultUuid: string;
+    value?: number;
+    note?: string;
+  }): GoalRecord {
+    return new GoalRecord({
+      accountUuid: accountUuid,
+      goalUuid: goalUuid,
+      keyResultUuid: keyResultUuid,
+      value: value || 1,
+      note: note,
+    });
+  }
 }

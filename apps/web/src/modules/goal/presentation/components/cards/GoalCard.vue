@@ -145,8 +145,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal'
-import { KeyResult } from '@renderer/modules/Goal/domain/entities/keyResult';
+import { Goal, KeyResult } from '@dailyuse/domain-client'
 import { format } from 'date-fns'
 import { useRouter } from 'vue-router';
 

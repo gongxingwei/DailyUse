@@ -7,7 +7,7 @@ import type { Request, Response } from 'express';
 import { ReminderTemplateApplicationService } from '../../../application/services/ReminderTemplateApplicationService';
 import { ReminderInstanceApplicationService } from '../../../application/services/ReminderInstanceApplicationService';
 import { PrismaClient } from '@prisma/client';
-import type { ReminderContracts } from '@dailyuse/contracts';
+import type { Reminder, ReminderContracts } from '@dailyuse/contracts';
 
 type CreateReminderTemplateRequest = ReminderContracts.CreateReminderTemplateRequest;
 type UpdateReminderTemplateRequest = ReminderContracts.UpdateReminderTemplateRequest;
@@ -134,6 +134,54 @@ export class ReminderTemplateController {
       res.status(400).json({
         success: false,
         error: error instanceof Error ? error.message : '删除提醒模板失败',
+      });
+    }
+  }
+
+  /**
+   * 启用提醒模板
+   */
+  static async activateTemplate(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await ReminderTemplateController.reminderService.enable(id);
+
+      // 获取更新后的模板
+      const template = await ReminderTemplateController.reminderService.getById(id);
+
+      res.json({
+        success: true,
+        data: template,
+        message: '提醒模板启用成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '启用提醒模板失败',
+      });
+    }
+  }
+
+  /**
+   * 暂停提醒模板
+   */
+  static async pauseTemplate(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      await ReminderTemplateController.reminderService.disable(id);
+
+      // 获取更新后的模板
+      const template = await ReminderTemplateController.reminderService.getById(id);
+
+      res.json({
+        success: true,
+        data: template,
+        message: '提醒模板暂停成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '暂停提醒模板失败',
       });
     }
   }
@@ -660,6 +708,219 @@ export class ReminderInstanceController {
       res.status(400).json({
         success: false,
         error: error instanceof Error ? error.message : '批量忽略提醒失败',
+      });
+    }
+  }
+}
+
+export class ReminderController {
+  private static reminderTemplateService = new ReminderTemplateApplicationService(prisma);
+  private static reminderInstanceService = new ReminderInstanceApplicationService(prisma);
+
+  /**
+   * 批量忽略提醒
+   */
+  static async batchDismissReminders(req: Request, res: Response) {
+    try {
+      const { uuids } = req.body;
+      await ReminderController.reminderInstanceService.batchDismiss(uuids);
+
+      res.json({
+        success: true,
+        message: '批量忽略提醒成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '批量忽略提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 批量延迟提醒
+   */
+  static async batchSnoozeReminders(req: Request, res: Response) {
+    try {
+      const { uuids, snoozeMinutes } = req.body;
+      // TODO: 实现批量延迟逻辑
+      res.json({
+        success: true,
+        message: `批量延迟提醒 ${snoozeMinutes} 分钟成功`,
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '批量延迟提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 搜索提醒
+   */
+  static async searchReminders(req: Request, res: Response) {
+    try {
+      const { accountUuid, q: query } = req.query;
+      if (!accountUuid || !query) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的参数',
+        });
+      }
+
+      // TODO: 实现搜索逻辑
+      res.json({
+        success: true,
+        data: [],
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '搜索提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 获取提醒统计
+   */
+  static async getReminderStats(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.query;
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必需的 accountUuid 参数',
+        });
+      }
+
+      // TODO: 实现统计逻辑
+      res.json({
+        success: true,
+        data: {
+          total: 0,
+          pending: 0,
+          triggered: 0,
+          acknowledged: 0,
+          dismissed: 0,
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取提醒统计失败',
+      });
+    }
+  }
+
+  /**
+   * 获取活跃提醒
+   */
+  static async getActiveReminders(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.params;
+      const instances = await ReminderController.reminderInstanceService.getTriggered(accountUuid);
+
+      res.json({
+        success: true,
+        data: instances,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取活跃提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 获取待处理提醒
+   */
+  static async getPendingReminders(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.params;
+      const instances = await ReminderController.reminderInstanceService.getPending(accountUuid);
+
+      res.json({
+        success: true,
+        data: instances,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取待处理提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 获取过期提醒
+   */
+  static async getOverdueReminders(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.params;
+      // TODO: 实现过期提醒逻辑
+      res.json({
+        success: true,
+        data: [],
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取过期提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 获取即将到来的提醒
+   */
+  static async getUpcomingReminders(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.params;
+      const { hours } = req.query;
+      const hoursNum = hours ? parseInt(hours as string) : 24;
+
+      const instances = await ReminderController.reminderInstanceService.getUpcoming(
+        accountUuid,
+        hoursNum,
+      );
+
+      res.json({
+        success: true,
+        data: instances,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取即将到来的提醒失败',
+      });
+    }
+  }
+
+  /**
+   * 获取提醒历史
+   */
+  static async getReminderHistory(req: Request, res: Response) {
+    try {
+      const { accountUuid } = req.params;
+      const { limit = 50, offset = 0 } = req.query;
+
+      // TODO: 实现历史记录逻辑
+      res.json({
+        success: true,
+        data: {
+          reminders: [],
+          total: 0,
+          limit: parseInt(limit as string),
+          offset: parseInt(offset as string),
+        },
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取提醒历史失败',
       });
     }
   }

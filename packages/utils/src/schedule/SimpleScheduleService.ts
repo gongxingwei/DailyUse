@@ -5,7 +5,7 @@
  * @date 2025-01-09
  */
 
-import { EventEmitter } from 'events';
+import { CrossPlatformEventBus } from '../domain/CrossPlatformEventBus';
 import {
   ScheduleStatus,
   ScheduleTaskType,
@@ -52,9 +52,9 @@ export interface ReminderEventData {
  * 3. 事件驱动架构
  * 4. 任务管理功能
  */
-export class SimpleScheduleService extends EventEmitter {
+export class SimpleScheduleService extends CrossPlatformEventBus {
   private static instance: SimpleScheduleService;
-  private scheduledTasks = new Map<string, NodeJS.Timeout>();
+  private scheduledTasks = new Map<string, any>(); // 改为any以兼容浏览器和Node.js的定时器类型
   private activeTasks = new Map<string, SimpleScheduleTask>();
 
   private constructor() {
@@ -288,21 +288,21 @@ export class SimpleScheduleService extends EventEmitter {
     };
 
     // 发布通用提醒事件
-    this.emit('reminder-triggered', reminderData);
+    this.send('reminder-triggered', reminderData);
 
     // 发布特定类型的事件
     switch (task.taskType) {
       case ScheduleTaskType.TASK_REMINDER:
-        this.emit('task-reminder', reminderData);
+        this.send('task-reminder', reminderData);
         break;
       case ScheduleTaskType.GOAL_REMINDER:
-        this.emit('goal-reminder', reminderData);
+        this.send('goal-reminder', reminderData);
         break;
       case ScheduleTaskType.GENERAL_REMINDER:
-        this.emit('general-reminder', reminderData);
+        this.send('general-reminder', reminderData);
         break;
       default:
-        this.emit('unknown-reminder', reminderData);
+        this.send('unknown-reminder', reminderData);
     }
 
     // 根据提醒方式执行具体操作
@@ -316,7 +316,7 @@ export class SimpleScheduleService extends EventEmitter {
     for (const method of reminderData.alertMethods) {
       switch (method) {
         case AlertMethod.POPUP:
-          this.emit('show-popup-reminder', {
+          this.send('show-popup-reminder', {
             uuid: reminderData.taskUuid,
             title: reminderData.title,
             message: reminderData.message,
@@ -325,14 +325,14 @@ export class SimpleScheduleService extends EventEmitter {
           break;
 
         case AlertMethod.SOUND:
-          this.emit('play-reminder-sound', {
+          this.send('play-reminder-sound', {
             uuid: reminderData.taskUuid,
             priority: reminderData.priority,
           });
           break;
 
         case AlertMethod.SYSTEM_NOTIFICATION:
-          this.emit('show-system-notification', {
+          this.send('show-system-notification', {
             uuid: reminderData.taskUuid,
             title: reminderData.title,
             message: reminderData.message,
@@ -340,7 +340,7 @@ export class SimpleScheduleService extends EventEmitter {
           break;
 
         case AlertMethod.DESKTOP_FLASH:
-          this.emit('flash-desktop', {
+          this.send('flash-desktop', {
             uuid: reminderData.taskUuid,
             priority: reminderData.priority,
           });
