@@ -94,9 +94,9 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'task-list',
-            component: () => import('@/modules/task/presentation/views/TaskListView.vue'),
+            component: () => import('@/modules/task/presentation/views/TaskManagementView.vue'),
             meta: {
-              title: '任务列表',
+              title: '任务管理',
               requiresAuth: true,
             },
           },
@@ -296,8 +296,7 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'repository-list',
-            component: () =>
-              import('@/modules/repository/presentation/views/RepositoryListView.vue'),
+            component: () => import('@/modules/repository/presentation/views/RepositoryView.vue'),
             meta: {
               title: '仓储列表',
               requiresAuth: true,
@@ -376,6 +375,30 @@ export const appRoutes: RouteRecordRaw[] = [
               title: '安全设置',
               requiresAuth: true,
               permissions: ['account:security'],
+            },
+          },
+        ],
+      },
+
+      // 应用设置
+      {
+        path: '/settings',
+        name: 'settings',
+        meta: {
+          title: '应用设置',
+          showInNav: true,
+          icon: 'mdi-cog',
+          order: 8,
+          requiresAuth: true,
+        },
+        children: [
+          {
+            path: '',
+            name: 'settings-main',
+            component: () => import('@/modules/setting/presentation/views/SettingView.vue'),
+            meta: {
+              title: '应用设置',
+              requiresAuth: true,
             },
           },
         ],
