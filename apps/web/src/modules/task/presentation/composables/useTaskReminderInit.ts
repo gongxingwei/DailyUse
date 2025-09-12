@@ -1,7 +1,7 @@
 import { onMounted, onUnmounted, watch } from "vue";
-import { scheduleService } from "@renderer/shared/services/scheduleService";
+import { scheduleService } from "@/shared/services/scheduleService";
 import { notificationService } from "@renderer/modules/notification/services/notificationService";
-import { useTaskStore } from "@renderer/modules/Task/presentation/stores/taskStore";
+import { useTaskStore } from "@/modules/task/presentation/stores/taskStore";
 import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
 
 /**

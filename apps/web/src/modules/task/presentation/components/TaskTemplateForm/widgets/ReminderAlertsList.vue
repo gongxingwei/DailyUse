@@ -129,7 +129,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue';
 import { v4 as uuidv4 } from 'uuid';
-import { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 
 type ReminderAlert = TaskTemplate['reminderConfig']['alerts'][number];
 

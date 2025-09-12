@@ -58,11 +58,11 @@
 </template>
 
 <script setup lang="ts">
-import { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
 
 import WeekdaySelector from '../widgets/WeekdaySelector.vue';
-import { useRecurrenceValidation } from '@renderer/modules/Task/presentation/composables/useRecurrenceValidation';
+import { useRecurrenceValidation } from '@/modules/task/presentation/composables/useRecurrenceValidation';
 // utils
 import { formatDateToInput } from '@dailyuse/utils';
 interface Props {

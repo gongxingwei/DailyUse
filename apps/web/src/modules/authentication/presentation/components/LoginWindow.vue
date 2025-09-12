@@ -79,8 +79,8 @@ import { usernameRules, passwordRules } from '@/shared/utils/validations/rules';
 // services
 
 
-const { snackbar, handleLogin } = useAuthenticationService();
-const loading = ref(false);
+const { snackbar, handleLogin, loading: authLoading, isInitializing } = useAuthenticationService();
+const loading = computed(() => authLoading.value || isInitializing.value);
 const formRef = ref();
 const isCurrentFormValid = computed(() => {
     return formRef.value?.isValid ?? false;
@@ -103,13 +103,10 @@ const onFormSubmit = async (event: Event) => {
         return;
     }
 
-    loading.value = true;
     try {
         await handleLogin(passwordAuthenticationForm.value);
     } catch (error) {
         console.error('Login failed:', error);
-    } finally {
-        loading.value = false;
     }
 };
 

@@ -342,6 +342,11 @@ export interface TaskQueryParamsDTO {
 }
 
 /**
+ * 任务模板响应 DTO
+ */
+export type TaskTemplateResponse = TaskTemplateDTO;
+
+/**
  * 任务模板列表响应 DTO
  */
 export interface TaskTemplateListResponse {
@@ -353,6 +358,11 @@ export interface TaskTemplateListResponse {
 }
 
 /**
+ * 任务实例响应 DTO
+ */
+export type TaskInstanceResponse = TaskInstanceDTO;
+
+/**
  * 任务实例列表响应 DTO
  */
 export interface TaskInstanceListResponse {
@@ -362,6 +372,16 @@ export interface TaskInstanceListResponse {
   limit: number;
   hasMore: boolean;
 }
+
+/**
+ * 通用任务列表响应 DTO
+ */
+export type TaskListResponse = TaskInstanceListResponse;
+
+/**
+ * 任务元模板响应 DTO
+ */
+export type TaskMetaTemplateResponse = TaskMetaTemplateDTO;
 
 /**
  * 任务元模板列表响应 DTO

@@ -4,10 +4,18 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
+      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
+      "@dailyuse/contracts/*": ["../../packages/contracts/src/*"],
       "@dailyuse/domain-client": ["../../packages/domain-client/src/index.ts"],
       "@dailyuse/domain-client/*": ["../../packages/domain-client/src/*"],
       "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
-      "@dailyuse/domain-core/*": ["../../packages/domain-core/src/*"]
+      "@dailyuse/domain-core/*": ["../../packages/domain-core/src/*"],
+      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
+      "@dailyuse/domain-server/*": ["../../packages/domain-server/src/*"],
+      "@dailyuse/utils": ["../../packages/utils/src/index.ts"],
+      "@dailyuse/utils/*": ["../../packages/utils/src/*"],
+      "@dailyuse/ui": ["../../packages/ui/src/index.ts"],
+      "@dailyuse/ui/*": ["../../packages/ui/src/*"]
     },
     "types": ["vite/client"]
   },

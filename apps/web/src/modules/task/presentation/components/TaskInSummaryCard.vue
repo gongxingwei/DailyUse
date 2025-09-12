@@ -96,10 +96,10 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import type { KeyResultLink } from '@common/modules/task/types/task';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
+import type { KeyResultLink } from '@dailyuse/contracts/modules/task/types/task';
 import { useRouter } from 'vue-router';
-import type { TaskInstance } from '@renderer/modules/Task/domain/aggregates/taskInstance';
+import type { TaskInstance } from '@/modules/task/domain/aggregates/taskInstance';
 const router = useRouter();
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();

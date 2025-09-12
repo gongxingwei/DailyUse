@@ -43,8 +43,8 @@
 </template>
 
 <script setup lang="ts">
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import { TaskInstance } from '@renderer/modules/Task/domain/aggregates/taskInstance';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
+import { TaskInstance } from '@/modules/task/domain/aggregates/taskInstance';
 const props = defineProps<{
     visible: boolean;
     task: TaskInstance;

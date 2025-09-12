@@ -26,9 +26,15 @@ importers:
       '@dailyuse/utils':
         specifier: workspace:*
         version: link:packages/utils
+      echarts:
+        specifier: ^5.6.0
+        version: 5.6.0
       node-schedule:
         specifier: ^2.1.1
         version: 2.1.1
+      vue-echarts:
+        specifier: ^7.0.3
+        version: 7.0.3(@vue/runtime-core@3.5.18)(echarts@5.6.0)(vue@3.5.18(typescript@5.9.2))
     devDependencies:
       '@nx/eslint':
         specifier: ^21.4.1
@@ -359,12 +365,27 @@ importers:
       axios:
         specifier: ^1.9.0
         version: 1.11.0
+      date-fns:
+        specifier: ^4.1.0
+        version: 4.1.0
+      markdown-it:
+        specifier: ^14.1.0
+        version: 14.1.0
+      monaco-editor:
+        specifier: ^0.52.2
+        version: 0.52.2
+      monaco-editor-vue3:
+        specifier: ^0.1.10
+        version: 0.1.10(typescript@5.9.2)
       pinia:
         specifier: ^3.0.3
         version: 3.0.3(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))
       pinia-plugin-persistedstate:
         specifier: ^4.2.0
         version: 4.5.0(pinia@3.0.3(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2)))
+      uuid:
+        specifier: ^11.1.0
+        version: 11.1.0
       vue:
         specifier: ^3.4.21
         version: 3.5.18(typescript@5.9.2)
@@ -378,9 +399,15 @@ importers:
         specifier: ^3.7.5
         version: 3.9.5(typescript@5.9.2)(vue@3.5.18(typescript@5.9.2))
     devDependencies:
+      '@types/markdown-it':
+        specifier: ^14.1.2
+        version: 14.1.2
       '@types/node':
-        specifier: ^22.7.5
+        specifier: ^22.17.1
         version: 22.17.1
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       '@vitejs/plugin-vue':
         specifier: ^5.2.4
         version: 5.2.4(vite@5.4.19(@types/node@22.17.1)(lightningcss@1.30.1))(vue@3.5.18(typescript@5.9.2))

@@ -219,7 +219,7 @@ import { computed, ref, type ComputedRef } from 'vue';
 import { useRoute } from 'vue-router';
 // store
 import { useGoalStore } from '../stores/goalStore';
-import { useRepositoryStore } from '@renderer/modules/Repository/presentation/stores/repositoryStore';
+
 // composables
 import { useGoalDialog } from '../composables/useGoalDialog';
 // domain
@@ -235,7 +235,7 @@ import RepoInfoCard from '@renderer/modules/Repository/presentation/components/R
 import { format } from 'date-fns';
 const route = useRoute();
 const goalStore = useGoalStore();
-const repositoryStore = useRepositoryStore();
+
 const { goalDialog, startEditGoal, handleCreateGoal, handleDeleteGoal, handleUpdateGoal, goalReviewDialog, showReviewCard, startCreateGoalReview } = useGoalDialog();
 
 

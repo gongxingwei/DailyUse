@@ -51,7 +51,8 @@ export type { IReminderTemplate, IReminderInstance } from './modules/reminder/ty
 
 // 导出新增模块的核心接口
 export type { IAccount, IUser } from './modules/account/types';
-export type { IUserSession, SessionStatus, SessionType } from './modules/sessionManagement/types';
+export type { IUserSession, SessionType } from './modules/sessionManagement/types';
+export { SessionStatus } from './modules/sessionManagement/types';
 export type {
   INotification,
   NotificationType,

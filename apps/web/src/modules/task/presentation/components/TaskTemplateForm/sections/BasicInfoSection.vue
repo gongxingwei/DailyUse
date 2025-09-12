@@ -35,7 +35,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { useBasicInfoValidation } from '../../../composables/useBasicInfoValidation';
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 interface Props {
   modelValue: TaskTemplate;
 }

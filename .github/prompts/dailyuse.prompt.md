@@ -666,6 +666,272 @@ nx affected --target=test         # 只测试受影响的项目
 3. **领域事件** - 解耦模块间通信
 4. **仓储模式** - 数据访问抽象化
 
+## 数据获取流程架构设计
+
+### 推荐架构：Composable + ApplicationService + Store 分层
+
+**设计原则**：
+
+- **Domain层**: 纯业务逻辑，不涉及技术实现
+- **Application层**: 业务用例协调，API调用，缓存策略
+- **Presentation层**: UI状态管理，用户交互
+
+**数据流向**：
+
+```
+Vue组件 → Composable → ApplicationService → API Client
+                  ↓                      ↓
+                Store (缓存)              Backend API
+```
+
+### 架构层次职责
+
+#### 1. Presentation Layer (表示层)
+
+**Pinia Store**: 纯缓存存储
+
+```typescript
+// store/goalStore.ts
+export const useGoalStore = defineStore('goal', {
+  state: () => ({
+    // 缓存数据
+    goals: [] as Goal[],
+    goalDirs: [] as GoalDir[],
+
+    // UI状态
+    isLoading: false,
+    error: null,
+    pagination: {...},
+    filters: {...},
+    selectedGoalUuid: null,
+  }),
+
+  getters: {
+    // 纯数据查询，无业务逻辑
+    getGoalByUuid: (state) => (uuid: string) =>
+      state.goals.find(g => g.uuid === uuid),
+
+    getActiveGoals: (state) =>
+      state.goals.filter(g => g.status === 'active'),
+  },
+
+  actions: {
+    // 纯数据操作，不调用外部服务
+    setGoals(goals: Goal[]) { this.goals = goals; },
+    addGoal(goal: Goal) { this.goals.push(goal); },
+    updateGoal(goal: Goal) { /* 更新逻辑 */ },
+    removeGoal(uuid: string) { /* 删除逻辑 */ },
+
+    // UI状态管理
+    setLoading(loading: boolean) { this.isLoading = loading; },
+    setError(error: string | null) { this.error = error; },
+  },
+});
+```
+
+**Composable**: 业务逻辑封装
+
+```typescript
+// composables/useGoal.ts
+export function useGoal() {
+  const goalStore = useGoalStore();
+  const goalService = new GoalWebApplicationService();
+
+  // 获取所有目标 - 优先从缓存读取
+  const fetchGoals = async (forceRefresh = false) => {
+    // 如果有缓存且不强制刷新，直接返回
+    if (!forceRefresh && goalStore.goals.length > 0) {
+      return goalStore.goals;
+    }
+
+    // 调用应用服务获取数据
+    await goalService.fetchAndCacheGoals();
+    return goalStore.goals;
+  };
+
+  // 创建目标
+  const createGoal = async (request: CreateGoalRequest) => {
+    return await goalService.createGoal(request);
+  };
+
+  return {
+    // 响应式数据（从store获取）
+    goals: computed(() => goalStore.goals),
+    isLoading: computed(() => goalStore.isLoading),
+
+    // 业务方法
+    fetchGoals,
+    createGoal,
+    // ...其他方法
+  };
+}
+```
+
+#### 2. Application Layer (应用层)
+
+**ApplicationService**: 业务用例协调
+
+```typescript
+// application/services/GoalWebApplicationService.ts
+export class GoalWebApplicationService {
+  constructor(
+    private goalApiClient = goalApiClient,
+    private goalStore = useGoalStore(),
+  ) {}
+
+  /**
+   * 获取并缓存目标数据
+   * 职责：API调用 + 缓存管理 + 错误处理
+   */
+  async fetchAndCacheGoals(params?: GetGoalsParams): Promise<void> {
+    try {
+      this.goalStore.setLoading(true);
+      this.goalStore.setError(null);
+
+      // 调用API
+      const response = await this.goalApiClient.getGoals(params);
+
+      // 转换为领域实体
+      const goals = response.goals.map((dto) => Goal.fromDTO(dto));
+
+      // 缓存到store
+      this.goalStore.setGoals(goals);
+    } catch (error) {
+      this.goalStore.setError(error.message);
+      throw error;
+    } finally {
+      this.goalStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 创建目标
+   */
+  async createGoal(request: CreateGoalRequest): Promise<Goal> {
+    try {
+      this.goalStore.setLoading(true);
+
+      // API调用
+      const response = await this.goalApiClient.createGoal(request);
+
+      // 转换为领域实体
+      const goal = Goal.fromResponse(response);
+
+      // 更新缓存
+      this.goalStore.addGoal(goal);
+
+      return goal;
+    } catch (error) {
+      this.goalStore.setError(error.message);
+      throw error;
+    } finally {
+      this.goalStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 初始化模块数据
+   * 登录时调用，同步所有数据
+   */
+  async initializeModuleData(): Promise<void> {
+    await Promise.all([
+      this.fetchAndCacheGoals({ limit: 1000 }),
+      this.fetchAndCacheGoalDirs({ limit: 1000 }),
+    ]);
+  }
+}
+```
+
+#### 3. Infrastructure Layer (基础设施层)
+
+**API Client**: 纯API调用
+
+```typescript
+// infrastructure/api/goalApiClient.ts
+export const goalApiClient = {
+  async getGoals(params?: GetGoalsParams): Promise<GoalListResponse> {
+    const response = await httpClient.get('/api/goals', { params });
+    return response.data;
+  },
+
+  async createGoal(request: CreateGoalRequest): Promise<GoalResponse> {
+    const response = await httpClient.post('/api/goals', request);
+    return response.data;
+  },
+
+  // ...其他API方法
+};
+```
+
+### 登录时数据初始化策略
+
+**全局初始化服务**：
+
+```typescript
+// shared/services/InitializationService.ts
+export class InitializationService {
+  async initializeUserData(accountUuid: string): Promise<void> {
+    // 并行初始化所有模块数据
+    await Promise.all([
+      this.initializeGoalModule(),
+      this.initializeTaskModule(),
+      this.initializeReminderModule(),
+      // ...其他模块
+    ]);
+  }
+
+  private async initializeGoalModule(): Promise<void> {
+    const goalService = new GoalWebApplicationService();
+    await goalService.initializeModuleData();
+  }
+}
+```
+
+**登录后调用**：
+
+```typescript
+// authentication/stores/authStore.ts
+const login = async (credentials) => {
+  const response = await authApi.login(credentials);
+
+  // 设置用户信息
+  setUser(response.user);
+  setToken(response.token);
+
+  // 初始化所有模块数据
+  await initializationService.initializeUserData(response.user.uuid);
+};
+```
+
+### 架构优势
+
+1. **职责明确**：Store纯缓存，Service纯业务协调，API纯数据获取
+2. **性能优化**：登录时一次性同步，后续直接从缓存读取
+3. **错误隔离**：每层独立的错误处理机制
+4. **可测试性**：每层可独立单元测试
+5. **可维护性**：清晰的依赖关系和数据流
+
+### 实际使用示例
+
+```vue
+<!-- views/GoalList.vue -->
+<script setup>
+import { useGoal } from '../composables/useGoal';
+
+const { goals, isLoading, fetchGoals, createGoal } = useGoal();
+
+// 组件挂载时，优先从缓存获取数据
+onMounted(async () => {
+  await fetchGoals(); // 如果有缓存直接返回，无缓存则API获取
+});
+
+// 手动刷新
+const refresh = () => fetchGoals(true); // 强制从API刷新
+</script>
+```
+
+这种架构既保证了性能（缓存优先），又保证了数据的准确性（支持强制刷新），同时符合DDD的分层原则。
+
 #### 仓储接口设计规范
 
 **核心原则**: 仓储接口必须返回DTO对象，而不是领域实体

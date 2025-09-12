@@ -1,6 +1,6 @@
 // composables/useTimeConfigValidation.ts - 纯前端UI验证
 import { ref, computed } from 'vue';
-import { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 
 export function useTimeConfigValidation() {
   const errors = ref<string[]>([]);

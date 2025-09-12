@@ -1,6 +1,6 @@
-import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
-import { useNotification } from "./useNotification";
-import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
+import { TaskWebApplicationService } from '../../application/services/TaskWebApplicationService';
+import { useNotification } from './useNotification';
+import type { TaskTemplate } from '@dailyuse/domain-client';
 
 /**
  * 任务模板管理 Composable
@@ -8,20 +8,18 @@ import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
  */
 export function useTaskTemplate() {
   const { showSuccess, showError } = useNotification();
-  
+
   // 获取任务服务实例
-  const getTaskService = () => getTaskDomainApplicationService();
+  const taskService = new TaskWebApplicationService();
 
   // 获取所有任务模板
   const getTaskTemplates = async () => {
     try {
-      const templates = await getTaskService().getAllTaskTemplates();
+      const templates = await taskService.getTemplates();
       return templates;
     } catch (error) {
       console.error('获取任务模板失败:', error);
-      showError(
-        `获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
+      showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return [];
     }
   };
@@ -34,7 +32,7 @@ export function useTaskTemplate() {
     }
 
     try {
-      const template = await getTaskService().getTaskTemplate(templateId);
+      const template = await taskService.getTemplateById(templateId);
       if (!template) {
         showError(`未找到 ID 为 ${templateId} 的任务模板`);
         return null;
@@ -42,9 +40,7 @@ export function useTaskTemplate() {
       return template;
     } catch (error) {
       console.error('获取任务模板失败:', error);
-      showError(
-        `获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
+      showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
       return null;
     }
   };
@@ -57,8 +53,8 @@ export function useTaskTemplate() {
     }
 
     try {
-      const result = await getTaskService().createTaskTemplate(templateData);
-      
+      const result = await taskService.createTemplate(templateData);
+
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 创建成功`);
         return { success: true, data: result.data as TaskTemplate };
@@ -82,8 +78,8 @@ export function useTaskTemplate() {
     }
 
     try {
-      const result = await getTaskService().updateTaskTemplate(templateData);
-      
+      const result = await taskService.updateTemplate(templateData.uuid, templateData);
+
       if (result.success) {
         showSuccess(`任务模板 "${templateData.title}" 更新成功`);
         return { success: true, data: result.data as TaskTemplate };
@@ -107,15 +103,9 @@ export function useTaskTemplate() {
     }
 
     try {
-      const result = await getTaskService().deleteTaskTemplate(template.uuid);
-      
-      if (result.success) {
-        showSuccess(`任务模板 "${template.title}" 删除成功`);
-        return { success: true };
-      } else {
-        showError(result.message || '删除任务模板失败');
-        return { success: false, message: result.message };
-      }
+      await taskService.deleteTemplate(template.uuid);
+      showSuccess(`任务模板 "${template.title}" 删除成功`);
+      return { success: true };
     } catch (error) {
       console.error('删除任务模板失败:', error);
       const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -128,7 +118,7 @@ export function useTaskTemplate() {
   const createFromMetaTemplate = async (
     metaTemplateId: string,
     title: string,
-    description?: string
+    description?: string,
   ) => {
     if (!metaTemplateId || !title) {
       showError('元模板 ID 和标题不能为空');
@@ -136,14 +126,16 @@ export function useTaskTemplate() {
     }
 
     try {
-      const newTaskTemplate = await getTaskService().createTaskTemplateFromMetaTemplate(
-        metaTemplateId,
-        title,
-        { description }
-      );
+      // TODO: 需要实现从元模板创建的方法
+      // const newTaskTemplate = await taskService.createTemplateFromMeta(
+      //   metaTemplateId,
+      //   title,
+      //   { description }
+      // );
+      throw new Error('从元模板创建功能暂未实现');
 
-      showSuccess(`从元模板创建任务模板 "${title}" 成功`);
-      return newTaskTemplate;
+      // showSuccess(`从元模板创建任务模板 "${title}" 成功`);
+      // return newTaskTemplate;
     } catch (error) {
       console.error('从元模板创建任务模板失败:', error);
       const errorMessage = error instanceof Error ? error.message : '未知错误';
@@ -158,6 +150,6 @@ export function useTaskTemplate() {
     createTaskTemplate,
     updateTaskTemplate,
     deleteTaskTemplate,
-    createFromMetaTemplate
+    createFromMetaTemplate,
   };
 }

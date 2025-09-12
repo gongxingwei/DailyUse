@@ -253,8 +253,8 @@
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
+import { TaskTimeUtils } from '@dailyuse/contracts/modules/task/utils/taskTimeUtils';
 import { useTaskInstanceManagement } from '../composables/useTaskInstanceManagement';
 import { useTaskService } from '../composables/useTaskService';
 import { format } from 'date-fns';

@@ -75,7 +75,7 @@ import KeyResultLinksSection from './sections/KeyResultLinksSection.vue';
 import { useTaskTemplateForm } from '../../composables/useTaskTemplateForm';
 import { useTaskStore } from '../../stores/taskStore';
 // domains
-import { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 
 const taskStore = useTaskStore();
 

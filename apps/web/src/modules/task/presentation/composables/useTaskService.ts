@@ -1,12 +1,11 @@
-import { ref } from "vue";
-import { getTaskDomainApplicationService } from "../../application/services/taskDomainApplicationService";
-import { useTaskStore } from "../stores/taskStore";
-import type { TaskTemplate } from "../../domain/aggregates/taskTemplate";
-import type { TaskInstance } from "../../domain/aggregates/taskInstance";
-import { useSnackbar } from "@renderer/shared/composables/useSnackbar";
+import { ref } from 'vue';
+import { TaskWebApplicationService } from '../../application/services/TaskWebApplicationService';
+import { useTaskStore } from '../stores/taskStore';
+import type { TaskTemplate, TaskInstance } from '@dailyuse/domain-client';
+import { useSnackbar } from '@/shared/composables/useSnackbar';
 
 export function useTaskService() {
-  const getTaskService = () => getTaskDomainApplicationService();
+  const taskService = new TaskWebApplicationService();
   const { showSuccess, showError, showWarning, showInfo, snackbar } = useSnackbar();
   const taskStore = useTaskStore();
   const showEditTaskTemplateDialog = ref(false);
@@ -16,33 +15,10 @@ export function useTaskService() {
   const startCreateTaskTemplate = () => {
     showTemplateSelectionDialog.value = true;
   };
+
   const handleTemplateTypeSelected = async (metaTemplateUuid: string) => {
     showTemplateSelectionDialog.value = false;
-
-    try {
-      // 使用修复后的架构：从元模板创建任务模板但不保存
-      // 注意：这个方法现在只创建模板对象，不会保存到数据库
-      const newTaskTemplate = await getTaskService().createTaskTemplateByMetaTemplate(
-        metaTemplateUuid,
-      );
-      
-      if (!newTaskTemplate) {
-        showError('无法创建任务模板，请检查元模板是否存在');
-        return;
-      }
-      
-      // 将创建的模板传递给编辑器
-      taskStore.updateTaskTemplateBeingEdited(newTaskTemplate);
-      isEditMode.value = false; // 这是新创建的模板，需要保存
-
-      // 显示编辑对话框，让用户进一步编辑
-      showEditTaskTemplateDialog.value = true;
-      
-      showSuccess(`成功创建任务模板 "${newTaskTemplate.title}"，请编辑并保存`);
-    } catch (error) {
-      console.error('从元模板创建任务模板失败:', error);
-      showError(`创建任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    }
+    showInfo('功能开发中，请稍后使用');
   };
 
   // 取消模板选择
@@ -52,59 +28,12 @@ export function useTaskService() {
 
   // 开始编辑任务模板
   const startEditTaskTemplate = async (templateId: string) => {
-    try {
-      // 使用新架构的服务获取任务模板
-      const template = await getTaskService().getTaskTemplate(templateId);
-      
-      if (template) {
-        // 将领域对象转换为 store 需要的格式（深拷贝以避免修改原始数据）
-        taskStore.updateTaskTemplateBeingEdited(JSON.parse(JSON.stringify(template)));
-        isEditMode.value = true;
-        showEditTaskTemplateDialog.value = true;
-        
-        showInfo(`开始编辑任务模板 "${template.title}"`);
-      } else {
-        showError('未找到指定的任务模板');
-      }
-    } catch (error) {
-      console.error('获取模板失败:', error);
-      showError(`获取模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
-    }
+    showInfo('功能开发中，请稍后使用');
   };
 
   // 保存任务模板
   const handleSaveTaskTemplate = async () => {
-    try {
-      const taskTemplateBeingEdited = taskStore.getTaskTemplateBeingEdited;
-      if (!taskTemplateBeingEdited) {
-        showError('没有正在编辑的任务模板');
-        return;
-      }
-      
-      let result;
-      if (isEditMode.value && taskTemplateBeingEdited.uuid) {
-        // 更新现有模板 - 使用深度序列化确保数据可传输
-        const templateDto = JSON.parse(JSON.stringify(taskTemplateBeingEdited.toDTO()));
-        result = await getTaskService().updateTaskTemplate(templateDto);
-      } else {
-        // 创建新模板 - 使用深度序列化确保数据可传输
-        const templateDto = JSON.parse(JSON.stringify(taskTemplateBeingEdited.toDTO()));
-        result = await getTaskService().createTaskTemplate(templateDto);
-      }
-
-      if (result.success && result.data) {
-        showEditTaskTemplateDialog.value = false;
-        isEditMode.value = false;
-        
-        const action = isEditMode.value ? '更新' : '创建';
-        showSuccess(`任务模板 "${result.data.title}" ${action}成功`);
-      } else {
-        showError(result.message || '保存任务模板失败');
-      }
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`保存任务模板时发生错误: ${errorMessage}`);
-    }
+    showInfo('功能开发中，请稍后使用');
   };
 
   // 取消编辑
@@ -117,146 +46,88 @@ export function useTaskService() {
   // 删除任务模板
   const handleDeleteTaskTemplate = async (template: TaskTemplate) => {
     try {
-      const result = await getTaskService().deleteTaskTemplate(template.uuid);
-      
-      if (result.success) {
-        showSuccess(result.message || '删除任务模板成功', 5000);
-      } else {
-        showError(result.message || '删除任务模板失败', 6000);
-      }
-      
-      return result;
+      await taskService.deleteTemplate(template.uuid);
+      showSuccess('删除任务模板成功');
+      return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`删除任务模板失败: ${errorMessage}`, 6000);
-      return {
-        success: false,
-        message: errorMessage,
-        data: undefined
-      };
+      showError(`删除任务模板失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
   };
 
   // 删除任务实例
   const handleDeleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await getTaskService().deleteTaskInstance(taskId);
-      
-      if (result.success) {
-        showSuccess(`成功删除任务实例`, 4000);
-      } else {
-        showError(result.message || '删除任务实例失败', 6000);
-      }
-      
-      return result;
+      await taskService.deleteInstance(taskId);
+      showSuccess('删除任务实例成功');
+      return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`删除任务实例失败: ${errorMessage}`, 6000);
-      return {
-        success: false,
-        message: errorMessage,
-        data: undefined
-      };
+      showError(`删除任务实例失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
   };
 
   const handlePauseTaskTemplate = async (templateId: string) => {
     try {
-      const result = await getTaskService().pauseTaskTemplate(templateId);
-      
-      if (result.success) {
-        showSuccess(`任务模板已暂停`, 4000);
-      } else {
-        showError(result.message || `暂停任务模板失败`, 6000);
-      }
-      
-      return result.success;
+      await taskService.pauseTemplate(templateId);
+      showSuccess('任务模板已暂停');
+      return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`暂停任务模板失败: ${errorMessage}`, 6000);
+      showError(`暂停任务模板失败: ${errorMessage}`);
       return false;
     }
-  }
+  };
 
   const handleResumeTaskTemplate = async (templateId: string) => {
     try {
-      const result = await getTaskService().resumeTaskTemplate(templateId);
-      
-      if (result.success) {
-        showSuccess(`任务模板已恢复`, 4000);
-      } else {
-        showError(result.message || `恢复任务模板失败`, 6000);
-      }
-      
-      return result.success;
+      await taskService.activateTemplate(templateId);
+      showSuccess('任务模板已恢复');
+      return true;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`恢复任务模板失败: ${errorMessage}`, 6000);
+      showError(`恢复任务模板失败: ${errorMessage}`);
       return false;
     }
-  }
+  };
 
   const handleCompleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await getTaskService().completeTaskInstance(taskId);
-      
-      if (result.success) {
-        showSuccess(`任务实例已完成`, 4000);
-      } else {
-        showError(result.message || '完成任务实例失败', 6000);
-      }
-      
-      return result;
+      await taskService.completeTask(taskId, {});
+      showSuccess('任务实例已完成');
+      return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`完成任务实例失败: ${errorMessage}`, 6000);
-      return {
-        success: false,
-        message: errorMessage,
-        data: undefined
-      };
+      showError(`完成任务实例失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
-  }
+  };
 
   const handleUndoCompleteTaskInstance = async (taskId: string) => {
     try {
-      const result = await getTaskService().undoCompleteTaskInstance(taskId);
-      
-      if (result.success) {
-        showSuccess(`任务实例已撤销完成`, 4000);
-      } else {
-        showError(result.message || '撤销完成任务实例失败', 6000);
-      }
-      
-      return result;
+      await taskService.undoCompleteTask(taskId, '');
+      showSuccess('任务实例已撤销完成');
+      return { success: true };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '未知错误';
-      showError(`撤销完成任务实例失败: ${errorMessage}`, 6000);
-      return {
-        success: false,
-        message: errorMessage,
-        data: undefined
-      };
+      showError(`撤销完成任务实例失败: ${errorMessage}`);
+      return { success: false, message: errorMessage };
     }
-  } 
+  };
 
   // 获取所有元模板
   const getMetaTemplates = async () => {
-    try {
-      const metaTemplates = await getTaskService().getAllMetaTemplates();
-      return metaTemplates;
-    } catch (error) {
-      console.error('获取元模板失败:', error);
-      showError(`获取元模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
-      return [];
-    }
+    showInfo('功能开发中，请稍后使用');
+    return [];
   };
 
   // 获取所有任务模板
   const getTaskTemplates = async () => {
     try {
-      const templates = await getTaskService().getAllTaskTemplates();
-      return templates;
+      const response = await taskService.getTemplates();
+      return response;
     } catch (error) {
       console.error('获取任务模板失败:', error);
       showError(`获取任务模板失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -267,8 +138,8 @@ export function useTaskService() {
   // 获取今日任务实例
   const getTodayTaskInstances = async () => {
     try {
-      const instances = await getTaskService().getTodayTasks();
-      return instances;
+      const response = await taskService.getUpcomingTasks();
+      return response.instances || [];
     } catch (error) {
       console.error('获取今日任务失败:', error);
       showError(`获取今日任务失败: ${error instanceof Error ? error.message : '未知错误'}`);
@@ -278,34 +149,33 @@ export function useTaskService() {
 
   // 创建任务实例（从模板创建）
   const createTaskInstanceFromTemplate = async (_templateUuid: string, _scheduleDate?: Date) => {
-    try {
-      showWarning('暂不支持直接创建任务实例，请联系开发者完善此功能');
-      return null;
-    } catch (error) {
-      console.error('创建任务实例失败:', error);
-      showError(
-        `创建任务实例失败: ${error instanceof Error ? error.message : '未知错误'}`
-      );
-      return null;
-    }
+    showWarning('暂不支持直接创建任务实例，请联系开发者完善此功能');
+    return null;
   };
 
   // 批量完成任务
   const batchCompleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(uuid => getTaskService().completeTaskInstance(uuid))
+        taskIds.map(async (uuid) => {
+          try {
+            await taskService.completeTask(uuid, {});
+            return { success: true };
+          } catch (error) {
+            return { success: false };
+          }
+        }),
       );
-      
-      const successCount = results.filter(r => r.success).length;
+
+      const successCount = results.filter((r: any) => r.success).length;
       const failCount = results.length - successCount;
-      
+
       if (failCount === 0) {
         showSuccess(`成功完成 ${successCount} 个任务`);
       } else {
         showWarning(`完成 ${successCount} 个任务，失败 ${failCount} 个`);
       }
-      
+
       return results;
     } catch (error) {
       console.error('批量完成任务失败:', error);
@@ -318,18 +188,25 @@ export function useTaskService() {
   const batchDeleteTaskInstances = async (taskIds: string[]) => {
     try {
       const results = await Promise.all(
-        taskIds.map(uuid => getTaskService().deleteTaskInstance(uuid))
+        taskIds.map(async (uuid) => {
+          try {
+            await taskService.deleteInstance(uuid);
+            return { success: true };
+          } catch (error) {
+            return { success: false };
+          }
+        }),
       );
-      
+
       const successCount = results.filter((r: any) => r.success).length;
       const failCount = results.length - successCount;
-      
+
       if (failCount === 0) {
         showSuccess(`成功删除 ${successCount} 个任务`);
       } else {
         showWarning(`删除 ${successCount} 个任务，失败 ${failCount} 个`);
       }
-      
+
       return results;
     } catch (error) {
       console.error('批量删除任务失败:', error);
@@ -342,17 +219,15 @@ export function useTaskService() {
   const searchTasks = async (query: string, type: 'template' | 'instance' = 'instance') => {
     try {
       if (type === 'template') {
-        const templates = await getTaskService().getAllTaskTemplates();
-        return templates.filter(t => 
-          t.title.toLowerCase().includes(query.toLowerCase()) ||
-          (t.description && t.description.toLowerCase().includes(query.toLowerCase()))
+        const templates = await taskService.getTemplates();
+        return templates.filter(
+          (t: any) =>
+            t.title?.toLowerCase().includes(query.toLowerCase()) ||
+            (t.description && t.description.toLowerCase().includes(query.toLowerCase())),
         );
       } else {
-        const instances = await getTaskService().getTodayTasks();
-        return instances.filter((i: TaskInstance) => 
-          i.title.toLowerCase().includes(query.toLowerCase()) ||
-          (i.description && i.description.toLowerCase().includes(query.toLowerCase()))
-        );
+        const response = await taskService.searchTasks({ query });
+        return response.instances || [];
       }
     } catch (error) {
       console.error('搜索任务失败:', error);
@@ -390,6 +265,6 @@ export function useTaskService() {
     createTaskInstanceFromTemplate,
     batchCompleteTaskInstances,
     batchDeleteTaskInstances,
-    searchTasks
+    searchTasks,
   };
 }

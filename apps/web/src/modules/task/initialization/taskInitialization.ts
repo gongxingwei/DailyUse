@@ -2,7 +2,7 @@ import {
   InitializationManager,
   InitializationPhase,
   InitializationTask,
-} from "@main/shared/initialization/initializationManager";
+} from "@dailyuse/domain-server/shared/initialization/initializationManager";
 
 import { TaskEventHandlers } from "../application/events/taskEventHandlers";
 import { getTaskDomainApplicationService } from "../application/services/taskDomainApplicationService";

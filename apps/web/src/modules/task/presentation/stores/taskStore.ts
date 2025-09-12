@@ -1,386 +1,624 @@
 import { defineStore } from 'pinia';
-import { TaskTemplate } from '../../domain/aggregates/taskTemplate';
-import { TaskInstance } from '../../domain/aggregates/taskInstance';
-import { TaskMetaTemplate } from '../../domain/aggregates/taskMetaTemplate';
+import { TaskTemplate, TaskInstance, TaskMetaTemplate } from '@dailyuse/domain-client';
 import { toDayStart } from '@dailyuse/utils';
 
+/**
+ * Task Store - 新架构
+ * 纯缓存存储，不直接调用外部服务
+ * 所有数据操作通过 ApplicationService 进行
+ */
 export const useTaskStore = defineStore('task', {
   state: () => ({
-    taskInstances: [] as TaskInstance[],
-    taskTemplates: [] as TaskTemplate[],
-    metaTemplates: [] as TaskMetaTemplate[],
-    taskTemplateBeingEdited: null as TaskTemplate | null,
+    // ===== 核心数据 =====
+    taskTemplates: [] as any[],
+    taskInstances: [] as any[],
+    metaTemplates: [] as any[],
+
+    // ===== 状态管理 =====
+    isLoading: false,
+    error: null as string | null,
+    isInitialized: false,
+
+    // ===== UI 状态 =====
+    selectedTaskTemplate: null as string | null,
+    selectedTaskInstance: null as string | null,
+    taskTemplateBeingEdited: null as any | null,
+
+    // ===== 分页信息 =====
+    pagination: {
+      page: 1,
+      limit: 20,
+      total: 0,
+    },
+
+    // ===== 缓存管理 =====
+    lastSyncTime: null as Date | null,
+    cacheExpiry: 5 * 60 * 1000, // 5分钟过期
   }),
 
   getters: {
-    getTaskTemplateBeingEdited(state): TaskTemplate | null {
-      return state.taskTemplateBeingEdited as TaskTemplate | null;
+    // ===== 基础获取器 =====
+
+    /**
+     * 获取所有任务模板
+     */
+    getAllTaskTemplates(state): any[] {
+      return state.taskTemplates;
     },
 
-    getAllTaskTemplates(): TaskTemplate[] {
-      return this.taskTemplates as TaskTemplate[];
+    /**
+     * 获取所有任务实例
+     */
+    getAllTaskInstances(state): any[] {
+      return state.taskInstances;
     },
 
-    getAllTaskInstances(): TaskInstance[] {
-      return this.taskInstances as TaskInstance[];
+    /**
+     * 获取所有元模板
+     */
+    getAllTaskMetaTemplates(state): any[] {
+      return state.metaTemplates;
     },
 
-    getAllTaskMetaTemplates(): TaskMetaTemplate[] {
-      return this.metaTemplates as TaskMetaTemplate[];
-    },
-
-    getTaskTemplateById:
+    /**
+     * 根据UUID获取任务模板
+     */
+    getTaskTemplateByUuid:
       (state) =>
-      (uuid: string): TaskTemplate | undefined => {
-        const template = state.taskTemplates.find((t) => t.uuid === uuid);
-        return template as TaskTemplate | undefined;
+      (uuid: string): any | null => {
+        return state.taskTemplates.find((t) => t.uuid === uuid) || null;
       },
 
-    getTaskInstanceById:
+    /**
+     * 根据UUID获取任务实例
+     */
+    getTaskInstanceByUuid:
       (state) =>
-      (uuid: string): TaskInstance | undefined => {
-        const instance = state.taskInstances.find((t) => t.uuid === uuid);
-        return instance as TaskInstance | undefined;
+      (uuid: string): any | null => {
+        return state.taskInstances.find((t) => t.uuid === uuid) || null;
       },
 
-    getTodayTaskInstances(): TaskInstance[] {
-      console.log(
-        '🔍 [TaskStore] 获取今日任务实例！！！！！！！！！！！！！！！！！！！！！！！！！！！！！！',
-      );
-      console.log('当前任务实例列表:', this.taskInstances);
+    /**
+     * 根据UUID获取元模板
+     */
+    getMetaTemplateByUuid:
+      (state) =>
+      (uuid: string): any | null => {
+        return state.metaTemplates.find((t) => t.uuid === uuid) || null;
+      },
+
+    // ===== 选中状态 =====
+
+    /**
+     * 获取当前选中的任务模板
+     */
+    getSelectedTaskTemplate(state): any | null {
+      if (!state.selectedTaskTemplate) return null;
+      return state.taskTemplates.find((t) => t.uuid === state.selectedTaskTemplate) || null;
+    },
+
+    /**
+     * 获取当前选中的任务实例
+     */
+    getSelectedTaskInstance(state): any | null {
+      if (!state.selectedTaskInstance) return null;
+      return state.taskInstances.find((t) => t.uuid === state.selectedTaskInstance) || null;
+    },
+
+    /**
+     * 获取正在编辑的任务模板
+     */
+    getTaskTemplateBeingEdited(state): any | null {
+      return state.taskTemplateBeingEdited;
+    },
+
+    // ===== 业务逻辑获取器 =====
+
+    /**
+     * 获取今日任务实例
+     */
+    getTodayTaskInstances(state): any[] {
       const today = new Date();
       const todayStart = toDayStart(today);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayStart.getDate() + 1);
-      const todayInstance = (this.taskInstances as TaskInstance[]).filter((task) => {
-        if (
-          !task.timeConfig.scheduledTime ||
-          typeof task.timeConfig.scheduledTime.getTime() !== 'number'
-        ) {
-          return false;
-        }
+
+      return state.taskInstances.filter((task) => {
+        if (!task.timeConfig?.scheduledDate) return false;
+        const scheduledDate = new Date(task.timeConfig.scheduledDate);
         return (
-          task.timeConfig.scheduledTime.getTime() >= todayStart.getTime() &&
-          task.timeConfig.scheduledTime.getTime() < todayEnd.getTime()
+          scheduledDate.getTime() >= todayStart.getTime() &&
+          scheduledDate.getTime() < todayEnd.getTime()
         );
       });
-      console.log('📅 今日任务实例:', todayInstance);
-      return todayInstance;
     },
 
-    getAllMetaTemplates: (state): TaskMetaTemplate[] => {
-      return state.metaTemplates as TaskMetaTemplate[];
-    },
-
-    getMetaTemplateByUuid:
+    /**
+     * 根据关键结果UUID获取任务模板
+     */
+    getTaskTemplatesByKeyResultUuid:
       (state) =>
-      (uuid: string): TaskMetaTemplate | undefined => {
-        const template = state.metaTemplates.find((t) => t.uuid === uuid);
-        return template as TaskMetaTemplate | undefined;
+      (keyResultUuid: string): any[] => {
+        return state.taskTemplates.filter((t) => {
+          if (!t.goalLinks || t.goalLinks.length === 0) return false;
+          return t.goalLinks.some((link: any) => link.keyResultId === keyResultUuid);
+        });
       },
 
+    /**
+     * 根据分类获取元模板
+     */
     getMetaTemplatesByCategory:
       (state) =>
-      (category: string): TaskMetaTemplate[] => {
-        return (state.metaTemplates as TaskMetaTemplate[]).filter((t) => t.category === category);
+      (category: string): any[] => {
+        return state.metaTemplates.filter((t) => t.appearance?.category === category);
       },
+
+    /**
+     * 根据模板UUID获取任务实例
+     */
+    getInstancesByTemplateUuid:
+      (state) =>
+      (templateUuid: string): any[] => {
+        return state.taskInstances.filter((instance) => instance.templateUuid === templateUuid);
+      },
+
+    /**
+     * 根据状态获取任务实例
+     */
+    getInstancesByStatus:
+      (state) =>
+      (status: string): any[] => {
+        return state.taskInstances.filter((instance) => instance.execution?.status === status);
+      },
+
+    // ===== 统计信息 =====
+
+    /**
+     * 任务模板统计
+     */
+    getTaskTemplateStatistics(state): {
+      total: number;
+      active: number;
+      archived: number;
+    } {
+      const total = state.taskTemplates.length;
+      const active = state.taskTemplates.filter((t) => t.lifecycle?.status === 'active').length;
+      const archived = state.taskTemplates.filter((t) => t.lifecycle?.status === 'archived').length;
+
+      return { total, active, archived };
+    },
+
+    /**
+     * 任务实例统计
+     */
+    getTaskInstanceStatistics(state): {
+      total: number;
+      pending: number;
+      inProgress: number;
+      completed: number;
+      cancelled: number;
+      overdue: number;
+    } {
+      const total = state.taskInstances.length;
+      const pending = state.taskInstances.filter((i) => i.execution?.status === 'pending').length;
+      const inProgress = state.taskInstances.filter(
+        (i) => i.execution?.status === 'inProgress',
+      ).length;
+      const completed = state.taskInstances.filter(
+        (i) => i.execution?.status === 'completed',
+      ).length;
+      const cancelled = state.taskInstances.filter(
+        (i) => i.execution?.status === 'cancelled',
+      ).length;
+      const overdue = state.taskInstances.filter((i) => i.execution?.status === 'overdue').length;
+
+      return { total, pending, inProgress, completed, cancelled, overdue };
+    },
+
+    /**
+     * 元模板统计
+     */
+    getMetaTemplateStatistics(state): {
+      total: number;
+      byCategory: Record<string, number>;
+    } {
+      const total = state.metaTemplates.length;
+      const byCategory: Record<string, number> = {};
+
+      state.metaTemplates.forEach((template) => {
+        const category = template.appearance?.category || 'uncategorized';
+        byCategory[category] = (byCategory[category] || 0) + 1;
+      });
+
+      return { total, byCategory };
+    },
+
+    // ===== 缓存管理 =====
+
+    /**
+     * 检查是否需要刷新缓存
+     */
+    shouldRefreshCache(state): boolean {
+      if (!state.lastSyncTime) return true;
+      const now = new Date();
+      const timeDiff = now.getTime() - state.lastSyncTime.getTime();
+      return timeDiff > state.cacheExpiry;
+    },
   },
 
   actions: {
-    getTaskTemplatesByKeyResultUuid(keyResultUuid: string): TaskTemplate[] {
-      const templates = this.taskTemplates.filter((t) => {
-        if (!t.keyResultLinks || t.keyResultLinks.length === 0) {
-          return false;
-        }
-        return t.keyResultLinks.some((link) => link.keyResultId === keyResultUuid);
-      });
-      return templates as TaskTemplate[];
-    },
-    updateTaskTemplateBeingEdited(template: TaskTemplate | null) {
-      this.taskTemplateBeingEdited = template as TaskTemplate | null;
-    },
-    // 当作数据库来操作
-    // === 基础 CRUD 操作（确保类型安全）===
-    async addTaskTemplate(template: TaskTemplate | any): Promise<ApiResponse<TaskTemplate>> {
-      this.taskTemplates.push(template as TaskTemplate);
-      return {
-        success: true,
-        message: '任务模板添加成功',
-        data: template as TaskTemplate,
-      };
+    // ===== 状态管理 =====
+
+    /**
+     * 设置加载状态
+     */
+    setLoading(loading: boolean) {
+      this.isLoading = loading;
     },
 
-    async removeTaskTemplateById(templateId: string): Promise<ApiResponse<void>> {
-      const index = this.taskTemplates.findIndex((t) => t.uuid === templateId);
-      if (index !== -1) {
+    /**
+     * 设置错误信息
+     */
+    setError(error: string | null) {
+      this.error = error;
+    },
+
+    /**
+     * 标记为已初始化
+     */
+    setInitialized(initialized: boolean) {
+      this.isInitialized = initialized;
+    },
+
+    /**
+     * 更新最后同步时间
+     */
+    updateLastSyncTime() {
+      this.lastSyncTime = new Date();
+    },
+
+    /**
+     * 设置分页信息
+     */
+    setPagination(pagination: { page: number; limit: number; total: number }) {
+      this.pagination = { ...pagination };
+    },
+
+    // ===== 选中状态管理 =====
+
+    /**
+     * 设置选中的任务模板
+     */
+    setSelectedTaskTemplate(uuid: string | null) {
+      this.selectedTaskTemplate = uuid;
+    },
+
+    /**
+     * 设置选中的任务实例
+     */
+    setSelectedTaskInstance(uuid: string | null) {
+      this.selectedTaskInstance = uuid;
+    },
+
+    /**
+     * 设置正在编辑的任务模板
+     */
+    setTaskTemplateBeingEdited(template: any | null) {
+      this.taskTemplateBeingEdited = template;
+    },
+
+    // ===== 数据同步方法（由 ApplicationService 调用）=====
+
+    /**
+     * 批量设置任务模板
+     */
+    setTaskTemplates(templates: any[]) {
+      this.taskTemplates = [...templates];
+      console.log(`✅ [TaskStore] 已设置 ${templates.length} 个任务模板`);
+    },
+
+    /**
+     * 批量设置任务实例
+     */
+    setTaskInstances(instances: any[]) {
+      this.taskInstances = [...instances];
+      console.log(`✅ [TaskStore] 已设置 ${instances.length} 个任务实例`);
+    },
+
+    /**
+     * 批量设置元模板
+     */
+    setMetaTemplates(metaTemplates: any[]) {
+      this.metaTemplates = [...metaTemplates];
+      console.log(`✅ [TaskStore] 已设置 ${metaTemplates.length} 个元模板`);
+    },
+
+    /**
+     * 添加单个任务模板到缓存
+     */
+    addTaskTemplate(template: any) {
+      const existingIndex = this.taskTemplates.findIndex((t) => t.uuid === template.uuid);
+      if (existingIndex >= 0) {
+        this.taskTemplates[existingIndex] = template;
+      } else {
+        this.taskTemplates.push(template);
+      }
+    },
+
+    /**
+     * 添加单个任务实例到缓存
+     */
+    addTaskInstance(instance: any) {
+      const existingIndex = this.taskInstances.findIndex((i) => i.uuid === instance.uuid);
+      if (existingIndex >= 0) {
+        this.taskInstances[existingIndex] = instance;
+      } else {
+        this.taskInstances.push(instance);
+      }
+    },
+
+    /**
+     * 添加多个任务实例到缓存
+     */
+    addTaskInstances(instances: any[]) {
+      instances.forEach((instance) => {
+        this.addTaskInstance(instance);
+      });
+    },
+
+    /**
+     * 添加单个元模板到缓存
+     */
+    addMetaTemplate(metaTemplate: any) {
+      const existingIndex = this.metaTemplates.findIndex((t) => t.uuid === metaTemplate.uuid);
+      if (existingIndex >= 0) {
+        this.metaTemplates[existingIndex] = metaTemplate;
+      } else {
+        this.metaTemplates.push(metaTemplate);
+      }
+    },
+
+    /**
+     * 更新任务模板
+     */
+    updateTaskTemplate(uuid: string, updatedTemplate: any) {
+      const index = this.taskTemplates.findIndex((t) => t.uuid === uuid);
+      if (index >= 0) {
+        this.taskTemplates[index] = updatedTemplate;
+      }
+    },
+
+    /**
+     * 更新任务实例
+     */
+    updateTaskInstance(uuid: string, updatedInstance: any) {
+      const index = this.taskInstances.findIndex((i) => i.uuid === uuid);
+      if (index >= 0) {
+        this.taskInstances[index] = updatedInstance;
+      }
+    },
+
+    /**
+     * 批量更新任务实例
+     */
+    updateTaskInstances(instances: any[]) {
+      instances.forEach((instance) => {
+        this.updateTaskInstance(instance.uuid, instance);
+      });
+    },
+
+    /**
+     * 更新元模板
+     */
+    updateMetaTemplate(uuid: string, updatedTemplate: any) {
+      const index = this.metaTemplates.findIndex((t) => t.uuid === uuid);
+      if (index >= 0) {
+        this.metaTemplates[index] = updatedTemplate;
+      }
+    },
+
+    /**
+     * 移除任务模板
+     */
+    removeTaskTemplate(uuid: string) {
+      const index = this.taskTemplates.findIndex((t) => t.uuid === uuid);
+      if (index >= 0) {
         this.taskTemplates.splice(index, 1);
-        return {
-          success: true,
-          message: '任务模板删除成功',
-        };
-      }
-      return {
-        success: false,
-        message: `未找到ID为 ${templateId} 的任务模板`,
-      };
-    },
 
-    async updateTaskTemplate(template: TaskTemplate | any): Promise<ApiResponse<TaskTemplate>> {
-      const index = this.taskTemplates.findIndex((t) => t.uuid === (template as TaskTemplate).uuid);
-      if (index !== -1) {
-        this.taskTemplates[index] = template as TaskTemplate;
-        return {
-          success: true,
-          message: '任务模板更新成功',
-          data: template as TaskTemplate,
-        };
-      }
-      return {
-        success: false,
-        message: `未找到ID为 ${(template as TaskTemplate).uuid} 的任务模板`,
-      };
-    },
-
-    async addTaskInstance(instance: TaskInstance | any): Promise<ApiResponse<TaskInstance>> {
-      this.taskInstances.push(instance as TaskInstance);
-      return {
-        success: true,
-        message: '任务实例添加成功',
-        data: instance as TaskInstance,
-      };
-    },
-
-    async addTaskInstances(instances: (TaskInstance | any)[]): Promise<ApiResponse<TaskInstance[]>> {
-      this.taskInstances.push(...(instances as TaskInstance[]));
-      return {
-        success: true,
-        message: `成功添加 ${(instances as TaskInstance[]).length} 个任务实例`,
-        data: instances as TaskInstance[],
-      };
-    },
-
-    async updateTaskInstance(instance: TaskInstance | any): Promise<ApiResponse<TaskInstance>> {
-      const index = this.taskInstances.findIndex((t) => t.uuid === (instance as TaskInstance).uuid);
-      if (index !== -1) {
-        this.taskInstances[index] = instance as TaskInstance;
-        return {
-          success: true,
-          message: '任务实例更新成功',
-          data: instance as TaskInstance,
-        };
-      }
-      return {
-        success: false,
-        message: `未找到ID为 ${(instance as TaskInstance).uuid} 的任务实例`,
-      };
-    },
-
-    async updateTaskInstances(
-      instances: (TaskInstance | any)[],
-    ): Promise<ApiResponse<TaskInstance[]>> {
-      const updatedInstances: TaskInstance[] = [];
-      (instances as TaskInstance[]).forEach((instance) => {
-        const index = this.taskInstances.findIndex((t) => t.uuid === instance.uuid);
-        if (index !== -1) {
-          this.taskInstances[index] = instance;
-          updatedInstances.push(instance);
+        // 如果删除的是当前选中的模板，清除选中状态
+        if (this.selectedTaskTemplate === uuid) {
+          this.selectedTaskTemplate = null;
         }
-      });
-      return {
-        success: true,
-        message: `成功更新 ${updatedInstances.length} 个任务实例`,
-        data: updatedInstances,
-      };
+
+        // 如果删除的是正在编辑的模板，清除编辑状态
+        if (this.taskTemplateBeingEdited?.uuid === uuid) {
+          this.taskTemplateBeingEdited = null;
+        }
+      }
     },
 
-    // ✅ 新增：删除单个任务实例
-    async removeTaskInstanceById(instanceId: string): Promise<ApiResponse<void>> {
-      const index = this.taskInstances.findIndex((t) => t.uuid === instanceId);
-      if (index !== -1) {
+    /**
+     * 移除任务实例
+     */
+    removeTaskInstance(uuid: string) {
+      const index = this.taskInstances.findIndex((i) => i.uuid === uuid);
+      if (index >= 0) {
         this.taskInstances.splice(index, 1);
-        return {
-          success: true,
-          message: '任务实例删除成功',
-        };
-      }
-      return {
-        success: false,
-        message: `未找到ID为 ${instanceId} 的任务实例`,
-      };
-    },
 
-    // ✅ 新增：批量删除任务实例
-    async removeTaskInstancesByIds(instanceIds: string[]): Promise<ApiResponse<number>> {
-      let removedCount = 0;
-
-      // 从后往前删除，避免索引变化问题
-      for (let i = this.taskInstances.length - 1; i >= 0; i--) {
-        if (instanceIds.includes(this.taskInstances[i].uuid)) {
-          this.taskInstances.splice(i, 1);
-          removedCount++;
+        // 如果删除的是当前选中的实例，清除选中状态
+        if (this.selectedTaskInstance === uuid) {
+          this.selectedTaskInstance = null;
         }
       }
-
-      return {
-        success: true,
-        message: `成功删除 ${removedCount} 个任务实例`,
-        data: removedCount,
-      };
     },
 
-    // ✅ 新增：根据模板ID删除所有相关实例
-    async removeInstancesByTemplateId(templateId: string): Promise<ApiResponse<number>> {
-      const initialCount = this.taskInstances.length;
-      this.taskInstances = this.taskInstances.filter(
-        (instance) => (instance as TaskInstance).templateUuid !== templateId,
-      );
-      const removedCount = initialCount - this.taskInstances.length;
+    /**
+     * 批量移除任务实例
+     */
+    removeTaskInstancesByIds(uuids: string[]) {
+      this.taskInstances = this.taskInstances.filter((instance) => !uuids.includes(instance.uuid));
 
-      return {
-        success: true,
-        message: `成功删除模板 ${templateId} 的 ${removedCount} 个相关实例`,
-        data: removedCount,
-      };
-    },
-
-    // ✅ 新增：根据状态删除实例
-    async removeInstancesByStatus(
-      status: 'pending' | 'inProgress' | 'completed' | 'cancelled' | 'overdue',
-    ): Promise<ApiResponse<number>> {
-      const initialCount = this.taskInstances.length;
-      this.taskInstances = this.taskInstances.filter((instance) => {
-        return (instance as TaskInstance).status !== status;
-      });
-      const removedCount = initialCount - this.taskInstances.length;
-
-      return {
-        success: true,
-        message: `成功删除 ${removedCount} 个状态为 ${status} 的实例`,
-        data: removedCount,
-      };
-    },
-
-    // ✅ 修改：MetaTemplate 相关方法
-    async addMetaTemplate(metaTemplate: TaskMetaTemplate): Promise<ApiResponse<TaskMetaTemplate>> {
-      this.metaTemplates.push(metaTemplate as TaskMetaTemplate);
-      return {
-        success: true,
-        message: '元模板添加成功',
-        data: metaTemplate as TaskMetaTemplate,
-      };
-    },
-
-    async deleteMetaTemplateById(metaTemplateId: string): Promise<ApiResponse<void>> {
-      const index = this.metaTemplates.findIndex((t) => t.uuid === metaTemplateId);
-      if (index !== -1) {
-        this.metaTemplates.splice(index, 1);
-        return {
-          success: true,
-          message: '元模板删除成功',
-        };
+      // 如果删除的包含当前选中的实例，清除选中状态
+      if (this.selectedTaskInstance && uuids.includes(this.selectedTaskInstance)) {
+        this.selectedTaskInstance = null;
       }
-      return {
-        success: false,
-        message: `未找到ID为 ${metaTemplateId} 的元模板`,
-      };
-    },
-
-    // === 批量数据同步方法 ===
-    /**
-     * 批量设置任务模板（从主进程同步数据时使用）
-     */
-    setTaskTemplates(templates: any[]): void {
-      this.taskTemplates = templates as TaskTemplate[];
     },
 
     /**
-     * 清空所有任务模板
+     * 根据模板UUID移除相关实例
      */
-    clearAllTaskTemplates(): void {
+    removeInstancesByTemplateUuid(templateUuid: string) {
+      this.taskInstances = this.taskInstances.filter(
+        (instance) => instance.templateUuid !== templateUuid,
+      );
+    },
+
+    /**
+     * 移除元模板
+     */
+    removeMetaTemplate(uuid: string) {
+      const index = this.metaTemplates.findIndex((t) => t.uuid === uuid);
+      if (index >= 0) {
+        this.metaTemplates.splice(index, 1);
+      }
+    },
+
+    // ===== 初始化和清理 =====
+
+    /**
+     * 初始化 Store（加载本地缓存）
+     */
+    initialize() {
+      try {
+        // 从 localStorage 加载缓存数据
+        const cachedData = localStorage.getItem('task-store-cache');
+        if (cachedData) {
+          const data = JSON.parse(cachedData);
+          this.taskTemplates = data.taskTemplates || [];
+          this.taskInstances = data.taskInstances || [];
+          this.metaTemplates = data.metaTemplates || [];
+          this.lastSyncTime = data.lastSyncTime ? new Date(data.lastSyncTime) : null;
+
+          console.log(
+            `📦 [TaskStore] 从缓存加载数据: ${this.taskTemplates.length} 模板, ${this.taskInstances.length} 实例, ${this.metaTemplates.length} 元模板`,
+          );
+        }
+
+        this.setInitialized(true);
+        console.log('✅ [TaskStore] 初始化完成');
+      } catch (error) {
+        console.error('❌ [TaskStore] 初始化失败:', error);
+        this.setError('初始化失败');
+      }
+    },
+
+    /**
+     * 保存到本地缓存
+     */
+    saveToCache() {
+      try {
+        const cacheData = {
+          taskTemplates: this.taskTemplates,
+          taskInstances: this.taskInstances,
+          metaTemplates: this.metaTemplates,
+          lastSyncTime: this.lastSyncTime?.toISOString(),
+        };
+        localStorage.setItem('task-store-cache', JSON.stringify(cacheData));
+        console.log('💾 [TaskStore] 数据已保存到缓存');
+      } catch (error) {
+        console.error('❌ [TaskStore] 保存缓存失败:', error);
+      }
+    },
+
+    /**
+     * 清除所有数据
+     */
+    clearAllData() {
       this.taskTemplates = [];
-      console.log('🧹 [TaskStore] 已清空所有任务模板');
-    },
-
-    /**
-     * 批量设置任务实例（从主进程同步数据时使用）
-     */
-    setTaskInstances(instances: any[]): void {
-      this.taskInstances = instances as TaskInstance[];
-    },
-
-    /**
-     * 清空所有任务实例
-     */
-    clearAllTaskInstances(): void {
       this.taskInstances = [];
-      console.log('🧹 [TaskStore] 已清空所有任务实例');
+      this.metaTemplates = [];
+      this.selectedTaskTemplate = null;
+      this.selectedTaskInstance = null;
+      this.taskTemplateBeingEdited = null;
+      this.lastSyncTime = null;
+      this.error = null;
+
+      // 清除本地缓存
+      localStorage.removeItem('task-store-cache');
+
+      console.log('🧹 [TaskStore] 已清除所有数据');
     },
 
     /**
-     * 批量设置元模板（从主进程同步数据时使用）
+     * 批量同步所有数据
      */
-    setMetaTemplates(metaTemplates: any[]): void {
-      this.metaTemplates = metaTemplates as TaskMetaTemplate[];
+    syncAllData(templates: any[], instances: any[], metaTemplates: any[]) {
+      this.setTaskTemplates(templates);
+      this.setTaskInstances(instances);
+      this.setMetaTemplates(metaTemplates);
+      this.updateLastSyncTime();
+      this.saveToCache();
+
+      console.log('🔄 [TaskStore] 批量同步完成');
+    },
+
+    // ===== 兼容性方法（保持向后兼容）=====
+
+    /**
+     * @deprecated 使用 getTaskTemplateByUuid 替代
+     */
+    getTaskTemplateById: (uuid: string) => {
+      console.warn('[TaskStore] getTaskTemplateById 已废弃，请使用 getTaskTemplateByUuid');
+      return this.getTaskTemplateByUuid(uuid);
     },
 
     /**
-     * 批量同步所有数据（从主进程同步时使用）
+     * @deprecated 使用 getTaskInstanceByUuid 替代
      */
-    syncAllData(templates: any[], instances: any[], metaTemplates: any[]): void {
-      console.log('🔄 [TaskStore] syncAllData 开始同步数据...');
-      console.log('📊 输入数据:', {
-        templatesCount: templates.length,
-        instancesCount: instances.length,
-        metaTemplatesCount: metaTemplates.length,
-      });
-
-      // 直接使用 $patch 批量更新，避免重复调用
-      this.$patch({
-        taskTemplates: templates as TaskTemplate[],
-        taskInstances: instances as TaskInstance[],
-        metaTemplates: metaTemplates as TaskMetaTemplate[],
-      });
-
-      console.log('✅ [TaskStore] syncAllData 同步完成');
-      console.log('📈 最终状态:', {
-        templatesCount: this.taskTemplates.length,
-        instancesCount: this.taskInstances.length,
-        metaTemplatesCount: this.metaTemplates.length,
-      });
+    getTaskInstanceById: (uuid: string) => {
+      console.warn('[TaskStore] getTaskInstanceById 已废弃，请使用 getTaskInstanceByUuid');
+      return this.getTaskInstanceByUuid(uuid);
     },
 
-    setTaskData(templates: TaskTemplate[], instances: TaskInstance[]) {
-      this.taskTemplates = templates;
-      this.taskInstances = instances;
+    /**
+     * 兼容旧方法：设置任务数据
+     */
+    setTaskData(templates: any[], instances: any[]) {
+      this.setTaskTemplates(templates);
+      this.setTaskInstances(instances);
     },
 
-    // ✅ 获取可序列化的状态快照
-    getSerializableSnapshot(): {
-      templates: any[];
-      instances: any[];
-      timestamp: number;
-    } {
+    /**
+     * 获取可序列化的状态快照
+     */
+    getSerializableSnapshot() {
       return {
-        templates: (this.taskTemplates as TaskTemplate[]).map((template) => template.toDTO()),
-        instances: (this.taskInstances as TaskInstance[]).map((instance) => instance.toDTO()),
+        templates: [...this.taskTemplates],
+        instances: [...this.taskInstances],
+        metaTemplates: [...this.metaTemplates],
         timestamp: Date.now(),
       };
     },
 
-    // ✅ 从快照恢复数据
+    /**
+     * 从快照恢复数据
+     */
     restoreFromSnapshot(snapshot: {
       templates: any[];
       instances: any[];
+      metaTemplates?: any[];
       timestamp?: number;
-    }): void {
-      this.taskTemplates = snapshot.templates.map((data) => TaskTemplate.fromDTO(data));
-      this.taskInstances = snapshot.instances.map((data) => TaskInstance.fromDTO(data));
-      console.log(
-        `✓ 从快照恢复数据成功 (${snapshot.templates.length} 模板, ${snapshot.instances.length} 实例)`,
-      );
-      if (snapshot.timestamp) {
-        console.log(`✓ 快照时间: ${new Date(snapshot.timestamp).toLocaleString()}`);
+    }) {
+      this.setTaskTemplates(snapshot.templates);
+      this.setTaskInstances(snapshot.instances);
+      if (snapshot.metaTemplates) {
+        this.setMetaTemplates(snapshot.metaTemplates);
       }
+      this.updateLastSyncTime();
+      this.saveToCache();
+
+      console.log(`✅ [TaskStore] 从快照恢复数据成功`);
     },
   },
 });

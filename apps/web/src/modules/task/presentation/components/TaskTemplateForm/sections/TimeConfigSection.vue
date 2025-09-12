@@ -55,9 +55,9 @@
 </template>
 
 <script setup lang="ts">
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 import { computed, ref, watch } from 'vue';
-import { useTimeConfigValidation } from '@renderer/modules/Task/presentation/composables/useTimeConfigValidation';
+import { useTimeConfigValidation } from '@/modules/task/presentation/composables/useTimeConfigValidation';
 // utils
 import { updateDateKeepTime, updateTimeKeepDate, formatDateToInput, formatTimeToInput } from '@dailyuse/utils';
 interface Props {

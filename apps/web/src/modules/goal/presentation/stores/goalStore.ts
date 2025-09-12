@@ -1,21 +1,24 @@
 import { defineStore } from 'pinia';
-import { Goal, GoalDir, goalService, type GoalDirTreeNode } from '@dailyuse/domain-client';
+import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { type GoalContracts } from '@dailyuse/contracts';
 
 /**
- * Goal 模块的 Pinia Store
- * 使用新的 domain-client 架构
+ * Goal 模块的 Pinia Store - 纯缓存存储
+ * 职责：缓存目标和目录数据，提供响应式查询接口
  */
 export const useGoalStore = defineStore('goal', {
   state: () => ({
-    // 加载状态
+    // ===== 缓存数据 =====
+    goals: [] as any[], // 暂时使用 any 避免类型冲突
+    goalDirs: [] as any[], // 暂时使用 any 避免类型冲突
+
+    // ===== 状态管理 =====
     isLoading: false,
     isInitialized: false,
-
-    // 错误状态
     error: null as string | null,
+    lastSyncTime: null as Date | null,
 
-    // 分页状态
+    // ===== UI状态 =====
     pagination: {
       page: 1,
       limit: 20,
@@ -23,7 +26,6 @@ export const useGoalStore = defineStore('goal', {
       totalPages: 0,
     },
 
-    // 过滤和搜索状态
     filters: {
       status: 'all' as 'all' | 'active' | 'completed' | 'paused' | 'archived',
       dirUuid: undefined as string | undefined,
@@ -41,8 +43,8 @@ export const useGoalStore = defineStore('goal', {
     /**
      * 获取所有目标
      */
-    getAllGoals(): Goal[] {
-      return goalService.getAllGoals();
+    getAllGoals(): any[] {
+      return this.goals;
     },
 
     /**
@@ -50,64 +52,90 @@ export const useGoalStore = defineStore('goal', {
      */
     getGoalByUuid:
       (state) =>
-      (uuid: string): Goal | undefined => {
-        return goalService.getGoal(uuid);
+      (uuid: string): any | undefined => {
+        return state.goals.find((g) => g.uuid === uuid);
       },
 
     /**
      * 根据目录UUID获取目标
      */
-    getGoalsByDir(): (dirUuid?: string) => Goal[] {
-      return (dirUuid?: string) => goalService.getGoalsByDir(dirUuid);
+    getGoalsByDir(): (dirUuid?: string) => any[] {
+      return (dirUuid?: string) => {
+        if (!dirUuid) {
+          return this.goals.filter((g) => !g.dirUuid);
+        }
+        return this.goals.filter((g) => g.dirUuid === dirUuid);
+      };
     },
 
     /**
      * 根据状态获取目标
      */
-    getGoalsByStatus(): (status: 'active' | 'completed' | 'paused' | 'archived') => Goal[] {
-      return (status) => goalService.getGoalsByStatus(status);
+    getGoalsByStatus(): (status: 'active' | 'completed' | 'paused' | 'archived') => any[] {
+      return (status) => this.goals.filter((g) => g.lifecycle?.status === status);
     },
 
     /**
      * 获取活跃目标
      */
-    getActiveGoals(): Goal[] {
-      return goalService.getGoalsByStatus('active');
+    getActiveGoals(): any[] {
+      return this.goals.filter((g) => g.lifecycle?.status === 'active');
     },
 
     /**
      * 获取需要关注的目标
      */
-    getGoalsNeedingAttention(): Goal[] {
-      return goalService.getGoalsNeedingAttention();
+    getGoalsNeedingAttention(): any[] {
+      const now = new Date();
+      return this.goals.filter((goal) => {
+        // 逾期的目标
+        if (goal.endTime && goal.endTime < now && goal.lifecycle?.status === 'active') {
+          return true;
+        }
+        return false;
+      });
     },
 
     /**
      * 获取即将截止的目标
      */
-    getGoalsDueSoon(): Goal[] {
-      return goalService.getGoalsDueSoon();
+    getGoalsDueSoon(): any[] {
+      const now = new Date();
+      const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+      return this.goals.filter(
+        (goal) =>
+          goal.endTime &&
+          goal.endTime >= now &&
+          goal.endTime <= threeDaysLater &&
+          goal.lifecycle?.status === 'active',
+      );
     },
 
     /**
      * 获取已逾期的目标
      */
-    getOverdueGoals(): Goal[] {
-      return goalService.getOverdueGoals();
+    getOverdueGoals(): any[] {
+      const now = new Date();
+      return this.goals.filter(
+        (goal) => goal.endTime && goal.endTime < now && goal.lifecycle?.status === 'active',
+      );
     },
 
     /**
      * 获取已暂停的目标
      */
-    getPausedGoals(): Goal[] {
-      return goalService.getPausedGoals();
+    getPausedGoals(): any[] {
+      return this.goals.filter((g) => g.lifecycle?.status === 'paused');
     },
 
     /**
      * 获取当前选中的目标
      */
-    getSelectedGoal(state): Goal | undefined {
-      return state.selectedGoalUuid ? goalService.getGoal(state.selectedGoalUuid) : undefined;
+    getSelectedGoal(state): any | undefined {
+      return state.selectedGoalUuid
+        ? state.goals.find((g) => g.uuid === state.selectedGoalUuid)
+        : undefined;
     },
 
     // ===== 目录查询 =====
@@ -115,8 +143,8 @@ export const useGoalStore = defineStore('goal', {
     /**
      * 获取所有目录
      */
-    getAllGoalDirs(): GoalDir[] {
-      return goalService.getAllGoalDirs();
+    getAllGoalDirs(): any[] {
+      return this.goalDirs;
     },
 
     /**
@@ -124,36 +152,36 @@ export const useGoalStore = defineStore('goal', {
      */
     getGoalDirByUuid:
       (state) =>
-      (uuid: string): GoalDir | undefined => {
-        return goalService.getGoalDir(uuid);
+      (uuid: string): any | undefined => {
+        return state.goalDirs.find((d) => d.uuid === uuid);
       },
 
     /**
      * 根据父目录获取子目录
      */
-    getGoalDirsByParent(): (parentUuid?: string) => GoalDir[] {
-      return (parentUuid?: string) => goalService.getGoalDirsByParent(parentUuid);
+    getGoalDirsByParent(): (parentUuid?: string) => any[] {
+      return (parentUuid?: string) => {
+        if (!parentUuid) {
+          return this.goalDirs.filter((d) => !d.parentUuid);
+        }
+        return this.goalDirs.filter((d) => d.parentUuid === parentUuid);
+      };
     },
 
     /**
      * 获取根目录
      */
-    getRootGoalDirs(): GoalDir[] {
-      return goalService.getRootGoalDirs();
-    },
-
-    /**
-     * 构建目录树
-     */
-    getGoalDirTree(): GoalDirTreeNode[] {
-      return goalService.buildGoalDirTree();
+    getRootGoalDirs(): any[] {
+      return this.goalDirs.filter((d) => !d.parentUuid);
     },
 
     /**
      * 获取当前选中的目录
      */
-    getSelectedGoalDir(state): GoalDir | undefined {
-      return state.selectedDirUuid ? goalService.getGoalDir(state.selectedDirUuid) : undefined;
+    getSelectedGoalDir(state): any | undefined {
+      return state.selectedDirUuid
+        ? state.goalDirs.find((d) => d.uuid === state.selectedDirUuid)
+        : undefined;
     },
 
     // ===== 统计信息 =====
@@ -171,7 +199,16 @@ export const useGoalStore = defineStore('goal', {
       dueSoon: number;
       needingAttention: number;
     } {
-      return goalService.getGoalStatistics();
+      return {
+        total: this.goals.length,
+        active: this.getActiveGoals.length,
+        completed: this.getGoalsByStatus('completed').length,
+        paused: this.getGoalsByStatus('paused').length,
+        archived: this.getGoalsByStatus('archived').length,
+        overdue: this.getOverdueGoals.length,
+        dueSoon: this.getGoalsDueSoon.length,
+        needingAttention: this.getGoalsNeedingAttention.length,
+      };
     },
 
     /**
@@ -184,7 +221,18 @@ export const useGoalStore = defineStore('goal', {
       system: number;
       user: number;
     } {
-      return goalService.getGoalDirStatistics();
+      const activeDirs = this.goalDirs.filter((d) => d.lifecycle?.status === 'active');
+      const archivedDirs = this.goalDirs.filter((d) => d.lifecycle?.status === 'archived');
+      const systemDirs = this.goalDirs.filter((d) => d.isSystemDir);
+      const userDirs = this.goalDirs.filter((d) => !d.isSystemDir);
+
+      return {
+        total: this.goalDirs.length,
+        active: activeDirs.length,
+        archived: archivedDirs.length,
+        system: systemDirs.length,
+        user: userDirs.length,
+      };
     },
 
     // ===== 过滤后的数据 =====
@@ -192,12 +240,12 @@ export const useGoalStore = defineStore('goal', {
     /**
      * 获取过滤后的目标列表
      */
-    getFilteredGoals(state): Goal[] {
-      let goals = goalService.getAllGoals();
+    getFilteredGoals(state): any[] {
+      let goals = this.goals;
 
       // 按状态过滤
       if (state.filters.status !== 'all') {
-        goals = goals.filter((goal) => goal.status === state.filters.status);
+        goals = goals.filter((goal) => goal.lifecycle?.status === state.filters.status);
       }
 
       // 按目录过滤
@@ -207,7 +255,12 @@ export const useGoalStore = defineStore('goal', {
 
       // 按搜索关键词过滤
       if (state.filters.searchQuery) {
-        goals = goalService.searchGoals(state.filters.searchQuery);
+        const query = state.filters.searchQuery.toLowerCase();
+        goals = goals.filter(
+          (goal) =>
+            goal.name.toLowerCase().includes(query) ||
+            (goal.description && goal.description.toLowerCase().includes(query)),
+        );
       }
 
       return goals;
@@ -220,70 +273,51 @@ export const useGoalStore = defineStore('goal', {
      */
     isSystemGoalDir(): (dirUuid: string) => boolean {
       return (dirUuid: string) => {
-        const dir = goalService.getGoalDir(dirUuid);
+        const dir = this.goalDirs.find((d) => d.uuid === dirUuid);
         return dir?.isSystemDir || false;
       };
     },
   },
 
   actions: {
-    // ===== 初始化 =====
+    // ===== 数据管理 - 纯缓存操作 =====
 
     /**
-     * 初始化 Goal Store
+     * 设置所有目标
      */
-    async initialize(): Promise<void> {
-      if (this.isInitialized) return;
+    setGoals(goals: any[]): void {
+      this.goals = goals;
+      this.lastSyncTime = new Date();
+    },
 
-      try {
-        this.isLoading = true;
-        this.error = null;
-
-        // 从本地存储加载缓存数据
-        goalService.loadFromLocalStorage();
-
-        this.isInitialized = true;
-      } catch (error) {
-        this.error = error instanceof Error ? error.message : '初始化失败';
-        console.error('Goal Store 初始化失败:', error);
-      } finally {
-        this.isLoading = false;
+    /**
+     * 添加或更新单个目标
+     */
+    addOrUpdateGoal(goal: any): void {
+      const index = this.goals.findIndex((g) => g.uuid === goal.uuid);
+      if (index >= 0) {
+        this.goals[index] = goal;
+      } else {
+        this.goals.push(goal);
       }
-    },
-
-    // ===== 目标管理 =====
-
-    /**
-     * 同步单个目标到本地状态
-     */
-    syncGoal(goal: Goal): void {
-      goalService.addOrUpdateGoal(goal);
-      goalService.saveToLocalStorage();
+      this.lastSyncTime = new Date();
     },
 
     /**
-     * 批量同步目标到本地状态
+     * 批量添加或更新目标
      */
-    syncGoals(goals: Goal[]): void {
-      goalService.clearGoals();
-      goals.forEach((goal) => goalService.addOrUpdateGoal(goal));
-      goalService.saveToLocalStorage();
-    },
-
-    /**
-     * 从响应数据同步目标
-     */
-    syncGoalsFromResponses(responses: GoalContracts.GoalResponse[]): void {
-      goalService.updateGoalsFromResponses(responses);
-      goalService.saveToLocalStorage();
+    addOrUpdateGoals(goals: any[]): void {
+      goals.forEach((goal) => this.addOrUpdateGoal(goal));
     },
 
     /**
      * 移除目标
      */
     removeGoal(uuid: string): void {
-      goalService.removeGoal(uuid);
-      goalService.saveToLocalStorage();
+      const index = this.goals.findIndex((g) => g.uuid === uuid);
+      if (index >= 0) {
+        this.goals.splice(index, 1);
+      }
 
       // 清除选中状态
       if (this.selectedGoalUuid === uuid) {
@@ -291,44 +325,63 @@ export const useGoalStore = defineStore('goal', {
       }
     },
 
-    // ===== 目录管理 =====
-
     /**
-     * 同步单个目录到本地状态
+     * 清空所有目标
      */
-    syncGoalDir(goalDir: GoalDir): void {
-      goalService.addOrUpdateGoalDir(goalDir);
-      goalService.saveToLocalStorage();
+    clearGoals(): void {
+      this.goals = [];
+      this.selectedGoalUuid = null;
     },
 
     /**
-     * 批量同步目录到本地状态
+     * 设置所有目录
      */
-    syncGoalDirs(goalDirs: GoalDir[]): void {
-      goalService.clearGoalDirs();
-      goalDirs.forEach((dir) => goalService.addOrUpdateGoalDir(dir));
-      goalService.saveToLocalStorage();
+    setGoalDirs(goalDirs: any[]): void {
+      this.goalDirs = goalDirs;
+      this.lastSyncTime = new Date();
     },
 
     /**
-     * 从响应数据同步目录
+     * 添加或更新单个目录
      */
-    syncGoalDirsFromResponses(responses: GoalContracts.GoalDirResponse[]): void {
-      goalService.updateGoalDirsFromResponses(responses);
-      goalService.saveToLocalStorage();
+    addOrUpdateGoalDir(goalDir: any): void {
+      const index = this.goalDirs.findIndex((d) => d.uuid === goalDir.uuid);
+      if (index >= 0) {
+        this.goalDirs[index] = goalDir;
+      } else {
+        this.goalDirs.push(goalDir);
+      }
+      this.lastSyncTime = new Date();
+    },
+
+    /**
+     * 批量添加或更新目录
+     */
+    addOrUpdateGoalDirs(goalDirs: any[]): void {
+      goalDirs.forEach((dir) => this.addOrUpdateGoalDir(dir));
     },
 
     /**
      * 移除目录
      */
     removeGoalDir(uuid: string): void {
-      goalService.removeGoalDir(uuid);
-      goalService.saveToLocalStorage();
+      const index = this.goalDirs.findIndex((d) => d.uuid === uuid);
+      if (index >= 0) {
+        this.goalDirs.splice(index, 1);
+      }
 
       // 清除选中状态
       if (this.selectedDirUuid === uuid) {
         this.selectedDirUuid = null;
       }
+    },
+
+    /**
+     * 清空所有目录
+     */
+    clearGoalDirs(): void {
+      this.goalDirs = [];
+      this.selectedDirUuid = null;
     },
 
     // ===== 状态管理 =====
@@ -345,6 +398,13 @@ export const useGoalStore = defineStore('goal', {
      */
     setError(error: string | null): void {
       this.error = error;
+    },
+
+    /**
+     * 设置初始化状态
+     */
+    setInitialized(initialized: boolean): void {
+      this.isInitialized = initialized;
     },
 
     /**
@@ -387,40 +447,96 @@ export const useGoalStore = defineStore('goal', {
     },
 
     /**
-     * 清空所有数据
+     * 清空所有数据和状态
      */
     clearAll(): void {
-      goalService.clearGoals();
-      goalService.clearGoalDirs();
-      goalService.clearLocalStorage();
-
+      this.clearGoals();
+      this.clearGoalDirs();
       this.selectedGoalUuid = null;
       this.selectedDirUuid = null;
       this.error = null;
+      this.isInitialized = false;
+      this.lastSyncTime = null;
       this.resetFilters();
+    },
+
+    // ===== 初始化 =====
+
+    /**
+     * 初始化 Store（加载本地存储的缓存数据）
+     */
+    initialize(): void {
+      try {
+        // 从 localStorage 加载缓存数据
+        const cachedGoals = localStorage.getItem('goal-cache-goals');
+        const cachedGoalDirs = localStorage.getItem('goal-cache-goalDirs');
+        const cachedSyncTime = localStorage.getItem('goal-cache-syncTime');
+
+        if (cachedGoals) {
+          const goalsData = JSON.parse(cachedGoals);
+          this.goals = goalsData.map((data: any) => Goal.fromDTO(data));
+        }
+
+        if (cachedGoalDirs) {
+          const goalDirsData = JSON.parse(cachedGoalDirs);
+          this.goalDirs = goalDirsData.map((data: any) => GoalDir.fromDTO(data));
+        }
+
+        if (cachedSyncTime) {
+          this.lastSyncTime = new Date(cachedSyncTime);
+        }
+
+        this.isInitialized = true;
+        console.log(
+          `Goal Store 初始化完成：${this.goals.length} 个目标，${this.goalDirs.length} 个目录`,
+        );
+      } catch (error) {
+        console.error('Goal Store 初始化失败:', error);
+        this.error = '加载缓存数据失败';
+        this.isInitialized = true; // 即使失败也设为已初始化
+      }
     },
 
     // ===== 缓存管理 =====
 
     /**
-     * 检查是否需要刷新缓存
-     */
-    shouldRefreshCache(): boolean {
-      return goalService.shouldRefreshCache();
-    },
-
-    /**
      * 保存到本地存储
      */
     saveToLocalStorage(): void {
-      goalService.saveToLocalStorage();
+      try {
+        localStorage.setItem('goal-cache-goals', JSON.stringify(this.goals.map((g) => g.toDTO())));
+        localStorage.setItem(
+          'goal-cache-goalDirs',
+          JSON.stringify(this.goalDirs.map((d) => d.toDTO())),
+        );
+        localStorage.setItem('goal-cache-syncTime', this.lastSyncTime?.toISOString() || '');
+      } catch (error) {
+        console.error('保存 Goal 缓存失败:', error);
+      }
     },
 
     /**
-     * 从本地存储加载
+     * 清除本地存储
      */
-    loadFromLocalStorage(): void {
-      goalService.loadFromLocalStorage();
+    clearLocalStorage(): void {
+      try {
+        localStorage.removeItem('goal-cache-goals');
+        localStorage.removeItem('goal-cache-goalDirs');
+        localStorage.removeItem('goal-cache-syncTime');
+      } catch (error) {
+        console.error('清除 Goal 缓存失败:', error);
+      }
+    },
+
+    /**
+     * 检查是否需要刷新缓存
+     */
+    shouldRefreshCache(): boolean {
+      if (!this.lastSyncTime) return true;
+
+      // 如果超过30分钟未同步，则需要刷新
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      return this.lastSyncTime < thirtyMinutesAgo;
     },
   },
 });

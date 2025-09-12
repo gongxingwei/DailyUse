@@ -66,7 +66,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 interface Props {
   modelValue: TaskTemplate;
 }

@@ -85,8 +85,8 @@
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
-import { TaskMetaTemplate } from '@renderer/modules/Task/domain/aggregates/taskMetaTemplate';
-import { useTaskStore } from '@renderer/modules/Task/presentation/stores/taskStore';
+import { TaskMetaTemplate } from '@/modules/task/domain/aggregates/taskMetaTemplate';
+import { useTaskStore } from '@/modules/task/presentation/stores/taskStore';
 
 
 interface Props {

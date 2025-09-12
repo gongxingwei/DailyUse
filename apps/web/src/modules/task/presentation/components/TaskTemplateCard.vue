@@ -171,9 +171,9 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { TaskTimeUtils } from '@common/modules/task/utils/taskTimeUtils';
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTimeUtils } from '@dailyuse/contracts/modules/task/utils/taskTimeUtils';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 import { format } from 'date-fns';
 import { ImportanceLevel } from '@dailyuse/contracts';
 import { UrgencyLevel } from '@dailyuse/contracts';

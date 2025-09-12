@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 export function useReminderValidation() {
   const errors = ref<string[]>([]);
   const warnings = ref<string[]>([]);

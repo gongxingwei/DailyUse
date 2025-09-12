@@ -36,7 +36,9 @@
     "@dailyuse/domain-server": "workspace:*",
     "@dailyuse/ui": "workspace:*",
     "@dailyuse/utils": "workspace:*",
-    "node-schedule": "^2.1.1"
+    "echarts": "^5.6.0",
+    "node-schedule": "^2.1.1",
+    "vue-echarts": "^7.0.3"
   },
   "devDependencies": {
     "@nx/eslint": "^21.4.1",

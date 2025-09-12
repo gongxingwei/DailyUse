@@ -1,5 +1,5 @@
 import { ref, computed, watch, readonly, type Ref } from 'vue';
-import type { RecurrenceRule } from '@common/modules/task/types/task';
+import type { RecurrenceRule } from '@dailyuse/contracts/modules/task/types/task';
 import { format } from 'date-fns';
 /**
  * 重复规则验证组合式函数

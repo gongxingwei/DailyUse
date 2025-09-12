@@ -150,7 +150,7 @@ import TaskTemplateCard from './TaskTemplateCard.vue';
 import TaskTemplateDialog from './dialogs/TaskTemplateDialog.vue';
 import TemplateSelectionDialog from './dialogs/TemplateSelectionDialog.vue';
 import { useTaskService } from '../composables/useTaskService';
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 
 const {
     snackbar,
@@ -293,7 +293,7 @@ const confirmDeleteAll = async () => {
         console.log('🔄 [组件] 开始删除所有任务模板');
 
         // 从taskDomainApplicationService获取服务实例并调用删除所有方法
-        const { getTaskDomainApplicationService } = await import('@renderer/modules/Task/application/services/taskDomainApplicationService');
+        const { getTaskDomainApplicationService } = await import('@/modules/task/application/services/taskDomainApplicationService');
         const taskService = getTaskDomainApplicationService();
 
         const result = await taskService.deleteAllTaskTemplates();

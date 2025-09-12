@@ -150,10 +150,10 @@
 
 <script setup lang="ts">
 import { computed, watch } from 'vue';
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
 import { useRouter } from 'vue-router';
-import type { TaskTemplate } from '@renderer/modules/Task/domain/aggregates/taskTemplate';
-import type { KeyResultLink } from '@common/modules/task/types/task';
+import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+import type { KeyResultLink } from '@dailyuse/contracts/modules/task/types/task';
 
 interface Props {
   modelValue: TaskTemplate;
