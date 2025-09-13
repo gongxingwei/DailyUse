@@ -27,13 +27,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.createGoal(request);
+      const goalData = await goalApiClient.createGoal(request);
 
       // 创建客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(goalData);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return goalData;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建目标失败';
       this.goalStore.setError(errorMessage);
@@ -55,22 +55,22 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoals(params);
+      const goalsData = await goalApiClient.getGoals(params);
 
       // 批量创建客户端实体并同步到 store
-      const goals = response.goals.map((goalData) => Goal.fromDTO(goalData));
+      const goals = (goalsData?.goals || []).map((goalData) => Goal.fromResponse(goalData));
       this.goalStore.setGoals(goals);
 
       // 更新分页信息
-      if (response.page) {
+      if (goalsData?.page) {
         this.goalStore.setPagination({
-          page: response.page,
-          limit: response.limit,
-          total: response.total,
+          page: goalsData.page,
+          limit: goalsData.limit,
+          total: goalsData.total,
         });
       }
 
-      return response;
+      return goalsData;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标列表失败';
       this.goalStore.setError(errorMessage);
@@ -85,13 +85,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoalById(uuid);
+      const data = await goalApiClient.getGoalById(uuid);
 
       // 创建客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标详情失败';
       this.goalStore.setError(errorMessage);
@@ -109,13 +109,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.updateGoal(uuid, request);
+      const data = await goalApiClient.updateGoal(uuid, request);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新目标失败';
       this.goalStore.setError(errorMessage);
@@ -150,13 +150,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.activateGoal(uuid);
+      const data = await goalApiClient.activateGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '激活目标失败';
       this.goalStore.setError(errorMessage);
@@ -171,13 +171,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.pauseGoal(uuid);
+      const data = await goalApiClient.pauseGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '暂停目标失败';
       this.goalStore.setError(errorMessage);
@@ -192,13 +192,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.completeGoal(uuid);
+      const data = await goalApiClient.completeGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '完成目标失败';
       this.goalStore.setError(errorMessage);
@@ -213,13 +213,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.archiveGoal(uuid);
+      const data = await goalApiClient.archiveGoal(uuid);
 
       // 更新客户端实体并同步到 store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '归档目标失败';
       this.goalStore.setError(errorMessage);
@@ -238,13 +238,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalDirApiClient.createGoalDir(request);
+      const data = await goalDirApiClient.createGoalDir(request);
 
       // 创建客户端实体并同步到 store
-      const goalDir = GoalDir.fromResponse(response);
+      const goalDir = GoalDir.fromResponse(data);
       this.goalStore.addOrUpdateGoalDir(goalDir);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建目标目录失败';
       this.goalStore.setError(errorMessage);
@@ -264,13 +264,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalDirApiClient.getGoalDirs(params);
+      const data = await goalDirApiClient.getGoalDirs(params);
 
       // 批量创建客户端实体并同步到 store
-      const goalDirs = response.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
+      const goalDirs = (data?.goalDirs || []).map((dirData: any) => GoalDir.fromResponse(dirData));
       this.goalStore.setGoalDirs(goalDirs);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标目录列表失败';
       this.goalStore.setError(errorMessage);
@@ -288,13 +288,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalDirApiClient.updateGoalDir(uuid, request);
+      const data = await goalDirApiClient.updateGoalDir(uuid, request);
 
       // 更新客户端实体并同步到 store
-      const goalDir = GoalDir.fromResponse(response);
+      const goalDir = GoalDir.fromResponse(data);
       this.goalStore.addOrUpdateGoalDir(goalDir);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新目标目录失败';
       this.goalStore.setError(errorMessage);
@@ -335,10 +335,10 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.searchGoals(params);
+      const data = await goalApiClient.searchGoals(params);
 
       // 搜索结果不自动同步到 store，只返回结果
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索目标失败';
       this.goalStore.setError(errorMessage);
@@ -377,25 +377,36 @@ export class GoalWebApplicationService {
       this.goalStore.setError(null);
 
       // 并行获取所有目标和目录数据
-      const [goalsResponse, goalDirsResponse] = await Promise.all([
+      console.log('📡 开始发起 API 请求...');
+      const [goalsData, goalDirsData] = await Promise.all([
         goalApiClient.getGoals({ limit: 1000 }), // 获取所有目标，设置较大的 limit
         goalDirApiClient.getGoalDirs({ limit: 1000 }), // 获取所有目录
       ]);
+      console.log('🔍 API 响应数据:', {
+        goalsData,
+        goalDirsData,
+        goalsType: typeof goalsData,
+        goalDirsType: typeof goalDirsData,
+        goalsDataStructure: goalsData ? Object.keys(goalsData) : 'null/undefined',
+        goalDirsDataStructure: goalDirsData ? Object.keys(goalDirsData) : 'null/undefined',
+      });
 
       // 转换为客户端实体
-      const goals = goalsResponse.goals.map((goalData) => Goal.fromDTO(goalData));
-      const goalDirs = goalDirsResponse.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
+      const goals = (goalsData?.goals || []).map((goalData) => Goal.fromResponse(goalData));
+      const goalDirs = (goalDirsData?.goalDirs || []).map((dirData) =>
+        GoalDir.fromResponse(dirData),
+      );
 
       // 批量同步到 store
       this.goalStore.setGoals(goals);
       this.goalStore.setGoalDirs(goalDirs);
 
       // 更新分页信息（如果有）
-      if (goalsResponse.page) {
+      if (goalsData?.page) {
         this.goalStore.setPagination({
-          page: goalsResponse.page,
-          limit: goalsResponse.limit,
-          total: goalsResponse.total,
+          page: goalsData.page,
+          limit: goalsData.limit,
+          total: goalsData.total,
         });
       }
 
@@ -438,12 +449,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.createKeyResultForGoal(goalUuid, request);
+      const data = await goalApiClient.createKeyResultForGoal(goalUuid, request);
 
       // 更新关联的Goal实体（重新获取以包含新的KeyResult）
       await this.refreshGoalWithKeyResults(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建关键结果失败';
       this.goalStore.setError(errorMessage);
@@ -461,9 +472,9 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getKeyResultsByGoal(goalUuid);
+      const data = await goalApiClient.getKeyResultsByGoal(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取关键结果列表失败';
       this.goalStore.setError(errorMessage);
@@ -485,12 +496,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.updateKeyResultForGoal(goalUuid, keyResultUuid, request);
+      const data = await goalApiClient.updateKeyResultForGoal(goalUuid, keyResultUuid, request);
 
       // 更新关联的Goal实体
       await this.refreshGoalWithKeyResults(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新关键结果失败';
       this.goalStore.setError(errorMessage);
@@ -533,16 +544,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.updateKeyResultProgress(
-        goalUuid,
-        keyResultUuid,
-        request,
-      );
+      const data = await goalApiClient.updateKeyResultProgress(goalUuid, keyResultUuid, request);
 
       // 更新关联的Goal实体和进度
       await this.refreshGoalWithKeyResults(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新关键结果进度失败';
       this.goalStore.setError(errorMessage);
@@ -568,12 +575,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.batchUpdateKeyResultWeights(goalUuid, request);
+      const data = await goalApiClient.batchUpdateKeyResultWeights(goalUuid, request);
 
       // 更新关联的Goal实体
       await this.refreshGoalWithKeyResults(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '批量更新关键结果权重失败';
       this.goalStore.setError(errorMessage);
@@ -597,7 +604,7 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.createGoalRecord(goalUuid, keyResultUuid, request);
+      const data = await goalApiClient.createGoalRecord(goalUuid, keyResultUuid, request);
 
       // 创建记录后更新关键结果进度和Goal状态
       await this.refreshGoalWithKeyResults(goalUuid);
@@ -605,7 +612,7 @@ export class GoalWebApplicationService {
       // 显示成功提示
       this.snackbar.showSuccess('目标记录创建成功');
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建目标记录失败';
       this.goalStore.setError(errorMessage);
@@ -635,13 +642,9 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoalRecordsByKeyResult(
-        goalUuid,
-        keyResultUuid,
-        params,
-      );
+      const data = await goalApiClient.getGoalRecordsByKeyResult(goalUuid, keyResultUuid, params);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标记录失败';
       this.goalStore.setError(errorMessage);
@@ -666,9 +669,9 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoalRecordsByGoal(goalUuid, params);
+      const data = await goalApiClient.getGoalRecordsByGoal(goalUuid, params);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标记录失败';
       this.goalStore.setError(errorMessage);
@@ -691,12 +694,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.createGoalReview(goalUuid, request);
+      const data = await goalApiClient.createGoalReview(goalUuid, request);
 
       // 更新关联的Goal实体
       await this.refreshGoalWithReviews(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建目标复盘失败';
       this.goalStore.setError(errorMessage);
@@ -714,9 +717,9 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoalReviewsByGoal(goalUuid);
+      const data = await goalApiClient.getGoalReviewsByGoal(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标复盘失败';
       this.goalStore.setError(errorMessage);
@@ -738,12 +741,12 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.updateGoalReview(goalUuid, reviewUuid, request);
+      const data = await goalApiClient.updateGoalReview(goalUuid, reviewUuid, request);
 
       // 更新关联的Goal实体
       await this.refreshGoalWithReviews(goalUuid);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新目标复盘失败';
       this.goalStore.setError(errorMessage);
@@ -785,13 +788,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.getGoalAggregateView(goalUuid);
+      const data = await goalApiClient.getGoalAggregateView(goalUuid);
 
       // 将聚合根数据同步到store
-      const goal = Goal.fromResponse(response.goal);
+      const goal = Goal.fromResponse(data.goal);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取目标聚合视图失败';
       this.goalStore.setError(errorMessage);
@@ -817,13 +820,13 @@ export class GoalWebApplicationService {
       this.goalStore.setLoading(true);
       this.goalStore.setError(null);
 
-      const response = await goalApiClient.cloneGoal(goalUuid, request);
+      const data = await goalApiClient.cloneGoal(goalUuid, request);
 
       // 将克隆的目标添加到store
-      const goal = Goal.fromResponse(response);
+      const goal = Goal.fromResponse(data);
       this.goalStore.addOrUpdateGoal(goal);
 
-      return response;
+      return data;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '克隆目标失败';
       this.goalStore.setError(errorMessage);
@@ -889,8 +892,10 @@ export class GoalWebApplicationService {
       ]);
 
       // 转换为客户端实体
-      const goals = goalsResponse.goals.map((goalData) => Goal.fromDTO(goalData));
-      const goalDirs = goalDirsResponse.goalDirs.map((dirData) => GoalDir.fromDTO(dirData));
+      const goals = (goalsResponse?.goals || []).map((goalData) => Goal.fromResponse(goalData));
+      const goalDirs = (goalDirsResponse?.goalDirs || []).map((dirData) =>
+        GoalDir.fromResponse(dirData),
+      );
 
       // 逐个同步到 store（保持现有数据）
       goals.forEach((goal) => this.goalStore.addOrUpdateGoal(goal));

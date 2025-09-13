@@ -130,6 +130,7 @@
         <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
             {{ snackbar.message }}
         </v-snackbar>
+        <goal-create-dialog />
     </v-container>
 </template>
 
@@ -142,8 +143,9 @@ import type { Goal, GoalDir } from '@dailyuse/domain-client';
 // 组件导入
 import GoalCard from '../components/cards/GoalCard.vue';
 import GoalDirComponent from '../components/GoalDir.vue';
+import GoalCreateDialog from '../components/dialogs/GoalCreateDialog.vue';
 // composables
-import { useGoalDialog } from '../composables/useGoalDialog';
+
 
 const {
     isLoading,

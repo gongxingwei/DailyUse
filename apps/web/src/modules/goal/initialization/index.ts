@@ -60,8 +60,8 @@ export function registerGoalInitializationTasks(): void {
       try {
         const goalService = getGoalWebService();
 
-        // 强制重新同步用户的所有目标数据
-        await goalService.forceSync();
+        // 完整初始化，包括数据同步
+        await goalService.initialize();
         console.log('✅ [Goal] 用户 Goal 数据同步完成');
       } catch (error) {
         console.error('❌ [Goal] 用户 Goal 数据同步失败:', error);

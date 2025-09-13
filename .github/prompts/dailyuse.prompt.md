@@ -516,6 +516,7 @@ ModuleName/
   - 错误处理
   - 认证Token管理
   - 请求重试机制
+  - **自动响应数据提取**：封装了标准API响应格式的自动解包
 
 ```bash
 api/
@@ -529,6 +530,66 @@ api/
 └── composables/
     ├── useAuth.ts             # 认证相关组合函数
     └── useRequest.ts          # 请求相关组合函数
+```
+
+#### API响应系统设计
+
+**标准API响应格式**：
+
+```typescript
+// 后端统一返回格式
+{
+  "success": true,
+  "data": {
+    // 实际业务数据
+    "goalDirs": [...],
+    "total": 2
+  },
+  "message": "Goal directories retrieved successfully"
+}
+```
+
+**自动响应解包机制**：
+
+```typescript
+// core/client.ts 中的 extractData 方法
+private extractData<T>(responseData: any): T {
+  // 自动提取标准API响应中的 data 字段
+  if (responseData && typeof responseData === 'object' && 'success' in responseData) {
+    const apiResponse = responseData as SuccessResponse<T> | ErrorResponse;
+
+    if (apiResponse.success === true) {
+      return (apiResponse as SuccessResponse<T>).data; // 直接返回 data 内容
+    } else {
+      throw new Error(apiResponse.message || '请求失败');
+    }
+  }
+
+  return responseData as T; // 非标准格式直接返回
+}
+```
+
+**API客户端使用规范**：
+
+```typescript
+// ✅ 推荐使用方式
+async getGoals(): Promise<GoalListResponse> {
+  const data = await goalApiClient.getGoals();
+  return data; // data 已经是解包后的业务数据
+}
+
+// ❌ 错误使用方式
+async getGoals(): Promise<GoalListResponse> {
+  const response = await goalApiClient.getGoals();
+  return response.data; // 会导致 undefined，因为 data 已被自动提取
+}
+```
+
+**响应数据流**：
+
+```
+后端API响应 → HTTP拦截器 → extractData() → 自动提取data字段 → 返回业务数据
+{success, data, message} → 拦截处理 → 自动解包 → {goalDirs, total} → 直接使用
 ```
 
 **认证系统** (`src/modules/authentication/presentation/stores/`)

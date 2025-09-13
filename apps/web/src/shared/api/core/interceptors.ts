@@ -278,9 +278,11 @@ export class InterceptorManager {
 
         // 响应变换
         if (this.config.responseTransformer) {
-          return this.config.responseTransformer(response);
+          const transformedRes =  this.config.responseTransformer(response);
+          console.log('🔍 转换后响应数据:', transformedRes);
+          return transformedRes;
         }
-
+        console.log('🔍 原始响应数据:', response.data);
         return response;
       },
       async (error: AxiosError) => {
