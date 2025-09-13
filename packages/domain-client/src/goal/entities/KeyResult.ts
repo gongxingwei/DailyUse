@@ -73,6 +73,24 @@ export class KeyResult extends KeyResultCore implements IKeyResult {
     return KeyResult.fromDTO(this.toDTO());
   }
 
+  static forCreate(params: {
+    accountUuid: string;
+    goalUuid: string;
+    unit: string;
+    name?: string;
+    targetValue?: number;
+    weight?: number;
+  }): KeyResult {
+    return new KeyResult({
+      accountUuid: params.accountUuid,
+      goalUuid: params.goalUuid,
+      name: params.name || '',
+      targetValue: params.targetValue || 10,
+      unit: params.unit,
+      weight: params.weight || 10,
+    });
+  }
+
   // ===== 抽象方法实现=====
   complete(): void {
     this._lifecycle.status = 'completed';

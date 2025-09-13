@@ -131,9 +131,13 @@ export class GoalDir extends GoalDirCore {
   /**
    * 创建一个空的目录实例（用于新建表单）
    */
-  static forCreate(): GoalDir {
+  static forCreate({
+    accountUuid,
+  }: {
+    accountUuid: string;
+  }): GoalDir {
     return new GoalDir({
-      accountUuid: '', // 需要在创建时提供
+      accountUuid,
       name: '',
       icon: 'mdi-folder',
       color: '#2196F3',

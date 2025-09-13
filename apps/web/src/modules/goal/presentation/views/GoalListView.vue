@@ -142,6 +142,8 @@ import type { Goal, GoalDir } from '@dailyuse/domain-client';
 // 组件导入
 import GoalCard from '../components/cards/GoalCard.vue';
 import GoalDirComponent from '../components/GoalDir.vue';
+// composables
+import { useGoalDialog } from '../composables/useGoalDialog';
 
 const {
     isLoading,
@@ -154,6 +156,7 @@ const {
     refresh,
     initialize
 } = useGoal();
+
 
 const goalStore = useGoalStore();
 

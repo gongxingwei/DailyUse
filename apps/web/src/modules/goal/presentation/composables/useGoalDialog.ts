@@ -1,10 +1,10 @@
 import { useGoalServices } from "./useGoalService";
 import { ref } from "vue";
-import { Goal } from "../../domain/aggregates/goal";
-import { KeyResult } from "../../domain/entities/keyResult";
+import { Goal, KeyResult } from "@dailyuse/domain-client";
+import { useRouter } from "vue-router";
 
-import router from "@renderer/shared/router";
 export function useGoalDialog() {
+  const router = useRouter();
   const { handleCreateGoal, handleUpdateGoal, handleDeleteGoal } =
     useGoalServices();
   const goalDialog = ref<{

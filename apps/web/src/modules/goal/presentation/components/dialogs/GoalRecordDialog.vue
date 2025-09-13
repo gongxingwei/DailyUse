@@ -67,7 +67,7 @@
                   <v-icon color="primary" class="mr-3">mdi-clock-outline</v-icon>
                   <div>
                     <div class="text-body-1 font-weight-medium">记录时间</div>
-                    <div class="text-h6 text-primary">{{ format(localGoalRecord.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}</div>
+                    <div class="text-h6 text-primary">{{ format(localGoalRecord.createdAt, 'yyyy-MM-dd HH:mm:ss') }}</div>
                   </div>
                 </div>
               </v-card-text>
@@ -101,7 +101,7 @@
                 :variant="localGoalRecord.value === quickValue ? 'flat' : 'outlined'"
                 size="small"
                 clickable
-                @click="localGoalRecord.value = quickValue"
+                @click="localGoalRecord.updateValue(quickValue)"
                 class="quick-value-chip"
               >
                 {{ quickValue }}
@@ -120,25 +120,34 @@ import { computed, watch, ref } from 'vue';
 import { format } from 'date-fns';
 // domains
 import { GoalRecord } from '@dailyuse/domain-client';
+// composables
+import { useGoal } from '../../composables/useGoal';
+
+const { createGoalRecord } = useGoal();
+
 const props = defineProps<{
-  modelValue: boolean;
   record: GoalRecord | null;
   goalUuid: string;
   keyResultUuid: string;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
   (e: 'create-record', record: GoalRecord): void;
   (e: 'update-record', record: GoalRecord): void;
 }>();
+
+const modelValue = ref(false);
 
 const quickValues = [1, 2, 5, 10];
 
 const formRef = ref();
 const formValid = ref(false);
 
-const localGoalRecord = ref<GoalRecord>(GoalRecord.forCreate(props.goalUuid, props.keyResultUuid));
+const localGoalRecord = ref<GoalRecord>(GoalRecord.forCreate({
+  keyResultUuid: props.keyResultUuid,
+  goalUuid: props.goalUuid,
+  accountUuid: '', // 需要在创建时提供
+}));
 
 const isEditing = computed(() => !!props.record);
 
@@ -150,12 +159,23 @@ const valueRules = [
 
 const isValid = computed(() => formValid.value && localGoalRecord.value.value > 0);
 
+const handleCreateKeyResult = async () => {
+  await createGoalRecord(
+    props.goalUuid,
+    localGoalRecord.value.keyResultUuid,
+    {
+      value: localGoalRecord.value.value,
+      note: localGoalRecord.value.note,
+    }
+  );
+};
+
 const handleSave = () => {
   if (formRef.value?.validate()) {
     if (isEditing.value) {
       emit('update-record', localGoalRecord.value as GoalRecord);
     } else {
-      emit('create-record', localGoalRecord.value as GoalRecord);
+      handleCreateKeyResult();
     }
     closeDialog();
   }
@@ -165,18 +185,26 @@ const handleCancel = () => {
   closeDialog();
 };
 
+const openDialog = () => {
+  modelValue.value = true;
+};
+
 const closeDialog = () => {
-  emit('update:modelValue', false);
+  modelValue.value = false;
 };
 // 监听弹窗显示，重置表单
 watch(
-  () => props.modelValue,
+  () => modelValue,
   (show) => {
     if (show) {
-      localGoalRecord.value = props.record ? props.record.clone() : GoalRecord.forCreate(props.goalUuid, props.keyResultUuid);
+      localGoalRecord.value = props.record ? props.record.clone() : GoalRecord.forCreate({ goalUuid: props.goalUuid, keyResultUuid: props.keyResultUuid, accountUuid: '' });
     }
   }
 );
+
+defineExpose({
+  openDialog,
+});
 </script>
 
 <style scoped>

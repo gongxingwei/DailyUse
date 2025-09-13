@@ -405,6 +405,348 @@ export function useGoal() {
     goalStore.setSelectedGoal(null);
   };
 
+  // ===== DDD聚合根控制：KeyResult管理 =====
+
+  /**
+   * 通过Goal聚合根创建关键结果
+   */
+  const createKeyResultForGoal = async (
+    goalUuid: string,
+    request: {
+      name: string;
+      description?: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      unit: string;
+      weight: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    },
+  ) => {
+    try {
+      const response = await goalService.createKeyResultForGoal(goalUuid, request);
+      console.log('关键结果创建成功');
+      return response;
+    } catch (error) {
+      console.error('创建关键结果失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 获取目标的所有关键结果
+   */
+  const getKeyResultsByGoal = async (goalUuid: string) => {
+    try {
+      const response = await goalService.getKeyResultsByGoal(goalUuid);
+      return response;
+    } catch (error) {
+      console.error('获取关键结果列表失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 通过Goal聚合根更新关键结果
+   */
+  const updateKeyResultForGoal = async (
+    goalUuid: string,
+    keyResultUuid: string,
+    request: GoalContracts.UpdateKeyResultRequest,
+  ) => {
+    try {
+      const response = await goalService.updateKeyResultForGoal(goalUuid, keyResultUuid, request);
+      console.log('关键结果更新成功');
+      return response;
+    } catch (error) {
+      console.error('更新关键结果失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 通过Goal聚合根删除关键结果
+   */
+  const deleteKeyResultForGoal = async (goalUuid: string, keyResultUuid: string) => {
+    try {
+      await goalService.deleteKeyResultForGoal(goalUuid, keyResultUuid);
+      console.log('关键结果删除成功');
+    } catch (error) {
+      console.error('删除关键结果失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 更新关键结果进度
+   */
+  const updateKeyResultProgress = async (
+    goalUuid: string,
+    keyResultUuid: string,
+    request: GoalContracts.UpdateKeyResultProgressRequest,
+  ) => {
+    try {
+      const response = await goalService.updateKeyResultProgress(goalUuid, keyResultUuid, request);
+      console.log('关键结果进度更新成功');
+      return response;
+    } catch (error) {
+      console.error('更新关键结果进度失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 批量更新关键结果权重
+   */
+  const batchUpdateKeyResultWeights = async (
+    goalUuid: string,
+    updates: Array<{ keyResultUuid: string; weight: number }>,
+  ) => {
+    try {
+      const response = await goalService.batchUpdateKeyResultWeights(goalUuid, { updates });
+      console.log('关键结果权重批量更新成功');
+      return response;
+    } catch (error) {
+      console.error('批量更新关键结果权重失败:', error);
+      throw error;
+    }
+  };
+
+  // ===== DDD聚合根控制：GoalRecord管理 =====
+
+  /**
+   * 通过KeyResult创建目标记录
+   */
+  const createGoalRecord = async (
+    goalUuid: string,
+    keyResultUuid: string,
+    request: GoalContracts.CreateGoalRecordRequest,
+  ) => {
+    try {
+      const response = await goalService.createGoalRecord(goalUuid, keyResultUuid, request);
+      console.log('目标记录创建成功');
+      return response;
+    } catch (error) {
+      console.error('创建目标记录失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 获取关键结果的所有记录
+   */
+  const getGoalRecordsByKeyResult = async (
+    goalUuid: string,
+    keyResultUuid: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      dateRange?: { start?: string; end?: string };
+    },
+  ) => {
+    try {
+      const response = await goalService.getGoalRecordsByKeyResult(goalUuid, keyResultUuid, params);
+      return response;
+    } catch (error) {
+      console.error('获取目标记录失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 获取目标的所有记录
+   */
+  const getGoalRecordsByGoal = async (
+    goalUuid: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      dateRange?: { start?: string; end?: string };
+    },
+  ) => {
+    try {
+      const response = await goalService.getGoalRecordsByGoal(goalUuid, params);
+      return response;
+    } catch (error) {
+      console.error('获取目标记录失败:', error);
+      throw error;
+    }
+  };
+
+  // ===== DDD聚合根控制：GoalReview管理 =====
+
+  /**
+   * 通过Goal聚合根创建目标复盘
+   */
+  const createGoalReview = async (
+    goalUuid: string,
+    request: GoalContracts.CreateGoalReviewRequest,
+  ) => {
+    try {
+      const response = await goalService.createGoalReview(goalUuid, request);
+      console.log('目标复盘创建成功');
+      return response;
+    } catch (error) {
+      console.error('创建目标复盘失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 获取目标的所有复盘
+   */
+  const getGoalReviewsByGoal = async (goalUuid: string) => {
+    try {
+      const response = await goalService.getGoalReviewsByGoal(goalUuid);
+      return response;
+    } catch (error) {
+      console.error('获取目标复盘失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 通过Goal聚合根更新目标复盘
+   */
+  const updateGoalReview = async (
+    goalUuid: string,
+    reviewUuid: string,
+    request: Partial<GoalContracts.GoalReviewDTO>,
+  ) => {
+    try {
+      const response = await goalService.updateGoalReview(goalUuid, reviewUuid, request);
+      console.log('目标复盘更新成功');
+      return response;
+    } catch (error) {
+      console.error('更新目标复盘失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 通过Goal聚合根删除目标复盘
+   */
+  const deleteGoalReview = async (goalUuid: string, reviewUuid: string) => {
+    try {
+      await goalService.deleteGoalReview(goalUuid, reviewUuid);
+      console.log('目标复盘删除成功');
+    } catch (error) {
+      console.error('删除目标复盘失败:', error);
+      throw error;
+    }
+  };
+
+  // ===== DDD聚合根完整视图 =====
+
+  /**
+   * 获取Goal聚合根的完整视图
+   * 包含目标、关键结果、记录、复盘等所有子实体
+   */
+  const getGoalAggregateView = async (goalUuid: string) => {
+    try {
+      const response = await goalService.getGoalAggregateView(goalUuid);
+      console.log('获取目标聚合视图成功');
+
+      // 自动设置为当前选中的目标
+      goalStore.setSelectedGoal(goalUuid);
+
+      return response;
+    } catch (error) {
+      console.error('获取目标聚合视图失败:', error);
+      throw error;
+    }
+  };
+
+  /**
+   * 克隆Goal聚合根
+   */
+  const cloneGoal = async (
+    goalUuid: string,
+    options: {
+      name?: string;
+      description?: string;
+      includeKeyResults?: boolean;
+      includeRecords?: boolean;
+    } = {},
+  ) => {
+    try {
+      const response = await goalService.cloneGoal(goalUuid, options);
+      console.log('目标克隆成功');
+      return response;
+    } catch (error) {
+      console.error('克隆目标失败:', error);
+      throw error;
+    }
+  };
+
+  // ===== 实体状态管理 =====
+
+  /**
+   * 当前选中目标的关键结果列表
+   */
+  const currentGoalKeyResults = ref<GoalContracts.KeyResultDTO[]>([]);
+
+  /**
+   * 当前选中关键结果的记录列表
+   */
+  const currentKeyResultRecords = ref<GoalContracts.GoalRecordDTO[]>([]);
+
+  /**
+   * 当前选中目标的复盘列表
+   */
+  const currentGoalReviews = ref<GoalContracts.GoalReviewDTO[]>([]);
+
+  /**
+   * 加载当前目标的关键结果
+   */
+  const loadCurrentGoalKeyResults = async (goalUuid: string) => {
+    try {
+      const response = await getKeyResultsByGoal(goalUuid);
+      currentGoalKeyResults.value = response.data.map((kr) => kr); // 从 data 数组获取数据
+      return response;
+    } catch (error) {
+      currentGoalKeyResults.value = [];
+      throw error;
+    }
+  };
+
+  /**
+   * 加载当前关键结果的记录
+   */
+  const loadCurrentKeyResultRecords = async (goalUuid: string, keyResultUuid: string) => {
+    try {
+      const response = await getGoalRecordsByKeyResult(goalUuid, keyResultUuid);
+      currentKeyResultRecords.value = response.data.map((record) => record); // 从 data 数组获取数据
+      return response;
+    } catch (error) {
+      currentKeyResultRecords.value = [];
+      throw error;
+    }
+  };
+
+  /**
+   * 加载当前目标的复盘
+   */
+  const loadCurrentGoalReviews = async (goalUuid: string) => {
+    try {
+      const response = await getGoalReviewsByGoal(goalUuid);
+      currentGoalReviews.value = response.reviews; // reviews 属性是正确的
+      return response;
+    } catch (error) {
+      currentGoalReviews.value = [];
+      throw error;
+    }
+  };
+
+  /**
+   * 清除当前实体状态
+   */
+  const clearCurrentEntityState = () => {
+    currentGoalKeyResults.value = [];
+    currentKeyResultRecords.value = [];
+    currentGoalReviews.value = [];
+  };
+
   // ===== 工具方法 =====
 
   /**
@@ -516,5 +858,37 @@ export function useGoal() {
     // 工具方法
     refresh,
     initialize,
+
+    // ===== DDD聚合根控制：KeyResult管理 =====
+    createKeyResultForGoal,
+    getKeyResultsByGoal,
+    updateKeyResultForGoal,
+    deleteKeyResultForGoal,
+    updateKeyResultProgress,
+    batchUpdateKeyResultWeights,
+
+    // ===== DDD聚合根控制：GoalRecord管理 =====
+    createGoalRecord,
+    getGoalRecordsByKeyResult,
+    getGoalRecordsByGoal,
+
+    // ===== DDD聚合根控制：GoalReview管理 =====
+    createGoalReview,
+    getGoalReviewsByGoal,
+    updateGoalReview,
+    deleteGoalReview,
+
+    // ===== DDD聚合根完整视图 =====
+    getGoalAggregateView,
+    cloneGoal,
+
+    // ===== 实体状态管理 =====
+    currentGoalKeyResults,
+    currentKeyResultRecords,
+    currentGoalReviews,
+    loadCurrentGoalKeyResults,
+    loadCurrentKeyResultRecords,
+    loadCurrentGoalReviews,
+    clearCurrentEntityState,
   };
 }

@@ -165,6 +165,7 @@
   <!-- 内嵌的关键结果对话框 -->
   <KeyResultDialog :model-value="keyResultDialog.show"
     :key-result="(keyResultDialog.keyResult as KeyResult) || null"
+    :goal-uuid="goalModel.uuid"
     @update:model-value="keyResultDialog.show = $event"
     @create-key-result="handleCreateKeyResult(goalModel as Goal, $event as KeyResult)"
     @update-key-result="handleUpdateKeyResult(goalModel as Goal, $event as KeyResult)"
@@ -184,6 +185,7 @@ import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue';
 import { useGoalStore } from '../../stores/goalStore';
 import { KeyResult, Goal } from '@dailyuse/domain-client';
 // composables
+import { useGoalDialog } from '../../composables/useGoalDialog';
 
 const { keyResultDialog, startCreateKeyResult, startEditKeyResult, handleCreateKeyResult, handleUpdateKeyResult, handleRemoveKeyResult } = useGoalDialog();
 

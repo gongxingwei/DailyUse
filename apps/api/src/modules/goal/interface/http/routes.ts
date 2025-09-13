@@ -3,10 +3,15 @@ import { GoalController } from './controllers/GoalController.js';
 import { KeyResultController } from './controllers/KeyResultController.js';
 import { GoalRecordController } from './controllers/GoalRecordController.js';
 import { GoalReviewController } from './controllers/GoalReviewController.js';
+import { goalAggregateRoutes } from './routes/goalAggregateRoutes';
 
 const router = Router();
 
-// ============ Goal 路由 ============
+// ============ DDD聚合根控制路由（推荐使用）============
+// 体现DDD聚合根控制模式，通过聚合根管理所有子实体
+router.use('/', goalAggregateRoutes);
+
+// ============ 传统CRUD路由（向后兼容）============
 
 // 基础 CRUD 路由
 router.post('/', GoalController.createGoal);

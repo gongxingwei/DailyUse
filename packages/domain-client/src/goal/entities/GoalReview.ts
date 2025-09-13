@@ -66,4 +66,71 @@ export class GoalReview extends GoalReviewCore {
       updatedAt: new Date(this.updatedAt.getTime()),
     });
   }
+
+  static fromDTO(dto: GoalContracts.GoalReviewDTO): GoalReview {
+    return new GoalReview({
+      uuid: dto.uuid,
+      goalUuid: dto.goalUuid,
+      title: dto.title,
+      type: dto.type,
+      reviewDate: new Date(dto.reviewDate),
+      content: {
+        achievements: dto.content.achievements,
+        challenges: dto.content.challenges,
+        learnings: dto.content.learnings,
+        nextSteps: dto.content.nextSteps,
+        adjustments: dto.content.adjustments,
+      },
+      snapshot: {
+        snapshotDate: new Date(dto.snapshot.snapshotDate),
+        overallProgress: dto.snapshot.overallProgress,
+        weightedProgress: dto.snapshot.weightedProgress,
+        completedKeyResults: dto.snapshot.completedKeyResults,
+        totalKeyResults: dto.snapshot.totalKeyResults,
+        keyResultsSnapshot: dto.snapshot.keyResultsSnapshot.map((kr) => ({
+          uuid: kr.uuid,
+          name: kr.name,
+          progress: kr.progress,
+          currentValue: kr.currentValue,
+          targetValue: kr.targetValue,
+        })),
+      },
+      rating: dto.rating,
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
+    });
+  }
+
+  static forCreate(goalUuid: string): GoalReview {
+    return new GoalReview({
+      uuid: Entity.generateUUID(),
+      goalUuid,
+      title: '',
+      type: 'weekly',
+      reviewDate: new Date(),
+      content: {
+        achievements: '',
+        challenges: '',
+        learnings: '',
+        nextSteps: '',
+        adjustments: '',
+      },
+      snapshot: {
+        snapshotDate: new Date(),
+        overallProgress: 0,
+        weightedProgress: 0,
+        completedKeyResults: 0,
+        totalKeyResults: 0,
+        keyResultsSnapshot: [],
+      },
+      rating: {
+        progressSatisfaction: 0,
+        executionEfficiency: 0,
+        goalReasonableness: 0,
+      },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+  
+  }
 }

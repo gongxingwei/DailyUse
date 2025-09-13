@@ -39,8 +39,7 @@ model Account {
   goals                  Goal[]
   goalDirs               GoalDir[]
   goalCategories         GoalCategory[]
-  keyResults             KeyResult[]
-  goalRecords            GoalRecord[]
+  // KeyResult和GoalRecord通过Goal聚合根关联，不直接关联Account
   taskTemplates          TaskTemplate[]
   taskInstances          TaskInstance[]
   taskMetaTemplates      TaskMetaTemplate[]
@@ -224,7 +223,7 @@ model Goal {
   account             Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   directory           GoalDir?           @relation(fields: [dirUuid], references: [uuid], onDelete: SetNull)
   keyResults          KeyResult[]
-  records             GoalRecord[]
+  // GoalRecord通过KeyResult间接关联，不直接关联Goal
   reviews             GoalReview[]
   sourceRelationships GoalRelationship[] @relation("SourceGoal")
   targetRelationships GoalRelationship[] @relation("TargetGoal")
@@ -304,11 +303,10 @@ model GoalCategory {
   @@map("goal_categories")
 }
 
-// Key Result (OKR)
+// Key Result (OKR) - DDD聚合根控制模式
 model KeyResult {
-  uuid        String @id @default(cuid())
-  accountUuid String @map("account_uuid")
-  goalUuid    String @map("goal_uuid")
+  uuid     String @id @default(cuid())
+  goalUuid String @map("goal_uuid")
 
   // 基本信息
   name        String
@@ -328,12 +326,10 @@ model KeyResult {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  // Relations
-  account Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  // Relations - 只通过Goal聚合根关联
   goal    Goal         @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
   records GoalRecord[]
 
-  @@index([accountUuid])
   @@index([goalUuid])
   @@index([weight])
   @@index([createdAt])
@@ -341,11 +337,9 @@ model KeyResult {
   @@map("key_results")
 }
 
-// Goal Record
+// Goal Record - DDD聚合根控制模式
 model GoalRecord {
   uuid          String @id @default(cuid())
-  accountUuid   String @map("account_uuid")
-  goalUuid      String @map("goal_uuid")
   keyResultUuid String @map("key_result_uuid")
 
   value Float
@@ -353,13 +347,9 @@ model GoalRecord {
 
   createdAt DateTime @default(now()) @map("created_at")
 
-  // Relations
-  account   Account   @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  goal      Goal      @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  // Relations - 只通过KeyResult关联，间接关联到Goal聚合根
   keyResult KeyResult @relation(fields: [keyResultUuid], references: [uuid], onDelete: Cascade)
 
-  @@index([accountUuid])
-  @@index([goalUuid])
   @@index([keyResultUuid])
   @@index([createdAt])
   @@map("goal_records")

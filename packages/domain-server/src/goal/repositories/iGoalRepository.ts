@@ -7,7 +7,6 @@
  */
 import type { GoalContracts } from '@dailyuse/contracts';
 
-
 export interface IGoalRepository {
   // ========================= Goal 相关 =========================
 
@@ -310,6 +309,120 @@ export interface IGoalRepository {
       endTime: number;
       daysRemaining: number;
       progress: number;
+    }>
+  >;
+
+  // ========================= DDD聚合根控制方法 =========================
+
+  /**
+   * 加载完整的Goal聚合根
+   * 包含目标、关键结果、记录、复盘等所有子实体
+   * 用于聚合根业务操作
+   */
+  loadGoalAggregate(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<{
+    goal: GoalContracts.GoalDTO;
+    keyResults: GoalContracts.KeyResultDTO[];
+    records: GoalContracts.GoalRecordDTO[];
+    reviews: GoalContracts.GoalReviewDTO[];
+  } | null>;
+
+  /**
+   * 原子性更新Goal聚合根
+   * 在一个事务中更新目标及其所有子实体
+   * 保证聚合一致性
+   */
+  updateGoalAggregate(
+    accountUuid: string,
+    aggregateData: {
+      goal: Partial<GoalContracts.GoalDTO>;
+      keyResults?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.KeyResultDTO | Partial<GoalContracts.KeyResultDTO>;
+        uuid?: string;
+      }>;
+      records?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.GoalRecordDTO | Partial<GoalContracts.GoalRecordDTO>;
+        uuid?: string;
+      }>;
+      reviews?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.GoalReviewDTO | Partial<GoalContracts.GoalReviewDTO>;
+        uuid?: string;
+      }>;
+    },
+  ): Promise<{
+    goal: GoalContracts.GoalDTO;
+    keyResults: GoalContracts.KeyResultDTO[];
+    records: GoalContracts.GoalRecordDTO[];
+    reviews: GoalContracts.GoalReviewDTO[];
+  }>;
+
+  /**
+   * 验证聚合根业务规则
+   * 在持久化前验证聚合的完整性和业务规则
+   */
+  validateGoalAggregateRules(
+    accountUuid: string,
+    goalUuid: string,
+    proposedChanges: {
+      keyResults?: GoalContracts.KeyResultDTO[];
+      records?: GoalContracts.GoalRecordDTO[];
+    },
+  ): Promise<{
+    isValid: boolean;
+    violations: Array<{
+      rule: string;
+      message: string;
+      severity: 'error' | 'warning';
+    }>;
+  }>;
+
+  /**
+   * 级联删除Goal聚合根
+   * 删除目标及其所有相关子实体
+   * 保证数据一致性
+   */
+  cascadeDeleteGoalAggregate(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<{
+    deletedGoal: GoalContracts.GoalDTO;
+    deletedKeyResults: GoalContracts.KeyResultDTO[];
+    deletedRecords: GoalContracts.GoalRecordDTO[];
+    deletedReviews: GoalContracts.GoalReviewDTO[];
+  }>;
+
+  /**
+   * 聚合根版本控制
+   * 实现乐观锁机制，防止并发修改冲突
+   */
+  updateGoalVersion(
+    accountUuid: string,
+    goalUuid: string,
+    expectedVersion: number,
+    newVersion: number,
+  ): Promise<boolean>;
+
+  /**
+   * 获取聚合根变更历史
+   * 用于审计和回滚操作
+   */
+  getGoalAggregateHistory(
+    accountUuid: string,
+    goalUuid: string,
+    limit?: number,
+  ): Promise<
+    Array<{
+      version: number;
+      changedAt: number;
+      changedBy: string;
+      changeType: 'goal' | 'keyResult' | 'record' | 'review';
+      entityUuid: string;
+      changeData: any;
     }>
   >;
 }

@@ -111,11 +111,12 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { KeyResult } from '@renderer/modules/Goal/domain/entities/keyResult';
+import { KeyResult } from '@dailyuse/domain-client';
 
 // 定义 props
 const props = defineProps<{
   modelValue: boolean
+  goalUuid: string | null
   keyResult: KeyResult | null
 }>();
 
@@ -129,7 +130,11 @@ const emit = defineEmits<{
 
 // 表单状态
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
-const localKeyResult = ref<KeyResult>(KeyResult.forCreate());
+const localKeyResult = ref<KeyResult>(KeyResult.forCreate({
+  accountUuid: '', // 需要在创建时提供
+  goalUuid: props.goalUuid!,
+  unit: '',
+}));
 const loading = ref(false);
 const isEditing = computed(() => !!props.keyResult);
 const isFormValid = computed(
@@ -173,9 +178,9 @@ const progressBarColor = computed(() => {
 const handleSave = async () => {
   if (!isFormValid.value) return;
   if (isEditing.value) {
-    emit('update-key-result', KeyResult.ensureKeyResultNeverNull(localKeyResult.value));
+    emit('update-key-result', localKeyResult.value as KeyResult);
   } else {
-    emit('create-key-result', KeyResult.ensureKeyResultNeverNull(localKeyResult.value));
+    emit('create-key-result', localKeyResult.value as KeyResult);
   }
   closeDialog();
 };
@@ -193,9 +198,9 @@ watch(
     if (newValue) {
       localKeyResult.value = props.keyResult ?
         props.keyResult.clone() :
-        KeyResult.forCreate();
+        KeyResult.forCreate({ accountUuid: '', goalUuid: props.goalUuid!, unit: '' });
     } else {
-      localKeyResult.value = KeyResult.forCreate();
+      localKeyResult.value = KeyResult.forCreate({ accountUuid: '', goalUuid: props.goalUuid!, unit: '' });
     }
   }
 )

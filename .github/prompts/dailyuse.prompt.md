@@ -190,6 +190,244 @@ application/events/
 └── domainEvents.ts          # 领域事件定义 (单向事件)
 ```
 
+### DDD聚合根控制模式
+
+**核心思想**: 在DDD中，聚合根（Aggregate Root）是唯一对外暴露的实体，负责控制聚合内所有子实体的生命周期和业务规则。其他实体只能通过聚合根进行操作。
+
+#### 聚合根控制原则
+
+1. **封装性** - 外部无法直接修改子实体
+2. **一致性** - 所有变更都通过聚合根验证
+3. **完整性** - 业务规则在聚合根层面统一执行
+4. **事件驱动** - 发布领域事件通知其他模块
+
+#### 实现层次架构
+
+```bash
+领域层 (Domain Client)
+├── Goal.ts (聚合根)
+│   ├── createKeyResult()     # 创建关键结果
+│   ├── updateKeyResult()     # 更新关键结果
+│   ├── removeKeyResult()     # 删除关键结果
+│   ├── createRecord()        # 创建目标记录
+│   └── createReview()        # 创建目标复盘
+│
+应用层 (API Application)
+├── GoalAggregateService.ts   # 聚合根服务
+├── GoalApplicationService.ts # 集成聚合根控制
+│
+接口层 (API Interface)
+├── GoalAggregateController.ts # 聚合根控制器
+├── goalAggregateRoutes.ts     # 聚合根路由
+│
+基础设施层 (Domain Server)
+└── iGoalRepository.ts         # 扩展聚合根方法
+```
+
+#### 领域层实现示例
+
+```typescript
+// packages/domain-client/src/goal/aggregates/Goal.ts
+export class Goal extends GoalCore {
+  /**
+   * 创建并添加关键结果
+   * 聚合根控制：确保关键结果属于当前目标，维护权重总和不超过100%
+   */
+  createKeyResult(keyResultData: {
+    name: string;
+    weight: number;
+    // ... 其他属性
+  }): string {
+    // 业务规则验证
+    if (!keyResultData.name.trim()) {
+      throw new Error('关键结果名称不能为空');
+    }
+
+    // 检查权重限制
+    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
+    if (totalWeight + keyResultData.weight > 100) {
+      throw new Error(`关键结果权重总和不能超过100%，当前总和: ${totalWeight}%`);
+    }
+
+    // 创建关键结果并发布领域事件
+    const keyResultUuid = this.generateUUID();
+    const newKeyResult = {
+      /* ... */
+    };
+    this.addKeyResult(newKeyResult);
+    this.publishDomainEvent('KeyResultCreated', {
+      /* ... */
+    });
+
+    return keyResultUuid;
+  }
+
+  /**
+   * 删除关键结果
+   * 聚合根控制：确保数据一致性，级联删除相关记录
+   */
+  removeKeyResult(keyResultUuid: string): void {
+    // 级联删除相关记录
+    const relatedRecords = this.records.filter((record) => record.keyResultUuid === keyResultUuid);
+    this.records = this.records.filter((record) => record.keyResultUuid !== keyResultUuid);
+
+    // 从聚合中移除
+    const keyResultIndex = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
+    this.keyResults.splice(keyResultIndex, 1);
+
+    // 发布领域事件
+    this.publishDomainEvent('KeyResultRemoved', {
+      goalUuid: this.uuid,
+      keyResultUuid,
+      cascadeDeletedRecordsCount: relatedRecords.length,
+    });
+  }
+}
+```
+
+#### API层路由设计
+
+```typescript
+// 体现聚合根控制的路由设计
+
+// ❌ 传统设计 - 直接操作子实体
+POST /api/v1/key-results
+PUT /api/v1/key-results/:id
+DELETE /api/v1/key-results/:id
+
+// ✅ DDD设计 - 通过聚合根操作
+POST /api/v1/goals/:goalId/key-results
+PUT /api/v1/goals/:goalId/key-results/:keyResultId
+DELETE /api/v1/goals/:goalId/key-results/:keyResultId
+
+// ✅ 聚合根完整视图
+GET /api/v1/goals/:goalId/aggregate
+
+// ✅ 聚合根批量操作
+PUT /api/v1/goals/:goalId/key-results/batch-weight
+POST /api/v1/goals/:goalId/clone
+```
+
+#### 应用服务协调
+
+```typescript
+// apps/api/src/modules/goal/application/services/goalAggregateService.ts
+export class GoalAggregateService {
+  /**
+   * 通过聚合根创建关键结果
+   * 体现DDD原则：只能通过Goal聚合根创建KeyResult
+   */
+  async createKeyResultForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      /* ... */
+    },
+  ): Promise<KeyResultResponse> {
+    // 1. 获取聚合根
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+
+    // 2. 转换为领域实体（聚合根）
+    const goal = Goal.fromDTO(goalDTO);
+
+    // 3. 通过聚合根创建关键结果（业务规则验证在这里）
+    const keyResultUuid = goal.createKeyResult(request);
+
+    // 4. 持久化更改
+    const savedKeyResult = await this.goalRepository.createKeyResult(/* ... */);
+
+    // 5. 更新Goal的版本号
+    await this.goalRepository.updateGoal(accountUuid, goalUuid, {
+      version: goal.version,
+      lifecycle: { updatedAt: Date.now() },
+    });
+
+    return /* 响应数据 */;
+  }
+}
+```
+
+#### 仓储层扩展
+
+```typescript
+// packages/domain-server/src/goal/repositories/iGoalRepository.ts
+export interface IGoalRepository {
+  // 传统CRUD方法...
+
+  // ===== DDD聚合根控制方法 =====
+
+  /**
+   * 加载完整的Goal聚合根
+   * 包含目标、关键结果、记录、复盘等所有子实体
+   */
+  loadGoalAggregate(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<{
+    goal: GoalDTO;
+    keyResults: KeyResultDTO[];
+    records: GoalRecordDTO[];
+    reviews: GoalReviewDTO[];
+  } | null>;
+
+  /**
+   * 原子性更新Goal聚合根
+   * 在一个事务中更新目标及其所有子实体
+   */
+  updateGoalAggregate(
+    accountUuid: string,
+    aggregateData: {
+      /* ... */
+    },
+  ): Promise<{
+    /* ... */
+  }>;
+
+  /**
+   * 验证聚合根业务规则
+   */
+  validateGoalAggregateRules(
+    accountUuid: string,
+    goalUuid: string,
+    proposedChanges: {
+      /* ... */
+    },
+  ): Promise<{
+    isValid: boolean;
+    violations: Array<{
+      /* ... */
+    }>;
+  }>;
+}
+```
+
+#### 业务规则保护
+
+1. **权重控制** - 关键结果权重总和不超过100%
+2. **数据一致性** - 删除关键结果时级联删除相关记录
+3. **版本控制** - 乐观锁机制防止并发冲突
+4. **原子操作** - 批量更新保证一致性
+
+#### 与传统CRUD的对比
+
+| 方面           | 传统CRUD               | DDD聚合根控制                        |
+| -------------- | ---------------------- | ------------------------------------ |
+| **数据操作**   | 直接操作子实体         | 通过聚合根操作                       |
+| **业务规则**   | 分散在各处             | 集中在聚合根                         |
+| **数据一致性** | 依赖数据库约束         | 领域层保证                           |
+| **路由设计**   | `PUT /key-results/:id` | `PUT /goals/:goalId/key-results/:id` |
+| **错误处理**   | 技术性错误             | 业务性错误                           |
+| **测试复杂度** | 需要数据库集成测试     | 可以纯领域逻辑测试                   |
+
+#### 实现优势
+
+- **业务规则集中化** - 所有关于Goal聚合的业务规则都在Goal实体中
+- **数据一致性保证** - 通过聚合根确保所有子实体的数据一致性
+- **更好的封装性** - 外部代码无法绕过业务规则直接修改子实体
+- **领域事件驱动** - 所有重要的业务变更都会发布领域事件
+- **可维护性提升** - 业务逻辑变更只需要修改聚合根
+- **更符合现实业务** - 反映真实世界中的业务关系
+
 ---
 
 ## 公共包说明
@@ -442,6 +680,160 @@ apps/desktop/
 - **提交规范**: Conventional Commits
 - **代码审查**: Pull Request必须经过审查
 
+### DDD聚合根控制开发规范
+
+#### 聚合根设计原则
+
+1. **聚合边界明确** - 每个聚合根控制特定的业务边界
+2. **业务规则集中** - 所有业务规则在聚合根内部实现
+3. **数据一致性** - 聚合根保证内部数据的强一致性
+4. **领域事件** - 重要业务变更必须发布领域事件
+
+#### API路由设计规范
+
+```typescript
+// ✅ 推荐：通过聚合根操作子实体
+POST   /api/v1/goals/:goalId/key-results
+PUT    /api/v1/goals/:goalId/key-results/:keyResultId
+DELETE /api/v1/goals/:goalId/key-results/:keyResultId
+GET    /api/v1/goals/:goalId/aggregate
+
+// ❌ 避免：直接操作子实体
+POST   /api/v1/key-results
+PUT    /api/v1/key-results/:id
+DELETE /api/v1/key-results/:id
+```
+
+#### 聚合根实现规范
+
+```typescript
+// ✅ 正确的聚合根方法命名和实现
+export class Goal extends GoalCore {
+  // 创建子实体：create + 子实体名称
+  createKeyResult(data: KeyResultData): string {
+    /* ... */
+  }
+
+  // 更新子实体：update + 子实体名称
+  updateKeyResult(uuid: string, updates: Partial<KeyResultData>): void {
+    /* ... */
+  }
+
+  // 删除子实体：remove + 子实体名称
+  removeKeyResult(uuid: string): void {
+    /* ... */
+  }
+
+  // 业务规则验证
+  private validateKeyResultWeight(weight: number): void {
+    /* ... */
+  }
+
+  // 领域事件发布
+  private publishDomainEvent(eventType: string, data: any): void {
+    /* ... */
+  }
+}
+```
+
+#### 应用服务协调规范
+
+```typescript
+// ✅ 正确的应用服务实现
+export class GoalAggregateService {
+  async createKeyResultForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    request: CreateKeyResultRequest,
+  ): Promise<KeyResultResponse> {
+    // 1. 获取聚合根
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+
+    // 2. 转换为领域实体
+    const goal = Goal.fromDTO(goalDTO);
+
+    // 3. 通过聚合根执行业务操作
+    const keyResultUuid = goal.createKeyResult(request);
+
+    // 4. 持久化更改
+    await this.persistAggregateChanges(goal);
+
+    return /* 响应 */;
+  }
+}
+```
+
+#### 仓储层扩展规范
+
+```typescript
+// ✅ 聚合根仓储扩展方法
+export interface IGoalRepository {
+  // 加载完整聚合
+  loadGoalAggregate(accountUuid: string, goalUuid: string): Promise<GoalAggregateData>;
+
+  // 原子性更新聚合
+  updateGoalAggregate(accountUuid: string, changes: AggregateChanges): Promise<void>;
+
+  // 业务规则验证
+  validateGoalAggregateRules(
+    accountUuid: string,
+    goalUuid: string,
+    changes: any,
+  ): Promise<ValidationResult>;
+}
+```
+
+#### 错误处理规范
+
+```typescript
+// ✅ 业务规则错误处理
+export class Goal extends GoalCore {
+  createKeyResult(data: KeyResultData): string {
+    // 业务规则验证
+    if (!data.name.trim()) {
+      throw new DomainError('关键结果名称不能为空', 'INVALID_KEY_RESULT_NAME');
+    }
+
+    const totalWeight = this.calculateTotalWeight();
+    if (totalWeight + data.weight > 100) {
+      throw new DomainError(
+        `关键结果权重总和不能超过100%，当前总和: ${totalWeight}%`,
+        'WEIGHT_LIMIT_EXCEEDED',
+      );
+    }
+
+    // 业务逻辑...
+  }
+}
+```
+
+#### 测试规范
+
+```typescript
+// ✅ 聚合根单元测试
+describe('Goal Aggregate Root', () => {
+  it('should enforce weight limit when creating key result', () => {
+    const goal = new Goal(/* ... */);
+    goal.addKeyResult({ weight: 60 });
+    goal.addKeyResult({ weight: 30 });
+
+    expect(() => {
+      goal.createKeyResult({ weight: 20 }); // 总和110%
+    }).toThrow('关键结果权重总和不能超过100%');
+  });
+
+  it('should cascade delete records when removing key result', () => {
+    const goal = new Goal(/* ... */);
+    const keyResultUuid = goal.createKeyResult(/* ... */);
+    goal.createRecord({ keyResultUuid, value: 50 });
+
+    goal.removeKeyResult(keyResultUuid);
+
+    expect(goal.getRecordsForKeyResult(keyResultUuid)).toHaveLength(0);
+  });
+});
+```
+
 ---
 
 ## 快速开始
@@ -524,10 +916,13 @@ nx affected --target=test         # 只测试受影响的项目
 **Goal模块** (目标模块)
 
 - **迁移时间**: 2025年9月
-- **迁移方式**: Contracts-First 方法
-- **迁移文档**: `docs/GOAL_MODULE_MIGRATION_SUMMARY.md`
-- **架构特点**: 首个迁移模块，建立了标准迁移模式
+- **迁移方式**: Contracts-First 方法 + DDD 聚合根模式
+- **迁移文档**: `docs/GOAL_MODULE_MIGRATION_SUMMARY.md`, `docs/DDD_AGGREGATE_ROOT_CONTROL_IMPLEMENTATION.md`
+- **架构特点**: 首个迁移模块，建立了标准迁移模式和聚合根控制范式
 - **核心类型**: `IGoal`, `IKeyResult`, `IGoalReview`
+- **DDD实现**: Goal作为聚合根控制KeyResult、GoalRecord、GoalReview等子实体
+- **API设计**: 实现了聚合根控制的REST API端点模式
+- **业务规则**: 在聚合根层面实现权重控制、级联删除等业务逻辑
 
 **Task模块** (任务模块)
 
@@ -1037,8 +1432,35 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
 - **服务端**: NestJS任务服务 (CRUD + 批量操作)
 - **特性**: 优先级管理、截止日期、任务状态、批量操作
 
-#### 4. Goal (目标管理模块) ✅ **完整实现** - **已完全迁移到新架构**
+#### 4. Goal (目标管理模块) ✅ **完整实现** - **已完全迁移到新架构 + DDD聚合根控制**
 
+- **DDD聚合根控制**: ✅ **完整实现标准DDD模式**
+  - **聚合根**: Goal (控制所有子实体生命周期)
+  - **子实体控制**: KeyResult, GoalRecord, GoalReview 只能通过 Goal 聚合根操作
+  - **业务规则保护**: 权重总和不超过100%，数据一致性保证，级联删除
+  - **领域事件**: 完整的事件驱动架构 (KeyResultCreated, KeyResultRemoved 等)
+  - **聚合根方法**:
+    - `createKeyResult()` - 创建关键结果
+    - `updateKeyResult()` - 更新关键结果
+    - `removeKeyResult()` - 删除关键结果(级联删除记录)
+    - `createRecord()` - 创建记录(自动更新关键结果进度)
+    - `createReview()` - 创建复盘(生成状态快照)
+- **API聚合根控制**: ✅ **完整的DDD REST API设计**
+  - **GoalAggregateService** - 专门的聚合根业务协调服务
+  - **GoalAggregateController** - 聚合根控制器
+  - **聚合根路由**: 体现DDD原则的路由设计
+    - `POST /goals/:goalId/key-results` (通过聚合根创建)
+    - `PUT /goals/:goalId/key-results/:id` (通过聚合根更新)
+    - `DELETE /goals/:goalId/key-results/:id` (通过聚合根删除)
+    - `GET /goals/:goalId/aggregate` (完整聚合视图)
+    - `PUT /goals/:goalId/key-results/batch-weight` (批量权重更新)
+    - `POST /goals/:goalId/clone` (聚合根复制)
+  - **传统CRUD对比**: 替代直接操作子实体的传统方式
+- **仓储层扩展**: ✅ **DDD聚合根仓储模式**
+  - `loadGoalAggregate()` - 完整聚合加载
+  - `updateGoalAggregate()` - 原子性聚合更新
+  - `validateGoalAggregateRules()` - 业务规则验证
+  - `cascadeDeleteGoalAggregate()` - 级联删除
 - **领域层**: 完整的DDD实体设计
   - **聚合根**: Goal, GoalDir (目标和目标目录)
   - **实体**: KeyResult (关键结果), GoalRecord (目标记录), GoalReview (目标复盘)
@@ -1072,6 +1494,8 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
   - **路由配置**: ✅ **完整的路由系统** - 目标列表、创建、详情、编辑页面
   - **响应式设计**: ✅ **基于Vuetify的现代UI**
 - **特性**:
+  - **DDD聚合根控制**: 所有子实体操作必须通过Goal聚合根
+  - **业务规则保护**: 权重控制、数据一致性、版本控制、原子操作
   - **OKR系统**: 目标-关键结果追踪
   - **进度管理**: 自动进度计算和更新
   - **复盘系统**: 定期目标回顾和评分
@@ -1079,7 +1503,9 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
   - **生命周期**: 激活、暂停、完成、归档状态管理
   - **高性能查询**: 基于分解字段的复杂过滤和聚合查询
   - **跨平台同步**: Desktop和Web端数据同步
-- **迁移文档**: `docs/GOAL_MODULE_MIGRATION_COMPLETE.md` - 完整的迁移总结和模式指导
+- **迁移文档**:
+  - `docs/GOAL_MODULE_MIGRATION_COMPLETE.md` - 完整的迁移总结和模式指导
+  - `docs/DDD_AGGREGATE_ROOT_CONTROL_IMPLEMENTATION.md` - DDD聚合根控制模式实现指南
 
 #### 5. Reminder (提醒管理模块) ✅ 完整实现
 

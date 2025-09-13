@@ -1,11 +1,25 @@
 import { GoalCore } from '@dailyuse/domain-core';
-import { type GoalContracts, type IGoal } from '@dailyuse/contracts';
+import {
+  type GoalContracts,
+  type IGoal,
+  type IKeyResult,
+  type IGoalRecord,
+  type IGoalReview,
+} from '@dailyuse/contracts';
+import { KeyResult } from '../entities/KeyResult';
+import { GoalRecord } from '../entities/GoalRecord';
+import { GoalReview } from '../entities/GoalReview';
 
 /**
  * 客户端 Goal 实体
  * 继承核心 Goal 类，添加客户端特有功能
  */
 export class Goal extends GoalCore {
+  // 重新声明属性类型为具体的实体类型
+  declare keyResults: KeyResult[];
+  declare records: GoalRecord[];
+  declare reviews: GoalReview[];
+
   constructor(params: {
     uuid?: string;
     name: string;
@@ -26,6 +40,103 @@ export class Goal extends GoalCore {
     version?: number;
   }) {
     super(params);
+
+    // 使用实体的 fromDTO 方法创建实体对象
+    // 这里假设传入的已经是 DTO 格式，如果是接口格式需要转换
+    this.keyResults = (params.keyResults || []).map((dto) => {
+      // 如果是接口格式，需要转换时间戳
+      if (dto.lifecycle && dto.lifecycle.createdAt instanceof Date) {
+        const convertedDto: GoalContracts.KeyResultDTO = {
+          ...dto,
+          lifecycle: {
+            ...dto.lifecycle,
+            createdAt: dto.lifecycle.createdAt.getTime(),
+            updatedAt: dto.lifecycle.updatedAt.getTime(),
+          },
+        };
+        return KeyResult.fromDTO(convertedDto);
+      }
+      return KeyResult.fromDTO(dto);
+    });
+
+    this.records = (params.records || []).map((dto) => {
+      // 如果是接口格式，需要转换时间戳
+      if (dto.createdAt instanceof Date) {
+        const convertedDto: GoalContracts.GoalRecordDTO = {
+          ...dto,
+          createdAt: dto.createdAt.getTime(),
+        };
+        return GoalRecord.fromDTO(convertedDto) as GoalRecord;
+      }
+      return GoalRecord.fromDTO(dto) as GoalRecord;
+    });
+  }
+
+  // ===== 抽象方法实现 =====
+
+  /**
+   * 添加关键结果
+   */
+  addKeyResult(keyResult: IKeyResult): void {
+    // 验证权重总和不超过100
+    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0) + keyResult.weight;
+    if (totalWeight > 100) {
+      throw new Error('关键结果权重总和不能超过100%');
+    }
+
+    // 转换为 DTO 格式再调用 fromDTO
+    const keyResultDTO: GoalContracts.KeyResultDTO = {
+      uuid: keyResult.uuid,
+      accountUuid: keyResult.accountUuid,
+      goalUuid: keyResult.goalUuid,
+      name: keyResult.name,
+      description: keyResult.description,
+      startValue: keyResult.startValue,
+      targetValue: keyResult.targetValue,
+      currentValue: keyResult.currentValue,
+      unit: keyResult.unit,
+      weight: keyResult.weight,
+      calculationMethod: keyResult.calculationMethod,
+      lifecycle: {
+        createdAt: keyResult.lifecycle.createdAt.getTime(),
+        updatedAt: keyResult.lifecycle.updatedAt.getTime(),
+        status: keyResult.lifecycle.status,
+      },
+    };
+
+    const keyResultEntity = KeyResult.fromDTO(keyResultDTO);
+    this.keyResults.push(keyResultEntity);
+    this.updateVersion();
+  }
+
+  /**
+   * 更新关键结果进度
+   */
+  updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void {
+    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
+    if (!keyResult) {
+      throw new Error('关键结果不存在');
+    }
+
+    // 使用实体的业务方法更新进度
+    keyResult.updateProgress(increment, 'increment');
+
+    // 创建记录 DTO
+    const now = new Date();
+    const recordDTO: GoalContracts.GoalRecordDTO = {
+      uuid: this.generateUUID(),
+      accountUuid: keyResult.accountUuid,
+      goalUuid: this.uuid,
+      keyResultUuid,
+      value: increment,
+      note,
+      createdAt: now.getTime(), // 使用时间戳
+    };
+
+    // 使用 fromDTO 创建实体对象
+    const recordEntity = GoalRecord.fromDTO(recordDTO) as GoalRecord;
+    this.records.push(recordEntity);
+    this.updateVersion();
   }
 
   // ===== 客户端特有方法 =====
@@ -176,7 +287,487 @@ export class Goal extends GoalCore {
     return `${this.completedKeyResults}/${this.totalKeyResults} 已完成`;
   }
 
-  // ===== 客户端特有方法 =====
+  // ===== DDD聚合根控制模式 - 子实体管理 =====
+
+  /**
+   * 创建并添加关键结果
+   * 聚合根控制：确保关键结果属于当前目标，维护权重总和不超过100%
+   */
+  createKeyResult(keyResult: KeyResult): string {
+    // 业务规则验证
+    if (!keyResult.name.trim()) {
+      throw new Error('关键结果名称不能为空');
+    }
+
+    // 验证关键结果必须属于当前目标
+    if (keyResult.goalUuid !== this.uuid) {
+      throw new Error('关键结果必须属于当前目标');
+    }
+
+    // 检查权重限制
+    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
+    if (totalWeight + keyResult.weight > 100) {
+      throw new Error(`关键结果权重总和不能超过100%，当前总和: ${totalWeight}%`);
+    }
+
+    if (keyResult.weight <= 0 || keyResult.weight > 100) {
+      throw new Error('关键结果权重必须在1-100%之间');
+    }
+
+    // 直接添加实体到聚合
+    this.keyResults.push(keyResult);
+    this.updateVersion();
+
+    // 发布领域事件
+    this.publishDomainEvent('KeyResultCreated', {
+      goalUuid: this.uuid,
+      keyResultUuid: keyResult.uuid,
+      keyResult: keyResult.toDTO(),
+    });
+
+    return keyResult.uuid;
+  }
+
+  /**
+   * 为当前目标创建新的关键结果实例（工厂方法）
+   * 提供便捷的关键结果创建方式
+   */
+  createKeyResultForEdit(params: {
+    accountUuid: string;
+    name?: string;
+    unit: string;
+    targetValue?: number;
+    weight?: number;
+  }): KeyResult {
+    return KeyResult.forCreate({
+      accountUuid: params.accountUuid,
+      goalUuid: this.uuid,
+      name: params.name,
+      unit: params.unit,
+      targetValue: params.targetValue,
+      weight: params.weight,
+    });
+  }
+
+  /**
+   * 更新关键结果
+   * 聚合根控制：验证关键结果属于当前目标，维护业务规则
+   */
+  updateKeyResult(keyResult: KeyResult): void {
+    const existingKeyResult = this.keyResults.find((kr) => kr.uuid === keyResult.uuid);
+    if (!existingKeyResult) {
+      throw new Error(`关键结果不存在: ${keyResult.uuid}`);
+    }
+
+    // 验证关键结果属于当前目标
+    if (keyResult.goalUuid !== this.uuid) {
+      throw new Error('关键结果必须属于当前目标');
+    }
+
+    // 业务规则验证
+    if (!keyResult.name.trim()) {
+      throw new Error('关键结果名称不能为空');
+    }
+
+    // 检查权重限制（排除当前关键结果）
+    const otherWeight = this.keyResults
+      .filter((kr) => kr.uuid !== keyResult.uuid)
+      .reduce((sum, kr) => sum + kr.weight, 0);
+
+    if (otherWeight + keyResult.weight > 100) {
+      throw new Error(`关键结果权重总和不能超过100%，当前其他权重总和: ${otherWeight}%`);
+    }
+
+    if (keyResult.weight <= 0 || keyResult.weight > 100) {
+      throw new Error('关键结果权重必须在1-100%之间');
+    }
+
+    // 保存原始数据用于事件
+    const originalData = (existingKeyResult as KeyResult).toDTO();
+
+    // 直接替换聚合中的实体
+    const existingIndex = this.keyResults.findIndex((kr) => kr.uuid === keyResult.uuid);
+    this.keyResults[existingIndex] = keyResult;
+
+    // 更新聚合根
+    this.updateVersion();
+
+    // 发布领域事件
+    this.publishDomainEvent('KeyResultUpdated', {
+      goalUuid: this.uuid,
+      keyResultUuid: keyResult.uuid,
+      originalData,
+      updatedData: keyResult.toDTO(),
+      changes: keyResult,
+    });
+  }
+
+  /**
+   * 删除关键结果
+   * 聚合根控制：确保数据一致性，级联删除相关记录
+   */
+  removeKeyResult(keyResultUuid: string): void {
+    const keyResultIndex = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
+    if (keyResultIndex === -1) {
+      throw new Error(`关键结果不存在: ${keyResultUuid}`);
+    }
+
+    const keyResult = this.keyResults[keyResultIndex];
+
+    // 级联删除相关记录
+    const relatedRecords = this.records.filter((record) => record.keyResultUuid === keyResultUuid);
+    this.records = this.records.filter((record) => record.keyResultUuid !== keyResultUuid);
+
+    // 从聚合中移除
+    this.keyResults.splice(keyResultIndex, 1);
+
+    // 更新聚合根
+    this.updateVersion();
+
+    // 发布领域事件
+    this.publishDomainEvent('KeyResultRemoved', {
+      goalUuid: this.uuid,
+      keyResultUuid,
+      removedKeyResult: keyResult,
+      cascadeDeletedRecordsCount: relatedRecords.length,
+    });
+  }
+
+  /**
+   * 创建并添加目标记录
+   * 聚合根控制：验证记录数据有效性，自动更新关键结果进度
+   */
+  createRecord(recordData: { keyResultUuid: string; value: number; note?: string }): string {
+    // 验证关键结果存在
+    const keyResult = this.keyResults.find((kr) => kr.uuid === recordData.keyResultUuid);
+    if (!keyResult) {
+      throw new Error(`关键结果不存在: ${recordData.keyResultUuid}`);
+    }
+
+    // 创建记录实体
+    const recordUuid = this.generateUUID();
+    const now = new Date();
+
+    const newRecord = new GoalRecord({
+      uuid: recordUuid,
+      accountUuid: '', // 由应用层设置
+      goalUuid: this.uuid,
+      keyResultUuid: recordData.keyResultUuid,
+      value: recordData.value,
+      note: recordData.note,
+      createdAt: now,
+    });
+
+    // 添加到聚合
+    this.records.push(newRecord);
+
+    // 更新关键结果当前值（使用实体的业务方法）
+    keyResult.updateProgress(recordData.value, 'set');
+
+    // 更新聚合根
+    this.updateVersion();
+
+    // 发布领域事件
+    this.publishDomainEvent('GoalRecordCreated', {
+      goalUuid: this.uuid,
+      recordUuid,
+      record: newRecord.toDTO(),
+      keyResultUpdated: true,
+    });
+
+    return recordUuid;
+  }
+
+  /**
+   * 更新目标记录
+   */
+  updateRecord(
+    recordUuid: string,
+    updates: {
+      value?: number;
+      note?: string;
+    },
+  ): void {
+    const record = this.records.find((r) => r.uuid === recordUuid);
+    if (!record) {
+      throw new Error(`目标记录不存在: ${recordUuid}`);
+    }
+
+    const originalData = record.toDTO();
+
+    // 使用实体的业务方法应用更新
+    if (updates.value !== undefined) {
+      record.updateValue(updates.value);
+    }
+    if (updates.note !== undefined) {
+      record.updateNote(updates.note);
+    }
+
+    // 如果更新了值，同步更新关键结果
+    if (updates.value !== undefined && record.keyResultUuid) {
+      const keyResult = this.keyResults.find((kr) => kr.uuid === record.keyResultUuid);
+      if (keyResult) {
+        keyResult.updateProgress(updates.value, 'set');
+      }
+    }
+
+    this.updateVersion();
+
+    this.publishDomainEvent('GoalRecordUpdated', {
+      goalUuid: this.uuid,
+      recordUuid,
+      originalData,
+      updatedData: record.toDTO(),
+      changes: updates,
+    });
+  }
+
+  /**
+   * 删除目标记录
+   */
+  removeRecord(recordUuid: string): void {
+    const recordIndex = this.records.findIndex((r) => r.uuid === recordUuid);
+    if (recordIndex === -1) {
+      throw new Error(`目标记录不存在: ${recordUuid}`);
+    }
+
+    const record = this.records[recordIndex];
+    this.records.splice(recordIndex, 1);
+
+    this.updateVersion();
+
+    this.publishDomainEvent('GoalRecordRemoved', {
+      goalUuid: this.uuid,
+      recordUuid,
+      removedRecord: record,
+    });
+  }
+
+  /**
+   * 创建并添加目标复盘
+   * 聚合根控制：确保复盘数据完整性，生成快照
+   */
+  createReview(reviewData: {
+    title: string;
+    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+    content: {
+      achievements: string;
+      challenges: string;
+      learnings: string;
+      nextSteps: string;
+      adjustments?: string;
+    };
+    rating: {
+      progressSatisfaction: number;
+      executionEfficiency: number;
+      goalReasonableness: number;
+    };
+    reviewDate?: Date;
+  }): string {
+    if (!reviewData.title.trim()) {
+      throw new Error('复盘标题不能为空');
+    }
+
+    // 验证评分范围
+    const { progressSatisfaction, executionEfficiency, goalReasonableness } = reviewData.rating;
+    if (
+      [progressSatisfaction, executionEfficiency, goalReasonableness].some(
+        (score) => score < 1 || score > 10,
+      )
+    ) {
+      throw new Error('复盘评分必须在1-10之间');
+    }
+
+    const reviewUuid = this.generateUUID();
+    const now = new Date();
+
+    // 生成当前状态快照
+    const snapshot = {
+      snapshotDate: now,
+      overallProgress: this.overallProgress,
+      weightedProgress: this.weightedProgress,
+      completedKeyResults: this.completedKeyResults,
+      totalKeyResults: this.totalKeyResults,
+      keyResultsSnapshot: this.keyResults.map((kr) => ({
+        uuid: kr.uuid,
+        name: kr.name,
+        progress: Math.min((kr.currentValue / kr.targetValue) * 100, 100),
+        currentValue: kr.currentValue,
+        targetValue: kr.targetValue,
+      })),
+    };
+
+    const newReview: IGoalReview = {
+      uuid: reviewUuid,
+      goalUuid: this.uuid,
+      title: reviewData.title,
+      type: reviewData.type,
+      reviewDate: reviewData.reviewDate || now,
+      content: reviewData.content,
+      snapshot,
+      rating: reviewData.rating,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // 使用父类方法添加到聚合
+    this.addReview(newReview);
+
+    this.publishDomainEvent('GoalReviewCreated', {
+      goalUuid: this.uuid,
+      reviewUuid,
+      review: newReview,
+    });
+
+    return reviewUuid;
+  }
+
+  /**
+   * 更新目标复盘
+   */
+  updateReview(
+    reviewUuid: string,
+    updates: {
+      title?: string;
+      content?: Partial<IGoalReview['content']>;
+      rating?: Partial<IGoalReview['rating']>;
+    },
+  ): void {
+    const review = this.reviews.find((r) => r.uuid === reviewUuid);
+    if (!review) {
+      throw new Error(`目标复盘不存在: ${reviewUuid}`);
+    }
+
+    if (updates.title !== undefined && !updates.title.trim()) {
+      throw new Error('复盘标题不能为空');
+    }
+
+    const originalData = { ...review };
+
+    if (updates.title !== undefined) review.title = updates.title;
+    if (updates.content !== undefined) {
+      review.content = { ...review.content, ...updates.content };
+    }
+    if (updates.rating !== undefined) {
+      review.rating = { ...review.rating, ...updates.rating };
+    }
+
+    review.updatedAt = new Date();
+
+    this.updateVersion();
+
+    this.publishDomainEvent('GoalReviewUpdated', {
+      goalUuid: this.uuid,
+      reviewUuid,
+      originalData,
+      updatedData: { ...review },
+      changes: updates,
+    });
+  }
+
+  /**
+   * 删除目标复盘
+   */
+  removeReview(reviewUuid: string): void {
+    const reviewIndex = this.reviews.findIndex((r) => r.uuid === reviewUuid);
+    if (reviewIndex === -1) {
+      throw new Error(`目标复盘不存在: ${reviewUuid}`);
+    }
+
+    const review = this.reviews[reviewIndex];
+    this.reviews.splice(reviewIndex, 1);
+
+    this.updateVersion();
+
+    this.publishDomainEvent('GoalReviewRemoved', {
+      goalUuid: this.uuid,
+      reviewUuid,
+      removedReview: review,
+    });
+  }
+
+  // ===== 查询方法（聚合根提供的查询接口）=====
+
+  /**
+   * 获取指定关键结果（返回实体对象）
+   */
+  getKeyResult(keyResultUuid: string): KeyResult | undefined {
+    return this.keyResults.find((kr) => kr.uuid === keyResultUuid);
+  }
+
+  /**
+   * 获取指定关键结果的实体版本（用于编辑）
+   */
+  getKeyResultEntity(keyResultUuid: string): KeyResult | undefined {
+    // 现在keyResults已经是实体对象数组，直接返回即可
+    return this.keyResults.find((kr) => kr.uuid === keyResultUuid);
+  }
+
+  /**
+   * 获取指定关键结果的克隆版本（用于表单编辑）
+   */
+  getKeyResultForEdit(keyResultUuid: string): KeyResult | undefined {
+    const keyResult = this.getKeyResultEntity(keyResultUuid);
+    return keyResult?.clone();
+  }
+
+  /**
+   * 获取活跃的关键结果
+   */
+  getActiveKeyResults(): IKeyResult[] {
+    return this.keyResults.filter((kr) => kr.lifecycle.status === 'active');
+  }
+
+  /**
+   * 获取指定关键结果的记录
+   */
+  getRecordsForKeyResult(keyResultUuid: string): IGoalRecord[] {
+    return this.records.filter((r) => r.keyResultUuid === keyResultUuid);
+  }
+
+  /**
+   * 获取最近的记录
+   */
+  getRecentRecords(limit: number = 10): IGoalRecord[] {
+    return this.records
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      .slice(0, limit);
+  }
+
+  /**
+   * 获取指定类型的复盘
+   */
+  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): IGoalReview[] {
+    return this.reviews.filter((r) => r.type === type);
+  }
+
+  /**
+   * 获取最新的复盘
+   */
+  getLatestReview(): IGoalReview | undefined {
+    return this.reviews.sort((a, b) => b.reviewDate.getTime() - a.reviewDate.getTime())[0];
+  }
+
+  // ===== 辅助方法 =====
+
+  /**
+   * 生成UUID
+   */
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c == 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * 发布领域事件
+   */
+  private publishDomainEvent(eventType: string, eventData: any): void {
+    // 这里可以集成事件发布机制
+    console.log(`[Domain Event] ${eventType}:`, eventData);
+  }
 
   /**
    * 获取格式化的时间范围

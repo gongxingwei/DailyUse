@@ -61,7 +61,6 @@ export class PrismaGoalRepository implements IGoalRepository {
   private mapKeyResultToDTO(keyResult: any): GoalContracts.KeyResultDTO {
     return {
       uuid: keyResult.uuid,
-      accountUuid: keyResult.accountUuid,
       goalUuid: keyResult.goalUuid,
       name: keyResult.name,
       description: keyResult.description,
@@ -353,7 +352,6 @@ export class PrismaGoalRepository implements IGoalRepository {
     const created = await this.prisma.keyResult.create({
       data: {
         uuid,
-        accountUuid,
         goalUuid: keyResultData.goalUuid,
         name: keyResultData.name,
         description: keyResultData.description,
@@ -379,7 +377,9 @@ export class PrismaGoalRepository implements IGoalRepository {
     const keyResult = await this.prisma.keyResult.findFirst({
       where: {
         uuid,
-        accountUuid,
+        goal: {
+          accountUuid, // 通过Goal聚合根验证权限
+        },
       },
     });
 
@@ -392,8 +392,10 @@ export class PrismaGoalRepository implements IGoalRepository {
   ): Promise<GoalContracts.KeyResultDTO[]> {
     const keyResults = await this.prisma.keyResult.findMany({
       where: {
-        accountUuid,
         goalUuid,
+        goal: {
+          accountUuid, // 通过Goal聚合根验证权限，而不是直接使用冗余的accountUuid
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -534,81 +536,322 @@ export class PrismaGoalRepository implements IGoalRepository {
     return dirs.map((dir) => this.mapGoalDirToDTO(dir));
   }
 
-  // 以下方法暂时抛出未实现错误，后续可以根据需要实现
-  async createGoalRecord(): Promise<any> {
-    throw new Error('Method not implemented');
+  // ===== GoalRecord CRUD 操作 =====
+
+  async createGoalRecord(
+    accountUuid: string,
+    recordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'>,
+  ): Promise<GoalContracts.GoalRecordDTO> {
+    const uuid = randomUUID();
+    const now = new Date();
+
+    const created = await this.prisma.goalRecord.create({
+      data: {
+        uuid,
+        keyResultUuid: recordData.keyResultUuid,
+        value: recordData.value,
+        note: recordData.note,
+        createdAt: now,
+      },
+    });
+
+    return this.mapGoalRecordToDTO(created);
   }
 
-  async getGoalRecordByUuid(): Promise<any> {
-    throw new Error('Method not implemented');
+  async getGoalRecordByUuid(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<GoalContracts.GoalRecordDTO | null> {
+    const record = await this.prisma.goalRecord.findFirst({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return record ? this.mapGoalRecordToDTO(record) : null;
   }
 
-  async getGoalRecordsByGoalUuid(): Promise<any> {
-    throw new Error('Method not implemented');
+  async getGoalRecordsByGoalUuid(
+    accountUuid: string,
+    goalUuid: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      dateRange?: { start?: Date; end?: Date };
+    },
+  ): Promise<{
+    records: GoalContracts.GoalRecordDTO[];
+    total: number;
+  }> {
+    const where = {
+      goalUuid,
+      goal: {
+        accountUuid, // 通过Goal聚合根验证权限
+      },
+      ...(params?.dateRange && {
+        createdAt: {
+          gte: params.dateRange.start,
+          lte: params.dateRange.end,
+        },
+      }),
+    };
+
+    const [records, total] = await Promise.all([
+      this.prisma.goalRecord.findMany({
+        where,
+        skip: ((params?.page || 1) - 1) * (params?.limit || 10),
+        take: params?.limit || 10,
+        orderBy: {
+          createdAt: 'desc',
+        },
+      }),
+      this.prisma.goalRecord.count({ where }),
+    ]);
+
+    return {
+      records: records.map((record) => this.mapGoalRecordToDTO(record)),
+      total,
+    };
   }
 
-  async updateGoalRecord(): Promise<any> {
-    throw new Error('Method not implemented');
+  async getGoalRecordsByKeyResultUuid(
+    accountUuid: string,
+    keyResultUuid: string,
+  ): Promise<GoalContracts.GoalRecordDTO[]> {
+    const records = await this.prisma.goalRecord.findMany({
+      where: {
+        accountUuid,
+        keyResultUuid,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return records.map((record) => this.mapGoalRecordToDTO(record));
   }
 
-  async deleteGoalRecord(): Promise<any> {
-    throw new Error('Method not implemented');
+  async updateGoalRecord(
+    accountUuid: string,
+    uuid: string,
+    recordData: Partial<GoalContracts.GoalRecordDTO>,
+  ): Promise<GoalContracts.GoalRecordDTO> {
+    const updated = await this.prisma.goalRecord.update({
+      where: { uuid },
+      data: {
+        ...(recordData.value !== undefined && { value: recordData.value }),
+        ...(recordData.note !== undefined && { note: recordData.note }),
+        ...(recordData.keyResultUuid && { keyResultUuid: recordData.keyResultUuid }),
+      },
+    });
+
+    return this.mapGoalRecordToDTO(updated);
   }
 
-  async createGoalReview(): Promise<any> {
-    throw new Error('Method not implemented');
+  async deleteGoalRecord(accountUuid: string, uuid: string): Promise<boolean> {
+    const result = await this.prisma.goalRecord.deleteMany({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return result.count > 0;
   }
 
-  async getGoalReviewByUuid(): Promise<any> {
-    throw new Error('Method not implemented');
+  // ===== GoalReview CRUD 操作 =====
+
+  async createGoalReview(
+    accountUuid: string,
+    reviewData: Omit<GoalContracts.GoalReviewDTO, 'uuid' | 'createdAt' | 'updatedAt'>,
+  ): Promise<GoalContracts.GoalReviewDTO> {
+    const uuid = randomUUID();
+    const now = new Date();
+
+    const created = await this.prisma.goalReview.create({
+      data: {
+        uuid,
+        goalUuid: reviewData.goalUuid,
+        title: reviewData.title,
+        type: reviewData.type,
+        reviewDate: new Date(reviewData.reviewDate),
+        content: JSON.stringify(reviewData.content),
+        snapshot: JSON.stringify(reviewData.snapshot),
+        rating: JSON.stringify(reviewData.rating),
+        createdAt: now,
+        updatedAt: now,
+      },
+    });
+
+    return this.mapGoalReviewToDTO(created);
   }
 
-  async getGoalReviewsByGoalUuid(): Promise<any> {
-    throw new Error('Method not implemented');
+  async getGoalReviewByUuid(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<GoalContracts.GoalReviewDTO | null> {
+    const review = await this.prisma.goalReview.findFirst({
+      where: {
+        uuid,
+        goal: {
+          accountUuid,
+        },
+      },
+    });
+
+    return review ? this.mapGoalReviewToDTO(review) : null;
   }
 
-  async updateGoalReview(): Promise<any> {
-    throw new Error('Method not implemented');
+  async getGoalReviewsByGoalUuid(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<GoalContracts.GoalReviewDTO[]> {
+    const reviews = await this.prisma.goalReview.findMany({
+      where: {
+        goalUuid,
+        goal: {
+          accountUuid,
+        },
+      },
+      orderBy: {
+        reviewDate: 'desc',
+      },
+    });
+
+    return reviews.map((review) => this.mapGoalReviewToDTO(review));
   }
 
-  async deleteGoalReview(): Promise<any> {
-    throw new Error('Method not implemented');
+  async updateGoalReview(
+    accountUuid: string,
+    uuid: string,
+    reviewData: Partial<GoalContracts.GoalReviewDTO>,
+  ): Promise<GoalContracts.GoalReviewDTO> {
+    const now = new Date();
+
+    const updated = await this.prisma.goalReview.update({
+      where: { uuid },
+      data: {
+        ...(reviewData.title && { title: reviewData.title }),
+        ...(reviewData.type && { type: reviewData.type }),
+        ...(reviewData.reviewDate && { reviewDate: new Date(reviewData.reviewDate) }),
+        ...(reviewData.content !== undefined && { content: JSON.stringify(reviewData.content) }),
+        ...(reviewData.snapshot !== undefined && { snapshot: JSON.stringify(reviewData.snapshot) }),
+        ...(reviewData.rating !== undefined && { rating: JSON.stringify(reviewData.rating) }),
+        updatedAt: now,
+      },
+    });
+
+    return this.mapGoalReviewToDTO(updated);
   }
 
-  async createGoalRelationship(): Promise<any> {
-    throw new Error('Method not implemented');
+  async deleteGoalReview(accountUuid: string, uuid: string): Promise<boolean> {
+    const result = await this.prisma.goalReview.deleteMany({
+      where: {
+        uuid,
+        goal: {
+          accountUuid,
+        },
+      },
+    });
+
+    return result.count > 0;
   }
 
-  async getGoalRelationshipsByGoalUuid(): Promise<any> {
-    throw new Error('Method not implemented');
+  // ===== 映射方法 =====
+
+  private mapGoalRecordToDTO(record: any): GoalContracts.GoalRecordDTO {
+    return {
+      uuid: record.uuid,
+      keyResultUuid: record.keyResultUuid,
+      value: record.value,
+      note: record.note,
+      createdAt: record.createdAt.getTime(),
+    };
   }
 
-  async deleteGoalRelationship(): Promise<any> {
-    throw new Error('Method not implemented');
+  private mapGoalReviewToDTO(review: any): GoalContracts.GoalReviewDTO {
+    // Parse JSON strings from database
+    const content =
+      typeof review.content === 'string' ? JSON.parse(review.content) : review.content;
+    const snapshot =
+      typeof review.snapshot === 'string' ? JSON.parse(review.snapshot) : review.snapshot;
+    const rating = typeof review.rating === 'string' ? JSON.parse(review.rating) : review.rating;
+
+    return {
+      uuid: review.uuid,
+      goalUuid: review.goalUuid,
+      title: review.title,
+      type: review.type,
+      reviewDate: review.reviewDate.getTime(),
+      content: content,
+      snapshot: snapshot,
+      rating: rating,
+      createdAt: review.createdAt.getTime(),
+      updatedAt: review.updatedAt.getTime(),
+    };
   }
 
-  async searchGoals(): Promise<any> {
-    throw new Error('Method not implemented');
-  }
+  // ===== 统计方法 =====
 
-  async getGoalStatistics(): Promise<any> {
-    throw new Error('Method not implemented');
-  }
+  async getGoalStats(
+    accountUuid: string,
+    dateRange?: { start?: Date; end?: Date },
+  ): Promise<{
+    totalGoals: number;
+    activeGoals: number;
+    completedGoals: number;
+    pausedGoals: number;
+    archivedGoals: number;
+    overallProgress: number;
+    avgKeyResultsPerGoal: number;
+    completionRate: number;
+  }> {
+    const where = {
+      accountUuid,
+      ...(dateRange && {
+        createdAt: {
+          gte: dateRange.start,
+          lte: dateRange.end,
+        },
+      }),
+    };
 
-  async getUpcomingGoals(): Promise<any> {
-    throw new Error('Method not implemented');
-  }
+    const [totalGoals, activeGoals, completedGoals, pausedGoals, archivedGoals, goals, keyResults] =
+      await Promise.all([
+        this.prisma.goal.count({ where }),
+        this.prisma.goal.count({ where: { ...where, status: 'active' } }),
+        this.prisma.goal.count({ where: { ...where, status: 'completed' } }),
+        this.prisma.goal.count({ where: { ...where, status: 'paused' } }),
+        this.prisma.goal.count({ where: { ...where, status: 'archived' } }),
+        this.prisma.goal.findMany({ where, include: { _count: { select: { keyResults: true } } } }),
+        this.prisma.keyResult.findMany({
+          where: {
+            accountUuid,
+            goal: where,
+          },
+        }),
+      ]);
 
-  async getOverdueGoals(): Promise<any> {
-    throw new Error('Method not implemented');
-  }
+    const overallProgress =
+      keyResults.length > 0
+        ? keyResults.reduce((sum, kr) => sum + (kr.currentValue / kr.targetValue) * 100, 0) /
+          keyResults.length
+        : 0;
 
-  async getGoalRecordsByKeyResultUuid(): Promise<any> {
-    throw new Error('Method not implemented');
-  }
+    const avgKeyResultsPerGoal = totalGoals > 0 ? keyResults.length / totalGoals : 0;
+    const completionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
 
-  async getGoalStats(): Promise<any> {
-    throw new Error('Method not implemented');
+    return {
+      totalGoals,
+      activeGoals,
+      completedGoals,
+      pausedGoals,
+      archivedGoals,
+      overallProgress,
+      avgKeyResultsPerGoal,
+      completionRate,
+    };
   }
 
   async getProgressTrend(): Promise<any> {
@@ -617,5 +860,324 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   async getUpcomingDeadlines(): Promise<any> {
     throw new Error('Method not implemented');
+  }
+
+  // ========================= DDD聚合根控制方法 =========================
+
+  /**
+   * 加载完整的Goal聚合根
+   * 包含目标、关键结果、记录、复盘等所有子实体
+   */
+  async loadGoalAggregate(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<{
+    goal: GoalContracts.GoalDTO;
+    keyResults: GoalContracts.KeyResultDTO[];
+    records: GoalContracts.GoalRecordDTO[];
+    reviews: GoalContracts.GoalReviewDTO[];
+  } | null> {
+    // 获取目标基本信息
+    const goal = await this.getGoalByUuid(accountUuid, goalUuid);
+    if (!goal) {
+      return null;
+    }
+
+    // 并行获取所有子实体
+    const [keyResults, recordsResult, reviews] = await Promise.all([
+      this.getKeyResultsByGoalUuid(accountUuid, goalUuid),
+      this.getGoalRecordsByGoalUuid(accountUuid, goalUuid),
+      this.getGoalReviewsByGoalUuid(accountUuid, goalUuid),
+    ]);
+
+    return {
+      goal,
+      keyResults,
+      records: recordsResult.records || [],
+      reviews,
+    };
+  }
+
+  /**
+   * 原子性更新Goal聚合根
+   * 在一个事务中更新目标及其所有子实体
+   */
+  async updateGoalAggregate(
+    accountUuid: string,
+    aggregateData: {
+      goal: Partial<GoalContracts.GoalDTO>;
+      keyResults?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.KeyResultDTO | Partial<GoalContracts.KeyResultDTO>;
+        uuid?: string;
+      }>;
+      records?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.GoalRecordDTO | Partial<GoalContracts.GoalRecordDTO>;
+        uuid?: string;
+      }>;
+      reviews?: Array<{
+        action: 'create' | 'update' | 'delete';
+        data: GoalContracts.GoalReviewDTO | Partial<GoalContracts.GoalReviewDTO>;
+        uuid?: string;
+      }>;
+    },
+  ): Promise<{
+    goal: GoalContracts.GoalDTO;
+    keyResults: GoalContracts.KeyResultDTO[];
+    records: GoalContracts.GoalRecordDTO[];
+    reviews: GoalContracts.GoalReviewDTO[];
+  }> {
+    // 使用事务确保原子性
+    return await this.prisma.$transaction(async (tx) => {
+      let updatedGoal: GoalContracts.GoalDTO;
+
+      // 更新目标
+      if (aggregateData.goal.uuid) {
+        updatedGoal = await this.updateGoal(
+          accountUuid,
+          aggregateData.goal.uuid,
+          aggregateData.goal,
+        );
+      } else {
+        throw new Error('Goal UUID is required for aggregate update');
+      }
+
+      // 处理关键结果变更
+      if (aggregateData.keyResults) {
+        for (const kr of aggregateData.keyResults) {
+          switch (kr.action) {
+            case 'create':
+              await this.createKeyResult(accountUuid, kr.data as GoalContracts.KeyResultDTO);
+              break;
+            case 'update':
+              if (kr.uuid) {
+                await this.updateKeyResult(accountUuid, kr.uuid, kr.data);
+              }
+              break;
+            case 'delete':
+              if (kr.uuid) {
+                await this.deleteKeyResult(accountUuid, kr.uuid);
+              }
+              break;
+          }
+        }
+      }
+
+      // 处理记录变更
+      if (aggregateData.records) {
+        for (const record of aggregateData.records) {
+          switch (record.action) {
+            case 'create':
+              await this.createGoalRecord(accountUuid, record.data as GoalContracts.GoalRecordDTO);
+              break;
+            case 'update':
+              if (record.uuid) {
+                await this.updateGoalRecord(accountUuid, record.uuid, record.data);
+              }
+              break;
+            case 'delete':
+              if (record.uuid) {
+                await this.deleteGoalRecord(accountUuid, record.uuid);
+              }
+              break;
+          }
+        }
+      }
+
+      // 处理复盘变更
+      if (aggregateData.reviews) {
+        for (const review of aggregateData.reviews) {
+          switch (review.action) {
+            case 'create':
+              await this.createGoalReview(accountUuid, review.data as GoalContracts.GoalReviewDTO);
+              break;
+            case 'update':
+              if (review.uuid) {
+                await this.updateGoalReview(accountUuid, review.uuid, review.data);
+              }
+              break;
+            case 'delete':
+              if (review.uuid) {
+                await this.deleteGoalReview(accountUuid, review.uuid);
+              }
+              break;
+          }
+        }
+      }
+
+      // 返回更新后的完整聚合
+      const result = await this.loadGoalAggregate(accountUuid, updatedGoal.uuid);
+      if (!result) {
+        throw new Error('Failed to load updated aggregate');
+      }
+      return result;
+    });
+  }
+
+  /**
+   * 验证聚合根业务规则
+   */
+  async validateGoalAggregateRules(
+    accountUuid: string,
+    goalUuid: string,
+    proposedChanges: {
+      keyResults?: GoalContracts.KeyResultDTO[];
+      records?: GoalContracts.GoalRecordDTO[];
+    },
+  ): Promise<{
+    isValid: boolean;
+    violations: Array<{
+      rule: string;
+      message: string;
+      severity: 'error' | 'warning';
+    }>;
+  }> {
+    const violations: Array<{
+      rule: string;
+      message: string;
+      severity: 'error' | 'warning';
+    }> = [];
+
+    // 验证关键结果权重总和不超过100%
+    if (proposedChanges.keyResults) {
+      const totalWeight = proposedChanges.keyResults.reduce((sum, kr) => sum + (kr.weight || 0), 0);
+      if (totalWeight > 100) {
+        violations.push({
+          rule: 'keyResultWeightLimit',
+          message: `关键结果权重总和(${totalWeight}%)不能超过100%`,
+          severity: 'error',
+        });
+      }
+    }
+
+    // 验证关键结果数量限制
+    if (proposedChanges.keyResults && proposedChanges.keyResults.length > 10) {
+      violations.push({
+        rule: 'keyResultCountLimit',
+        message: '关键结果数量不能超过10个',
+        severity: 'error',
+      });
+    }
+
+    // 可以添加更多业务规则验证...
+
+    return {
+      isValid: violations.filter((v) => v.severity === 'error').length === 0,
+      violations,
+    };
+  }
+
+  /**
+   * 级联删除Goal聚合根
+   */
+  async cascadeDeleteGoalAggregate(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<{
+    deletedGoal: GoalContracts.GoalDTO;
+    deletedKeyResults: GoalContracts.KeyResultDTO[];
+    deletedRecords: GoalContracts.GoalRecordDTO[];
+    deletedReviews: GoalContracts.GoalReviewDTO[];
+  }> {
+    // 先获取完整聚合数据
+    const aggregateData = await this.loadGoalAggregate(accountUuid, goalUuid);
+    if (!aggregateData) {
+      throw new Error('Goal aggregate not found');
+    }
+
+    // 在事务中删除所有相关数据
+    await this.prisma.$transaction(async (tx) => {
+      // 删除复盘
+      await tx.goalReview.deleteMany({
+        where: {
+          goalUuid,
+          goal: {
+            accountUuid,
+          },
+        },
+      });
+
+      // 删除记录
+      await tx.goalRecord.deleteMany({
+        where: {
+          goalUuid,
+          accountUuid,
+        },
+      });
+
+      // 删除关键结果
+      await tx.keyResult.deleteMany({
+        where: {
+          goalUuid,
+          accountUuid,
+        },
+      });
+
+      // 最后删除目标
+      await tx.goal.deleteMany({
+        where: {
+          uuid: goalUuid,
+          accountUuid,
+        },
+      });
+    });
+
+    return {
+      deletedGoal: aggregateData.goal,
+      deletedKeyResults: aggregateData.keyResults,
+      deletedRecords: aggregateData.records,
+      deletedReviews: aggregateData.reviews,
+    };
+  }
+
+  /**
+   * 聚合根版本控制
+   */
+  async updateGoalVersion(
+    accountUuid: string,
+    goalUuid: string,
+    expectedVersion: number,
+    newVersion: number,
+  ): Promise<boolean> {
+    try {
+      const result = await this.prisma.goal.updateMany({
+        where: {
+          uuid: goalUuid,
+          accountUuid,
+          version: expectedVersion,
+        },
+        data: {
+          version: newVersion,
+          updatedAt: new Date(),
+        },
+      });
+
+      return result.count > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * 获取聚合根变更历史
+   */
+  async getGoalAggregateHistory(
+    accountUuid: string,
+    goalUuid: string,
+    limit?: number,
+  ): Promise<
+    Array<{
+      version: number;
+      changedAt: number;
+      changedBy: string;
+      changeType: 'goal' | 'keyResult' | 'record' | 'review';
+      entityUuid: string;
+      changeData: any;
+    }>
+  > {
+    // 注意：这里需要有审计表才能实现完整的历史记录
+    // 目前返回空数组，后续可以根据审计表结构实现
+    return [];
   }
 }

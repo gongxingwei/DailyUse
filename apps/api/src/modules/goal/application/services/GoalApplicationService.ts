@@ -1,8 +1,13 @@
 import type { GoalContracts } from '@dailyuse/contracts';
 import { Goal, type IGoalRepository } from '@dailyuse/domain-server';
+import { GoalAggregateService } from './goalAggregateService';
 
 export class GoalApplicationService {
-  constructor(private goalRepository: IGoalRepository) {}
+  private aggregateService: GoalAggregateService;
+
+  constructor(private goalRepository: IGoalRepository) {
+    this.aggregateService = new GoalAggregateService(goalRepository);
+  }
 
   // ===== Goal 管理 =====
 
@@ -187,5 +192,121 @@ export class GoalApplicationService {
     queryParams: any, // Use any since req.query provides strings
   ): Promise<GoalContracts.GoalListResponse> {
     return this.getGoals(accountUuid, queryParams);
+  }
+
+  // ===== DDD 聚合根控制方法 - 关键结果管理 =====
+
+  /**
+   * 通过聚合根创建关键结果
+   * 体现DDD原则：所有子实体操作必须通过聚合根
+   */
+  async createKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      name: string;
+      description?: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      unit: string;
+      weight: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    },
+  ): Promise<GoalContracts.KeyResultResponse> {
+    return this.aggregateService.createKeyResultForGoal(accountUuid, goalUuid, request);
+  }
+
+  /**
+   * 通过聚合根更新关键结果
+   */
+  async updateKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultUuid: string,
+    request: {
+      name?: string;
+      description?: string;
+      currentValue?: number;
+      weight?: number;
+      status?: 'active' | 'completed' | 'archived';
+    },
+  ): Promise<GoalContracts.KeyResultResponse> {
+    return this.aggregateService.updateKeyResultForGoal(
+      accountUuid,
+      goalUuid,
+      keyResultUuid,
+      request,
+    );
+  }
+
+  /**
+   * 通过聚合根删除关键结果
+   */
+  async deleteKeyResult(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultUuid: string,
+  ): Promise<void> {
+    return this.aggregateService.removeKeyResultFromGoal(accountUuid, goalUuid, keyResultUuid);
+  }
+
+  // ===== DDD 聚合根控制方法 - 目标记录管理 =====
+
+  /**
+   * 通过聚合根创建目标记录
+   */
+  async createGoalRecord(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      keyResultUuid: string;
+      value: number;
+      note?: string;
+    },
+  ): Promise<GoalContracts.GoalRecordResponse> {
+    return this.aggregateService.createRecordForGoal(accountUuid, goalUuid, request);
+  }
+
+  // ===== DDD 聚合根控制方法 - 目标复盘管理 =====
+
+  /**
+   * 通过聚合根创建目标复盘
+   */
+  async createGoalReview(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      title: string;
+      type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+      content: {
+        achievements: string;
+        challenges: string;
+        learnings: string;
+        nextSteps: string;
+        adjustments?: string;
+      };
+      rating: {
+        progressSatisfaction: number;
+        executionEfficiency: number;
+        goalReasonableness: number;
+      };
+      reviewDate?: Date;
+    },
+  ): Promise<GoalContracts.GoalReviewResponse> {
+    return this.aggregateService.createReviewForGoal(accountUuid, goalUuid, request);
+  }
+
+  // ===== 聚合根完整视图 =====
+
+  /**
+   * 获取完整的聚合根视图
+   * 包含目标及所有相关子实体
+   */
+  async getGoalAggregateView(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<GoalContracts.GoalAggregateViewResponse> {
+    return this.aggregateService.getGoalAggregateView(accountUuid, goalUuid);
   }
 }

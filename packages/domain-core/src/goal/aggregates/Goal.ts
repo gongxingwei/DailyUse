@@ -2,6 +2,9 @@ import { AggregateRoot } from '@dailyuse/utils';
 import { type GoalContracts } from '@dailyuse/contracts';
 import type { IGoal, IKeyResult, IGoalRecord, IGoalReview } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { KeyResultCore } from '../entities/KeyResult';
+import { GoalRecordCore } from '../entities/GoalRecord';
+import { GoalReview } from '../entities/GoalReview';
 
 /**
  * Goal核心基类 - 包含共享属性和基础计算
@@ -14,9 +17,9 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   protected _startTime: Date;
   protected _endTime: Date;
   protected _note?: string;
-  keyResults: IKeyResult[];
-  records: IGoalRecord[];
-  reviews: IGoalReview[];
+  keyResults: KeyResultCore[];
+  records: GoalRecordCore[];
+  reviews: GoalReview[];
   protected _analysis: {
     motive: string;
     feasibility: string;
@@ -82,9 +85,11 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
       tags: params.tags || [],
       category: params.category || '',
     };
-    this.keyResults = params.keyResults || [];
-    this.records = params.records || [];
-    this.reviews = params.reviews || [];
+
+    // 子类需要在构造函数中自行处理实体对象的创建
+    this.keyResults = [];
+    this.records = [];
+    this.reviews = (params.reviews || []).map((dto) => new GoalReview(dto));
     this._version = params.version || 0;
   }
 
@@ -306,52 +311,22 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   }
 
   /**
-   * 添加关键结果
+   * 添加关键结果（抽象方法，由子类实现）
    */
-  addKeyResult(keyResult: IKeyResult): void {
-    // 验证权重总和不超过100
-    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0) + keyResult.weight;
-    if (totalWeight > 100) {
-      throw new Error('关键结果权重总和不能超过100%');
-    }
-
-    this.keyResults.push(keyResult);
-    this.updateVersion();
-  }
+  abstract addKeyResult(keyResult: IKeyResult): void;
 
   /**
-   * 更新关键结果进度
+   * 更新关键结果进度（抽象方法，由子类实现）
    */
-  updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void {
-    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
-    if (!keyResult) {
-      throw new Error('关键结果不存在');
-    }
-
-    const oldValue = keyResult.currentValue;
-    keyResult.currentValue = Math.max(0, oldValue + increment);
-    // 注意：IKeyResult接口没有直接的updatedAt，需要在实现中处理
-
-    // 添加记录
-    const record: IGoalRecord = {
-      uuid: AggregateRoot.generateUUID(),
-      accountUuid: keyResult.accountUuid,
-      goalUuid: this.uuid,
-      keyResultUuid,
-      value: increment,
-      note,
-      createdAt: new Date(),
-    };
-
-    this.records.push(record);
-    this.updateVersion();
-  }
+  abstract updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void;
 
   /**
    * 添加复盘
    */
   addReview(review: IGoalReview): void {
-    this.reviews.push(review);
+    // 将DTO转换为实体对象
+    const reviewEntity = new GoalReview(review);
+    this.reviews.push(reviewEntity);
     this.updateVersion();
   }
 

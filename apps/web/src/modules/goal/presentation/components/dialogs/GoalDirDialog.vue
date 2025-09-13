@@ -53,7 +53,7 @@ const emit = defineEmits<{
     (e: 'edit-goal-dir', goalDir: GoalDir): void;
 }>();
 
-const localGoalDir = ref<GoalDir>(GoalDir.forCreate());
+const localGoalDir = ref<GoalDir>(GoalDir.forCreate({ accountUuid: '' }));
 const isEditing = computed(() => !!props.goalDir);
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const isFormValid = computed(() => {
@@ -107,9 +107,9 @@ watch(
     [() => props.modelValue, () => props.goalDir],
     ([show]) => {
         if (show) {
-            localGoalDir.value = props.goalDir ? props.goalDir.clone() : GoalDir.forCreate();
+            localGoalDir.value = props.goalDir ? props.goalDir.clone() : GoalDir.forCreate({ accountUuid: '' });
         } else {
-            localGoalDir.value = GoalDir.forCreate();
+            localGoalDir.value = GoalDir.forCreate({ accountUuid: '' });
         }
     },
     { immediate: true }

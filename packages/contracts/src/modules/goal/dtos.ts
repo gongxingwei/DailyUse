@@ -11,12 +11,11 @@ import { ImportanceLevel, UrgencyLevel } from '../../core';
 // ============ 关键结果 DTOs ============
 
 /**
- * 关键结果 DTO
+ * 关键结果 DTO - DDD聚合根控制模式
  */
 export interface KeyResultDTO {
   uuid: string;
-  accountUuid: string;
-  goalUuid: string;
+  goalUuid: string; // 只保留聚合根关联
   name: string;
   description?: string;
   startValue: number;
@@ -79,13 +78,11 @@ export interface UpdateKeyResultProgressRequest {
 // ============ 目标记录 DTOs ============
 
 /**
- * 目标记录 DTO
+ * 目标记录 DTO - DDD聚合根控制模式
  */
 export interface GoalRecordDTO {
   uuid: string;
-  accountUuid: string;
-  goalUuid: string;
-  keyResultUuid: string;
+  keyResultUuid: string; // 只保留直接父实体关联
   value: number;
   note?: string;
   createdAt: number; // 时间戳
@@ -151,9 +148,9 @@ export interface GoalRecordListResponse {
 
 /**
  * 创建目标记录请求 DTO
+ * keyResultUuid 通过 URL 路径参数传递，不在请求体中
  */
 export interface CreateGoalRecordRequest {
-  keyResultUuid: string;
   value: number;
   note?: string;
   recordDate?: string; // ISO date string, defaults to now
@@ -416,4 +413,15 @@ export interface GoalStatsResponse {
     endTime: string; // ISO date string
     daysRemaining: number;
   }>;
+}
+
+/**
+ * DDD聚合根完整视图响应
+ * 包含目标及所有相关子实体的完整信息
+ */
+export interface GoalAggregateViewResponse {
+  goal: GoalResponse;
+  keyResults: KeyResultResponse[];
+  recentRecords: GoalRecordResponse[];
+  reviews: GoalReviewResponse[];
 }
