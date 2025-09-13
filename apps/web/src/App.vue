@@ -5,6 +5,9 @@
       <p class="mt-4">正在初始化应用...</p>
     </div>
     <router-view v-else></router-view>
+
+    <!-- 全局 Snackbar 组件 -->
+    <GlobalSnackbar />
   </v-app>
 </template>
 
@@ -12,6 +15,7 @@
 import { onMounted, ref } from 'vue';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
+import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
 
 const isLoading = ref(true);
 const settingStore = useSettingStore();

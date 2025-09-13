@@ -1,132 +1,158 @@
-import { ref } from "vue";
+import { useSnackbarStore, type SnackbarConfig } from '../stores/snackbarStore';
 
 /**
- * 通用 Snackbar 通知 Composable
- * 
- * 用于在应用内全局显示消息提示（如成功、错误、警告、信息）。
- * 
- * 典型用法：在页面或组件中调用 showSuccess/showError/showWarning/showInfo 显示通知。
- * 
- * @returns 提供 snackbar 状态和一组操作方法
- * @example
- * ```ts
- * const { showSuccess, showError, snackbar } = useSnackbar();
- * showSuccess('保存成功');
- * showError('操作失败');
- * ```
+ * Snackbar 全局提示系统 Composable
+ * 符合 DailyUse 项目架构设计：
+ * - 基于 Pinia Store 的状态管理
+ * - 提供简洁的 API 接口
+ * - 支持多种提示类型和自定义配置
+ * - 与 GoalWebApplicationService 等应用服务无缝集成
  */
 export function useSnackbar() {
-  /**
-   * Snackbar 配置对象
-   * @property show 是否显示
-   * @property message 显示的消息内容
-   * @property color 通知类型（决定样式）
-   * @property timeout 显示时长（毫秒）
-   * 
-   * @example
-   * {
-   *   show: true,
-   *   message: '操作成功',
-   *   color: 'success',
-   *   timeout: 4000
-   * }
-   */
-  interface SnackbarConfig {
-    show: boolean;
-    message: string;
-    color: 'success' | 'error' | 'warning' | 'info';
-    timeout: number;
-  }
-
-  // 响应式 snackbar 状态
-  const snackbar = ref<SnackbarConfig>({
-    show: false,
-    message: '',
-    color: 'success',
-    timeout: 4000
-  });
+  const snackbarStore = useSnackbarStore();
 
   /**
-   * 显示 Snackbar 通知
-   * @param message 消息内容
-   * @param color 通知类型（success|error|warning|info），默认 success
-   * @param timeout 显示时长（毫秒），默认 4000
-   * @example
-   * showSnackbar('已保存', 'success', 3000);
+   * 显示通用提示
    */
-  const showSnackbar = (
-    message: string, 
-    color: SnackbarConfig['color'] = 'success',
-    timeout: number = 4000
+  const showSnackbar = (config: SnackbarConfig) => {
+    snackbarStore.show(config);
+  };
+
+  /**
+   * 显示成功提示
+   */
+  const showSuccess = (message: string, timeout?: number) => {
+    snackbarStore.showSuccess(message, timeout);
+  };
+
+  /**
+   * 显示错误提示
+   */
+  const showError = (message: string, timeout?: number) => {
+    snackbarStore.showError(message, timeout);
+  };
+
+  /**
+   * 显示警告提示
+   */
+  const showWarning = (message: string, timeout?: number) => {
+    snackbarStore.showWarning(message, timeout);
+  };
+
+  /**
+   * 显示信息提示
+   */
+  const showInfo = (message: string, timeout?: number) => {
+    snackbarStore.showInfo(message, timeout);
+  };
+
+  /**
+   * 显示带操作按钮的提示
+   */
+  const showWithAction = (
+    message: string,
+    actionText: string,
+    actionHandler: () => void,
+    type: 'success' | 'error' | 'warning' | 'info' = 'info',
   ) => {
-    snackbar.value = {
-      show: true,
+    snackbarStore.show({
       message,
-      color,
-      timeout
-    };
+      type,
+      action: {
+        text: actionText,
+        handler: actionHandler,
+      },
+    });
   };
 
   /**
-   * 关闭 Snackbar 通知
-   * @example
-   * closeSnackbar();
+   * 显示持久化提示（需要手动关闭）
    */
-  const closeSnackbar = () => {
-    snackbar.value.show = false;
+  const showPersistent = (
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info' = 'info',
+  ) => {
+    snackbarStore.show({
+      message,
+      type,
+      persistent: true,
+    });
   };
 
   /**
-   * 显示成功类型通知
-   * @param message 消息内容
-   * @param timeout 显示时长（毫秒），默认 4000
-   * @example
-   * showSuccess('操作成功');
+   * 隐藏提示
    */
-  const showSuccess = (message: string, timeout = 4000) => {
-    showSnackbar(message, 'success', timeout);
+  const hideSnackbar = () => {
+    snackbarStore.hide();
   };
 
   /**
-   * 显示错误类型通知
-   * @param message 消息内容
-   * @param timeout 显示时长（毫秒），默认 6000
-   * @example
-   * showError('操作失败');
+   * 操作结果反馈快捷方法
+   * 自动处理 Promise 的成功和失败状态
    */
-  const showError = (message: string, timeout = 6000) => {
-    showSnackbar(message, 'error', timeout);
+  const handleOperationResult = <T>(
+    promise: Promise<T>,
+    successMessage: string,
+    errorMessage?: string,
+  ): Promise<T> => {
+    return promise
+      .then((result) => {
+        showSuccess(successMessage);
+        return result;
+      })
+      .catch((error) => {
+        const errorMsg = errorMessage || error.message || '操作失败';
+        showError(errorMsg);
+        throw error;
+      });
   };
 
   /**
-   * 显示警告类型通知
-   * @param message 消息内容
-   * @param timeout 显示时长（毫秒），默认 5000
-   * @example
-   * showWarning('请检查输入');
+   * 批量操作结果反馈
    */
-  const showWarning = (message: string, timeout = 5000) => {
-    showSnackbar(message, 'warning', timeout);
-  };
+  const handleBatchOperationResult = (
+    results: Array<{ success: boolean; message?: string }>,
+    operation: string,
+  ) => {
+    const successCount = results.filter((r) => r.success).length;
+    const failCount = results.length - successCount;
 
-  /**
-   * 显示信息类型通知
-   * @param message 消息内容
-   * @param timeout 显示时长（毫秒），默认 4000
-   * @example
-   * showInfo('已同步');
-   */
-  const showInfo = (message: string, timeout = 4000) => {
-    showSnackbar(message, 'info', timeout);
+    if (failCount === 0) {
+      showSuccess(`${operation}完成：成功 ${successCount} 项`);
+    } else if (successCount === 0) {
+      showError(`${operation}失败：失败 ${failCount} 项`);
+    } else {
+      showWarning(`${operation}部分完成：成功 ${successCount} 项，失败 ${failCount} 项`);
+    }
   };
 
   return {
-    snackbar,        // 响应式状态对象，适合 v-model 绑定到 UI
-    showSnackbar,    // 通用显示方法
-    closeSnackbar,   // 关闭方法
-    showSuccess,     // 显示成功通知
-    showError,       // 显示错误通知
-    showWarning,     // 显示警告通知
-    showInfo         // 显示信息通知
+    // 基础方法
+    showSnackbar,
+    hideSnackbar,
+
+    // 类型方法
+    showSuccess,
+    showError,
+    showWarning,
+    showInfo,
+
+    // 高级方法
+    showWithAction,
+    showPersistent,
+    handleOperationResult,
+    handleBatchOperationResult,
+
+    // 状态（只读）
+    isVisible: snackbarStore.isVisible,
+
+    // 兼容旧 API
+    snackbar: {
+      show: snackbarStore.isVisible,
+      message: snackbarStore.message,
+      color: snackbarStore.type,
+      timeout: snackbarStore.timeout,
+    },
+    closeSnackbar: hideSnackbar,
   };
 }

@@ -3,6 +3,7 @@ import type { GoalContracts } from '@dailyuse/contracts';
 import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { GoalWebApplicationService } from '../../application/services/GoalWebApplicationService';
 import { useGoalStore } from '../stores/goalStore';
+import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 
 /**
  * Goal 业务逻辑 Composable - 新架构
@@ -11,6 +12,7 @@ import { useGoalStore } from '../stores/goalStore';
 export function useGoal() {
   const goalService = new GoalWebApplicationService();
   const goalStore = useGoalStore();
+  const snackbar = useSnackbar();
 
   // ===== 响应式状态 =====
   const isLoading = computed(() => goalStore.isLoading);
@@ -58,15 +60,15 @@ export function useGoal() {
         goalStore.shouldRefreshCache();
 
       if (needsRefresh) {
-        console.log('从 API 获取目标数据...');
+        // 从 API 获取数据时不需要用户提示，这是内部操作
         await goalService.getGoals(params);
       } else {
-        console.log('使用缓存的目标数据');
+        // 使用缓存数据也不需要用户提示
       }
 
       return goalStore.getAllGoals;
     } catch (error) {
-      console.error('获取目标列表失败:', error);
+      snackbar.showError('获取目标列表失败');
       throw error;
     }
   };
@@ -94,15 +96,15 @@ export function useGoal() {
         goalStore.shouldRefreshCache();
 
       if (needsRefresh) {
-        console.log('从 API 获取目标目录数据...');
+        // 从 API 获取目录数据时不需要用户提示
         await goalService.getGoalDirs(params);
       } else {
-        console.log('使用缓存的目标目录数据');
+        // 使用缓存的目录数据也不需要用户提示
       }
 
       return goalStore.getAllGoalDirs;
     } catch (error) {
-      console.error('获取目标目录列表失败:', error);
+      snackbar.showError('获取目标目录列表失败');
       throw error;
     }
   };
@@ -118,13 +120,12 @@ export function useGoal() {
       const cachedGoal = goalStore.getGoalByUuid(uuid);
 
       if (cachedGoal && !forceRefresh) {
-        console.log('使用缓存的目标详情');
+        // 使用缓存的目标详情，不需要用户提示
         goalStore.setSelectedGoal(uuid);
         return cachedGoal;
       }
 
-      // 从API获取
-      console.log('从 API 获取目标详情...');
+      // 从API获取目标详情，不需要用户提示这是内部操作
       const response = await goalService.getGoalById(uuid);
 
       if (response) {
@@ -133,7 +134,7 @@ export function useGoal() {
 
       return response;
     } catch (error) {
-      console.error('获取目标详情失败:', error);
+      snackbar.showError('获取目标详情失败');
       throw error;
     }
   };
@@ -145,11 +146,11 @@ export function useGoal() {
     try {
       // 使用 ApplicationService 的同步方法
       const result = await goalService.syncAllGoals();
-      console.log(
+      snackbar.showSuccess(
         `Goal 数据初始化完成: ${result.goalsCount} 个目标, ${result.goalDirsCount} 个目录`,
       );
     } catch (error) {
-      console.error('Goal 数据初始化失败:', error);
+      snackbar.showError('Goal 数据初始化失败');
       throw error;
     }
   };
@@ -165,10 +166,10 @@ export function useGoal() {
       showCreateDialog.value = false;
 
       // 数据已经在 ApplicationService 中自动同步到 store
-      console.log('目标创建成功');
+      snackbar.showSuccess('目标创建成功');
       return response;
     } catch (error) {
-      console.error('创建目标失败:', error);
+      snackbar.showError('创建目标失败');
       throw error;
     }
   };
@@ -182,10 +183,10 @@ export function useGoal() {
       showEditDialog.value = false;
       editingGoal.value = null;
 
-      console.log('目标更新成功');
+      snackbar.showSuccess('目标更新成功');
       return response;
     } catch (error) {
-      console.error('更新目标失败:', error);
+      snackbar.showError('更新目标失败');
       throw error;
     }
   };
@@ -202,9 +203,9 @@ export function useGoal() {
         goalStore.setSelectedGoal(null);
       }
 
-      console.log('目标删除成功');
+      snackbar.showSuccess('目标删除成功');
     } catch (error) {
-      console.error('删除目标失败:', error);
+      snackbar.showError('删除目标失败');
       throw error;
     }
   };
@@ -216,9 +217,11 @@ export function useGoal() {
    */
   const activateGoal = async (uuid: string) => {
     try {
-      return await goalService.activateGoal(uuid);
+      const result = await goalService.activateGoal(uuid);
+      snackbar.showSuccess('目标激活成功');
+      return result;
     } catch (error) {
-      console.error('激活目标失败:', error);
+      snackbar.showError('激活目标失败');
       throw error;
     }
   };
@@ -228,9 +231,11 @@ export function useGoal() {
    */
   const pauseGoal = async (uuid: string) => {
     try {
-      return await goalService.pauseGoal(uuid);
+      const result = await goalService.pauseGoal(uuid);
+      snackbar.showSuccess('目标暂停成功');
+      return result;
     } catch (error) {
-      console.error('暂停目标失败:', error);
+      snackbar.showError('暂停目标失败');
       throw error;
     }
   };
@@ -240,9 +245,11 @@ export function useGoal() {
    */
   const completeGoal = async (uuid: string) => {
     try {
-      return await goalService.completeGoal(uuid);
+      const result = await goalService.completeGoal(uuid);
+      snackbar.showSuccess('目标完成成功');
+      return result;
     } catch (error) {
-      console.error('完成目标失败:', error);
+      snackbar.showError('完成目标失败');
       throw error;
     }
   };
@@ -252,9 +259,11 @@ export function useGoal() {
    */
   const archiveGoal = async (uuid: string) => {
     try {
-      return await goalService.archiveGoal(uuid);
+      const result = await goalService.archiveGoal(uuid);
+      snackbar.showSuccess('目标归档成功');
+      return result;
     } catch (error) {
-      console.error('归档目标失败:', error);
+      snackbar.showError('归档目标失败');
       throw error;
     }
   };
@@ -267,10 +276,10 @@ export function useGoal() {
   const createGoalDir = async (data: GoalContracts.CreateGoalDirRequest) => {
     try {
       const response = await goalService.createGoalDir(data);
-      console.log('目标目录创建成功');
+      snackbar.showSuccess('目标目录创建成功');
       return response;
     } catch (error) {
-      console.error('创建目标目录失败:', error);
+      snackbar.showError('创建目标目录失败');
       throw error;
     }
   };
@@ -281,10 +290,10 @@ export function useGoal() {
   const updateGoalDir = async (uuid: string, data: GoalContracts.UpdateGoalDirRequest) => {
     try {
       const response = await goalService.updateGoalDir(uuid, data);
-      console.log('目标目录更新成功');
+      snackbar.showSuccess('目标目录更新成功');
       return response;
     } catch (error) {
-      console.error('更新目标目录失败:', error);
+      snackbar.showError('更新目标目录失败');
       throw error;
     }
   };
@@ -295,9 +304,9 @@ export function useGoal() {
   const deleteGoalDir = async (uuid: string) => {
     try {
       await goalService.deleteGoalDir(uuid);
-      console.log('目标目录删除成功');
+      snackbar.showSuccess('目标目录删除成功');
     } catch (error) {
-      console.error('删除目标目录失败:', error);
+      snackbar.showError('删除目标目录失败');
       throw error;
     }
   };
@@ -322,7 +331,7 @@ export function useGoal() {
         ...options,
       });
     } catch (error) {
-      console.error('搜索目标失败:', error);
+      snackbar.showError('搜索目标失败');
       throw error;
     }
   };
@@ -425,10 +434,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.createKeyResultForGoal(goalUuid, request);
-      console.log('关键结果创建成功');
+      snackbar.showSuccess('关键结果创建成功');
       return response;
     } catch (error) {
-      console.error('创建关键结果失败:', error);
+      snackbar.showError('创建关键结果失败');
       throw error;
     }
   };
@@ -441,7 +450,7 @@ export function useGoal() {
       const response = await goalService.getKeyResultsByGoal(goalUuid);
       return response;
     } catch (error) {
-      console.error('获取关键结果列表失败:', error);
+      snackbar.showError('获取关键结果列表失败');
       throw error;
     }
   };
@@ -456,10 +465,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.updateKeyResultForGoal(goalUuid, keyResultUuid, request);
-      console.log('关键结果更新成功');
+      snackbar.showSuccess('关键结果更新成功');
       return response;
     } catch (error) {
-      console.error('更新关键结果失败:', error);
+      snackbar.showError('更新关键结果失败');
       throw error;
     }
   };
@@ -470,9 +479,9 @@ export function useGoal() {
   const deleteKeyResultForGoal = async (goalUuid: string, keyResultUuid: string) => {
     try {
       await goalService.deleteKeyResultForGoal(goalUuid, keyResultUuid);
-      console.log('关键结果删除成功');
+      snackbar.showSuccess('关键结果删除成功');
     } catch (error) {
-      console.error('删除关键结果失败:', error);
+      snackbar.showError('删除关键结果失败');
       throw error;
     }
   };
@@ -487,10 +496,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.updateKeyResultProgress(goalUuid, keyResultUuid, request);
-      console.log('关键结果进度更新成功');
+      snackbar.showSuccess('关键结果进度更新成功');
       return response;
     } catch (error) {
-      console.error('更新关键结果进度失败:', error);
+      snackbar.showError('更新关键结果进度失败');
       throw error;
     }
   };
@@ -504,10 +513,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.batchUpdateKeyResultWeights(goalUuid, { updates });
-      console.log('关键结果权重批量更新成功');
+      snackbar.showSuccess('关键结果权重批量更新成功');
       return response;
     } catch (error) {
-      console.error('批量更新关键结果权重失败:', error);
+      snackbar.showError('批量更新关键结果权重失败');
       throw error;
     }
   };
@@ -524,10 +533,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.createGoalRecord(goalUuid, keyResultUuid, request);
-      console.log('目标记录创建成功');
+      snackbar.showSuccess('目标记录创建成功');
       return response;
     } catch (error) {
-      console.error('创建目标记录失败:', error);
+      snackbar.showError('创建目标记录失败');
       throw error;
     }
   };
@@ -548,7 +557,7 @@ export function useGoal() {
       const response = await goalService.getGoalRecordsByKeyResult(goalUuid, keyResultUuid, params);
       return response;
     } catch (error) {
-      console.error('获取目标记录失败:', error);
+      snackbar.showError('获取关键结果记录失败');
       throw error;
     }
   };
@@ -568,7 +577,7 @@ export function useGoal() {
       const response = await goalService.getGoalRecordsByGoal(goalUuid, params);
       return response;
     } catch (error) {
-      console.error('获取目标记录失败:', error);
+      snackbar.showError('获取目标所有记录失败');
       throw error;
     }
   };
@@ -584,10 +593,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.createGoalReview(goalUuid, request);
-      console.log('目标复盘创建成功');
+      snackbar.showSuccess('目标复盘创建成功');
       return response;
     } catch (error) {
-      console.error('创建目标复盘失败:', error);
+      snackbar.showError('创建目标复盘失败');
       throw error;
     }
   };
@@ -600,7 +609,7 @@ export function useGoal() {
       const response = await goalService.getGoalReviewsByGoal(goalUuid);
       return response;
     } catch (error) {
-      console.error('获取目标复盘失败:', error);
+      snackbar.showError('获取目标复盘失败');
       throw error;
     }
   };
@@ -615,10 +624,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.updateGoalReview(goalUuid, reviewUuid, request);
-      console.log('目标复盘更新成功');
+      snackbar.showSuccess('目标复盘更新成功');
       return response;
     } catch (error) {
-      console.error('更新目标复盘失败:', error);
+      snackbar.showError('更新目标复盘失败');
       throw error;
     }
   };
@@ -629,9 +638,9 @@ export function useGoal() {
   const deleteGoalReview = async (goalUuid: string, reviewUuid: string) => {
     try {
       await goalService.deleteGoalReview(goalUuid, reviewUuid);
-      console.log('目标复盘删除成功');
+      snackbar.showSuccess('目标复盘删除成功');
     } catch (error) {
-      console.error('删除目标复盘失败:', error);
+      snackbar.showError('删除目标复盘失败');
       throw error;
     }
   };
@@ -645,14 +654,15 @@ export function useGoal() {
   const getGoalAggregateView = async (goalUuid: string) => {
     try {
       const response = await goalService.getGoalAggregateView(goalUuid);
-      console.log('获取目标聚合视图成功');
+      // 获取聚合视图通常是数据加载操作，不需要成功提示
+      // snackbar.showInfo('获取目标聚合视图成功');
 
       // 自动设置为当前选中的目标
       goalStore.setSelectedGoal(goalUuid);
 
       return response;
     } catch (error) {
-      console.error('获取目标聚合视图失败:', error);
+      snackbar.showError('获取目标聚合视图失败');
       throw error;
     }
   };
@@ -671,10 +681,10 @@ export function useGoal() {
   ) => {
     try {
       const response = await goalService.cloneGoal(goalUuid, options);
-      console.log('目标克隆成功');
+      snackbar.showSuccess('目标克隆成功');
       return response;
     } catch (error) {
-      console.error('克隆目标失败:', error);
+      snackbar.showError('克隆目标失败');
       throw error;
     }
   };
@@ -757,7 +767,7 @@ export function useGoal() {
       fetchGoals(true), // 强制刷新
       fetchGoalDirs(true), // 强制刷新
     ]);
-    console.log('数据刷新完成');
+    snackbar.showInfo('数据刷新完成');
   };
 
   /**
@@ -768,7 +778,7 @@ export function useGoal() {
       // 使用 ApplicationService 的初始化方法
       await goalService.initialize();
     } catch (error) {
-      console.error('初始化失败:', error);
+      snackbar.showError('初始化失败');
       throw error;
     }
   };

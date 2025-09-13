@@ -2,12 +2,16 @@ import type { GoalContracts } from '@dailyuse/contracts';
 import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { goalApiClient, goalDirApiClient } from '../../infrastructure/api/goalApiClient';
 import { useGoalStore } from '../../presentation/stores/goalStore';
+import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 
 /**
  * Goal Web 应用服务
  * 负责协调 Web 端的目标相关操作，整合 API 调用和本地状态管理
+ * 集成全局 Snackbar 提示系统
  */
 export class GoalWebApplicationService {
+  private snackbar = useSnackbar();
+
   /**
    * 懒加载获取 Goal Store
    * 避免在 Pinia 初始化之前调用
@@ -598,10 +602,17 @@ export class GoalWebApplicationService {
       // 创建记录后更新关键结果进度和Goal状态
       await this.refreshGoalWithKeyResults(goalUuid);
 
+      // 显示成功提示
+      this.snackbar.showSuccess('目标记录创建成功');
+
       return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建目标记录失败';
       this.goalStore.setError(errorMessage);
+
+      // 显示错误提示
+      this.snackbar.showError(errorMessage);
+
       throw error;
     } finally {
       this.goalStore.setLoading(false);
