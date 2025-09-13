@@ -1,12 +1,39 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import { Goal, type IGoalRepository } from '@dailyuse/domain-server';
+import { Goal, type IGoalRepository, UserDataInitializationService } from '@dailyuse/domain-server';
 import { GoalAggregateService } from './goalAggregateService';
 
 export class GoalApplicationService {
   private aggregateService: GoalAggregateService;
+  private userInitService: UserDataInitializationService;
 
   constructor(private goalRepository: IGoalRepository) {
     this.aggregateService = new GoalAggregateService(goalRepository);
+    this.userInitService = new UserDataInitializationService(goalRepository);
+  }
+
+  // ===== 用户数据初始化 =====
+
+  /**
+   * 初始化用户目标模块数据
+   * 在用户首次登录或访问目标模块时调用
+   */
+  async initializeUserData(accountUuid: string): Promise<void> {
+    await this.userInitService.initializeUserGoalData(accountUuid);
+  }
+
+  /**
+   * 确保默认目录存在
+   * 用于修复缺失的系统目录
+   */
+  async ensureDefaultDirectories(accountUuid: string): Promise<void> {
+    await this.userInitService.ensureDefaultDirectories(accountUuid);
+  }
+
+  /**
+   * 获取用户的默认目录（全部目标）
+   */
+  async getDefaultDirectory(accountUuid: string): Promise<GoalContracts.GoalDirDTO> {
+    return await this.userInitService.getDefaultDirectory(accountUuid);
   }
 
   // ===== Goal 管理 =====

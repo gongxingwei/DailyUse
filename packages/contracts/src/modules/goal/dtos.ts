@@ -15,6 +15,7 @@ import { ImportanceLevel, UrgencyLevel } from '../../core';
  */
 export interface KeyResultDTO {
   uuid: string;
+  accountUuid: string; // 用户账户UUID
   goalUuid: string; // 只保留聚合根关联
   name: string;
   description?: string;
@@ -82,7 +83,9 @@ export interface UpdateKeyResultProgressRequest {
  */
 export interface GoalRecordDTO {
   uuid: string;
-  keyResultUuid: string; // 只保留直接父实体关联
+  accountUuid: string; // 用于权限验证和数据隔离
+  goalUuid: string; // 聚合根UUID
+  keyResultUuid: string; // 直接父实体关联
   value: number;
   note?: string;
   createdAt: number; // 时间戳
@@ -153,7 +156,7 @@ export interface GoalRecordListResponse {
 export interface CreateGoalRecordRequest {
   value: number;
   note?: string;
-  recordDate?: string; // ISO date string, defaults to now
+  recordDate?: number; // timestamp, defaults to now
 }
 
 // ============ 目标复盘 DTOs ============
@@ -215,7 +218,7 @@ export interface CreateGoalReviewRequest {
     executionEfficiency: number;
     goalReasonableness: number;
   };
-  reviewDate?: string; // ISO date string, defaults to now
+  reviewDate?: number; // timestamp, defaults to now
 }
 
 /**
@@ -243,6 +246,7 @@ export interface GoalReviewListResponse {
  */
 export interface GoalDTO {
   uuid: string;
+  accountUuid: string; // 添加账户UUID字段
   name: string;
   description?: string;
   color: string;
@@ -280,8 +284,8 @@ export interface CreateGoalRequest {
   description?: string;
   color: string;
   dirUuid?: string;
-  startTime: string; // ISO date string
-  endTime: string; // ISO date string
+  startTime: number; // timestamp
+  endTime: number; // timestamp
   note?: string;
   analysis: {
     motive: string;
@@ -317,6 +321,14 @@ export interface GoalDirDTO {
   sortConfig: {
     sortKey: string;
     sortOrder: number;
+  };
+  systemType?: 'ALL' | 'UNCATEGORIZED' | 'ARCHIVED' | 'CUSTOM'; // 系统类型
+  isDefault?: boolean; // 是否为默认目录
+  metadata?: {
+    isSystemCreated?: boolean;
+    createdBy?: string;
+    purpose?: string;
+    [key: string]: any;
   };
   lifecycle: {
     createdAt: number; // 时间戳
@@ -386,8 +398,8 @@ export interface GoalDirListResponse {
  */
 export interface GoalQueryParamsDTO extends Omit<GoalQueryParams, 'dateRange'> {
   dateRange?: {
-    start: string; // ISO date string
-    end: string; // ISO date string
+    start: number; // timestamp
+    end: number; // timestamp
   };
 }
 
@@ -404,13 +416,13 @@ export interface GoalStatsResponse {
   avgKeyResultsPerGoal: number;
   completionRate: number;
   progressTrend: Array<{
-    date: string; // ISO date string
+    date: number; // timestamp
     progress: number;
   }>;
   upcomingDeadlines: Array<{
     goalUuid: string;
     goalName: string;
-    endTime: string; // ISO date string
+    endTime: number; // timestamp
     daysRemaining: number;
   }>;
 }

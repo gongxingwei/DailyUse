@@ -418,6 +418,7 @@ export function useGoal() {
 
   /**
    * 通过Goal聚合根创建关键结果
+   * 后面得在 contract 中添加 dto 类型定义
    */
   const createKeyResultForGoal = async (
     goalUuid: string,

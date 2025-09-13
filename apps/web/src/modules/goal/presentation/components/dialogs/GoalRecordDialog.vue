@@ -1,5 +1,5 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="600" persistent class="record-dialog">
+  <v-dialog :model-value="visible" max-width="600" persistent class="record-dialog">
     <v-card class="record-dialog-card">
       <!-- 对话框头部 -->
       <v-card-title class="record-dialog-header pa-6">
@@ -125,18 +125,10 @@ import { useGoal } from '../../composables/useGoal';
 
 const { createGoalRecord } = useGoal();
 
-const props = defineProps<{
-  record: GoalRecord | null;
-  goalUuid: string;
-  keyResultUuid: string;
-}>();
-
-const emit = defineEmits<{
-  (e: 'create-record', record: GoalRecord): void;
-  (e: 'update-record', record: GoalRecord): void;
-}>();
-
-const modelValue = ref(false);
+const visible = ref(false);
+const propKeyResultUuid = ref<string>('');
+const propGoalUuid = ref<string>('');
+const propRecord = ref<GoalRecord | null>(null);
 
 const quickValues = [1, 2, 5, 10];
 
@@ -144,12 +136,12 @@ const formRef = ref();
 const formValid = ref(false);
 
 const localGoalRecord = ref<GoalRecord>(GoalRecord.forCreate({
-  keyResultUuid: props.keyResultUuid,
-  goalUuid: props.goalUuid,
+  keyResultUuid: propKeyResultUuid.value,
+  goalUuid: propGoalUuid.value,
   accountUuid: '', // 需要在创建时提供
 }));
 
-const isEditing = computed(() => !!props.record);
+const isEditing = computed(() => !!propRecord.value);
 
 const valueRules = [
   (v: number) => !!v || '增加值不能为空',
@@ -161,7 +153,7 @@ const isValid = computed(() => formValid.value && localGoalRecord.value.value > 
 
 const handleCreateKeyResult = async () => {
   await createGoalRecord(
-    props.goalUuid,
+    propGoalUuid.value,
     localGoalRecord.value.keyResultUuid,
     {
       value: localGoalRecord.value.value,
@@ -173,7 +165,7 @@ const handleCreateKeyResult = async () => {
 const handleSave = () => {
   if (formRef.value?.validate()) {
     if (isEditing.value) {
-      emit('update-record', localGoalRecord.value as GoalRecord);
+      console.warn('不允许编辑记录');
     } else {
       handleCreateKeyResult();
     }
@@ -185,19 +177,22 @@ const handleCancel = () => {
   closeDialog();
 };
 
-const openDialog = () => {
-  modelValue.value = true;
+const openDialog = (goalUuid: string, keyResultUuid: string, record?: GoalRecord) => {
+  propGoalUuid.value = goalUuid;
+  propKeyResultUuid.value = keyResultUuid;
+  propRecord.value = record || null;
+  visible.value = true;
 };
 
 const closeDialog = () => {
-  modelValue.value = false;
+  visible.value = false;
 };
 // 监听弹窗显示，重置表单
 watch(
-  () => modelValue,
+  () => visible.value,
   (show) => {
     if (show) {
-      localGoalRecord.value = props.record ? props.record.clone() : GoalRecord.forCreate({ goalUuid: props.goalUuid, keyResultUuid: props.keyResultUuid, accountUuid: '' });
+      localGoalRecord.value = propRecord.value ? propRecord.value.clone() : GoalRecord.forCreate({ goalUuid: propGoalUuid.value, keyResultUuid: propKeyResultUuid.value, accountUuid: '' });
     }
   }
 );

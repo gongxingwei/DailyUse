@@ -236,10 +236,10 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   }
 
   // ===== 序列化方法 =====
-  toDTO(): GoalContracts.KeyResultDTO {
+  toDTO(context?: { accountUuid?: string }): GoalContracts.KeyResultDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this._accountUuid,
+      accountUuid: context?.accountUuid || '', // 从上下文获取
       goalUuid: this._goalUuid,
       name: this._name,
       description: this._description,

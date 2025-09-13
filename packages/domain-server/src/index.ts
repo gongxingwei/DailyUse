@@ -34,6 +34,7 @@ export * from './goal/entities/KeyResult';
 export * from './goal/entities/GoalRecord';
 export * from './goal/entities/GoalReview';
 export * from './goal/repositories/iGoalRepository';
+export * from './goal/services/UserDataInitializationService';
 
 // Task domain exports
 export * from './task/aggregates/TaskTemplate';

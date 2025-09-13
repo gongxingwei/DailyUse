@@ -28,13 +28,12 @@
             <v-form @submit.prevent class="px-4 py-2">
               <v-row>
                 <v-col cols="11">
-                  <v-text-field v-model="goalModel.name" :rules="nameRules" label="目标" placeholder="一段话来描述自己的目标"
-                    required />
+                  <v-text-field v-model="goalName" :rules="nameRules" label="目标" placeholder="一段话来描述自己的目标" required />
                 </v-col>
                 <v-col cols="1">
                   <v-menu>
                     <template v-slot:activator="{ props }">
-                      <v-btn v-bind="props" :style="{ backgroundColor: goalModel.color }" class="color-btn mt-2" icon>
+                      <v-btn v-bind="props" :style="{ backgroundColor: goalColor }" class="color-btn mt-2" icon>
                         <v-icon color="white">mdi-palette</v-icon>
                       </v-btn>
                     </template>
@@ -43,7 +42,7 @@
                         <div class="color-grid">
                           <v-btn v-for="colorOption in predefinedColors" :key="colorOption"
                             :style="{ backgroundColor: colorOption }" class="color-option" icon
-                            @click="goalModel.updateInfo({ color: colorOption })" />
+                            @click="goalColor = colorOption" />
                         </div>
                       </v-card-text>
                     </v-card>
@@ -51,7 +50,7 @@
                 </v-col>
               </v-row>
 
-              <v-select v-model="goalModel.dirUuid" :items="directoryOptions" item-title="text" item-value="value"
+              <v-select v-model="goalDirUuid" :items="directoryOptions" item-title="text" item-value="value"
                 label="目标文件夹" :disabled="directoryOptions.length === 0">
                 <template v-slot:prepend-inner>
                   <v-icon>mdi-folder</v-icon>
@@ -65,7 +64,7 @@
                 </template>
               </v-select>
 
-              <v-textarea v-model="goalModel.description" label="目标描述" rows="3" />
+              <v-textarea v-model="goalDescription" label="目标描述" rows="3" />
 
               <v-row>
                 <v-col cols="6">
@@ -78,7 +77,7 @@
                 </v-col>
               </v-row>
 
-              <v-textarea v-model="goalModel.note" label="备注" rows="3" />
+              <v-textarea v-model="goalNote" label="备注" rows="3" />
             </v-form>
           </v-window-item>
 
@@ -90,7 +89,7 @@
                 <v-list>
                   <v-list-item v-for="(kr, index) in goalModel.keyResults" :key="`kr-${index}`" class="mb-2">
                     <template v-slot:prepend>
-                      <v-icon :color="goalModel.color">mdi-target</v-icon>
+                      <v-icon :color="goalColor">mdi-target</v-icon>
                     </template>
                     <v-list-item-title>{{ kr.name || '未命名关键结果' }}</v-list-item-title>
                     <v-list-item-subtitle>
@@ -98,10 +97,10 @@
                       <span v-if="kr.weight">(权重: {{ kr.weight }})</span>
                     </v-list-item-subtitle>
                     <template v-slot:append>
-                      <v-btn icon="mdi-pencil" variant="text" :color="goalModel.color" size="small"
-                        @click="startEditKeyResult((kr as KeyResult))" />
+                      <v-btn icon="mdi-pencil" variant="text" :color="goalColor" size="small"
+                        @click="keyResultDialogRef?.openForUpdateKeyResultInGoalEditing(goalModel as Goal, kr as KeyResult)" />
                       <v-btn icon="mdi-delete" variant="text" color="error" size="small"
-                        @click="startRemoveKeyResult(props.goal as Goal, kr.uuid)" />
+                        @click="startRemoveKeyResult(propGoal as Goal, kr.uuid)" />
                     </template>
                   </v-list-item>
                 </v-list>
@@ -113,8 +112,8 @@
                   关键结果是衡量目标达成的具体指标
                 </p>
               </div>
-              <v-btn :color="goalModel.color" variant="elevated" prepend-icon="mdi-plus" block class="add-kr-btn"
-                @click="startCreateKeyResult">
+              <v-btn :color="goalColor" variant="elevated" prepend-icon="mdi-plus" block class="add-kr-btn"
+                @click="keyResultDialogRef?.openForCreateKeyResultInGoalEditing(goalModel as Goal)">
                 {{ goalModel.keyResults.length === 0 ? '添加第一个关键结果' : '添加更多关键结果' }}
               </v-btn>
               <v-alert type="info" variant="tonal" class="mt-4" density="compact">
@@ -137,8 +136,8 @@
                       目标动机
                     </v-card-title>
                     <v-card-text>
-                      <v-textarea v-model="goalModel.analysis.motive" placeholder="为什么要实现这个目标？它对你意味着什么？"
-                        variant="outlined" rows="6" density="comfortable" hide-details />
+                      <v-textarea v-model="goalMotive" placeholder="为什么要实现这个目标？它对你意味着什么？" variant="outlined" rows="6"
+                        density="comfortable" hide-details />
                     </v-card-text>
                   </v-card>
                 </v-col>
@@ -149,8 +148,8 @@
                       可行性分析
                     </v-card-title>
                     <v-card-text>
-                      <v-textarea v-model="goalModel.analysis.feasibility" placeholder="分析实现这个目标的可行性、所需资源和可能的挑战"
-                        variant="outlined" rows="6" density="comfortable" hide-details />
+                      <v-textarea v-model="goalFeasibility" placeholder="分析实现这个目标的可行性、所需资源和可能的挑战" variant="outlined"
+                        rows="6" density="comfortable" hide-details />
                     </v-card-text>
                   </v-card>
                 </v-col>
@@ -163,15 +162,9 @@
   </v-dialog>
 
   <!-- 内嵌的关键结果对话框 -->
-  <KeyResultDialog :model-value="keyResultDialog.show"
-    :key-result="(keyResultDialog.keyResult as KeyResult) || null"
-    :goal-uuid="goalModel.uuid"
-    @update:model-value="keyResultDialog.show = $event"
-    @create-key-result="handleCreateKeyResult(goalModel as Goal, $event as KeyResult)"
-    @update-key-result="handleUpdateKeyResult(goalModel as Goal, $event as KeyResult)"
-    @remove-key-result="handleRemoveKeyResult(goalModel as Goal, $event as string)" />
+  <KeyResultDialog ref="keyResultDialogRef" />
   <!-- 确认对话框 -->
-  <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
+  <DuConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
     confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
     @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
 </template>
@@ -180,34 +173,28 @@
 import { ref, computed, watch } from 'vue';
 // components
 import KeyResultDialog from './KeyResultDialog.vue';
-import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue';
+import { DuConfirmDialog } from '@dailyuse/ui';
 // types
 import { useGoalStore } from '../../stores/goalStore';
 import { KeyResult, Goal } from '@dailyuse/domain-client';
 // composables
-import { useGoalDialog } from '../../composables/useGoalDialog';
+import { useGoal } from '../../composables/useGoal';
 
-const { keyResultDialog, startCreateKeyResult, startEditKeyResult, handleCreateKeyResult, handleUpdateKeyResult, handleRemoveKeyResult } = useGoalDialog();
+const { createGoal, updateGoal, deleteKeyResultForGoal } = useGoal();
 
 const goalStore = useGoalStore();
-// Props & Emits
-const props = defineProps<{
-  visible: boolean;
-  goal: Goal | null;
 
-}>();
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'create-goal', goal: Goal): void;
-  (e: 'update-goal', goal: Goal): void;
+const visible = ref(false);
+const propGoal = ref<Goal | null>(null);
 
-}>();
+// 组件对象
+const keyResultDialogRef = ref<InstanceType<typeof KeyResultDialog> | null>(null);
 
 // 本地表单对象
 const loading = ref(false);
 const goalModel = ref<Goal>(Goal.forCreate());
 
-const isEditing = computed(() => !!props.goal);
+const isEditing = computed(() => !!propGoal.value);
 
 const confirmDialog = ref<{
   show: boolean;
@@ -229,7 +216,7 @@ const startRemoveKeyResult = (goal: Goal, keyResultUuid: string) => {
     title: '确认删除',
     message: '您确定要删除这个关键结果吗？',
     onConfirm: () => {
-      handleRemoveKeyResult(goal, keyResultUuid);
+      deleteKeyResultForGoal(goal.uuid, keyResultUuid);
       confirmDialog.value.show = false;
     },
     onCancel: () => {
@@ -240,7 +227,7 @@ const startRemoveKeyResult = (goal: Goal, keyResultUuid: string) => {
 
 // 监听弹窗和传入对象，初始化本地对象
 watch(
-  [() => props.visible, () => props.goal],
+  [() => visible, () => propGoal.value],
   ([visible, goal]) => {
     if (visible) {
       if (goal) {
@@ -283,23 +270,86 @@ const endTimeRules = [
   }
 ];
 
+// 表单字段的 getter/setter
+const goalName = computed({
+  get: () => goalModel.value.name || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({ name: val });
+  }
+});
+
+const goalColor = computed({
+  get: () => goalModel.value.color || '#FF5733',
+  set: (val: string) => {
+    goalModel.value.updateInfo({ color: val });
+  }
+});
+
+const goalDirUuid = computed({
+  get: () => goalModel.value.dirUuid || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({ dirUuid: val });
+  }
+});
+
+const goalDescription = computed({
+  get: () => goalModel.value.description || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({ description: val });
+  }
+});
+
+const goalNote = computed({
+  get: () => goalModel.value.note || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({ note: val });
+  }
+});
+
+const goalMotive = computed({
+  get: () => goalModel.value.analysis?.motive || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({
+      analysis: {
+        ...goalModel.value.analysis,
+        motive: val
+      }
+    });
+  }
+});
+
+const goalFeasibility = computed({
+  get: () => goalModel.value.analysis?.feasibility || '',
+  set: (val: string) => {
+    goalModel.value.updateInfo({
+      analysis: {
+        ...goalModel.value.analysis,
+        feasibility: val
+      }
+    });
+  }
+});
+
 // 日期格式化
 const minDate = computed(() => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 });
+
 const startTimeFormatted = computed({
   get: () => goalModel.value.startTime ? goalModel.value.startTime.toISOString().split('T')[0] : '',
   set: (val: string) => {
     if (val) goalModel.value.updateInfo({ startTime: new Date(val) });
   }
 });
+
 const endTimeFormatted = computed({
   get: () => goalModel.value.endTime ? goalModel.value.endTime.toISOString().split('T')[0] : '',
   set: (val: string) => {
     if (val) goalModel.value.updateInfo({ endTime: new Date(val) });
   }
 });
+
 const updateStartTime = (val: string) => { startTimeFormatted.value = val; };
 const updateEndTime = (val: string) => { endTimeFormatted.value = val; };
 
@@ -317,15 +367,15 @@ const directoryOptions = computed(() =>
 
 // 表单有效性
 const isFormValid = computed(() => {
-  return !!goalModel.value.name?.trim() && goalModel.value.endTime > goalModel.value.startTime;
+  return !!goalName.value?.trim() && goalModel.value.endTime > goalModel.value.startTime;
 });
 // 保存和取消
 const handleSave = () => {
   if (!isFormValid.value) return;
   if (isEditing.value) {
-    emit('update-goal', goalModel.value as Goal);
+    updateGoal(goalModel.value.uuid, goalModel.value.toDTO());
   } else {
-    emit('create-goal', goalModel.value as Goal);
+    createGoal(goalModel.value.toDTO());
   }
   closeDialog();
 };
@@ -335,9 +385,16 @@ const handleCancel = () => {
 };
 
 const closeDialog = () => {
-  emit('update:modelValue', false);
+  visible.value = false;
+};
+const openDialog = (goal?: Goal) => {
+  propGoal.value = goal || null;
+  visible.value = true;
 };
 
+defineExpose({
+  openDialog,
+});
 </script>
 
 <style scoped>

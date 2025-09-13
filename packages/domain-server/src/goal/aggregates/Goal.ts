@@ -18,8 +18,11 @@ import { GoalReview } from '../entities/GoalReview';
  * 继承核心 Goal 类，添加服务端特有功能
  */
 export class Goal extends GoalCore {
+  public readonly accountUuid: string; // 添加账户UUID属性
+
   constructor(params: {
     uuid?: string;
+    accountUuid: string; // 添加到构造函数参数
     name: string;
     description?: string;
     color: string;
@@ -42,6 +45,8 @@ export class Goal extends GoalCore {
     version?: number;
   }) {
     super(params);
+
+    this.accountUuid = params.accountUuid; // 设置账户UUID
 
     // 服务端特有的实体创建逻辑
     this.keyResults = (params.keyResults || []).map((dto) => this.createKeyResultEntity(dto));
@@ -124,7 +129,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid: keyResult.uuid,
-        keyResult: keyResultEntity.toDTO(),
+        keyResult: keyResultEntity.toDTO({ accountUuid: this.accountUuid }),
       },
     });
   }
@@ -145,8 +150,8 @@ export class Goal extends GoalCore {
     const now = new Date();
     const recordDTO: GoalContracts.GoalRecordDTO = {
       uuid: this.generateUUID(),
-      accountUuid: keyResult.accountUuid,
-      goalUuid: this.uuid,
+      accountUuid: this.accountUuid, // 添加账户UUID
+      goalUuid: this.uuid, // 添加目标UUID
       keyResultUuid,
       value: increment,
       note,
@@ -237,7 +242,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid: keyResultUuid,
-        keyResult: keyResult.toDTO(),
+        keyResult: keyResult.toDTO({ accountUuid: this.accountUuid }),
       },
     });
 
@@ -264,7 +269,7 @@ export class Goal extends GoalCore {
     }
 
     const keyResult = this.keyResults[keyResultIndex];
-    const originalData = keyResult.toDTO();
+    const originalData = keyResult.toDTO({ accountUuid: this.accountUuid });
 
     // 权重验证
     if (updates.weight !== undefined) {
@@ -311,7 +316,7 @@ export class Goal extends GoalCore {
         goalUuid: this.uuid,
         keyResultUuid,
         originalData,
-        updatedData: updatedKeyResult.toDTO(),
+        updatedData: updatedKeyResult.toDTO({ accountUuid: this.accountUuid }),
         changes: updates,
       },
     });
@@ -344,7 +349,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid,
-        removedKeyResult: keyResult.toDTO(),
+        removedKeyResult: keyResult.toDTO({ accountUuid: this.accountUuid }),
         cascadeDeletedRecordsCount: relatedRecords.length,
       },
     });
@@ -394,7 +399,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         recordUuid,
-        record: newRecord.toDTO(),
+        record: newRecord.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
         keyResultUpdated: true,
       },
     });
@@ -411,7 +416,7 @@ export class Goal extends GoalCore {
       throw new Error(`目标记录不存在: ${recordUuid}`);
     }
 
-    const originalData = record.toDTO();
+    const originalData = record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid });
 
     // 使用实体的业务方法应用更新
     if (updates.value !== undefined) {
@@ -439,7 +444,7 @@ export class Goal extends GoalCore {
         goalUuid: this.uuid,
         recordUuid,
         originalData,
-        updatedData: record.toDTO(),
+        updatedData: record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
         changes: updates,
       },
     });
@@ -465,7 +470,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         recordUuid,
-        removedRecord: record.toDTO(),
+        removedRecord: record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
       },
     });
   }
@@ -666,7 +671,7 @@ export class Goal extends GoalCore {
     if (!keyResult) return undefined;
 
     // 通过 fromDTO + toDTO 实现克隆
-    return KeyResult.fromDTO(keyResult.toDTO());
+    return KeyResult.fromDTO(keyResult.toDTO({ accountUuid: this.accountUuid }));
   }
 
   /**
@@ -1145,6 +1150,7 @@ export class Goal extends GoalCore {
   static fromDTO(dto: GoalContracts.GoalDTO): Goal {
     return new Goal({
       uuid: dto.uuid,
+      accountUuid: dto.accountUuid, // 添加账户UUID
       name: dto.name,
       description: dto.description,
       color: dto.color,
@@ -1162,39 +1168,19 @@ export class Goal extends GoalCore {
   }
 
   toResponse(): GoalContracts.GoalResponse {
-    const baseDTO = this.toDTO();
+    const baseDTO = this.toDTO({ accountUuid: this.accountUuid });
 
     return {
       ...baseDTO,
       keyResults: this.keyResults.map((kr) => ({
-        uuid: kr.uuid,
-        accountUuid: kr.accountUuid,
-        goalUuid: kr.goalUuid,
-        name: kr.name,
-        description: kr.description,
-        startValue: kr.startValue,
-        targetValue: kr.targetValue,
-        currentValue: kr.currentValue,
-        unit: kr.unit,
-        weight: kr.weight,
-        calculationMethod: kr.calculationMethod,
-        lifecycle: {
-          createdAt: kr.lifecycle.createdAt.getTime(),
-          updatedAt: kr.lifecycle.updatedAt.getTime(),
-          status: kr.lifecycle.status,
-        },
+        ...kr.toDTO({ accountUuid: this.accountUuid }),
         progress: Math.min((kr.currentValue / kr.targetValue) * 100, 100),
         isCompleted: kr.currentValue >= kr.targetValue,
+        remaining: kr.targetValue - kr.currentValue,
       })),
-      records: this.records.map((record) => ({
-        uuid: record.uuid,
-        accountUuid: record.accountUuid,
-        goalUuid: record.goalUuid,
-        keyResultUuid: record.keyResultUuid,
-        value: record.value,
-        note: record.note,
-        createdAt: record.createdAt.getTime(),
-      })),
+      records: this.records.map((record) =>
+        record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
+      ),
       reviews: this.reviews.map((review) => ({
         uuid: review.uuid,
         goalUuid: review.goalUuid,

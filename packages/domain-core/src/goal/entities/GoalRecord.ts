@@ -81,11 +81,11 @@ export abstract class GoalRecordCore extends Entity implements IGoalRecord {
   }
 
   // ===== 序列化方法 =====
-  toDTO(): GoalContracts.GoalRecordDTO {
+  toDTO(context?: { accountUuid?: string; goalUuid?: string }): GoalContracts.GoalRecordDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this._accountUuid,
-      goalUuid: this._goalUuid,
+      accountUuid: context?.accountUuid || '', // 从上下文获取
+      goalUuid: context?.goalUuid || '', // 从上下文获取
       keyResultUuid: this._keyResultUuid,
       value: this._value,
       note: this._note,

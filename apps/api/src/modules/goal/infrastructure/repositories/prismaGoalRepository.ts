@@ -94,7 +94,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         name: goalData.name,
         description: goalData.description,
         color: goalData.color,
-        dirUuid: goalData.dirUuid,
+        dirUuid: goalData.dirUuid || null, // 处理空字符串，转换为 null
         startTime: new Date(goalData.startTime),
         endTime: new Date(goalData.endTime),
         note: goalData.note,
@@ -193,7 +193,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         ...(updateData.name && { name: updateData.name }),
         ...(updateData.description !== undefined && { description: updateData.description }),
         ...(updateData.color && { color: updateData.color }),
-        ...(updateData.dirUuid !== undefined && { dirUuid: updateData.dirUuid }),
+        ...(updateData.dirUuid !== undefined && { dirUuid: updateData.dirUuid || null }), // 处理空字符串
         ...(updateData.startTime && { startTime: new Date(updateData.startTime) }),
         ...(updateData.endTime && { endTime: new Date(updateData.endTime) }),
         ...(updateData.note !== undefined && { note: updateData.note }),

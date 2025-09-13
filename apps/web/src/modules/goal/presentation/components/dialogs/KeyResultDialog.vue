@@ -1,10 +1,10 @@
 <template>
-  <v-dialog :model-value="modelValue" max-width="700px" persistent>
+  <v-dialog :model-value="visible" max-width="700px" persistent>
     <v-card>
       <!-- 对话框头部 -->
       <v-card-title class="d-flex align-center pa-4">
         <v-icon color="primary" class="mr-3">mdi-target</v-icon>
-        <span class="text-h5">{{ isEditing ? '更新关键结果' : '创建关键结果'}}</span>
+        <span class="text-h5">{{ isEditing ? '更新关键结果' : '创建关键结果' }}</span>
       </v-card-title>
 
       <v-divider />
@@ -17,11 +17,11 @@
             <v-row>
               <!-- 关键结果名称 -->
               <v-col cols="12">
-                <v-text-field v-model="localKeyResult.name" label="关键结果名称*" placeholder="例如：新增活跃用户数量"
-                  variant="outlined" required />
+                <v-text-field v-model="keyResultName" label="关键结果名称*" placeholder="例如：新增活跃用户数量" variant="outlined"
+                  required />
               </v-col>
 
-              
+
             </v-row>
           </div>
 
@@ -31,22 +31,20 @@
             <v-row>
               <!-- 起始值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="localKeyResult.startValue" label="起始值*" type="number" variant="outlined"
-                  hint="关键结果的初始数值" persistent-hint required
-                  />
+                <v-text-field v-model.number="keyResultStartValue" label="起始值*" type="number" variant="outlined"
+                  hint="关键结果的初始数值" persistent-hint required />
               </v-col>
 
               <!-- 目标值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="localKeyResult.targetValue" label="目标值*" type="number" variant="outlined"
-                  hint="期望达到的目标数值" persistent-hint required
-                  />
+                <v-text-field v-model.number="keyResultTargetValue" label="目标值*" type="number" variant="outlined"
+                  hint="期望达到的目标数值" persistent-hint required />
               </v-col>
 
               <!-- 当前值 -->
               <v-col cols="4">
-                <v-text-field v-model.number="localKeyResult.currentValue" label="当前值" type="number" variant="outlined" hint="目前的实际数值"
-                  persistent-hint />
+                <v-text-field v-model.number="keyResultCurrentValue" label="当前值" type="number" variant="outlined"
+                  hint="目前的实际数值" persistent-hint />
               </v-col>
             </v-row>
           </div>
@@ -57,15 +55,14 @@
             <v-row>
               <!-- 计算方法 -->
               <v-col cols="6">
-                <v-select v-model="localKeyResult.calculationMethod" :items="calculationMethods" label="进度计算方法*" variant="outlined"
-                  hint="选择如何计算进度百分比" persistent-hint required />
+                <v-select v-model="keyResultCalculationMethod" :items="calculationMethods" label="进度计算方法*"
+                  variant="outlined" hint="选择如何计算进度百分比" persistent-hint required />
               </v-col>
 
               <!-- 权重 -->
               <v-col cols="6">
-                <v-text-field v-model.number="localKeyResult.weight" label="权重*" type="number" min="1" max="10" step="1"
-                  variant="outlined" hint="该关键结果在目标中的重要程度 (1-10)" persistent-hint
-                  required />
+                <v-text-field v-model.number="keyResultWeight" label="权重*" type="number" min="1" max="10" step="1"
+                  variant="outlined" hint="该关键结果在目标中的重要程度 (1-10)" persistent-hint required />
               </v-col>
             </v-row>
           </div>
@@ -75,7 +72,7 @@
             <h3 class="text-h6 mb-3">进度预览</h3>
             <v-card variant="outlined" class="pa-4">
               <div class="d-flex justify-space-between align-center mb-2">
-                <span class="text-subtitle-1 font-weight-medium">{{ localKeyResult.name || '关键结果名称' }}</span>
+                <span class="text-subtitle-1 font-weight-medium">{{ keyResultName || '关键结果名称' }}</span>
                 <span class="text-h6 font-weight-bold" :class="progressColor">
                   {{ progressPercentage.toFixed(1) }}%
                 </span>
@@ -85,8 +82,8 @@
                 class="mb-2" />
 
               <div class="d-flex justify-space-between text-caption text-medium-emphasis">
-                <span>{{ localKeyResult.startValue }}</span>
-                <span>{{ localKeyResult.currentValue }} / {{ localKeyResult.targetValue }}</span>
+                <span>{{ keyResultStartValue }}</span>
+                <span>{{ keyResultCurrentValue }} / {{ keyResultTargetValue }}</span>
               </div>
             </v-card>
           </div>
@@ -111,32 +108,28 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue';
-import { KeyResult } from '@dailyuse/domain-client';
+import { KeyResult, Goal } from '@dailyuse/domain-client';
+// composables
+import { useGoal } from '../../composables/useGoal';
 
-// 定义 props
-const props = defineProps<{
-  modelValue: boolean
-  goalUuid: string | null
-  keyResult: KeyResult | null
-}>();
+const { createKeyResultForGoal, updateKeyResultForGoal } = useGoal();
 
-// 定义 emits
-const emit = defineEmits<{
-  (e: 'update:modelValue', value: boolean): void;
-  (e: 'create-key-result', keyResult: KeyResult): void;
-  (e: 'update-key-result', keyResult: KeyResult): void;
-}>();
-
-
+const visible = ref(false);
+const propKeyResult = ref<KeyResult | null>(null);
+const propGoalUuid = ref<string | null>(null);
+//如果是在编辑 Goal 的情况下，编辑 Key Result，应该直接把 keyResult 的修改直接反映到 Goal 中（到时候调用 Goal 的接口），而不是直接掉用修改 Key Result 的接口
+// 规定传入 goal 对象，则表示是在编辑 Goal 的情况下编辑 Key Result
+const propGoal = ref<Goal | null>(null);
+const isInGoalEditing = computed(() => !!propGoal.value);
 // 表单状态
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const localKeyResult = ref<KeyResult>(KeyResult.forCreate({
   accountUuid: '', // 需要在创建时提供
-  goalUuid: props.goalUuid!,
+  goalUuid: (propGoalUuid.value || propGoal.value?.uuid)!,
   unit: '',
 }));
 const loading = ref(false);
-const isEditing = computed(() => !!props.keyResult);
+const isEditing = computed(() => !!propKeyResult.value);
 const isFormValid = computed(
   () => formRef.value?.isValid ?? false
 )
@@ -145,6 +138,54 @@ const progressPercentage = computed(() => {
 
   const progress = ((localKeyResult.value.currentValue - localKeyResult.value.startValue) / (localKeyResult.value.targetValue - localKeyResult.value.startValue)) * 100;
   return Math.max(0, Math.min(100, progress));
+});
+
+// 表单字段的 getter/setter
+const keyResultName = computed({
+  get: () => localKeyResult.value.name || '',
+  set: (val: string) => {
+    localKeyResult.value.updateInfo({ name: val });
+  }
+});
+
+const keyResultStartValue = computed({
+  get: () => localKeyResult.value.startValue || 0,
+  set: (val: number) => {
+    // 重新创建 KeyResult 对象以更新 startValue
+    const dto = localKeyResult.value.toDTO();
+    dto.startValue = val;
+    localKeyResult.value = KeyResult.fromDTO(dto);
+  }
+});
+
+const keyResultTargetValue = computed({
+  get: () => localKeyResult.value.targetValue || 0,
+  set: (val: number) => {
+    localKeyResult.value.updateInfo({ targetValue: val });
+  }
+});
+
+const keyResultCurrentValue = computed({
+  get: () => localKeyResult.value.currentValue || 0,
+  set: (val: number) => {
+    localKeyResult.value.updateProgress(val);
+  }
+});
+
+const keyResultCalculationMethod = computed({
+  get: () => localKeyResult.value.calculationMethod || 'sum',
+  set: (val: string) => {
+    localKeyResult.value.updateInfo({
+      calculationMethod: val as 'sum' | 'average' | 'max' | 'min' | 'custom'
+    });
+  }
+});
+
+const keyResultWeight = computed({
+  get: () => localKeyResult.value.weight || 1,
+  set: (val: number) => {
+    localKeyResult.value.updateInfo({ weight: val });
+  }
 });
 
 
@@ -178,9 +219,20 @@ const progressBarColor = computed(() => {
 const handleSave = async () => {
   if (!isFormValid.value) return;
   if (isEditing.value) {
-    emit('update-key-result', localKeyResult.value as KeyResult);
+    if (isInGoalEditing.value) {
+      // 如果在目标编辑页面，禁止修改关键结果
+      propGoal.value?.updateKeyResult(localKeyResult.value as KeyResult);
+    }
+    await updateKeyResultForGoal(propGoalUuid.value!, localKeyResult.value.uuid, localKeyResult.value.toDTO());
   } else {
-    emit('create-key-result', localKeyResult.value as KeyResult);
+    if (isInGoalEditing.value) {
+      // 如果在目标编辑页面，直接把关键结果添加到目标中
+      propGoal.value?.addKeyResult(localKeyResult.value);
+      // 不调用创建接口，等保存目标时统一创建
+      closeDialog();
+      return;
+    }
+    await createKeyResultForGoal(propGoalUuid.value!, localKeyResult.value.toDTO());
   }
   closeDialog();
 };
@@ -189,21 +241,50 @@ const handleCancel = () => {
   closeDialog();
 };
 const closeDialog = () => {
-  emit('update:modelValue', false);
+  visible.value = false;
+};
+const openDialog = ({ goalUuid, keyResult, goal }: { goalUuid?: string; keyResult?: KeyResult; goal?: Goal }) => {
+  propGoalUuid.value = goalUuid || null;
+  propKeyResult.value = keyResult || null;
+  propGoal.value = goal || null;
+  visible.value = true;
+};
+
+const openForCreateKeyResultInGoalEditing = (goal: Goal) => {
+  openDialog({ goal });
+};
+
+const openForUpdateKeyResultInGoalEditing = (goal: Goal, keyResult: KeyResult) => {
+  openDialog({ goal, keyResult });
+};
+
+const openForCreateKeyResult = (goalUuid: string) => {
+  openDialog({ goalUuid });
+};
+
+const openForUpdateKeyResult = (goalUuid: string, keyResult: KeyResult) => {
+  openDialog({ goalUuid, keyResult });
 };
 
 watch(
-  [() => props.modelValue, () => props.keyResult],
+  [() => visible.value, () => propKeyResult.value],
   ([newValue]) => {
     if (newValue) {
-      localKeyResult.value = props.keyResult ?
-        props.keyResult.clone() :
-        KeyResult.forCreate({ accountUuid: '', goalUuid: props.goalUuid!, unit: '' });
+      localKeyResult.value = propKeyResult.value ?
+        propKeyResult.value.clone() :
+        KeyResult.forCreate({ accountUuid: '', goalUuid: propGoalUuid.value!, unit: '' });
     } else {
-      localKeyResult.value = KeyResult.forCreate({ accountUuid: '', goalUuid: props.goalUuid!, unit: '' });
+      localKeyResult.value = KeyResult.forCreate({ accountUuid: '', goalUuid: propGoalUuid.value!, unit: '' });
     }
   }
 )
+
+defineExpose({
+  openForCreateKeyResultInGoalEditing,
+  openForUpdateKeyResultInGoalEditing,
+  openForCreateKeyResult,
+  openForUpdateKeyResult
+});
 </script>
 
 <style scoped>

@@ -337,9 +337,10 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   }
 
   // ===== 序列化方法 =====
-  toDTO(): GoalContracts.GoalDTO {
+  toDTO(context?: { accountUuid?: string }): GoalContracts.GoalDTO {
     return {
       uuid: this.uuid,
+      accountUuid: context?.accountUuid || '', // 从上下文获取，或使用空字符串
       name: this._name,
       description: this._description,
       color: this._color,

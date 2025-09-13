@@ -112,7 +112,6 @@ export class KeyResult extends KeyResultCore {
 
     // 使用父类的更新进度方法将当前值设为目标值
     super.updateProgress(this.targetValue, 'set');
-
   }
 
   /**
@@ -121,7 +120,6 @@ export class KeyResult extends KeyResultCore {
   archive(): void {
     this._lifecycle.status = 'archived';
     this._lifecycle.updatedAt = new Date();
-
   }
 
   /**
@@ -134,7 +132,6 @@ export class KeyResult extends KeyResultCore {
 
     this._lifecycle.status = 'active';
     this._lifecycle.updatedAt = new Date();
-
   }
 
   // ===== 验证方法 =====

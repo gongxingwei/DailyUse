@@ -19,7 +19,7 @@
                     </div>
 
                     <v-btn color="primary" size="large" prepend-icon="mdi-plus" variant="elevated"
-                        @click="$router.push('/goals/create')">
+                        @click="goalDialogRef?.openDialog()">
                         创建目标
                     </v-btn>
                 </div>
@@ -94,7 +94,7 @@
                                     <v-empty-state icon="mdi-target" title="暂无目标" text="创建您的第一个目标，开始目标管理之旅">
                                         <template v-slot:actions>
                                             <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus"
-                                                @click="$router.push('/goals/create')">
+                                                @click="goalDialogRef?.openDialog()">
                                                 创建第一个目标
                                             </v-btn>
                                         </template>
@@ -127,10 +127,10 @@
         </v-dialog>
 
         <!-- 成功/错误提示 -->
-        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
+        <!-- <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout">
             {{ snackbar.message }}
-        </v-snackbar>
-        <goal-create-dialog />
+        </v-snackbar> -->
+        <GoalDialog ref="goalDialogRef" />
     </v-container>
 </template>
 
@@ -143,7 +143,7 @@ import type { Goal, GoalDir } from '@dailyuse/domain-client';
 // 组件导入
 import GoalCard from '../components/cards/GoalCard.vue';
 import GoalDirComponent from '../components/GoalDir.vue';
-import GoalCreateDialog from '../components/dialogs/GoalCreateDialog.vue';
+import GoalDialog from '../components/dialogs/GoalDialog.vue';
 // composables
 
 
@@ -167,17 +167,20 @@ const goalStore = useGoalStore();
 const selectedDirUuid = ref<string>('all');
 const selectedStatusIndex = ref(0);
 
+// dialogs
+const goalDialogRef = ref<InstanceType<typeof GoalDialog> | null>(null);
+
 const deleteDialog = reactive({
     show: false,
     goalUuid: ''
 });
 
-const snackbar = reactive({
-    show: false,
-    message: '',
-    color: 'success',
-    timeout: 3000
-});
+// const snackbar = reactive({
+//     show: false,
+//     message: '',
+//     color: 'success',
+//     timeout: 3000
+// });
 
 // 状态标签配置
 const statusTabs = [
@@ -248,10 +251,8 @@ const handleDeleteGoal = async () => {
     try {
         await deleteGoal(deleteDialog.goalUuid);
         deleteDialog.show = false;
-        showSnackbar('目标删除成功', 'success');
     } catch (error) {
         console.error('删除目标失败:', error);
-        showSnackbar('删除目标失败', 'error');
     }
 };
 
@@ -259,17 +260,17 @@ const handleDeleteGoal = async () => {
  * 切换目标状态
  */
 const onToggleGoalStatus = () => {
-    showSnackbar('目标状态更新成功', 'success');
+
 };
 
 /**
  * 显示提示消息
  */
-const showSnackbar = (message: string, color: string = 'success') => {
-    snackbar.message = message;
-    snackbar.color = color;
-    snackbar.show = true;
-};
+// const showSnackbar = (message: string, color: string = 'success') => {
+//     snackbar.message = message;
+//     snackbar.color = color;
+//     snackbar.show = true;
+// };
 
 /**
  * 打开创建目录对话框

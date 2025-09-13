@@ -1,5 +1,5 @@
 <template>
-    <v-dialog :model-value="props.modelValue" max-width="400" persistent>
+    <v-dialog :model-value="visible" max-width="400" persistent>
         <v-card>
             <v-card-title class="pa-4">
                 <v-icon size="24" class="mr-2">mdi-folder-plus</v-icon>
@@ -41,20 +41,17 @@
 <script setup lang="ts">
 import { computed, watch, ref } from 'vue';
 import { GoalDir } from '@dailyuse/domain-client';
+// composables
+import { useGoal } from '../../composables/useGoal';
+import { vi } from 'date-fns/locale';
 
-const props = defineProps<{
-    modelValue: boolean;
-    goalDir: GoalDir | null; // 目标目录数据
-}>();
+const { createGoalDir, updateGoalDir } = useGoal();
 
-const emit = defineEmits<{
-    (e: 'update:modelValue', value: boolean): void;
-    (e: 'create-goal-dir', goalDir: GoalDir): void;
-    (e: 'edit-goal-dir', goalDir: GoalDir): void;
-}>();
-
+const visible = ref(false);
+const propGoalDir = ref<GoalDir | null>(null);
 const localGoalDir = ref<GoalDir>(GoalDir.forCreate({ accountUuid: '' }));
-const isEditing = computed(() => !!props.goalDir);
+
+const isEditing = computed(() => !!propGoalDir.value);
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const isFormValid = computed(() => {
     return formRef.value?.isValid ?? false;
@@ -85,12 +82,12 @@ const nameRules = [
 
 const handleSave = () => {
     if (!isFormValid.value) return;
-    if (props.goalDir) {
+    if (propGoalDir.value) {
         // 编辑模式
-        emit('edit-goal-dir', localGoalDir.value as GoalDir);
+        updateGoalDir(localGoalDir.value.uuid, localGoalDir.value.toDTO());
     } else {
         // 创建模式
-        emit('create-goal-dir', localGoalDir.value as GoalDir);
+        createGoalDir(localGoalDir.value as GoalDir);
     }
     closeDialog();
 };
@@ -99,19 +96,28 @@ const handleCancel = () => {
     closeDialog();
 };
 
+const openDialog = (goalDir?: GoalDir) => {
+    visible.value = true;
+    propGoalDir.value = goalDir || null;
+};
+
 const closeDialog = () => {
-    emit('update:modelValue', false);
+    visible.value = false;
 };
 
 watch(
-    [() => props.modelValue, () => props.goalDir],
+    [() => visible.value, () => propGoalDir.value],
     ([show]) => {
         if (show) {
-            localGoalDir.value = props.goalDir ? props.goalDir.clone() : GoalDir.forCreate({ accountUuid: '' });
+            localGoalDir.value = propGoalDir.value ? propGoalDir.value.clone() : GoalDir.forCreate({ accountUuid: '' });
         } else {
             localGoalDir.value = GoalDir.forCreate({ accountUuid: '' });
         }
     },
     { immediate: true }
 )
+
+defineExpose({
+    openDialog
+});
 </script>

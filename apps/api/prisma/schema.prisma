@@ -251,6 +251,11 @@ model GoalDir {
   icon        String
   color       String
 
+  // 系统类型和默认标识
+  systemType String? @map("system_type") // 'ALL', 'UNCATEGORIZED', 'ARCHIVED', 'CUSTOM'
+  isDefault  Boolean @default(false) @map("is_default")
+  metadata   Json? // 元数据 JSON 字段
+
   // 排序配置 - 展开存储
   sortKey   String @default("createdAt") @map("sort_key") // 排序字段
   sortOrder Int    @default(0) @map("sort_order") // 排序顺序
@@ -271,6 +276,8 @@ model GoalDir {
   @@index([parentUuid])
   @@index([status])
   @@index([sortOrder])
+  @@index([systemType])
+  @@index([isDefault])
   @@map("goal_directories")
 }
 
