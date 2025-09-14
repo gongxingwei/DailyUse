@@ -90,6 +90,7 @@ export class GoalAggregateService {
     return {
       uuid: savedKeyResult.uuid,
       goalUuid: savedKeyResult.goalUuid,
+      accountUuid: savedKeyResult.accountUuid,
       name: savedKeyResult.name,
       description: savedKeyResult.description,
       startValue: savedKeyResult.startValue,
@@ -99,6 +100,8 @@ export class GoalAggregateService {
       weight: savedKeyResult.weight,
       calculationMethod: savedKeyResult.calculationMethod,
       progress: Math.min((savedKeyResult.currentValue / savedKeyResult.targetValue) * 100, 100),
+      isCompleted: savedKeyResult.currentValue >= savedKeyResult.targetValue,
+      remaining: Math.max(savedKeyResult.targetValue - savedKeyResult.currentValue, 0),
       lifecycle: savedKeyResult.lifecycle,
     };
   }
@@ -129,8 +132,7 @@ export class GoalAggregateService {
 
     // 3. 构建完整的聚合根（包含子实体）
     const goal = Goal.fromDTO(goalDTO);
-    // 设置关键结果（模拟聚合根加载）
-    keyResults.forEach((kr) => goal.addKeyResult(kr));
+    // 注意：不直接添加DTO到聚合根，在需要时单独处理业务逻辑
 
     // 4. 通过聚合根更新关键结果（业务规则验证）
     goal.updateKeyResult(keyResultUuid, request);
@@ -167,6 +169,7 @@ export class GoalAggregateService {
     return {
       uuid: updatedKeyResult.uuid,
       goalUuid: updatedKeyResult.goalUuid,
+      accountUuid: updatedKeyResult.accountUuid,
       name: updatedKeyResult.name,
       description: updatedKeyResult.description,
       startValue: updatedKeyResult.startValue,
@@ -176,6 +179,8 @@ export class GoalAggregateService {
       weight: updatedKeyResult.weight,
       calculationMethod: updatedKeyResult.calculationMethod,
       progress: Math.min((updatedKeyResult.currentValue / updatedKeyResult.targetValue) * 100, 100),
+      isCompleted: updatedKeyResult.currentValue >= updatedKeyResult.targetValue,
+      remaining: Math.max(updatedKeyResult.targetValue - updatedKeyResult.currentValue, 0),
       lifecycle: updatedKeyResult.lifecycle,
     };
   }
@@ -203,8 +208,7 @@ export class GoalAggregateService {
 
     // 3. 构建聚合根
     const goal = Goal.fromDTO(goalDTO);
-    keyResults.forEach((kr) => goal.addKeyResult(kr));
-    records.forEach((record) => goal.records.push(record));
+    // 注意：不直接添加DTO到聚合根，在需要时单独处理业务逻辑
 
     // 4. 通过聚合根删除（包含级联删除逻辑）
     goal.removeKeyResult(keyResultUuid);
@@ -252,10 +256,11 @@ export class GoalAggregateService {
 
     // 3. 构建聚合根
     const goal = Goal.fromDTO(goalDTO);
-    keyResults.forEach((kr) => goal.addKeyResult(kr));
+    // 注意：不直接添加DTO到聚合根，在需要时单独处理业务逻辑
 
     // 4. 通过聚合根创建记录（自动更新关键结果进度）
     const recordUuid = goal.createRecord({
+      accountUuid,
       keyResultUuid: request.keyResultUuid,
       value: request.value,
       note: request.note,
@@ -278,8 +283,9 @@ export class GoalAggregateService {
       await this.goalRepository.updateKeyResult(accountUuid, request.keyResultUuid, {
         currentValue: updatedKeyResult.currentValue,
         lifecycle: {
-          ...updatedKeyResult.lifecycle,
+          createdAt: updatedKeyResult.lifecycle.createdAt.getTime(),
           updatedAt: Date.now(),
+          status: updatedKeyResult.lifecycle.status,
         },
       });
     }
@@ -292,6 +298,7 @@ export class GoalAggregateService {
       value: savedRecord.value,
       note: savedRecord.note,
       createdAt: savedRecord.createdAt,
+      xxxx: '', // 预留字段
     };
   }
 
@@ -331,7 +338,7 @@ export class GoalAggregateService {
 
     // 2. 构建聚合根
     const goal = Goal.fromDTO(goalDTO);
-    keyResults.forEach((kr) => goal.addKeyResult(kr));
+    // 注意：这里不加载关键结果到聚合根中，直接用于复盘快照生成
 
     // 3. 通过聚合根创建复盘（生成当前状态快照）
     const reviewUuid = goal.createReview({
@@ -355,7 +362,10 @@ export class GoalAggregateService {
       type: newReview.type,
       reviewDate: newReview.reviewDate.getTime(),
       content: newReview.content,
-      snapshot: newReview.snapshot,
+      snapshot: {
+        ...newReview.snapshot,
+        snapshotDate: newReview.snapshot.snapshotDate.getTime(),
+      },
       rating: newReview.rating,
     };
 
@@ -370,17 +380,31 @@ export class GoalAggregateService {
       content: savedReview.content,
       snapshot: savedReview.snapshot,
       rating: savedReview.rating,
+      overallRating:
+        (savedReview.rating.progressSatisfaction +
+          savedReview.rating.executionEfficiency +
+          savedReview.rating.goalReasonableness) /
+        3,
+      isPositiveReview:
+        (savedReview.rating.progressSatisfaction +
+          savedReview.rating.executionEfficiency +
+          savedReview.rating.goalReasonableness) /
+          3 >=
+        7,
       createdAt: savedReview.createdAt,
       updatedAt: savedReview.updatedAt,
     };
   }
 
-  // ===== 聚合根完整加载（用于复杂业务操作）=====
+  // ===== 聚合根完整视图 =====
 
   /**
-   * 加载完整的聚合根（包含所有子实体）
+   * 获取聚合根的完整视图（用于复杂查询）
    */
-  async loadFullGoalAggregate(accountUuid: string, goalUuid: string): Promise<Goal> {
+  async getGoalAggregateView(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<GoalContracts.GoalAggregateViewResponse> {
     // 1. 获取根实体
     const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalDTO) {
@@ -394,35 +418,16 @@ export class GoalAggregateService {
       this.goalRepository.getGoalReviewsByGoalUuid(accountUuid, goalUuid),
     ]);
 
-    // 3. 构建完整聚合根
+    // 3. 构建Goal实体以获取响应格式
     const goal = Goal.fromDTO(goalDTO);
 
-    // 添加关键结果
-    keyResults.forEach((kr) => goal.addKeyResult(kr));
-
-    // 添加记录
-    records.records.forEach((record) => goal.records.push(record));
-
-    // 添加复盘
-    reviews.forEach((review) => goal.addReview(review));
-
-    return goal;
-  }
-
-  /**
-   * 获取聚合根的完整视图（用于复杂查询）
-   */
-  async getGoalAggregateView(
-    accountUuid: string,
-    goalUuid: string,
-  ): Promise<GoalContracts.GoalAggregateViewResponse> {
-    const goal = await this.loadFullGoalAggregate(accountUuid, goalUuid);
-
+    // 4. 直接返回视图数据
     return {
       goal: goal.toResponse(),
-      keyResults: goal.getActiveKeyResults().map((kr) => ({
+      keyResults: keyResults.map((kr) => ({
         uuid: kr.uuid,
         goalUuid: kr.goalUuid,
+        accountUuid: kr.accountUuid,
         name: kr.name,
         description: kr.description,
         startValue: kr.startValue,
@@ -432,9 +437,11 @@ export class GoalAggregateService {
         weight: kr.weight,
         calculationMethod: kr.calculationMethod,
         progress: Math.min((kr.currentValue / kr.targetValue) * 100, 100),
+        isCompleted: kr.currentValue >= kr.targetValue,
+        remaining: Math.max(kr.targetValue - kr.currentValue, 0),
         lifecycle: kr.lifecycle,
       })),
-      recentRecords: goal.getRecentRecords(5).map((record) => ({
+      recentRecords: records.records.slice(0, 5).map((record) => ({
         uuid: record.uuid,
         accountUuid: record.accountUuid,
         goalUuid: record.goalUuid,
@@ -442,16 +449,34 @@ export class GoalAggregateService {
         value: record.value,
         note: record.note,
         createdAt: record.createdAt,
+        xxxx: '', // 预留字段
       })),
-      reviews: goal.getReviewsByType('monthly').map((review) => ({
+      reviews: reviews.map((review) => ({
         uuid: review.uuid,
         goalUuid: review.goalUuid,
         title: review.title,
         type: review.type,
-        reviewDate: review.reviewDate.getTime(),
+        reviewDate: review.reviewDate,
         content: review.content,
-        snapshot: review.snapshot,
+        snapshot: {
+          ...review.snapshot,
+          snapshotDate:
+            typeof review.snapshot.snapshotDate === 'number'
+              ? review.snapshot.snapshotDate
+              : review.snapshot.snapshotDate,
+        },
         rating: review.rating,
+        overallRating:
+          (review.rating.progressSatisfaction +
+            review.rating.executionEfficiency +
+            review.rating.goalReasonableness) /
+          3,
+        isPositiveReview:
+          (review.rating.progressSatisfaction +
+            review.rating.executionEfficiency +
+            review.rating.goalReasonableness) /
+            3 >=
+          7,
         createdAt: review.createdAt,
         updatedAt: review.updatedAt,
       })),

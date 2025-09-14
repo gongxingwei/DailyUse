@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { GoalAggregateController } from '../controllers/GoalAggregateController';
+import { GoalAggregateController } from '../controllers/GoalAggregateController.js';
 
 /**
  * Goal聚合根控制路由
@@ -38,7 +38,7 @@ const router = Router();
  * - 自动关联到指定目标
  * - 维护聚合一致性
  */
-router.post('/goals/:goalId/key-results', GoalAggregateController.createKeyResult);
+router.post('/:goalId/key-results', GoalAggregateController.createKeyResult);
 
 /**
  * 通过Goal聚合根更新关键结果
@@ -57,7 +57,7 @@ router.post('/goals/:goalId/key-results', GoalAggregateController.createKeyResul
  * - 更新聚合根版本
  * - 维护业务规则
  */
-router.put('/goals/:goalId/key-results/:keyResultId', GoalAggregateController.updateKeyResult);
+router.put('/:goalId/key-results/:keyResultId', GoalAggregateController.updateKeyResult);
 
 /**
  * 通过Goal聚合根删除关键结果
@@ -68,7 +68,7 @@ router.put('/goals/:goalId/key-results/:keyResultId', GoalAggregateController.up
  * - 维护聚合一致性
  * - 发布领域事件
  */
-router.delete('/goals/:goalId/key-results/:keyResultId', GoalAggregateController.deleteKeyResult);
+router.delete('/:goalId/key-results/:keyResultId', GoalAggregateController.deleteKeyResult);
 
 // ===== 聚合根控制：目标记录管理 =====
 
@@ -88,7 +88,7 @@ router.delete('/goals/:goalId/key-results/:keyResultId', GoalAggregateController
  * - 验证记录数据合理性
  * - 维护数据一致性
  */
-router.post('/goals/:goalId/records', GoalAggregateController.createGoalRecord);
+router.post('/:goalId/records', GoalAggregateController.createGoalRecord);
 
 // ===== 聚合根控制：目标复盘管理 =====
 
@@ -120,7 +120,7 @@ router.post('/goals/:goalId/records', GoalAggregateController.createGoalRecord);
  * - 包含完整聚合状态
  * - 统一复盘数据管理
  */
-router.post('/goals/:goalId/reviews', GoalAggregateController.createGoalReview);
+router.post('/:goalId/reviews', GoalAggregateController.createGoalReview);
 
 // ===== 聚合根完整视图 =====
 
@@ -144,7 +144,7 @@ router.post('/goals/:goalId/reviews', GoalAggregateController.createGoalReview);
  * - 包含所有子实体信息
  * - 保证数据一致性
  */
-router.get('/goals/:goalId/aggregate', GoalAggregateController.getGoalAggregateView);
+router.get('/:goalId/aggregate', GoalAggregateController.getGoalAggregateView);
 
 // ===== 聚合根批量操作 =====
 
@@ -167,7 +167,7 @@ router.get('/goals/:goalId/aggregate', GoalAggregateController.getGoalAggregateV
  * - 维护业务规则一致性
  */
 router.put(
-  '/goals/:goalId/key-results/batch-weight',
+  '/:goalId/key-results/batch-weight',
   GoalAggregateController.batchUpdateKeyResultWeights,
 );
 
@@ -186,7 +186,7 @@ router.put(
  * - 保持数据关联关系
  * - 重置时间戳和状态
  */
-router.post('/goals/:goalId/clone', GoalAggregateController.cloneGoalAggregate);
+router.post('/:goalId/clone', GoalAggregateController.cloneGoalAggregate);
 
 export { router as goalAggregateRoutes };
 

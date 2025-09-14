@@ -226,8 +226,8 @@ const handleSave = async () => {
     await updateKeyResultForGoal(propGoalUuid.value!, localKeyResult.value.uuid, localKeyResult.value.toDTO());
   } else {
     if (isInGoalEditing.value) {
-      // 如果在目标编辑页面，直接把关键结果添加到目标中
-      propGoal.value?.addKeyResult(localKeyResult.value);
+      // 如果在目标编辑页面，使用变更跟踪方法添加关键结果
+      propGoal.value?.addNewKeyResult(localKeyResult.value as KeyResult);
       // 不调用创建接口，等保存目标时统一创建
       closeDialog();
       return;

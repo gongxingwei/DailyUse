@@ -216,7 +216,12 @@ const startRemoveKeyResult = (goal: Goal, keyResultUuid: string) => {
     title: '确认删除',
     message: '您确定要删除这个关键结果吗？',
     onConfirm: () => {
-      deleteKeyResultForGoal(goal.uuid, keyResultUuid);
+      // 如果是编辑模式，使用变更跟踪方法
+      if (isEditing.value) {
+        goalModel.value.removeKeyResultWithTracking(keyResultUuid);
+      } else {
+        deleteKeyResultForGoal(goal.uuid, keyResultUuid);
+      }
       confirmDialog.value.show = false;
     },
     onCancel: () => {
@@ -231,7 +236,24 @@ watch(
   ([visible, goal]) => {
     if (visible) {
       if (goal) {
+        console.log('[GoalDialog] Original Goal before clone:', {
+          uuid: goal.uuid,
+          name: goal.name,
+          keyResultsCount: goal.keyResults?.length || 0,
+          keyResults: goal.keyResults
+        });
+
         goalModel.value = goal.clone();
+
+        console.log('[GoalDialog] Cloned Goal after clone:', {
+          uuid: goalModel.value.uuid,
+          name: goalModel.value.name,
+          keyResultsCount: goalModel.value.keyResults?.length || 0,
+          keyResults: goalModel.value.keyResults
+        });
+
+        // 在编辑模式下启用变更跟踪
+        goalModel.value.startEditing();
       } else {
         goalModel.value = Goal.forCreate();
       }
@@ -373,7 +395,7 @@ const isFormValid = computed(() => {
 const handleSave = () => {
   if (!isFormValid.value) return;
   if (isEditing.value) {
-    updateGoal(goalModel.value.uuid, goalModel.value.toDTO());
+    updateGoal(goalModel.value.uuid, goalModel.value.toUpdateRequest());
   } else {
     createGoal(goalModel.value.toDTO());
   }

@@ -9,8 +9,25 @@ export class PrismaGoalRepository implements IGoalRepository {
   // ===== 数据库实体到DTO的转换 =====
 
   private mapGoalToDTO(goal: any): GoalContracts.GoalDTO {
+    // 收集所有 records，从 keyResults 中提取
+    const allRecords: any[] = [];
+    if (goal.keyResults) {
+      goal.keyResults.forEach((kr: any) => {
+        if (kr.records) {
+          kr.records.forEach((record: any) => {
+            allRecords.push({
+              ...record,
+              goalUuid: goal.uuid, // 添加 goalUuid
+              accountUuid: goal.accountUuid, // 从 goal 获取 accountUuid
+            });
+          });
+        }
+      });
+    }
+
     return {
       uuid: goal.uuid,
+      accountUuid: goal.accountUuid,
       name: goal.name,
       description: goal.description,
       color: goal.color,
@@ -34,6 +51,14 @@ export class PrismaGoalRepository implements IGoalRepository {
         category: goal.category || '',
       },
       version: goal.version || 1,
+      // 添加关联数据的映射
+      keyResults: goal.keyResults
+        ? goal.keyResults.map((kr: any) => this.mapKeyResultToDTO(kr, goal.accountUuid))
+        : [],
+      records: allRecords.map((record: any) => this.mapGoalRecordToDTO(record)),
+      reviews: goal.reviews
+        ? goal.reviews.map((review: any) => this.mapGoalReviewToDTO(review))
+        : [],
     };
   }
 
@@ -58,9 +83,10 @@ export class PrismaGoalRepository implements IGoalRepository {
     };
   }
 
-  private mapKeyResultToDTO(keyResult: any): GoalContracts.KeyResultDTO {
+  private mapKeyResultToDTO(keyResult: any, accountUuid?: string): GoalContracts.KeyResultDTO {
     return {
       uuid: keyResult.uuid,
+      accountUuid: accountUuid || '', // 从参数获取
       goalUuid: keyResult.goalUuid,
       name: keyResult.name,
       description: keyResult.description,
@@ -123,6 +149,18 @@ export class PrismaGoalRepository implements IGoalRepository {
         uuid,
         accountUuid,
       },
+      include: {
+        keyResults: {
+          include: {
+            records: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
+        reviews: {
+          orderBy: { reviewDate: 'desc' },
+        },
+      },
     });
 
     return goal ? this.mapGoalToDTO(goal) : null;
@@ -151,6 +189,18 @@ export class PrismaGoalRepository implements IGoalRepository {
     const [goals, total] = await Promise.all([
       this.prisma.goal.findMany({
         where,
+        include: {
+          keyResults: {
+            include: {
+              records: {
+                orderBy: { createdAt: 'desc' },
+              },
+            },
+          },
+          reviews: {
+            orderBy: { reviewDate: 'desc' },
+          },
+        },
         skip: params?.offset || 0,
         take: params?.limit || 10,
         orderBy: {
@@ -160,8 +210,10 @@ export class PrismaGoalRepository implements IGoalRepository {
       this.prisma.goal.count({ where }),
     ]);
 
+    const goalDTOs = goals.map((goal) => this.mapGoalToDTO(goal));
+    console.log('Mapped GoalDTOs:', JSON.stringify(goalDTOs, null, 2));
     return {
-      goals: goals.map((goal) => this.mapGoalToDTO(goal)),
+      goals: goalDTOs,
       total,
     };
   }
@@ -402,7 +454,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       },
     });
 
-    return keyResults.map((kr) => this.mapKeyResultToDTO(kr));
+    return keyResults.map((kr) => this.mapKeyResultToDTO(kr, accountUuid));
   }
 
   async updateKeyResult(
@@ -438,7 +490,9 @@ export class PrismaGoalRepository implements IGoalRepository {
     const result = await this.prisma.keyResult.deleteMany({
       where: {
         uuid,
-        accountUuid,
+        goal: {
+          accountUuid, // 通过Goal聚合根验证权限
+        },
       },
     });
 
@@ -456,6 +510,18 @@ export class PrismaGoalRepository implements IGoalRepository {
         accountUuid,
         dirUuid: directoryUuid,
       },
+      include: {
+        keyResults: {
+          include: {
+            records: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
+        reviews: {
+          orderBy: { reviewDate: 'desc' },
+        },
+      },
       orderBy: {
         createdAt: 'desc',
       },
@@ -472,6 +538,18 @@ export class PrismaGoalRepository implements IGoalRepository {
       where: {
         accountUuid,
         status,
+      },
+      include: {
+        keyResults: {
+          include: {
+            records: {
+              orderBy: { createdAt: 'desc' },
+            },
+          },
+        },
+        reviews: {
+          orderBy: { reviewDate: 'desc' },
+        },
       },
       orderBy: {
         createdAt: 'desc',
@@ -565,11 +643,28 @@ export class PrismaGoalRepository implements IGoalRepository {
     const record = await this.prisma.goalRecord.findFirst({
       where: {
         uuid,
-        accountUuid,
+        keyResult: {
+          goal: {
+            accountUuid, // 通过Goal聚合根验证权限
+          },
+        },
+      },
+      include: {
+        keyResult: {
+          include: {
+            goal: true,
+          },
+        },
       },
     });
 
-    return record ? this.mapGoalRecordToDTO(record) : null;
+    if (!record) return null;
+
+    return this.mapGoalRecordToDTO({
+      ...record,
+      goalUuid: record.keyResult.goal.uuid,
+      accountUuid: record.keyResult.goal.accountUuid,
+    });
   }
 
   async getGoalRecordsByGoalUuid(
@@ -621,15 +716,32 @@ export class PrismaGoalRepository implements IGoalRepository {
   ): Promise<GoalContracts.GoalRecordDTO[]> {
     const records = await this.prisma.goalRecord.findMany({
       where: {
-        accountUuid,
         keyResultUuid,
+        keyResult: {
+          goal: {
+            accountUuid, // 通过Goal聚合根验证权限
+          },
+        },
+      },
+      include: {
+        keyResult: {
+          include: {
+            goal: true,
+          },
+        },
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return records.map((record) => this.mapGoalRecordToDTO(record));
+    return records.map((record) =>
+      this.mapGoalRecordToDTO({
+        ...record,
+        goalUuid: record.keyResult.goal.uuid,
+        accountUuid: record.keyResult.goal.accountUuid,
+      }),
+    );
   }
 
   async updateGoalRecord(
@@ -653,7 +765,11 @@ export class PrismaGoalRepository implements IGoalRepository {
     const result = await this.prisma.goalRecord.deleteMany({
       where: {
         uuid,
-        accountUuid,
+        keyResult: {
+          goal: {
+            accountUuid, // 通过Goal聚合根验证权限
+          },
+        },
       },
     });
 
@@ -763,6 +879,8 @@ export class PrismaGoalRepository implements IGoalRepository {
   private mapGoalRecordToDTO(record: any): GoalContracts.GoalRecordDTO {
     return {
       uuid: record.uuid,
+      accountUuid: record.accountUuid || '', // 从关联的goal获取
+      goalUuid: record.goalUuid || '', // 从关联获取
       keyResultUuid: record.keyResultUuid,
       value: record.value,
       note: record.note,
@@ -827,8 +945,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         this.prisma.goal.findMany({ where, include: { _count: { select: { keyResults: true } } } }),
         this.prisma.keyResult.findMany({
           where: {
-            accountUuid,
-            goal: where,
+            goal: where, // 通过Goal关联进行查询
           },
         }),
       ]);
@@ -1101,8 +1218,12 @@ export class PrismaGoalRepository implements IGoalRepository {
       // 删除记录
       await tx.goalRecord.deleteMany({
         where: {
-          goalUuid,
-          accountUuid,
+          keyResult: {
+            goalUuid,
+            goal: {
+              accountUuid,
+            },
+          },
         },
       });
 
@@ -1110,7 +1231,9 @@ export class PrismaGoalRepository implements IGoalRepository {
       await tx.keyResult.deleteMany({
         where: {
           goalUuid,
-          accountUuid,
+          goal: {
+            accountUuid,
+          },
         },
       });
 

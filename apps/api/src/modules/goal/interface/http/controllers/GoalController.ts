@@ -131,6 +131,10 @@ export class GoalController {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
       const request: GoalContracts.UpdateGoalRequest = req.body;
+
+      console.log('🎯 Updating goal:', id);
+      console.log('📝 Request body:', JSON.stringify(request, null, 2));
+
       const goal = await GoalController.goalService.updateGoal(accountUuid, id, request);
 
       res.json({
@@ -139,6 +143,9 @@ export class GoalController {
         message: 'Goal updated successfully',
       });
     } catch (error) {
+      console.error('❌ Error updating goal:', error);
+      console.error('📍 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to update goal',

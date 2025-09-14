@@ -37,9 +37,9 @@ export class Goal extends GoalCore {
     status?: 'active' | 'completed' | 'paused' | 'archived';
     createdAt?: Date;
     updatedAt?: Date;
-    keyResults?: any[];
-    records?: any[];
-    reviews?: any[];
+    keyResults?: KeyResult[];
+    records?: GoalRecord[];
+    reviews?: GoalReview[];
     tags?: string[];
     category?: string;
     version?: number;
@@ -49,8 +49,9 @@ export class Goal extends GoalCore {
     this.accountUuid = params.accountUuid; // 设置账户UUID
 
     // 服务端特有的实体创建逻辑
-    this.keyResults = (params.keyResults || []).map((dto) => this.createKeyResultEntity(dto));
-    this.records = (params.records || []).map((dto) => this.createGoalRecordEntity(dto));
+    this.keyResults = params.keyResults || [];
+    this.records = params.records || [];
+    this.reviews = params.reviews || [];
   }
 
   // ===== 抽象方法实现 =====
@@ -1348,6 +1349,9 @@ export class Goal extends GoalCore {
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
       version: dto.version,
+      keyResults: dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [],
+      records: dto.records?.map((record) => GoalRecord.fromDTO(record)) || [],
+      reviews: dto.reviews?.map((review) => GoalReview.fromDTO(review)) || [],
     });
   }
 
@@ -1381,5 +1385,18 @@ export class Goal extends GoalCore {
         updatedAt: review.updatedAt.getTime(),
       })),
     };
+  }
+
+  // ====== 工厂模式 ======
+
+  /**
+   * 从完整的 DTO 创建聚合根实例（包括子实体）
+   */
+  static createFromGoalDTO(dto: GoalContracts.GoalDTO): Goal {
+    const goal = Goal.fromDTO(dto);
+    goal.keyResults = dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [];
+    goal.records = dto.records?.map((record) => GoalRecord.fromDTO(record)) || [];
+    goal.reviews = dto.reviews?.map((review) => GoalReview.fromDTO(review)) || [];
+    return goal;
   }
 }

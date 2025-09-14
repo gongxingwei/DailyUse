@@ -130,8 +130,7 @@ const isLoading = ref(false);
 const openDialog = async () => {
   try {
     isVisible.value = true;
-    // 加载目标的复盘数据
-    await loadGoalReviews();
+    console.log('Opening review dialog for goal:', props.goal);
   } catch (error) {
     console.error('Failed to open review dialog:', error);
   }
@@ -145,32 +144,30 @@ const closeDialog = () => {
 };
 
 /**
- * 加载目标复盘数据
+ * 打开卡片 - 与 GoalCard 保持一致的方法名
  */
-const loadGoalReviews = async () => {
-  if (!props.goal?.uuid) return;
+const openCard = () => {
+  openDialog();
+};
 
-  try {
-    isLoading.value = true;
-    await goalComposable.loadCurrentGoalReviews(props.goal.uuid);
-  } catch (error) {
-    console.error('Failed to load goal reviews:', error);
-  } finally {
-    isLoading.value = false;
-  }
+/**
+ * 关闭卡片 - 与 GoalCard 保持一致的方法名  
+ */
+const closeCard = () => {
+  closeDialog();
 };
 
 /**
  * 查看复盘详情
  */
-const handleView = async (reviewId: string) => {
+const handleView = async (reviewUuid: string) => {
   try {
     // 导航到复盘详情页面
     router.push({
       name: 'goal-review-detail',
       params: {
         goalUuid: props.goal.uuid,
-        reviewUuid: reviewId
+        reviewUuid: reviewUuid
       }
     });
     closeDialog();
@@ -186,8 +183,6 @@ const handleDelete = async (reviewId: string) => {
   try {
     if (confirm('确定要删除这条复盘记录吗？此操作不可撤销。')) {
       await goalComposable.deleteGoalReview(props.goal.uuid, reviewId);
-      // 删除成功后重新加载复盘列表
-      await loadGoalReviews();
     }
   } catch (error) {
     console.error('Failed to delete review:', error);
@@ -220,13 +215,16 @@ const createNewReview = async () => {
 // 暴露方法给父组件
 defineExpose({
   openDialog,
+  closeDialog,
+  openCard,
+  closeCard,
 });
 
 // ===== 计算属性 =====
 
 // 获取当前目标的复盘列表
 const goalReviews = computed(() => {
-  return goalComposable.currentGoalReviews.value || [];
+  return props.goal.reviews || [];
 });
 
 // 是否有复盘记录

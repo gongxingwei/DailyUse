@@ -2,6 +2,29 @@ import { defineStore } from 'pinia';
 import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { type GoalContracts } from '@dailyuse/contracts';
 
+// 类型定义
+interface GoalStoreState {
+  goals: any[];
+  goalDirs: any[];
+  isLoading: boolean;
+  isInitialized: boolean;
+  error: string | null;
+  lastSyncTime: Date | null;
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  filters: {
+    status: 'all' | 'active' | 'completed' | 'paused' | 'archived';
+    dirUuid: string | undefined;
+    searchQuery: string;
+  };
+  selectedGoalUuid: string | null;
+  selectedDirUuid: string | null;
+}
+
 /**
  * Goal 模块的 Pinia Store - 纯缓存存储
  * 职责：缓存目标和目录数据，提供响应式查询接口
@@ -307,7 +330,7 @@ export const useGoalStore = defineStore('goal', {
      * 批量添加或更新目标
      */
     addOrUpdateGoals(goals: any[]): void {
-      goals.forEach((goal) => this.addOrUpdateGoal(goal));
+      goals.forEach((goal) => (this as any).addOrUpdateGoal(goal));
     },
 
     /**
@@ -358,7 +381,7 @@ export const useGoalStore = defineStore('goal', {
      * 批量添加或更新目录
      */
     addOrUpdateGoalDirs(goalDirs: any[]): void {
-      goalDirs.forEach((dir) => this.addOrUpdateGoalDir(dir));
+      goalDirs.forEach((dir) => (this as any).addOrUpdateGoalDir(dir));
     },
 
     /**
@@ -450,83 +473,30 @@ export const useGoalStore = defineStore('goal', {
      * 清空所有数据和状态
      */
     clearAll(): void {
-      this.clearGoals();
-      this.clearGoalDirs();
+      (this as any).clearGoals();
+      (this as any).clearGoalDirs();
       this.selectedGoalUuid = null;
       this.selectedDirUuid = null;
       this.error = null;
       this.isInitialized = false;
       this.lastSyncTime = null;
-      this.resetFilters();
+      (this as any).resetFilters();
     },
 
     // ===== 初始化 =====
 
     /**
-     * 初始化 Store（加载本地存储的缓存数据）
+     * 初始化 Store（现在由 pinia-plugin-persistedstate 自动处理）
      */
     initialize(): void {
-      try {
-        // 从 localStorage 加载缓存数据
-        const cachedGoals = localStorage.getItem('goal-cache-goals');
-        const cachedGoalDirs = localStorage.getItem('goal-cache-goalDirs');
-        const cachedSyncTime = localStorage.getItem('goal-cache-syncTime');
-
-        if (cachedGoals) {
-          const goalsData = JSON.parse(cachedGoals);
-          this.goals = goalsData.map((data: any) => Goal.fromDTO(data));
-        }
-
-        if (cachedGoalDirs) {
-          const goalDirsData = JSON.parse(cachedGoalDirs);
-          this.goalDirs = goalDirsData.map((data: any) => GoalDir.fromDTO(data));
-        }
-
-        if (cachedSyncTime) {
-          this.lastSyncTime = new Date(cachedSyncTime);
-        }
-
-        this.isInitialized = true;
-        console.log(
-          `Goal Store 初始化完成：${this.goals.length} 个目标，${this.goalDirs.length} 个目录`,
-        );
-      } catch (error) {
-        console.error('Goal Store 初始化失败:', error);
-        this.error = '加载缓存数据失败';
-        this.isInitialized = true; // 即使失败也设为已初始化
-      }
+      this.isInitialized = true;
+      console.log(
+        `Goal Store 初始化完成：${this.goals.length} 个目标，${this.goalDirs.length} 个目录`,
+      );
     },
 
     // ===== 缓存管理 =====
-
-    /**
-     * 保存到本地存储
-     */
-    saveToLocalStorage(): void {
-      try {
-        localStorage.setItem('goal-cache-goals', JSON.stringify(this.goals.map((g) => g.toDTO())));
-        localStorage.setItem(
-          'goal-cache-goalDirs',
-          JSON.stringify(this.goalDirs.map((d) => d.toDTO())),
-        );
-        localStorage.setItem('goal-cache-syncTime', this.lastSyncTime?.toISOString() || '');
-      } catch (error) {
-        console.error('保存 Goal 缓存失败:', error);
-      }
-    },
-
-    /**
-     * 清除本地存储
-     */
-    clearLocalStorage(): void {
-      try {
-        localStorage.removeItem('goal-cache-goals');
-        localStorage.removeItem('goal-cache-goalDirs');
-        localStorage.removeItem('goal-cache-syncTime');
-      } catch (error) {
-        console.error('清除 Goal 缓存失败:', error);
-      }
-    },
+    // 注意：缓存管理现在由 pinia-plugin-persistedstate 自动处理
 
     /**
      * 检查是否需要刷新缓存
@@ -537,6 +507,46 @@ export const useGoalStore = defineStore('goal', {
       // 如果超过30分钟未同步，则需要刷新
       const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
       return this.lastSyncTime < thirtyMinutesAgo;
+    },
+  },
+
+  persist: {
+    key: 'goal-store',
+    storage: localStorage,
+    // 选择性持久化关键数据，避免持久化 loading 状态
+    pick: [
+      'goals',
+      'goalDirs',
+      'selectedGoalUuid',
+      'selectedDirUuid',
+      'lastSyncTime',
+      'isInitialized',
+    ] as any,
+    // 自定义序列化器，确保实体类的正确序列化
+    serializer: {
+      serialize: (state: any) => {
+        return JSON.stringify({
+          ...state,
+          goals: state.goals.map((goal: any) =>
+            goal && typeof goal.toDTO === 'function' ? goal.toDTO() : goal,
+          ),
+          goalDirs: state.goalDirs.map((dir: any) =>
+            dir && typeof dir.toDTO === 'function' ? dir.toDTO() : dir,
+          ),
+          lastSyncTime: state.lastSyncTime?.getTime
+            ? state.lastSyncTime.getTime()
+            : state.lastSyncTime,
+        });
+      },
+      deserialize: (serialized: string) => {
+        const state = JSON.parse(serialized);
+        return {
+          ...state,
+          goals: (state.goals || []).map((goalData: any) => Goal.fromDTO(goalData)),
+          goalDirs: (state.goalDirs || []).map((dirData: any) => GoalDir.fromDTO(dirData)),
+          lastSyncTime: state.lastSyncTime ? new Date(state.lastSyncTime) : null,
+        };
+      },
     },
   },
 });

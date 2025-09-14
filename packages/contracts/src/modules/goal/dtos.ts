@@ -51,7 +51,7 @@ export interface KeyResultListResponse {
   limit?: number;
 }
 export interface CreateKeyResultRequest {
-  goalUuid: string;
+  goalUuid?: string; // 可选，在聚合根创建时会自动设置
   name: string;
   description?: string;
   startValue: number;
@@ -154,6 +154,8 @@ export interface GoalRecordListResponse {
  * keyResultUuid 通过 URL 路径参数传递，不在请求体中
  */
 export interface CreateGoalRecordRequest {
+  keyResultUuid?: string; // 可选，在聚合根创建时需要指定关联的 KeyResult
+  keyResultIndex?: number; // 在聚合根创建时，通过索引指定关联的 KeyResult
   value: number;
   note?: string;
   recordDate?: number; // timestamp, defaults to now
@@ -298,12 +300,48 @@ export interface CreateGoalRequest {
     category: string;
   };
   keyResults?: CreateKeyResultRequest[];
+  records?: CreateGoalRecordRequest[];
+  reviews?: CreateGoalReviewRequest[];
 }
 
 /**
- * 更新目标请求 DTO
+ * 更新目标请求 DTO - 支持聚合根式更新
  */
-export type UpdateGoalRequest = Partial<CreateGoalRequest>;
+export interface UpdateGoalRequest {
+  name?: string;
+  description?: string;
+  color?: string;
+  dirUuid?: string;
+  startTime?: number; // timestamp
+  endTime?: number; // timestamp
+  note?: string;
+  analysis?: {
+    motive?: string;
+    feasibility?: string;
+    importanceLevel?: ImportanceLevel;
+    urgencyLevel?: UrgencyLevel;
+  };
+  metadata?: {
+    tags?: string[];
+    category?: string;
+  };
+  // 子实体操作
+  keyResults?: Array<{
+    action: 'create' | 'update' | 'delete';
+    uuid?: string; // update/delete 时必须提供
+    data?: CreateKeyResultRequest | Partial<CreateKeyResultRequest>;
+  }>;
+  records?: Array<{
+    action: 'create' | 'update' | 'delete';
+    uuid?: string; // update/delete 时必须提供
+    data?: CreateGoalRecordRequest | Partial<CreateGoalRecordRequest>;
+  }>;
+  reviews?: Array<{
+    action: 'create' | 'update' | 'delete';
+    uuid?: string; // update/delete 时必须提供
+    data?: CreateGoalReviewRequest | Partial<CreateGoalReviewRequest>;
+  }>;
+}
 
 // ============ 目标目录 DTOs ============
 

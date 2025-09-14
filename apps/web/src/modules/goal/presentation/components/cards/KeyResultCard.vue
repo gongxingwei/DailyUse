@@ -1,6 +1,6 @@
 <template>
   <v-card class="key-result-card" :class="{ 'key-result-card--completed': keyResult.progress >= 100 }"
-    variant="outlined" elevation="0" hover @click="navigateToKeyResultInfo">
+    variant="outlined" elevation="0" hover @click="goToKeyResultInfo">
     <!-- 进度背景层 -->
     <div class="progress-background" :style="{
       background: `linear-gradient(90deg, ${goal?.color || '#1976D2'} 0%, ${goal?.color || '#1976D2'}88 100%)`,
@@ -46,7 +46,7 @@
 
         <!-- 添加记录按钮 -->
         <v-btn :color="goal?.color || 'primary'" icon="mdi-plus" size="small" variant="tonal" class="add-record-btn"
-          @click.stop="startAddGoalRecord(goal?.uuid, keyResult.uuid)">
+          @click.stop="goalRecordDialogRef?.openDialog(keyResult.goalUuid, keyResult.uuid)">
           <v-icon>mdi-plus</v-icon>
           <v-tooltip activator="parent" location="bottom">
             添加进度记录
@@ -60,62 +60,39 @@
       </p>
 
       <!-- 最近记录时间 -->
-      <div v-if="keyResult.lastUpdateTime" class="d-flex align-center mt-2">
+      <!-- <div v-if="keyResult.lastUpdateTime" class="d-flex align-center mt-2">
         <v-icon size="14" color="medium-emphasis" class="mr-1">mdi-clock-outline</v-icon>
         <span class="text-caption text-medium-emphasis">
           最近更新: {{ format(keyResult.lastUpdateTime, 'MM-DD HH:mm') }}
         </span>
-      </div>
+      </div> -->
     </v-card-text>
+    <GoalRecordDialog ref="goalRecordDialogRef" />
   </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref } from 'vue';
 import { format } from 'date-fns';
+import { KeyResult, Goal } from '@dailyuse/domain-client';
+// composables
+import { useGoal } from '../../composables/useGoal';
+// components
+import GoalRecordDialog from '../dialogs/GoalRecordDialog.vue';
 
-// TODO: 导入正确的类型定义
-// import type { KeyResultDTO, GoalDTO } from '@dailyuse/contracts';
-
-// 临时类型定义
-interface KeyResult {
-  uuid: string;
-  name: string;
-  description?: string;
-  currentValue: number;
-  targetValue: number;
-  progress: number;
-  weight: number;
-  lastUpdateTime?: Date | string;
-}
-
-interface Goal {
-  uuid: string;
-  color?: string;
-}
-
-interface Props {
+const props = defineProps<{
   keyResult: KeyResult;
   goal?: Goal;
-}
-
-const props = defineProps<Props>();
-
-const emit = defineEmits<{
-  (e: 'navigate-to-info'): void;
-  (e: 'add-record', goalUuid: string, keyResultUuid: string): void;
 }>();
 
 
-const navigateToKeyResultInfo = () => {
-  emit('navigate-to-info');
+// components
+const goalRecordDialogRef = ref<InstanceType<typeof GoalRecordDialog> | null>(null);
+
+const goToKeyResultInfo = () => {
+  console.log('好像没必要')
 };
 
-const startAddGoalRecord = (goalUuid?: string, keyResultUuid?: string) => {
-  if (goalUuid && keyResultUuid) {
-    emit('add-record', goalUuid, keyResultUuid);
-  }
-};
 </script>
 
 <style scoped>

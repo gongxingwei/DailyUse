@@ -154,15 +154,6 @@ export const appRoutes: RouteRecordRaw[] = [
             },
           },
           {
-            path: 'create',
-            name: 'goal-create',
-            component: () => import('@/modules/goal/presentation/views/GoalCreateView.vue'),
-            meta: {
-              title: '创建目标',
-              requiresAuth: true,
-            },
-          },
-          {
             path: ':id',
             name: 'goal-detail',
             component: () => import('@/modules/goal/presentation/views/GoalDetailView.vue'),
@@ -173,11 +164,21 @@ export const appRoutes: RouteRecordRaw[] = [
             props: true,
           },
           {
-            path: ':id/edit',
-            name: 'goal-edit',
-            component: () => import('@/modules/goal/presentation/views/GoalEditView.vue'),
+            path: ':goalUuid/review/create',
+            name: 'goal-review-create',
+            component: () => import('@/modules/goal/presentation/views/GoalReviewCreationView.vue'),
             meta: {
-              title: '编辑目标',
+              title: '创建目标复盘',
+              requiresAuth: true,
+            },
+            props: true,
+          },
+          {
+            path: ':goalUuid/review/:reviewUuid',
+            name: 'goal-review-detail',
+            component: () => import('@/modules/goal/presentation/views/GoalReviewDetailView.vue'),
+            meta: {
+              title: '目标复盘记录',
               requiresAuth: true,
             },
             props: true,

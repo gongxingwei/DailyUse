@@ -28,7 +28,7 @@
                     <v-list-item @click="gotoGoalReviewCreationView(goal?.uuid as string)">
                         <v-list-item-title>期中复盘</v-list-item-title>
                     </v-list-item>
-                    <v-list-item @click="gotoGoalReviewDetailView(goal?.uuid as string)">
+                    <v-list-item @click="openGoalReviewListCard()">
                         <v-list-item-title>复盘记录</v-list-item-title>
                     </v-list-item>
                 </v-list>
@@ -82,11 +82,12 @@
                             <!-- 进度圆环 -->
                             <v-col cols="12" md="4" class="d-flex justify-center align-center">
                                 <div class="progress-container">
-                                    <v-progress-circular :model-value="goal?.weightedProgress" :color="goalColor" size="120"
-                                        width="12" class="progress-circle">
+                                    <v-progress-circular :model-value="goal?.weightedProgress" :color="goalColor"
+                                        size="120" width="12" class="progress-circle">
                                         <div class="progress-text-container">
                                             <div class="progress-value">
-                                                <span class="text-h4 font-weight-bold">{{ goal?.weightedProgress }}</span>
+                                                <span class="text-h4 font-weight-bold">{{ goal?.weightedProgress
+                                                    }}</span>
                                                 <span class="text-h6 text-medium-emphasis">%</span>
                                             </div>
                                             <div class="text-caption text-medium-emphasis">目标进度</div>
@@ -192,7 +193,7 @@
                                     </v-row>
                                     <v-empty-state v-else icon="mdi-source-repository" title="暂无关联仓库"
                                         text="关联代码仓库来跟踪开发进度" /> -->
-                                
+
                                 </div>
                             </v-window-item>
                         </v-window>
@@ -208,13 +209,13 @@
         <ConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
             confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
             @confirm="confirmDialog.onConfirm" @cancel="confirmDialog.onCancel" />
-        <GoalReviewCard ref="goalReviewCardRef" :goal="(goal as Goal)" />
+        <GoalReviewListCard ref="goalReviewListCardRef" :goal="(goal as Goal)" />
     </v-container>
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type ComputedRef } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, ref, type ComputedRef, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 // store
 import { useGoalStore } from '../stores/goalStore';
 
@@ -225,36 +226,35 @@ import { Goal } from '@dailyuse/domain-client';
 
 // 组件
 import GoalDialog from '@/modules/goal/presentation/components/dialogs/GoalDialog.vue';
-import GoalReviewCard from '@/modules/goal/presentation/components/cards/GoalReviewCard.vue';
+import GoalReviewListCard from '@/modules/goal/presentation/components/cards/GoalReviewListCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import KeyResultCard from '@/modules/goal/presentation/components/cards/KeyResultCard.vue';
 // import RepoInfoCard from '@/modules/Repository/presentation/components/RepoInfoCard.vue';
 // utils
 import { format } from 'date-fns';
 const route = useRoute();
+const router = useRouter();
 const goalStore = useGoalStore();
 
 const { deleteGoal, getGoalAggregateView } = useGoal();
 
 // component refs
 const goalDialogRef = ref<InstanceType<typeof GoalDialog> | null>(null);
-const goalReviewCardRef = ref<InstanceType<typeof GoalReviewCard> | null>(null);
+const goalReviewListCardRef = ref<InstanceType<typeof GoalReviewListCard> | null>(null);
 
 const goal: ComputedRef<Goal | null> = computed(() => {
     const goalUuid = route.params.id as string;
-    console.log(goalStore.getAllGoals);
-    console.log('goalUuid from route:', goalUuid);
     if (!goalUuid) return null;
     return goalStore.getGoalByUuid(goalUuid);
 });
 
-console.log(goal.value);
+console.log('[goalDetailView]Current Goal:', goal.value);
 
 
 const remainingDays = computed(() => {
-  return goal.value!.endTime.getTime() - Date.now() > 0
-    ? Math.ceil((goal.value!.endTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
-    : 0;
+    return goal.value!.endTime.getTime() - Date.now() > 0
+        ? Math.ceil((goal.value!.endTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        : 0;
 });
 
 const keyResults = computed(() => {
@@ -336,11 +336,26 @@ const relativeRepos = computed(() => {
 
 
 const gotoGoalReviewCreationView = (goalUuid: string) => {
-    console.log('Go to goal review', goalUuid);
+    console.log('Go to goal review creation', goalUuid);
+    router.push({
+        name: 'goal-review-create',
+        params: { goalUuid }
+    });
 };
-const gotoGoalReviewDetailView = (goalReviewUuid: string) => {
-    console.log('Go to goal review detail', goalReviewUuid);
+
+const gotoGoalReviewDetailView = (goalUuid: string) => {
+    console.log('Go to goal review detail', goalUuid);
+    router.push({
+        name: 'goal-review-detail',
+        params: { goalUuid }
+    });
 };
+
+const openGoalReviewListCard = () => {
+    console.log('Opening goal review list card');
+    goalReviewListCardRef.value?.openDialog();
+};
+
 </script>
 
 <style scoped>

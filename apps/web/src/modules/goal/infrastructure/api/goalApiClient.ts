@@ -179,17 +179,20 @@ export class GoalApiClient {
   // ===== DDD聚合根控制：GoalRecord管理 =====
 
   /**
-   * 通过KeyResult创建目标记录
+   * 通过Goal聚合根创建目标记录
    */
   async createGoalRecord(
     goalUuid: string,
     keyResultUuid: string,
     request: GoalContracts.CreateGoalRecordRequest,
   ): Promise<GoalContracts.GoalRecordResponse> {
-    const data = await apiClient.post(
-      `${this.baseUrl}/${goalUuid}/key-results/${keyResultUuid}/records`,
-      request,
-    );
+    // 将keyResultUuid添加到请求体中，而不是URL路径
+    const requestWithKeyResult = {
+      ...request,
+      keyResultUuid,
+    };
+
+    const data = await apiClient.post(`${this.baseUrl}/${goalUuid}/records`, requestWithKeyResult);
     return data;
   }
 
@@ -205,10 +208,9 @@ export class GoalApiClient {
       dateRange?: { start?: string; end?: string };
     },
   ): Promise<GoalContracts.GoalRecordListResponse> {
-    const data = await apiClient.get(
-      `${this.baseUrl}/${goalUuid}/key-results/${keyResultUuid}/records`,
-      { params },
-    );
+    const data = await apiClient.get(`${this.baseUrl}/key-results/${keyResultUuid}/records`, {
+      params,
+    });
     return data;
   }
 

@@ -20,6 +20,32 @@ export class Goal extends GoalCore {
   declare records: GoalRecord[];
   declare reviews: GoalReview[];
 
+  // 变更跟踪系统
+  private _changeTracker = {
+    keyResults: {
+      created: [] as KeyResult[],
+      updated: [] as { original: KeyResult; current: KeyResult }[],
+      deleted: [] as string[], // 存储被删除的 UUID
+    },
+    records: {
+      created: [] as GoalRecord[],
+      updated: [] as { original: GoalRecord; current: GoalRecord }[],
+      deleted: [] as string[],
+    },
+    reviews: {
+      created: [] as GoalReview[],
+      updated: [] as { original: GoalReview; current: GoalReview }[],
+      deleted: [] as string[],
+    },
+  };
+
+  // 用于记录原始状态，在编辑模式下使用
+  private _originalState: {
+    keyResults: KeyResult[];
+    records: GoalRecord[];
+    reviews: GoalReview[];
+  } | null = null;
+
   constructor(params: {
     uuid?: string;
     name: string;
@@ -41,35 +67,154 @@ export class Goal extends GoalCore {
   }) {
     super(params);
 
-    // 使用实体的 fromDTO 方法创建实体对象
-    // 这里假设传入的已经是 DTO 格式，如果是接口格式需要转换
-    this.keyResults = (params.keyResults || []).map((dto) => {
-      // 如果是接口格式，需要转换时间戳
-      if (dto.lifecycle && dto.lifecycle.createdAt instanceof Date) {
-        const convertedDto: GoalContracts.KeyResultDTO = {
-          ...dto,
-          lifecycle: {
-            ...dto.lifecycle,
-            createdAt: dto.lifecycle.createdAt.getTime(),
-            updatedAt: dto.lifecycle.updatedAt.getTime(),
-          },
-        };
-        return KeyResult.fromDTO(convertedDto);
-      }
-      return KeyResult.fromDTO(dto);
-    });
+    this.keyResults =
+      params.keyResults?.map((kr) => (kr instanceof KeyResult ? kr : KeyResult.fromDTO(kr))) || [];
+    this.records =
+      params.records?.map((r) => (r instanceof GoalRecord ? r : GoalRecord.fromDTO(r))) || [];
+    this.reviews =
+      params.reviews?.map((rev) => (rev instanceof GoalReview ? rev : GoalReview.fromDTO(rev))) ||
+      [];
+  }
 
-    this.records = (params.records || []).map((dto) => {
-      // 如果是接口格式，需要转换时间戳
-      if (dto.createdAt instanceof Date) {
-        const convertedDto: GoalContracts.GoalRecordDTO = {
-          ...dto,
-          createdAt: dto.createdAt.getTime(),
-        };
-        return GoalRecord.fromDTO(convertedDto) as GoalRecord;
+  // ===== 变更跟踪系统 =====
+
+  /**
+   * 开始编辑模式 - 保存当前状态作为原始状态
+   */
+  startEditing(): void {
+    this._originalState = {
+      keyResults: this.keyResults.map((kr) => kr.clone()),
+      records: this.records.map((record) => record.clone()),
+      reviews: this.reviews.map((review) => review.clone()),
+    };
+    this._clearChangeTracker();
+  }
+
+  /**
+   * 清空变更跟踪器
+   */
+  private _clearChangeTracker(): void {
+    this._changeTracker = {
+      keyResults: { created: [], updated: [], deleted: [] },
+      records: { created: [], updated: [], deleted: [] },
+      reviews: { created: [], updated: [], deleted: [] },
+    };
+  }
+
+  /**
+   * 添加新的关键结果（用于变更跟踪）
+   */
+  addNewKeyResult(keyResult: KeyResult): void {
+    this.keyResults.push(keyResult);
+    this._changeTracker.keyResults.created.push(keyResult);
+  }
+
+  /**
+   * 更新关键结果（用于变更跟踪）
+   */
+  updateKeyResultWithTracking(uuid: string, updates: Partial<any>): void {
+    const keyResult = this.keyResults.find((kr) => kr.uuid === uuid);
+    if (!keyResult) return;
+
+    // 查找原始状态
+    const original = this._originalState?.keyResults.find((kr) => kr.uuid === uuid);
+    if (original) {
+      // 检查是否已经在更新列表中
+      const existingUpdate = this._changeTracker.keyResults.updated.find(
+        (u) => u.current.uuid === uuid,
+      );
+      if (!existingUpdate) {
+        this._changeTracker.keyResults.updated.push({
+          original: original.clone(),
+          current: keyResult,
+        });
       }
-      return GoalRecord.fromDTO(dto) as GoalRecord;
-    });
+    }
+
+    // 应用更新
+    Object.assign(keyResult, updates);
+  }
+
+  /**
+   * 删除关键结果（用于变更跟踪）
+   */
+  removeKeyResultWithTracking(uuid: string): void {
+    const index = this.keyResults.findIndex((kr) => kr.uuid === uuid);
+    if (index === -1) return;
+
+    const keyResult = this.keyResults[index];
+    this.keyResults.splice(index, 1);
+
+    // 如果这是新创建的，从创建列表中移除
+    const createdIndex = this._changeTracker.keyResults.created.findIndex((kr) => kr.uuid === uuid);
+    if (createdIndex !== -1) {
+      this._changeTracker.keyResults.created.splice(createdIndex, 1);
+    } else {
+      // 否则添加到删除列表
+      this._changeTracker.keyResults.deleted.push(uuid);
+    }
+
+    // 从更新列表中移除
+    const updatedIndex = this._changeTracker.keyResults.updated.findIndex(
+      (u) => u.current.uuid === uuid,
+    );
+    if (updatedIndex !== -1) {
+      this._changeTracker.keyResults.updated.splice(updatedIndex, 1);
+    }
+  }
+
+  /**
+   * 添加新的记录（用于变更跟踪）
+   */
+  addNewRecord(record: GoalRecord): void {
+    this.records.push(record);
+    this._changeTracker.records.created.push(record);
+  }
+
+  /**
+   * 删除记录（用于变更跟踪）
+   */
+  removeRecordWithTracking(uuid: string): void {
+    const index = this.records.findIndex((r) => r.uuid === uuid);
+    if (index === -1) return;
+
+    this.records.splice(index, 1);
+
+    // 如果这是新创建的，从创建列表中移除
+    const createdIndex = this._changeTracker.records.created.findIndex((r) => r.uuid === uuid);
+    if (createdIndex !== -1) {
+      this._changeTracker.records.created.splice(createdIndex, 1);
+    } else {
+      // 否则添加到删除列表
+      this._changeTracker.records.deleted.push(uuid);
+    }
+  }
+
+  /**
+   * 添加新的复盘（用于变更跟踪）
+   */
+  addNewReview(review: GoalReview): void {
+    this.reviews.push(review);
+    this._changeTracker.reviews.created.push(review);
+  }
+
+  /**
+   * 删除复盘（用于变更跟踪）
+   */
+  removeReviewWithTracking(uuid: string): void {
+    const index = this.reviews.findIndex((r) => r.uuid === uuid);
+    if (index === -1) return;
+
+    this.reviews.splice(index, 1);
+
+    // 如果这是新创建的，从创建列表中移除
+    const createdIndex = this._changeTracker.reviews.created.findIndex((r) => r.uuid === uuid);
+    if (createdIndex !== -1) {
+      this._changeTracker.reviews.created.splice(createdIndex, 1);
+    } else {
+      // 否则添加到删除列表
+      this._changeTracker.reviews.deleted.push(uuid);
+    }
   }
 
   // ===== 抽象方法实现 =====
@@ -1115,58 +1260,29 @@ export class Goal extends GoalCore {
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
       version: dto.version,
+      keyResults: dto.keyResults ? dto.keyResults.map((kr) => KeyResult.fromDTO(kr)) : [],
+      records: dto.records ? dto.records.map((r) => GoalRecord.fromDTO(r)) : [],
+      reviews: dto.reviews ? dto.reviews.map((rev) => GoalReview.fromDTO(rev)) : [],
     });
   }
 
   static fromResponse(response: GoalContracts.GoalResponse): Goal {
     const goal = Goal.fromDTO(response);
 
-    // // 设置关键结果
-    // goal.keyResults = response.keyResults.map((kr) => ({
-    //   uuid: kr.uuid,
-    //   goalUuid: kr.goalUuid,
-    //   accountUuid: kr.accountUuid,
-    //   name: kr.name,
-    //   description: kr.description,
-    //   startValue: kr.startValue,
-    //   targetValue: kr.targetValue,
-    //   currentValue: kr.currentValue,
-    //   unit: kr.unit,
-    //   weight: kr.weight,
-    //   calculationMethod: kr.calculationMethod,
-    //   createdAt: new Date(kr.createdAt),
-    //   updatedAt: new Date(kr.updatedAt),
-    //   status: kr.status,
-    // }));
+    // 设置关键结果（如果存在）
+    if (response.keyResults && response.keyResults.length > 0) {
+      goal.keyResults = response.keyResults.map((kr) => KeyResult.fromDTO(kr));
+    }
 
-    // // 设置记录
-    // goal.records = response.records.map((record) => ({
-    //   uuid: record.uuid,
-    //   accountUuid: record.accountUuid,
-    //   goalUuid: record.goalUuid,
-    //   keyResultUuid: record.keyResultUuid,
-    //   value: record.value,
-    //   note: record.note,
-    //   recordDate: new Date(record.recordDate),
-    //   createdAt: new Date(record.createdAt),
-    // }));
+    // 设置记录（如果存在）
+    if (response.records && response.records.length > 0) {
+      goal.records = response.records.map((record) => GoalRecord.fromDTO(record));
+    }
 
-    // // 设置复盘
-    // goal.reviews = response.reviews.map((review) => ({
-    //   uuid: review.uuid,
-    //   goalUuid: review.goalUuid,
-    //   title: review.title,
-    //   type: review.type,
-    //   reviewDate: new Date(review.reviewDate),
-    //   content: review.content,
-    //   snapshot: {
-    //     ...review.snapshot,
-    //     snapshotDate: new Date(review.snapshot.snapshotDate),
-    //   },
-    //   rating: review.rating,
-    //   createdAt: new Date(review.createdAt),
-    //   updatedAt: new Date(review.updatedAt),
-    // }));
+    // 设置复盘（如果存在）
+    if (response.reviews && response.reviews.length > 0) {
+      goal.reviews = response.reviews.map((review) => GoalReview.fromDTO(review));
+    }
 
     return goal;
   }
@@ -1187,6 +1303,20 @@ export class Goal extends GoalCore {
   }
 
   /**
+   * 重写父类的 toDTO 方法，包含子实体数据
+   * 确保客户端的 clone 操作能保持完整的聚合根数据
+   */
+  toDTO(context?: { accountUuid?: string }): GoalContracts.GoalDTO {
+    const baseDTO = super.toDTO(context);
+    return {
+      ...baseDTO,
+      keyResults: this.keyResults.map((kr) => kr.toDTO()),
+      records: this.records.map((r) => r.toDTO()),
+      reviews: this.reviews.map((rev) => rev.toDTO()),
+    };
+  }
+
+  /**
    * 克隆当前对象（深拷贝）
    * 用于表单编辑时避免直接修改原数据
    */
@@ -1199,6 +1329,157 @@ export class Goal extends GoalCore {
    */
   getCacheKey(): string {
     return `goal_${this.uuid}`;
+  }
+
+  /**
+   * 转换为更新请求格式
+   * 使用变更跟踪系统生成具体的创建、更新、删除操作
+   */
+  toUpdateRequest(): GoalContracts.UpdateGoalRequest {
+    const request: any = {
+      // 基本字段
+      name: this._name,
+      description: this._description,
+      color: this._color,
+      dirUuid: this._dirUuid,
+      startTime: this._startTime.getTime(),
+      endTime: this._endTime.getTime(),
+      note: this._note,
+      analysis: this._analysis,
+      metadata: this._metadata,
+    };
+
+    // 构建关键结果操作数组
+    const keyResultOperations: any[] = [];
+
+    // 1. 创建操作
+    for (const kr of this._changeTracker.keyResults.created) {
+      keyResultOperations.push({
+        action: 'create',
+        data: {
+          goalUuid: this.uuid,
+          name: kr.name,
+          description: kr.description,
+          startValue: kr.startValue,
+          targetValue: kr.targetValue,
+          currentValue: kr.currentValue,
+          unit: kr.unit,
+          weight: kr.weight,
+          calculationMethod: kr.calculationMethod,
+        },
+      });
+    }
+
+    // 2. 更新操作
+    for (const update of this._changeTracker.keyResults.updated) {
+      keyResultOperations.push({
+        action: 'update',
+        uuid: update.current.uuid,
+        data: {
+          name: update.current.name,
+          description: update.current.description,
+          currentValue: update.current.currentValue,
+          weight: update.current.weight,
+        },
+      });
+    }
+
+    // 3. 删除操作
+    for (const uuid of this._changeTracker.keyResults.deleted) {
+      keyResultOperations.push({
+        action: 'delete',
+        uuid: uuid,
+      });
+    }
+
+    if (keyResultOperations.length > 0) {
+      request.keyResults = keyResultOperations;
+    }
+
+    // 构建记录操作数组
+    const recordOperations: any[] = [];
+
+    // 1. 创建操作
+    for (const record of this._changeTracker.records.created) {
+      recordOperations.push({
+        action: 'create',
+        data: {
+          keyResultUuid: record.keyResultUuid,
+          value: record.value,
+          note: record.note,
+        },
+      });
+    }
+
+    // 2. 更新操作
+    for (const update of this._changeTracker.records.updated) {
+      recordOperations.push({
+        action: 'update',
+        uuid: update.current.uuid,
+        data: {
+          value: update.current.value,
+          note: update.current.note,
+        },
+      });
+    }
+
+    // 3. 删除操作
+    for (const uuid of this._changeTracker.records.deleted) {
+      recordOperations.push({
+        action: 'delete',
+        uuid: uuid,
+      });
+    }
+
+    if (recordOperations.length > 0) {
+      request.records = recordOperations;
+    }
+
+    // 构建复盘操作数组
+    const reviewOperations: any[] = [];
+
+    // 1. 创建操作
+    for (const review of this._changeTracker.reviews.created) {
+      reviewOperations.push({
+        action: 'create',
+        data: {
+          title: review.title,
+          type: review.type,
+          reviewDate: review.reviewDate.getTime(),
+          content: review.content,
+          rating: review.rating,
+        },
+      });
+    }
+
+    // 2. 更新操作
+    for (const update of this._changeTracker.reviews.updated) {
+      reviewOperations.push({
+        action: 'update',
+        uuid: update.current.uuid,
+        data: {
+          title: update.current.title,
+          type: update.current.type,
+          reviewDate: update.current.reviewDate.getTime(),
+          content: update.current.content,
+          rating: update.current.rating,
+        },
+      });
+    }
+
+    // 3. 删除操作
+    for (const uuid of this._changeTracker.reviews.deleted) {
+      reviewOperations.push({
+        action: 'delete',
+        uuid: uuid,
+      });
+    }
+
+    if (reviewOperations.length > 0) {
+      request.reviews = reviewOperations;
+    }
+
+    return request as GoalContracts.UpdateGoalRequest;
   }
 
   /**

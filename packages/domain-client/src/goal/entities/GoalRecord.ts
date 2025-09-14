@@ -38,7 +38,7 @@ export class GoalRecord extends GoalRecordCore {
     };
   }
 
-  static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecordCore {
+  static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,
