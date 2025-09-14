@@ -25,6 +25,96 @@ export class KeyResult extends KeyResultCore {
     super(params);
   }
 
+  // ===== 服务端特有的进度计算方法 =====
+
+  /**
+   * 自定义进度计算逻辑（服务端实现）
+   * 重写父类方法以实现服务端特定的业务逻辑
+   */
+  protected customProgressCalculation(): number {
+    // 服务端可以访问更多数据来进行复杂的进度计算
+    const baseProgress = this.progress;
+
+    // 服务端特定逻辑：考虑历史数据、趋势分析等
+    const trendFactor = this.calculateTrendFactor();
+    const consistencyFactor = this.calculateConsistencyFactor();
+
+    // 综合计算：基础进度 + 趋势调整 + 一致性调整
+    const adjustedProgress = baseProgress * trendFactor * consistencyFactor;
+
+    return Math.max(0, Math.min(100, adjustedProgress));
+  }
+
+  /**
+   * 计算趋势因子（服务端特有）
+   * 基于进度变化趋势调整
+   */
+  private calculateTrendFactor(): number {
+    // 默认实现：基于创建时间和更新时间的变化率
+    const now = Date.now();
+    const created = this._lifecycle.createdAt.getTime();
+    const updated = this._lifecycle.updatedAt.getTime();
+
+    const totalTime = now - created;
+    const activeTime = updated - created;
+
+    if (totalTime === 0) return 1.0;
+
+    const activityRatio = activeTime / totalTime;
+
+    // 如果最近有活动，给予轻微加分
+    return Math.min(1.1, 0.9 + activityRatio * 0.2);
+  }
+
+  /**
+   * 计算一致性因子（服务端特有）
+   * 基于进度更新的一致性
+   */
+  private calculateConsistencyFactor(): number {
+    // 简化实现：基于当前值与目标值的合理性
+    if (this._targetValue === 0) return 1.0;
+
+    const progressRatio = this._currentValue / this._targetValue;
+
+    // 如果进度过快或过慢，给予调整
+    if (progressRatio > 1.2) return 0.95; // 进度过快，轻微调低
+    if (progressRatio < 0.1) return 0.98; // 进度过慢，轻微调低
+
+    return 1.0; // 正常情况
+  }
+
+  /**
+   * 获取详细的进度分析（服务端专用）
+   */
+  getProgressAnalysis(): {
+    baseProgress: number;
+    calculatedProgress: number;
+    trendFactor: number;
+    consistencyFactor: number;
+    recommendation: string;
+  } {
+    const baseProgress = this.progress;
+    const trendFactor = this.calculateTrendFactor();
+    const consistencyFactor = this.calculateConsistencyFactor();
+
+    let recommendation = '进度正常';
+    if (baseProgress < 30) {
+      recommendation = '建议加快进度';
+    } else if (baseProgress > 90) {
+      recommendation = '即将完成，保持节奏';
+    } else if (trendFactor < 0.95) {
+      recommendation = '需要提高活跃度';
+    }
+
+    return {
+      baseProgress,
+      calculatedProgress: this.progress, // 使用基础的progress，避免循环引用
+      trendFactor,
+      consistencyFactor,
+      recommendation,
+    };
+  }
+
   // ===== 业务方法 =====
 
   /**
@@ -181,6 +271,7 @@ export class KeyResult extends KeyResultCore {
 
   toResponse(): GoalContracts.KeyResultResponse {
     const dto = this.toDTO();
+
     return {
       ...dto,
       progress: this.progress,

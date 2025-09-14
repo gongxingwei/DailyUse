@@ -22,7 +22,7 @@
               mdi-clock-outline
             </v-icon>
             <div>
-              {{ format(record.lifecycle.createdAt, 'yyyy/MM/dd HH:mm') }}
+              {{ format(record.createdAt, 'yyyy/MM/dd HH:mm') }}
             </div>
           </div>
         </v-col>
@@ -44,7 +44,7 @@
 </template>
 
 <script setup lang="ts">
-import { GoalRecord } from '@renderer/modules/Goal/domain/entities/record';
+import { GoalRecord } from '@dailyuse/domain-client';
 import { format } from 'date-fns';
 
 defineProps<{

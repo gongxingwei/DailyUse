@@ -392,6 +392,16 @@ const openDialog = (goal?: Goal) => {
   visible.value = true;
 };
 
+watch(visible, (newVal) => {
+  if (!newVal) {
+    // 重置表单
+    propGoal.value = null;
+    goalModel.value = Goal.forCreate();
+    activeTab.value = 0;
+    loading.value = false;
+  }
+});
+
 defineExpose({
   openDialog,
 });

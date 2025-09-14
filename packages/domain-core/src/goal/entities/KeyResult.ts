@@ -119,15 +119,94 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   }
 
   // ===== 计算属性 =====
+
+  /**
+   * 基础进度计算（百分比）
+   * 根据起始值、目标值、当前值计算进度百分比
+   */
   get progress(): number {
-    if (this._targetValue === 0) return 0;
-    const progress =
+    if (this._targetValue === this._startValue) return 0;
+    const rawProgress =
       (this._currentValue - this._startValue) / (this._targetValue - this._startValue);
-    return Math.max(0, Math.min(100, progress * 100));
+    return Math.max(0, Math.min(100, rawProgress * 100));
+  }
+
+  /**
+   * 根据计算方法计算的进度（用于不同业务场景）
+   * sum: 累加进度（默认）
+   * average: 平均进度
+   * max: 最大值进度
+   * min: 最小值进度
+   * custom: 自定义计算
+   */
+  get calculatedProgress(): number {
+    switch (this._calculationMethod) {
+      case 'sum':
+        return this.progress;
+
+      case 'average':
+        // 平均值模式：考虑时间权重
+        const totalDays = Math.max(
+          1,
+          Math.ceil((Date.now() - this._lifecycle.createdAt.getTime()) / (1000 * 60 * 60 * 24)),
+        );
+        const expectedProgress = (totalDays / 30) * 100; // 假设30天为一个周期
+        return Math.min(100, (this.progress + expectedProgress) / 2);
+
+      case 'max':
+        // 最大值模式：取当前进度和历史最高进度的较大值
+        return Math.max(this.progress, this.percentageToTarget);
+
+      case 'min':
+        // 最小值模式：更保守的进度计算
+        return Math.min(this.progress, this.percentageToTarget * 0.8);
+
+      case 'custom':
+        // 自定义模式：可以根据具体业务需求调整
+        return this.customProgressCalculation();
+
+      default:
+        return this.progress;
+    }
+  }
+
+  /**
+   * 加权进度（考虑权重的进度）
+   * 用于Goal聚合计算总体进度
+   */
+  get weightedProgress(): number {
+    return this.calculatedProgress * (this._weight / 100);
+  }
+
+  /**
+   * 自定义进度计算逻辑
+   * 可以在子类中重写以实现特定的业务逻辑
+   */
+  protected customProgressCalculation(): number {
+    // 默认实现：结合时间因素的进度计算
+    const baseProgress = this.progress;
+    const timeProgress = this.getTimeBasedProgress();
+
+    // 时间权重：如果超时，进度会被调低
+    const timeFactor = timeProgress > 100 ? 0.8 : 1.0;
+
+    return Math.max(0, Math.min(100, baseProgress * timeFactor));
+  }
+
+  /**
+   * 基于时间的进度计算
+   */
+  protected getTimeBasedProgress(): number {
+    const now = Date.now();
+    const created = this._lifecycle.createdAt.getTime();
+    const totalTime = 30 * 24 * 60 * 60 * 1000; // 假设30天为完成周期
+
+    const elapsedTime = now - created;
+    return Math.min(100, (elapsedTime / totalTime) * 100);
   }
 
   get isCompleted(): boolean {
-    return this._currentValue >= this._targetValue;
+    return this._currentValue >= this._targetValue || this._lifecycle.status === 'completed';
   }
 
   get remaining(): number {
@@ -137,6 +216,38 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   get percentageToTarget(): number {
     if (this._targetValue === 0) return 0;
     return Math.min(100, (this._currentValue / this._targetValue) * 100);
+  }
+
+  /**
+   * 是否超额完成
+   */
+  get isOverAchieved(): boolean {
+    return this._currentValue > this._targetValue;
+  }
+
+  /**
+   * 超额完成的百分比
+   */
+  get overAchievementPercentage(): number {
+    if (!this.isOverAchieved) return 0;
+    return ((this._currentValue - this._targetValue) / this._targetValue) * 100;
+  }
+
+  /**
+   * 进度状态分类
+   */
+  get progressStatus():
+    | 'not-started'
+    | 'in-progress'
+    | 'nearly-completed'
+    | 'completed'
+    | 'over-achieved' {
+    const progress = this.calculatedProgress;
+
+    if (progress === 0) return 'not-started';
+    if (progress >= 100) return this.isOverAchieved ? 'over-achieved' : 'completed';
+    if (progress >= 80) return 'nearly-completed';
+    return 'in-progress';
   }
 
   // ===== 验证方法 =====

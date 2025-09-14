@@ -194,6 +194,91 @@ export class Goal extends GoalCore {
   // ===== 客户端特有计算属性 =====
 
   /**
+   * 获取进度颜色（UI相关）
+   */
+  get progressColor(): string {
+    const progress = this.weightedProgress; // 使用继承的属性
+    if (progress >= 100) return 'success';
+    if (progress >= 80) return 'warning';
+    if (progress >= 60) return 'info';
+    if (progress >= 40) return 'primary';
+    return 'error';
+  }
+
+  /**
+   * 获取进度图标（UI相关）
+   */
+  get progressIcon(): string {
+    const progress = this.weightedProgress; // 使用继承的属性
+    if (progress === 0) return 'mdi-play-circle-outline';
+    if (progress >= 100) return 'mdi-check-circle';
+    if (progress >= 80) return 'mdi-check-circle-outline';
+    return 'mdi-progress-clock';
+  }
+
+  /**
+   * 获取健康度颜色（UI相关）
+   */
+  get healthColor(): string {
+    // 简化的健康度计算
+    const progress = this.weightedProgress;
+    const timeProgress = this.getTimeProgress();
+    const health = (progress + Math.min(100, 100 - Math.abs(progress - timeProgress))) / 2;
+
+    if (health >= 80) return 'success';
+    if (health >= 60) return 'warning';
+    if (health >= 40) return 'info';
+    return 'error';
+  }
+
+  /**
+   * 获取健康度描述（UI相关）
+   */
+  get healthDescription(): string {
+    const progress = this.weightedProgress;
+    const timeProgress = this.getTimeProgress();
+    const health = (progress + Math.min(100, 100 - Math.abs(progress - timeProgress))) / 2;
+
+    if (health >= 90) return '优秀';
+    if (health >= 80) return '良好';
+    if (health >= 60) return '一般';
+    if (health >= 40) return '需要关注';
+    return '需要改进';
+  }
+
+  /**
+   * 获取时间进度（客户端实现）
+   */
+  private getTimeProgress(): number {
+    const now = Date.now();
+    const start = this._startTime.getTime();
+    const end = this._endTime.getTime();
+
+    if (now <= start) return 0;
+    if (now >= end) return 100;
+
+    return ((now - start) / (end - start)) * 100;
+  }
+
+  /**
+   * 获取关键结果进度分布描述（UI相关）
+   */
+  get progressDistributionDescription(): string {
+    if (this.keyResults.length === 0) return '暂无关键结果';
+
+    const progresses = this.keyResults.map((kr) => kr.progress);
+    const mean = progresses.reduce((sum, p) => sum + p, 0) / progresses.length;
+    const variance =
+      progresses.reduce((sum, p) => sum + Math.pow(p - mean, 2), 0) / progresses.length;
+    const standardDeviation = Math.sqrt(variance);
+
+    if (standardDeviation < 10) return '进度分布均匀';
+    if (standardDeviation < 20) return '进度分布较均匀';
+    if (standardDeviation < 30) return '进度分布不均匀';
+    return '进度差异较大';
+  }
+
+  /**
    * 获取显示状态文本
    */
   get statusText(): string {
@@ -224,6 +309,72 @@ export class Goal extends GoalCore {
    */
   get progressText(): string {
     return `${Math.round(this.overallProgress)}%`;
+  }
+
+  /**
+   * 获取今日进度增量文本
+   */
+  get todayProgressText(): string {
+    const progress = this.getTodayProgress() || 0;
+    if (progress === 0) return '今日无进展';
+    return progress > 0 ? `今日 +${Math.round(progress)}%` : `今日 ${Math.round(progress)}%`;
+  }
+
+  /**
+   * 今日是否有进展
+   */
+  get hasTodayProgress(): boolean {
+    return (this.getTodayProgress() || 0) > 0;
+  }
+
+  /**
+   * 今日进度等级
+   */
+  get todayProgressLevel(): 'none' | 'low' | 'medium' | 'high' | 'excellent' {
+    const progress = this.getTodayProgress() || 0;
+    if (progress === 0) return 'none';
+    if (progress < 5) return 'low';
+    if (progress < 15) return 'medium';
+    if (progress < 30) return 'high';
+    return 'excellent';
+  }
+
+  /**
+   * 获取今日进度 - 公开方法
+   * 暂时使用类型断言直到类型系统问题解决
+   */
+  public getTodayProgress(): number {
+    return (this as any).todayProgress || 0;
+  }
+
+  /**
+   * 今日进度颜色
+   */
+  get todayProgressColor(): string {
+    const level = this.todayProgressLevel;
+    const colorMap = {
+      none: '#9E9E9E',
+      low: '#FF9800',
+      medium: '#2196F3',
+      high: '#4CAF50',
+      excellent: '#8BC34A',
+    };
+    return colorMap[level];
+  }
+
+  /**
+   * 今日进度图标
+   */
+  get todayProgressIcon(): string {
+    const level = this.todayProgressLevel;
+    const iconMap = {
+      none: 'mdi-minus-circle-outline',
+      low: 'mdi-trending-up',
+      medium: 'mdi-arrow-up-circle',
+      high: 'mdi-trending-up-circle',
+      excellent: 'mdi-rocket-launch',
+    };
+    return iconMap[level];
   }
 
   /**

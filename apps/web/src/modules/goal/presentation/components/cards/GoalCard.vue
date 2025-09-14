@@ -1,43 +1,23 @@
 <template>
-  <v-card
-    class="goal-card mb-4"
-    elevation="2"
-    :style="{ borderLeft: `4px solid ${goal.color}` }"
-  >
+  <v-card class="goal-card mb-4" elevation="2" :style="{ borderLeft: `4px solid ${goal.color}` }">
     <v-card-text class="pa-6">
       <!-- 目标标题和状态 -->
       <div class="d-flex align-center justify-space-between mb-4">
         <div class="d-flex align-center">
-          <v-avatar
-            :color="goal.color"
-            size="40"
-            class="mr-3"
-            variant="tonal"
-          >
+          <v-avatar :color="goal.color" size="40" class="mr-3" variant="tonal">
             <v-icon color="white">mdi-target</v-icon>
           </v-avatar>
           <div>
             <h3 class="text-h6 font-weight-bold mb-1">{{ goal.name }}</h3>
-            <v-chip
-              :color="getStatusColor()"
-              size="small"
-              variant="tonal"
-              class="font-weight-medium"
-            >
+            <v-chip :color="getStatusColor()" size="small" variant="tonal" class="font-weight-medium">
               <v-icon start size="12">{{ getStatusIcon() }}</v-icon>
               {{ getStatusText() }}
             </v-chip>
           </div>
         </div>
-        
+
         <!-- 进度圆环 -->
-        <v-progress-circular
-          :model-value="goalProgress"
-          :color="goal.color"
-          size="48"
-          width="6"
-          class="progress-ring"
-        >
+        <v-progress-circular :model-value="goalProgress" :color="goal.color" size="48" width="6" class="progress-ring">
           <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </v-progress-circular>
       </div>
@@ -54,12 +34,7 @@
           {{ format(goal.startTime, 'yyyy-MM-dd') }} - {{ format(goal.endTime, 'yyyy-MM-dd') }}
         </span>
         <v-spacer />
-        <v-chip
-          :color="getRemainingDaysColor()"
-          size="small"
-          variant="outlined"
-          class="font-weight-medium"
-        >
+        <v-chip :color="getRemainingDaysColor()" size="small" variant="outlined" class="font-weight-medium">
           <v-icon start size="12">mdi-clock-outline</v-icon>
           {{ getRemainingDaysText() }}
         </v-chip>
@@ -71,13 +46,7 @@
           <span class="text-caption text-medium-emphasis">目标进度</span>
           <span class="text-caption font-weight-bold">{{ Math.round(goalProgress) }}%</span>
         </div>
-        <v-progress-linear
-          :model-value="goalProgress"
-          :color="goal.color"
-          height="8"
-          rounded
-          class="progress-bar"
-        />
+        <v-progress-linear :model-value="goalProgress" :color="goal.color" height="8" rounded class="progress-bar" />
       </div>
 
       <!-- 关键结果数量 -->
@@ -94,48 +63,27 @@
     <!-- 卡片操作 -->
     <v-card-actions class="goal-actions">
       <v-spacer></v-spacer>
-      
+
       <!-- 复盘按钮 -->
-      <v-btn
-        v-if="isGoalCompleted || isGoalArchived"
-        variant="text"
-        size="small"
-        color="info"
-        @click="$emit('review-goal', goal.uuid)"
-      >
+      <v-btn v-if="isGoalCompleted || isGoalArchived" variant="text" size="small" color="info" @click="reviewGoal">
         <v-icon left size="16">mdi-clipboard-text</v-icon>
         复盘
       </v-btn>
 
       <!-- 查看详情 -->
-      <v-btn
-        variant="text"
-        size="small"
-        color="info"
-        @click="handleViewGoal"
-      >
+      <v-btn variant="text" size="small" color="info" @click="goToGoalDetailView">
         <v-icon left size="16">mdi-eye</v-icon>
         查看详情
       </v-btn>
 
       <!-- 编辑按钮 -->
-      <v-btn
-        variant="text"
-        size="small"
-        color="primary"
-        @click="$emit('edit-goal', goal)"
-      >
+      <v-btn variant="text" size="small" color="primary" @click="editGoal">
         <v-icon left size="16">mdi-pencil</v-icon>
         编辑
       </v-btn>
-      
+
       <!-- 删除按钮 -->
-      <v-btn
-        variant="text"
-        size="small"
-        color="error"
-        @click="$emit('start-delete-goal', goal.uuid)"
-      >
+      <v-btn variant="text" size="small" color="error" @click="deleteGoal">
         <v-icon left size="16">mdi-delete</v-icon>
         删除
       </v-btn>
@@ -144,30 +92,89 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, defineExpose } from 'vue'
 import { Goal, KeyResult } from '@dailyuse/domain-client'
 import { format } from 'date-fns'
 import { useRouter } from 'vue-router';
+import { useGoal } from '../../composables/useGoal';
 
 const router = useRouter();
+const goalComposable = useGoal();
+
 const props = defineProps<{
   goal: Goal
 }>()
 
-// Emits
-interface Emits {
-  (e: 'edit-goal', goal: Goal): void;
-  (e: 'start-delete-goal', goalUuid: string): void;
-  (e: 'add-key-result', goalUuid: string): void;
-  (e: 'edit-key-result', goalUuid: string, keyResult: KeyResult): void;
-  (e: 'review-goal', goalUuid: string): void;
-}
+// 内部状态控制
+const isCardOpen = ref(false);
 
-defineEmits<Emits>();
+// ===== 内部业务逻辑方法 =====
+
+/**
+ * 编辑目标
+ */
+const editGoal = async () => {
+  try {
+    goalComposable.openEditDialog(props.goal);
+  } catch (error) {
+    console.error('Failed to open edit dialog:', error);
+  }
+};
+
+/**
+ * 删除目标
+ */
+const deleteGoal = async () => {
+  try {
+    if (confirm(`确定要删除目标 "${props.goal.name}" 吗？此操作不可撤销。`)) {
+      await goalComposable.deleteGoal(props.goal.uuid);
+    }
+  } catch (error) {
+    console.error('Failed to delete goal:', error);
+  }
+};
+
+/**
+ * 创建复盘
+ */
+const reviewGoal = async () => {
+  try {
+    // 导航到复盘页面或打开复盘对话框
+    router.push({
+      name: 'goal-review',
+      params: { goalUuid: props.goal.uuid }
+    });
+  } catch (error) {
+    console.error('Failed to open goal review:', error);
+  }
+};
+
+/**
+ * 打开卡片详情 - 可供外部调用的方法
+ */
+const openCard = () => {
+  isCardOpen.value = true;
+  goToGoalDetailView();
+};
+
+/**
+ * 关闭卡片
+ */
+const closeCard = () => {
+  isCardOpen.value = false;
+};
+
+// 暴露方法给父组件
+defineExpose({
+  openCard,
+  closeCard,
+});
+
+// ===== 计算属性 =====
 
 // 使用 Goal 对象的方法获取属性
 const goalProgress = computed(() => {
-  return props.goal.progress;
+  return props.goal.weightedProgress;
 });
 
 const isGoalArchived = computed(() => {
@@ -179,18 +186,24 @@ const isGoalCompleted = computed(() => {
 });
 
 const remainingDays = computed(() => {
-  return props.goal.remainingDays;
+  return props.goal.endTime.getTime() - Date.now() > 0
+    ? Math.ceil((props.goal.endTime.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0;
 });
 
 // 关键结果完成数量
 const completedKeyResultsCount = computed(() => {
   if (!props.goal.keyResults) return 0;
-  return props.goal.keyResults.filter(kr => kr.progress >= 100).length;
+  return props.goal.keyResults.filter((kr) => kr.progress >= 100).length;
 });
 
-const handleViewGoal = () => {
-  router.push({ name: 'goal-info', params: { goalUuid: props.goal.uuid } });
+// ===== 视图导航方法 =====
+
+const goToGoalDetailView = () => {
+  router.push({ name: 'goal-detail', params: { id: props.goal.uuid } });
 };
+
+// ===== 状态显示方法 =====
 
 const getStatusColor = () => {
   if (isGoalCompleted.value) return 'success';

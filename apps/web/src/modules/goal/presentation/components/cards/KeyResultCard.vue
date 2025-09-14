@@ -63,7 +63,7 @@
       <div v-if="keyResult.lastUpdateTime" class="d-flex align-center mt-2">
         <v-icon size="14" color="medium-emphasis" class="mr-1">mdi-clock-outline</v-icon>
         <span class="text-caption text-medium-emphasis">
-          最近更新: {{ formatDate(keyResult.lastUpdateTime) }}
+          最近更新: {{ format(keyResult.lastUpdateTime, 'MM-DD HH:mm') }}
         </span>
       </div>
     </v-card-text>
@@ -72,7 +72,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { formatDateWithTemplate } from '../../../../shared/utils/dateUtils';
+import { format } from 'date-fns';
+
 // TODO: 导入正确的类型定义
 // import type { KeyResultDTO, GoalDTO } from '@dailyuse/contracts';
 
@@ -105,9 +106,6 @@ const emit = defineEmits<{
   (e: 'add-record', goalUuid: string, keyResultUuid: string): void;
 }>();
 
-const formatDate = (date: Date | string) => {
-  return formatDateWithTemplate(date, 'MM-DD HH:mm');
-};
 
 const navigateToKeyResultInfo = () => {
   emit('navigate-to-info');

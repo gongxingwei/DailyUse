@@ -363,7 +363,39 @@ export type UpdateGoalDirRequest = Partial<CreateGoalDirRequest>;
  * 目标响应 DTO
  */
 export interface GoalResponse extends GoalDTO {
-  xxxx?: string; // 预留字段
+  // 计算属性 - 进度相关
+  overallProgress: number; // 整体进度百分比
+  weightedProgress: number; // 加权进度百分比
+  calculatedProgress: number; // 计算进度百分比
+  todayProgress: number; // 今日进度增量百分比
+
+  // 计算属性 - 关键结果统计
+  completedKeyResults: number; // 已完成的关键结果数量
+  totalKeyResults: number; // 关键结果总数
+  keyResultCompletionRate: number; // 关键结果完成率
+
+  // 计算属性 - 状态分析
+  progressStatus:
+    | 'not-started'
+    | 'in-progress'
+    | 'nearly-completed'
+    | 'completed'
+    | 'over-achieved';
+  healthScore: number; // 健康度评分 (0-100)
+
+  // 计算属性 - 时间相关
+  daysRemaining: number; // 剩余天数
+  isOverdue: boolean; // 是否过期
+
+  // 今日进度相关的计算属性
+  hasTodayProgress: boolean; // 是否有今日进展
+  todayProgressLevel: 'none' | 'low' | 'medium' | 'high' | 'excellent'; // 今日进度等级
+  todayRecordsStats: {
+    totalRecords: number; // 今日记录总数
+    keyResultsWithRecords: number; // 有记录的关键结果数
+    averageRecordValue: number; // 平均记录值
+    totalRecordValue: number; // 总记录值
+  };
 }
 
 /**

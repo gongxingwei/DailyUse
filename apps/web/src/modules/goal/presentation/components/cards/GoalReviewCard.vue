@@ -1,14 +1,7 @@
 <template>
   <!-- 只在 goal 存在时渲染对话框，防止 props 校验警告 -->
-  <v-dialog
-    v-if="goal"
-    v-model="$props.visible"
-    max-width="900"
-    max-height="90vh"
-    persistent
-    scrollable
-    class="goal-review-dialog"
-  >
+  <v-dialog v-if="goal" v-model="isVisible" max-width="900" max-height="90vh" persistent scrollable
+    class="goal-review-dialog">
     <v-card class="review-card">
       <!-- 对话框头部 -->
       <v-card-title class="review-header pa-6">
@@ -28,24 +21,33 @@
       <v-divider />
       <!-- 复盘列表内容 -->
       <v-card-text class="review-content pa-6">
+        <!-- 加载状态 -->
+        <v-progress-linear v-if="isLoading" indeterminate color="primary" class="mb-4" />
+
         <!-- 空状态 -->
-        <v-empty-state
-          v-if="!goal.reviews?.length"
-          icon="mdi-book-edit-outline"
-          title="暂无复盘记录"
-          text="开始记录您的目标复盘，追踪成长轨迹"
-          class="my-8"
-        />
+        <v-empty-state v-if="!hasReviews && !isLoading" icon="mdi-book-edit-outline" title="暂无复盘记录"
+          text="开始记录您的目标复盘，追踪成长轨迹" class="my-8">
+          <template #actions>
+            <v-btn color="primary" variant="elevated" prepend-icon="mdi-plus" @click="createNewReview">
+              创建复盘
+            </v-btn>
+          </template>
+        </v-empty-state>
+
         <!-- 复盘记录列表 -->
-        <div v-else class="review-list">
-          <v-card
-            v-for="review in goal.reviews"
-            :key="review.uuid"
-            class="review-item mb-4"
-            variant="outlined"
-            elevation="0"
-            :hover="true"
-          >
+        <div v-else-if="hasReviews" class="review-list">
+          <!-- 顶部操作栏 -->
+          <div class="d-flex justify-space-between align-center mb-4">
+            <div class="text-h6 font-weight-medium">
+              复盘记录 ({{ goalReviews.length }})
+            </div>
+            <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-plus" @click="createNewReview">
+              新建复盘
+            </v-btn>
+          </div>
+
+          <v-card v-for="review in goalReviews" :key="review.uuid" class="review-item mb-4" variant="outlined"
+            elevation="0" :hover="true">
             <v-card-text class="pa-4">
               <v-row align="center">
                 <!-- 左侧信息 -->
@@ -80,23 +82,12 @@
                 <!-- 右侧操作按钮 -->
                 <v-col cols="12" md="4" class="d-flex justify-end align-center">
                   <div class="action-buttons">
-                    <v-btn
-                      color="primary"
-                      variant="outlined"
-                      size="small"
-                      prepend-icon="mdi-eye"
-                      class="mr-2"
-                      @click="handleView(review.uuid)"
-                    >
+                    <v-btn color="primary" variant="outlined" size="small" prepend-icon="mdi-eye" class="mr-2"
+                      @click="handleView(review.uuid)">
                       查看
                     </v-btn>
-                    <v-btn
-                      color="error"
-                      variant="text"
-                      size="small"
-                      icon="mdi-delete"
-                      @click="handleDelete(review.uuid)"
-                    >
+                    <v-btn color="error" variant="text" size="small" icon="mdi-delete"
+                      @click="handleDelete(review.uuid)">
                       <v-icon>mdi-delete</v-icon>
                       <v-tooltip activator="parent" location="bottom">
                         删除记录
@@ -114,22 +105,136 @@
 </template>
 
 <script setup lang="ts">
-import { GoalReview } from '@renderer/modules/Goal/domain/entities/goalReview';
-import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal';
+import { ref, computed, defineExpose, watch } from 'vue'
+import { Goal, GoalReview } from '@dailyuse/domain-client';
 import { format } from 'date-fns';
+import { useRouter } from 'vue-router';
+import { useGoal } from '../../composables/useGoal';
 
-// 允许 goal 为 null，防止类型校验警告
-defineProps<{
-  visible: boolean;
-  goal: Goal | null;
-}>();
+const router = useRouter();
+const goalComposable = useGoal();
 
-const emit = defineEmits<{
-  (e: 'close'): void;
-  (e: 'delete', reviewId: string): void;
-  (e: 'view', reviewId: string): void;
-  (e: 'update:modelValue', value: boolean): void;
-}>();
+const props = defineProps<{
+  goal: Goal
+}>()
+
+// 内部状态控制
+const isVisible = ref(false);
+const isLoading = ref(false);
+
+// ===== 内部业务逻辑方法 =====
+
+/**
+ * 打开复盘对话框 - 可供外部调用的方法
+ */
+const openDialog = async () => {
+  try {
+    isVisible.value = true;
+    // 加载目标的复盘数据
+    await loadGoalReviews();
+  } catch (error) {
+    console.error('Failed to open review dialog:', error);
+  }
+};
+
+/**
+ * 关闭复盘对话框
+ */
+const closeDialog = () => {
+  isVisible.value = false;
+};
+
+/**
+ * 加载目标复盘数据
+ */
+const loadGoalReviews = async () => {
+  if (!props.goal?.uuid) return;
+
+  try {
+    isLoading.value = true;
+    await goalComposable.loadCurrentGoalReviews(props.goal.uuid);
+  } catch (error) {
+    console.error('Failed to load goal reviews:', error);
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+/**
+ * 查看复盘详情
+ */
+const handleView = async (reviewId: string) => {
+  try {
+    // 导航到复盘详情页面
+    router.push({
+      name: 'goal-review-detail',
+      params: {
+        goalUuid: props.goal.uuid,
+        reviewUuid: reviewId
+      }
+    });
+    closeDialog();
+  } catch (error) {
+    console.error('Failed to view review:', error);
+  }
+};
+
+/**
+ * 删除复盘记录
+ */
+const handleDelete = async (reviewId: string) => {
+  try {
+    if (confirm('确定要删除这条复盘记录吗？此操作不可撤销。')) {
+      await goalComposable.deleteGoalReview(props.goal.uuid, reviewId);
+      // 删除成功后重新加载复盘列表
+      await loadGoalReviews();
+    }
+  } catch (error) {
+    console.error('Failed to delete review:', error);
+  }
+};
+
+/**
+ * 关闭处理 
+ */
+const handleClose = () => {
+  closeDialog();
+};
+
+/**
+ * 创建新复盘
+ */
+const createNewReview = async () => {
+  try {
+    // 导航到创建复盘页面
+    router.push({
+      name: 'goal-review-create',
+      params: { goalUuid: props.goal.uuid }
+    });
+    closeDialog();
+  } catch (error) {
+    console.error('Failed to create new review:', error);
+  }
+};
+
+// 暴露方法给父组件
+defineExpose({
+  openDialog,
+});
+
+// ===== 计算属性 =====
+
+// 获取当前目标的复盘列表
+const goalReviews = computed(() => {
+  return goalComposable.currentGoalReviews.value || [];
+});
+
+// 是否有复盘记录
+const hasReviews = computed(() => {
+  return goalReviews.value.length > 0;
+});
+
+// ===== 工具方法 =====
 
 // 复盘类型相关方法
 const getReviewTypeColor = (type: GoalReview['type']): string => {
@@ -165,17 +270,118 @@ const getReviewTypeText = (type: GoalReview['type']): string => {
   return texts[type] || '复盘';
 };
 
-// 事件处理
-const handleClose = () => emit('close');
+// ===== 监听器 =====
 
-const handleDelete = (reviewId: string) => {
-  if (confirm('确定要删除这条复盘记录吗？')) {
-    emit('delete', reviewId);
+// 当对话框关闭时清理状态
+watch(isVisible, (newValue) => {
+  if (!newValue) {
+    // 对话框关闭时的清理逻辑
   }
-};
-
-const handleView = (reviewId: string) => {
-  emit('view', reviewId);
-  handleClose();
-};
+});
 </script>
+
+<style scoped>
+.goal-review-dialog {
+  z-index: 2000;
+}
+
+.review-card {
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.review-header {
+  background: linear-gradient(135deg, rgb(var(--v-theme-primary)) 0%, rgb(var(--v-theme-secondary)) 100%);
+  color: white;
+}
+
+.review-header .v-icon,
+.review-header .text-h5 {
+  color: white !important;
+}
+
+.review-content {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.review-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-item {
+  border-radius: 12px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(var(--v-border-color), var(--v-border-opacity));
+}
+
+.review-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgb(var(--v-theme-primary));
+}
+
+.review-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.review-item .v-btn {
+  transition: all 0.2s ease;
+}
+
+.review-item .v-btn:hover {
+  transform: scale(1.05);
+}
+
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .review-content {
+    padding: 16px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin-top: 12px;
+  }
+
+  .action-buttons .v-btn {
+    width: 100%;
+  }
+}
+
+/* 空状态样式 */
+.v-empty-state {
+  padding: 48px 24px;
+}
+
+/* 滚动条样式 */
+.review-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.review-content::-webkit-scrollbar-track {
+  background: rgba(var(--v-theme-surface-variant), 0.3);
+  border-radius: 3px;
+}
+
+.review-content::-webkit-scrollbar-thumb {
+  background: rgba(var(--v-theme-primary), 0.5);
+  border-radius: 3px;
+}
+
+.review-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--v-theme-primary), 0.7);
+}
+</style>

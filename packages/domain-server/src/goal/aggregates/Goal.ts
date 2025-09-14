@@ -994,6 +994,190 @@ export class Goal extends GoalCore {
   // ===== 服务端特有方法 =====
 
   /**
+   * 获取详细的进度分析（服务端专用）
+   */
+  getDetailedProgressAnalysis(): {
+    overallProgress: number;
+    weightedProgress: number;
+    calculatedProgress: number;
+    healthScore: number;
+    timeProgress: number;
+    progressGap: number;
+    keyResultAnalysis: Array<{
+      uuid: string;
+      name: string;
+      progress: number;
+      weight: number;
+      contribution: number;
+      status: string;
+    }>;
+    recommendations: string[];
+  } {
+    const timeProgress = this.getServerTimeProgress();
+    const calculatedProgress = this.weightedProgress; // 使用现有的属性
+    const progressGap = calculatedProgress - timeProgress;
+
+    // 分析每个关键结果的贡献
+    const keyResultAnalysis = this.keyResults.map((kr) => ({
+      uuid: kr.uuid,
+      name: kr.name,
+      progress: kr.progress,
+      weight: kr.weight,
+      contribution: (kr.progress * kr.weight) / 100,
+      status: kr.isCompleted ? 'completed' : kr.progress >= 80 ? 'nearly-completed' : 'in-progress',
+    }));
+
+    // 计算简化的健康度
+    const healthScore = this.calculateServerHealthScore(calculatedProgress, timeProgress);
+
+    // 生成建议
+    const recommendations: string[] = [];
+
+    if (progressGap < -20) {
+      recommendations.push('进度明显滞后于时间，建议调整计划或增加资源投入');
+    } else if (progressGap > 20) {
+      recommendations.push('进度超前，可以适当放缓节奏或优化质量');
+    }
+
+    if (this.completedKeyResults === 0 && timeProgress > 30) {
+      recommendations.push('尚未完成任何关键结果，需要重点关注执行力');
+    }
+
+    const lowProgressKRs = this.keyResults.filter((kr) => kr.progress < 50 && kr.weight > 20);
+    if (lowProgressKRs.length > 0) {
+      recommendations.push(
+        `重要关键结果进度偏低：${lowProgressKRs.map((kr) => kr.name).join('、')}`,
+      );
+    }
+
+    return {
+      overallProgress: this.overallProgress,
+      weightedProgress: this.weightedProgress,
+      calculatedProgress,
+      healthScore,
+      timeProgress,
+      progressGap,
+      keyResultAnalysis,
+      recommendations,
+    };
+  }
+
+  /**
+   * 获取时间进度（服务端实现）
+   */
+  private getServerTimeProgress(): number {
+    const now = Date.now();
+    const start = this._startTime.getTime();
+    const end = this._endTime.getTime();
+
+    if (now <= start) return 0;
+    if (now >= end) return 100;
+
+    return ((now - start) / (end - start)) * 100;
+  }
+
+  /**
+   * 计算健康度得分（服务端实现）
+   */
+  private calculateServerHealthScore(progress: number, timeProgress: number): number {
+    // 进度得分 (60%)
+    const progressScore = progress * 0.6;
+
+    // 时间匹配得分 (30%)
+    const timeMatchScore = Math.max(0, 100 - Math.abs(progress - timeProgress)) * 0.3;
+
+    // 完成率得分 (10%)
+    const completionRate =
+      this.totalKeyResults > 0 ? (this.completedKeyResults / this.totalKeyResults) * 100 : 0;
+    const completionScore = completionRate * 0.1;
+
+    return Math.min(100, progressScore + timeMatchScore + completionScore);
+  }
+
+  /**
+   * 生成进度报告（服务端专用）
+   */
+  generateProgressReport(): {
+    reportDate: Date;
+    goalInfo: {
+      name: string;
+      status: string;
+      daysRemaining: number;
+      isOverdue: boolean;
+    };
+    progressSummary: {
+      overallProgress: number;
+      weightedProgress: number;
+      healthScore: number;
+      healthDescription: string;
+    };
+    keyResultsSummary: {
+      total: number;
+      completed: number;
+      inProgress: number;
+      notStarted: number;
+    };
+    insights: string[];
+  } {
+    const analysis = this.getDetailedProgressAnalysis();
+
+    const keyResultsSummary = {
+      total: this.totalKeyResults,
+      completed: this.completedKeyResults,
+      inProgress: this.keyResults.filter((kr) => kr.progress > 0 && kr.progress < 100).length,
+      notStarted: this.keyResults.filter((kr) => kr.progress === 0).length,
+    };
+
+    const insights: string[] = [];
+
+    // 生成洞察
+    if (analysis.healthScore >= 80) {
+      insights.push('目标执行状况良好，按计划推进');
+    } else if (analysis.healthScore >= 60) {
+      insights.push('目标执行有待提升，需要适当调整');
+    } else {
+      insights.push('目标执行存在问题，需要重点关注');
+    }
+
+    if (this.isOverdue) {
+      insights.push('目标已逾期，建议重新评估时间安排');
+    }
+
+    if (keyResultsSummary.notStarted > keyResultsSummary.completed) {
+      insights.push('多数关键结果尚未启动，建议优化执行计划');
+    }
+
+    return {
+      reportDate: new Date(),
+      goalInfo: {
+        name: this.name,
+        status: this.status,
+        daysRemaining: this.daysRemaining,
+        isOverdue: this.isOverdue,
+      },
+      progressSummary: {
+        overallProgress: analysis.overallProgress,
+        weightedProgress: analysis.weightedProgress,
+        healthScore: analysis.healthScore,
+        healthDescription: this.getHealthDescription(analysis.healthScore),
+      },
+      keyResultsSummary,
+      insights,
+    };
+  }
+
+  /**
+   * 获取健康度描述（服务端实现）
+   */
+  private getHealthDescription(healthScore: number): string {
+    if (healthScore >= 90) return '优秀';
+    if (healthScore >= 80) return '良好';
+    if (healthScore >= 60) return '一般';
+    if (healthScore >= 40) return '需要关注';
+    return '需要改进';
+  }
+
+  /**
    * 暂停目标
    */
   pause(): void {
@@ -1196,14 +1380,6 @@ export class Goal extends GoalCore {
         createdAt: review.createdAt.getTime(),
         updatedAt: review.updatedAt.getTime(),
       })),
-      // analytics: {
-      //   overallProgress: this.overallProgress,
-      //   weightedProgress: this.weightedProgress,
-      //   completedKeyResults: this.completedKeyResults,
-      //   totalKeyResults: this.totalKeyResults,
-      //   daysRemaining: this.daysRemaining,
-      //   isOverdue: this.isOverdue,
-      // },
     };
   }
 }
