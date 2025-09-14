@@ -33,7 +33,7 @@
                     <!-- 侧边栏 - 目标分类 -->
                     <v-col cols="12" md="3" class="pr-md-6 mb-6 mb-md-0 h-100">
                         <goal-dir-component :goal-dirs="goalDirs" @selected-goal-dir="onSelectedGoalDir"
-                            @create-goal-dir="openCreateDirDialog" @edit-goal-dir="openEditDirDialog" class="h-100" />
+                            @create-goal-dir="goalDirDialogRef?.openForCreate" @edit-goal-dir="goalDirDialogRef?.openForEdit" class="h-100" />
                     </v-col>
 
                     <!-- 目标列表区域 -->
@@ -131,6 +131,7 @@
             {{ snackbar.message }}
         </v-snackbar> -->
         <GoalDialog ref="goalDialogRef" />
+        <GoalDirDialog ref="goalDirDialogRef" />
     </v-container>
 </template>
 
@@ -144,6 +145,7 @@ import type { Goal, GoalDir } from '@dailyuse/domain-client';
 import GoalCard from '../components/cards/GoalCard.vue';
 import GoalDirComponent from '../components/GoalDir.vue';
 import GoalDialog from '../components/dialogs/GoalDialog.vue';
+import GoalDirDialog from '../components/dialogs/GoalDirDialog.vue';
 // composables
 
 
@@ -169,6 +171,7 @@ const selectedStatusIndex = ref(0);
 
 // dialogs
 const goalDialogRef = ref<InstanceType<typeof GoalDialog> | null>(null);
+const goalDirDialogRef = ref<InstanceType<typeof GoalDirDialog> | null>(null);
 
 const deleteDialog = reactive({
     show: false,
@@ -220,13 +223,23 @@ const filteredGoals = computed(() => {
 // ===== 方法 =====
 
 /**
+ * 根据状态获取目标数量的计算属性
+ */
+const goalCountByStatus = computed(() => {
+    return {
+        all: goals.value.length,
+        active: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'active').length,
+        paused: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'paused').length,
+        completed: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'completed').length,
+        archived: goals.value.filter((goal: Goal) => goal.lifecycle?.status === 'archived').length,
+    };
+});
+
+/**
  * 根据状态获取目标数量
  */
 const getGoalCountByStatus = (status: string) => {
-    if (status === 'all') {
-        return goals.value.length;
-    }
-    return goals.value.filter((goal: Goal) => goal.lifecycle?.status === status).length;
+    return goalCountByStatus.value[status as keyof typeof goalCountByStatus.value] || 0;
 };
 
 /**
@@ -277,7 +290,7 @@ const onToggleGoalStatus = () => {
  */
 const openCreateDirDialog = () => {
     // TODO: 实现创建目录对话框
-    showSnackbar('创建目录功能开发中', 'info');
+
 };
 
 /**
@@ -285,7 +298,7 @@ const openCreateDirDialog = () => {
  */
 const openEditDirDialog = (goalDir: GoalDir) => {
     // TODO: 实现编辑目录对话框
-    showSnackbar('编辑目录功能开发中', 'info');
+
 };
 
 // ===== 生命周期 =====
@@ -296,8 +309,7 @@ onMounted(async () => {
         await fetchGoals();
         await fetchGoalDirs();
     } catch (error) {
-        console.error('初始化失败:', error);
-        showSnackbar('数据加载失败', 'error');
+        console.error('初始化失败:', error);;
     }
 });
 </script>

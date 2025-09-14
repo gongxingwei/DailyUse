@@ -62,10 +62,10 @@
     </v-form>
 
     <!-- 提示信息 -->
-    <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="top" variant="tonal"
+    <!-- <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="3000" location="top" variant="tonal"
         elevation="4">
         {{ snackbar.message }}
-    </v-snackbar>
+    </v-snackbar> -->
 </template>
 
 <script setup lang="ts">
@@ -79,7 +79,7 @@ import { usernameRules, passwordRules } from '@/shared/utils/validations/rules';
 // services
 
 
-const { snackbar, handleLogin, loading: authLoading, isInitializing } = useAuthenticationService();
+const { handleLogin, loading: authLoading, isInitializing } = useAuthenticationService();
 const loading = computed(() => authLoading.value || isInitializing.value);
 const formRef = ref();
 const isCurrentFormValid = computed(() => {

@@ -57,7 +57,8 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
       }
     }
     // 创建新 access_token（有效期可自定义）
-    const newToken = Token.createAccessToken(this.accountUuid); // 1小时有效
+    const secret = process.env.JWT_SECRET || 'default-secret';
+    const newToken = Token.createAccessToken(this.accountUuid, secret); // 1小时有效
     this._tokens.set(TokenType.ACCESS_TOKEN, newToken as any);
     this._updatedAt = new Date();
     return newToken;
@@ -206,22 +207,23 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
 
   createToken(type: TokenType): ITokenCore {
     let token: Token;
+    const secret = process.env.JWT_SECRET || 'default-secret';
 
     switch (type) {
       case TokenType.ACCESS_TOKEN:
-        token = Token.createAccessToken(this.accountUuid);
+        token = Token.createAccessToken(this.accountUuid, secret);
         break;
       case TokenType.REFRESH_TOKEN:
-        token = Token.createRefreshToken(this.accountUuid);
+        token = Token.createRefreshToken(this.accountUuid, secret);
         break;
       case TokenType.PASSWORD_RESET:
-        token = Token.createPasswordResetToken(this.accountUuid);
+        token = Token.createPasswordResetToken(this.accountUuid, secret);
         break;
       case TokenType.EMAIL_VERIFICATION:
-        token = Token.createEmailVerificationToken(this.accountUuid);
+        token = Token.createEmailVerificationToken(this.accountUuid, secret);
         break;
       case TokenType.REMEMBER_ME:
-        token = Token.createRememberToken(this.accountUuid);
+        token = Token.createRememberToken(this.accountUuid, undefined, secret);
         break;
       default:
         throw new Error(`Unsupported token type: ${type}`);
@@ -238,7 +240,8 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
       this.revokeRememberTokenForDevice(deviceInfo);
     }
 
-    const token = Token.createRememberToken(this.accountUuid, deviceInfo);
+    const secret = process.env.JWT_SECRET || 'default-secret';
+    const token = Token.createRememberToken(this.accountUuid, deviceInfo, secret);
     this.tokens.set(token.value, token as any);
     this._updatedAt = new Date();
 

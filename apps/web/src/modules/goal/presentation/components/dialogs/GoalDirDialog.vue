@@ -8,11 +8,11 @@
 
             <v-form ref="formRef">
                 <v-card-text class="pa-4">
-                <v-text-field v-model="localGoalDir.name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
+                <v-text-field v-model="name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
                     @keyup.enter="handleSave">
                 </v-text-field>
 
-                <v-select v-model="localGoalDir.icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
+                <v-select v-model="icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
                     item-title="text" item-value="value">
                     <template v-slot:item="{ props, item }">
                         <v-list-item v-bind="props">
@@ -57,6 +57,20 @@ const isFormValid = computed(() => {
     return formRef.value?.isValid ?? false;
 })
 
+const name = computed({
+    get: () => localGoalDir.value.name,
+    set: (val: string) => {
+        localGoalDir.value.updateInfo({ name: val });
+    }
+})
+
+const icon = computed({
+    get: () => localGoalDir.value.icon,
+    set: (val: string) => {
+        localGoalDir.value.updateInfo({ icon: val });
+    }
+});
+
 watch(() => localGoalDir.value.name, (newName) => {
     console.log('localGoalDir name changed:', newName);
     console.log('isFormValid', isFormValid.value);
@@ -87,7 +101,7 @@ const handleSave = () => {
         updateGoalDir(localGoalDir.value.uuid, localGoalDir.value.toDTO());
     } else {
         // 创建模式
-        createGoalDir(localGoalDir.value as GoalDir);
+        createGoalDir(localGoalDir.value.toDTO());
     }
     closeDialog();
 };
@@ -99,6 +113,14 @@ const handleCancel = () => {
 const openDialog = (goalDir?: GoalDir) => {
     visible.value = true;
     propGoalDir.value = goalDir || null;
+};
+
+const openForCreate = () => {
+    openDialog();
+};
+
+const openForEdit = (goalDir: GoalDir) => {
+    openDialog(goalDir);
 };
 
 const closeDialog = () => {
@@ -115,9 +137,10 @@ watch(
         }
     },
     { immediate: true }
-)
+);
 
 defineExpose({
-    openDialog
+    openForCreate,
+    openForEdit,
 });
 </script>

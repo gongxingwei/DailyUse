@@ -6,8 +6,21 @@ import { AuthApplicationService } from '../../application/services/AuthApplicati
 import { useAuthStore } from '../stores/useAuthStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
 import { useGlobalInitialization } from '@/composables/useGlobalInitialization';
+
+/**
+ * 认证服务 Composable
+ * 使用新的 useSnackbar API 提供统一的用户反馈
+ * 包含登录、登出、密码修改等认证相关功能
+ */
 export function useAuthenticationService() {
-  const { showError, showSuccess, showInfo, snackbar } = useSnackbar();
+  // 使用新的 useSnackbar API - 解构出需要的方法
+  const {
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning,
+    handleOperationResult, // 自动处理 Promise 的成功和失败反馈
+  } = useSnackbar();
   const router = useRouter();
   const authStore = useAuthStore();
   const accountStore = useAccountStore();
@@ -31,7 +44,13 @@ export function useAuthenticationService() {
       showInfo('正在登录...');
 
       const authService = await AuthApplicationService.getInstance();
-      const response = await authService.login(credentials);
+
+      // 使用 handleOperationResult 处理登录请求
+      const response = await handleOperationResult(
+        authService.login(credentials),
+        '登录成功',
+        '登录失败',
+      );
 
       if (response.data && response.data.accessToken && response.data.refreshToken) {
         // 更新store状态，包括tokens
@@ -43,8 +62,6 @@ export function useAuthenticationService() {
           rememberToken: response.data.rememberToken,
           expiresIn: response.data.expiresIn || 3600,
         });
-
-        showSuccess('登录成功');
 
         // 登录成功后初始化所有模块数据
         try {
@@ -81,13 +98,13 @@ export function useAuthenticationService() {
           } else {
             // 部分模块初始化失败
             const errorCount = initResults.errors.length;
-            showError(`部分数据加载失败 (${errorCount} 个错误)`);
+            showWarning(`部分数据加载失败 (${errorCount} 个错误)`);
             console.warn('部分模块初始化失败:', initResults.errors);
           }
         } catch (initError) {
           // 初始化失败不影响登录流程
           console.error('数据初始化失败:', initError);
-          showError('数据加载失败，但登录成功');
+          showWarning('数据加载失败，但登录成功');
         }
 
         router.push({ name: 'dashboard' });
@@ -95,7 +112,7 @@ export function useAuthenticationService() {
     } catch (error: any) {
       const errorMessage = error.message || '登录失败';
       authStore.setError(errorMessage);
-      showError(errorMessage);
+      // 错误已经在 handleOperationResult 中处理了，这里不需要再次显示
       throw error;
     } finally {
       authStore.setLoading(false);
@@ -110,7 +127,9 @@ export function useAuthenticationService() {
       authStore.setLoading(true);
 
       const authService = await AuthApplicationService.getInstance();
-      await authService.logout();
+
+      // 使用 handleOperationResult 处理登出请求
+      await handleOperationResult(authService.logout(), '登出成功', '登出失败');
 
       // 清除store状态
       authStore.clearAuth();
@@ -119,12 +138,11 @@ export function useAuthenticationService() {
       const { cleanup } = useGlobalInitialization();
       cleanup();
 
-      showSuccess('登出成功');
       router.push({ name: 'login' });
     } catch (error: any) {
       const errorMessage = error.message || '登出失败';
       authStore.setError(errorMessage);
-      showError(errorMessage);
+      // 错误已经在 handleOperationResult 中处理了
     } finally {
       authStore.setLoading(false);
     }
@@ -180,13 +198,17 @@ export function useAuthenticationService() {
       authStore.clearError();
 
       const authService = await AuthApplicationService.getInstance();
-      await authService.changePassword(currentPassword, newPassword);
 
-      showSuccess('密码修改成功');
+      // 使用 handleOperationResult 处理密码修改请求
+      await handleOperationResult(
+        authService.changePassword(currentPassword, newPassword),
+        '密码修改成功',
+        '修改密码失败',
+      );
     } catch (error: any) {
       const errorMessage = error.message || '修改密码失败';
       authStore.setError(errorMessage);
-      showError(errorMessage);
+      // 错误已经在 handleOperationResult 中处理了
       throw error;
     } finally {
       authStore.setLoading(false);
@@ -194,9 +216,6 @@ export function useAuthenticationService() {
   };
 
   return {
-    // UI 相关
-    snackbar,
-
     // 业务方法
     handleLogin,
     handleLogout,
