@@ -1,6 +1,7 @@
 import { TaskTemplateCore } from '@dailyuse/domain-core';
 import type { TaskContracts } from '@dailyuse/contracts';
 import type { ITaskTemplate } from '@dailyuse/contracts';
+import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 /**
  * 任务模板客户端实现 - 添加客户端特有功能
@@ -368,6 +369,62 @@ export class TaskTemplate extends TaskTemplateCore {
       },
       goalLinks: this.goalLinks ? [...this.goalLinks] : undefined,
     };
+  }
+
+  /**
+   * 创建一个空的任务模板实例（用于新建表单）
+   */
+  static forCreate(accountUuid: string): TaskTemplate {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 明天
+
+    return new TaskTemplate({
+      uuid: '', // 将由 UUID 生成
+      accountUuid,
+      title: '',
+      description: '',
+      timeConfig: {
+        time: {
+          timeType: 'allDay' as any,
+          startTime: undefined,
+          endTime: undefined,
+        },
+        date: {
+          startDate: now,
+          endDate: undefined,
+        },
+        schedule: {
+          mode: 'once' as any,
+          intervalDays: undefined,
+          weekdays: undefined,
+          monthDays: undefined,
+        },
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      reminderConfig: {
+        enabled: false,
+        minutesBefore: 15,
+        methods: ['notification'],
+      },
+      properties: {
+        importance: ImportanceLevel.Moderate,
+        urgency: UrgencyLevel.Medium,
+        location: '',
+        tags: [],
+      },
+      goalLinks: [],
+      lifecycle: {
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      },
+      stats: {
+        totalInstances: 0,
+        completedInstances: 0,
+        completionRate: 0,
+        lastInstanceDate: undefined,
+      },
+    });
   }
 
   /**

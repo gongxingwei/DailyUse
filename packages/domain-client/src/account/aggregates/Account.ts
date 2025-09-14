@@ -198,6 +198,39 @@ export class Account extends AccountCore implements IAccountClient {
     return account;
   }
 
+  /**
+   * 创建一个空的账户实例（用于新建表单）
+   */
+  static forCreate(): Account {
+    const now = new Date();
+
+    // 创建一个基础用户
+    const user = User.create({
+      firstName: '',
+      lastName: '',
+    });
+
+    return new Account({
+      uuid: '', // 将由 UUID 生成
+      username: '',
+      accountType: AccountType.LOCAL,
+      user,
+      email: undefined,
+      phoneNumber: undefined,
+      address: undefined,
+      roleUuids: new Set(),
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  /**
+   * 克隆当前账户实例
+   */
+  clone(): Account {
+    return Account.fromDTO(this.toDTO());
+  }
+
   // ===== 静态工厂方法 =====
   static fromCache(uuid: string): Account | null {
     try {

@@ -337,6 +337,73 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     return null;
   }
 
+  /**
+   * 创建一个空的认证凭据实例（用于新建表单）
+   */
+  static forCreate(accountUuid: string): AuthCredential {
+    const now = new Date();
+
+    // 创建一个临时密码（用户需要设置）
+    const password = Password.createFromParams({
+      hashedValue: '',
+      salt: '',
+      algorithm: 'client',
+    });
+
+    return new AuthCredential({
+      uuid: '', // 将由 UUID 生成
+      accountUuid,
+      password,
+      sessions: new Map(),
+      mfaDevices: new Map(),
+      tokens: new Map(),
+      failedAttempts: 0,
+      lockedUntil: undefined,
+      createdAt: now,
+      updatedAt: now,
+      lastAuthAt: undefined,
+    });
+  }
+
+  /**
+   * 克隆当前认证凭据实例
+   */
+  clone(): AuthCredential {
+    // 克隆 sessions map
+    const clonedSessions = new Map<string, Session>();
+    for (const [key, session] of this.sessions.entries()) {
+      clonedSessions.set(key, session as Session);
+    }
+
+    // 克隆 mfaDevices map
+    const clonedMFADevices = new Map<string, MFADevice>();
+    for (const [key, device] of this.mfaDevices.entries()) {
+      clonedMFADevices.set(key, device as MFADevice);
+    }
+
+    // 克隆 tokens map
+    const clonedTokens = new Map<string, Token>();
+    for (const [key, token] of this.tokens.entries()) {
+      clonedTokens.set(key, token as Token);
+    }
+
+    const cloned = new AuthCredential({
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      password: this.password as Password,
+      sessions: clonedSessions,
+      mfaDevices: clonedMFADevices,
+      tokens: clonedTokens,
+      failedAttempts: this.failedAttempts,
+      lockedUntil: this.lockedUntil,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      lastAuthAt: this.lastAuthAt,
+    });
+
+    return cloned;
+  }
+
   // ===== 静态工厂方法 =====
   static async createWithLogin(params: {
     accountUuid: string;

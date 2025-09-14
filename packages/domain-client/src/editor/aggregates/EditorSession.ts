@@ -1,5 +1,6 @@
-import { EditorSessionCore, EditorGroupCore, EditorLayoutCore } from '@dailyuse/domain-core';
+import { EditorSessionCore, EditorGroupCore } from '@dailyuse/domain-core';
 import { type EditorContracts } from '@dailyuse/contracts';
+import { EditorLayout } from './EditorLayout';
 
 // 获取类型定义
 type EditorSessionDTO = EditorContracts.EditorSessionDTO;
@@ -19,7 +20,7 @@ export class EditorSession extends EditorSessionCore {
     name: string;
     groups?: EditorGroupCore[];
     activeGroupId?: string | null;
-    layout: EditorLayoutCore;
+    layout: EditorLayout;
     autoSave?: boolean;
     autoSaveInterval?: number;
     lastSavedAt?: Date;
@@ -228,6 +229,67 @@ export class EditorSession extends EditorSessionCore {
     }
 
     this.updateTimestamp();
+  }
+
+  /**
+   * 创建一个空的编辑器会话实例（用于新建表单）
+   */
+  static forCreate(accountUuid: string): EditorSession {
+    const now = new Date();
+
+    // 创建默认布局
+    const defaultLayout = new EditorLayout({
+      accountUuid,
+      name: 'Default Layout',
+      activityBarWidth: 45,
+      sidebarWidth: 250,
+      minSidebarWidth: 200,
+      resizeHandleWidth: 5,
+      minEditorWidth: 300,
+      editorTabWidth: 150,
+      windowWidth: 1200,
+      windowHeight: 800,
+      isDefault: true,
+    });
+
+    return new EditorSession({
+      uuid: '', // 将由 UUID 生成
+      accountUuid,
+      name: '',
+      groups: [],
+      activeGroupId: null,
+      layout: defaultLayout,
+      autoSave: true,
+      autoSaveInterval: 30000, // 30 秒
+      lastSavedAt: undefined,
+      createdAt: now,
+      updatedAt: now,
+      localSettings: {},
+      recentFiles: [],
+      searchHistory: [],
+    });
+  }
+
+  /**
+   * 克隆当前编辑器会话实例
+   */
+  clone(): EditorSession {
+    return new EditorSession({
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      name: this.name,
+      groups: [...this.groups], // 浅拷贝组列表
+      activeGroupId: this.activeGroupId,
+      layout: this.layout as EditorLayout,
+      autoSave: this.autoSave,
+      autoSaveInterval: this.autoSaveInterval,
+      lastSavedAt: this.lastSavedAt,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      localSettings: this._localSettings ? { ...this._localSettings } : undefined,
+      recentFiles: [...this._recentFiles],
+      searchHistory: [...this._searchHistory],
+    });
   }
 
   /**
