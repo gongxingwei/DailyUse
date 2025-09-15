@@ -11,4 +11,6 @@ export type {
   ITaskInstanceRepository,
   ITaskMetaTemplateRepository,
   ITaskStatsRepository,
+  ITaskTemplateAggregateRepository,
+  ITaskInstanceAggregateRepository,
 } from './repositories/iTaskRepository';

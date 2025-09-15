@@ -356,3 +356,210 @@ export interface ITaskStatsRepository {
     overdueRate: number;
   }>;
 }
+
+/**
+ * 任务模板聚合根仓储扩展接口
+ * 支持聚合根级别的原子操作和一致性管理
+ */
+export interface ITaskTemplateAggregateRepository extends ITaskTemplateRepository {
+  /**
+   * 加载任务模板聚合根（包含关联的实例）
+   */
+  loadAggregate(
+    templateUuid: string,
+    options?: {
+      includeInstances?: boolean;
+      includeStats?: boolean;
+      includeMetaTemplate?: boolean;
+    },
+  ): Promise<{
+    template: TaskContracts.TaskTemplateDTO;
+    instances?: TaskContracts.TaskInstanceDTO[];
+    stats?: TaskContracts.TaskStatsDTO['byTemplate'][0];
+    metaTemplate?: TaskContracts.TaskMetaTemplateDTO;
+  } | null>;
+
+  /**
+   * 保存任务模板聚合根（原子操作）
+   */
+  saveAggregate(
+    templateAggregate: {
+      template: TaskContracts.TaskTemplateDTO;
+      instances?: TaskContracts.TaskInstanceDTO[];
+      metaTemplate?: TaskContracts.TaskMetaTemplateDTO;
+    },
+    options?: {
+      validateConsistency?: boolean;
+      cascadeInstances?: boolean;
+    },
+  ): Promise<void>;
+
+  /**
+   * 更新任务模板聚合根
+   */
+  updateAggregate(
+    templateUuid: string,
+    updates: Partial<TaskContracts.TaskTemplateDTO>,
+    options?: {
+      updateInstances?: boolean;
+      preserveCustomizations?: boolean;
+    },
+  ): Promise<void>;
+
+  /**
+   * 原子更新操作
+   */
+  atomicUpdate(
+    templateUuid: string,
+    operation: (template: TaskContracts.TaskTemplateDTO) => Promise<TaskContracts.TaskTemplateDTO>,
+  ): Promise<void>;
+
+  /**
+   * 验证聚合根一致性
+   */
+  validateAggregateConsistency(templateUuid: string): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>;
+
+  /**
+   * 获取聚合根统计信息
+   */
+  getAggregateStatistics(templateUuid: string): Promise<{
+    totalInstances: number;
+    completedInstances: number;
+    pendingInstances: number;
+    overdueInstances: number;
+    averageCompletionTime: number;
+    lastActivityDate: Date | null;
+  }>;
+
+  /**
+   * 批量处理聚合根操作
+   */
+  batchProcessAggregates(
+    operations: Array<{
+      type: 'create' | 'update' | 'delete';
+      templateUuid?: string;
+      data?: Partial<TaskContracts.TaskTemplateDTO>;
+    }>,
+  ): Promise<{
+    successful: string[];
+    failed: Array<{ templateUuid: string; error: string }>;
+  }>;
+}
+
+/**
+ * 任务实例聚合根仓储扩展接口
+ * 支持聚合根级别的原子操作和生命周期管理
+ */
+export interface ITaskInstanceAggregateRepository extends ITaskInstanceRepository {
+  /**
+   * 加载任务实例聚合根（包含模板和依赖）
+   */
+  loadAggregate(
+    instanceUuid: string,
+    options?: {
+      includeTemplate?: boolean;
+      includeDependencies?: boolean;
+      includeHistory?: boolean;
+    },
+  ): Promise<{
+    instance: TaskContracts.TaskInstanceDTO;
+    template?: TaskContracts.TaskTemplateDTO;
+    dependencies?: TaskContracts.TaskInstanceDTO[];
+    history?: Array<{
+      status: string;
+      timestamp: Date;
+      duration?: number;
+    }>;
+  } | null>;
+
+  /**
+   * 保存任务实例聚合根（原子操作）
+   */
+  saveAggregate(
+    instanceAggregate: {
+      instance: TaskContracts.TaskInstanceDTO;
+      template?: TaskContracts.TaskTemplateDTO;
+      dependencies?: TaskContracts.TaskInstanceDTO[];
+    },
+    options?: {
+      validateConsistency?: boolean;
+      updateTemplate?: boolean;
+    },
+  ): Promise<void>;
+
+  /**
+   * 更新任务实例聚合根
+   */
+  updateAggregate(
+    instanceUuid: string,
+    updates: Partial<TaskContracts.TaskInstanceDTO>,
+    options?: {
+      cascadeToTemplate?: boolean;
+      notifyDependents?: boolean;
+    },
+  ): Promise<void>;
+
+  /**
+   * 原子更新操作
+   */
+  atomicUpdate(
+    instanceUuid: string,
+    operation: (instance: TaskContracts.TaskInstanceDTO) => Promise<TaskContracts.TaskInstanceDTO>,
+  ): Promise<void>;
+
+  /**
+   * 批量处理实例操作
+   */
+  batchProcessInstances(
+    operations: Array<{
+      type: 'create' | 'update' | 'complete' | 'cancel' | 'delete';
+      instanceUuid?: string;
+      templateUuid?: string;
+      data?: Partial<TaskContracts.TaskInstanceDTO>;
+    }>,
+  ): Promise<{
+    successful: string[];
+    failed: Array<{ instanceUuid: string; error: string }>;
+  }>;
+
+  /**
+   * 生命周期分析
+   */
+  getLifecycleAnalysis(instanceUuid: string): Promise<{
+    createdAt: Date;
+    lastUpdatedAt: Date;
+    statusHistory: Array<{
+      status: string;
+      timestamp: Date;
+      duration?: number;
+    }>;
+    totalDuration: number;
+    currentPhase: string;
+  }>;
+
+  /**
+   * 依赖关系管理
+   */
+  manageDependencies(
+    instanceUuid: string,
+    action: 'add' | 'remove' | 'update',
+    dependencies: string[],
+  ): Promise<{
+    updated: boolean;
+    conflictsResolved: string[];
+    errors: string[];
+  }>;
+
+  /**
+   * 验证聚合根一致性
+   */
+  validateAggregateConsistency(instanceUuid: string): Promise<{
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+  }>;
+}

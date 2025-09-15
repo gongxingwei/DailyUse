@@ -950,3 +950,120 @@ export class TaskTemplate extends TaskTemplateCore {
     }
   }
 }
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      title: this.title,
+      description: this.description,
+      timeConfig: {
+        time: {
+          timeType: this.timeConfig.time.timeType,
+          startTime: this.timeConfig.time.startTime,
+          endTime: this.timeConfig.time.endTime,
+        },
+        date: {
+          startDate: this.timeConfig.date.startDate.toISOString(),
+          endDate: this.timeConfig.date.endDate?.toISOString(),
+        },
+        schedule: {
+          mode: this.timeConfig.schedule.mode,
+          intervalDays: this.timeConfig.schedule.intervalDays,
+          weekdays: this.timeConfig.schedule.weekdays
+            ? [...this.timeConfig.schedule.weekdays]
+            : undefined,
+          monthDays: this.timeConfig.schedule.monthDays
+            ? [...this.timeConfig.schedule.monthDays]
+            : undefined,
+        },
+        timezone: this.timeConfig.timezone,
+      },
+      reminderConfig: {
+        enabled: this.reminderConfig.enabled,
+        minutesBefore: this.reminderConfig.minutesBefore,
+        methods: [...this.reminderConfig.methods],
+      },
+      properties: {
+        importance: this.properties.importance,
+        urgency: this.properties.urgency,
+        location: this.properties.location,
+        tags: [...this.properties.tags],
+      },
+      lifecycle: {
+        status: this.lifecycle.status,
+        createdAt: this.lifecycle.createdAt.toISOString(),
+        updatedAt: this.lifecycle.updatedAt.toISOString(),
+      },
+      stats: {
+        totalInstances: this.stats.totalInstances,
+        completedInstances: this.stats.completedInstances,
+        completionRate: this.stats.completionRate,
+        lastInstanceDate: this.stats.lastInstanceDate?.toISOString(),
+      },
+      goalLinks: this.goalLinks ? [...this.goalLinks] : undefined,
+    };
+  }
+
+  /**
+   * 创建一个空的任务模板实例（用于新建表单）
+   */
+  static forCreate(accountUuid: string): TaskTemplate {
+    const now = new Date();
+    const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000); // 明天
+
+    return new TaskTemplate({
+      uuid: '', // 将由 UUID 生成
+      accountUuid,
+      title: '',
+      description: '',
+      timeConfig: {
+        time: {
+          timeType: 'allDay' as any,
+          startTime: undefined,
+          endTime: undefined,
+        },
+        date: {
+          startDate: now,
+          endDate: undefined,
+        },
+        schedule: {
+          mode: 'once' as any,
+          intervalDays: undefined,
+          weekdays: undefined,
+          monthDays: undefined,
+        },
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+      reminderConfig: {
+        enabled: false,
+        minutesBefore: 15,
+        methods: ['notification'],
+      },
+      properties: {
+        importance: ImportanceLevel.Moderate,
+        urgency: UrgencyLevel.Medium,
+        location: '',
+        tags: [],
+      },
+      goalLinks: [],
+      lifecycle: {
+        status: 'draft',
+        createdAt: now,
+        updatedAt: now,
+      },
+      stats: {
+        totalInstances: 0,
+        completedInstances: 0,
+        completionRate: 0,
+        lastInstanceDate: undefined,
+      },
+    });
+  }
+
+  /**
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
+   */
+  clone(): TaskTemplate {
+    return TaskTemplate.fromDTO(this.toDTO());
+  }
+}
