@@ -14,14 +14,14 @@ class MCPClient {
     console.log('启动 MCP 文件系统服务器...');
 
     // 启动服务器进程
-    this.serverProcess = spawn('pnpm', [
-      'dlx',
-      '@modelcontextprotocol/server-filesystem',
-      'd:/myPrograms/DailyUse'
-    ], {
-      stdio: ['pipe', 'pipe', 'pipe'],
-      shell: true
-    });
+    this.serverProcess = spawn(
+      'pnpm',
+      ['dlx', '@modelcontextprotocol/server-filesystem', 'd:/myPrograms/DailyUse'],
+      {
+        stdio: ['pipe', 'pipe', 'pipe'],
+        shell: true,
+      },
+    );
 
     // 监听服务器输出
     this.serverProcess.stdout.on('data', (data: Buffer) => {
@@ -48,9 +48,9 @@ class MCPClient {
         capabilities: {},
         clientInfo: {
           name: 'test-client',
-          version: '1.0.0'
-        }
-      }
+          version: '1.0.0',
+        },
+      },
     };
 
     console.log('发送初始化消息:', JSON.stringify(initMessage, null, 2));
@@ -63,7 +63,7 @@ class MCPClient {
       jsonrpc: '2.0',
       id: this.requestId++,
       method,
-      params
+      params,
     };
 
     console.log('发送请求:', JSON.stringify(message, null, 2));
@@ -73,14 +73,14 @@ class MCPClient {
   // 列出目录内容
   public listDirectory(path: string) {
     this.sendRequest('tools/list', {
-      uri: `file://${path}`
+      uri: `file://${path}`,
     });
   }
 
   // 读取文件
   public readFile(path: string) {
     this.sendRequest('tools/read', {
-      uri: `file://${path}`
+      uri: `file://${path}`,
     });
   }
 
@@ -112,5 +112,4 @@ setTimeout(() => {
     console.log('\n=== 关闭连接 ===');
     client.close();
   }, 5000);
-
 }, 3000);
