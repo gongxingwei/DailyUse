@@ -44,6 +44,11 @@ export * from './task/repositories/iTaskRepository';
 
 // Reminder domain exports
 export * from './reminder/aggregates/Reminder';
+export * from './reminder/aggregates/ReminderTemplate';
+export * from './reminder/aggregates/ReminderTemplateGroup';
+export * from './reminder/entities/ReminderInstance';
+export * from './reminder/repositories/IReminderAggregateRepository';
+export * from './reminder/services/ReminderAggregateService';
 
 // Repository domain exports
 export * from './repository';

@@ -1,79 +1,378 @@
 import { defineStore } from 'pinia';
-// TODO: 需要从domain-client或contracts中导入正确的类型
-// import { ReminderTemplate, ReminderTemplateGroup } from "@dailyuse/domain-client";
+import { ref, computed } from 'vue';
+import type {
+  ReminderTemplate,
+  ReminderTemplateGroup,
+  ReminderInstance,
+} from '@dailyuse/domain-client';
 
-// 临时类型定义，等待reminder模块在domain-client中实现
-interface ReminderTemplate {
-  uuid: string;
-  // 其他属性...
-}
+/**
+ * Reminder Store - 状态管理
+ * 职责：纯数据存储和缓存管理，不执行业务逻辑
+ */
+export const useReminderStore = defineStore('reminder', () => {
+  // ===== 状态 =====
 
-interface ReminderTemplateGroup {
-  uuid: string;
-  templates: ReminderTemplate[];
-  // 其他属性...
-}
+  // 提醒模板
+  const reminderTemplates = ref<ReminderTemplate[]>([]);
 
-// 临时禁用的函数，等待完整实现
-export function ensureReminderTemplate(obj: any): ReminderTemplate {
-  // TODO: 实现类型转换逻辑
-  return obj as ReminderTemplate;
-}
+  // 提醒分组
+  const reminderGroups = ref<ReminderTemplateGroup[]>([]);
 
-export const useReminderStore = defineStore('Reminder', {
-  state: () => ({
-    ReminderGroups: [] as ReminderTemplateGroup[],
-    loading: false,
-    error: null as string | null,
-  }),
+  // 提醒实例
+  const reminderInstances = ref<ReminderInstance[]>([]);
 
-  getters: {
-    getReminderGroups: (state) => {
-      return state.ReminderGroups.map(ReminderTemplateGroup.ensureReminderTemplateGroup);
-    },
-    getReminderGroupById:
-      (state) =>
-      (uuid: string): ReminderTemplateGroup | null => {
-        const item = state.ReminderGroups.find((g) => g.uuid === uuid);
-        return item ? ReminderTemplateGroup.ensureReminderTemplateGroup(item) : null;
-      },
+  // 当前选中的模板
+  const selectedTemplate = ref<ReminderTemplate | null>(null);
 
-    getAllReminderGroupExceptSystemGroup: (state) => {
-      return state.ReminderGroups.filter((g) => g.uuid !== 'system-root')
-        .map(ReminderTemplateGroup.ensureReminderTemplateGroup)
-        .filter((g) => g !== null); // 过滤掉 null
-    },
+  // 当前选中的分组
+  const selectedGroup = ref<ReminderTemplateGroup | null>(null);
 
-    getSystemGroup: (state) => {
-      const group = state.ReminderGroups.filter((g) => g.uuid === 'system-root')
-        .map(ReminderTemplateGroup.ensureReminderTemplateGroup)
-        .filter((g) => g !== null); // 过滤掉 null;
-      return group.length > 0 ? group[0] : ({} as ReminderTemplateGroup);
-    },
+  // UI状态
+  const isLoading = ref(false);
+  const error = ref<string | null>(null);
 
-    getReminderTemplateEnabledStatus:
-      (state) =>
-      (templateUuid: string): boolean => {
-        const group = state.ReminderGroups.find((g) =>
-          g.templates.some((t) => t.uuid === templateUuid),
-        );
-        const status = group?.isTemplateEnabled(templateUuid);
-        return status !== undefined ? status : false;
-      },
-  },
+  // 过滤器状态
+  const filters = ref({
+    groupUuid: '',
+    priority: '',
+    enabled: null as boolean | null,
+    status: '',
+  });
 
-  actions: {
-    setReminderGroups(groups: ReminderTemplateGroup[]) {
-      this.ReminderGroups = groups.map(ReminderTemplateGroup.ensureReminderTemplateGroupNeverNull);
-      console.log('ReminderGroups set:', this.ReminderGroups);
-    },
+  // ===== 计算属性 =====
 
-    setLoading(loading: boolean) {
-      this.loading = loading;
-    },
+  /**
+   * 获取所有提醒模板
+   */
+  const getAllReminderTemplates = computed(() => reminderTemplates.value);
 
-    setError(error: string | null) {
-      this.error = error;
-    },
-  },
+  /**
+   * 获取启用的提醒模板
+   */
+  const getEnabledReminderTemplates = computed(() =>
+    reminderTemplates.value.filter((template) => template.enabled),
+  );
+
+  /**
+   * 获取所有提醒分组
+   */
+  const getAllReminderGroups = computed(() => reminderGroups.value);
+
+  /**
+   * 获取所有提醒实例
+   */
+  const getAllReminderInstances = computed(() => reminderInstances.value);
+
+  /**
+   * 获取活跃的提醒实例
+   */
+  const getActiveReminderInstances = computed(() =>
+    reminderInstances.value.filter(
+      (instance) => instance.status === 'scheduled' || instance.status === 'overdue',
+    ),
+  );
+
+  /**
+   * 根据模板分组的实例
+   */
+  const getInstancesByTemplate = computed(() => {
+    const grouped: Record<string, ReminderInstance[]> = {};
+    reminderInstances.value.forEach((instance) => {
+      if (!grouped[instance.templateUuid]) {
+        grouped[instance.templateUuid] = [];
+      }
+      grouped[instance.templateUuid].push(instance);
+    });
+    return grouped;
+  });
+
+  /**
+   * 过滤后的模板列表
+   */
+  const getFilteredTemplates = computed(() => {
+    let filtered = reminderTemplates.value;
+
+    if (filters.value.groupUuid) {
+      filtered = filtered.filter((template) => template.groupUuid === filters.value.groupUuid);
+    }
+
+    if (filters.value.priority) {
+      filtered = filtered.filter((template) => template.priority === filters.value.priority);
+    }
+
+    if (filters.value.enabled !== null) {
+      filtered = filtered.filter((template) => template.enabled === filters.value.enabled);
+    }
+
+    return filtered;
+  });
+
+  // ===== 状态操作方法 =====
+
+  /**
+   * 设置加载状态
+   */
+  const setLoading = (loading: boolean) => {
+    isLoading.value = loading;
+  };
+
+  /**
+   * 设置错误信息
+   */
+  const setError = (errorMessage: string | null) => {
+    error.value = errorMessage;
+  };
+
+  /**
+   * 清除错误
+   */
+  const clearError = () => {
+    error.value = null;
+  };
+
+  // ===== 提醒模板管理 =====
+
+  /**
+   * 设置提醒模板列表
+   */
+  const setReminderTemplates = (templates: ReminderTemplate[]) => {
+    reminderTemplates.value = templates;
+  };
+
+  /**
+   * 添加或更新提醒模板
+   */
+  const addOrUpdateReminderTemplate = (template: ReminderTemplate) => {
+    const index = reminderTemplates.value.findIndex((t) => t.uuid === template.uuid);
+    if (index >= 0) {
+      reminderTemplates.value[index] = template;
+    } else {
+      reminderTemplates.value.push(template);
+    }
+  };
+
+  /**
+   * 删除提醒模板
+   */
+  const removeReminderTemplate = (uuid: string) => {
+    const index = reminderTemplates.value.findIndex((t) => t.uuid === uuid);
+    if (index >= 0) {
+      reminderTemplates.value.splice(index, 1);
+    }
+  };
+
+  /**
+   * 根据UUID获取提醒模板
+   */
+  const getReminderTemplateByUuid = (uuid: string): ReminderTemplate | null => {
+    return reminderTemplates.value.find((t) => t.uuid === uuid) || null;
+  };
+
+  /**
+   * 设置选中的模板
+   */
+  const setSelectedTemplate = (template: ReminderTemplate | null) => {
+    selectedTemplate.value = template;
+  };
+
+  // ===== 提醒分组管理 =====
+
+  /**
+   * 设置提醒分组列表
+   */
+  const setReminderGroups = (groups: ReminderTemplateGroup[]) => {
+    reminderGroups.value = groups;
+  };
+
+  /**
+   * 添加或更新提醒分组
+   */
+  const addOrUpdateReminderGroup = (group: ReminderTemplateGroup) => {
+    const index = reminderGroups.value.findIndex((g) => g.uuid === group.uuid);
+    if (index >= 0) {
+      reminderGroups.value[index] = group;
+    } else {
+      reminderGroups.value.push(group);
+    }
+  };
+
+  /**
+   * 删除提醒分组
+   */
+  const removeReminderGroup = (uuid: string) => {
+    const index = reminderGroups.value.findIndex((g) => g.uuid === uuid);
+    if (index >= 0) {
+      reminderGroups.value.splice(index, 1);
+    }
+  };
+
+  /**
+   * 根据UUID获取提醒分组
+   */
+  const getReminderGroupByUuid = (uuid: string): ReminderTemplateGroup | null => {
+    return reminderGroups.value.find((g) => g.uuid === uuid) || null;
+  };
+
+  /**
+   * 设置选中的分组
+   */
+  const setSelectedGroup = (group: ReminderTemplateGroup | null) => {
+    selectedGroup.value = group;
+  };
+
+  // ===== 提醒实例管理 =====
+
+  /**
+   * 设置提醒实例列表
+   */
+  const setReminderInstances = (instances: ReminderInstance[]) => {
+    reminderInstances.value = instances;
+  };
+
+  /**
+   * 添加或更新提醒实例
+   */
+  const addOrUpdateReminderInstance = (instance: ReminderInstance) => {
+    const index = reminderInstances.value.findIndex((i) => i.uuid === instance.uuid);
+    if (index >= 0) {
+      reminderInstances.value[index] = instance;
+    } else {
+      reminderInstances.value.push(instance);
+    }
+  };
+
+  /**
+   * 批量添加或更新提醒实例
+   */
+  const addOrUpdateReminderInstances = (instances: ReminderInstance[]) => {
+    instances.forEach((instance) => {
+      addOrUpdateReminderInstance(instance);
+    });
+  };
+
+  /**
+   * 删除提醒实例
+   */
+  const removeReminderInstance = (uuid: string) => {
+    const index = reminderInstances.value.findIndex((i) => i.uuid === uuid);
+    if (index >= 0) {
+      reminderInstances.value.splice(index, 1);
+    }
+  };
+
+  /**
+   * 根据UUID获取提醒实例
+   */
+  const getReminderInstanceByUuid = (uuid: string): ReminderInstance | null => {
+    return reminderInstances.value.find((i) => i.uuid === uuid) || null;
+  };
+
+  /**
+   * 根据模板UUID获取提醒实例列表
+   */
+  const getReminderInstancesByTemplate = (templateUuid: string): ReminderInstance[] => {
+    return reminderInstances.value.filter((i) => i.templateUuid === templateUuid);
+  };
+
+  // ===== 过滤器管理 =====
+
+  /**
+   * 设置过滤器
+   */
+  const setFilters = (newFilters: Partial<typeof filters.value>) => {
+    filters.value = { ...filters.value, ...newFilters };
+  };
+
+  /**
+   * 清除过滤器
+   */
+  const clearFilters = () => {
+    filters.value = {
+      groupUuid: '',
+      priority: '',
+      enabled: null,
+      status: '',
+    };
+  };
+
+  // ===== 缓存管理 =====
+
+  /**
+   * 清除所有缓存数据
+   */
+  const clearAll = () => {
+    reminderTemplates.value = [];
+    reminderGroups.value = [];
+    reminderInstances.value = [];
+    selectedTemplate.value = null;
+    selectedGroup.value = null;
+    error.value = null;
+    clearFilters();
+  };
+
+  /**
+   * 刷新指定模板的实例数据
+   */
+  const refreshTemplateInstances = (templateUuid: string) => {
+    // 移除该模板的所有实例，等待重新加载
+    reminderInstances.value = reminderInstances.value.filter(
+      (instance) => instance.templateUuid !== templateUuid,
+    );
+  };
+
+  return {
+    // 状态
+    reminderTemplates: getAllReminderTemplates,
+    reminderGroups: getAllReminderGroups,
+    reminderInstances: getAllReminderInstances,
+    selectedTemplate,
+    selectedGroup,
+    isLoading,
+    error,
+    filters,
+
+    // 计算属性
+    getEnabledReminderTemplates,
+    getActiveReminderInstances,
+    getInstancesByTemplate,
+    getFilteredTemplates,
+
+    // 状态操作
+    setLoading,
+    setError,
+    clearError,
+
+    // 提醒模板操作
+    setReminderTemplates,
+    addOrUpdateReminderTemplate,
+    removeReminderTemplate,
+    getReminderTemplateByUuid,
+    setSelectedTemplate,
+
+    // 提醒分组操作
+    setReminderGroups,
+    addOrUpdateReminderGroup,
+    removeReminderGroup,
+    getReminderGroupByUuid,
+    setSelectedGroup,
+
+    // 提醒实例操作
+    setReminderInstances,
+    addOrUpdateReminderInstance,
+    addOrUpdateReminderInstances,
+    removeReminderInstance,
+    getReminderInstanceByUuid,
+    getReminderInstancesByTemplate,
+
+    // 过滤器操作
+    setFilters,
+    clearFilters,
+
+    // 缓存管理
+    clearAll,
+    refreshTemplateInstances,
+  };
 });
+
+export type ReminderStore = ReturnType<typeof useReminderStore>;

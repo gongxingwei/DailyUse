@@ -6,6 +6,26 @@ import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
  * 任务模板聚合根 - 服务端实现
  */
 export class TaskTemplate extends TaskTemplateCore {
+  constructor(params: {
+    uuid?: string;
+    accountUuid: string;
+    title: string;
+    description?: string;
+    timeConfig: any;
+    reminderConfig?: any;
+    properties?: any;
+    goalLinks?: any;
+    createdAt?: Date;
+    updatedAt?: Date;
+    instances?: any[]; // 支持实体形式或DTO形式
+  }) {
+    super(params);
+
+    // 服务端特有的逻辑可以在这里添加
+    // 如果有instances参数，这里可以处理它们
+    // 目前保持简单，因为TaskTemplate的instances通常通过仓储加载
+  }
+
   /**
    * 从 DTO 创建任务模板实例
    */

@@ -37,15 +37,21 @@ export class TaskTemplate extends TaskTemplateCore {
     goalLinks?: ITaskTemplate['goalLinks'];
     lifecycle?: ITaskTemplate['lifecycle'];
     stats?: ITaskTemplate['stats'];
-    instances?: any[];
+    instances?: TaskInstance[] | any[]; // 支持实体形式或DTO形式
   }) {
     super(params);
 
     // 支持DTO形式和实体形式的TaskInstance数组
+    // 使用instanceof判断，参考Goal模块的实现
     this.instances =
-      params.instances?.map((instance) =>
-        instance instanceof TaskInstance ? instance : TaskInstance.fromDTO(instance),
-      ) || [];
+      params.instances?.map((instance) => {
+        if (instance instanceof TaskInstance) {
+          return instance;
+        } else {
+          // 不是实体则调用fromDTO方法
+          return TaskInstance.fromDTO(instance);
+        }
+      }) || [];
   }
   // ===== 变更跟踪系统 =====
 
