@@ -1,44 +1,689 @@
-import { EditorSessionCore, EditorGroupCore } from '@dailyuse/domain-core';
+import { EditorSessionCore } from '@dailyuse/domain-core';
+import { EditorGroup } from '../entities/EditorGroup';
+import { EditorTab } from '../entities/EditorTab';
+import { EditorLayout } from '../entities/EditorLayout';
 import { type EditorContracts } from '@dailyuse/contracts';
-import { EditorLayout } from './EditorLayout';
 
 // 获取类型定义
 type EditorSessionDTO = EditorContracts.EditorSessionDTO;
+type CreateEditorGroupRequest = EditorContracts.CreateEditorGroupRequest;
+type CreateEditorTabRequest = EditorContracts.CreateEditorTabRequest;
+type SupportedFileType = EditorContracts.SupportedFileType;
+type BatchCreateTabsRequest = EditorContracts.BatchCreateTabsRequest;
 
 /**
  * 客户端 EditorSession 聚合根
- * 继承核心 EditorSession 类，添加客户端特有功能
+ * 使用组合模式包装核心 EditorSession，添加客户端特有功能和变更跟踪
  */
-export class EditorSession extends EditorSessionCore {
-  private _localSettings?: Record<string, any>;
-  private _recentFiles: string[];
-  private _searchHistory: string[];
+export class EditorSession {
+  private _core: EditorSessionCore;
+  private _groups: EditorGroup[] = [];
+  private _layout: EditorLayout | null = null;
 
-  constructor(params: {
-    uuid?: string;
-    accountUuid: string;
-    name: string;
-    groups?: EditorGroupCore[];
-    activeGroupId?: string | null;
-    layout: EditorLayout;
-    autoSave?: boolean;
-    autoSaveInterval?: number;
-    lastSavedAt?: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
-    // 客户端特有字段
-    localSettings?: Record<string, any>;
-    recentFiles?: string[];
-    searchHistory?: string[];
-  }) {
-    super(params);
+  // 客户端特有状态
+  private _changeTracker: {
+    isEditing: boolean;
+    editStartTime?: Date;
+    changedFields: Set<string>;
+    originalValues: Record<string, any>;
+  };
 
-    this._localSettings = params.localSettings;
-    this._recentFiles = params.recentFiles || [];
-    this._searchHistory = params.searchHistory || [];
+  private _uiState: {
+    isMinimized: boolean;
+    isMaximized: boolean;
+    isFullscreen: boolean;
+    isVisible: boolean;
+    zIndex: number;
+    position?: { x: number; y: number };
+    lastFocusedAt?: Date;
+    notifications: Array<{
+      id: string;
+      type: 'info' | 'warning' | 'error' | 'success';
+      message: string;
+      timestamp: Date;
+      dismissed?: boolean;
+    }>;
+  };
+
+  private _localSettings: {
+    enableAutoSave: boolean;
+    autoSaveInterval: number;
+    enableNotifications: boolean;
+    enableKeyboardShortcuts: boolean;
+    defaultFileEncoding: string;
+    maxRecentFiles: number;
+    enableFileWatcher: boolean;
+  };
+
+  constructor(data: EditorSessionDTO | EditorSessionCore) {
+    if (data instanceof EditorSessionCore) {
+      this._core = data;
+    } else {
+      // 从DTO创建核心实例
+      this._core = new (EditorSessionCore as any)({
+        uuid: data.uuid,
+        accountUuid: data.accountUuid,
+        name: data.name,
+        groups: [],
+        activeGroupId: data.activeGroupId,
+        layout: this.createDefaultLayoutCore(data.accountUuid),
+        autoSave: data.autoSave,
+        autoSaveInterval: data.autoSaveInterval,
+        lastSavedAt: data.lastSavedAt ? new Date(data.lastSavedAt) : undefined,
+        createdAt: data.createdAt ? new Date(data.createdAt) : undefined,
+        updatedAt: data.updatedAt ? new Date(data.updatedAt) : undefined,
+      });
+    }
+
+    this._changeTracker = {
+      isEditing: false,
+      changedFields: new Set(),
+      originalValues: {},
+    };
+
+    this._uiState = {
+      isMinimized: false,
+      isMaximized: false,
+      isFullscreen: false,
+      isVisible: true,
+      zIndex: 1,
+      notifications: [],
+    };
+
+    this._localSettings = {
+      enableAutoSave: true,
+      autoSaveInterval: 30,
+      enableNotifications: true,
+      enableKeyboardShortcuts: true,
+      defaultFileEncoding: 'utf-8',
+      maxRecentFiles: 10,
+      enableFileWatcher: true,
+    };
   }
 
-  // ===== 实现抽象方法 =====
+  // ===== 委托核心属性 =====
+  get uuid(): string {
+    return this._core.uuid;
+  }
+  get accountUuid(): string {
+    return this._core.accountUuid;
+  }
+  get name(): string {
+    return this._core.name;
+  }
+  get activeGroupId(): string | null {
+    return this._core.activeGroupId;
+  }
+  get autoSave(): boolean {
+    return this._core.autoSave;
+  }
+  get autoSaveInterval(): number {
+    return this._core.autoSaveInterval;
+  }
+  get lastSavedAt(): Date | undefined {
+    return this._core.lastSavedAt;
+  }
+  get createdAt(): Date {
+    return this._core.createdAt;
+  }
+  get updatedAt(): Date {
+    return this._core.updatedAt;
+  }
+
+  // ===== 客户端特有属性 =====
+  get groups(): EditorGroup[] {
+    return [...this._groups];
+  }
+  get layout(): EditorLayout | null {
+    return this._layout;
+  }
+  get layoutUuid(): string | null {
+    return this._layout?.uuid || null;
+  }
+
+  get changeTracker() {
+    return { ...this._changeTracker };
+  }
+  get uiState() {
+    return { ...this._uiState };
+  }
+  get localSettings() {
+    return { ...this._localSettings };
+  }
+
+  get isEditing(): boolean {
+    return this._changeTracker.isEditing;
+  }
+  get hasChanges(): boolean {
+    return this._changeTracker.changedFields.size > 0;
+  }
+  get isMinimized(): boolean {
+    return this._uiState.isMinimized;
+  }
+  get isMaximized(): boolean {
+    return this._uiState.isMaximized;
+  }
+  get isFullscreen(): boolean {
+    return this._uiState.isFullscreen;
+  }
+  get isVisible(): boolean {
+    return this._uiState.isVisible;
+  }
+
+  // ===== 变更跟踪方法 =====
+
+  /**
+   * 开始编辑模式
+   */
+  startEditing(): void {
+    if (this._changeTracker.isEditing) return;
+
+    this._changeTracker.isEditing = true;
+    this._changeTracker.editStartTime = new Date();
+    this._changeTracker.changedFields.clear();
+    this._changeTracker.originalValues = this.captureCurrentState();
+  }
+
+  /**
+   * 完成编辑模式
+   */
+  finishEditing(): void {
+    this._changeTracker.isEditing = false;
+    this._changeTracker.editStartTime = undefined;
+    this._changeTracker.changedFields.clear();
+    this._changeTracker.originalValues = {};
+  }
+
+  /**
+   * 取消编辑并恢复原始值
+   */
+  cancelEditing(): void {
+    if (!this._changeTracker.isEditing) return;
+
+    // 恢复原始值
+    const original = this._changeTracker.originalValues;
+    if (original.name) this.updateName(original.name);
+    if (original.autoSave !== undefined)
+      this.setAutoSave(original.autoSave, original.autoSaveInterval);
+
+    this.finishEditing();
+  }
+
+  /**
+   * 记录字段变更
+   */
+  private trackChange(fieldName: string, newValue: any): void {
+    if (!this._changeTracker.isEditing) return;
+
+    this._changeTracker.changedFields.add(fieldName);
+  }
+
+  /**
+   * 捕获当前状态
+   */
+  private captureCurrentState(): Record<string, any> {
+    return {
+      name: this.name,
+      autoSave: this.autoSave,
+      autoSaveInterval: this.autoSaveInterval,
+      activeGroupId: this.activeGroupId,
+    };
+  }
+
+  // ===== 委托核心方法并添加变更跟踪 =====
+
+  /**
+   * 更新会话名称
+   */
+  updateName(name: string): void {
+    const oldValue = this.name;
+    this._core.updateName(name);
+    this.trackChange('name', name);
+    this.addNotification('success', `会话名称已更新为: ${name}`);
+  }
+
+  /**
+   * 设置自动保存
+   */
+  setAutoSave(enabled: boolean, interval?: number): void {
+    const oldEnabled = this.autoSave;
+    const oldInterval = this.autoSaveInterval;
+
+    this._core.setAutoSave(enabled, interval);
+    this.trackChange('autoSave', enabled);
+    if (interval !== undefined) {
+      this.trackChange('autoSaveInterval', interval);
+    }
+
+    this.addNotification(
+      'info',
+      enabled ? `自动保存已启用 (${interval || this.autoSaveInterval}秒)` : '自动保存已禁用',
+    );
+  }
+
+  /**
+   * 更新布局
+   */
+  updateLayout(layout: EditorLayout): void {
+    this._layout = layout;
+    this.trackChange('layout', layout);
+    this.addNotification('success', '布局已更新');
+  }
+
+  // ===== 编辑器组管理 =====
+
+  /**
+   * 创建编辑器组
+   */
+  createGroup(request: CreateEditorGroupRequest): EditorGroup {
+    const groupData = {
+      uuid: this.generateUuid(),
+      accountUuid: this.accountUuid,
+      active: this._groups.length === 0,
+      width: request.width,
+      height: request.height || 600,
+      activeTabId: null,
+      title: request.title || `Group ${this._groups.length + 1}`,
+      order: request.order ?? this._groups.length,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const group = new EditorGroup(groupData);
+    this._groups.push(group);
+
+    // 如果是第一个组，自动设为活动组
+    if (this._groups.length === 1) {
+      this.setActiveGroup(group.uuid);
+    }
+
+    this.trackChange('groups', this._groups);
+    this.addNotification('success', `编辑器组 "${group.title}" 已创建`);
+    return group;
+  }
+
+  /**
+   * 删除编辑器组
+   */
+  removeGroup(groupId: string): void {
+    const index = this._groups.findIndex((g) => g.uuid === groupId);
+    if (index === -1) {
+      throw new Error(`编辑器组不存在: ${groupId}`);
+    }
+
+    const group = this._groups[index];
+
+    // 检查是否有未保存的标签页
+    const unsavedTabs = group.tabs.filter((tab: any) => tab.isDirty);
+    if (unsavedTabs.length > 0) {
+      this.addNotification(
+        'warning',
+        `编辑器组 "${group.title}" 包含 ${unsavedTabs.length} 个未保存的文件`,
+      );
+    }
+
+    // 如果删除的是活动组，需要重新设置活动组
+    if (this.activeGroupId === groupId) {
+      const remainingGroups = this._groups.filter((g) => g.uuid !== groupId);
+      this.setActiveGroup(remainingGroups.length > 0 ? remainingGroups[0].uuid : null);
+    }
+
+    this._groups.splice(index, 1);
+    this.trackChange('groups', this._groups);
+    this.addNotification('info', `编辑器组 "${group.title}" 已删除`);
+  }
+
+  /**
+   * 获取指定的编辑器组
+   */
+  getGroup(groupId: string): EditorGroup | undefined {
+    return this._groups.find((g) => g.uuid === groupId);
+  }
+
+  /**
+   * 获取活动编辑器组
+   */
+  getActiveGroup(): EditorGroup | undefined {
+    return this.activeGroupId ? this.getGroup(this.activeGroupId) : undefined;
+  }
+
+  /**
+   * 设置活动编辑器组
+   */
+  setActiveGroup(groupId: string | null): void {
+    if (groupId && !this._groups.some((g) => g.uuid === groupId)) {
+      throw new Error(`编辑器组不存在: ${groupId}`);
+    }
+
+    // 取消所有组的激活状态
+    this._groups.forEach((g) => g.setActive(false));
+
+    // 激活指定组
+    if (groupId) {
+      const group = this.getGroup(groupId);
+      if (group) {
+        group.setActive(true);
+      }
+    }
+
+    this._core.setActiveGroup(groupId);
+    this.trackChange('activeGroupId', groupId);
+  }
+
+  // ===== 标签页管理 =====
+
+  /**
+   * 创建编辑器标签页
+   */
+  createTab(groupUuid: string, request: CreateEditorTabRequest): EditorTab {
+    const group = this.getGroup(groupUuid);
+    if (!group) {
+      throw new Error(`编辑器组不存在: ${groupUuid}`);
+    }
+
+    // 检查是否已存在相同路径的标签页
+    const existingTab = this.findTabByPath(request.path);
+    if (existingTab) {
+      // 激活现有标签页
+      const existingGroup = this.findGroupContainingTab(existingTab.uuid);
+      if (existingGroup?.uuid === groupUuid) {
+        group.setActiveTab(existingTab.uuid);
+      }
+      this.addNotification('info', `文件 "${request.path}" 已在编辑器中打开`);
+      return existingTab;
+    }
+
+    const tabData = {
+      uuid: this.generateUuid(),
+      title: request.title || this.extractFileName(request.path),
+      path: request.path,
+      active: true,
+      isPreview: request.isPreview || false,
+      fileType: request.fileType || this.detectFileType(request.path),
+      isDirty: false,
+      content: request.content || '',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const tab = new EditorTab(tabData);
+    group.addTab(tab);
+
+    this.addNotification('success', `文件 "${tab.title}" 已打开`);
+    return tab;
+  }
+
+  /**
+   * 批量创建标签页
+   */
+  batchCreateTabs(groupUuid: string, request: BatchCreateTabsRequest): EditorTab[] {
+    const group = this.getGroup(groupUuid);
+    if (!group) {
+      throw new Error(`编辑器组不存在: ${groupUuid}`);
+    }
+
+    const createdTabs: EditorTab[] = [];
+
+    for (const tabRequest of request.tabs) {
+      try {
+        const tab = this.createTab(groupUuid, tabRequest);
+        createdTabs.push(tab);
+      } catch (error) {
+        this.addNotification('error', `创建标签页失败: ${tabRequest.path}`);
+      }
+    }
+
+    this.addNotification('success', `成功创建 ${createdTabs.length} 个标签页`);
+    return createdTabs;
+  }
+
+  /**
+   * 查找标签页（跨所有组）
+   */
+  findTab(tabUuid: string): EditorTab | null {
+    for (const group of this._groups) {
+      const tab = group.findTab(tabUuid);
+      if (tab) return tab;
+    }
+    return null;
+  }
+
+  /**
+   * 按路径查找标签页
+   */
+  findTabByPath(path: string): EditorTab | null {
+    for (const group of this._groups) {
+      const tab = group.findTabByPath(path);
+      if (tab) return tab;
+    }
+    return null;
+  }
+
+  /**
+   * 查找包含指定标签页的组
+   */
+  findGroupContainingTab(tabUuid: string): EditorGroup | null {
+    return this._groups.find((group) => group.findTab(tabUuid) !== null) || null;
+  }
+
+  /**
+   * 获取所有标签页
+   */
+  getAllTabs(): EditorTab[] {
+    return this._groups.flatMap((g) => g.tabs);
+  }
+
+  /**
+   * 设置活动标签页
+   */
+  setActiveTab(groupUuid: string, tabUuid: string): void {
+    const group = this.getGroup(groupUuid);
+    if (!group) {
+      throw new Error(`编辑器组不存在: ${groupUuid}`);
+    }
+
+    const tab = group.findTab(tabUuid);
+    if (!tab) {
+      throw new Error(`标签页不存在: ${tabUuid}`);
+    }
+
+    // 取消其他组中标签页的激活状态
+    this._groups.forEach((g) => {
+      if (g.uuid !== groupUuid) {
+        g.tabs.forEach((t: any) => t.setActive(false));
+      }
+    });
+
+    // 激活指定标签页
+    group.setActiveTab(tabUuid);
+
+    // 确保所在组也是活动组
+    if (this.activeGroupId !== groupUuid) {
+      this.setActiveGroup(groupUuid);
+    }
+
+    this._uiState.lastFocusedAt = new Date();
+  }
+
+  // ===== 文件操作辅助方法 =====
+
+  /**
+   * 从路径提取文件名
+   */
+  private extractFileName(path: string): string {
+    return path.split('/').pop() || path.split('\\').pop() || path;
+  }
+
+  /**
+   * 检测文件类型
+   */
+  private detectFileType(path: string): SupportedFileType {
+    const extension = path.split('.').pop()?.toLowerCase();
+    const typeMap: Record<string, SupportedFileType> = {
+      ts: 'typescript' as SupportedFileType,
+      js: 'javascript' as SupportedFileType,
+      vue: 'javascript' as SupportedFileType, // VUE类型在枚举中不存在，使用javascript
+      json: 'json' as SupportedFileType,
+      md: 'markdown' as SupportedFileType,
+      css: 'css' as SupportedFileType,
+      html: 'html' as SupportedFileType,
+      py: 'python' as SupportedFileType,
+      java: 'text' as SupportedFileType, // JAVA类型在枚举中不存在，使用text
+      go: 'text' as SupportedFileType, // GO类型在枚举中不存在，使用text
+      rs: 'text' as SupportedFileType, // RUST类型在枚举中不存在，使用text
+      c: 'text' as SupportedFileType, // C类型在枚举中不存在，使用text
+      cpp: 'text' as SupportedFileType, // CPP类型在枚举中不存在，使用text
+      h: 'text' as SupportedFileType, // C头文件，使用text
+      hpp: 'text' as SupportedFileType, // CPP头文件，使用text
+    };
+
+    return typeMap[extension || ''] || ('text' as SupportedFileType);
+  }
+
+  // ===== UI状态管理 =====
+
+  /**
+   * 设置窗口状态
+   */
+  setWindowState(state: {
+    isMinimized?: boolean;
+    isMaximized?: boolean;
+    isFullscreen?: boolean;
+    isVisible?: boolean;
+    position?: { x: number; y: number };
+  }): void {
+    if (state.isMinimized !== undefined) this._uiState.isMinimized = state.isMinimized;
+    if (state.isMaximized !== undefined) this._uiState.isMaximized = state.isMaximized;
+    if (state.isFullscreen !== undefined) this._uiState.isFullscreen = state.isFullscreen;
+    if (state.isVisible !== undefined) this._uiState.isVisible = state.isVisible;
+    if (state.position !== undefined) this._uiState.position = state.position;
+
+    this.trackChange('uiState', this._uiState);
+  }
+
+  /**
+   * 设置z-index
+   */
+  setZIndex(zIndex: number): void {
+    this._uiState.zIndex = zIndex;
+    this.trackChange('uiState', this._uiState);
+  }
+
+  /**
+   * 记录最后聚焦时间
+   */
+  focus(): void {
+    this._uiState.lastFocusedAt = new Date();
+    this._uiState.isVisible = true;
+  }
+
+  // ===== 通知管理 =====
+
+  /**
+   * 添加通知
+   */
+  addNotification(type: 'info' | 'warning' | 'error' | 'success', message: string): void {
+    if (!this._localSettings.enableNotifications) return;
+
+    const notification = {
+      id: this.generateUuid(),
+      type,
+      message,
+      timestamp: new Date(),
+      dismissed: false,
+    };
+
+    this._uiState.notifications.push(notification);
+
+    // 限制通知数量
+    if (this._uiState.notifications.length > 20) {
+      this._uiState.notifications = this._uiState.notifications.slice(-10);
+    }
+  }
+
+  /**
+   * 标记通知为已读
+   */
+  dismissNotification(notificationId: string): void {
+    const notification = this._uiState.notifications.find((n) => n.id === notificationId);
+    if (notification) {
+      notification.dismissed = true;
+    }
+  }
+
+  /**
+   * 清除所有通知
+   */
+  clearNotifications(): void {
+    this._uiState.notifications = [];
+  }
+
+  /**
+   * 获取未读通知
+   */
+  getUnreadNotifications() {
+    return this._uiState.notifications.filter((n) => !n.dismissed);
+  }
+
+  // ===== 本地设置管理 =====
+
+  /**
+   * 更新本地设置
+   */
+  updateLocalSettings(settings: Partial<typeof this._localSettings>): void {
+    this._localSettings = { ...this._localSettings, ...settings };
+    this.trackChange('localSettings', this._localSettings);
+  }
+
+  // ===== 统计信息 =====
+
+  /**
+   * 获取会话统计信息
+   */
+  getStatistics(): {
+    totalGroups: number;
+    totalTabs: number;
+    activeTabs: number;
+    unsavedFiles: number;
+    totalNotifications: number;
+    unreadNotifications: number;
+    editingTime?: number;
+    lastActivity?: Date;
+  } {
+    const editingTime = this._changeTracker.editStartTime
+      ? Date.now() - this._changeTracker.editStartTime.getTime()
+      : undefined;
+
+    return {
+      totalGroups: this._groups.length,
+      totalTabs: this.getAllTabs().length,
+      activeTabs: this.getAllTabs().filter((t) => t.active).length,
+      unsavedFiles: this.getAllTabs().filter((t) => t.isDirty).length,
+      totalNotifications: this._uiState.notifications.length,
+      unreadNotifications: this.getUnreadNotifications().length,
+      editingTime,
+      lastActivity: this._uiState.lastFocusedAt || this.updatedAt,
+    };
+  }
+
+  // ===== 辅助方法 =====
+
+  /**
+   * 生成UUID
+   */
+  private generateUuid(): string {
+    return Math.random().toString(36).substr(2, 9);
+  }
+
+  /**
+   * 创建默认布局核心实例
+   */
+  private createDefaultLayoutCore(accountUuid: string) {
+    // 这里需要根据实际的EditorLayoutCore构造器调整
+    return null as any; // 临时返回null，需要实际实现
+  }
+
+  // ===== DTO转换 =====
 
   /**
    * 转换为DTO
@@ -48,257 +693,52 @@ export class EditorSession extends EditorSessionCore {
       uuid: this.uuid,
       accountUuid: this.accountUuid,
       name: this.name,
-      groups: this.groups.map((group) => group.toDTO()),
       activeGroupId: this.activeGroupId,
-      layout: this.layout.toDTO(),
+      layoutUuid: this.layoutUuid,
       autoSave: this.autoSave,
       autoSaveInterval: this.autoSaveInterval,
-      lastSavedAt: this.lastSavedAt,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      lastSavedAt: this.lastSavedAt?.getTime(),
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 
-  // ===== Getter 方法 =====
-  get localSettings(): Record<string, any> | undefined {
-    return this._localSettings;
-  }
-  get recentFiles(): string[] {
-    return [...this._recentFiles];
-  }
-  get searchHistory(): string[] {
-    return [...this._searchHistory];
-  }
-
-  // ===== 客户端特有方法 =====
-
   /**
-   * 更新本地设置
+   * 转换为完整DTO（包含关联数据）
    */
-  updateLocalSettings(settings: Record<string, any>): void {
-    this._localSettings = { ...this._localSettings, ...settings };
-    this.updateTimestamp();
-  }
-
-  /**
-   * 清除本地设置
-   */
-  clearLocalSettings(): void {
-    this._localSettings = undefined;
-    this.updateTimestamp();
-  }
-
-  /**
-   * 添加最近打开的文件
-   */
-  addRecentFile(filePath: string): void {
-    // 移除已存在的路径
-    this._recentFiles = this._recentFiles.filter((path) => path !== filePath);
-    // 添加到开头
-    this._recentFiles.unshift(filePath);
-    // 限制数量
-    if (this._recentFiles.length > 20) {
-      this._recentFiles = this._recentFiles.slice(0, 20);
-    }
-    this.updateTimestamp();
-  }
-
-  /**
-   * 移除最近文件
-   */
-  removeRecentFile(filePath: string): void {
-    this._recentFiles = this._recentFiles.filter((path) => path !== filePath);
-    this.updateTimestamp();
-  }
-
-  /**
-   * 清除最近文件
-   */
-  clearRecentFiles(): void {
-    this._recentFiles = [];
-    this.updateTimestamp();
-  }
-
-  /**
-   * 添加搜索历史
-   */
-  addSearchHistory(query: string): void {
-    if (!query.trim()) return;
-
-    const trimmedQuery = query.trim();
-    // 移除已存在的查询
-    this._searchHistory = this._searchHistory.filter((q) => q !== trimmedQuery);
-    // 添加到开头
-    this._searchHistory.unshift(trimmedQuery);
-    // 限制数量
-    if (this._searchHistory.length > 50) {
-      this._searchHistory = this._searchHistory.slice(0, 50);
-    }
-    this.updateTimestamp();
-  }
-
-  /**
-   * 移除搜索历史
-   */
-  removeSearchHistory(query: string): void {
-    this._searchHistory = this._searchHistory.filter((q) => q !== query);
-    this.updateTimestamp();
-  }
-
-  /**
-   * 清除搜索历史
-   */
-  clearSearchHistory(): void {
-    this._searchHistory = [];
-    this.updateTimestamp();
-  }
-
-  /**
-   * 快速访问文件
-   */
-  quickOpenFile(filePath: string): void {
-    this.addRecentFile(filePath);
-
-    // 如果当前没有活动组，创建一个
-    if (!this.activeGroup) {
-      const group = this.groups[0];
-      if (group) {
-        this.setActiveGroup(group.uuid);
-      }
-    }
-  }
-
-  /**
-   * 搜索文件
-   */
-  searchFiles(query: string): string[] {
-    this.addSearchHistory(query);
-
-    // 在最近文件中搜索
-    return this._recentFiles.filter((path) => path.toLowerCase().includes(query.toLowerCase()));
-  }
-
-  /**
-   * 获取会话统计信息
-   */
-  getSessionStats(): {
-    totalGroups: number;
-    totalTabs: number;
-    activeTabs: number;
-    unsavedFiles: number;
-    recentFilesCount: number;
-    searchHistoryCount: number;
+  toFullDTO(): EditorSessionDTO & {
+    groups: Array<ReturnType<EditorGroup['toDTO']>>;
+    layout: ReturnType<EditorLayout['toDTO']> | null;
   } {
     return {
-      totalGroups: this.groups.length,
-      totalTabs: this.totalTabs,
-      activeTabs: this.activeTabs,
-      unsavedFiles: this.unsavedFiles,
-      recentFilesCount: this._recentFiles.length,
-      searchHistoryCount: this._searchHistory.length,
+      ...this.toDTO(),
+      groups: this._groups.map((g) => g.toDTO()),
+      layout: this._layout?.toDTO() || null,
     };
   }
 
   /**
-   * 导出会话配置
-   */
-  exportConfig(): Record<string, any> {
-    return {
-      uuid: this.uuid,
-      name: this.name,
-      layout: this.layout.toDTO(),
-      groups: this.groups.map((group) => group.toDTO()),
-      localSettings: this._localSettings,
-      recentFiles: this._recentFiles,
-      searchHistory: this._searchHistory,
-      autoSave: this.autoSave,
-      autoSaveInterval: this.autoSaveInterval,
-    };
-  }
-
-  /**
-   * 导入会话配置
-   */
-  importConfig(config: Record<string, any>): void {
-    if (config.name) this.updateName(config.name);
-    if (config.localSettings) this._localSettings = config.localSettings;
-    if (config.recentFiles) this._recentFiles = config.recentFiles;
-    if (config.searchHistory) this._searchHistory = config.searchHistory;
-    if (config.autoSave !== undefined) {
-      this.setAutoSave(config.autoSave, config.autoSaveInterval);
-    }
-
-    this.updateTimestamp();
-  }
-
-  /**
-   * 创建一个空的编辑器会话实例（用于新建表单）
-   */
-  static forCreate(accountUuid: string): EditorSession {
-    const now = new Date();
-
-    // 创建默认布局
-    const defaultLayout = new EditorLayout({
-      accountUuid,
-      name: 'Default Layout',
-      activityBarWidth: 45,
-      sidebarWidth: 250,
-      minSidebarWidth: 200,
-      resizeHandleWidth: 5,
-      minEditorWidth: 300,
-      editorTabWidth: 150,
-      windowWidth: 1200,
-      windowHeight: 800,
-      isDefault: true,
-    });
-
-    return new EditorSession({
-      uuid: '', // 将由 UUID 生成
-      accountUuid,
-      name: '',
-      groups: [],
-      activeGroupId: null,
-      layout: defaultLayout,
-      autoSave: true,
-      autoSaveInterval: 30000, // 30 秒
-      lastSavedAt: undefined,
-      createdAt: now,
-      updatedAt: now,
-      localSettings: {},
-      recentFiles: [],
-      searchHistory: [],
-    });
-  }
-
-  /**
-   * 克隆当前编辑器会话实例
+   * 克隆当前对象（深拷贝）
+   * 用于表单编辑时避免直接修改原数据
    */
   clone(): EditorSession {
-    return new EditorSession({
-      uuid: this.uuid,
-      accountUuid: this.accountUuid,
-      name: this.name,
-      groups: [...this.groups], // 浅拷贝组列表
-      activeGroupId: this.activeGroupId,
-      layout: this.layout as EditorLayout,
-      autoSave: this.autoSave,
-      autoSaveInterval: this.autoSaveInterval,
-      lastSavedAt: this.lastSavedAt,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      localSettings: this._localSettings ? { ...this._localSettings } : undefined,
-      recentFiles: [...this._recentFiles],
-      searchHistory: [...this._searchHistory],
-    });
-  }
+    const cloned = new EditorSession(this.toDTO());
 
-  /**
-   * 重置会话状态
-   */
-  resetSession(): void {
-    this.clearLocalSettings();
-    this.clearRecentFiles();
-    this.clearSearchHistory();
-    this.updateTimestamp();
+    // 深拷贝组
+    cloned._groups = this._groups.map((g) => g.clone());
+
+    // 深拷贝布局
+    cloned._layout = this._layout?.clone() || null;
+
+    // 深拷贝客户端状态
+    cloned._uiState = {
+      ...this._uiState,
+      notifications: this._uiState.notifications.map((n) => ({ ...n })),
+      position: this._uiState.position ? { ...this._uiState.position } : undefined,
+    };
+
+    cloned._localSettings = { ...this._localSettings };
+
+    return cloned;
   }
 }

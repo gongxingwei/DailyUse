@@ -1,24 +1,29 @@
 /**
  * Editor Module DTOs
- * 编辑器模块数据传输对象
+ * 编辑器模块数据传输对象定义
  */
 
 import type {
   IEditorTab,
   IEditorGroup,
   IEditorLayout,
+  IEditorSession,
   SupportedFileType,
   FileOperationType,
 } from './types.js';
 
-// ============ Core DTOs ============
+// ============ DTO 基础类型 ============
 
 /**
- * 编辑器标签页DTO
+ * 编辑器标签页 DTO
  */
 export interface EditorTabDTO {
   /** 唯一标识符 */
   uuid: string;
+  /** 所属账户UUID */
+  accountUuid: string;
+  /** 所属编辑器组UUID */
+  groupUuid: string;
   /** 标签页标题 */
   title: string;
   /** 文件路径 */
@@ -34,45 +39,45 @@ export interface EditorTabDTO {
   /** 文件内容 */
   content?: string;
   /** 最后修改时间 */
-  lastModified?: Date;
+  lastModified?: number;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt: number;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt: number;
 }
 
 /**
- * 编辑器组DTO
+ * 编辑器组 DTO
  */
 export interface EditorGroupDTO {
   /** 唯一标识符 */
   uuid: string;
   /** 所属账户UUID */
   accountUuid: string;
+  /** 所属会话UUID */
+  sessionUuid: string;
   /** 是否激活 */
   active: boolean;
   /** 宽度 */
   width: number;
   /** 高度 */
   height?: number;
-  /** 标签页列表 */
-  tabs: EditorTabDTO[];
   /** 当前激活的标签页ID */
   activeTabId: string | null;
   /** 组标题 */
   title?: string;
-  /** 组排序 */
+  /** 排序序号 */
   order: number;
   /** 最后访问时间 */
-  lastAccessed?: Date;
+  lastAccessed?: number;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt: number;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt: number;
 }
 
 /**
- * 编辑器布局DTO
+ * 编辑器布局 DTO
  */
 export interface EditorLayoutDTO {
   /** 唯一标识符 */
@@ -97,16 +102,16 @@ export interface EditorLayoutDTO {
   windowWidth: number;
   /** 窗口高度 */
   windowHeight: number;
-  /** 是否默认布局 */
+  /** 是否为默认布局 */
   isDefault: boolean;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt: number;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt: number;
 }
 
 /**
- * 编辑器会话DTO
+ * 编辑器会话 DTO
  */
 export interface EditorSessionDTO {
   /** 唯一标识符 */
@@ -115,39 +120,63 @@ export interface EditorSessionDTO {
   accountUuid: string;
   /** 会话名称 */
   name: string;
-  /** 编辑器组列表 */
-  groups: EditorGroupDTO[];
   /** 活动编辑器组ID */
   activeGroupId: string | null;
-  /** 布局配置 */
-  layout: EditorLayoutDTO;
+  /** 布局UUID */
+  layoutUuid: string | null;
   /** 是否自动保存 */
   autoSave: boolean;
   /** 自动保存间隔（秒） */
   autoSaveInterval: number;
   /** 最后保存时间 */
-  lastSavedAt?: Date;
+  lastSavedAt?: number;
   /** 创建时间 */
-  createdAt: Date;
+  createdAt: number;
   /** 更新时间 */
-  updatedAt: Date;
+  updatedAt: number;
 }
 
-// ============ Request DTOs ============
+// ============ 请求 DTOs ============
+
+/**
+ * 创建编辑器会话请求
+ */
+export interface CreateEditorSessionRequest {
+  /** 会话名称 */
+  name: string;
+  /** 布局配置（可选，使用默认布局） */
+  layout?: Partial<Omit<EditorLayoutDTO, 'uuid' | 'accountUuid' | 'createdAt' | 'updatedAt'>>;
+  /** 是否自动保存 */
+  autoSave?: boolean;
+  /** 自动保存间隔（秒） */
+  autoSaveInterval?: number;
+}
+
+/**
+ * 更新编辑器会话请求
+ */
+export interface UpdateEditorSessionRequest {
+  /** 会话名称 */
+  name?: string;
+  /** 活动编辑器组ID */
+  activeGroupId?: string | null;
+  /** 是否自动保存 */
+  autoSave?: boolean;
+  /** 自动保存间隔（秒） */
+  autoSaveInterval?: number;
+}
 
 /**
  * 创建编辑器组请求
  */
 export interface CreateEditorGroupRequest {
-  /** 所属账户UUID */
-  accountUuid: string;
+  /** 宽度 */
+  width: number;
+  /** 高度 */
+  height?: number;
   /** 组标题 */
   title?: string;
-  /** 初始宽度 */
-  width?: number;
-  /** 初始高度 */
-  height?: number;
-  /** 排序 */
+  /** 排序序号 */
   order?: number;
 }
 
@@ -155,15 +184,17 @@ export interface CreateEditorGroupRequest {
  * 更新编辑器组请求
  */
 export interface UpdateEditorGroupRequest {
-  /** 组标题 */
-  title?: string;
+  /** 是否激活 */
+  active?: boolean;
   /** 宽度 */
   width?: number;
   /** 高度 */
   height?: number;
-  /** 是否激活 */
-  active?: boolean;
-  /** 排序 */
+  /** 活动标签页ID */
+  activeTabId?: string | null;
+  /** 组标题 */
+  title?: string;
+  /** 排序序号 */
   order?: number;
 }
 
@@ -171,17 +202,15 @@ export interface UpdateEditorGroupRequest {
  * 创建编辑器标签页请求
  */
 export interface CreateEditorTabRequest {
-  /** 所属编辑器组UUID */
-  groupUuid: string;
   /** 标签页标题 */
   title: string;
   /** 文件路径 */
   path: string;
-  /** 文件类型 */
-  fileType?: SupportedFileType;
   /** 是否为预览模式 */
   isPreview?: boolean;
-  /** 初始内容 */
+  /** 文件类型 */
+  fileType?: SupportedFileType;
+  /** 文件内容 */
   content?: string;
 }
 
@@ -206,26 +235,6 @@ export interface UpdateEditorTabRequest {
 }
 
 /**
- * 创建编辑器布局请求
- */
-export interface CreateEditorLayoutRequest {
-  /** 所属账户UUID */
-  accountUuid: string;
-  /** 布局名称 */
-  name: string;
-  /** 活动栏宽度 */
-  activityBarWidth?: number;
-  /** 侧边栏宽度 */
-  sidebarWidth?: number;
-  /** 窗口宽度 */
-  windowWidth?: number;
-  /** 窗口高度 */
-  windowHeight?: number;
-  /** 是否默认布局 */
-  isDefault?: boolean;
-}
-
-/**
  * 更新编辑器布局请求
  */
 export interface UpdateEditorLayoutRequest {
@@ -247,60 +256,84 @@ export interface UpdateEditorLayoutRequest {
   windowWidth?: number;
   /** 窗口高度 */
   windowHeight?: number;
-  /** 是否默认布局 */
+  /** 是否为默认布局 */
   isDefault?: boolean;
 }
 
+// ============ 响应 DTOs ============
+
 /**
- * 创建编辑器会话请求
+ * 编辑器会话响应
  */
-export interface CreateEditorSessionRequest {
-  /** 所属账户UUID */
-  accountUuid: string;
-  /** 会话名称 */
-  name: string;
-  /** 布局UUID */
-  layoutUuid?: string;
-  /** 是否自动保存 */
-  autoSave?: boolean;
-  /** 自动保存间隔（秒） */
-  autoSaveInterval?: number;
+export type EditorSessionResponse = EditorSessionDTO;
+
+/**
+ * 编辑器组响应
+ */
+export type EditorGroupResponse = EditorGroupDTO;
+
+/**
+ * 编辑器标签页响应
+ */
+export type EditorTabResponse = EditorTabDTO;
+
+/**
+ * 编辑器布局响应
+ */
+export type EditorLayoutResponse = EditorLayoutDTO;
+
+/**
+ * 编辑器会话列表响应
+ */
+export interface EditorSessionListResponse {
+  /** 会话列表 */
+  sessions: EditorSessionResponse[];
+  /** 总数量 */
+  total: number;
+  /** 当前页码 */
+  page: number;
+  /** 每页数量 */
+  limit: number;
+  /** 是否有更多数据 */
+  hasMore: boolean;
 }
 
 /**
- * 更新编辑器会话请求
+ * 编辑器组列表响应
  */
-export interface UpdateEditorSessionRequest {
-  /** 会话名称 */
-  name?: string;
-  /** 活动编辑器组ID */
-  activeGroupId?: string;
-  /** 布局UUID */
-  layoutUuid?: string;
-  /** 是否自动保存 */
-  autoSave?: boolean;
-  /** 自动保存间隔（秒） */
-  autoSaveInterval?: number;
+export interface EditorGroupListResponse {
+  /** 编辑器组列表 */
+  groups: EditorGroupResponse[];
+  /** 总数量 */
+  total: number;
+  /** 当前页码 */
+  page: number;
+  /** 每页数量 */
+  limit: number;
+  /** 是否有更多数据 */
+  hasMore: boolean;
 }
-
-// ============ Response DTOs ============
 
 /**
  * 编辑器状态响应
  */
 export interface EditorStateResponse {
+  /** 当前会话 */
+  currentSession: EditorSessionResponse | null;
   /** 编辑器组列表 */
-  groups: EditorGroupDTO[];
+  groups: EditorGroupResponse[];
   /** 活动编辑器组ID */
   activeGroupId: string | null;
   /** 布局配置 */
-  layout: EditorLayoutDTO;
+  layout: EditorLayoutResponse;
   /** 总标签页数 */
   totalTabs: number;
+  /** 活动标签页数 */
+  activeTabs: number;
   /** 未保存的文件数 */
   unsavedFiles: number;
-  /** 最后保存时间 */
-  lastSavedAt?: Date;
+  /** 是否有未保存的更改 */
+  hasUnsavedChanges: boolean;
 }
 
 /**
@@ -316,49 +349,95 @@ export interface FileContentResponse {
   /** 文件大小 */
   size: number;
   /** 最后修改时间 */
-  lastModified: Date;
+  lastModified: number;
   /** 是否只读 */
   readonly: boolean;
-  /** 文件编码 */
-  encoding?: string;
+}
+
+// ============ 批量操作 DTOs ============
+
+/**
+ * 批量创建标签页请求
+ */
+export interface BatchCreateTabsRequest {
+  /** 标签页列表 */
+  tabs: CreateEditorTabRequest[];
 }
 
 /**
- * 编辑器组列表响应
+ * 批量更新标签页请求
  */
-export interface EditorGroupListResponse {
-  /** 编辑器组列表 */
-  groups: EditorGroupDTO[];
-  /** 总数 */
-  total: number;
-  /** 页码 */
-  page: number;
-  /** 每页数量 */
-  limit: number;
+export interface BatchUpdateTabsRequest {
+  /** 更新操作列表 */
+  updates: { tabId: string; data: UpdateEditorTabRequest }[];
 }
 
 /**
- * 编辑器布局列表响应
+ * 批量关闭标签页请求
  */
-export interface EditorLayoutListResponse {
-  /** 布局列表 */
-  layouts: EditorLayoutDTO[];
-  /** 总数 */
-  total: number;
-  /** 默认布局 */
-  defaultLayout?: EditorLayoutDTO;
+export interface BatchCloseTabsRequest {
+  /** 标签页ID列表 */
+  tabIds: string[];
+  /** 是否保存修改的文件 */
+  saveModified?: boolean;
 }
 
 /**
- * 编辑器会话列表响应
+ * 批量保存文件请求
  */
-export interface EditorSessionListResponse {
-  /** 会话列表 */
-  sessions: EditorSessionDTO[];
-  /** 总数 */
+export interface BatchSaveFilesRequest {
+  /** 文件路径列表 */
+  paths: string[];
+  /** 是否保存所有修改的文件（忽略paths参数） */
+  saveAll?: boolean;
+}
+
+/**
+ * 批量操作响应
+ */
+export interface BatchOperationResponse<T = any> {
+  /** 成功的操作 */
+  successful: Array<{ id: string; result: T }>;
+  /** 失败的操作 */
+  failed: Array<{ id: string; error: string }>;
+  /** 总操作数 */
   total: number;
-  /** 当前会话 */
-  currentSession?: EditorSessionDTO;
+  /** 成功数 */
+  successCount: number;
+  /** 失败数 */
+  failureCount: number;
+}
+
+/**
+ * 会话切换请求
+ */
+export interface SwitchSessionRequest {
+  /** 目标会话ID */
+  sessionId: string;
+  /** 是否保存当前会话状态 */
+  saveCurrentState?: boolean;
+}
+
+/**
+ * 布局切换请求
+ */
+export interface SwitchLayoutRequest {
+  /** 目标布局ID */
+  layoutId: string;
+  /** 是否应用到所有会话 */
+  applyToAllSessions?: boolean;
+}
+
+/**
+ * 工作区导入请求
+ */
+export interface ImportWorkspaceRequest {
+  /** 工作区路径 */
+  workspacePath: string;
+  /** 是否创建新会话 */
+  createNewSession?: boolean;
+  /** 新会话名称 */
+  sessionName?: string;
 }
 
 /**
@@ -374,7 +453,7 @@ export interface FileOperationResponse {
   /** 错误信息 */
   error?: string;
   /** 操作时间 */
-  timestamp: Date;
+  timestamp: number;
 }
 
 // ============ Query DTOs ============

@@ -87,6 +87,7 @@ export class EditorTab extends EditorTabCore {
   toDTO(): EditorTabDTO {
     return {
       uuid: this.uuid,
+      accountUuid: (this as any)._accountUuid || '',
       title: this.title,
       path: this.path,
       active: this.active,
@@ -94,9 +95,10 @@ export class EditorTab extends EditorTabCore {
       fileType: this.fileType,
       isDirty: this.isDirty,
       content: this.content,
-      lastModified: this.lastModified,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      groupUuid: (this as any)._groupUuid || '',
+      lastModified: this.lastModified?.getTime(),
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 
@@ -441,9 +443,9 @@ export class EditorTab extends EditorTabCore {
       fileType: dto.fileType,
       isDirty: dto.isDirty,
       content: dto.content,
-      lastModified: dto.lastModified,
-      createdAt: dto.createdAt,
-      updatedAt: dto.updatedAt,
+      lastModified: dto.lastModified ? new Date(dto.lastModified) : undefined,
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
       // 深拷贝UI状态
       uiState: this._uiState
         ? {

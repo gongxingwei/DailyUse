@@ -148,7 +148,7 @@ export class ReminderTemplate extends AggregateRoot {
       title: this._name,
       message: instanceData.message || this._message,
       scheduledTime: instanceData.scheduledTime,
-      status: 'pending',
+      status: 'pending' as ReminderContracts.ReminderStatus,
       priority: instanceData.priority || this._priority,
       metadata: {
         category: instanceData.metadata?.category || this._category,
@@ -294,7 +294,7 @@ export class ReminderTemplate extends AggregateRoot {
       this.instances
         .filter((instance) => instance.status === 'pending')
         .forEach((instance) => {
-          instance.updateStatus('cancelled', new Date());
+          instance.updateStatus('cancelled' as ReminderContracts.ReminderStatus, new Date());
         });
     }
 

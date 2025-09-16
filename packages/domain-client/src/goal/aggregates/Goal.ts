@@ -394,7 +394,7 @@ export class Goal extends GoalCore {
   /**
    * 获取时间进度（客户端实现）
    */
-  private getTimeProgress(): number {
+  protected getTimeProgress(): number {
     const now = Date.now();
     const start = this._startTime.getTime();
     const end = this._endTime.getTime();
