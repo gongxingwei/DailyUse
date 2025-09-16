@@ -1,4 +1,6 @@
 import { useRepositoryStore } from '../../presentation/stores/repositoryStore';
+import { repositoryApiClient } from '../../infrastructure/api/repositoryApiClient';
+import { type RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository Web 应用服务 - 新架构
@@ -6,8 +8,6 @@ import { useRepositoryStore } from '../../presentation/stores/repositoryStore';
  * 实现缓存优先的数据同步策略
  */
 export class RepositoryWebApplicationService {
-  private baseUrl = '/api/v1/repositories';
-
   /**
    * 懒加载获取 Repository Store
    * 避免在 Pinia 初始化之前调用
@@ -21,31 +21,14 @@ export class RepositoryWebApplicationService {
   /**
    * 创建仓库
    */
-  async createRepository(request: {
-    name: string;
-    path: string;
-    type?: string;
-    description?: string;
-    relatedGoals?: string[];
-  }): Promise<any> {
+  async createRepository(
+    request: RepositoryContracts.CreateRepositoryRequestDTO,
+  ): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to create repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.createRepository(request);
 
       // 添加到缓存
       this.repositoryStore.addRepository(repository);
@@ -69,45 +52,24 @@ export class RepositoryWebApplicationService {
     type?: string;
     status?: string;
     goalUuid?: string;
-  }): Promise<any> {
+  }): Promise<RepositoryContracts.RepositoryListResponseDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const url = new URL(`${this.baseUrl}`, window.location.origin);
-      if (params) {
-        Object.entries(params).forEach(([key, value]) => {
-          if (value !== undefined && value !== null) {
-            url.searchParams.append(key, String(value));
-          }
-        });
-      }
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        throw new Error(`Failed to get repositories: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repositories = result.data || [];
+      const response = await repositoryApiClient.getRepositories(params);
 
       // 批量同步到 store
-      this.repositoryStore.setRepositories(repositories);
+      this.repositoryStore.setRepositories(response.repositories);
 
       // 更新分页信息
-      if (result.meta) {
-        this.repositoryStore.setPagination({
-          page: result.meta.page || 1,
-          limit: result.meta.limit || 20,
-          total: result.meta.total || repositories.length,
-        });
-      }
+      this.repositoryStore.setPagination({
+        page: response.page || 1,
+        limit: response.limit || 20,
+        total: response.total,
+      });
 
-      return {
-        repositories,
-        ...result.meta,
-      };
+      return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取仓库列表失败';
       this.repositoryStore.setError(errorMessage);
@@ -120,29 +82,21 @@ export class RepositoryWebApplicationService {
   /**
    * 获取仓库详情
    */
-  async getRepositoryById(uuid: string): Promise<any | null> {
+  async getRepositoryById(uuid: string): Promise<RepositoryContracts.RepositoryDTO | null> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${uuid}`);
-
-      if (response.status === 404) {
-        return null;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to get repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.getRepositoryById(uuid);
 
       // 添加到缓存
       this.repositoryStore.addRepository(repository);
 
       return repository;
     } catch (error) {
+      if (error instanceof Error && error.message.includes('404')) {
+        return null;
+      }
       const errorMessage = error instanceof Error ? error.message : '获取仓库详情失败';
       this.repositoryStore.setError(errorMessage);
       throw error;
@@ -156,33 +110,13 @@ export class RepositoryWebApplicationService {
    */
   async updateRepository(
     uuid: string,
-    request: {
-      name?: string;
-      path?: string;
-      type?: string;
-      description?: string;
-      relatedGoals?: string[];
-      status?: string;
-    },
-  ): Promise<any> {
+    request: RepositoryContracts.UpdateRepositoryRequestDTO,
+  ): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${uuid}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to update repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.updateRepository(uuid, request);
 
       // 更新缓存
       this.repositoryStore.updateRepository(uuid, repository);
@@ -205,13 +139,7 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${uuid}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to delete repository: ${response.statusText}`);
-      }
+      await repositoryApiClient.deleteRepository(uuid);
 
       // 从缓存中移除
       this.repositoryStore.removeRepository(uuid);
@@ -229,21 +157,12 @@ export class RepositoryWebApplicationService {
   /**
    * 激活仓库
    */
-  async activateRepository(uuid: string): Promise<any> {
+  async activateRepository(uuid: string): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${uuid}/activate`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to activate repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.activateRepository(uuid);
 
       // 更新缓存
       this.repositoryStore.updateRepository(uuid, repository);
@@ -261,21 +180,12 @@ export class RepositoryWebApplicationService {
   /**
    * 归档仓库
    */
-  async archiveRepository(uuid: string): Promise<any> {
+  async archiveRepository(uuid: string): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${uuid}/archive`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to archive repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.archiveRepository(uuid);
 
       // 更新缓存
       this.repositoryStore.updateRepository(uuid, repository);
@@ -295,21 +205,15 @@ export class RepositoryWebApplicationService {
   /**
    * 关联目标到仓库
    */
-  async linkGoalToRepository(repositoryUuid: string, goalUuid: string): Promise<any> {
+  async linkGoalToRepository(
+    repositoryUuid: string,
+    goalUuid: string,
+  ): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${repositoryUuid}/goals/${goalUuid}`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to link goal to repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.linkGoalToRepository(repositoryUuid, goalUuid);
 
       // 更新缓存
       this.repositoryStore.updateRepository(repositoryUuid, repository);
@@ -327,21 +231,18 @@ export class RepositoryWebApplicationService {
   /**
    * 取消目标与仓库的关联
    */
-  async unlinkGoalFromRepository(repositoryUuid: string, goalUuid: string): Promise<any> {
+  async unlinkGoalFromRepository(
+    repositoryUuid: string,
+    goalUuid: string,
+  ): Promise<RepositoryContracts.RepositoryDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await fetch(`${this.baseUrl}/${repositoryUuid}/goals/${goalUuid}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        throw new Error(`Failed to unlink goal from repository: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      const repository = result.data;
+      const repository = await repositoryApiClient.unlinkGoalFromRepository(
+        repositoryUuid,
+        goalUuid,
+      );
 
       // 更新缓存
       this.repositoryStore.updateRepository(repositoryUuid, repository);
@@ -367,26 +268,13 @@ export class RepositoryWebApplicationService {
     limit?: number;
     type?: string;
     status?: string;
-  }): Promise<any> {
+  }): Promise<RepositoryContracts.RepositoryListResponseDTO> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const url = new URL(`${this.baseUrl}/search`, window.location.origin);
-      Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-          url.searchParams.append(key, String(value));
-        }
-      });
-
-      const response = await fetch(url.toString());
-
-      if (!response.ok) {
-        throw new Error(`Failed to search repositories: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      return result.data;
+      const response = await repositoryApiClient.searchRepositories(params);
+      return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索仓库失败';
       this.repositoryStore.setError(errorMessage);
@@ -399,7 +287,7 @@ export class RepositoryWebApplicationService {
   /**
    * 获取与指定目标关联的仓库
    */
-  async getRepositoriesByGoal(goalUuid: string): Promise<any[]> {
+  async getRepositoriesByGoal(goalUuid: string): Promise<RepositoryContracts.RepositoryDTO[]> {
     // 优先从缓存获取
     const cachedRepositories = this.repositoryStore.getRepositoriesByGoalUuid(goalUuid);
 
@@ -414,6 +302,95 @@ export class RepositoryWebApplicationService {
     });
 
     return response.repositories || [];
+  }
+
+  // ===== 资源管理 =====
+
+  /**
+   * 获取仓库资源列表
+   */
+  async getRepositoryResources(
+    repositoryUuid: string,
+    params?: RepositoryContracts.ResourceQueryParamsDTO,
+  ): Promise<RepositoryContracts.ResourceListResponseDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const response = await repositoryApiClient.getRepositoryResources(repositoryUuid, params);
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取仓库资源失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 创建资源
+   */
+  async createResource(
+    request: RepositoryContracts.CreateResourceRequestDTO,
+  ): Promise<RepositoryContracts.ResourceDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const resource = await repositoryApiClient.createResource(request);
+      return resource;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '创建资源失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  // ===== Git管理 =====
+
+  /**
+   * 获取Git状态
+   */
+  async getGitStatus(repositoryUuid: string): Promise<RepositoryContracts.GitStatusResponseDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const status = await repositoryApiClient.getGitStatus(repositoryUuid);
+      return status;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取Git状态失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * Git提交
+   */
+  async gitCommit(
+    repositoryUuid: string,
+    message: string,
+    addAll = true,
+  ): Promise<RepositoryContracts.GitCommitDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const commit = await repositoryApiClient.gitCommit(repositoryUuid, { message, addAll });
+      return commit;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Git提交失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
   }
 
   // ===== 数据同步方法 =====

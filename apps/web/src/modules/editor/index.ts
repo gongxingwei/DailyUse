@@ -3,8 +3,11 @@
  * 编辑器Web模块导出
  */
 
-export * from './application/index.js';
+// 导出应用层
+export * from './application/index';
 
-// 新增 - domain-client 集成相关
-export { useEditorSessionStore } from './presentation/stores/editorSessionStore';
-export { default as EditorSessionManager } from './presentation/components/EditorSessionManager.vue';
+// 导出基础设施层 API 客户端
+export * from './infrastructure/api/index';
+
+// 导出 Store
+export { useEditorStore } from './presentation/stores/editorStore';
