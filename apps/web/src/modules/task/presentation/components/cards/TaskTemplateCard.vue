@@ -12,15 +12,15 @@
                         </v-icon>
                         {{ getTemplateStatusText(template) }}
                     </v-chip>
-                    <v-chip :color="getImportanceColor(template.metadata.importance)" 
+                    <v-chip :color="getImportanceColor(template.properties.importance)" 
                         variant="outlined" size="small" class="importance-chip ml-2">
                         <v-icon start size="small">mdi-flag</v-icon>
-                        {{ getImportanceText(template.metadata.importance) }}
+                        {{ getImportanceText(template.properties.importance) }}
                     </v-chip>
-                    <v-chip :color="getUrgencyColor(template.metadata.urgency)" 
+                    <v-chip :color="getUrgencyColor(template.properties.urgency)" 
                         variant="outlined" size="small" class="urgency-chip ml-2">
                         <v-icon start size="small">mdi-flag</v-icon>
-                        {{ getUrgencyText(template.metadata.urgency) }}
+                        {{ getUrgencyText(template.properties.urgency) }}
                     </v-chip>
 
                 </div>
@@ -48,14 +48,6 @@
                 {{ template.description }}
             </p>
 
-            <!-- 时间配置摘要 -->
-            <div class="time-summary mb-3">
-                <v-chip color="primary" variant="outlined" size="small" class="mb-1">
-                    <v-icon start size="small">mdi-clock-outline</v-icon>
-                    {{ TaskTimeUtils.formatTimeConfigSummary(template.timeConfig) }}
-                </v-chip>
-            </div>
-
             <!-- 元信息 -->
             <div class="template-meta">
                 <!-- 日期范围 -->
@@ -64,7 +56,7 @@
                         mdi-calendar-range
                     </v-icon>
                     <span class="meta-text">
-                        开始于 {{ format(template.timeConfig.baseTime.start, 'yyyy-MM-dd') }}
+                        开始于 {{ format(template.timeConfig.date.startDate, 'yyyy-MM-dd') }}
                     </span>
                 </div>
 
@@ -74,7 +66,7 @@
                         mdi-clock
                     </v-icon>
                     <span class="meta-text">
-                        {{ timeRange }}
+                        {{ getTaskTemplateTimeText(template) }}
                     </span>
                 </div>
 
@@ -84,7 +76,7 @@
                         mdi-repeat
                     </v-icon>
                     <span class="meta-text">
-                        {{ recurrence || '无重复' }}
+                        {{ getTaskTemplateRecurrenceText(template) }}
                     </span>
                 </div>
 
@@ -94,52 +86,47 @@
                         mdi-tag
                     </v-icon>
                     <span class="meta-text">
-                        {{ template.metadata.category }}
-                        <span v-if="template.metadata.tags.length > 0" class="tags">
-                            · {{ template.metadata.tags.slice(0, 2).join(', ') }}
-                            <span v-if="template.metadata.tags.length > 2">等{{ template.metadata.tags.length }}个标签</span>
+                        <span v-if="template.properties.tags.length > 0" class="tags">
+                            · {{ template.properties.tags.slice(0, 2).join(', ') }}
+                            <span v-if="template.properties.tags.length > 2">等{{ template.properties.tags.length }}个标签</span>
                         </span>
                     </span>
                 </div>
 
                 <!-- 关联目标 -->
-                <div v-if="template.keyResultLinks?.length" class="meta-item">
+                <div v-if="template.goalLinks?.length" class="meta-item">
                     <v-icon color="warning" size="small" class="meta-icon">
                         mdi-target
                     </v-icon>
                     <span class="meta-text">
-                        关联 {{ template.keyResultLinks.length }} 个关键结果
+                        关联 {{ template.goalLinks.length }} 个目标
                     </span>
                 </div>
             </div>
 
             <!-- 关键结果标签 -->
-            <div v-if="template.keyResultLinks?.length" class="key-results mt-3">
-                <v-chip v-for="link in template.keyResultLinks.slice(0, 2)" :key="link.keyResultId" size="small"
+            <div v-if="template.goalLinks?.length" class="key-results mt-3">
+                <v-chip v-for="link in template.goalLinks.slice(0, 2)" :key="link.keyResultId" size="small"
                     color="primary" variant="outlined" class="mr-1 mb-1">
                     <v-icon start size="small">mdi-target</v-icon>
                     {{ getKeyResultName(link) }}
                 </v-chip>
-                <v-chip v-if="template.keyResultLinks.length > 2" size="small" variant="text" class="mb-1">
-                    +{{ template.keyResultLinks.length - 2 }}
+                <v-chip v-if="template.goalLinks.length > 2" size="small" variant="text" class="mb-1">
+                    +{{ template.goalLinks.length - 2 }}
                 </v-chip>
             </div>
 
             <!-- 统计信息 -->
-            <div v-if="template.analytics.totalInstances > 0" class="analytics-info mt-3">
+            <div v-if="template.stats.totalInstances > 0" class="analytics-info mt-3">
                 <v-divider class="mb-2"></v-divider>
                 <div class="analytics-row">
                     <div class="analytics-item">
                         <span class="analytics-label">总次数：</span>
-                        <span class="analytics-value">{{ template.analytics.totalInstances }}</span>
+                        <span class="analytics-value">{{ template.stats.totalInstances }}</span>
                     </div>
                     <div class="analytics-item">
                         <span class="analytics-label">完成率：</span>
-                        <span class="analytics-value">{{ Math.round(template.analytics.successRate * 100) }}%</span>
-                    </div>
-                    <div v-if="template.analytics.averageCompletionTime" class="analytics-item">
-                        <span class="analytics-label">平均用时：</span>
-                        <span class="analytics-value">{{ formatCompletionTime(template.analytics.averageCompletionTime) }}</span>
+                        <span class="analytics-value">{{ Math.round(template.stats.completionRate * 100) }}%</span>
                     </div>
                 </div>
             </div>
@@ -147,36 +134,71 @@
 
         <!-- 卡片底部操作 -->
         <v-card-actions class="template-footer">
-            <v-btn v-if="template.isActive()" color="primary" variant="outlined" size="small" 
-                @click="handlePauseTemplate">
+            <v-btn v-if="template.lifecycle.status === 'active'" color="primary" variant="outlined" size="small" 
+                @click="pauseTaskTemplate(template.uuid)">
                 <v-icon start size="small">mdi-plus</v-icon>
                 暂停
             </v-btn>
-            <v-btn v-else-if="template.isPaused()" color="warning" variant="outlined" size="small" 
+            <v-btn v-else-if="template.lifecycle.status === 'paused'" color="warning" variant="outlined" size="small" 
                 @click="handleResume">
                 <v-icon start size="small">mdi-play</v-icon>
                 恢复
             </v-btn>
-            
-            <v-spacer></v-spacer>
-            
+            <v-btn v-else-if="template.lifecycle.status === 'draft'" color="info" variant="outlined" size="small" 
+                @click="activateTaskTemplate(template.uuid)">
+                <v-icon start size="small">mdi-play</v-icon>
+                激活
+            </v-btn>
+
+            <v-divider class="mx-2" inset vertical></v-divider>
+
             <div class="template-dates">
                 <span class="date-text">
                     创建于 {{ format(template.lifecycle.createdAt, 'yyyy-MM-dd HH:mm:ss') }}
                 </span>
             </div>
         </v-card-actions>
+        <!-- 删除确认对话框 -->
+        <v-dialog v-model="showDeleteDialog" max-width="400">
+            <v-card>
+                <v-card-title class="text-h6">
+                    <v-icon color="error" class="mr-2">mdi-delete-alert</v-icon>
+                    确认删除
+                </v-card-title>
+                <v-card-text>
+                    确定要删除任务模板 "{{ props.template?.title }}" 吗？
+                    <br>
+                    <span class="text-caption text-error">此操作不可恢复，相关的任务实例也会被删除。</span>
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="showDeleteDialog = false">
+                        取消
+                    </v-btn>
+                    <v-btn color="error" variant="elevated" @click="handleDelete">
+                        删除
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </v-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { TaskTimeUtils } from '@dailyuse/contracts/modules/task/utils/taskTimeUtils';
+import { computed, ref } from 'vue';
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
 import { format } from 'date-fns';
 import { ImportanceLevel } from '@dailyuse/contracts';
 import { UrgencyLevel } from '@dailyuse/contracts';
+// types
+import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
+import { TaskTemplate, KeyResult, Goal } from '@dailyuse/domain-client';
+// composables
+import { useTaskUtils } from '../../composables/useTaskUtils';
+import { useTask } from '../../composables/useTask';
+import { de } from 'date-fns/locale';
+const { getTaskTemplateTimeText, getTaskTemplateRecurrenceText } = useTaskUtils();
+const { deleteTaskTemplate, pauseTaskTemplate, activateTaskTemplate } = useTask();
 
 interface Props {
     template: TaskTemplate;
@@ -205,13 +227,8 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<Emits>();
 const goalStore = useGoalStore();
+const showDeleteDialog = ref(false);
 
-const timeConfigFormatted = computed(() => {
-    return TaskTimeUtils.formatTimeConfig(props.template.timeConfig);
-});
-
-const timeRange = computed(() => timeConfigFormatted.value.timeRange);
-const recurrence = computed(() => timeConfigFormatted.value.recurrence);
 console.log('lifecycle', props.template.lifecycle);
 // 状态相关方法
 const getTemplateStatusColor = (template: TaskTemplate) => {
@@ -278,9 +295,9 @@ const getUrgencyText = (urgency: UrgencyLevel) => {
         default: return '';
     }
 };
-const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalByUuid(link.goalUuid);
-    const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
+const getKeyResultName = (link: KeyResultLink) => {
+    const goal: Goal | undefined = goalStore.getGoalByUuid(link.goalUuid);
+    const kr: KeyResult | undefined = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
     return kr?.name || '未知关键结果';
 };
 
@@ -300,7 +317,8 @@ const handleEdit = () => {
 };
 
 const handleDelete = () => {
-    emit('delete', props.template);
+    deleteTaskTemplate(props.template.uuid);
+    showDeleteDialog.value = false;
 };
 
 const handlePauseTemplate = () => {

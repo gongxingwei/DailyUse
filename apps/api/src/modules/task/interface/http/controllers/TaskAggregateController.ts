@@ -3,21 +3,22 @@ import { TaskAggregateService } from '../../../application/services/TaskAggregat
 import { PrismaTaskTemplateRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskTemplateRepository';
 import { PrismaTaskInstanceRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskInstanceRepository';
 import { PrismaTaskMetaTemplateRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskMetaTemplateRepository';
+import { PrismaClient } from '@prisma/client';
 import type { TaskContracts } from '@dailyuse/contracts';
 
 type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
 type CreateTaskInstanceRequest = TaskContracts.CreateTaskInstanceRequest;
 type UpdateTaskInstanceRequest = TaskContracts.UpdateTaskInstanceRequest;
 
-// 这里需要实际的数据库连接，在真实项目中会通过依赖注入获取
-const createAggregateService = () => {
-  // 此处应该从容器或环境获取真实的数据库连接
-  const mockPrisma = {} as any; // 临时mock，实际使用时替换为真实Prisma实例
+// 创建真实的Prisma客户端实例
+const prisma = new PrismaClient();
 
+// 创建聚合服务实例
+const createAggregateService = () => {
   return new TaskAggregateService(
-    new PrismaTaskTemplateRepository(mockPrisma),
-    new PrismaTaskInstanceRepository(mockPrisma),
-    new PrismaTaskMetaTemplateRepository(mockPrisma),
+    new PrismaTaskTemplateRepository(prisma),
+    new PrismaTaskInstanceRepository(prisma),
+    new PrismaTaskMetaTemplateRepository(prisma),
   );
 };
 
@@ -31,12 +32,20 @@ export class TaskAggregateController {
 
   /**
    * 创建任务模板聚合根
-   * POST /api/accounts/:accountUuid/task-aggregates
+   * POST /api/v1/tasks/templates
    */
   static async createTemplateAggregate(req: Request, res: Response) {
     try {
       const request: CreateTaskTemplateRequest = req.body;
-      const { accountUuid } = req.params;
+      // 从认证中间件获取accountUuid，而不是从路径参数
+      const accountUuid = (req as any).accountUuid;
+
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少用户账户信息',
+        });
+      }
 
       const aggregate = await TaskAggregateController.aggregateService.createTaskTemplateAggregate(
         accountUuid,
@@ -58,13 +67,21 @@ export class TaskAggregateController {
 
   /**
    * 通过聚合根创建任务实例
-   * POST /api/task-aggregates/:templateUuid/instances
+   * POST /api/v1/tasks/templates/:templateUuid/instances
    */
   static async createInstanceViaAggregate(req: Request, res: Response) {
     try {
       const request: CreateTaskInstanceRequest = req.body;
       const { templateUuid } = req.params;
-      const { accountUuid } = req.body; // 从请求体获取accountUuid
+      // 从认证中间件获取accountUuid
+      const accountUuid = (req as any).accountUuid;
+
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少用户账户信息',
+        });
+      }
 
       const instance =
         await TaskAggregateController.aggregateService.createTaskInstanceViaAggregate(
@@ -315,6 +332,128 @@ export class TaskAggregateController {
       res.status(400).json({
         success: false,
         error: error instanceof Error ? error.message : '删除任务模板聚合根失败',
+      });
+    }
+  }
+
+  /**
+   * 通过聚合根取消任务实例
+   * POST /api/v1/tasks/templates/:templateUuid/instances/:instanceUuid/cancel
+   */
+  static async cancelInstanceViaAggregate(req: Request, res: Response) {
+    try {
+      const { templateUuid, instanceUuid } = req.params;
+      const { reason } = req.body;
+
+      await TaskAggregateController.aggregateService.cancelTaskInstanceViaAggregate(
+        templateUuid,
+        instanceUuid,
+        reason,
+      );
+
+      res.json({
+        success: true,
+        message: '通过聚合根取消实例成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '通过聚合根取消实例失败',
+      });
+    }
+  }
+
+  /**
+   * 通过聚合根重新调度任务实例
+   * POST /api/v1/tasks/templates/:templateUuid/instances/:instanceUuid/reschedule
+   */
+  static async rescheduleInstanceViaAggregate(req: Request, res: Response) {
+    try {
+      const { templateUuid, instanceUuid } = req.params;
+      const rescheduleRequest = req.body;
+
+      await TaskAggregateController.aggregateService.rescheduleTaskInstanceViaAggregate(
+        templateUuid,
+        instanceUuid,
+        rescheduleRequest,
+      );
+
+      res.json({
+        success: true,
+        message: '通过聚合根重新调度实例成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '通过聚合根重新调度实例失败',
+      });
+    }
+  }
+
+  /**
+   * 获取账户的所有任务模板聚合根列表
+   * GET /api/v1/tasks/template-aggregates
+   */
+  static async getAccountTemplateAggregates(req: Request, res: Response) {
+    try {
+      // 从认证中间件获取accountUuid
+      const accountUuid = (req as any).accountUuid;
+
+      if (!accountUuid) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少用户账户信息',
+        });
+      }
+
+      const { includeInstances = false, limit = 20, offset = 0 } = req.query;
+
+      const aggregates =
+        await TaskAggregateController.aggregateService.getAccountTaskTemplateAggregates(
+          accountUuid,
+          {
+            includeInstances: includeInstances === 'true',
+            limit: Number(limit),
+            offset: Number(offset),
+          },
+        );
+
+      res.json({
+        success: true,
+        data: aggregates,
+        message: '获取账户任务模板聚合根列表成功',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取账户任务模板聚合根列表失败',
+      });
+    }
+  }
+
+  /**
+   * 搜索任务模板聚合根
+   * GET /api/v1/tasks/template-aggregates/search
+   */
+  static async searchTemplateAggregates(req: Request, res: Response) {
+    try {
+      const { accountUuid, keyword, tags, status, limit = 20, offset = 0 } = req.query;
+
+      // 此处应该调用 TaskAggregateService 的搜索方法
+      // 暂时返回简单响应，实际实现需要在 TaskAggregateService 中添加相应方法
+      res.json({
+        success: true,
+        data: {
+          templates: [],
+          total: 0,
+          message: 'Search functionality not yet implemented in TaskAggregateService',
+        },
+        message: '搜索功能需要在TaskAggregateService中实现',
+      });
+    } catch (error) {
+      res.status(400).json({
+        success: false,
+        error: error instanceof Error ? error.message : '搜索任务模板聚合根失败',
       });
     }
   }

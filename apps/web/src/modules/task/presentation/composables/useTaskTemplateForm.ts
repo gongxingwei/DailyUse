@@ -1,4 +1,4 @@
-import { ref, computed } from "vue";
+import { ref, computed } from 'vue';
 
 export function useTaskTemplateForm() {
   // 表单验证状态
@@ -7,14 +7,11 @@ export function useTaskTemplateForm() {
     time: true,
     recurrence: true,
     reminder: true,
-    scheduling: true,
     metadata: true,
   });
 
   // 整体表单验证状态
-  const isFormValid = computed(() =>
-    Object.values(formValidations.value).every((valid) => valid)
-  );
+  const isFormValid = computed(() => Object.values(formValidations.value).every((valid) => valid));
 
   // 验证更新函数
   const updateBasicValidation = (isValid: boolean) => {
@@ -33,10 +30,6 @@ export function useTaskTemplateForm() {
     formValidations.value.reminder = isValid;
   };
 
-  const updateSchedulingValidation = (isValid: boolean) => {
-    formValidations.value.scheduling = isValid;
-  };
-
   const updateMetadataValidation = (isValid: boolean) => {
     formValidations.value.metadata = isValid;
   };
@@ -46,6 +39,7 @@ export function useTaskTemplateForm() {
     // 这里可以添加跨字段验证逻辑
     return isFormValid.value;
   };
+
   return {
     formValidations,
     isFormValid,
@@ -54,7 +48,6 @@ export function useTaskTemplateForm() {
     updateTimeValidation,
     updateRecurrenceValidation,
     updateReminderValidation,
-    updateSchedulingValidation,
     updateMetadataValidation,
   };
 }

@@ -11,3 +11,16 @@ export * from './infrastructure/api/index';
 
 // 导出 Store
 export { useTaskStore } from './presentation/stores/taskStore';
+
+// 导出模块服务获取函数
+export { taskWebApplicationService as getTaskWebService } from './application/services/TaskWebApplicationService';
+
+// 导出初始化任务
+export { registerTaskInitializationTasks } from './initialization';
+
+/**
+ * 初始化Task模块
+ */
+export function initializeTaskModule(): void {
+  console.log('✅ Task 模块已初始化');
+}

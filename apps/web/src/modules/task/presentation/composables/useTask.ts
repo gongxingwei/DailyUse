@@ -2,6 +2,7 @@ import { ref, computed, onMounted, onBeforeUnmount, readonly } from 'vue';
 import type { TaskContracts } from '@dailyuse/contracts';
 import { TaskWebApplicationService } from '../../application/services/TaskWebApplicationService';
 import { useTaskStore } from '../stores/taskStore';
+import { TaskTemplate } from '@dailyuse/domain-client';
 
 /**
  * Task 模块组合式函数 - 新架构
@@ -96,6 +97,23 @@ export function useTask() {
     }
   }
 
+  /**
+   * 通过元模板创建任务模板
+   */
+  async function createTaskTemplateByTaskMetaTemplate(metaTemplateUuid: string): Promise<TaskTemplate> {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+      const result = await taskService.createTaskTemplateByMetaTemplate(metaTemplateUuid);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '通过元模板创建任务模板失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
   /**
    * 获取任务模板列表
    */
@@ -339,12 +357,12 @@ export function useTask() {
   /**
    * 完成任务
    */
-  async function completeTask(uuid: string, request: TaskContracts.CompleteTaskRequest) {
+  async function completeTaskInstance(uuid: string, request?: TaskContracts.CompleteTaskRequest) {
     try {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.completeTask(uuid, request);
+      const result = await taskService.completeTaskInstance(uuid);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '完成任务失败';
@@ -358,12 +376,12 @@ export function useTask() {
   /**
    * 撤销完成任务
    */
-  async function undoCompleteTask(uuid: string, accountUuid: string) {
+  async function undoCompleteTaskInstance(uuid: string, accountUuid?: string) {
     try {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.undoCompleteTask(uuid, accountUuid);
+      const result = await taskService.undoCompleteTaskInstance(uuid);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '撤销完成任务失败';
@@ -377,12 +395,12 @@ export function useTask() {
   /**
    * 重新安排任务
    */
-  async function rescheduleTask(uuid: string, request: TaskContracts.RescheduleTaskRequest) {
+  async function rescheduleTaskInstance(uuid: string, request: TaskContracts.RescheduleTaskRequest) {
     try {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.rescheduleTask(uuid, request);
+      const result = await taskService.rescheduleTaskInstance(uuid, request);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '重新安排任务失败';
@@ -396,12 +414,12 @@ export function useTask() {
   /**
    * 取消任务
    */
-  async function cancelTask(uuid: string) {
+  async function cancelTaskInstance(uuid: string) {
     try {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.cancelTask(uuid);
+      const result = await taskService.cancelTaskInstance(uuid);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '取消任务失败';
@@ -415,9 +433,9 @@ export function useTask() {
   // ===== 数据查询方法 =====
 
   /**
-   * 搜索任务
+   * 搜索任务模板
    */
-  async function searchTasks(params: {
+  async function searchTaskTemplates(params: {
     query: string;
     page?: number;
     limit?: number;
@@ -428,7 +446,32 @@ export function useTask() {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.searchTasks(params);
+      const result = await taskService.searchTaskTemplates(params);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '搜索任务失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 搜索任务实例
+   */
+  async function searchTaskInstances(params: {
+    query: string;
+    page?: number;
+    limit?: number;
+    type?: 'template' | 'instance' | 'both';
+    status?: string;
+  }) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await taskService.searchTaskInstances(params);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索任务失败';
@@ -463,12 +506,12 @@ export function useTask() {
   /**
    * 同步所有任务数据
    */
-  async function syncAllTasks() {
+  async function syncAllTaskData() {
     try {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.syncAllTasks();
+      const result = await taskService.syncAllTaskData();
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '同步任务数据失败';
@@ -606,6 +649,7 @@ export function useTask() {
 
     // 任务模板操作
     createTaskTemplate,
+    createTaskTemplateByTaskMetaTemplate,
     fetchTaskTemplates,
     fetchTaskTemplate,
     updateTaskTemplate,
@@ -619,17 +663,18 @@ export function useTask() {
     fetchTaskInstance,
     updateTaskInstance,
     deleteTaskInstance,
-    completeTask,
-    undoCompleteTask,
-    rescheduleTask,
-    cancelTask,
+    completeTaskInstance,
+    undoCompleteTaskInstance,
+    rescheduleTaskInstance,
+    cancelTaskInstance,
 
     // 查询方法
-    searchTasks,
+    searchTaskTemplates,
+    searchTaskInstances,
     getTodayTasks,
 
     // 数据同步
-    syncAllTasks,
+    syncAllTaskData,
     forceRefresh,
     initialize,
 

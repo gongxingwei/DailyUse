@@ -4,63 +4,33 @@ import { TaskInstance } from '../entities/TaskInstance';
 import { TaskMetaTemplate } from '../entities/TaskMetaTemplate';
 
 /**
- * Task模块应用层服务 - 客户端实现
+ * Task模块领域层服务 - 客户端实现
  * 负责协调聚合根操作和业务流程
  */
-export class TaskApplicationService {
+export class TaskDomainService {
   private taskTemplates = new Map<string, TaskTemplate>();
   private taskMetaTemplates = new Map<string, TaskMetaTemplate>();
 
   // ===== TaskTemplate聚合根操作 =====
 
   /**
-   * 创建任务模板
+   * 用 TaskMetaTemplate 创建 TaskTemplate
+   * 类似本地调用工厂方法
    */
-  async createTaskTemplate(
-    request: TaskContracts.CreateTaskTemplateRequest,
-    accountUuid: string,
+  async createTaskTemplateByTaskMetaTemplate(
+    metaTemplate: TaskMetaTemplate
   ): Promise<TaskTemplate> {
-    // 创建聚合根
+    const config = metaTemplate.getTaskTemplateConfig();
+    console.log('[taskDomain]Creating TaskTemplate from MetaTemplate with config:', config);
     const template = new TaskTemplate({
-      accountUuid,
-      title: request.title,
-      description: request.description,
-      timeConfig: {
-        time: request.timeConfig.time,
-        date: {
-          startDate: new Date(request.timeConfig.date.startDate),
-          endDate: request.timeConfig.date.endDate
-            ? new Date(request.timeConfig.date.endDate)
-            : undefined,
-        },
-        schedule: request.timeConfig.schedule,
-        timezone: request.timeConfig.timezone,
-      },
-      reminderConfig: request.reminderConfig,
-      properties: request.properties,
-      goalLinks: request.goalLinks,
-      lifecycle: {
-        status: 'draft',
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      },
-      stats: {
-        totalInstances: 0,
-        completedInstances: 0,
-        completionRate: 0,
-      },
+      accountUuid: metaTemplate.accountUuid,
+      title: config.title,
+      description: config.description,
+      timeConfig: config.timeConfig,
+      reminderConfig: config.reminderConfig,
+      properties: config.properties,
+      goalLinks: [],
     });
-
-    // 缓存到内存（实际应用中这里会调用Repository）
-    this.taskTemplates.set(template.uuid, template);
-
-    // 发布领域事件
-    this.publishEvent('TaskTemplateCreated', {
-      templateUuid: template.uuid,
-      accountUuid,
-      template: template.toDTO(),
-    });
-
     return template;
   }
 

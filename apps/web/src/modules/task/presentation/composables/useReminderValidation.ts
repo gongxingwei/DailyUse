@@ -1,69 +1,176 @@
 import { ref, computed } from 'vue';
-import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+
+/**
+ * 任务提醒配置接口 - 使用最新的简化结构
+ */
+interface TaskReminderConfig {
+  enabled: boolean;
+  minutesBefore: number;
+  methods: ('notification' | 'sound')[];
+}
+
+/**
+ * 提醒配置验证组合式函数
+ * 重构后专注于用户体验验证，核心业务验证移到聚合根中
+ */
 export function useReminderValidation() {
   const errors = ref<string[]>([]);
   const warnings = ref<string[]>([]);
 
   /**
-   * 前端快速验证 - 仅用于UI实时反馈
+   * UI层面的用户体验验证 - 主要是实时反馈和建议
    */
-  const validateReminders = (reminderConfig: TaskTemplate['reminderConfig']): boolean => {
-    errors.value = [];
+  const validateUserExperience = (reminderConfig: TaskReminderConfig): void => {
     warnings.value = [];
 
+    if (!reminderConfig.enabled) return;
+
+    // 检查提醒方式
+    if (!reminderConfig.methods || reminderConfig.methods.length === 0) {
+      warnings.value.push('启用提醒但未设置提醒方式，建议至少选择一种');
+      return;
+    }
+
+    // 提前时间的用户体验建议
+    if (reminderConfig.minutesBefore > 1440) {
+      // 24小时
+      warnings.value.push('提前时间超过24小时，可能导致提醒过早失去意义');
+    } else if (reminderConfig.minutesBefore > 720) {
+      // 12小时
+      warnings.value.push('提前时间较长，建议确认是否真的需要这么早提醒');
+    }
+
+    if (reminderConfig.minutesBefore < 5) {
+      warnings.value.push('提前时间过短，可能无法提供足够的准备时间');
+    }
+
+    // 根据提醒时间给出个性化建议
+    if (reminderConfig.minutesBefore === 1440) {
+      warnings.value.push('一天前提醒适合重要的长期准备任务');
+    } else if (reminderConfig.minutesBefore >= 60 && reminderConfig.minutesBefore < 1440) {
+      warnings.value.push('小时级提醒适合需要准备的任务');
+    } else if (reminderConfig.minutesBefore < 60) {
+      warnings.value.push('分钟级提醒适合即时行动的任务');
+    }
+
+    // 检查提醒方式的合理性
+    validateReminderMethodsUserExperience(reminderConfig.methods);
+  };
+
+  /**
+   * 提醒方式的用户体验验证
+   */
+  const validateReminderMethodsUserExperience = (methods: string[]): void => {
+    if (methods.includes('sound') && methods.length === 1) {
+      warnings.value.push('仅启用声音提醒，在静音模式下可能会错过');
+    }
+
+    if (methods.includes('notification') && methods.includes('sound')) {
+      warnings.value.push('同时启用通知和声音，在安静环境中可能过于突出');
+    }
+
+    if (methods.length === 0) {
+      warnings.value.push('未选择任何提醒方式，将无法收到提醒');
+    }
+  };
+
+  /**
+   * 调用聚合根的业务验证 - 这会抛出错误如果验证失败
+   */
+  const validateBusinessRules = (reminderConfig: TaskReminderConfig): boolean => {
+    try {
+      // 这里应该调用 TaskTemplate 聚合根的验证方法
+      // 在实际使用时，这些验证会在提交数据到聚合根时进行
+
+      // 基础的业务规则验证（模拟聚合根验证）
+      if (reminderConfig.enabled) {
+        if (!reminderConfig.methods || reminderConfig.methods.length === 0) {
+          throw new Error('启用提醒时必须选择至少一种提醒方式');
+        }
+
+        if (reminderConfig.minutesBefore === undefined || reminderConfig.minutesBefore < 0) {
+          throw new Error('提醒时间必须大于等于0分钟');
+        }
+
+        if (reminderConfig.minutesBefore > 43200) {
+          // 30天
+          throw new Error('提醒时间不能超过30天');
+        }
+
+        // 验证提醒方式
+        for (const method of reminderConfig.methods) {
+          if (!['notification', 'sound'].includes(method)) {
+            throw new Error(`不支持的提醒方式: ${method}`);
+          }
+        }
+      }
+
+      errors.value = [];
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    }
+  };
+
+  /**
+   * 综合验证方法
+   */
+  const validateReminderConfig = (reminderConfig: TaskReminderConfig): boolean => {
+    validateUserExperience(reminderConfig);
+    return validateBusinessRules(reminderConfig);
+  };
+
+  /**
+   * 快速检查提醒配置的基本问题
+   */
+  const quickCheck = (reminderConfig: TaskReminderConfig): boolean => {
     if (!reminderConfig.enabled) return true;
 
-    // 快速检查必要字段
-    if (!reminderConfig.alerts || reminderConfig.alerts.length === 0) {
-      errors.value.push('启用提醒时必须至少添加一个提醒项');
+    if (!reminderConfig.methods?.length) {
+      warnings.value.push('启用提醒但未设置提醒方式');
       return false;
     }
 
-    for (const alert of reminderConfig.alerts) {
-      if (!validateSingleAlert(alert)) {
-        return false;
-      }
+    if (reminderConfig.minutesBefore < 0) {
+      warnings.value.push('提醒时间不能为负数');
+      return false;
     }
 
     return true;
   };
 
   /**
-   * 单个提醒项的快速验证
+   * 获取建议的提醒时间选项
    */
-  const validateSingleAlert = (alert: TaskTemplate['reminderConfig']['alerts'][number]): boolean => {
-    if (!alert.type) {
-      errors.value.push('提醒类型不能为空');
-      return false;
-    }
-      
-    if (!alert.timing || !alert.timing.type) {
-      errors.value.push('提醒时机类型不能为空');
-      return false;
-    }
+  const getSuggestedReminderTimes = (): Array<{
+    value: number;
+    label: string;
+    description: string;
+  }> => {
+    return [
+      { value: 0, label: '准时提醒', description: '任务开始时提醒' },
+      { value: 5, label: '5分钟前', description: '适合短期准备' },
+      { value: 15, label: '15分钟前', description: '适合简单准备' },
+      { value: 30, label: '30分钟前', description: '适合中等准备' },
+      { value: 60, label: '1小时前', description: '适合充分准备' },
+      { value: 120, label: '2小时前', description: '适合复杂任务' },
+      { value: 1440, label: '1天前', description: '适合重要任务' },
+    ];
+  };
 
-    if (alert.timing.type === 'relative') {
-      if (!alert.timing.minutesBefore || alert.timing.minutesBefore <= 0) {
-        errors.value.push('相对提醒时间必须大于0分钟');
-        return false;
-      }
-      
-      // UI层面的用户体验警告
-      if (alert.timing.minutesBefore > 1440) {
-        warnings.value.push('提前时间超过24小时可能影响提醒效果');
-      }
-      
-      if (alert.timing.minutesBefore < 5) {
-        warnings.value.push('提前时间过短，可能无法及时准备');
-      }
-    } else if (alert.timing.type === 'absolute') {
-      if (!alert.timing.absoluteTime) {
-        errors.value.push('绝对提醒时间不能为空');
-        return false;
-      }
-    }
-
-    return true;
+  /**
+   * 获取推荐的提醒方式组合
+   */
+  const getRecommendedMethodCombinations = (): Array<{
+    methods: string[];
+    description: string;
+  }> => {
+    return [
+      { methods: ['notification'], description: '适合办公环境的轻提醒' },
+      { methods: ['sound'], description: '适合需要强提醒的场景' },
+      { methods: ['notification', 'sound'], description: '适合重要任务的双重提醒' },
+    ];
   };
 
   /**
@@ -72,26 +179,6 @@ export function useReminderValidation() {
   const resetValidation = () => {
     errors.value = [];
     warnings.value = [];
-  };
-
-  /**
-   * 检查提醒时间冲突 (UI层面的简单检查)
-   */
-  const checkTimeConflicts = (alerts: TaskTemplate['reminderConfig']['alerts']): boolean => {
-    const relativeTimes = alerts
-      .filter(alert => alert.timing.type === 'relative' && alert.timing.minutesBefore)
-      .map(alert => alert.timing.minutesBefore!)
-      .sort((a, b) => a - b);
-
-    // 检查是否有重复的相对时间
-    for (let i = 1; i < relativeTimes.length; i++) {
-      if (relativeTimes[i] === relativeTimes[i - 1]) {
-        warnings.value.push('存在相同的提醒时间，可能产生重复提醒');
-        return false;
-      }
-    }
-
-    return true;
   };
 
   const isValid = computed(() => errors.value.length === 0);
@@ -103,11 +190,14 @@ export function useReminderValidation() {
     warnings,
     isValid,
     hasWarnings,
-    
-    // 方法 - 仅UI验证相关
-    validateReminders,
-    validateSingleAlert,
+
+    // 方法
+    validateReminderConfig,
+    validateUserExperience,
+    validateBusinessRules,
+    quickCheck,
+    getSuggestedReminderTimes,
+    getRecommendedMethodCombinations,
     resetValidation,
-    checkTimeConflicts
   };
 }

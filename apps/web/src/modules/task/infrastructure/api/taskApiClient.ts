@@ -6,7 +6,7 @@ import { type TaskContracts } from '@dailyuse/contracts';
  * 负责任务模板相关的API调用
  */
 export class TaskTemplateApiClient {
-  private readonly baseUrl = '/api/v1/tasks/templates';
+  private readonly baseUrl = '/tasks/templates';
 
   /**
    * 创建任务模板
@@ -119,7 +119,7 @@ export class TaskTemplateApiClient {
  * 负责任务实例相关的API调用
  */
 export class TaskInstanceApiClient {
-  private readonly baseUrl = '/api/v1/tasks/instances';
+  private readonly baseUrl = '/tasks/instances';
 
   /**
    * 创建任务实例
@@ -282,7 +282,7 @@ export class TaskInstanceApiClient {
  * 负责任务元模板相关的API调用
  */
 export class TaskMetaTemplateApiClient {
-  private readonly baseUrl = '/api/v1/tasks/meta-templates';
+  private readonly baseUrl = '/tasks/meta-templates';
 
   /**
    * 创建任务元模板
@@ -338,7 +338,7 @@ export class TaskMetaTemplateApiClient {
  * 负责任务统计相关的API调用
  */
 export class TaskStatisticsApiClient {
-  private readonly baseUrl = '/api/v1/tasks/statistics';
+  private readonly baseUrl = '/tasks/statistics';
 
   /**
    * 获取任务统计概览

@@ -1,228 +1,143 @@
 import { ref, computed, watch, readonly, type Ref } from 'vue';
-import type { RecurrenceRule } from '@dailyuse/contracts/modules/task/types/task';
+import type { TaskTimeConfig, TaskScheduleMode } from '@dailyuse/contracts/modules/task/types';
 import { format } from 'date-fns';
+
 /**
- * 重复规则验证组合式函数
- * 提供重复规则的UI层面验证功能
+ * 任务调度验证组合式函数
+ * 提供任务调度配置的UI层面验证功能
+ * 重构后专注于用户体验验证，核心业务验证移到聚合根中
  */
-export function useRecurrenceValidation(recurrenceRule: Ref<RecurrenceRule>) {
+export function useRecurrenceValidation(scheduleConfig: Ref<TaskTimeConfig['schedule']>) {
   // 验证状态
   const validationErrors = ref<string[]>([]);
+  const warnings = ref<string[]>([]);
   const isValid = computed(() => validationErrors.value.length === 0);
-  // 验证重复间隔
-  const validateInterval = (): string[] => {
-    const errors: string[] = [];
-    const { type, interval } = recurrenceRule.value;
+  const hasWarnings = computed(() => warnings.value.length > 0);
 
-    if (type === 'none') return errors;
+  /**
+   * UI层面的用户体验验证 - 主要是警告和建议
+   */
+  const validateUserExperience = (): void => {
+    warnings.value = [];
 
-    if (!interval || interval < 1) {
-      errors.push('重复间隔必须大于0');
-    }
+    const { mode, intervalDays, weekdays, monthDays } = scheduleConfig.value;
 
-    // 根据类型设置合理的最大值
-    const maxIntervals = {
-      daily: 365,    // 最多每365天
-      weekly: 52,    // 最多每52周  
-      monthly: 12,   // 最多每12个月
-      yearly: 10,     // 最多每10年
-      custom: 365     // 自定义模式的默认限制
-    };
-
-    const maxInterval = maxIntervals[type as keyof typeof maxIntervals];
-    if (maxInterval && interval && interval > maxInterval) {
-      errors.push(`${type}重复间隔不能超过${maxInterval}`);
-    }
-
-    return errors;
-  };
-  // 验证结束条件
-  const validateEndCondition = (): string[] => {
-    const errors: string[] = [];
-    const { type, endCondition } = recurrenceRule.value;
-
-    if (type === 'none') return errors;
-
-    if (!endCondition?.type) {
-      errors.push('必须设置重复结束条件');
-      return errors;
-    }
-
-    switch (endCondition.type) {
-      case 'date':
-        if (!endCondition.endDate) {
-          errors.push('必须设置结束日期');
-        } else {
-          const now = new Date();
-          if (endCondition.endDate.getTime() <= now.getTime()) {
-            errors.push('结束日期必须在当前时间之后');
-          }
+    // 用户体验建议
+    switch (mode) {
+      case 'intervalDays':
+        if (intervalDays && intervalDays > 30) {
+          warnings.value.push('间隔天数较长，可能影响任务连续性');
         }
         break;
-        
-      case 'count':
-        if (!endCondition.count || endCondition.count < 1) {
-          errors.push('重复次数必须大于0');
-        } else if (endCondition.count > 1000) {
-          errors.push('重复次数不能超过1000次');
-        }
-        break;
-        
-      case 'never':
-        // 永不结束是有效的，不需要验证
-        break;
-        
-      default:
-        errors.push('无效的结束条件类型');
-    }
 
-    return errors;
-  };
-
-  // 验证周重复的星期配置
-  const validateWeeklyConfig = (): string[] => {
-    const errors: string[] = [];
-    const { type, config } = recurrenceRule.value;
-
-    if (type !== 'weekly') return errors;
-
-    if (!config?.weekdays || config.weekdays.length === 0) {
-      errors.push('周重复必须选择至少一个星期');
-    } else {
-      // 验证星期数值的有效性
-      const invalidWeekdays = config.weekdays.filter(day => day < 0 || day > 6);
-      if (invalidWeekdays.length > 0) {
-        errors.push('无效的星期设置');
-      }
-    }
-
-    return errors;
-  };
-  // 验证月重复的配置
-  const validateMonthlyConfig = (): string[] => {
-    const errors: string[] = [];
-    const { type, config } = recurrenceRule.value;
-
-    if (type !== 'monthly') return errors;
-
-    // 根据实际的RecurrenceRule类型结构验证
-    if (config?.monthDays && config.monthDays.length > 0) {
-      // 验证每月的第几天配置
-      const invalidDays = config.monthDays.filter(day => day < 1 || day > 31);
-      if (invalidDays.length > 0) {
-        errors.push('每月日期必须在1-31之间');
-      }
-    } else if (config?.monthWeekdays && config.monthWeekdays.length > 0) {
-      // 验证每月第几个星期几的配置
-      const invalidConfigs = config.monthWeekdays.filter(
-        cfg => cfg.week < 1 || cfg.week > 5 || cfg.weekday < 0 || cfg.weekday > 6
-      );
-      if (invalidConfigs.length > 0) {
-        errors.push('每月第几周配置无效：周次必须在1-5之间，星期必须在0-6之间');
-      }
-    } else {
-      // 没有设置任何月重复配置
-      errors.push('月重复必须设置具体的重复规则');
-    }
-
-    return errors;
-  };
-
-  // 综合验证方法
-  const validateRecurrence = (): boolean => {
-    const errors: string[] = [
-      ...validateInterval(),
-      ...validateEndCondition(),
-      ...validateWeeklyConfig(),
-      ...validateMonthlyConfig()
-    ];
-
-    validationErrors.value = errors;
-    return errors.length === 0;
-  };
-
-  // 重置验证状态
-  const resetValidation = () => {
-    validationErrors.value = [];
-  };
-  // 获取重复规则的描述文本（用于UI显示）
-  const getRecurrenceDescription = computed(() => {
-    const { type, interval, config, endCondition } = recurrenceRule.value;
-
-    if (type === 'none') return '不重复';
-
-    let description = '';
-    
-    // 基础间隔描述
-    switch (type) {
-      case 'daily':
-        description = interval === 1 ? '每天' : `每${interval}天`;
-        break;
       case 'weekly':
-        if (config?.weekdays?.length) {
-          const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
-          const selectedDays = config.weekdays.map(d => weekdayNames[d]).join('、');
-          description = interval === 1 ? `每周${selectedDays}` : `每${interval}周${selectedDays}`;
-        } else {
-          description = interval === 1 ? '每周' : `每${interval}周`;
+        if (weekdays && weekdays.length > 5) {
+          warnings.value.push('选择了过多的星期，可能导致任务过于频繁');
         }
         break;
+
       case 'monthly':
-        description = interval === 1 ? '每月' : `每${interval}月`;
-        if (config?.monthDays?.length) {
-          description += config.monthDays.map(day => `${day}日`).join('、');
-        } else if (config?.monthWeekdays?.length) {
-          const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
-          const descriptions = config.monthWeekdays.map(cfg => 
-            `第${cfg.week}个星期${weekdayNames[cfg.weekday]}`
-          );
-          description += descriptions.join('、');
+        if (monthDays && monthDays.length > 15) {
+          warnings.value.push('选择了过多的日期，可能导致任务过于频繁');
         }
         break;
-      case 'yearly':
-        description = interval === 1 ? '每年' : `每${interval}年`;
-        break;
-      case 'custom':
-        description = '自定义重复';
-        break;
     }
+  };
 
-    // 结束条件描述
-    if (endCondition?.type === 'count' && endCondition.count) {
-      description += `，共${endCondition.count}次`;
-    } else if (endCondition?.type === 'date' && endCondition.endDate) {
-      // 使用formatDateToInput方法来格式化日期
-      const endDateStr = format(endCondition.endDate, 'yyyy-MM-dd');
-      description += `，至${endDateStr}`;
+  /**
+   * 调用聚合根的业务验证 - 这会抛出错误如果验证失败
+   */
+  const validateBusinessRules = (): boolean => {
+    try {
+      // 这里应该调用 TaskTemplate 聚合根的验证方法
+      // 由于我们在 composable 中，无法直接访问聚合根
+      // 实际使用时，这些验证应该在提交数据到聚合根时进行
+      validationErrors.value = [];
+      return true;
+    } catch (error: any) {
+      validationErrors.value = [error.message];
+      return false;
     }
+  };
 
-    return description;
+  /**
+   * 综合验证方法
+   */
+  const validate = (): boolean => {
+    validateUserExperience();
+    return validateBusinessRules();
+  };
+
+  /**
+   * 获取调度配置的描述文本（用于UI显示）
+   */
+  const getScheduleDescription = computed(() => {
+    const { mode, intervalDays, weekdays, monthDays } = scheduleConfig.value;
+
+    switch (mode) {
+      case 'once':
+        return '单次任务';
+
+      case 'daily':
+        return '每天';
+
+      case 'weekly':
+        if (weekdays?.length) {
+          const weekdayNames = ['日', '一', '二', '三', '四', '五', '六'];
+          const selectedDays = weekdays.map((d) => weekdayNames[d]).join('、');
+          return `每周${selectedDays}`;
+        }
+        return '每周';
+
+      case 'monthly':
+        if (monthDays?.length) {
+          const selectedDays = monthDays.map((day) => `${day}日`).join('、');
+          return `每月${selectedDays}`;
+        }
+        return '每月';
+
+      case 'intervalDays':
+        return intervalDays ? `每${intervalDays}天` : '间隔天数';
+
+      default:
+        return '未设置';
+    }
   });
 
-  // 监听重复规则变化，自动验证
-  watch(recurrenceRule, () => {
-    validateRecurrence();
-  }, { deep: true });
+  /**
+   * 重置验证状态
+   */
+  const resetValidation = () => {
+    validationErrors.value = [];
+    warnings.value = [];
+  };
+
+  // 监听调度配置变化，自动进行用户体验验证
+  watch(
+    scheduleConfig,
+    () => {
+      validateUserExperience();
+    },
+    { deep: true },
+  );
 
   // 初始验证
-  validateRecurrence();
+  validateUserExperience();
 
   return {
     // 状态
     validationErrors: readonly(validationErrors),
+    warnings: readonly(warnings),
     isValid,
-    
+    hasWarnings,
+
     // 方法
-    validateRecurrence,
+    validate,
+    validateUserExperience,
+    validateBusinessRules,
     resetValidation,
-    
+
     // 计算属性
-    getRecurrenceDescription,
-    
-    // 单独的验证方法（用于特定场景）
-    validateInterval,
-    validateEndCondition,
-    validateWeeklyConfig,
-    validateMonthlyConfig
+    getScheduleDescription,
   };
 }

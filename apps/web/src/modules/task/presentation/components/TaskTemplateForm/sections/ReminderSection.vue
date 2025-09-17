@@ -9,50 +9,26 @@
     </v-card-title>
     <v-card-text>
       <!-- 显示验证错误 -->
-      <v-alert 
-        v-if="errors.length > 0" 
-        type="error" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="errors.length > 0" type="error" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="error in errors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
 
-      <!-- 显示警告信息 -->
-      <v-alert 
-        v-if="hasWarnings" 
-        type="warning" 
-        variant="tonal" 
-        class="mb-4"
-      >
-        <ul class="mb-0">
-          <li v-for="warning in warnings" :key="warning">{{ warning }}</li>
-        </ul>
-      </v-alert>
-
       <v-row>
         <v-col cols="12">
-          <v-switch 
-            v-model="localData.reminderConfig.enabled" 
-            label="启用提醒" 
-            color="primary" 
-          />
+          <v-switch v-model="reminderEnabled" label="启用提醒" color="primary" />
         </v-col>
 
-        <template v-if="localData.reminderConfig.enabled">
-          <v-col cols="12">
-            <ReminderAlertsList 
-              v-model="localData.reminderConfig.alerts"
-              @update:validation="handleAlertsValidation"
-            />
+        <template v-if="reminderEnabled">
+          <v-col cols="12" md="6">
+            <v-text-field v-model.number="minutesBefore" label="提前提醒时间（分钟）" type="number" variant="outlined" min="1"
+              max="1440" hint="在任务开始前多少分钟提醒" />
           </v-col>
-          
-          <v-col cols="12">
-            <ReminderSnoozeSettings 
-              v-model="localData.reminderConfig.snooze"
-            />
+
+          <v-col cols="12" md="6">
+            <v-select v-model="selectedMethods" label="提醒方式" :items="reminderMethods" variant="outlined" multiple chips
+              closable-chips />
           </v-col>
         </template>
       </v-row>
@@ -61,11 +37,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, watch } from 'vue';
-import ReminderAlertsList from '../widgets/ReminderAlertsList.vue';
-import ReminderSnoozeSettings from '../widgets/ReminderSnoozeSettings.vue';
+import { computed, ref, watch } from 'vue';
 import { useReminderValidation } from '../../../composables/useReminderValidation';
-import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@dailyuse/domain-client';
+
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -76,59 +51,83 @@ const emit = defineEmits<{
   'update:validation': [isValid: boolean];
 }>();
 
-const localData = computed({
-  get: () => props.modelValue,
-  set: (value) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateReminderConfig(value.reminderConfig);
-    emit('update:modelValue', updatedTemplate);
+const updateTemplate = (updater: (template: TaskTemplate) => void) => {
+  const updatedTemplate = props.modelValue.clone();
+  updater(updatedTemplate);
+  emit('update:modelValue', updatedTemplate);
+};
+
+// 提醒配置字段
+const reminderEnabled = computed({
+  get: () => props.modelValue.reminderConfig.enabled,
+  set: (value: boolean) => {
+    updateTemplate((template) => {
+      (template as any)._reminderConfig = {
+        ...template.reminderConfig,
+        enabled: value
+      };
+    });
   }
 });
 
-// 使用完整的验证功能
-const {
-  errors,
-  warnings,
-  isValid,
-  hasWarnings,
-  validateReminders,
-  resetValidation,
-  checkTimeConflicts
-} = useReminderValidation();
-
-const handleAlertsValidation = (isValid: boolean) => {
-  emit('update:validation', isValid);
-};
-
-// 执行验证并发射结果
-const performValidation = () => {
-  const validationResult = validateReminders(localData.value.reminderConfig);
-  
-  // 额外检查时间冲突
-  if (validationResult && localData.value.reminderConfig.enabled) {
-    checkTimeConflicts(localData.value.reminderConfig.alerts);
+const minutesBefore = computed({
+  get: () => props.modelValue.reminderConfig.minutesBefore,
+  set: (value: number) => {
+    updateTemplate((template) => {
+      (template as any)._reminderConfig = {
+        ...template.reminderConfig,
+        minutesBefore: value
+      };
+    });
   }
-  
-  emit('update:validation', validationResult);
-  return validationResult;
-};
+});
 
-// 监听提醒配置变化，触发验证
-watch(
-  () => localData.value.reminderConfig,
-  () => {
-    performValidation();
-  },
-  { deep: true, immediate: true } // 添加 immediate: true 进行初始验证
-);
+const selectedMethods = computed({
+  get: () => props.modelValue.reminderConfig.methods,
+  set: (value: ('notification' | 'sound')[]) => {
+    updateTemplate((template) => {
+      (template as any)._reminderConfig = {
+        ...template.reminderConfig,
+        methods: value
+      };
+    });
+  }
+});
 
-// 监听启用状态变化
-watch(
-  () => localData.value.reminderConfig.enabled,
-  (newEnabled) => {
-    if (!newEnabled) {
-      resetValidation();
+// 提醒方式选项
+const reminderMethods = [
+  { title: '通知', value: 'notification' },
+  { title: '声音', value: 'sound' }
+];
+
+// 简单的验证
+const errors = ref<string[]>([]);
+
+const validateReminderConfig = () => {
+  errors.value = [];
+
+  if (reminderEnabled.value) {
+    if (minutesBefore.value < 1 || minutesBefore.value > 1440) {
+      errors.value.push('提前提醒时间必须在1-1440分钟之间');
+    }
+
+    if (!selectedMethods.value || selectedMethods.value.length === 0) {
+      errors.value.push('请至少选择一种提醒方式');
     }
   }
-);
+};
+
+const isValid = computed(() => {
+  return errors.value.length === 0;
+});
+
+// 监听验证状态变化
+watch(isValid, (newValue) => {
+  emit('update:validation', newValue);
+}, { immediate: true });
+
+// 监听提醒配置变化
+watch(() => props.modelValue.reminderConfig, () => {
+  validateReminderConfig();
+}, { deep: true, immediate: true });
 </script>

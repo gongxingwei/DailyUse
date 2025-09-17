@@ -7,24 +7,18 @@
     </v-card-title>
     <v-card-text>
       <!-- 显示验证错误 -->
-      <v-alert 
-        v-if="validationErrors.length > 0" 
-        type="error" 
-        variant="tonal" 
-        class="mb-4"
-      >
+      <v-alert v-if="validationErrors.length > 0" type="error" variant="tonal" class="mb-4">
         <ul class="mb-0">
           <li v-for="error in validationErrors" :key="error">{{ error }}</li>
         </ul>
       </v-alert>
       <v-row> <v-col cols="12">
-          <v-text-field v-model="title" label="任务标题" placeholder="请输入任务标题" variant="outlined"
-            required counter="100" />
+          <v-text-field v-model="title" label="任务标题" placeholder="请输入任务标题" variant="outlined" required counter="100" />
         </v-col>
 
         <v-col cols="12">
-          <v-textarea v-model="description" label="任务描述" placeholder="请输入任务描述（可选）"
-            variant="outlined" rows="3" counter="1000" no-resize />
+          <v-textarea v-model="description" label="任务描述" placeholder="请输入任务描述（可选）" variant="outlined" rows="3"
+            counter="1000" no-resize />
         </v-col>
 
       </v-row>
@@ -35,7 +29,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue';
 import { useBasicInfoValidation } from '../../../composables/useBasicInfoValidation';
-import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+import type { TaskTemplate } from '@dailyuse/domain-client';
 interface Props {
   modelValue: TaskTemplate;
 }
@@ -60,7 +54,8 @@ const title = computed({
   get: () => props.modelValue.title,
   set: (value: string) => {
     updateTemplate((template) => {
-      template.updateTitle(value);
+      // 直接设置属性，因为TaskTemplate没有updateTitle方法
+      (template as any)._title = value;
     });
   }
 });
@@ -69,7 +64,8 @@ const description = computed({
   get: () => props.modelValue.description,
   set: (value: string) => {
     updateTemplate((template) => {
-      template.updateDescription(value);
+      // 直接设置属性，因为TaskTemplate没有updateDescription方法
+      (template as any)._description = value;
     });
   }
 });

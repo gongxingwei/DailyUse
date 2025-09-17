@@ -491,54 +491,33 @@ export const useTaskStore = defineStore('task', {
     // ===== 初始化和清理 =====
 
     /**
-     * 初始化 Store（加载本地缓存）
+     * 初始化 Store
      */
-    initialize() {
-      try {
-        // 从 localStorage 加载缓存数据
-        const cachedData = localStorage.getItem('task-store-cache');
-        if (cachedData) {
-          const data = JSON.parse(cachedData);
-          this.taskTemplates = data.taskTemplates || [];
-          this.taskInstances = data.taskInstances || [];
-          this.metaTemplates = data.metaTemplates || [];
-          this.lastSyncTime = data.lastSyncTime ? new Date(data.lastSyncTime) : null;
-
-          console.log(
-            `📦 [TaskStore] 从缓存加载数据: ${this.taskTemplates.length} 模板, ${this.taskInstances.length} 实例, ${this.metaTemplates.length} 元模板`,
-          );
-        }
-
-        this.setInitialized(true);
-        console.log('✅ [TaskStore] 初始化完成');
-      } catch (error) {
-        console.error('❌ [TaskStore] 初始化失败:', error);
-        this.setError('初始化失败');
-      }
+    initialize(): void {
+      this.isInitialized = true;
+      console.log(
+        `✅ [TaskStore] 初始化完成: ${this.taskTemplates.length} 个模板，${this.taskInstances.length} 个实例，${this.metaTemplates.length} 个元模板`,
+      );
     },
 
+    // ===== 缓存管理 =====
+    // 注意：缓存管理现在由 pinia-plugin-persistedstate 自动处理
+
     /**
-     * 保存到本地缓存
+     * 检查是否需要刷新缓存
      */
-    saveToCache() {
-      try {
-        const cacheData = {
-          taskTemplates: this.taskTemplates,
-          taskInstances: this.taskInstances,
-          metaTemplates: this.metaTemplates,
-          lastSyncTime: this.lastSyncTime?.toISOString(),
-        };
-        localStorage.setItem('task-store-cache', JSON.stringify(cacheData));
-        console.log('💾 [TaskStore] 数据已保存到缓存');
-      } catch (error) {
-        console.error('❌ [TaskStore] 保存缓存失败:', error);
-      }
+    shouldRefreshCache(): boolean {
+      if (!this.lastSyncTime) return true;
+
+      // 如果超过30分钟未同步，则需要刷新
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      return this.lastSyncTime < thirtyMinutesAgo;
     },
 
     /**
      * 清除所有数据
      */
-    clearAllData() {
+    clearAll() {
       this.taskTemplates = [];
       this.taskInstances = [];
       this.metaTemplates = [];
@@ -547,11 +526,17 @@ export const useTaskStore = defineStore('task', {
       this.taskTemplateBeingEdited = null;
       this.lastSyncTime = null;
       this.error = null;
-
-      // 清除本地缓存
-      localStorage.removeItem('task-store-cache');
+      this.isInitialized = false;
 
       console.log('🧹 [TaskStore] 已清除所有数据');
+    },
+
+    /**
+     * @deprecated 使用 clearAll 替代
+     */
+    clearAllData() {
+      console.warn('[TaskStore] clearAllData 已废弃，请使用 clearAll');
+      this.clearAll();
     },
 
     /**
@@ -562,7 +547,6 @@ export const useTaskStore = defineStore('task', {
       this.setTaskInstances(instances);
       this.setMetaTemplates(metaTemplates);
       this.updateLastSyncTime();
-      this.saveToCache();
 
       console.log('🔄 [TaskStore] 批量同步完成');
     },
@@ -620,9 +604,100 @@ export const useTaskStore = defineStore('task', {
         this.setMetaTemplates(snapshot.metaTemplates);
       }
       this.updateLastSyncTime();
-      this.saveToCache();
 
       console.log(`✅ [TaskStore] 从快照恢复数据成功`);
+    },
+  },
+
+  persist: {
+    key: 'task-store',
+    storage: localStorage,
+    // 选择性持久化关键数据，避免持久化加载状态
+    pick: [
+      'taskTemplates',
+      'taskInstances',
+      'metaTemplates',
+      'selectedTaskTemplate',
+      'selectedTaskInstance',
+      'lastSyncTime',
+      'isInitialized',
+    ],
+
+    // 自定义序列化器，处理Date对象和Domain实体
+    serializer: {
+      serialize: (value: any) => {
+        try {
+          // 处理需要序列化的数据
+          const serializedValue = {
+            ...value,
+            // 将Date转换为ISO字符串
+            lastSyncTime: value.lastSyncTime ? value.lastSyncTime.toISOString() : null,
+
+            // 将Domain实体转换为DTO
+            taskTemplates:
+              value.taskTemplates?.map((template: any) =>
+                template && typeof template.toDTO === 'function' ? template.toDTO() : template,
+              ) || [],
+
+            taskInstances:
+              value.taskInstances?.map((instance: any) =>
+                instance && typeof instance.toDTO === 'function' ? instance.toDTO() : instance,
+              ) || [],
+
+            metaTemplates:
+              value.metaTemplates?.map((metaTemplate: any) =>
+                metaTemplate && typeof metaTemplate.toDTO === 'function'
+                  ? metaTemplate.toDTO()
+                  : metaTemplate,
+              ) || [],
+          };
+
+          return JSON.stringify(serializedValue);
+        } catch (error) {
+          console.error('TaskStore 序列化失败:', error);
+          return JSON.stringify({});
+        }
+      },
+
+      deserialize: (value: string) => {
+        try {
+          const parsed = JSON.parse(value);
+
+          return {
+            ...parsed,
+            // 恢复Date对象
+            lastSyncTime: parsed.lastSyncTime ? new Date(parsed.lastSyncTime) : null,
+
+            // 将DTO转换回Domain实体（当实体类可用时）
+            taskTemplates:
+              parsed.taskTemplates?.map((templateDTO: any) => {
+                if (templateDTO && typeof TaskTemplate?.fromDTO === 'function') {
+                  return TaskTemplate.fromDTO(templateDTO);
+                }
+                return templateDTO;
+              }) || [],
+
+            taskInstances:
+              parsed.taskInstances?.map((instanceDTO: any) => {
+                if (instanceDTO && typeof TaskInstance?.fromDTO === 'function') {
+                  return TaskInstance.fromDTO(instanceDTO);
+                }
+                return instanceDTO;
+              }) || [],
+
+            metaTemplates:
+              parsed.metaTemplates?.map((metaTemplateDTO: any) => {
+                if (metaTemplateDTO && typeof TaskMetaTemplate?.fromDTO === 'function') {
+                  return TaskMetaTemplate.fromDTO(metaTemplateDTO);
+                }
+                return metaTemplateDTO;
+              }) || [],
+          };
+        } catch (error) {
+          console.error('TaskStore 反序列化失败:', error);
+          return {};
+        }
+      },
     },
   },
 });

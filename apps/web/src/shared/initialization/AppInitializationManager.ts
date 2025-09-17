@@ -13,6 +13,7 @@ import {
 import { registerAccountInitializationTasks } from '../../modules/account';
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
 import { registerGoalInitializationTasks } from '../../modules/goal';
+import { registerTaskInitializationTasks } from '../../modules/task';
 import { registerReminderInitializationTasks } from '../../modules/reminder';
 
 /**
@@ -68,10 +69,11 @@ function registerAllInitializationTasks(): void {
   registerAuthenticationInitializationTasks();
   registerAccountInitializationTasks();
   registerGoalInitializationTasks();
+  registerTaskInitializationTasks();
   registerReminderInitializationTasks();
 
   // 3. 可以在这里添加其他模块的初始化
-  // registerTaskInitializationTasks();
+  // registerOtherModuleInitializationTasks();
 
   console.log('✅ [AppInitialization] 所有初始化任务注册完成');
 }

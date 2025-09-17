@@ -11,4 +11,4 @@ export { TaskInstance } from './entities/TaskInstance';
 export { TaskMetaTemplate } from './entities/TaskMetaTemplate';
 
 // ===== 应用服务 =====
-export { TaskApplicationService } from './services/TaskApplicationService';
+export { TaskDomainService } from './services/TaskDomainService';

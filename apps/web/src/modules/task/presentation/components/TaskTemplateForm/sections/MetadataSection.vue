@@ -2,76 +2,32 @@
   <v-card class="mb-4" elevation="0" variant="outlined">
     <v-card-title class="section-title">
       <v-icon class="mr-2">mdi-information-outline</v-icon>
-      任务元数据
+      任务属性
     </v-card-title>
     <v-card-text>
       <v-row>
-        
-
         <!-- 重要性 -->
         <v-col cols="12" md="6">
-          <v-select
-            v-model="importance"
-            label="重要性"
-            :items="importanceOptions"
-            item-title="title"
-            item-value="value"
-            variant="outlined"
-            required
-          />
+          <v-select v-model="importance" label="重要性" :items="importanceOptions" item-title="title" item-value="value"
+            variant="outlined" required />
         </v-col>
 
         <!-- 紧急性 -->
         <v-col cols="12" md="6">
-          <v-select
-            v-model="urgency"
-            label="紧急性"
-            :items="urgencyOptions"
-            item-title="title"
-            item-value="value"
-            variant="outlined"
-            required
-          />
-        </v-col>
-        
-        <!-- 任务分类 -->
-        <v-col cols="12" md="6">
-          <v-select
-            v-model="category"
-            label="任务分类"
-            :items="categoryOptions"
-            variant="outlined"
-            required
-          />
+          <v-select v-model="urgency" label="紧急性" :items="urgencyOptions" item-title="title" item-value="value"
+            variant="outlined" required />
         </v-col>
 
-        <!-- 预估时长 -->
+        <!-- 地点 -->
         <v-col cols="12" md="6">
-          <v-text-field 
-            v-model.number="estimatedDuration" 
-            label="预估时长（分钟）"
-            type="number" 
-            variant="outlined" 
-            min="1" 
-            max="1440"
-            :rules="durationRules"
-          />
+          <v-text-field v-model="location" label="执行地点" variant="outlined" prepend-inner-icon="mdi-map-marker-outline"
+            hint="任务执行的具体地点（可选）" persistent-hint />
         </v-col>
 
         <!-- 任务标签 -->
-        <v-col cols="12">
-          <v-combobox
-            v-model="tags"
-            label="任务标签"
-            variant="outlined"
-            multiple
-            chips
-            closable-chips
-            :items="tagSuggestions"
-            prepend-inner-icon="mdi-tag-multiple-outline"
-            hint="按回车键添加新标签"
-            persistent-hint
-          />
+        <v-col cols="12" md="6">
+          <v-combobox v-model="tags" label="任务标签" variant="outlined" multiple chips closable-chips
+            :items="tagSuggestions" prepend-inner-icon="mdi-tag-multiple-outline" hint="按回车键添加新标签" persistent-hint />
         </v-col>
       </v-row>
     </v-card-text>
@@ -79,10 +35,9 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
-import { ImportanceLevel } from '@dailyuse/contracts';
-import { UrgencyLevel } from '@dailyuse/contracts';
+import { computed, watch } from 'vue';
+import type { TaskTemplate } from '@dailyuse/domain-client';
+import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 interface Props {
   modelValue: TaskTemplate;
@@ -90,25 +45,17 @@ interface Props {
 
 interface Emits {
   (e: 'update:modelValue', value: TaskTemplate): void;
+  (e: 'update:validation', isValid: boolean): void;
 }
 
 const props = defineProps<Props>();
 const emit = defineEmits<Emits>();
 
-
-
-// 分类选项
-const categoryOptions = [
-  { title: '工作', value: 'work' },
-  { title: '学习', value: 'study' },
-  { title: '生活', value: 'life' },
-  { title: '健康', value: 'health' },
-  { title: '社交', value: 'social' },
-  { title: '娱乐', value: 'entertainment' },
-  { title: '习惯', value: 'habit' },
-  { title: '其他', value: 'general' }
-];
-
+const updateTemplate = (updater: (template: TaskTemplate) => void) => {
+  const updatedTemplate = props.modelValue.clone();
+  updater(updatedTemplate);
+  emit('update:modelValue', updatedTemplate);
+};
 
 // 重要性选项
 const importanceOptions = [
@@ -118,7 +65,6 @@ const importanceOptions = [
   { title: '不太重要', value: ImportanceLevel.Minor, subtitle: '可做可不做，如日常琐事' },
   { title: '无关紧要', value: ImportanceLevel.Trivial, subtitle: '纯粹消遣，如游戏娱乐' },
 ];
-
 
 // 紧急性选项
 const urgencyOptions = [
@@ -131,77 +77,71 @@ const urgencyOptions = [
 
 // 标签建议
 const tagSuggestions = [
-  '重要', '紧急', '例行', '学习', '工作', '会议', '运动', '阅读', 
+  '重要', '紧急', '例行', '学习', '工作', '会议', '运动', '阅读',
   '编程', '设计', '写作', '思考', '计划', '回顾', '沟通', '创作'
 ];
 
-// 时长验证规则
-const durationRules = [
-  (v: number) => !v || v > 0 || '预估时长必须大于0分钟',
-  (v: number) => !v || v <= 1440 || '预估时长不能超过24小时(1440分钟)'
-];
-
-const category = computed({
-  get: () => props.modelValue.metadata.category,
-  set: (value: string) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      category: value
-    });
-    emit('update:modelValue', updatedTemplate);
-  }
-});
-
-
+// 重要性
 const importance = computed({
-  get: () => props.modelValue.metadata.importance,
-  set: (value: string) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      importance: value as ImportanceLevel
+  get: () => props.modelValue.properties.importance,
+  set: (value: ImportanceLevel) => {
+    updateTemplate((template) => {
+      (template as any)._properties = {
+        ...template.properties,
+        importance: value
+      };
     });
-    emit('update:modelValue', updatedTemplate);
   }
 });
 
+// 紧急性
 const urgency = computed({
-  get: () => props.modelValue.metadata.urgency,
+  get: () => props.modelValue.properties.urgency,
+  set: (value: UrgencyLevel) => {
+    updateTemplate((template) => {
+      (template as any)._properties = {
+        ...template.properties,
+        urgency: value
+      };
+    });
+  }
+});
+
+// 地点
+const location = computed({
+  get: () => props.modelValue.properties.location || '',
   set: (value: string) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      urgency: value as UrgencyLevel
+    updateTemplate((template) => {
+      (template as any)._properties = {
+        ...template.properties,
+        location: value || undefined
+      };
     });
-    emit('update:modelValue', updatedTemplate);
   }
 });
 
-const estimatedDuration = computed({
-  get: () => props.modelValue.metadata.estimatedDuration,
-  set: (value: number) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      estimatedDuration: value
-    });
-    emit('update:modelValue', updatedTemplate);
-  }
-});
-
-
+// 标签
 const tags = computed({
-  get: () => props.modelValue.metadata.tags,
+  get: () => props.modelValue.properties.tags || [],
   set: (value: string[]) => {
-    const updatedTemplate = props.modelValue.clone();
-    updatedTemplate.updateMetadata({
-      ...updatedTemplate.metadata,
-      tags: value
+    updateTemplate((template) => {
+      (template as any)._properties = {
+        ...template.properties,
+        tags: value
+      };
     });
-    emit('update:modelValue', updatedTemplate);
   }
 });
+
+// 简单验证
+const isValid = computed(() => {
+  return Boolean(importance.value && urgency.value);
+});
+
+// 监听验证状态变化
+watch(() => [importance.value, urgency.value], () => {
+  emit('update:validation', isValid.value);
+}, { immediate: true });
 </script>
 
 <style scoped>

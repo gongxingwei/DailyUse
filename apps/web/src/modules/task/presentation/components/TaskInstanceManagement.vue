@@ -7,26 +7,18 @@
                     <h2 class="header-title">{{ getHeaderTitle }}</h2>
                     <p class="header-subtitle">{{ getHeaderSubtitle }}</p>
                 </div>
-                <v-chip 
-                    :color="completedCount === totalCount && totalCount > 0 ? 'success' : 'primary'" 
-                    variant="elevated"
-                    size="large"
-                    class="progress-chip"
-                >
+                <v-chip :color="completedCount === totalCount && totalCount > 0 ? 'success' : 'primary'"
+                    variant="elevated" size="large" class="progress-chip">
                     <v-icon start>mdi-check-circle</v-icon>
                     {{ completedCount }}/{{ totalCount }}
                 </v-chip>
             </div>
-            
+
             <!-- 进度条 -->
             <div v-if="totalCount > 0" class="progress-section">
-                <v-progress-linear
-                    :model-value="(completedCount / totalCount) * 100"
-                    :color="completedCount === totalCount ? 'success' : 'primary'"
-                    height="10"
-                    rounded
-                    class="progress-bar"
-                />
+                <v-progress-linear :model-value="(completedCount / totalCount) * 100"
+                    :color="completedCount === totalCount ? 'success' : 'primary'" height="10" rounded
+                    class="progress-bar" />
                 <span class="progress-text">
                     {{ Math.round((completedCount / totalCount) * 100) }}% 完成
                 </span>
@@ -37,39 +29,21 @@
         <v-card class="week-selector-card" elevation="3">
             <v-card-text class="pa-4">
                 <div class="week-selector-header">
-                    <v-btn
-                        icon
-                        variant="text"
-                        @click="previousWeek"
-                        class="week-nav-btn"
-                    >
+                    <v-btn icon variant="text" @click="previousWeek" class="week-nav-btn">
                         <v-icon>mdi-chevron-left</v-icon>
                     </v-btn>
                     <span class="week-title">{{ getWeekTitle }}</span>
-                    <v-btn
-                        icon
-                        variant="text"
-                        @click="nextWeek"
-                        class="week-nav-btn"
-                    >
+                    <v-btn icon variant="text" @click="nextWeek" class="week-nav-btn">
                         <v-icon>mdi-chevron-right</v-icon>
                     </v-btn>
                 </div>
-                
+
                 <div class="week-selector">
-                    <v-btn
-                        v-for="day in weekDays" 
-                        :key="day.date"
-                        :variant="isSelectedDay(day.date) ? 'flat' : 'text'"
-                        :color="isSelectedDay(day.date) ? 'primary' : 'default'"
-                        class="day-button"
-                        :class="{ 
+                    <v-btn v-for="day in weekDays" :key="day.date" :variant="isSelectedDay(day.date) ? 'flat' : 'text'"
+                        :color="isSelectedDay(day.date) ? 'primary' : 'default'" class="day-button" :class="{
                             'today': isToday(day.date),
                             'has-tasks': getTaskCountForDate(day.date) > 0
-                        }"
-                        size="large"
-                        @click="selectDay(day.date)"
-                    >
+                        }" size="large" @click="selectDay(day.date)">
                         <div class="day-content">
                             <span class="weekday">{{ day.weekday }}</span>
                             <span class="date">{{ formatDate(day.date) }}</span>
@@ -85,10 +59,7 @@
         <!-- 任务列表 - 占据剩余空间 -->
         <div class="task-sections">
             <!-- 覆盖层：无任务 -->
-            <div
-                v-if="totalCount === 0"
-                class="overlay-card"
-            >
+            <div v-if="totalCount === 0" class="overlay-card">
                 <div class="overlay-content">
                     <v-icon color="success" size="80" class="mb-4 empty-icon">mdi-beach</v-icon>
                     <h3 class="text-h5 mb-3">休息日</h3>
@@ -97,12 +68,8 @@
             </div>
 
             <!-- 覆盖层：全部完成 -->
-            <div
-                v-else-if="totalCount > 0 && incompleteTasks.length === 0 && showCelebration"
-                class="overlay-card"
-                @click="showCelebration = false"
-                style="cursor:pointer"
-            >
+            <div v-else-if="totalCount > 0 && incompleteTasks.length === 0 && showCelebration" class="overlay-card"
+                @click="showCelebration = false" style="cursor:pointer">
                 <div class="overlay-content">
                     <v-icon color="warning" size="80" class="mb-4 celebration-icon">mdi-party-popper</v-icon>
                     <h3 class="text-h4 mb-3">🎉 恭喜完成所有任务！</h3>
@@ -136,24 +103,15 @@
                             </v-chip>
                         </div>
                     </v-card-title>
-                    
+
                     <v-card-text class="pa-0 task-content">
                         <div class="scrollable-list">
                             <v-list class="task-list">
-                                <v-list-item
-                                    v-for="(task, index) in incompleteTasks" 
-                                    :key="task.uuid"
-                                    class="task-item"
-                                    :class="{ 'border-bottom': index < incompleteTasks.length - 1 }"
-                                >
+                                <v-list-item v-for="(task, index) in incompleteTasks" :key="task.uuid" class="task-item"
+                                    :class="{ 'border-bottom': index < incompleteTasks.length - 1 }">
                                     <template v-slot:prepend>
-                                        <v-btn
-                                            icon
-                                            variant="text"
-                                            color="success"
-                                            @click="handleCompleteTaskInstance(task.uuid)"
-                                            class="complete-btn"
-                                        >
+                                        <v-btn icon variant="text" color="success"
+                                            @click="completeTaskInstance(task.uuid)" class="complete-btn">
                                             <v-icon>mdi-circle-outline</v-icon>
                                         </v-btn>
                                     </template>
@@ -165,19 +123,13 @@
 
                                         <v-list-item-subtitle class="task-meta">
                                             <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                                            {{ TaskTimeUtils.formatTaskInstanceTimeConfig(task.timeConfig) }}
+                                            {{ task.timeConfig }}
                                         </v-list-item-subtitle>
 
                                         <!-- 关键结果链接 -->
                                         <div v-if="task.keyResultLinks?.length" class="key-results mt-2">
-                                            <v-chip
-                                                v-for="link in task.keyResultLinks" 
-                                                :key="link.keyResultId"
-                                                size="small"
-                                                color="primary"
-                                                variant="outlined"
-                                                class="mr-1 mb-1"
-                                            >
+                                            <v-chip v-for="link in task.keyResultLinks" :key="link.keyResultId"
+                                                size="small" color="primary" variant="outlined" class="mr-1 mb-1">
                                                 <v-icon start size="small">mdi-target</v-icon>
                                                 {{ getKeyResultName(link) }} (+{{ link.incrementValue }})
                                             </v-chip>
@@ -202,16 +154,13 @@
                             </v-chip>
                         </div>
                     </v-card-title>
-                    
+
                     <v-card-text class="pa-0 task-content">
                         <div class="scrollable-list">
                             <v-list class="task-list">
-                                <v-list-item
-                                    v-for="(task, index) in completedTasks" 
-                                    :key="task.uuid"
+                                <v-list-item v-for="(task, index) in completedTasks" :key="task.uuid"
                                     class="task-item completed-task"
-                                    :class="{ 'border-bottom': index < completedTasks.length - 1 }"
-                                >
+                                    :class="{ 'border-bottom': index < completedTasks.length - 1 }">
                                     <template v-slot:prepend>
                                         <v-icon color="success" class="complete-icon">
                                             mdi-check-circle
@@ -230,13 +179,8 @@
                                     </div>
 
                                     <template v-slot:append>
-                                        <v-btn
-                                            icon
-                                            variant="text"
-                                            size="small"
-                                            @click="handleUndoCompleteTaskInstance(task.uuid)"
-                                            class="undo-btn"
-                                        >
+                                        <v-btn icon variant="text" size="small"
+                                            @click="undoCompleteTaskInstance(task.uuid)" class="undo-btn">
                                             <v-icon>mdi-undo</v-icon>
                                         </v-btn>
                                     </template>
@@ -254,15 +198,55 @@
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import { TaskTimeUtils } from '@dailyuse/contracts/modules/task/utils/taskTimeUtils';
-import { useTaskInstanceManagement } from '../composables/useTaskInstanceManagement';
-import { useTaskService } from '../composables/useTaskService';
-import { format } from 'date-fns';
-const { selectedDate, currentWeekStart, dayTasks, completedTasks, incompleteTasks,  selectDay, previousWeek, nextWeek } = useTaskInstanceManagement();
-const { handleCompleteTaskInstance, handleUndoCompleteTaskInstance } = useTaskService();
+import { format, startOfDay } from 'date-fns';
+// types
+import { TaskTemplate, TaskInstance } from '@dailyuse/domain-client';
+import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
+import { Goal, KeyResult } from '@dailyuse/domain-client';
+// composables
+import { useTask } from '../composables/useTask';
+
+const { completeTaskInstance, undoCompleteTaskInstance } = useTask();
 
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
+
+const selectedDate = ref(new Date().toISOString().split('T')[0]);
+const currentWeekStart = ref(new Date());
+const loading = ref(false);
+const taskInstances = computed(() => taskStore.getAllTaskInstances);
+
+// 计算属性
+const dayTasks = computed(() => {
+    const selected = new Date(selectedDate.value);
+    const dayStart = startOfDay(selected);
+    const nextDayStart = new Date(dayStart);
+    nextDayStart.setDate(dayStart.getDate() + 1);
+
+    return taskInstances.value.filter((task) => {
+        if (
+            !task.timeConfig.scheduledTime ||
+            typeof task.timeConfig.scheduledTime.getTime() !== 'number'
+        ) {
+            return false;
+        }
+        return (
+            task.timeConfig.scheduledTime.getTime() >= dayStart.getTime() &&
+            task.timeConfig.scheduledTime.getTime() < nextDayStart.getTime()
+        );
+    });
+});
+
+const completedTasks = computed(() =>
+    dayTasks.value.filter((task) => task.status === 'completed' && task instanceof TaskInstance),
+);
+
+const incompleteTasks = computed(() =>
+    dayTasks.value.filter(
+        (task) =>
+            (task.status === 'pending' || task.status === 'inProgress') && task instanceof TaskInstance,
+    ),
+);
 
 // Week days calculation
 const weekDays = computed(() => {
@@ -305,7 +289,7 @@ const getWeekTitle = computed(() => {
     monday.setDate(currentWeekStart.value.getDate() - (currentWeekStart.value.getDay() || 7) + 1);
     const sunday = new Date(monday);
     sunday.setDate(monday.getDate() + 6);
-    
+
     return `${monday.getMonth() + 1}月${monday.getDate()}日 - ${sunday.getMonth() + 1}月${sunday.getDate()}日`;
 });
 
@@ -320,9 +304,9 @@ const formatDate = (dateStr: string) => {
     return `${date.getDate()}`;
 };
 
-const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalByUuid(link.goalUuid);
-    const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
+const getKeyResultName = (link: KeyResultLink) => {
+    const goal: Goal = goalStore.getGoalByUuid(link.goalUuid);
+    const kr: KeyResult | undefined = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
     return kr?.name || '';
 };
 
@@ -337,7 +321,7 @@ const getTaskCountForDate = (date: string) => {
         }
 
         return task.scheduledTime.getTime() >= new Date(selectedDate).getTime() &&
-               task.scheduledTime.getTime() < new Date(nextDay).getTime();
+            task.scheduledTime.getTime() < new Date(nextDay).getTime();
     }).length;
 };
 
@@ -345,6 +329,23 @@ const isSelectedDay = (date: string) => date === selectedDate.value;
 const isToday = (date: string) => date === new Date().toISOString().split('T')[0];
 
 const showCelebration = ref(false);
+
+// 日期导航方法
+const selectDay = async (date: string) => {
+    selectedDate.value = date;
+};
+
+const previousWeek = () => {
+    const newDate = new Date(currentWeekStart.value);
+    newDate.setDate(newDate.getDate() - 7);
+    currentWeekStart.value = newDate;
+};
+
+const nextWeek = () => {
+    const newDate = new Date(currentWeekStart.value);
+    newDate.setDate(newDate.getDate() + 7);
+    currentWeekStart.value = newDate;
+};
 
 watchEffect(() => {
     if (totalCount.value > 0 && incompleteTasks.value.length === 0) {
@@ -507,19 +508,24 @@ watchEffect(() => {
     height: 100%;
     min-height: 0;
 }
-.incomplete-tasks, .completed-tasks {
+
+.incomplete-tasks,
+.completed-tasks {
     flex: 1 1 0;
     min-width: 0;
     min-height: 0;
     display: flex;
     flex-direction: column;
 }
+
 @media (max-width: 900px) {
     .task-lists-row {
         flex-direction: column;
         gap: 1rem;
     }
-    .incomplete-tasks, .completed-tasks {
+
+    .incomplete-tasks,
+    .completed-tasks {
         min-height: 200px;
     }
 }
@@ -528,7 +534,10 @@ watchEffect(() => {
 .overlay-card {
     position: absolute;
     z-index: 10;
-    top: 0; left: 0; right: 0; bottom: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     background: rgba(var(--v-theme-background), 0.95);
     display: flex;
     align-items: center;
@@ -537,14 +546,21 @@ watchEffect(() => {
     flex-direction: column;
     animation: fadeInOverlay 0.4s;
 }
+
 .overlay-content {
     text-align: center;
     max-width: 350px;
     margin: 0 auto;
 }
+
 @keyframes fadeInOverlay {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .task-section-card {
@@ -575,7 +591,8 @@ watchEffect(() => {
     flex-shrink: 0;
 }
 
-.header-left, .header-right {
+.header-left,
+.header-right {
     display: flex;
     align-items: center;
 }
@@ -613,7 +630,9 @@ watchEffect(() => {
     min-width: 0;
 }
 
-.complete-btn, .action-btn, .undo-btn {
+.complete-btn,
+.action-btn,
+.undo-btn {
     transition: all 0.2s ease;
 }
 
@@ -670,8 +689,15 @@ watchEffect(() => {
 }
 
 @keyframes gentle-bounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
 }
 
 /* 庆祝样式 */
@@ -719,9 +745,11 @@ watchEffect(() => {
         transform: scale(0.8) rotate(-5deg);
         opacity: 0;
     }
+
     50% {
         transform: scale(1.1) rotate(2deg);
     }
+
     100% {
         transform: scale(1) rotate(0deg);
         opacity: 1;
@@ -729,22 +757,29 @@ watchEffect(() => {
 }
 
 @keyframes float {
-    0%, 100% {
+
+    0%,
+    100% {
         transform: translateY(0) rotate(0deg);
     }
+
     25% {
         transform: translateY(-8px) rotate(2deg);
     }
+
     75% {
         transform: translateY(-4px) rotate(-1deg);
     }
 }
 
 @keyframes pulse-celebration {
-    0%, 100% {
+
+    0%,
+    100% {
         opacity: 0.1;
         transform: scale(1);
     }
+
     50% {
         opacity: 0.2;
         transform: scale(1.05);
@@ -791,7 +826,9 @@ watchEffect(() => {
         flex-direction: column;
         gap: 1rem;
     }
-    .incomplete-tasks, .completed-tasks {
+
+    .incomplete-tasks,
+    .completed-tasks {
         min-height: 200px;
     }
 }
@@ -801,42 +838,42 @@ watchEffect(() => {
         padding: 1rem;
         gap: 1rem;
     }
-    
+
     .header-info {
         flex-direction: column;
         align-items: stretch;
         gap: 1rem;
     }
-    
+
     .progress-section {
         flex-direction: column;
         gap: 0.5rem;
     }
-    
+
     .progress-text {
         text-align: center;
     }
-    
+
     .week-selector {
         gap: 0.5rem;
     }
-    
+
     .day-button {
         min-height: 60px;
     }
-    
+
     .weekday {
         font-size: 0.75rem;
     }
-    
+
     .date {
         font-size: 0.875rem;
     }
-    
+
     .task-lists-container {
         gap: 0.75rem;
     }
-    
+
     .task-item {
         padding: 1rem;
         min-height: 70px;
@@ -847,19 +884,19 @@ watchEffect(() => {
     .header-title {
         font-size: 1.5rem;
     }
-    
+
     .week-selector {
         gap: 0.25rem;
     }
-    
+
     .day-button {
         min-height: 50px;
     }
-    
+
     .weekday {
         font-size: 0.625rem;
     }
-    
+
     .date {
         font-size: 0.75rem;
     }

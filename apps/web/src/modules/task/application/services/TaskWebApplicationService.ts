@@ -6,6 +6,7 @@ import {
   taskMetaTemplateApiClient,
   taskStatisticsApiClient,
 } from '../../infrastructure/api/taskApiClient';
+import { TaskDomainService, TaskTemplate } from '@dailyuse/domain-client';
 
 /**
  * Task Web 应用服务 - 新架构
@@ -41,6 +42,28 @@ export class TaskWebApplicationService {
       return template;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建任务模板失败';
+      this.taskStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.taskStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 通过元模板创建任务模板
+   * 类似本地工具函数
+   */
+  async createTaskTemplateByMetaTemplate(metaTemplateUuid: string): Promise<TaskTemplate> {
+    try {
+      this.taskStore.setLoading(true);
+      this.taskStore.setError(null);
+      const metaTemplate = this.taskStore.getMetaTemplateByUuid(metaTemplateUuid);
+      const TaskDomainServiceInstance = new TaskDomainService();
+      const template =
+        await TaskDomainServiceInstance.createTaskTemplateByTaskMetaTemplate(metaTemplate);
+      return template;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '通过元模板创建任务模板失败';
       this.taskStore.setError(errorMessage);
       throw error;
     } finally {
@@ -161,6 +184,15 @@ export class TaskWebApplicationService {
 
       // 更新缓存
       this.taskStore.updateTaskTemplate(uuid, template);
+
+      // 激活后可能生成了新的任务实例，刷新实例列表
+      try {
+        const instancesResponse = await this.getTaskInstances({ templateUuid: uuid });
+        // getTaskInstances 已经会将实例同步到 store
+      } catch (instanceError) {
+        console.warn('激活模板后刷新实例列表失败:', instanceError);
+        // 不阻断主流程，只记录警告
+      }
 
       return template;
     } catch (error) {
@@ -635,7 +667,7 @@ export class TaskWebApplicationService {
     return (
       !this.taskStore.isInitialized ||
       this.taskStore.getAllTaskTemplates.length === 0 ||
-      this.taskStore.shouldRefreshCache
+      this.taskStore.shouldRefreshCache()
     );
   }
 
@@ -676,6 +708,23 @@ export class TaskWebApplicationService {
       ) {
         this.taskStore.initialize();
       }
+      throw error;
+    }
+  }
+
+  /**
+   * 仅初始化模块（不进行数据同步）
+   * 用于应用启动时的基础模块初始化
+   */
+  async initializeModule(): Promise<void> {
+    try {
+      // 只初始化 store（加载本地缓存），不进行网络同步
+      if (this.taskStore.initialize && typeof this.taskStore.initialize === 'function') {
+        this.taskStore.initialize();
+      }
+      console.log('Task 模块基础初始化完成（仅本地缓存）');
+    } catch (error) {
+      console.error('Task 模块初始化失败:', error);
       throw error;
     }
   }

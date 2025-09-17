@@ -15,7 +15,7 @@ export {
 } from './infrastructure/repositories/index.js';
 
 // 导出接口层
-export { taskRouter } from './interface/routes/index.js';
+export { taskRouter } from './interface/index.js';
 export {
   TaskTemplateController,
   TaskInstanceController,

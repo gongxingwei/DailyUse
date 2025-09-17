@@ -1,6 +1,7 @@
 import { TaskMetaTemplateCore } from '@dailyuse/domain-core';
 import type { TaskContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import type { TaskTemplate } from '../aggregates/TaskTemplate';
 
 /**
  * 任务元模板实体 - 客户端实现
@@ -172,9 +173,9 @@ export class TaskMetaTemplate extends TaskMetaTemplateCore {
   // ===== 客户端特有的业务方法 =====
 
   /**
-   * 创建基于此元模板的任务模板
+   * 获取基于此元模板的任务模板配置
    */
-  createTaskTemplate(overrides?: {
+  getTaskTemplateConfig(overrides?: {
     title?: string;
     description?: string;
     timeConfig?: Partial<any>;

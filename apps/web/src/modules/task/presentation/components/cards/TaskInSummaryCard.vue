@@ -95,11 +95,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useTaskStore } from '../stores/taskStore';
+import { useTaskStore } from '../../stores/taskStore';
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import type { KeyResultLink } from '@dailyuse/contracts/modules/task/types/task';
+import type { KeyResultLink } from '@dailyuse/contracts/modules/task';
 import { useRouter } from 'vue-router';
-import type { TaskInstance } from '@/modules/task/domain/aggregates/taskInstance';
+import { TaskInstance, Goal } from '@dailyuse/domain-client';
 const router = useRouter();
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();
@@ -130,7 +130,7 @@ const toggleTaskComplete = async (task: TaskInstance) => {
 
 // 获取关键结果名称的方法
 const getKeyResultName = (link: KeyResultLink) => {
-  const goal = goalStore.getGoalByUuid(link.goalUuid);
+  const goal: Goal = goalStore.getGoalByUuid(link.goalUuid);
   const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
   return kr?.name || '未知关键结果';
 };

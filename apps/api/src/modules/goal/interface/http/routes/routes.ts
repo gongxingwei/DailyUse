@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { GoalController } from './controllers/GoalController.js';
-import { GoalAggregateController } from './controllers/GoalAggregateController.js';
-import { goalAggregateRoutes } from './routes/goalAggregateRoutes';
+import { GoalController } from '../controllers/GoalController.js';
+import { GoalAggregateController } from '../controllers/GoalAggregateController.js';
+import { goalAggregateRoutes } from './goalAggregateRoutes.js';
 
 const router = Router();
 

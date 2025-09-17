@@ -278,7 +278,7 @@ export class InterceptorManager {
 
         // 响应变换
         if (this.config.responseTransformer) {
-          const transformedRes =  this.config.responseTransformer(response);
+          const transformedRes = this.config.responseTransformer(response);
           console.log('🔍 转换后响应数据:', transformedRes);
           return transformedRes;
         }
@@ -364,7 +364,7 @@ export class InterceptorManager {
     try {
       // 使用原始 axios 实例避免拦截器循环
       const response = await this.instance.post(
-        '/api/auth/refresh',
+        '/auth/refresh',
         {
           refreshToken,
         },

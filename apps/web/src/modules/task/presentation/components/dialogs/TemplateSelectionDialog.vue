@@ -39,9 +39,9 @@
                     @click="selectMetaTemplate(metaTemplate.uuid)"
                 >
                     <v-card-text class="text-center pa-4">
-                        <v-avatar :color="getMetaTemplateColor(metaTemplate.category)" size="64" class="mb-3">
+                        <v-avatar :color="getMetaTemplateColor(metaTemplate.name)" size="64" class="mb-3">
                             <v-icon size="32" color="white">
-                                {{ getMetaTemplateIcon(metaTemplate.category) }}
+                                {{ getMetaTemplateIcon(metaTemplate.name) }}
                             </v-icon>
                         </v-avatar>
 
@@ -50,24 +50,14 @@
                             {{ metaTemplate.description }}
                         </p>
 
-                        <div class="template-features mt-3">
-                            <v-chip 
-                                v-for="tag in metaTemplate.defaultMetadata.tags" 
-                                :key="tag" 
-                                size="small" 
-                                variant="outlined"
-                                class="ma-1"
-                            >
-                                {{ tag }}
-                            </v-chip>
-                        </div>
+                        
                     </v-card-text>
                 </v-card>
             </v-card-text>
 
             <v-card-actions class="dialog-actions">
                 <v-spacer />
-                <v-btn variant="text" @click="$emit('cancel')">
+                <v-btn variant="text" @click="handleCancel">
                     取消
                 </v-btn>
                 <v-btn 
@@ -80,32 +70,27 @@
                 </v-btn>
             </v-card-actions>
         </v-card>
+        <TaskTemplateDialog ref="taskTemplateDialogRef" />
     </v-dialog>
 </template>
 
 <script setup lang="ts">
 import { ref, watch, onMounted } from 'vue';
-import { TaskMetaTemplate } from '@/modules/task/domain/aggregates/taskMetaTemplate';
+import { TaskMetaTemplate } from '@dailyuse/domain-client';
 import { useTaskStore } from '@/modules/task/presentation/stores/taskStore';
+// components
+import TaskTemplateDialog from './TaskTemplateDialog.vue';
 
 
-interface Props {
-    visible: boolean;
-}
 
-interface Emits {
-    (e: 'cancel'): void;
-    (e: 'select', templateType: string): void;
-    (e: 'update:visible', value: boolean): void;
-}
-
-const props = defineProps<Props>();
-const emit = defineEmits<Emits>();
 const taskStore = useTaskStore();
-
+const visible = ref(false);
 const metaTemplates = ref<TaskMetaTemplate[]>([]);
 const selectedmetaTemplateUuid = ref<string>('');
 const loading = ref(false);
+
+// component refs
+const taskTemplateDialogRef = ref<InstanceType<typeof TaskTemplateDialog> | null>(null);
 
 onMounted(async () => {
     await loadMetaTemplates();
@@ -130,7 +115,8 @@ const selectMetaTemplate = (metaTemplateUuid: string) => {
 
 const confirmSelection = () => {
     if (selectedmetaTemplateUuid.value) {
-        emit('select', selectedmetaTemplateUuid.value);
+        taskTemplateDialogRef?.value?.openForCreationWithMetaTemplateUuid(selectedmetaTemplateUuid.value);
+        visible.value = false;
     }
 };
 
@@ -159,10 +145,28 @@ const getMetaTemplateIcon = (category: string): string => {
 };
 
 // 重置选择当对话框关闭时
-watch(() => props.visible, (newVal) => {
+watch(() => visible, (newVal) => {
     if (!newVal) {
         selectedmetaTemplateUuid.value = '';
     }
+});
+
+const handleCancel = () => {
+    closeDialog();
+};
+
+// 工具函数
+const openDialog = () => {
+    visible.value = true;
+};
+
+const closeDialog = () => {
+    visible.value = false;
+    selectedmetaTemplateUuid.value = '';
+};
+
+defineExpose({
+    openDialog,
 });
 </script>
 

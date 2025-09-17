@@ -26,7 +26,7 @@
 
                 <!-- 创建按钮 -->
                 <v-btn color="primary" variant="elevated" size="large" prepend-icon="mdi-plus"
-                    @click="startCreateTaskTemplate" class="create-button">
+                    @click="taskTemplateDialogRef?.openForCreation()" class="create-button">
                     创建新模板
                 </v-btn>
             </div>
@@ -47,7 +47,7 @@
                         {{ getEmptyStateDescription() }}
                     </p>
                     <v-btn v-if="currentStatus === 'active'" color="primary" variant="tonal" prepend-icon="mdi-plus"
-                        @click="startCreateTaskTemplate" class="mt-4">
+                        @click="taskTemplateDialogRef?.openForCreation()" class="mt-4">
                         创建第一个模板
                     </v-btn>
                 </v-card-text>
@@ -55,36 +55,13 @@
 
             <!-- 使用 TaskTemplateCard 组件 -->
             <TaskTemplateCard v-for="template in filteredTemplates" :key="template.uuid" :template="template"
-                :status-filters="statusFilters" @edit="startEditTaskTemplate" @delete="deleteTemplate"
-                @pause="pauseTemplate" @resume="resumeTemplate" />
+                :status-filters="statusFilters" />
         </div>
 
-        <!-- 删除确认对话框 -->
-        <v-dialog v-model="showDeleteDialog" max-width="400">
-            <v-card>
-                <v-card-title class="text-h6">
-                    <v-icon color="error" class="mr-2">mdi-delete-alert</v-icon>
-                    确认删除
-                </v-card-title>
-                <v-card-text>
-                    确定要删除任务模板 "{{ selectedTemplate?.title }}" 吗？
-                    <br>
-                    <span class="text-caption text-error">此操作不可恢复，相关的任务实例也会被删除。</span>
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn variant="text" @click="showDeleteDialog = false">
-                        取消
-                    </v-btn>
-                    <v-btn color="error" variant="elevated" @click="confirmDelete">
-                        删除
-                    </v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
+        
 
         <!-- 删除所有模板确认对话框 -->
-        <v-dialog v-model="showDeleteAllDialog" max-width="500">
+        <!-- <v-dialog v-model="showDeleteAllDialog" max-width="500">
             <v-card>
                 <v-card-title class="text-h6">
                     <v-icon color="error" class="mr-2">mdi-delete-sweep</v-icon>
@@ -125,54 +102,35 @@
                     </v-btn>
                 </v-card-actions>
             </v-card>
-        </v-dialog>
+        </v-dialog> -->
 
         <!-- 模板选择对话框 -->
-        <TemplateSelectionDialog :visible="showTemplateSelectionDialog" @cancel="cancelTemplateSelection"
-            @select="handleTemplateTypeSelected" />
+        <TemplateSelectionDialog ref="templateSelectionDialogRef" />
 
         <!-- 任务模板编辑对话框 -->
-        <TaskTemplateDialog :visible="showEditTaskTemplateDialog" :is-edit-mode="isEditMode"
-            @cancel="cancelEditTaskTemplate" @save="handleSaveTaskTemplate" />
-
-        <!-- 消息提示框 -->
-        <v-snackbar v-model="snackbar.show" :color="snackbar.color" :timeout="snackbar.timeout" location="top right"
-            variant="elevated" :multi-line="snackbar.message.length > 50">
-            {{ snackbar.message }}
-        </v-snackbar>
+        <TaskTemplateDialog ref="taskTemplateDialogRef" />
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import TaskTemplateCard from './TaskTemplateCard.vue';
+import TaskTemplateCard from './cards/TaskTemplateCard.vue';
 import TaskTemplateDialog from './dialogs/TaskTemplateDialog.vue';
 import TemplateSelectionDialog from './dialogs/TemplateSelectionDialog.vue';
-import { useTaskService } from '../composables/useTaskService';
-import type { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
-
-const {
-    snackbar,
-    showEditTaskTemplateDialog,
-    showTemplateSelectionDialog,
-    isEditMode,
-    startCreateTaskTemplate,
-    handleTemplateTypeSelected,
-    cancelTemplateSelection,
-    startEditTaskTemplate,
-    handleSaveTaskTemplate,
-    cancelEditTaskTemplate,
-    handleDeleteTaskTemplate,
-    handlePauseTaskTemplate,
-    handleResumeTaskTemplate
-} = useTaskService();
+import { TaskTemplate } from '@dailyuse/domain-client';
+// composables
+import { useTask } from '../composables/useTask';
 
 const taskStore = useTaskStore();
 const currentStatus = ref('active'); // 设置为 active，因为新创建的模板现在直接激活
 const showDeleteDialog = ref(false);
 const showDeleteAllDialog = ref(false);
 const selectedTemplate = ref<TaskTemplate | null>(null);
+
+// component refs
+const taskTemplateDialogRef = ref<InstanceType<typeof TaskTemplateDialog> | null>(null);
+const templateSelectionDialogRef = ref<InstanceType<typeof TemplateSelectionDialog> | null>(null);
 
 // 状态筛选器配置
 const statusFilters = [
@@ -272,81 +230,26 @@ const getEmptyStateIconColor = () => {
     return getStatusChipColor(currentStatus.value);
 };
 
-// 操作方法
-const deleteTemplate = (template: TaskTemplate) => {
-    selectedTemplate.value = template;
-    showDeleteDialog.value = true;
-};
 
-const confirmDelete = async () => {
-    if (selectedTemplate.value && selectedTemplate.value.isTaskTemplate()) {
-        await handleDeleteTaskTemplate(selectedTemplate.value);
-        showDeleteDialog.value = false;
-        selectedTemplate.value = null;
-    } else {
-        console.error('Selected template is not a valid TaskTemplate');
-    }
-};
+// const pauseTemplate = (template: TaskTemplate) => {
+//     handlePauseTaskTemplate(template.uuid)
+//         .then(() => {
+//             console.log('模板已暂停:', template.title);
+//         })
+//         .catch((error: Error) => {
+//             console.error('暂停模板失败:', error);
+//         });
+// }
 
-const confirmDeleteAll = async () => {
-    try {
-        console.log('🔄 [组件] 开始删除所有任务模板');
-
-        // 从taskDomainApplicationService获取服务实例并调用删除所有方法
-        const { getTaskDomainApplicationService } = await import('@/modules/task/application/services/taskDomainApplicationService');
-        const taskService = getTaskDomainApplicationService();
-
-        const result = await taskService.deleteAllTaskTemplates();
-
-        if (result.success) {
-            snackbar.value = {
-                show: true,
-                message: result.message || '所有任务模板已成功删除',
-                color: 'success',
-                timeout: 3000
-            };
-            console.log('✅ [组件] 删除所有任务模板成功');
-        } else {
-            snackbar.value = {
-                show: true,
-                message: result.message || '删除任务模板失败',
-                color: 'error',
-                timeout: 5000
-            };
-            console.error('❌ [组件] 删除所有任务模板失败:', result.message);
-        }
-    } catch (error) {
-        console.error('❌ [组件] 删除所有任务模板时发生错误:', error);
-        snackbar.value = {
-            show: true,
-            message: '删除任务模板时发生错误',
-            color: 'error',
-            timeout: 5000
-        };
-    } finally {
-        showDeleteAllDialog.value = false;
-    }
-};
-
-const pauseTemplate = (template: TaskTemplate) => {
-    handlePauseTaskTemplate(template.uuid)
-        .then(() => {
-            console.log('模板已暂停:', template.title);
-        })
-        .catch((error: Error) => {
-            console.error('暂停模板失败:', error);
-        });
-}
-
-const resumeTemplate = (template: TaskTemplate) => {
-    handleResumeTaskTemplate(template.uuid)
-        .then(() => {
-            console.log('模板已恢复:', template.title);
-        })
-        .catch((error: Error) => {
-            console.error('恢复模板失败:', error);
-        });
-};
+// const resumeTemplate = (template: TaskTemplate) => {
+//     handleResumeTaskTemplate(template.uuid)
+//         .then(() => {
+//             console.log('模板已恢复:', template.title);
+//         })
+//         .catch((error: Error) => {
+//             console.error('恢复模板失败:', error);
+//         });
+// };
 </script>
 
 <style scoped>

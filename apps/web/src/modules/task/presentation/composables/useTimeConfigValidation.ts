@@ -1,107 +1,193 @@
-// composables/useTimeConfigValidation.ts - 纯前端UI验证
 import { ref, computed } from 'vue';
-import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+import type { TaskTimeConfig, TaskTimeType } from '@dailyuse/contracts/modules/task/types';
 
+/**
+ * 时间配置验证组合式函数
+ * 重构后专注于用户体验验证，核心业务验证移到聚合根中
+ */
 export function useTimeConfigValidation() {
   const errors = ref<string[]>([]);
   const warnings = ref<string[]>([]);
 
   /**
-   * 前端时间配置验证 - 仅用于UI反馈
+   * UI层面的用户体验验证 - 主要是实时反馈和建议
    */
-  const validateTimeConfig = (timeConfig: TaskTemplate['timeConfig']): boolean => {
-    errors.value = [];
+  const validateUserExperience = (timeConfig: TaskTimeConfig): void => {
     warnings.value = [];
 
-    // 基础类型检查
-    if (!['allDay', 'timed', 'timeRange'].includes(timeConfig.type)) {
-      errors.value.push('请选择有效的任务类型');
-      return false;
-    }
-
-    // 开始时间检查
-    if (!timeConfig.baseTime?.start) {
-      errors.value.push('请设置开始时间');
-      return false;
-    }
-
-    // 时间段类型的特殊检查
-    if (timeConfig.type === 'timeRange') {
-      if (!timeConfig.baseTime.end) {
-        errors.value.push('时间段任务必须设置结束时间');
-        return false;
-      }
-
-      // 时间顺序检查
-      if (timeConfig.baseTime.end.getTime() <= timeConfig.baseTime.start.getTime()) {
-        errors.value.push('结束时间必须晚于开始时间');
-        return false;
-      }
-
-      // 时长合理性检查
-      const duration = timeConfig.baseTime.end.getTime() - timeConfig.baseTime.start.getTime();
-      const hours = duration / (1000 * 60 * 60);
-      
-      if (hours > 12) {
-        warnings.value.push('任务时长超过12小时，请确认是否合理');
-      } else if (hours < 0.25) {
-        warnings.value.push('任务时长不足15分钟，可能过于简短');
-      }
-    }
-
     // 时间设置的用户体验检查
-    if (timeConfig.type === 'timed' && timeConfig.baseTime.start) {
-      const hour = timeConfig.baseTime.start.getHours();
+    if (timeConfig.time.timeType === 'specificTime' && timeConfig.time.startTime) {
+      const hour = parseInt(timeConfig.time.startTime.split(':')[0]);
       if (hour < 6 || hour > 23) {
         warnings.value.push('任务时间较早或较晚，请确认是否合适');
       }
+      if (hour >= 12 && hour <= 14) {
+        warnings.value.push('午休时间安排任务，请注意是否会被打扰');
+      }
     }
 
-    return true;
+    // 时间段类型的用户体验检查
+    if (timeConfig.time.timeType === 'timeRange') {
+      if (timeConfig.time.startTime && timeConfig.time.endTime) {
+        const duration = calculateDurationMinutes(
+          timeConfig.time.startTime,
+          timeConfig.time.endTime,
+        );
+
+        if (duration > 480) {
+          // 8小时
+          warnings.value.push('任务时长超过8小时，建议分解为较小的任务');
+        } else if (duration < 15) {
+          warnings.value.push('任务时长不足15分钟，可能过于简短');
+        }
+
+        if (duration > 120 && timeConfig.schedule.mode === 'daily') {
+          warnings.value.push('每日重复的长时间任务，请确认是否现实');
+        }
+      }
+    }
+
+    // 调度设置的用户体验建议
+    if (timeConfig.schedule.mode === 'intervalDays' && timeConfig.schedule.intervalDays) {
+      if (timeConfig.schedule.intervalDays > 30) {
+        warnings.value.push('间隔天数较长，可能导致任务被遗忘');
+      }
+    }
+
+    // 日期范围的用户体验检查
+    if (timeConfig.date.endDate) {
+      const durationDays = Math.ceil(
+        (timeConfig.date.endDate.getTime() - timeConfig.date.startDate.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      if (durationDays > 365) {
+        warnings.value.push('任务期间超过一年，建议考虑是否需要分阶段');
+      }
+    }
+  };
+
+  /**
+   * 调用聚合根的业务验证 - 这会抛出错误如果验证失败
+   */
+  const validateBusinessRules = (timeConfig: TaskTimeConfig): boolean => {
+    try {
+      // 这里应该调用 TaskTemplate 聚合根的验证方法
+      // 在实际使用时，这些验证会在提交数据到聚合根时进行
+
+      // 基础的业务规则验证（模拟聚合根验证）
+      if (!timeConfig.time.timeType) {
+        throw new Error('必须指定时间类型');
+      }
+
+      if (!timeConfig.schedule.mode) {
+        throw new Error('必须指定调度模式');
+      }
+
+      if (!timeConfig.timezone) {
+        throw new Error('必须指定时区');
+      }
+
+      if (!timeConfig.date.startDate) {
+        throw new Error('必须设置开始日期');
+      }
+
+      // 时间段类型的业务验证
+      if (timeConfig.time.timeType === 'timeRange') {
+        if (!timeConfig.time.startTime) {
+          throw new Error('时间段任务必须设置开始时间');
+        }
+        if (!timeConfig.time.endTime) {
+          throw new Error('时间段任务必须设置结束时间');
+        }
+
+        const duration = calculateDurationMinutes(
+          timeConfig.time.startTime,
+          timeConfig.time.endTime,
+        );
+        if (duration <= 0) {
+          throw new Error('结束时间必须晚于开始时间');
+        }
+        if (duration > 1440) {
+          // 24小时
+          throw new Error('单个任务持续时间不能超过24小时');
+        }
+      }
+
+      // 日期范围验证
+      if (timeConfig.date.endDate) {
+        if (timeConfig.date.endDate.getTime() <= timeConfig.date.startDate.getTime()) {
+          throw new Error('结束日期必须晚于开始日期');
+        }
+      }
+
+      // 调度配置验证
+      if (timeConfig.schedule.mode === 'intervalDays') {
+        if (!timeConfig.schedule.intervalDays || timeConfig.schedule.intervalDays < 1) {
+          throw new Error('间隔天数必须大于0');
+        }
+        if (timeConfig.schedule.intervalDays > 365) {
+          throw new Error('间隔天数不能超过365天');
+        }
+      }
+
+      if (timeConfig.schedule.mode === 'weekly') {
+        if (!timeConfig.schedule.weekdays || timeConfig.schedule.weekdays.length === 0) {
+          throw new Error('周重复必须选择至少一个星期');
+        }
+      }
+
+      if (timeConfig.schedule.mode === 'monthly') {
+        if (!timeConfig.schedule.monthDays || timeConfig.schedule.monthDays.length === 0) {
+          throw new Error('月重复必须选择至少一天');
+        }
+      }
+
+      errors.value = [];
+      return true;
+    } catch (error: any) {
+      errors.value = [error.message];
+      return false;
+    }
+  };
+
+  /**
+   * 综合验证方法
+   */
+  const validateTimeConfig = (timeConfig: TaskTimeConfig): boolean => {
+    validateUserExperience(timeConfig);
+    return validateBusinessRules(timeConfig);
   };
 
   /**
    * 快速检查时间冲突 (简单的UI层检查)
    */
-  const checkBasicTimeConflict = (timeConfig: TaskTemplate['timeConfig'], otherTimes: TaskTemplate['timeConfig'][] = []): boolean => {
-    if (timeConfig.type === 'allDay') return true;
+  const checkBasicTimeConflict = (
+    timeConfig: TaskTimeConfig,
+    otherTimes: TaskTimeConfig[] = [],
+  ): boolean => {
+    if (timeConfig.time.timeType === 'allDay') return true;
 
-    // 简单的重叠检查
+    // 简单的重叠检查（同一天内）
     for (const other of otherTimes) {
-      if (other.type === 'allDay') continue;
-      
-      const start1 = timeConfig.baseTime.start.getTime();
-      const end1 = timeConfig.baseTime.end?.getTime() || start1 + (60 * 60 * 1000); // 默认1小时
-      const start2 = other.baseTime.start.getTime();
-      const end2 = other.baseTime.end?.getTime() || start2 + (60 * 60 * 1000);
+      if (other.time.timeType === 'allDay') continue;
 
-      if (start1 < end2 && end1 > start2) {
-        warnings.value.push('存在时间重叠的任务，请注意安排');
-        break;
-      }
-    }
+      // 检查是否在同一天
+      const sameDay =
+        timeConfig.date.startDate.toDateString() === other.date.startDate.toDateString();
+      if (!sameDay) continue;
 
-    return true;
-  };
+      if (timeConfig.time.startTime && other.time.startTime) {
+        const start1 = timeStringToMinutes(timeConfig.time.startTime);
+        const end1 = timeConfig.time.endTime
+          ? timeStringToMinutes(timeConfig.time.endTime)
+          : start1 + 60;
+        const start2 = timeStringToMinutes(other.time.startTime);
+        const end2 = other.time.endTime ? timeStringToMinutes(other.time.endTime) : start2 + 60;
 
-  /**
-   * 验证重复设置的合理性
-   */
-  const validateRecurrenceSettings = (timeConfig: TaskTemplate['timeConfig']): boolean => {
-    const recurrence = timeConfig.recurrence;
-    
-    if (recurrence.type === 'none') return true;
-
-    // 检查间隔合理性
-    if (recurrence.interval && recurrence.interval > 365) {
-      warnings.value.push('重复间隔过长，可能影响任务连续性');
-    }
-
-    // 每日重复且时间很晚的警告
-    if (recurrence.type === 'daily' && timeConfig.baseTime.start) {
-      const hour = timeConfig.baseTime.start.getHours();
-      if (hour > 22) {
-        warnings.value.push('每日重复任务时间较晚，可能影响执行');
+        if (start1 < end2 && end1 > start2) {
+          warnings.value.push('存在时间重叠的任务，请注意安排');
+          break;
+        }
       }
     }
 
@@ -116,6 +202,23 @@ export function useTimeConfigValidation() {
     warnings.value = [];
   };
 
+  /**
+   * 计算持续时间（分钟）
+   */
+  const calculateDurationMinutes = (startTime: string, endTime: string): number => {
+    const start = timeStringToMinutes(startTime);
+    const end = timeStringToMinutes(endTime);
+    return end - start;
+  };
+
+  /**
+   * 将时间字符串转换为分钟数
+   */
+  const timeStringToMinutes = (timeString: string): number => {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
   const isValid = computed(() => errors.value.length === 0);
   const hasWarnings = computed(() => warnings.value.length > 0);
 
@@ -125,11 +228,12 @@ export function useTimeConfigValidation() {
     warnings,
     isValid,
     hasWarnings,
-    
-    // 方法 - 仅UI验证相关
+
+    // 方法
     validateTimeConfig,
+    validateUserExperience,
+    validateBusinessRules,
     checkBasicTimeConflict,
-    validateRecurrenceSettings,
-    resetValidation
+    resetValidation,
   };
 }

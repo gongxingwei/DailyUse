@@ -1,0 +1,22 @@
+{
+  "title": "Test Template",
+  "description": "Test description",
+  "timeConfig": {
+    "time": {
+      "timeType": "allDay"
+    },
+    "date": {
+      "startDate": "2025-09-17"
+    },
+    "schedule": {
+      "mode": "once"
+    },
+    "timezone": "Asia/Shanghai"
+  },
+  "reminderConfig": {},
+  "properties": {
+    "importance": "moderate",
+    "urgency": "medium"
+  },
+  "goalLinks": []
+}
