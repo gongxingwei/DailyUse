@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import { TaskTemplate, TaskInstance, TaskMetaTemplate } from '@dailyuse/domain-client';
 import { toDayStart } from '@dailyuse/utils';
+import type { TaskContracts } from '@dailyuse/contracts';
 
 /**
  * Task Store - 新架构
@@ -10,23 +11,19 @@ import { toDayStart } from '@dailyuse/utils';
 export const useTaskStore = defineStore('task', {
   state: () => ({
     // ===== 核心数据 =====
-    taskTemplates: [] as any[],
-    taskInstances: [] as any[],
-    metaTemplates: [] as any[],
+    taskTemplates: [] as TaskTemplate[],
+    taskInstances: [] as TaskInstance[],
+    metaTemplates: [] as TaskMetaTemplate[],
 
     // ===== 状态管理 =====
     isLoading: false,
     error: null as string | null,
-    isInitialized: false /**
-     * @deprecated 使用 getTaskTemplateByUuid 替代
-     */,
-    getTaskTemplateById(uuid: string) {
-      console.warn('[TaskStore] getTaskTemplateById 已废弃，请使用 getTaskTemplateByUuid');
-      return this.taskTemplates.find((t) => t.uuid === uuid) || null;
-    }, // ===== UI 状态 =====
+    isInitialized: false,
+
+    // ===== UI 状态 =====
     selectedTaskTemplate: null as string | null,
     selectedTaskInstance: null as string | null,
-    taskTemplateBeingEdited: null as any | null,
+    taskTemplateBeingEdited: null as TaskMetaTemplate | null,
 
     // ===== 分页信息 =====
     pagination: {
@@ -46,22 +43,22 @@ export const useTaskStore = defineStore('task', {
     /**
      * 获取所有任务模板
      */
-    getAllTaskTemplates(state): any[] {
-      return state.taskTemplates;
+    getAllTaskTemplates(state): TaskTemplate[] {
+      return state.taskTemplates as TaskTemplate[];
     },
 
     /**
      * 获取所有任务实例
      */
-    getAllTaskInstances(state): any[] {
-      return state.taskInstances;
+    getAllTaskInstances(state): TaskInstance[] {
+      return state.taskInstances as TaskInstance[];
     },
 
     /**
      * 获取所有元模板
      */
-    getAllTaskMetaTemplates(state): any[] {
-      return state.metaTemplates;
+    getAllTaskMetaTemplates(state): TaskMetaTemplate[] {
+      return state.metaTemplates as TaskMetaTemplate[];
     },
 
     /**
@@ -69,8 +66,18 @@ export const useTaskStore = defineStore('task', {
      */
     getTaskTemplateByUuid:
       (state) =>
-      (uuid: string): any | null => {
-        return state.taskTemplates.find((t) => t.uuid === uuid) || null;
+      (uuid: string): TaskTemplate | null => {
+        const found = state.taskTemplates.find((t) => t.uuid === uuid);
+        if (!found) return null;
+
+        // 如果反序列化正常工作，这里应该已经是 TaskTemplate 实例
+        // 但为了安全起见，如果不是实例则转换
+        if (found instanceof TaskTemplate) {
+          return found;
+        } else {
+          console.warn('[TaskStore] 发现非实体对象，正在转换为 TaskTemplate 实例');
+          return TaskTemplate.fromDTO(found as any);
+        }
       },
 
     /**
@@ -78,8 +85,17 @@ export const useTaskStore = defineStore('task', {
      */
     getTaskInstanceByUuid:
       (state) =>
-      (uuid: string): any | null => {
-        return state.taskInstances.find((t) => t.uuid === uuid) || null;
+      (uuid: string): TaskInstance | null => {
+        const found = state.taskInstances.find((t) => t.uuid === uuid);
+        if (!found) return null;
+
+        // 如果反序列化正常工作，这里应该已经是 TaskInstance 实例
+        if (found instanceof TaskInstance) {
+          return found;
+        } else {
+          console.warn('[TaskStore] 发现非实体对象，正在转换为 TaskInstance 实例');
+          return TaskInstance.fromDTO(found as any);
+        }
       },
 
     /**
@@ -87,8 +103,17 @@ export const useTaskStore = defineStore('task', {
      */
     getMetaTemplateByUuid:
       (state) =>
-      (uuid: string): any | null => {
-        return state.metaTemplates.find((t) => t.uuid === uuid) || null;
+      (uuid: string): TaskMetaTemplate | null => {
+        const found = state.metaTemplates.find((t) => t.uuid === uuid);
+        if (!found) return null;
+
+        // 确保返回的是 TaskMetaTemplate 实例
+        if (found instanceof TaskMetaTemplate) {
+          return found;
+        } else {
+          // 如果是普通对象，转换为 TaskMetaTemplate 实例
+          return TaskMetaTemplate.fromDTO(found as any);
+        }
       },
 
     // ===== 选中状态 =====
@@ -96,24 +121,48 @@ export const useTaskStore = defineStore('task', {
     /**
      * 获取当前选中的任务模板
      */
-    getSelectedTaskTemplate(state): any | null {
+    getSelectedTaskTemplate(state): TaskTemplate | null {
       if (!state.selectedTaskTemplate) return null;
-      return state.taskTemplates.find((t) => t.uuid === state.selectedTaskTemplate) || null;
+      const found = state.taskTemplates.find((t) => t.uuid === state.selectedTaskTemplate);
+      if (!found) return null;
+
+      // 确保返回的是 TaskTemplate 实例
+      if (found instanceof TaskTemplate) {
+        return found;
+      } else {
+        return TaskTemplate.fromDTO(found as any);
+      }
     },
 
     /**
      * 获取当前选中的任务实例
      */
-    getSelectedTaskInstance(state): any | null {
+    getSelectedTaskInstance(state): TaskInstance | null {
       if (!state.selectedTaskInstance) return null;
-      return state.taskInstances.find((t) => t.uuid === state.selectedTaskInstance) || null;
+      const found = state.taskInstances.find((t) => t.uuid === state.selectedTaskInstance);
+      if (!found) return null;
+
+      // 确保返回的是 TaskInstance 实例
+      if (found instanceof TaskInstance) {
+        return found;
+      } else {
+        return TaskInstance.fromDTO(found as any);
+      }
     },
 
     /**
      * 获取正在编辑的任务模板
      */
-    getTaskTemplateBeingEdited(state): any | null {
-      return state.taskTemplateBeingEdited;
+    getTaskTemplateBeingEdited(state): TaskMetaTemplate | null {
+      if (!state.taskTemplateBeingEdited) return null;
+
+      const template = state.taskTemplateBeingEdited;
+      if (template instanceof TaskMetaTemplate) {
+        return template;
+      } else {
+        console.warn('[TaskStore] 发现非实体对象，正在转换为 TaskMetaTemplate 实例');
+        return TaskMetaTemplate.fromDTO(template as any);
+      }
     },
 
     // ===== 业务逻辑获取器 =====
@@ -121,20 +170,28 @@ export const useTaskStore = defineStore('task', {
     /**
      * 获取今日任务实例
      */
-    getTodayTaskInstances(state): any[] {
+    getTodayTaskInstances(state): TaskInstance[] {
       const today = new Date();
       const todayStart = toDayStart(today);
       const todayEnd = new Date(todayStart);
       todayEnd.setDate(todayStart.getDate() + 1);
 
-      return state.taskInstances.filter((task) => {
-        if (!task.timeConfig?.scheduledDate) return false;
-        const scheduledDate = new Date(task.timeConfig?.scheduledDate);
-        return (
-          scheduledDate.getTime() >= todayStart.getTime() &&
-          scheduledDate.getTime() < todayEnd.getTime()
-        );
-      });
+      return state.taskInstances
+        .filter((task) => {
+          if (!task.timeConfig?.scheduledDate) return false;
+          const scheduledDate = new Date(task.timeConfig?.scheduledDate);
+          return (
+            scheduledDate.getTime() >= todayStart.getTime() &&
+            scheduledDate.getTime() < todayEnd.getTime()
+          );
+        })
+        .map((task) => {
+          if (task instanceof TaskInstance) {
+            return task;
+          } else {
+            return TaskInstance.fromDTO(task as any);
+          }
+        });
     },
 
     /**
@@ -142,11 +199,21 @@ export const useTaskStore = defineStore('task', {
      */
     getTaskTemplatesByKeyResultUuid:
       (state) =>
-      (keyResultUuid: string): any[] => {
-        return state.taskTemplates.filter((t) => {
-          if (!t.goalLinks || t.goalLinks.length === 0) return false;
-          return t.goalLinks.some((link: any) => link.keyResultId === keyResultUuid);
-        });
+      (keyResultUuid: string): TaskTemplate[] => {
+        return state.taskTemplates
+          .filter((t) => {
+            if (!t.goalLinks || t.goalLinks.length === 0) return false;
+            return t.goalLinks.some(
+              (link: TaskContracts.KeyResultLink) => link.keyResultId === keyResultUuid,
+            );
+          })
+          .map((template) => {
+            if (template instanceof TaskTemplate) {
+              return template;
+            } else {
+              return TaskTemplate.fromDTO(template as any);
+            }
+          });
       },
 
     /**
@@ -154,8 +221,16 @@ export const useTaskStore = defineStore('task', {
      */
     getMetaTemplatesByCategory:
       (state) =>
-      (category: string): any[] => {
-        return state.metaTemplates.filter((t) => t.appearance?.category === category);
+      (category: string): TaskMetaTemplate[] => {
+        return state.metaTemplates
+          .filter((t) => t.appearance?.category === category)
+          .map((template) => {
+            if (template instanceof TaskMetaTemplate) {
+              return template;
+            } else {
+              return TaskMetaTemplate.fromDTO(template as any);
+            }
+          });
       },
 
     /**
@@ -163,8 +238,16 @@ export const useTaskStore = defineStore('task', {
      */
     getInstancesByTemplateUuid:
       (state) =>
-      (templateUuid: string): any[] => {
-        return state.taskInstances.filter((instance) => instance.templateUuid === templateUuid);
+      (templateUuid: string): TaskInstance[] => {
+        return state.taskInstances
+          .filter((instance) => instance.templateUuid === templateUuid)
+          .map((instance) => {
+            if (instance instanceof TaskInstance) {
+              return instance;
+            } else {
+              return TaskInstance.fromDTO(instance as any);
+            }
+          });
       },
 
     /**
@@ -172,8 +255,16 @@ export const useTaskStore = defineStore('task', {
      */
     getInstancesByStatus:
       (state) =>
-      (status: string): any[] => {
-        return state.taskInstances.filter((instance) => instance.execution?.status === status);
+      (status: string): TaskInstance[] => {
+        return state.taskInstances
+          .filter((instance) => instance.execution?.status === status)
+          .map((instance) => {
+            if (instance instanceof TaskInstance) {
+              return instance;
+            } else {
+              return TaskInstance.fromDTO(instance as any);
+            }
+          });
       },
 
     // ===== 统计信息 =====
@@ -239,16 +330,7 @@ export const useTaskStore = defineStore('task', {
     },
 
     // ===== 缓存管理 =====
-
-    /**
-     * 检查是否需要刷新缓存
-     */
-    shouldRefreshCache(state): boolean {
-      if (!state.lastSyncTime) return true;
-      const now = new Date();
-      const timeDiff = now.getTime() - state.lastSyncTime.getTime();
-      return timeDiff > state.cacheExpiry;
-    },
+    // 注意：缓存管理方法已移至 actions 部分
   },
 
   actions: {
@@ -308,7 +390,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 设置正在编辑的任务模板
      */
-    setTaskTemplateBeingEdited(template: any | null) {
+    setTaskTemplateBeingEdited(template: TaskMetaTemplate | null) {
       this.taskTemplateBeingEdited = template;
     },
 
@@ -317,7 +399,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 批量设置任务模板
      */
-    setTaskTemplates(templates: any[]) {
+    setTaskTemplates(templates: TaskTemplate[]) {
       this.taskTemplates = [...templates];
       console.log(`✅ [TaskStore] 已设置 ${templates.length} 个任务模板`);
     },
@@ -325,7 +407,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 批量设置任务实例
      */
-    setTaskInstances(instances: any[]) {
+    setTaskInstances(instances: TaskInstance[]) {
       this.taskInstances = [...instances];
       console.log(`✅ [TaskStore] 已设置 ${instances.length} 个任务实例`);
     },
@@ -333,7 +415,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 批量设置元模板
      */
-    setMetaTemplates(metaTemplates: any[]) {
+    setMetaTemplates(metaTemplates: TaskMetaTemplate[]) {
       this.metaTemplates = [...metaTemplates];
       console.log(`✅ [TaskStore] 已设置 ${metaTemplates.length} 个元模板`);
     },
@@ -341,7 +423,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 添加单个任务模板到缓存
      */
-    addTaskTemplate(template: any) {
+    addTaskTemplate(template: TaskTemplate) {
       const existingIndex = this.taskTemplates.findIndex((t) => t.uuid === template.uuid);
       if (existingIndex >= 0) {
         this.taskTemplates[existingIndex] = template;
@@ -353,7 +435,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 添加单个任务实例到缓存
      */
-    addTaskInstance(instance: any) {
+    addTaskInstance(instance: TaskInstance) {
       const existingIndex = this.taskInstances.findIndex((i) => i.uuid === instance.uuid);
       if (existingIndex >= 0) {
         this.taskInstances[existingIndex] = instance;
@@ -365,7 +447,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 添加多个任务实例到缓存
      */
-    addTaskInstances(instances: any[]) {
+    addTaskInstances(instances: TaskInstance[]) {
       instances.forEach((instance) => {
         this.addTaskInstance(instance);
       });
@@ -374,7 +456,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 添加单个元模板到缓存
      */
-    addMetaTemplate(metaTemplate: any) {
+    addMetaTemplate(metaTemplate: TaskMetaTemplate) {
       const existingIndex = this.metaTemplates.findIndex((t) => t.uuid === metaTemplate.uuid);
       if (existingIndex >= 0) {
         this.metaTemplates[existingIndex] = metaTemplate;
@@ -386,7 +468,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 更新任务模板
      */
-    updateTaskTemplate(uuid: string, updatedTemplate: any) {
+    updateTaskTemplate(uuid: string, updatedTemplate: TaskTemplate) {
       const index = this.taskTemplates.findIndex((t) => t.uuid === uuid);
       if (index >= 0) {
         this.taskTemplates[index] = updatedTemplate;
@@ -396,7 +478,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 更新任务实例
      */
-    updateTaskInstance(uuid: string, updatedInstance: any) {
+    updateTaskInstance(uuid: string, updatedInstance: TaskInstance) {
       const index = this.taskInstances.findIndex((i) => i.uuid === uuid);
       if (index >= 0) {
         this.taskInstances[index] = updatedInstance;
@@ -406,7 +488,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 批量更新任务实例
      */
-    updateTaskInstances(instances: any[]) {
+    updateTaskInstances(instances: TaskInstance[]) {
       instances.forEach((instance) => {
         this.updateTaskInstance(instance.uuid, instance);
       });
@@ -415,7 +497,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 更新元模板
      */
-    updateMetaTemplate(uuid: string, updatedTemplate: any) {
+    updateMetaTemplate(uuid: string, updatedTemplate: TaskMetaTemplate) {
       const index = this.metaTemplates.findIndex((t) => t.uuid === uuid);
       if (index >= 0) {
         this.metaTemplates[index] = updatedTemplate;
@@ -542,7 +624,11 @@ export const useTaskStore = defineStore('task', {
     /**
      * 批量同步所有数据
      */
-    syncAllData(templates: any[], instances: any[], metaTemplates: any[]) {
+    syncAllData(
+      templates: TaskTemplate[],
+      instances: TaskInstance[],
+      metaTemplates: TaskMetaTemplate[],
+    ) {
       this.setTaskTemplates(templates);
       this.setTaskInstances(instances);
       this.setMetaTemplates(metaTemplates);
@@ -572,7 +658,7 @@ export const useTaskStore = defineStore('task', {
     /**
      * 兼容旧方法：设置任务数据
      */
-    setTaskData(templates: any[], instances: any[]) {
+    setTaskData(templates: TaskTemplate[], instances: TaskInstance[]) {
       this.setTaskTemplates(templates);
       this.setTaskInstances(instances);
     },
@@ -593,9 +679,9 @@ export const useTaskStore = defineStore('task', {
      * 从快照恢复数据
      */
     restoreFromSnapshot(snapshot: {
-      templates: any[];
-      instances: any[];
-      metaTemplates?: any[];
+      templates: TaskTemplate[];
+      instances: TaskInstance[];
+      metaTemplates?: TaskMetaTemplate[];
       timestamp?: number;
     }) {
       this.setTaskTemplates(snapshot.templates);
@@ -671,7 +757,7 @@ export const useTaskStore = defineStore('task', {
             // 将DTO转换回Domain实体（当实体类可用时）
             taskTemplates:
               parsed.taskTemplates?.map((templateDTO: any) => {
-                if (templateDTO && typeof TaskTemplate?.fromDTO === 'function') {
+                if (templateDTO && TaskTemplate && typeof TaskTemplate.fromDTO === 'function') {
                   return TaskTemplate.fromDTO(templateDTO);
                 }
                 return templateDTO;
@@ -679,7 +765,7 @@ export const useTaskStore = defineStore('task', {
 
             taskInstances:
               parsed.taskInstances?.map((instanceDTO: any) => {
-                if (instanceDTO && typeof TaskInstance?.fromDTO === 'function') {
+                if (instanceDTO && TaskInstance && typeof TaskInstance.fromDTO === 'function') {
                   return TaskInstance.fromDTO(instanceDTO);
                 }
                 return instanceDTO;
@@ -687,7 +773,11 @@ export const useTaskStore = defineStore('task', {
 
             metaTemplates:
               parsed.metaTemplates?.map((metaTemplateDTO: any) => {
-                if (metaTemplateDTO && typeof TaskMetaTemplate?.fromDTO === 'function') {
+                if (
+                  metaTemplateDTO &&
+                  TaskMetaTemplate &&
+                  typeof TaskMetaTemplate.fromDTO === 'function'
+                ) {
                   return TaskMetaTemplate.fromDTO(metaTemplateDTO);
                 }
                 return metaTemplateDTO;

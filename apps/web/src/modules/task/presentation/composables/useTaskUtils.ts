@@ -1,7 +1,10 @@
-import { TaskTemplate } from "@dailyuse/domain-client"
+import { TaskInstance, TaskTemplate } from "@dailyuse/domain-client"
 import { TaskTimeType, TaskScheduleMode } from "@dailyuse/contracts/modules/task";
 
 export function useTaskUtils() {
+
+    // TaskTemplate 相关
+
     const getTaskTemplateTimeText = (template: TaskTemplate) => {
         if (!template.timeConfig) {
             return "无时间配置";
@@ -46,10 +49,25 @@ export function useTaskUtils() {
         }
     }
 
-    
+    // TaskInstance 相关
+
+    const getTaskInstanceTimeText = (taskInstance: TaskInstance) => {
+        if (!taskInstance.timeConfig) {
+            return "无时间配置";
+        }
+
+        if (taskInstance.timeConfig.timeType === TaskTimeType.SPECIFIC_TIME) {
+            return `具体时间: ${taskInstance.timeConfig.startTime}`;
+        } else if (taskInstance.timeConfig.timeType === TaskTimeType.TIME_RANGE) {
+            return `时间范围: ${taskInstance.timeConfig.startTime} - ${taskInstance.timeConfig.endTime}`;
+        } else if (taskInstance.timeConfig.timeType === TaskTimeType.ALL_DAY) {
+            return "全天";
+        }
+    }
 
     return {
         getTaskTemplateTimeText,
         getTaskTemplateRecurrenceText,
+        getTaskInstanceTimeText,
     }
 }

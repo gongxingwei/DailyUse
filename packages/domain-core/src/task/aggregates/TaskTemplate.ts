@@ -91,6 +91,17 @@ export abstract class TaskTemplateCore extends AggregateRoot implements ITaskTem
       tags: string[];
     };
     goalLinks?: TaskContracts.KeyResultLink[];
+    lifecycle?: {
+      status: 'draft' | 'active' | 'paused' | 'completed' | 'archived';
+      createdAt: Date;
+      updatedAt: Date;
+    };
+    stats?: {
+      totalInstances: number;
+      completedInstances: number;
+      completionRate: number;
+      lastInstanceDate?: Date;
+    };
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -110,12 +121,12 @@ export abstract class TaskTemplateCore extends AggregateRoot implements ITaskTem
       urgency: UrgencyLevel.Medium,
       tags: [],
     };
-    this._lifecycle = {
+    this._lifecycle = params.lifecycle || {
       status: 'draft',
       createdAt: params.createdAt || new Date(),
       updatedAt: params.updatedAt || new Date(),
     };
-    this._stats = {
+    this._stats = params.stats || {
       totalInstances: 0,
       completedInstances: 0,
       completionRate: 0,

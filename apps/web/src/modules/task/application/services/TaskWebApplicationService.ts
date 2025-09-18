@@ -6,7 +6,12 @@ import {
   taskMetaTemplateApiClient,
   taskStatisticsApiClient,
 } from '../../infrastructure/api/taskApiClient';
-import { TaskDomainService, TaskTemplate } from '@dailyuse/domain-client';
+import {
+  TaskDomainService,
+  TaskTemplate,
+  TaskInstance,
+  TaskMetaTemplate,
+} from '@dailyuse/domain-client';
 
 /**
  * Task Web 应用服务 - 新架构
@@ -18,7 +23,7 @@ export class TaskWebApplicationService {
    * 懒加载获取 Task Store
    * 避免在 Pinia 初始化之前调用
    */
-  private get taskStore() {
+  private get taskStore(): ReturnType<typeof useTaskStore> {
     return useTaskStore();
   }
 
@@ -34,12 +39,18 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const template = await taskTemplateApiClient.createTemplate(request);
+      const templateDTO = await taskTemplateApiClient.createTemplate(request);
+
+      // 将DTO转换为实体对象
+      const entityTemplate = TaskTemplate.fromDTO(templateDTO);
 
       // 添加到缓存
-      this.taskStore.addTaskTemplate(template);
+      this.taskStore.addTaskTemplate(entityTemplate);
 
-      return template;
+      // 更新同步时间
+      this.taskStore.updateLastSyncTime();
+
+      return templateDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建任务模板失败';
       this.taskStore.setError(errorMessage);
@@ -57,7 +68,20 @@ export class TaskWebApplicationService {
     try {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
-      const metaTemplate = this.taskStore.getMetaTemplateByUuid(metaTemplateUuid);
+      let metaTemplate = this.taskStore.getMetaTemplateByUuid(metaTemplateUuid);
+      if (!metaTemplate) {
+        // 如果本地没有，从服务器获取
+        const dto = await taskMetaTemplateApiClient.getMetaTemplateById(metaTemplateUuid);
+        if (!dto) {
+          throw new Error('找不到对应的元模板');
+        }
+        // 转换为实体对象
+        const entity = TaskMetaTemplate.fromDTO(dto);
+        // 添加到缓存
+        this.taskStore.addMetaTemplate(entity);
+        // 使用这个实体
+        metaTemplate = entity;
+      }
       const TaskDomainServiceInstance = new TaskDomainService();
       const template =
         await TaskDomainServiceInstance.createTaskTemplateByTaskMetaTemplate(metaTemplate);
@@ -86,8 +110,11 @@ export class TaskWebApplicationService {
 
       const response = await taskTemplateApiClient.getTemplates(params);
 
+      // 将DTO转换为实体对象
+      const entityTemplates = response.templates?.map((dto) => TaskTemplate.fromDTO(dto)) || [];
+      console.log('Fetched templates:==================================================', entityTemplates);
       // 批量同步到 store
-      this.taskStore.setTaskTemplates(response.templates || []);
+      this.taskStore.setTaskTemplates(entityTemplates);
 
       return response;
     } catch (error) {
@@ -107,12 +134,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const template = await taskTemplateApiClient.getTemplateById(uuid);
+      const templateDTO = await taskTemplateApiClient.getTemplateById(uuid);
+
+      // 将DTO转换为实体对象
+      const entityTemplate = TaskTemplate.fromDTO(templateDTO);
 
       // 添加到缓存
-      this.taskStore.addTaskTemplate(template);
+      this.taskStore.addTaskTemplate(entityTemplate);
 
-      return template;
+      return templateDTO; // 返回DTO保持API兼容性
     } catch (error) {
       if (error instanceof Error && error.message.includes('404')) {
         return null;
@@ -136,12 +166,18 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const template = await taskTemplateApiClient.updateTemplate(uuid, request);
+      const templateDTO = await taskTemplateApiClient.updateTemplate(uuid, request);
+
+      // 将DTO转换为实体对象
+      const entityTemplate = TaskTemplate.fromDTO(templateDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskTemplate(uuid, template);
+      this.taskStore.updateTaskTemplate(uuid, entityTemplate);
 
-      return template;
+      // 更新同步时间
+      this.taskStore.updateLastSyncTime();
+
+      return templateDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新任务模板失败';
       this.taskStore.setError(errorMessage);
@@ -180,12 +216,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const template = await taskTemplateApiClient.activateTemplate(uuid);
+      const templateDTO = await taskTemplateApiClient.activateTemplate(uuid);
+
+      // 将DTO转换为实体对象
+      const entityTemplate = TaskTemplate.fromDTO(templateDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskTemplate(uuid, template);
+      this.taskStore.updateTaskTemplate(uuid, entityTemplate);
 
-      // 激活后可能生成了新的任务实例，刷新实例列表
+      // 激活后可能生成了新的任务实例，刷新全部实例列表
       try {
         const instancesResponse = await this.getTaskInstances({ templateUuid: uuid });
         // getTaskInstances 已经会将实例同步到 store
@@ -194,7 +233,10 @@ export class TaskWebApplicationService {
         // 不阻断主流程，只记录警告
       }
 
-      return template;
+      // 更新同步时间，确保数据被持久化
+      this.taskStore.updateLastSyncTime();
+
+      return templateDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '激活任务模板失败';
       this.taskStore.setError(errorMessage);
@@ -212,12 +254,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const template = await taskTemplateApiClient.pauseTemplate(uuid);
+      const templateDTO = await taskTemplateApiClient.pauseTemplate(uuid);
+
+      // 将DTO转换为实体对象
+      const entityTemplate = TaskTemplate.fromDTO(templateDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskTemplate(uuid, template);
+      this.taskStore.updateTaskTemplate(uuid, entityTemplate);
 
-      return template;
+      return templateDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '暂停任务模板失败';
       this.taskStore.setError(errorMessage);
@@ -239,12 +284,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.createInstance(request);
+      const instanceDTO = await taskInstanceApiClient.createInstance(request);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 添加到缓存
-      this.taskStore.addTaskInstance(instance);
+      this.taskStore.addTaskInstance(entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建任务实例失败';
       this.taskStore.setError(errorMessage);
@@ -272,8 +320,11 @@ export class TaskWebApplicationService {
 
       const response = await taskInstanceApiClient.getInstances(params);
 
+      // 将DTO转换为实体对象
+      const entityInstances = response.instances?.map((dto) => TaskInstance.fromDTO(dto)) || [];
+
       // 批量同步到 store
-      this.taskStore.setTaskInstances(response.instances || []);
+      this.taskStore.setTaskInstances(entityInstances);
 
       return response;
     } catch (error) {
@@ -293,12 +344,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.getInstanceById(uuid);
+      const instanceDTO = await taskInstanceApiClient.getInstanceById(uuid);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 添加到缓存
-      this.taskStore.addTaskInstance(instance);
+      this.taskStore.addTaskInstance(entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       if (error instanceof Error && error.message.includes('404')) {
         return null;
@@ -322,12 +376,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.updateInstance(uuid, request);
+      const instanceDTO = await taskInstanceApiClient.updateInstance(uuid, request);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskInstance(uuid, instance);
+      this.taskStore.updateTaskInstance(uuid, entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新任务实例失败';
       this.taskStore.setError(errorMessage);
@@ -369,12 +426,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.completeInstance(uuid, result);
+      const instanceDTO = await taskInstanceApiClient.completeInstance(uuid, result);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskInstance(uuid, instance);
+      this.taskStore.updateTaskInstance(uuid, entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '完成任务实例失败';
       this.taskStore.setError(errorMessage);
@@ -392,12 +452,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.undoCompleteInstance(uuid);
+      const instanceDTO = await taskInstanceApiClient.undoCompleteInstance(uuid);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskInstance(uuid, instance);
+      this.taskStore.updateTaskInstance(uuid, entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '撤销任务完成失败';
       this.taskStore.setError(errorMessage);
@@ -418,12 +481,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.rescheduleInstance(uuid, request);
+      const instanceDTO = await taskInstanceApiClient.rescheduleInstance(uuid, request);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskInstance(uuid, instance);
+      this.taskStore.updateTaskInstance(uuid, entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '重新安排任务失败';
       this.taskStore.setError(errorMessage);
@@ -441,12 +507,15 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const instance = await taskInstanceApiClient.cancelInstance(uuid, reason);
+      const instanceDTO = await taskInstanceApiClient.cancelInstance(uuid, reason);
+
+      // 将DTO转换为实体对象
+      const entityInstance = TaskInstance.fromDTO(instanceDTO);
 
       // 更新缓存
-      this.taskStore.updateTaskInstance(uuid, instance);
+      this.taskStore.updateTaskInstance(uuid, entityInstance);
 
-      return instance;
+      return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '取消任务实例失败';
       this.taskStore.setError(errorMessage);
@@ -637,8 +706,8 @@ export class TaskWebApplicationService {
         this.getTaskInstances({ limit: 1000 }),
       ]);
 
-      const templates = templatesResponse.templates || [];
-      const instances = instancesResponse.instances || [];
+      const templates = templatesResponse.templates.map(templateDTO => TaskTemplate.fromDTO(templateDTO)) || [];
+      const instances = instancesResponse.instances.map(instanceDTO => TaskInstance.fromDTO(instanceDTO)) || [];
 
       // 批量设置到 store
       this.taskStore.setTaskTemplates(templates);
@@ -664,11 +733,34 @@ export class TaskWebApplicationService {
    * 检查是否需要同步数据
    */
   shouldSyncData(): boolean {
-    return (
-      !this.taskStore.isInitialized ||
-      this.taskStore.getAllTaskTemplates.length === 0 ||
-      this.taskStore.shouldRefreshCache()
-    );
+    try {
+      const store = this.taskStore;
+
+      // 1. 如果store没有初始化，肯定需要同步
+      if (!store.isInitialized) {
+        console.log('🔄 [缓存检查] Store未初始化，需要同步');
+        return true;
+      }
+
+      // 2. 如果没有任何数据，需要同步
+      if (store.getAllTaskTemplates.length === 0 && store.getAllTaskInstances.length === 0) {
+        console.log('🔄 [缓存检查] 本地无数据，需要同步');
+        return true;
+      }
+
+      // 3. 检查缓存是否过期
+      if (store.shouldRefreshCache()) {
+        console.log('🔄 [缓存检查] 缓存已过期，需要同步');
+        return true;
+      }
+
+      // 4. 如果有数据且缓存未过期，使用本地数据
+      console.log('✅ [缓存检查] 使用本地缓存数据，跳过同步');
+      return false;
+    } catch (error) {
+      console.warn('检查同步状态时出错，默认需要同步:', error);
+      return true; // 默认需要同步
+    }
   }
 
   // ===== 工具方法 =====
@@ -687,8 +779,13 @@ export class TaskWebApplicationService {
   async initialize(): Promise<void> {
     try {
       // 先初始化 store（加载本地缓存）
-      if (this.taskStore.initialize && typeof this.taskStore.initialize === 'function') {
-        this.taskStore.initialize();
+      try {
+        const store = this.taskStore;
+        if (store && store.initialize && typeof store.initialize === 'function') {
+          store.initialize();
+        }
+      } catch (storeError) {
+        console.warn('Store 初始化出错:', storeError);
       }
 
       // 检查是否需要从服务器同步数据
@@ -701,12 +798,18 @@ export class TaskWebApplicationService {
     } catch (error) {
       console.error('Task 服务初始化失败:', error);
       // 即使同步失败，也要完成 store 的初始化
-      if (
-        this.taskStore.initialize &&
-        typeof this.taskStore.initialize === 'function' &&
-        !this.taskStore.isInitialized
-      ) {
-        this.taskStore.initialize();
+      try {
+        const store = this.taskStore;
+        if (
+          store &&
+          store.initialize &&
+          typeof store.initialize === 'function' &&
+          !store.isInitialized
+        ) {
+          store.initialize();
+        }
+      } catch (fallbackError) {
+        console.warn('Store 回退初始化也失败:', fallbackError);
       }
       throw error;
     }
@@ -718,9 +821,21 @@ export class TaskWebApplicationService {
    */
   async initializeModule(): Promise<void> {
     try {
+      // 确保在 nextTick 后访问 store，避免 Pinia 初始化时机问题
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      // 获取 store 实例并检查是否可用
+      let store;
+      try {
+        store = this.taskStore;
+      } catch (error) {
+        console.warn('Store 暂时不可用，跳过初始化:', error);
+        return;
+      }
+
       // 只初始化 store（加载本地缓存），不进行网络同步
-      if (this.taskStore.initialize && typeof this.taskStore.initialize === 'function') {
-        this.taskStore.initialize();
+      if (store && store.initialize && typeof store.initialize === 'function') {
+        store.initialize();
       }
       console.log('Task 模块基础初始化完成（仅本地缓存）');
     } catch (error) {
@@ -733,8 +848,58 @@ export class TaskWebApplicationService {
    * 强制重新同步所有数据
    */
   async forceSync(): Promise<void> {
-    console.log('强制重新同步所有数据...');
-    await this.syncAllTaskData();
+    console.log('🔄 [强制同步] 开始重新同步所有数据...');
+    try {
+      const result = await this.syncAllTaskData();
+      console.log(
+        `✅ [强制同步] 完成: ${result.templatesCount} 个模板，${result.instancesCount} 个实例`,
+      );
+    } catch (error) {
+      console.error('❌ [强制同步] 失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 智能同步数据 - 只在需要时同步
+   */
+  async smartSync(): Promise<{ synced: boolean; reason?: string }> {
+    if (!this.shouldSyncData()) {
+      return { synced: false, reason: '缓存有效，无需同步' };
+    }
+
+    try {
+      const result = await this.syncAllTaskData();
+      console.log(
+        `✅ [智能同步] 完成: ${result.templatesCount} 个模板，${result.instancesCount} 个实例`,
+      );
+      return { synced: true, reason: '同步完成' };
+    } catch (error) {
+      console.error('❌ [智能同步] 失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 检查并刷新过期数据
+   */
+  async refreshIfNeeded(): Promise<boolean> {
+    try {
+      const store = this.taskStore;
+
+      // 检查是否需要刷新
+      if (store.shouldRefreshCache()) {
+        console.log('🔄 [刷新检查] 缓存已过期，开始刷新...');
+        await this.forceSync();
+        return true;
+      } else {
+        console.log('✅ [刷新检查] 缓存仍然有效');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ [刷新检查] 失败:', error);
+      return false;
+    }
   }
 }
 

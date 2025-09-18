@@ -4,3 +4,4 @@
  */
 
 export { PrismaRepositoryRepository } from './repositories/PrismaRepositoryRepository.js';
+export { PrismaResourceRepository } from './repositories/PrismaResourceRepository.js';

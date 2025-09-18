@@ -24,13 +24,17 @@ export function registerTaskInitializationTasks(): void {
       console.log('📋 [Task] 开始初始化 Task 模块...');
 
       try {
+        // 延迟一小段时间，确保 Pinia 完全初始化
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         // 只初始化 Task 模块，不同步数据（数据同步在用户登录时进行）
         const taskService = getTaskWebService;
         await taskService.initializeModule(); // 只初始化模块，不同步数据
         console.log('✅ [Task] Task 模块初始化完成');
       } catch (error) {
         console.error('❌ [Task] Task 模块初始化失败:', error);
-        throw error;
+        // 不抛出错误，允许应用继续启动
+        console.warn('Task 模块初始化失败，但应用将继续启动');
       }
     },
     cleanup: async () => {

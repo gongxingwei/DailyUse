@@ -102,7 +102,7 @@ export class GlobalInitializationService {
       try {
         console.log('初始化 Task 模块...');
         await this.getTaskService().initialize();
-        const taskResult = await this.getTaskService().syncAllTasks();
+        const taskResult = await this.getTaskService().syncAllTaskData();
         results.tasks = taskResult;
         console.log(
           `Task 模块初始化完成: ${taskResult.templatesCount} 个模板, ${taskResult.instancesCount} 个实例`,

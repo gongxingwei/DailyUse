@@ -17,9 +17,12 @@ import { reminderRouter } from './modules/reminder';
 import { createEditorRoutes, EditorController } from './modules/editor';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
 import { EditorDomainService } from './modules/editor/domain/services/EditorDomainService.js';
-import { RepositoryController, createRepositoryRoutes } from './modules/repository';
+import { RepositoryController, createRepositoryRoutes } from './modules/repository/index.js';
 import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
-import { RepositoryDomainService } from './modules/repository/domain/services/RepositoryDomainService.js';
+import {
+  PrismaRepositoryRepository,
+  PrismaResourceRepository,
+} from './modules/repository/infrastructure/index.js';
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 
 const app: Express = express();
@@ -83,16 +86,16 @@ EditorController.initialize(editorApplicationService);
 const editorRoutes = createEditorRoutes();
 api.use('/editor', authMiddleware, editorRoutes);
 
-// TODO: 挂载仓储路由 - 待完整实现
-// import { RepositoryController, createRepositoryRoutes } from './modules/repository';
-// import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
-// import { RepositoryDomainService } from './modules/repository/domain/services/RepositoryDomainService.js';
-//
-// const repositoryDomainService = new RepositoryDomainService();
-// const repositoryApplicationService = new RepositoryApplicationService(repositoryDomainService);
-// RepositoryController.initialize(repositoryApplicationService);
-// const repositoryRoutes = createRepositoryRoutes();
-// api.use('/repositories', repositoryRoutes);
+// 挂载仓储路由
+const repositoryRepository = new PrismaRepositoryRepository();
+const resourceRepository = new PrismaResourceRepository();
+const repositoryApplicationService = new RepositoryApplicationService(
+  repositoryRepository,
+  resourceRepository,
+);
+RepositoryController.initialize(repositoryApplicationService);
+const repositoryRoutes = createRepositoryRoutes();
+api.use('/repositories', authMiddleware, repositoryRoutes);
 
 app.use('/api/v1', api);
 

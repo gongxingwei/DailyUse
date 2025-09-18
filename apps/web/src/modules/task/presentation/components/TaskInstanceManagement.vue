@@ -7,11 +7,22 @@
                     <h2 class="header-title">{{ getHeaderTitle }}</h2>
                     <p class="header-subtitle">{{ getHeaderSubtitle }}</p>
                 </div>
-                <v-chip :color="completedCount === totalCount && totalCount > 0 ? 'success' : 'primary'"
-                    variant="elevated" size="large" class="progress-chip">
-                    <v-icon start>mdi-check-circle</v-icon>
-                    {{ completedCount }}/{{ totalCount }}
-                </v-chip>
+                <div class="header-actions">
+                    <!-- 刷新按钮 -->
+                    <v-btn icon variant="text" size="small" @click="refreshData" :loading="loading" class="refresh-btn">
+                        <v-icon>mdi-refresh</v-icon>
+                        <v-tooltip activator="parent" location="bottom">
+                            刷新数据
+                        </v-tooltip>
+                    </v-btn>
+
+                    <!-- 进度芯片 -->
+                    <v-chip :color="completedCount === totalCount && totalCount > 0 ? 'success' : 'primary'"
+                        variant="elevated" size="large" class="progress-chip">
+                        <v-icon start>mdi-check-circle</v-icon>
+                        {{ completedCount }}/{{ totalCount }}
+                    </v-chip>
+                </div>
             </div>
 
             <!-- 进度条 -->
@@ -107,35 +118,9 @@
                     <v-card-text class="pa-0 task-content">
                         <div class="scrollable-list">
                             <v-list class="task-list">
-                                <v-list-item v-for="(task, index) in incompleteTasks" :key="task.uuid" class="task-item"
-                                    :class="{ 'border-bottom': index < incompleteTasks.length - 1 }">
-                                    <template v-slot:prepend>
-                                        <v-btn icon variant="text" color="success"
-                                            @click="completeTaskInstance(task.uuid)" class="complete-btn">
-                                            <v-icon>mdi-circle-outline</v-icon>
-                                        </v-btn>
-                                    </template>
-
-                                    <div class="task-content-wrapper">
-                                        <v-list-item-title class="task-title">
-                                            {{ task.title }}
-                                        </v-list-item-title>
-
-                                        <v-list-item-subtitle class="task-meta">
-                                            <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                                            {{ task.timeConfig }}
-                                        </v-list-item-subtitle>
-
-                                        <!-- 关键结果链接 -->
-                                        <div v-if="task.keyResultLinks?.length" class="key-results mt-2">
-                                            <v-chip v-for="link in task.keyResultLinks" :key="link.keyResultId"
-                                                size="small" color="primary" variant="outlined" class="mr-1 mb-1">
-                                                <v-icon start size="small">mdi-target</v-icon>
-                                                {{ getKeyResultName(link) }} (+{{ link.incrementValue }})
-                                            </v-chip>
-                                        </div>
-                                    </div>
-                                </v-list-item>
+                                <TaskInstanceCard v-for="(task, index) in incompleteTasks" :key="task.uuid" :task="task"
+                                    :show-border="index < incompleteTasks.length - 1" :goal-store="goalStore"
+                                    @complete="completeTaskInstance" />
                             </v-list>
                         </div>
                     </v-card-text>
@@ -158,33 +143,9 @@
                     <v-card-text class="pa-0 task-content">
                         <div class="scrollable-list">
                             <v-list class="task-list">
-                                <v-list-item v-for="(task, index) in completedTasks" :key="task.uuid"
-                                    class="task-item completed-task"
-                                    :class="{ 'border-bottom': index < completedTasks.length - 1 }">
-                                    <template v-slot:prepend>
-                                        <v-icon color="success" class="complete-icon">
-                                            mdi-check-circle
-                                        </v-icon>
-                                    </template>
-
-                                    <div class="task-content-wrapper">
-                                        <v-list-item-title class="task-title completed">
-                                            {{ task.title }}
-                                        </v-list-item-title>
-
-                                        <v-list-item-subtitle class="task-meta">
-                                            <v-icon size="small" class="mr-1">mdi-check</v-icon>
-                                            完成于 {{ format(task.lifecycle.completedAt!, 'yyyy-MM-dd HH:mm:ss') }}
-                                        </v-list-item-subtitle>
-                                    </div>
-
-                                    <template v-slot:append>
-                                        <v-btn icon variant="text" size="small"
-                                            @click="undoCompleteTaskInstance(task.uuid)" class="undo-btn">
-                                            <v-icon>mdi-undo</v-icon>
-                                        </v-btn>
-                                    </template>
-                                </v-list-item>
+                                <TaskInstanceCard v-for="(task, index) in completedTasks" :key="task.uuid" :task="task"
+                                    :show-border="index < completedTasks.length - 1" :goal-store="goalStore"
+                                    @undo="undoCompleteTaskInstance" />
                             </v-list>
                         </div>
                     </v-card-text>
@@ -195,16 +156,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue';
+import { ref, computed, watchEffect, onMounted } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, isToday, isSameDay } from 'date-fns';
 // types
 import { TaskTemplate, TaskInstance } from '@dailyuse/domain-client';
 import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
 import { Goal, KeyResult } from '@dailyuse/domain-client';
 // composables
 import { useTask } from '../composables/useTask';
+// 导入 task web service
+import { getTaskWebService } from '../../index';
+// 导入 TaskInstanceCard 组件
+import TaskInstanceCard from './cards/TaskInstanceCard.vue';
 
 const { completeTaskInstance, undoCompleteTaskInstance } = useTask();
 
@@ -219,32 +184,19 @@ const taskInstances = computed(() => taskStore.getAllTaskInstances);
 // 计算属性
 const dayTasks = computed(() => {
     const selected = new Date(selectedDate.value);
-    const dayStart = startOfDay(selected);
-    const nextDayStart = new Date(dayStart);
-    nextDayStart.setDate(dayStart.getDate() + 1);
-
     return taskInstances.value.filter((task) => {
-        if (
-            !task.timeConfig.scheduledTime ||
-            typeof task.timeConfig.scheduledTime.getTime() !== 'number'
-        ) {
-            return false;
-        }
-        return (
-            task.timeConfig.scheduledTime.getTime() >= dayStart.getTime() &&
-            task.timeConfig.scheduledTime.getTime() < nextDayStart.getTime()
-        );
+        return isSameDay(task.timeConfig.scheduledDate, selected);
     });
 });
 
 const completedTasks = computed(() =>
-    dayTasks.value.filter((task) => task.status === 'completed' && task instanceof TaskInstance),
+    dayTasks.value.filter((task) => task.execution.status === 'completed' && task instanceof TaskInstance),
 );
 
 const incompleteTasks = computed(() =>
     dayTasks.value.filter(
         (task) =>
-            (task.status === 'pending' || task.status === 'inProgress') && task instanceof TaskInstance,
+            (task.execution.status === 'pending' || task.execution.status === 'inProgress') && task instanceof TaskInstance,
     ),
 );
 
@@ -304,29 +256,16 @@ const formatDate = (dateStr: string) => {
     return `${date.getDate()}`;
 };
 
-const getKeyResultName = (link: KeyResultLink) => {
-    const goal: Goal = goalStore.getGoalByUuid(link.goalUuid);
-    const kr: KeyResult | undefined = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
-    return kr?.name || '';
-};
-
 // ✅ 修改任务计数逻辑
 const getTaskCountForDate = (date: string) => {
-    const selectedDate = new Date(date).toISOString().split('T')[0];
-    const nextDay = new Date(new Date(date).getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const selectedDate = new Date(date);
 
     return taskStore.getAllTaskInstances.filter(task => {
-        if (!task.scheduledTime || typeof task.scheduledTime.getTime() !== 'number') {
-            return false;
-        }
-
-        return task.scheduledTime.getTime() >= new Date(selectedDate).getTime() &&
-            task.scheduledTime.getTime() < new Date(nextDay).getTime();
+        isSameDay(task.timeConfig.scheduledDate, selectedDate);
     }).length;
 };
 
 const isSelectedDay = (date: string) => date === selectedDate.value;
-const isToday = (date: string) => date === new Date().toISOString().split('T')[0];
 
 const showCelebration = ref(false);
 
@@ -347,12 +286,64 @@ const nextWeek = () => {
     currentWeekStart.value = newDate;
 };
 
+// 手动刷新数据
+const refreshData = async () => {
+    console.log('🔄 [TaskInstanceManagement] 手动刷新数据...');
+
+    try {
+        loading.value = true;
+
+        const taskService = getTaskWebService;
+        await taskService.forceSync(); // 强制同步
+
+        // 显示更新后的数据统计
+        const templates = taskStore.getAllTaskTemplates.length;
+        const instances = taskStore.getAllTaskInstances.length;
+        console.log(`✅ [TaskInstanceManagement] 刷新完成: ${templates} 个模板，${instances} 个实例`);
+
+    } catch (error) {
+        console.error('❌ [TaskInstanceManagement] 刷新失败:', error);
+    } finally {
+        loading.value = false;
+    }
+};
+
 watchEffect(() => {
     if (totalCount.value > 0 && incompleteTasks.value.length === 0) {
         showCelebration.value = true;
     }
     if (totalCount.value === 0) {
         showCelebration.value = false;
+    }
+});
+
+// 组件挂载时检查并加载数据
+onMounted(async () => {
+    console.log('📋 [TaskInstanceManagement] 组件已挂载，开始检查数据...');
+
+    try {
+        loading.value = true;
+
+        // 使用智能同步，只在需要时才从服务器获取数据
+        const taskService = getTaskWebService;
+        const syncResult = await taskService.smartSync();
+
+        if (syncResult.synced) {
+            console.log('✅ [TaskInstanceManagement] 数据已从服务器更新');
+        } else {
+            console.log('✅ [TaskInstanceManagement] 使用本地缓存数据');
+        }
+
+        // 显示当前数据统计
+        const templates = taskStore.getAllTaskTemplates.length;
+        const instances = taskStore.getAllTaskInstances.length;
+        console.log(`📊 [TaskInstanceManagement] 当前数据: ${templates} 个模板，${instances} 个实例`);
+
+    } catch (error) {
+        console.error('❌ [TaskInstanceManagement] 数据加载失败:', error);
+        // 不影响组件正常显示，只记录错误
+    } finally {
+        loading.value = false;
     }
 });
 </script>
@@ -378,6 +369,16 @@ watchEffect(() => {
 
 .title-section {
     flex: 1;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.refresh-btn {
+    margin-right: 0.5rem;
 }
 
 .header-title {
@@ -611,68 +612,6 @@ watchEffect(() => {
     background: transparent;
 }
 
-.task-item {
-    padding: 1.25rem 1.5rem;
-    transition: all 0.2s ease;
-    min-height: 80px;
-}
-
-.task-item:hover {
-    background: rgba(var(--v-theme-primary), 0.04);
-}
-
-.task-item.border-bottom {
-    border-bottom: 1px solid rgba(var(--v-theme-outline), 0.08);
-}
-
-.task-content-wrapper {
-    flex: 1;
-    min-width: 0;
-}
-
-.complete-btn,
-.action-btn,
-.undo-btn {
-    transition: all 0.2s ease;
-}
-
-.complete-btn:hover {
-    background: rgba(var(--v-theme-success), 0.1);
-    transform: scale(1.1);
-}
-
-.task-title {
-    font-weight: 600;
-    font-size: 1rem;
-    line-height: 1.4;
-}
-
-.task-title.completed {
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-
-.task-meta {
-    display: flex;
-    align-items: center;
-    margin-top: 0.5rem;
-    font-size: 0.875rem;
-    color: rgba(var(--v-theme-on-surface), 0.7);
-}
-
-.duration-info {
-    margin-left: 0.5rem;
-    color: rgba(var(--v-theme-primary), 0.8);
-}
-
-.completed-task {
-    opacity: 0.8;
-}
-
-.complete-icon {
-    margin-left: 8px;
-}
-
 /* 空状态样式 */
 .empty-state-card {
     border-radius: 20px;
@@ -784,14 +723,6 @@ watchEffect(() => {
         opacity: 0.2;
         transform: scale(1.05);
     }
-}
-
-/* 关键结果链接 */
-.key-results {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.25rem;
-    margin-top: 0.5rem;
 }
 
 /* 滚动条样式 */
