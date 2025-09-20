@@ -1,23 +1,24 @@
-import { getRepositoryApplicationService } from "../../application/services/repositoryApplicationService";
+import { repositoryApplicationService } from '../../application/services/repositoryApplicationService';
 // types
-import type { Repository } from "../../domain/aggregates/repository";
+import type { Repository } from '../../domain/aggregates/repository';
+import { RepositoryContracts } from '@dailyuse/contracts';
 // composables
-import { useSnackbar } from "@renderer/shared/composables/useSnackbar";
+import { useSnackbar } from '@renderer/shared/composables/useSnackbar';
 
 /**
  * useRepositoryServices
- * 
+ *
  * 该组合式函数封装了所有与仓库相关的业务操作（增删改查等），
  * 并统一处理消息提示（snackbar），为表现层提供简洁的调用接口。
- * 
+ *
  * 主要职责：
- * - 调用应用服务（repositoryService）完成业务操作
+ * - 调用应用服务（repositoryApplicationService）完成业务操作
  * - 统一处理操作结果和异常
  * - 通过 snackbar 反馈操作结果
  */
 export function useRepositoryServices() {
   // 获取领域应用服务实例
-  const repositoryService = getRepositoryApplicationService();
+  const repositoryService = repositoryApplicationService;
   // 获取全局 snackbar 相关方法
   const { snackbar, showError, showSuccess } = useSnackbar();
 
@@ -27,11 +28,20 @@ export function useRepositoryServices() {
    */
   const handleCreateRepository = async (repository: Repository) => {
     try {
-      await repositoryService.addRepository(repository);
+      // 构建创建请求
+      const request: RepositoryContracts.CreateRepositoryRequestDTO = {
+        name: repository.name,
+        path: repository.path,
+        description: repository.description,
+        type: RepositoryContracts.RepositoryType.LOCAL,
+        initializeGit: false,
+      };
+
+      await repositoryService.createRepository(request);
       showSuccess(`仓库创建成功：${repository.name}`);
     } catch (error: any) {
       showError(`创建仓库失败：${error.message || error}`);
-      console.error("Error creating repository:", error);
+      console.error('Error creating repository:', error);
     }
   };
 
@@ -41,11 +51,11 @@ export function useRepositoryServices() {
    */
   const handleUpdateRepository = async (repo: Repository) => {
     try {
-      await repositoryService.updateRepository(repo);
+      await repositoryService.updateRepository(repo.uuid, repo);
       showSuccess(`仓库更新成功：${repo.name}`);
     } catch (error: any) {
       showError(`更新仓库失败：${error.message || error}`);
-      console.error("Error updating repository:", error);
+      console.error('Error updating repository:', error);
     }
   };
 
@@ -55,11 +65,11 @@ export function useRepositoryServices() {
    */
   const handleDeleteRepository = async (repoId: string) => {
     try {
-      await repositoryService.removeRepository(repoId);
+      await repositoryService.deleteRepository(repoId);
       showSuccess(`仓库已删除：${repoId}`);
     } catch (error: any) {
       showError(`删除仓库失败：${error.message || error}`);
-      console.error("Error deleting repository:", error);
+      console.error('Error deleting repository:', error);
     }
   };
 
@@ -69,10 +79,10 @@ export function useRepositoryServices() {
    */
   const handleGetRepositoryById = async (repoId: string): Promise<Repository | null> => {
     try {
-      return await repositoryService.getRepositoryById(repoId);
+      return await repositoryService.getRepositoryByUuid(repoId);
     } catch (error: any) {
       showError(`获取仓库详情失败：${error.message || error}`);
-      console.error("Error getting repository:", error);
+      console.error('Error getting repository:', error);
       return null;
     }
   };

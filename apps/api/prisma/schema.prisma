@@ -170,18 +170,87 @@ model AuthToken {
 
 // Repository aggregate
 model Repository {
-  uuid         String   @id @default(cuid())
-  accountUuid  String   @map("account_uuid")
-  name         String
-  path         String
-  description  String?
-  relatedGoals String?  @map("related_goals") // JSON array
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  uuid        String   @id @default(cuid())
+  accountUuid String   @map("account_uuid")
+  name        String
+  type        String // 'LOCAL', 'REMOTE', 'SYNCHRONIZED'
+  path        String
+  description String?
+  
+  // 配置信息 - JSON 存储
+  config String @default("{}") // IRepositoryConfig as JSON
+  
+  // 关联目标
+  relatedGoals String? @map("related_goals") // JSON array of goal UUIDs
+  
+  // 状态
+  status String @default("ACTIVE") // 'ACTIVE', 'INACTIVE', 'ARCHIVED', 'SYNCING'
+  
+  // Git 信息 - JSON 存储
+  git String? // IGitInfo as JSON
+  
+  // 同步状态 - JSON 存储
+  syncStatus String? @map("sync_status") // IRepositorySyncStatus as JSON
+  
+  // 统计信息 - JSON 存储  
+  stats String @default("{}") // IRepositoryStats as JSON
+  
+  // 最后访问时间
+  lastAccessedAt DateTime? @map("last_accessed_at")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
-  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  // Relations
+  account   Account    @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  resources Resource[]
 
+  @@index([accountUuid])
+  @@index([type])
+  @@index([status])
+  @@index([path])
+  @@index([lastAccessedAt])
   @@map("repositories")
+}
+
+// Resource entity (part of Repository aggregate)
+model Resource {
+  uuid           String   @id @default(cuid())
+  repositoryUuid String   @map("repository_uuid")
+  name           String
+  type           String // 'MARKDOWN', 'IMAGE', 'VIDEO', 'AUDIO', 'PDF', 'LINK', 'CODE', 'OTHER'
+  path           String
+  size           Int      @default(0)
+  description    String?
+  author         String?
+  version        String?
+  
+  // 标签和分类
+  tags     String @default("[]") // JSON array of strings
+  category String?
+  
+  // 状态
+  status String @default("ACTIVE") // 'ACTIVE', 'ARCHIVED', 'DELETED', 'DRAFT'
+  
+  // 元数据 - JSON 存储
+  metadata String @default("{}") // IResourceMetadata as JSON
+  
+  // 修改时间
+  modifiedAt DateTime? @map("modified_at")
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  repository Repository @relation(fields: [repositoryUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([repositoryUuid])
+  @@index([type])
+  @@index([status])
+  @@index([path])
+  @@index([category])
+  @@index([modifiedAt])
+  @@map("resources")
 }
 
 // Goal aggregate

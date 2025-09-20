@@ -23,6 +23,7 @@ import {
   PrismaRepositoryRepository,
   PrismaResourceRepository,
 } from './modules/repository/infrastructure/index.js';
+import { prisma } from './config/prisma.js';
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 
 const app: Express = express();
@@ -87,8 +88,8 @@ const editorRoutes = createEditorRoutes();
 api.use('/editor', authMiddleware, editorRoutes);
 
 // 挂载仓储路由
-const repositoryRepository = new PrismaRepositoryRepository();
-const resourceRepository = new PrismaResourceRepository();
+const repositoryRepository = new PrismaRepositoryRepository(prisma);
+const resourceRepository = new PrismaResourceRepository(prisma);
 const repositoryApplicationService = new RepositoryApplicationService(
   repositoryRepository,
   resourceRepository,

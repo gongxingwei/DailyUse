@@ -7,12 +7,11 @@ import { RepositoryContracts } from '@dailyuse/contracts';
 
 // 使用类型别名来简化类型引用
 type IRepository = RepositoryContracts.IRepository;
-type ICreateRepositoryCommand = RepositoryContracts.ICreateRepositoryCommand;
-type IUpdateRepositoryCommand = RepositoryContracts.IUpdateRepositoryCommand;
-type IDeleteRepositoryCommand = RepositoryContracts.IDeleteRepositoryCommand;
-type IRepositoryQuery = RepositoryContracts.IRepositoryQuery;
-type IRepositoryQueryResponse = RepositoryContracts.IRepositoryQueryResponse;
-type IRepositoryStatsResponse = RepositoryContracts.IRepositoryStatsResponse;
+type CreateRepositoryRequest = RepositoryContracts.CreateRepositoryRequestDTO;
+type UpdateRepositoryRequest = RepositoryContracts.UpdateRepositoryRequestDTO;
+type RepositoryQueryParams = RepositoryContracts.RepositoryQueryParamsDTO;
+type RepositoryListResponse = RepositoryContracts.RepositoryListResponseDTO;
+type RepositoryStats = RepositoryContracts.IRepositoryStats;
 type IGitInitCommand = RepositoryContracts.IGitInitCommand;
 type IGitAddCommand = RepositoryContracts.IGitAddCommand;
 type IGitCommitCommand = RepositoryContracts.IGitCommitCommand;
@@ -57,7 +56,7 @@ export class RepositoryWebApplicationService {
   /**
    * 创建仓储
    */
-  async createRepository(command: ICreateRepositoryCommand): Promise<IRepository> {
+  async createRepository(command: CreateRepositoryRequest): Promise<IRepository> {
     try {
       const response = await fetch(this.getApiUrl(''), {
         method: 'POST',
@@ -134,7 +133,7 @@ export class RepositoryWebApplicationService {
   /**
    * 更新仓储
    */
-  async updateRepository(command: IUpdateRepositoryCommand): Promise<IRepository> {
+  async updateRepository(command: UpdateRepositoryRequest): Promise<IRepository> {
     try {
       const response = await fetch(this.getApiUrl(`/${command.uuid}`), {
         method: 'PUT',
@@ -161,13 +160,10 @@ export class RepositoryWebApplicationService {
   /**
    * 删除仓储
    */
-  async deleteRepository(command: IDeleteRepositoryCommand): Promise<void> {
+  async deleteRepository(uuid: string): Promise<void> {
     try {
-      const url = this.getApiUrl(`/${command.uuid}`);
+      const url = this.getApiUrl(`/${uuid}`);
       const searchParams = new URLSearchParams();
-      if (command.deleteFiles) {
-        searchParams.set('deleteFiles', 'true');
-      }
 
       const response = await fetch(`${url}?${searchParams}`, {
         method: 'DELETE',
@@ -181,7 +177,7 @@ export class RepositoryWebApplicationService {
       throw new RepositoryContracts.RepositoryError(
         `Failed to delete repository: ${(error as Error).message}`,
         'DELETE_REPOSITORY_FAILED',
-        { command, error },
+        { uuid, error },
       );
     }
   }
@@ -189,7 +185,7 @@ export class RepositoryWebApplicationService {
   /**
    * 查询仓储
    */
-  async queryRepositories(query: IRepositoryQuery): Promise<IRepositoryQueryResponse> {
+  async queryRepositories(query: RepositoryQueryParams): Promise<RepositoryListResponse> {
     try {
       const searchParams = new URLSearchParams();
 
@@ -197,13 +193,15 @@ export class RepositoryWebApplicationService {
         searchParams.set('searchText', query.keyword);
       }
       if (query.status) {
-        searchParams.set('status', query.status);
+        const statusValue = Array.isArray(query.status) ? query.status.join(',') : query.status;
+        searchParams.set('status', statusValue);
       }
-      if (query.goalId) {
-        searchParams.set('goalId', query.goalId);
+      if (query.type) {
+        const typeValue = Array.isArray(query.type) ? query.type.join(',') : query.type;
+        searchParams.set('type', typeValue);
       }
-      if (query.isGitRepo !== undefined) {
-        searchParams.set('isGitRepo', query.isGitRepo.toString());
+      if (query.enableGit !== undefined) {
+        searchParams.set('enableGit', query.enableGit.toString());
       }
       if (query.sortBy) {
         searchParams.set('sortBy', query.sortBy);
@@ -211,18 +209,18 @@ export class RepositoryWebApplicationService {
       if (query.sortOrder) {
         searchParams.set('sortDirection', query.sortOrder);
       }
-      if (query.offset !== undefined) {
-        searchParams.set('offset', query.offset.toString());
+      if (query.pagination?.page !== undefined) {
+        searchParams.set('page', query.pagination.page.toString());
       }
-      if (query.limit !== undefined) {
-        searchParams.set('limit', query.limit.toString());
+      if (query.pagination?.limit !== undefined) {
+        searchParams.set('limit', query.pagination.limit.toString());
       }
 
       const response = await fetch(this.getApiUrl(`/query?${searchParams}`), {
         method: 'GET',
       });
 
-      return await this.handleResponse<IRepositoryQueryResponse>(response);
+      return await this.handleResponse<RepositoryListResponse>(response);
     } catch (error) {
       if (error instanceof RepositoryContracts.RepositoryError) {
         throw error;
@@ -319,13 +317,13 @@ export class RepositoryWebApplicationService {
   /**
    * 获取仓储统计
    */
-  async getRepositoryStats(): Promise<IRepositoryStatsResponse> {
+  async getRepositoryStats(): Promise<RepositoryStats> {
     try {
       const response = await fetch(this.getApiUrl('/stats'), {
         method: 'GET',
       });
 
-      return await this.handleResponse<IRepositoryStatsResponse>(response);
+      return await this.handleResponse<RepositoryStats>(response);
     } catch (error) {
       if (error instanceof RepositoryContracts.RepositoryError) {
         throw error;

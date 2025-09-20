@@ -1,6 +1,8 @@
 import { ref, computed, onMounted, onBeforeUnmount, readonly } from 'vue';
 import { RepositoryWebApplicationService } from '../../application/services/RepositoryWebApplicationService';
 import { useRepositoryStore } from '../stores/repositoryStore';
+import { RepositoryType, RepositoryStatus } from '@dailyuse/contracts/modules/repository';
+import { RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository 模块组合式函数 - 新架构
@@ -28,7 +30,7 @@ export function useRepository() {
     () => (goalUuid: string) => repositoryStore.getRepositoriesByGoalUuid(goalUuid),
   );
   const repositoriesByType = computed(
-    () => (type: string) => repositoryStore.getRepositoriesByType(type),
+    () => (type: RepositoryType) => repositoryStore.getRepositoriesByType(type),
   );
 
   /**
@@ -47,7 +49,7 @@ export function useRepository() {
   async function createRepository(request: {
     name: string;
     path: string;
-    type?: string;
+    type: RepositoryType;
     description?: string;
     relatedGoals?: string[];
   }) {
@@ -123,12 +125,13 @@ export function useRepository() {
   async function updateRepository(
     uuid: string,
     request: {
+      uuid: string;
       name?: string;
       path?: string;
-      type?: string;
+      type: RepositoryType;
       description?: string;
       relatedGoals?: string[];
-      status?: string;
+      status?: RepositoryStatus;
     },
   ) {
     try {
@@ -195,6 +198,131 @@ export function useRepository() {
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '归档仓库失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  // ===== 资源操作 =====
+
+  /**
+   * 创建资源
+   */
+  async function createResource(request: RepositoryContracts.CreateResourceRequestDTO) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await repositoryService.createResource(request);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '创建资源失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 获取资源详情
+   */
+  async function fetchResource(uuid: string) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await repositoryService.getResourceById(uuid);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取资源详情失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 更新资源
+   */
+  async function updateResource(
+    uuid: string,
+    request: RepositoryContracts.UpdateResourceRequestDTO,
+  ) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await repositoryService.updateResource(uuid, request);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '更新资源失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 删除资源
+   */
+  async function deleteResource(uuid: string) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      await repositoryService.deleteResource(uuid);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '删除资源失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 获取仓库资源列表
+   */
+  async function fetchRepositoryResources(
+    repositoryUuid: string,
+    params?: RepositoryContracts.ResourceQueryParamsDTO,
+  ) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await repositoryService.getRepositoryResources(repositoryUuid, params);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取仓库资源失败';
+      operationError.value = errorMessage;
+      throw error;
+    } finally {
+      isOperating.value = false;
+    }
+  }
+
+  /**
+   * 搜索资源
+   */
+  async function searchResources(params: {
+    query: string;
+    repositoryUuid?: string;
+    pagination?: { page: number; limit: number };
+  }) {
+    try {
+      isOperating.value = true;
+      operationError.value = null;
+
+      const result = await repositoryService.searchResources(params);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '搜索资源失败';
       operationError.value = errorMessage;
       throw error;
     } finally {
@@ -359,7 +487,7 @@ export function useRepository() {
    * 清除所有本地数据
    */
   function clearLocalData() {
-    repositoryStore.clearAllData();
+    repositoryStore.clearAll();
   }
 
   /**
@@ -417,6 +545,14 @@ export function useRepository() {
     deleteRepository,
     activateRepository,
     archiveRepository,
+
+    // 资源操作
+    createResource,
+    fetchResource,
+    updateResource,
+    deleteResource,
+    fetchRepositoryResources,
+    searchResources,
 
     // 关联管理
     linkGoalToRepository,

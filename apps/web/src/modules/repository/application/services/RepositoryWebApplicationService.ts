@@ -1,5 +1,6 @@
 import { useRepositoryStore } from '../../presentation/stores/repositoryStore';
 import { repositoryApiClient } from '../../infrastructure/api/repositoryApiClient';
+import { Repository, Resource } from '@dailyuse/domain-client';
 import { type RepositoryContracts } from '@dailyuse/contracts';
 
 /**
@@ -28,12 +29,13 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.createRepository(request);
+      const repositoryDTO = await repositoryApiClient.createRepository(request);
 
-      // 添加到缓存
-      this.repositoryStore.addRepository(repository);
+      // 将DTO转换为Domain实体并添加到缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.addRepository(repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建仓库失败';
       this.repositoryStore.setError(errorMessage);
@@ -59,8 +61,9 @@ export class RepositoryWebApplicationService {
 
       const response = await repositoryApiClient.getRepositories(params);
 
-      // 批量同步到 store
-      this.repositoryStore.setRepositories(response.repositories);
+      // 将DTO转换为Domain实体并批量同步到 store
+      const repositoryEntities = response.repositories.map((dto) => Repository.fromDTO(dto));
+      this.repositoryStore.setRepositories(repositoryEntities);
 
       // 更新分页信息
       this.repositoryStore.setPagination({
@@ -87,12 +90,13 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.getRepositoryById(uuid);
+      const repositoryDTO = await repositoryApiClient.getRepositoryById(uuid);
 
-      // 添加到缓存
-      this.repositoryStore.addRepository(repository);
+      // 将DTO转换为Domain实体并添加到缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.addRepository(repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       if (error instanceof Error && error.message.includes('404')) {
         return null;
@@ -116,12 +120,13 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.updateRepository(uuid, request);
+      const repositoryDTO = await repositoryApiClient.updateRepository(uuid, request);
 
-      // 更新缓存
-      this.repositoryStore.updateRepository(uuid, repository);
+      // 将DTO转换为Domain实体并更新缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新仓库失败';
       this.repositoryStore.setError(errorMessage);
@@ -162,12 +167,13 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.activateRepository(uuid);
+      const repositoryDTO = await repositoryApiClient.activateRepository(uuid);
 
-      // 更新缓存
-      this.repositoryStore.updateRepository(uuid, repository);
+      // 将DTO转换为Domain实体并更新缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '激活仓库失败';
       this.repositoryStore.setError(errorMessage);
@@ -185,12 +191,13 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.archiveRepository(uuid);
+      const repositoryDTO = await repositoryApiClient.archiveRepository(uuid);
 
-      // 更新缓存
-      this.repositoryStore.updateRepository(uuid, repository);
+      // 将DTO转换为Domain实体并更新缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '归档仓库失败';
       this.repositoryStore.setError(errorMessage);
@@ -213,12 +220,16 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.linkGoalToRepository(repositoryUuid, goalUuid);
+      const repositoryDTO = await repositoryApiClient.linkGoalToRepository(
+        repositoryUuid,
+        goalUuid,
+      );
 
-      // 更新缓存
-      this.repositoryStore.updateRepository(repositoryUuid, repository);
+      // 将DTO转换为Domain实体并更新缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.updateRepository(repositoryUuid, repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '关联目标失败';
       this.repositoryStore.setError(errorMessage);
@@ -239,15 +250,16 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const repository = await repositoryApiClient.unlinkGoalFromRepository(
+      const repositoryDTO = await repositoryApiClient.unlinkGoalFromRepository(
         repositoryUuid,
         goalUuid,
       );
 
-      // 更新缓存
-      this.repositoryStore.updateRepository(repositoryUuid, repository);
+      // 将DTO转换为Domain实体并更新缓存
+      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      this.repositoryStore.updateRepository(repositoryUuid, repositoryEntity);
 
-      return repository;
+      return repositoryDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '取消关联失败';
       this.repositoryStore.setError(errorMessage);
@@ -307,6 +319,32 @@ export class RepositoryWebApplicationService {
   // ===== 资源管理 =====
 
   /**
+   * 获取所有资源列表
+   */
+  async getResources(
+    params?: RepositoryContracts.ResourceQueryParamsDTO,
+  ): Promise<RepositoryContracts.ResourceListResponseDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const response = await repositoryApiClient.getResources(params);
+
+      // 将DTO转换为Domain实体并添加到缓存
+      const resourceEntities = response.resources.map((dto) => Resource.fromDTO(dto));
+      this.repositoryStore.addResources(resourceEntities);
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取资源列表失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
    * 获取仓库资源列表
    */
   async getRepositoryResources(
@@ -318,6 +356,11 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setError(null);
 
       const response = await repositoryApiClient.getRepositoryResources(repositoryUuid, params);
+
+      // 将DTO转换为Domain实体并添加到缓存
+      const resourceEntities = response.resources.map((dto) => Resource.fromDTO(dto));
+      this.repositoryStore.addResources(resourceEntities);
+
       return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取仓库资源失败';
@@ -338,10 +381,125 @@ export class RepositoryWebApplicationService {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const resource = await repositoryApiClient.createResource(request);
-      return resource;
+      const resourceDTO = await repositoryApiClient.createResource(request);
+
+      // 将DTO转换为Domain实体并添加到缓存
+      const resourceEntity = Resource.fromDTO(resourceDTO);
+      this.repositoryStore.addResource(resourceEntity);
+
+      return resourceDTO;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建资源失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 获取资源详情
+   */
+  async getResourceById(uuid: string): Promise<RepositoryContracts.ResourceDTO | null> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      // 先从缓存获取
+      const cachedResource = this.repositoryStore.getResourceByUuid(uuid);
+      if (cachedResource) {
+        return cachedResource.toDTO();
+      }
+
+      // 如果缓存中没有，从API获取
+      const resourceDTO = await repositoryApiClient.getResourceById(uuid);
+
+      // 将DTO转换为Domain实体并添加到缓存
+      const resourceEntity = Resource.fromDTO(resourceDTO);
+      this.repositoryStore.addResource(resourceEntity);
+
+      return resourceDTO;
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('404')) {
+        return null;
+      }
+      const errorMessage = error instanceof Error ? error.message : '获取资源详情失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 更新资源
+   */
+  async updateResource(
+    uuid: string,
+    request: RepositoryContracts.UpdateResourceRequestDTO,
+  ): Promise<RepositoryContracts.ResourceDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const resourceDTO = await repositoryApiClient.updateResource(uuid, request);
+
+      // 将DTO转换为Domain实体并更新缓存
+      const resourceEntity = Resource.fromDTO(resourceDTO);
+      this.repositoryStore.updateResource(uuid, resourceEntity);
+
+      return resourceDTO;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '更新资源失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 删除资源
+   */
+  async deleteResource(uuid: string): Promise<void> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      await repositoryApiClient.deleteResource(uuid);
+
+      // 从缓存中移除
+      this.repositoryStore.removeResource(uuid);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '删除资源失败';
+      this.repositoryStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.repositoryStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 搜索资源
+   */
+  async searchResources(params: {
+    query: string;
+    repositoryUuid?: string;
+    pagination?: { page: number; limit: number };
+  }): Promise<RepositoryContracts.ResourceListResponseDTO> {
+    try {
+      this.repositoryStore.setLoading(true);
+      this.repositoryStore.setError(null);
+
+      const response = await this.getResources({
+        keyword: params.query,
+        repositoryUuid: params.repositoryUuid,
+        pagination: params.pagination || { page: 1, limit: 20 },
+      });
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '搜索资源失败';
       this.repositoryStore.setError(errorMessage);
       throw error;
     } finally {
@@ -401,21 +559,32 @@ export class RepositoryWebApplicationService {
    */
   async syncAllRepositories(): Promise<{
     repositoriesCount: number;
+    resourcesCount: number;
   }> {
     try {
       this.repositoryStore.setLoading(true);
       this.repositoryStore.setError(null);
 
-      const response = await this.getRepositories({ limit: 1000 });
-      const repositories = response.repositories || [];
+      const [repositoryDTOs, resourceDTOs] = await Promise.all([
+        this.getRepositories({ limit: 1000 }),
+        this.getResources({ pagination: { page: 1, limit: 1000 } }),
+      ]);
+
+      const repositories = repositoryDTOs.repositories || [];
+      const resources = resourceDTOs.resources || [];
+
+      // 将 DTO 转换为 Domain 实体
+      const repositoryEntities = repositories.map((dto) => Repository.fromDTO(dto));
+      const resourceEntities = resources.map((dto) => Resource.fromDTO(dto));
 
       // 批量同步到 store
-      this.repositoryStore.syncAllData(repositories);
+      this.repositoryStore.syncAllData(repositoryEntities, resourceEntities);
 
-      console.log(`成功同步数据: ${repositories.length} 个仓库`);
+      console.log(`成功同步数据: ${repositories.length} 个仓库, ${resources.length} 个资源`);
 
       return {
         repositoriesCount: repositories.length,
+        resourcesCount: resources.length,
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '同步所有仓库数据失败';

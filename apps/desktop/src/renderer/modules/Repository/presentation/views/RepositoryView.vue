@@ -7,8 +7,7 @@
           <h1 class="page-title">我的仓库</h1>
           <p class="page-subtitle">管理您的知识库和项目文档</p>
         </div>
-        <v-btn color="primary" prepend-icon="mdi-plus" variant="elevated" @click="startCreateRepo"
-          class="create-btn">
+        <v-btn color="primary" prepend-icon="mdi-plus" variant="elevated" @click="startCreateRepo" class="create-btn">
           新建仓库
         </v-btn>
       </div>
@@ -16,12 +15,13 @@
 
     <!-- 仓库列表 -->
     <div class="content-section">
-      <div v-if="repositoryStore.repositories.length > 0" class="repo-list">
-        <v-card v-for="repo in repositoryStore.repositories" :key="repo.id" class="repo-card" elevation="3" hover>
+      <div v-if="repositoryStore.getAllRepositories.length > 0" class="repo-list">
+        <v-card v-for="repo in repositoryStore.getAllRepositories" :key="repo.uuid" class="repo-card" elevation="3"
+          hover>
           <v-card-text class="pa-6">
             <div class="repo-header">
               <div class="repo-info">
-                <router-link :to="`/repository/${encodeURIComponent(repo.id)}`" class="repo-title">
+                <router-link :to="`/repository/${encodeURIComponent(repo.uuid)}`" class="repo-title">
                   <v-icon class="mr-2" color="primary">mdi-folder</v-icon>
                   {{ repo.name }}
                 </router-link>
@@ -66,7 +66,8 @@
               </div>
               <div class="meta-item">
                 <v-icon size="small" class="mr-1">mdi-clock-outline</v-icon>
-                <span class="text-caption">更新于 {{ formatDistanceToNow(new Date(repo.updatedAt), { locale: zhCN }) }} 前</span>
+                <span class="text-caption">更新于 {{ formatDistanceToNow(new Date(repo.updatedAt), { locale: zhCN }) }}
+                  前</span>
               </div>
             </div>
           </v-card-text>
@@ -84,8 +85,8 @@
     </div>
 
     <!-- 对话框 -->
-    <RepoDialog v-model="repoDialog.show" :repository="Repository.ensureRepository(repoDialog.repository)" 
-      @create-repo="handleCreateRepository" @edit-repo="handleUpdateRepository" 
+    <RepoDialog v-model="repoDialog.show" :repository="Repository.ensureRepository(repoDialog.repository)"
+      @create-repo="handleCreateRepository" @edit-repo="handleUpdateRepository"
       @handle-delete-repo="handleDeleteRepository" />
     <RepoSettings v-model="showSettings" :repo="Repository.ensureRepositoryNeverNull(selectedRepo)" />
 
@@ -109,7 +110,7 @@ import { fileSystem } from '@renderer/shared/utils/fileUtils'
 import { formatDistanceToNow } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 
-const { 
+const {
   snackbar,
   handleCreateRepository,
   handleUpdateRepository,

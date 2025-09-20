@@ -297,19 +297,9 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'repository-list',
-            component: () => import('@/modules/repository/presentation/views/RepositoryView.vue'),
+            component: () => import('@/modules/repository/presentation/views/RepositoryListView.vue'),
             meta: {
               title: '仓储列表',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'create',
-            name: 'repository-create',
-            component: () =>
-              import('@/modules/repository/presentation/views/RepositoryCreateView.vue'),
-            meta: {
-              title: '添加仓储',
               requiresAuth: true,
             },
           },
@@ -320,17 +310,6 @@ export const appRoutes: RouteRecordRaw[] = [
               import('@/modules/repository/presentation/views/RepositoryDetailView.vue'),
             meta: {
               title: '仓储详情',
-              requiresAuth: true,
-            },
-            props: true,
-          },
-          {
-            path: ':id/edit',
-            name: 'repository-edit',
-            component: () =>
-              import('@/modules/repository/presentation/views/RepositoryEditView.vue'),
-            meta: {
-              title: '编辑仓储',
               requiresAuth: true,
             },
             props: true,

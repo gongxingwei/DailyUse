@@ -1,14 +1,17 @@
 import { defineStore } from 'pinia';
+import { Repository, Resource } from '@dailyuse/domain-client';
+import { RepositoryContracts } from '@dailyuse/contracts';
 
 /**
  * Repository Store - 新架构
- * 负责仓库数据的纯缓存存储
- * 采用缓存优先策略，与外部服务解耦
+ * 纯缓存存储，不直接调用外部服务
+ * 所有数据操作通过 ApplicationService 进行
  */
 export const useRepositoryStore = defineStore('repository', {
   state: () => ({
     // ===== 核心数据 =====
-    repositories: [] as any[],
+    repositories: [] as Repository[],
+    resources: [] as Resource[],
 
     // ===== 状态管理 =====
     isLoading: false,
@@ -17,11 +20,8 @@ export const useRepositoryStore = defineStore('repository', {
 
     // ===== UI 状态 =====
     selectedRepository: null as string | null,
-    repositoryBeingEdited: null as any,
-
-    // ===== 缓存管理 =====
-    lastSyncTime: null as Date | null,
-    cacheExpiry: 30 * 60 * 1000, // 30分钟
+    selectedResource: null as string | null,
+    repositoryBeingEdited: null as Repository | null,
 
     // ===== 分页信息 =====
     pagination: {
@@ -29,6 +29,10 @@ export const useRepositoryStore = defineStore('repository', {
       limit: 20,
       total: 0,
     },
+
+    // ===== 缓存管理 =====
+    lastSyncTime: null as Date | null,
+    cacheExpiry: 5 * 60 * 1000, // 5分钟过期
   }),
 
   getters: {
@@ -37,8 +41,15 @@ export const useRepositoryStore = defineStore('repository', {
     /**
      * 获取所有仓库
      */
-    getAllRepositories(state): any[] {
-      return state.repositories;
+    getAllRepositories(state): Repository[] {
+      return state.repositories as Repository[];
+    },
+
+    /**
+     * 获取所有资源
+     */
+    getAllResources(state): Resource[] {
+      return state.resources as Resource[];
     },
 
     /**
@@ -46,8 +57,36 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoryByUuid:
       (state) =>
-      (uuid: string): any | null => {
-        return state.repositories.find((r) => r.uuid === uuid) || null;
+      (uuid: string): Repository | null => {
+        const found = state.repositories.find((r) => r.uuid === uuid);
+        if (!found) return null;
+
+        // 如果反序列化正常工作，这里应该已经是 Repository 实例
+        // 但为了安全起见，如果不是实例则转换
+        if (found instanceof Repository) {
+          return found;
+        } else {
+          console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Repository 实例');
+          return Repository.fromDTO(found as any);
+        }
+      },
+
+    /**
+     * 根据UUID获取资源
+     */
+    getResourceByUuid:
+      (state) =>
+      (uuid: string): Resource | null => {
+        const found = state.resources.find((r) => r.uuid === uuid);
+        if (!found) return null;
+
+        // 确保返回的是 Resource 实例
+        if (found instanceof Resource) {
+          return found;
+        } else {
+          console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Resource 实例');
+          return Resource.fromDTO(found as any);
+        }
       },
 
     /**
@@ -55,8 +94,11 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoryByName:
       (state) =>
-      (name: string): any | null => {
-        return state.repositories.find((r) => r.name === name) || null;
+      (name: string): Repository | null => {
+        const found = state.repositories.find((r) => r.name === name);
+        if (!found) return null;
+
+        return found instanceof Repository ? found : Repository.fromDTO(found as any);
       },
 
     /**
@@ -64,8 +106,28 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoryByPath:
       (state) =>
-      (path: string): any | null => {
-        return state.repositories.find((r) => r.path === path) || null;
+      (path: string): Repository | null => {
+        const found = state.repositories.find((r) => r.path === path);
+        if (!found) return null;
+
+        return found instanceof Repository ? found : Repository.fromDTO(found as any);
+      },
+
+    /**
+     * 根据仓库UUID获取资源
+     */
+    getResourcesByRepositoryUuid:
+      (state) =>
+      (repositoryUuid: string): Resource[] => {
+        return state.resources
+          .filter((r) => r.repositoryUuid === repositoryUuid)
+          .map((resource) => {
+            if (resource instanceof Resource) {
+              return resource;
+            } else {
+              return Resource.fromDTO(resource as any);
+            }
+          });
       },
 
     // ===== 选中状态 =====
@@ -73,16 +135,38 @@ export const useRepositoryStore = defineStore('repository', {
     /**
      * 获取当前选中的仓库
      */
-    getSelectedRepository(state): any | null {
+    getSelectedRepository(state): Repository | null {
       if (!state.selectedRepository) return null;
-      return state.repositories.find((r) => r.uuid === state.selectedRepository) || null;
+      const found = state.repositories.find((r) => r.uuid === state.selectedRepository);
+      if (!found) return null;
+
+      return found instanceof Repository ? found : Repository.fromDTO(found as any);
+    },
+
+    /**
+     * 获取当前选中的资源
+     */
+    getSelectedResource(state): Resource | null {
+      if (!state.selectedResource) return null;
+      const found = state.resources.find((r) => r.uuid === state.selectedResource);
+      if (!found) return null;
+
+      return found instanceof Resource ? found : Resource.fromDTO(found as any);
     },
 
     /**
      * 获取正在编辑的仓库
      */
-    getRepositoryBeingEdited(state): any | null {
-      return state.repositoryBeingEdited;
+    getRepositoryBeingEdited(state): Repository | null {
+      if (!state.repositoryBeingEdited) return null;
+
+      const repo = state.repositoryBeingEdited;
+      if (repo instanceof Repository) {
+        return repo;
+      } else {
+        console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Repository 实例');
+        return Repository.fromDTO(repo as any);
+      }
     },
 
     // ===== 业务逻辑获取器 =====
@@ -92,11 +176,19 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoriesByGoalUuid:
       (state) =>
-      (goalUuid: string): any[] => {
-        return state.repositories.filter((r) => {
-          if (!r.relatedGoals || r.relatedGoals.length === 0) return false;
-          return r.relatedGoals.includes(goalUuid);
-        });
+      (goalUuid: string): Repository[] => {
+        return state.repositories
+          .filter((r) => {
+            if (!r.relatedGoals || r.relatedGoals.length === 0) return false;
+            return r.relatedGoals.includes(goalUuid);
+          })
+          .map((repo) => {
+            if (repo instanceof Repository) {
+              return repo;
+            } else {
+              return Repository.fromDTO(repo as any);
+            }
+          });
       },
 
     /**
@@ -104,8 +196,16 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoriesByType:
       (state) =>
-      (type: string): any[] => {
-        return state.repositories.filter((r) => r.type === type);
+      (type: RepositoryContracts.RepositoryType): Repository[] => {
+        return state.repositories
+          .filter((r) => r.type === type)
+          .map((repo) => {
+            if (repo instanceof Repository) {
+              return repo;
+            } else {
+              return Repository.fromDTO(repo as any);
+            }
+          });
       },
 
     /**
@@ -113,23 +213,81 @@ export const useRepositoryStore = defineStore('repository', {
      */
     getRepositoriesByStatus:
       (state) =>
-      (status: string): any[] => {
-        return state.repositories.filter((r) => r.status === status);
+      (status: RepositoryContracts.RepositoryStatus): Repository[] => {
+        return state.repositories
+          .filter((r) => r.status === status)
+          .map((repo) => {
+            if (repo instanceof Repository) {
+              return repo;
+            } else {
+              return Repository.fromDTO(repo as any);
+            }
+          });
       },
 
     /**
      * 获取活跃仓库
      */
-    getActiveRepositories(state): any[] {
-      return state.repositories.filter((r) => r.status === 'active');
+    getActiveRepositories(state): Repository[] {
+      return state.repositories
+        .filter((r) => r.status === RepositoryContracts.RepositoryStatus.ACTIVE)
+        .map((repo) => {
+          if (repo instanceof Repository) {
+            return repo;
+          } else {
+            return Repository.fromDTO(repo as any);
+          }
+        });
     },
 
     /**
      * 获取已归档仓库
      */
-    getArchivedRepositories(state): any[] {
-      return state.repositories.filter((r) => r.status === 'archived');
+    getArchivedRepositories(state): Repository[] {
+      return state.repositories
+        .filter((r) => r.status === RepositoryContracts.RepositoryStatus.ARCHIVED)
+        .map((repo) => {
+          if (repo instanceof Repository) {
+            return repo;
+          } else {
+            return Repository.fromDTO(repo as any);
+          }
+        });
     },
+
+    /**
+     * 根据类型获取资源
+     */
+    getResourcesByType:
+      (state) =>
+      (type: RepositoryContracts.ResourceType): Resource[] => {
+        return state.resources
+          .filter((r) => r.type === type)
+          .map((resource) => {
+            if (resource instanceof Resource) {
+              return resource;
+            } else {
+              return Resource.fromDTO(resource as any);
+            }
+          });
+      },
+
+    /**
+     * 根据状态获取资源
+     */
+    getResourcesByStatus:
+      (state) =>
+      (status: RepositoryContracts.ResourceStatus): Resource[] => {
+        return state.resources
+          .filter((r) => r.status === status)
+          .map((resource) => {
+            if (resource instanceof Resource) {
+              return resource;
+            } else {
+              return Resource.fromDTO(resource as any);
+            }
+          });
+      },
 
     // ===== 搜索相关 =====
 
@@ -138,17 +296,52 @@ export const useRepositoryStore = defineStore('repository', {
      */
     searchRepositories:
       (state) =>
-      (query: string): any[] => {
-        if (!query.trim()) return state.repositories;
+      (query: string): Repository[] => {
+        if (!query.trim()) return state.repositories as Repository[];
 
         const lowerQuery = query.toLowerCase();
-        return state.repositories.filter((r) => {
-          return (
-            r.name?.toLowerCase().includes(lowerQuery) ||
-            r.description?.toLowerCase().includes(lowerQuery) ||
-            r.path?.toLowerCase().includes(lowerQuery)
-          );
-        });
+        return state.repositories
+          .filter((r) => {
+            return (
+              r.name?.toLowerCase().includes(lowerQuery) ||
+              r.description?.toLowerCase().includes(lowerQuery) ||
+              r.path?.toLowerCase().includes(lowerQuery)
+            );
+          })
+          .map((repo) => {
+            if (repo instanceof Repository) {
+              return repo;
+            } else {
+              return Repository.fromDTO(repo as any);
+            }
+          });
+      },
+
+    /**
+     * 搜索资源（按名称和描述）
+     */
+    searchResources:
+      (state) =>
+      (query: string): Resource[] => {
+        if (!query.trim()) return state.resources as Resource[];
+
+        const lowerQuery = query.toLowerCase();
+        return state.resources
+          .filter((r) => {
+            return (
+              r.name?.toLowerCase().includes(lowerQuery) ||
+              r.description?.toLowerCase().includes(lowerQuery) ||
+              r.path?.toLowerCase().includes(lowerQuery) ||
+              r.tags?.some((tag) => tag.toLowerCase().includes(lowerQuery))
+            );
+          })
+          .map((resource) => {
+            if (resource instanceof Resource) {
+              return resource;
+            } else {
+              return Resource.fromDTO(resource as any);
+            }
+          });
       },
 
     // ===== 统计信息 =====
@@ -160,11 +353,23 @@ export const useRepositoryStore = defineStore('repository', {
       total: number;
       active: number;
       archived: number;
+      syncing: number;
+      inactive: number;
       byType: Record<string, number>;
     } {
       const total = state.repositories.length;
-      const active = state.repositories.filter((r) => r.status === 'active').length;
-      const archived = state.repositories.filter((r) => r.status === 'archived').length;
+      const active = state.repositories.filter(
+        (r) => r.status === RepositoryContracts.RepositoryStatus.ACTIVE,
+      ).length;
+      const archived = state.repositories.filter(
+        (r) => r.status === RepositoryContracts.RepositoryStatus.ARCHIVED,
+      ).length;
+      const syncing = state.repositories.filter(
+        (r) => r.status === RepositoryContracts.RepositoryStatus.SYNCING,
+      ).length;
+      const inactive = state.repositories.filter(
+        (r) => r.status === RepositoryContracts.RepositoryStatus.INACTIVE,
+      ).length;
 
       const byType: Record<string, number> = {};
       state.repositories.forEach((repo) => {
@@ -172,7 +377,45 @@ export const useRepositoryStore = defineStore('repository', {
         byType[type] = (byType[type] || 0) + 1;
       });
 
-      return { total, active, archived, byType };
+      return { total, active, archived, syncing, inactive, byType };
+    },
+
+    /**
+     * 资源统计
+     */
+    getResourceStatistics(state): {
+      total: number;
+      active: number;
+      archived: number;
+      draft: number;
+      byType: Record<string, number>;
+      byRepository: Record<string, number>;
+    } {
+      const total = state.resources.length;
+      const active = state.resources.filter(
+        (r) => r.status === RepositoryContracts.ResourceStatus.ACTIVE,
+      ).length;
+      const archived = state.resources.filter(
+        (r) => r.status === RepositoryContracts.ResourceStatus.ARCHIVED,
+      ).length;
+      const draft = state.resources.filter(
+        (r) => r.status === RepositoryContracts.ResourceStatus.DRAFT,
+      ).length;
+
+      const byType: Record<string, number> = {};
+      const byRepository: Record<string, number> = {};
+
+      state.resources.forEach((resource) => {
+        // 按类型统计
+        const type = resource.type || 'unknown';
+        byType[type] = (byType[type] || 0) + 1;
+
+        // 按仓库统计
+        const repositoryUuid = resource.repositoryUuid || 'unknown';
+        byRepository[repositoryUuid] = (byRepository[repositoryUuid] || 0) + 1;
+      });
+
+      return { total, active, archived, draft, byType, byRepository };
     },
 
     // ===== 缓存管理 =====
@@ -182,9 +425,10 @@ export const useRepositoryStore = defineStore('repository', {
      */
     shouldRefreshCache(state): boolean {
       if (!state.lastSyncTime) return true;
-      const now = new Date();
-      const timeDiff = now.getTime() - state.lastSyncTime.getTime();
-      return timeDiff > state.cacheExpiry;
+
+      // 如果超过30分钟未同步，则需要刷新
+      const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
+      return state.lastSyncTime < thirtyMinutesAgo;
     },
   },
 
@@ -219,61 +463,123 @@ export const useRepositoryStore = defineStore('repository', {
       this.lastSyncTime = new Date();
     },
 
-    // ===== 数据操作 =====
+    /**
+     * 设置分页信息
+     */
+    setPagination(pagination: { page?: number; limit?: number; total?: number }) {
+      this.pagination = { ...this.pagination, ...pagination };
+    },
+
+    // ===== 选中状态管理 =====
 
     /**
-     * 设置仓库列表（批量替换）
+     * 设置选中的仓库
      */
-    setRepositories(repositories: any[]) {
-      this.repositories = repositories;
-      this.updateLastSyncTime();
+    setSelectedRepository(uuid: string | null) {
+      this.selectedRepository = uuid;
     },
 
     /**
-     * 添加仓库
+     * 设置选中的资源
      */
-    addRepository(repository: any) {
-      // 检查是否已存在
-      const existing = this.repositories.find((r) => r.uuid === repository.uuid);
-      if (existing) {
-        // 更新现有仓库
-        const index = this.repositories.indexOf(existing);
-        this.repositories[index] = repository;
+    setSelectedResource(uuid: string | null) {
+      this.selectedResource = uuid;
+    },
+
+    /**
+     * 设置正在编辑的仓库
+     */
+    setRepositoryBeingEdited(repository: Repository | null) {
+      this.repositoryBeingEdited = repository;
+    },
+
+    // ===== 数据同步方法（由 ApplicationService 调用）=====
+
+    /**
+     * 批量设置仓库
+     */
+    setRepositories(repositories: Repository[]) {
+      this.repositories = [...repositories];
+      console.log(`✅ [RepositoryStore] 已设置 ${repositories.length} 个仓库`);
+    },
+
+    /**
+     * 批量设置资源
+     */
+    setResources(resources: Resource[]) {
+      this.resources = [...resources];
+      console.log(`✅ [RepositoryStore] 已设置 ${resources.length} 个资源`);
+    },
+
+    /**
+     * 添加单个仓库到缓存
+     */
+    addRepository(repository: Repository) {
+      const existingIndex = this.repositories.findIndex((r) => r.uuid === repository.uuid);
+      if (existingIndex >= 0) {
+        this.repositories[existingIndex] = repository;
       } else {
-        // 添加新仓库
         this.repositories.push(repository);
       }
-      this.updateLastSyncTime();
     },
 
     /**
-     * 批量添加仓库
+     * 添加单个资源到缓存
      */
-    addRepositories(repositories: any[]) {
+    addResource(resource: Resource) {
+      const existingIndex = this.resources.findIndex((r) => r.uuid === resource.uuid);
+      if (existingIndex >= 0) {
+        this.resources[existingIndex] = resource;
+      } else {
+        this.resources.push(resource);
+      }
+    },
+
+    /**
+     * 添加多个仓库到缓存
+     */
+    addRepositories(repositories: Repository[]) {
       repositories.forEach((repository) => {
         this.addRepository(repository);
       });
     },
 
     /**
+     * 添加多个资源到缓存
+     */
+    addResources(resources: Resource[]) {
+      resources.forEach((resource) => {
+        this.addResource(resource);
+      });
+    },
+
+    /**
      * 更新仓库
      */
-    updateRepository(uuid: string, repository: any) {
+    updateRepository(uuid: string, updatedRepository: Repository) {
       const index = this.repositories.findIndex((r) => r.uuid === uuid);
-      if (index !== -1) {
-        this.repositories[index] = { ...this.repositories[index], ...repository };
-        this.updateLastSyncTime();
+      if (index >= 0) {
+        this.repositories[index] = updatedRepository;
       }
     },
 
     /**
-     * 删除仓库
+     * 更新资源
+     */
+    updateResource(uuid: string, updatedResource: Resource) {
+      const index = this.resources.findIndex((r) => r.uuid === uuid);
+      if (index >= 0) {
+        this.resources[index] = updatedResource;
+      }
+    },
+
+    /**
+     * 移除仓库
      */
     removeRepository(uuid: string) {
       const index = this.repositories.findIndex((r) => r.uuid === uuid);
-      if (index !== -1) {
+      if (index >= 0) {
         this.repositories.splice(index, 1);
-        this.updateLastSyncTime();
 
         // 如果删除的是当前选中的仓库，清除选中状态
         if (this.selectedRepository === uuid) {
@@ -284,41 +590,137 @@ export const useRepositoryStore = defineStore('repository', {
         if (this.repositoryBeingEdited?.uuid === uuid) {
           this.repositoryBeingEdited = null;
         }
+
+        // 同时移除该仓库下的所有资源
+        this.removeResourcesByRepositoryUuid(uuid);
       }
     },
 
     /**
-     * 批量删除仓库
+     * 移除资源
+     */
+    removeResource(uuid: string) {
+      const index = this.resources.findIndex((r) => r.uuid === uuid);
+      if (index >= 0) {
+        this.resources.splice(index, 1);
+
+        // 如果删除的是当前选中的资源，清除选中状态
+        if (this.selectedResource === uuid) {
+          this.selectedResource = null;
+        }
+      }
+    },
+
+    /**
+     * 根据仓库UUID移除相关资源
+     */
+    removeResourcesByRepositoryUuid(repositoryUuid: string) {
+      this.resources = this.resources.filter(
+        (resource) => resource.repositoryUuid !== repositoryUuid,
+      );
+    },
+
+    /**
+     * 批量移除仓库
      */
     removeRepositories(uuids: string[]) {
+      this.repositories = this.repositories.filter(
+        (repository) => !uuids.includes(repository.uuid),
+      );
+
+      // 如果删除的包含当前选中的仓库，清除选中状态
+      if (this.selectedRepository && uuids.includes(this.selectedRepository)) {
+        this.selectedRepository = null;
+      }
+
+      // 如果删除的包含正在编辑的仓库，清除编辑状态
+      if (this.repositoryBeingEdited && uuids.includes(this.repositoryBeingEdited.uuid)) {
+        this.repositoryBeingEdited = null;
+      }
+
+      // 移除这些仓库下的所有资源
       uuids.forEach((uuid) => {
-        this.removeRepository(uuid);
+        this.removeResourcesByRepositoryUuid(uuid);
       });
     },
 
-    // ===== UI 状态管理 =====
+    /**
+     * 批量移除资源
+     */
+    removeResources(uuids: string[]) {
+      this.resources = this.resources.filter((resource) => !uuids.includes(resource.uuid));
+
+      // 如果删除的包含当前选中的资源，清除选中状态
+      if (this.selectedResource && uuids.includes(this.selectedResource)) {
+        this.selectedResource = null;
+      }
+    },
+
+    // ===== 初始化和清理 =====
 
     /**
-     * 设置选中的仓库
+     * 初始化 Store
      */
-    setSelectedRepository(uuid: string | null) {
-      this.selectedRepository = uuid;
+    initialize(): void {
+      this.isInitialized = true;
+      console.log(
+        `✅ [RepositoryStore] 初始化完成: ${this.repositories.length} 个仓库，${this.resources.length} 个资源`,
+      );
     },
 
     /**
-     * 设置正在编辑的仓库
+     * 清除所有数据
      */
-    setRepositoryBeingEdited(repository: any | null) {
-      this.repositoryBeingEdited = repository;
+    clearAll() {
+      this.repositories = [];
+      this.resources = [];
+      this.selectedRepository = null;
+      this.selectedResource = null;
+      this.repositoryBeingEdited = null;
+      this.lastSyncTime = null;
+      this.error = null;
+      this.isInitialized = false;
+
+      console.log('🧹 [RepositoryStore] 已清除所有数据');
     },
 
     /**
-     * 开始编辑仓库
+     * 批量同步所有数据
+     */
+    syncAllData(repositories: Repository[], resources: Resource[]) {
+      this.setRepositories(repositories);
+      this.setResources(resources);
+      this.updateLastSyncTime();
+
+      console.log('🔄 [RepositoryStore] 批量同步完成');
+    },
+
+    // ===== 兼容性方法（保持向后兼容）=====
+
+    /**
+     * @deprecated 使用 getRepositoryByUuid 替代
+     */
+    getRepositoryById(uuid: string) {
+      console.warn('[RepositoryStore] getRepositoryById 已废弃，请使用 getRepositoryByUuid');
+      return this.repositories.find((r) => r.uuid === uuid) || null;
+    },
+
+    /**
+     * @deprecated 使用 getResourceByUuid 替代
+     */
+    getResourceById(uuid: string) {
+      console.warn('[RepositoryStore] getResourceById 已废弃，请使用 getResourceByUuid');
+      return this.resources.find((r) => r.uuid === uuid) || null;
+    },
+
+    /**
+     * 开始编辑仓库 - 创建副本
      */
     startEditingRepository(uuid: string) {
       const repository = this.getRepositoryByUuid(uuid);
       if (repository) {
-        this.repositoryBeingEdited = { ...repository };
+        // 使用 DTO 转换创建副本以避免引用问题
+        this.repositoryBeingEdited = Repository.fromDTO(repository.toDTO());
       }
     },
 
@@ -329,107 +731,110 @@ export const useRepositoryStore = defineStore('repository', {
       this.repositoryBeingEdited = null;
     },
 
-    // ===== 分页管理 =====
-
     /**
-     * 设置分页信息
+     * 获取可序列化的状态快照
      */
-    setPagination(pagination: { page?: number; limit?: number; total?: number }) {
-      this.pagination = { ...this.pagination, ...pagination };
+    getSerializableSnapshot() {
+      return {
+        repositories: [...this.repositories],
+        resources: [...this.resources],
+        timestamp: Date.now(),
+      };
     },
 
-    // ===== 批量操作 =====
-
     /**
-     * 批量同步数据（替换所有数据）
+     * 从快照恢复数据
      */
-    syncAllData(repositories: any[]) {
-      this.repositories = repositories;
+    restoreFromSnapshot(snapshot: {
+      repositories: Repository[];
+      resources: Resource[];
+      timestamp?: number;
+    }) {
+      this.setRepositories(snapshot.repositories);
+      this.setResources(snapshot.resources);
       this.updateLastSyncTime();
-      this.setInitialized(true);
+
+      console.log(`✅ [RepositoryStore] 从快照恢复数据成功`);
     },
+  },
 
-    /**
-     * 清除所有数据
-     */
-    clearAllData() {
-      this.repositories = [];
-      this.selectedRepository = null;
-      this.repositoryBeingEdited = null;
-      this.error = null;
-      this.lastSyncTime = null;
-      this.pagination = { page: 1, limit: 20, total: 0 };
-    },
+  persist: {
+    key: 'repository-store',
+    storage: localStorage,
+    // 选择性持久化关键数据，避免持久化加载状态
+    pick: [
+      'repositories',
+      'resources',
+      'selectedRepository',
+      'selectedResource',
+      'lastSyncTime',
+      'isInitialized',
+    ],
 
-    // ===== 缓存管理 =====
+    // 自定义序列化器，处理Date对象和Domain实体
+    serializer: {
+      serialize: (value: any) => {
+        try {
+          // 处理需要序列化的数据
+          const serializedValue = {
+            ...value,
+            // 将Date转换为ISO字符串
+            lastSyncTime: value.lastSyncTime ? value.lastSyncTime.toISOString() : null,
 
-    /**
-     * 从 localStorage 加载数据
-     */
-    loadFromCache() {
-      try {
-        const cached = localStorage.getItem('dailyuse_repository_cache');
-        if (cached) {
-          const data = JSON.parse(cached);
-          if (data.repositories) {
-            this.repositories = data.repositories;
-          }
-          if (data.lastSyncTime) {
-            this.lastSyncTime = new Date(data.lastSyncTime);
-          }
-          this.setInitialized(true);
+            // 将Domain实体转换为DTO
+            repositories:
+              value.repositories?.map((repository: any) =>
+                repository && typeof repository.toDTO === 'function'
+                  ? repository.toDTO()
+                  : repository,
+              ) || [],
+
+            resources:
+              value.resources?.map((resource: any) =>
+                resource && typeof resource.toDTO === 'function' ? resource.toDTO() : resource,
+              ) || [],
+          };
+
+          return JSON.stringify(serializedValue);
+        } catch (error) {
+          console.error('RepositoryStore 序列化失败:', error);
+          return JSON.stringify({});
         }
-      } catch (error) {
-        console.error('加载仓库缓存失败:', error);
-      }
-    },
+      },
 
-    /**
-     * 保存到 localStorage
-     */
-    saveToCache() {
-      try {
-        const data = {
-          repositories: this.repositories,
-          lastSyncTime: this.lastSyncTime?.toISOString(),
-        };
-        localStorage.setItem('dailyuse_repository_cache', JSON.stringify(data));
-      } catch (error) {
-        console.error('保存仓库缓存失败:', error);
-      }
-    },
+      deserialize: (value: string) => {
+        try {
+          const parsed = JSON.parse(value);
 
-    /**
-     * 清除缓存
-     */
-    clearCache() {
-      try {
-        localStorage.removeItem('dailyuse_repository_cache');
-      } catch (error) {
-        console.error('清除仓库缓存失败:', error);
-      }
-    },
+          return {
+            ...parsed,
+            // 恢复Date对象
+            lastSyncTime: parsed.lastSyncTime ? new Date(parsed.lastSyncTime) : null,
 
-    /**
-     * 初始化 Store
-     * 先从本地缓存加载数据
-     */
-    initialize() {
-      if (!this.isInitialized) {
-        this.loadFromCache();
-      }
-    },
+            // 将DTO转换回Domain实体（当实体类可用时）
+            repositories:
+              parsed.repositories?.map((repositoryDTO: any) => {
+                if (repositoryDTO && Repository && typeof Repository.fromDTO === 'function') {
+                  return Repository.fromDTO(repositoryDTO);
+                }
+                return repositoryDTO;
+              }) || [],
 
-    // ===== 监听数据变化，自动保存到缓存 =====
-
-    /**
-     * 监听数据变化并自动保存
-     */
-    $subscribe() {
-      // 当仓库数据变化时自动保存到缓存
-      this.$subscribe((mutation, state) => {
-        this.saveToCache();
-      });
+            resources:
+              parsed.resources?.map((resourceDTO: any) => {
+                if (resourceDTO && Resource && typeof Resource.fromDTO === 'function') {
+                  return Resource.fromDTO(resourceDTO);
+                }
+                return resourceDTO;
+              }) || [],
+          };
+        } catch (error) {
+          console.error('RepositoryStore 反序列化失败:', error);
+          return {};
+        }
+      },
     },
   },
 });
+
+export type RepositoryStore = ReturnType<typeof useRepositoryStore>;

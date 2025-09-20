@@ -1,4 +1,5 @@
 import { RepositoryContracts } from '@dailyuse/contracts';
+import { randomUUID } from 'node:crypto';
 import {
   Repository,
   type IRepositoryRepository,
@@ -35,16 +36,17 @@ export class RepositoryApplicationService {
       },
     });
 
-    // 保存到仓储并获取生成的DTO
+    // 保存到仓储
     await this.repositoryRepository.save(repository);
 
-    // 返回通过UUID查询的DTO结果
-    const savedRepository = await this.repositoryRepository.findByUuid(repository.uuid);
-    if (!savedRepository) {
-      throw new Error('Failed to create repository');
+    // 保存后重新读取，确保包含数据库实际持久化后的完整信息（含关联、时间戳等）
+    const created = await this.repositoryRepository.findByUuid(repository.getUuid());
+    if (!created) {
+      throw new Error('Failed to retrieve created repository');
     }
 
-    return savedRepository;
+    console.log(`✅ Repository created successfully: ${created.uuid} - ${created.name}`);
+    return created;
   }
 
   async getRepositories(
@@ -121,6 +123,9 @@ export class RepositoryApplicationService {
       throw new Error('Failed to retrieve updated repository');
     }
 
+    console.log(
+      `✅ Repository updated successfully: ${updatedRepository.uuid} - ${updatedRepository.name}`,
+    );
     return updatedRepository;
   }
 
@@ -294,10 +299,11 @@ export class RepositoryApplicationService {
         name: request.name,
         type: request.type,
         path: request.path,
+        // 计算内容大小（Node环境下不使用Blob）
         size: request.content
           ? typeof request.content === 'string'
-            ? new Blob([request.content]).size
-            : request.content.byteLength
+            ? Buffer.byteLength(request.content)
+            : ((request.content as ArrayBuffer | Uint8Array).byteLength ?? 0)
           : 0,
         description: request.description,
         author: request.author,
@@ -307,16 +313,25 @@ export class RepositoryApplicationService {
         metadata: request.metadata || {},
       };
 
-    // 创建资源DTO对象并保存
+    // 为资源生成UUID，保存并返回持久化后的完整DTO
+    const resourceUuidGenerated = randomUUID();
     const resourceDto: RepositoryContracts.ResourceDTO = {
-      uuid: '', // 将由仓储层生成
+      uuid: resourceUuidGenerated,
       ...resourceData,
       createdAt: new Date(),
       updatedAt: new Date(),
     };
 
     await this.resourceRepository.save(resourceDto);
-    return resourceDto;
+
+    // 读取持久化后的完整数据确保包含所有数据库生成的字段
+    const created = await this.resourceRepository.findByUuid(resourceUuidGenerated);
+    if (!created) {
+      throw new Error('Failed to retrieve created resource');
+    }
+
+    console.log(`✅ Resource created successfully: ${created.uuid} - ${created.name}`);
+    return created;
   }
 
   async updateResource(
@@ -359,7 +374,15 @@ export class RepositoryApplicationService {
     };
 
     await this.resourceRepository.save(updatedResource);
-    return updatedResource;
+
+    // 读取持久化后的完整数据
+    const persisted = await this.resourceRepository.findByUuid(resourceUuid);
+    if (!persisted) {
+      throw new Error('Failed to retrieve updated resource');
+    }
+
+    console.log(`✅ Resource updated successfully: ${persisted.uuid} - ${persisted.name}`);
+    return persisted;
   }
 
   async deleteResource(accountUuid: string, resourceUuid: string): Promise<void> {

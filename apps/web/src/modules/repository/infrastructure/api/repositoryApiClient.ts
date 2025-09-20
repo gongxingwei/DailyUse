@@ -142,6 +142,16 @@ export class RepositoryApiClient {
   // ===== Repository Resource Management =====
 
   /**
+   * 获取所有资源列表
+   */
+  async getResources(
+    params?: RepositoryContracts.ResourceQueryParamsDTO,
+  ): Promise<RepositoryContracts.ResourceListResponseDTO> {
+    const data = await apiClient.get(`${this.baseUrl}/resources`, { params });
+    return data;
+  }
+
+  /**
    * 获取仓库资源列表
    */
   async getRepositoryResources(
@@ -149,6 +159,14 @@ export class RepositoryApiClient {
     params?: RepositoryContracts.ResourceQueryParamsDTO,
   ): Promise<RepositoryContracts.ResourceListResponseDTO> {
     const data = await apiClient.get(`${this.baseUrl}/${repositoryUuid}/resources`, { params });
+    return data;
+  }
+
+  /**
+   * 获取资源详情
+   */
+  async getResourceById(resourceUuid: string): Promise<RepositoryContracts.ResourceDTO> {
+    const data = await apiClient.get(`${this.baseUrl}/resources/${resourceUuid}`);
     return data;
   }
 
