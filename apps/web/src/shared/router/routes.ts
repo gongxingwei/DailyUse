@@ -209,8 +209,8 @@ export const appRoutes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
-            name: 'reminder-list',
-            component: () => import('@/modules/reminder/presentation/views/ReminderListView.vue'),
+            name: 'reminder-desktop',
+            component: () => import('@/modules/reminder/presentation/views/ReminderDesktopView.vue'),
             meta: {
               title: '提醒列表',
               requiresAuth: true,

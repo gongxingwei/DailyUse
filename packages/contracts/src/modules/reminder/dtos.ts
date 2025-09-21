@@ -4,6 +4,7 @@ import type {
   IReminderInstance,
   ReminderQueryParams,
   ReminderTimeConfig,
+  ReminderTemplateEnableMode,
 } from './types';
 
 /**
@@ -39,15 +40,38 @@ export type UpdateReminderTemplateRequest = Partial<CreateReminderTemplateReques
  */
 export interface CreateReminderGroupRequest {
   name: string;
-  enabled: boolean;
-  enableMode: 'group' | 'individual';
+  description?: string;
+  enabled?: boolean;
+  enableMode?: ReminderTemplateEnableMode;
   parentUuid?: string;
+  icon?: string;
+  color?: string;
+  sortOrder?: number;
 }
 
 /**
  * 更新提醒分组请求 DTO
  */
 export type UpdateReminderGroupRequest = Partial<CreateReminderGroupRequest>;
+
+/**
+ * 创建提醒模板分组请求 DTO
+ */
+export interface CreateReminderTemplateGroupRequest {
+  name: string;
+  description?: string;
+  enabled?: boolean;
+  enableMode?: ReminderTemplateEnableMode;
+  parentUuid?: string;
+  icon?: string;
+  color?: string;
+  sortOrder?: number;
+}
+
+/**
+ * 更新提醒模板分组请求 DTO
+ */
+export type UpdateReminderTemplateGroupRequest = Partial<CreateReminderTemplateGroupRequest>;
 
 /**
  * 创建提醒实例请求 DTO
@@ -107,6 +131,41 @@ export interface ReminderGroupResponse extends Omit<IReminderTemplateGroup, 'tem
   templates: ReminderTemplateResponse[];
   templateCount: number;
   activeTemplateCount: number;
+}
+
+/**
+ * 提醒模板分组响应 DTO
+ */
+export interface ReminderTemplateGroupResponse {
+  uuid: string;
+  name: string;
+  description?: string;
+  enabled: boolean;
+  enableMode: ReminderTemplateEnableMode;
+  parentUuid?: string;
+  icon?: string;
+  color?: string;
+  displayOrder: number;
+  isSystemGroup?: boolean;
+  position?: {
+    x: number;
+    y: number;
+  };
+  children?: ReminderTemplateGroupResponse[];
+  templates?: ReminderTemplateResponse[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 提醒模板分组列表响应 DTO
+ */
+export interface ReminderTemplateGroupListResponse {
+  groups: ReminderTemplateGroupResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
 /**

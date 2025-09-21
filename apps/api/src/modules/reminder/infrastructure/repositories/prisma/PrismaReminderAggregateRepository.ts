@@ -1,230 +1,430 @@
-import type {
-  IReminderAggregateRepository,
-  ReminderTemplate,
-  ReminderInstance,
-} from '@dailyuse/domain-server';
-import type { ReminderContracts } from '@dailyuse/contracts';
+import type { PrismaClient } from '@prisma/client';
 
-// 暂时使用类型定义避免PrismaClient导入错误
-// 在实际使用时，会通过依赖注入获得真实的数据库客户端
-type MockPrismaClient = any;
+export class PrismaReminderAggregateRepository {
+  constructor(private readonly prisma: PrismaClient) {}
 
-/**
- * Prisma提醒聚合根仓储实现
- * 实现聚合根管理模式的数据访问层
- */
-export class PrismaReminderAggregateRepository implements IReminderAggregateRepository {
-  constructor(private readonly prisma: MockPrismaClient) {}
+  async getAggregatesByAccountUuid(accountUuid: string): Promise<any[]> {
+    try {
+      const templates = await this.prisma.reminderTemplate.findMany({
+        where: { accountUuid },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
 
-  // ===== 聚合根生命周期管理 =====
-
-  async getAggregateById(uuid: string): Promise<ReminderTemplate | null> {
-    // 这里应该实现实际的数据库查询
-    // 临时返回null，实际实现时需要查询数据库并构建聚合根
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+      return templates.map((template) => ({
+        uuid: template.uuid,
+        accountUuid: template.accountUuid,
+        name: template.name,
+        description: template.description,
+        message: template.message,
+        enabled: template.enabled,
+        priority: template.priority,
+        category: template.category,
+        tags: template.tags ? JSON.parse(template.tags) : [],
+        groupUuid: template.groupUuid,
+        version: template.version || 1,
+        createdAt: template.createdAt,
+        updatedAt: template.updatedAt,
+        instances: template.instances || [],
+        schedules: template.schedules || [],
+      }));
+    } catch (error) {
+      console.error('获取聚合根列表错误:', error);
+      throw new Error(
+        `获取账户聚合根列表失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async getAggregatesByAccountUuid(accountUuid: string): Promise<ReminderTemplate[]> {
-    // 这里应该实现实际的数据库查询
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async createReminderTemplate(data: any): Promise<any> {
+    try {
+      const template = await this.prisma.reminderTemplate.create({
+        data: {
+          uuid: data.uuid,
+          accountUuid: data.accountUuid,
+          groupUuid: data.groupUuid,
+          name: data.name,
+          description: data.description,
+          message: data.message,
+          enabled: data.enabled ?? true,
+          category: data.category,
+          tags: JSON.stringify(data.tags || []),
+          priority: data.priority || 'normal',
+          version: 1,
+        },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+      });
+
+      return this.mapTemplateToAggregate(template);
+    } catch (error) {
+      console.error('创建提醒模板错误:', error);
+      throw new Error(
+        `创建提醒模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async saveAggregate(aggregate: ReminderTemplate): Promise<void> {
-    // 这里应该实现实际的数据库保存
-    // 需要保存聚合根及其所有关联实体
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async updateReminderTemplate(uuid: string, data: any): Promise<any> {
+    try {
+      const template = await this.prisma.reminderTemplate.update({
+        where: { uuid },
+        data: {
+          name: data.name,
+          description: data.description,
+          message: data.message,
+          enabled: data.enabled,
+          category: data.category,
+          tags: JSON.stringify(data.tags || []),
+          priority: data.priority,
+          groupUuid: data.groupUuid,
+          version: { increment: 1 },
+        },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+      });
+
+      return this.mapTemplateToAggregate(template);
+    } catch (error) {
+      console.error('更新提醒模板错误:', error);
+      throw new Error(
+        `更新提醒模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async deleteAggregate(uuid: string): Promise<void> {
-    // 这里应该实现实际的数据库删除
-    // 需要级联删除聚合根及其所有关联实体
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async deleteReminderTemplate(uuid: string): Promise<void> {
+    try {
+      await this.prisma.reminderTemplate.delete({
+        where: { uuid },
+      });
+    } catch (error) {
+      console.error('删除提醒模板错误:', error);
+      throw new Error(
+        `删除提醒模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  // ===== 聚合根查询操作 =====
+  async getReminderTemplate(uuid: string): Promise<any | null> {
+    try {
+      const template = await this.prisma.reminderTemplate.findUnique({
+        where: { uuid },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+      });
 
-  async getAggregatesByGroupUuid(groupUuid: string): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+      return template ? this.mapTemplateToAggregate(template) : null;
+    } catch (error) {
+      console.error('获取提醒模板错误:', error);
+      throw new Error(
+        `获取提醒模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async getAggregatesByCategory(
-    accountUuid: string,
-    category: string,
-  ): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async getTemplatesByGroupUuid(groupUuid: string): Promise<any[]> {
+    try {
+      const templates = await this.prisma.reminderTemplate.findMany({
+        where: { groupUuid },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return templates.map((template) => this.mapTemplateToAggregate(template));
+    } catch (error) {
+      console.error('获取分组模板错误:', error);
+      throw new Error(
+        `获取分组模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async getAggregatesByPriority(
-    accountUuid: string,
-    priority: ReminderContracts.ReminderPriority,
-  ): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async searchReminderTemplates(accountUuid: string, searchTerm: string): Promise<any[]> {
+    try {
+      const templates = await this.prisma.reminderTemplate.findMany({
+        where: {
+          accountUuid,
+          OR: [
+            { name: { contains: searchTerm, mode: 'insensitive' } },
+            { description: { contains: searchTerm, mode: 'insensitive' } },
+            { message: { contains: searchTerm, mode: 'insensitive' } },
+            { category: { contains: searchTerm, mode: 'insensitive' } },
+          ],
+        },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return templates.map((template) => this.mapTemplateToAggregate(template));
+    } catch (error) {
+      console.error('搜索提醒模板错误:', error);
+      throw new Error(
+        `搜索提醒模板失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async getAggregatesByTags(accountUuid: string, tags: string[]): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async toggleTemplateEnabled(uuid: string, enabled: boolean): Promise<void> {
+    try {
+      await this.prisma.reminderTemplate.update({
+        where: { uuid },
+        data: { enabled, version: { increment: 1 } },
+      });
+    } catch (error) {
+      console.error('切换模板启用状态错误:', error);
+      throw new Error(
+        `切换模板启用状态失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async getEnabledAggregates(accountUuid: string): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async batchUpdateTemplateStatus(uuids: string[], enabled: boolean): Promise<void> {
+    try {
+      await this.prisma.reminderTemplate.updateMany({
+        where: { uuid: { in: uuids } },
+        data: { enabled, version: { increment: 1 } },
+      });
+    } catch (error) {
+      console.error('批量更新模板状态错误:', error);
+      throw new Error(
+        `批量更新模板状态失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async searchAggregates(
-    accountUuid: string,
-    query: ReminderContracts.ReminderQueryParamsDTO,
-  ): Promise<ReminderTemplate[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async createReminderInstance(data: any): Promise<any> {
+    try {
+      const instance = await this.prisma.reminderInstance.create({
+        data: {
+          uuid: data.uuid,
+          templateUuid: data.templateUuid,
+          accountUuid: data.accountUuid,
+          title: data.title,
+          message: data.message,
+          scheduledTime: data.scheduledTime,
+          status: data.status || 'pending',
+          priority: data.priority || 'normal',
+          category: data.category,
+          tags: JSON.stringify(data.tags || []),
+          version: 1,
+        },
+      });
+
+      return instance;
+    } catch (error) {
+      console.error('创建提醒实例错误:', error);
+      throw new Error(
+        `创建提醒实例失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  // ===== 聚合根状态管理 =====
-
-  async toggleAggregateEnabled(uuid: string): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async batchEnableAggregates(uuids: string[]): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async batchDisableAggregates(uuids: string[]): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  // ===== 聚合根实例管理 =====
-
-  async createInstanceThroughAggregate(
+  async batchUpdateInstanceStatus(
     templateUuid: string,
-    instanceData: Partial<ReminderContracts.IReminderInstance>,
-  ): Promise<ReminderInstance> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async updateInstanceStatusThroughAggregate(
-    templateUuid: string,
-    instanceUuid: string,
-    status: ReminderContracts.ReminderStatus,
-    timestamp?: Date,
+    status: string,
+    instanceUuids?: string[],
   ): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+    try {
+      const whereClause: any = { templateUuid };
+      if (instanceUuids) {
+        whereClause.uuid = { in: instanceUuids };
+      }
+
+      await this.prisma.reminderInstance.updateMany({
+        where: whereClause,
+        data: { status, version: { increment: 1 } },
+      });
+    } catch (error) {
+      console.error('批量更新实例状态错误:', error);
+      throw new Error(
+        `批量更新实例状态失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 
-  async processInstanceResponseThroughAggregate(
-    templateUuid: string,
-    instanceUuid: string,
-    response: {
-      operation: 'acknowledge' | 'dismiss' | 'snooze' | 'delete';
-      snoozeUntil?: Date;
-      reason?: string;
-    },
-  ): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  // ===== 分组相关方法 =====
+
+  async createReminderTemplateGroup(data: any): Promise<any> {
+    try {
+      const group = await this.prisma.reminderTemplateGroup.create({
+        data: {
+          uuid: data.uuid,
+          accountUuid: data.accountUuid,
+          parentUuid: data.parentUuid,
+          name: data.name,
+          description: data.description,
+          enabled: data.enabled ?? true,
+          enableMode: data.enableMode || 'group',
+          icon: data.icon,
+          color: data.color,
+          sortOrder: data.sortOrder || 0,
+        },
+        include: {
+          parent: true,
+          children: true,
+          templates: true,
+        },
+      });
+
+      return this.mapGroupToDTO(group);
+    } catch (error) {
+      console.error('创建分组错误:', error);
+      throw new Error(`创建分组失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
-  async createRecurringInstancesThroughAggregate(
-    templateUuid: string,
-    config: {
-      startDate: Date;
-      endDate: Date;
-      recurrenceRule: ReminderContracts.RecurrenceRule;
-      maxInstances?: number;
-    },
-  ): Promise<ReminderInstance[]> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
+  async updateReminderTemplateGroup(uuid: string, data: any): Promise<any> {
+    try {
+      const group = await this.prisma.reminderTemplateGroup.update({
+        where: { uuid },
+        data: {
+          name: data.name,
+          description: data.description,
+          enabled: data.enabled,
+          enableMode: data.enableMode,
+          icon: data.icon,
+          color: data.color,
+          sortOrder: data.sortOrder,
+          parentUuid: data.parentUuid,
+        },
+        include: {
+          parent: true,
+          children: true,
+          templates: true,
+        },
+      });
+
+      return this.mapGroupToDTO(group);
+    } catch (error) {
+      console.error('更新分组错误:', error);
+      throw new Error(`更新分组失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   }
 
-  // ===== 聚合根统计和分析 =====
+  async deleteReminderTemplateGroup(uuid: string): Promise<void> {
+    try {
+      await this.prisma.reminderTemplateGroup.delete({
+        where: { uuid },
+      });
+    } catch (error) {
+      console.error('删除分组错误:', error);
+      throw new Error(`删除分组失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
 
-  async getAggregateStats(uuid: string): Promise<{
-    template: ReminderContracts.ReminderTemplateResponse;
-    instanceStats: {
-      total: number;
-      pending: number;
-      triggered: number;
-      acknowledged: number;
-      dismissed: number;
-      cancelled: number;
-      snoozed: number;
+  async getReminderTemplateGroup(uuid: string): Promise<any | null> {
+    try {
+      const group = await this.prisma.reminderTemplateGroup.findUnique({
+        where: { uuid },
+        include: {
+          parent: true,
+          children: true,
+          templates: true,
+        },
+      });
+
+      return group ? this.mapGroupToDTO(group) : null;
+    } catch (error) {
+      console.error('获取分组错误:', error);
+      throw new Error(`获取分组失败: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async getGroupsByAccountUuid(accountUuid: string): Promise<any[]> {
+    try {
+      const groups = await this.prisma.reminderTemplateGroup.findMany({
+        where: { accountUuid },
+        include: {
+          parent: true,
+          children: true,
+          templates: true,
+        },
+        orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
+      });
+
+      return groups.map((group) => this.mapGroupToDTO(group));
+    } catch (error) {
+      console.error('获取账户分组列表错误:', error);
+      throw new Error(
+        `获取账户分组列表失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  async toggleGroupEnabled(uuid: string, enabled: boolean): Promise<void> {
+    try {
+      await this.prisma.reminderTemplateGroup.update({
+        where: { uuid },
+        data: { enabled },
+      });
+    } catch (error) {
+      console.error('切换分组启用状态错误:', error);
+      throw new Error(
+        `切换分组启用状态失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  private mapGroupToDTO(group: any): any {
+    return {
+      uuid: group.uuid,
+      accountUuid: group.accountUuid,
+      parentUuid: group.parentUuid,
+      name: group.name,
+      description: group.description,
+      enabled: group.enabled,
+      enableMode: group.enableMode,
+      icon: group.icon,
+      color: group.color,
+      sortOrder: group.sortOrder,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      parent: group.parent,
+      children: group.children || [],
+      templates: group.templates || [],
     };
-    performanceMetrics: {
-      averageResponseTime: number;
-      acknowledgmentRate: number;
-      dismissalRate: number;
-      snoozeRate: number;
+  }
+
+  private mapTemplateToAggregate(template: any): any {
+    return {
+      uuid: template.uuid,
+      accountUuid: template.accountUuid,
+      name: template.name,
+      description: template.description,
+      message: template.message,
+      enabled: template.enabled,
+      priority: template.priority,
+      category: template.category,
+      tags: template.tags ? JSON.parse(template.tags) : [],
+      groupUuid: template.groupUuid,
+      version: template.version || 1,
+      createdAt: template.createdAt,
+      updatedAt: template.updatedAt,
+      instances: template.instances || [],
+      schedules: template.schedules || [],
+      group: template.group,
     };
-  }> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async getAccountAggregateStats(accountUuid: string): Promise<{
-    totalTemplates: number;
-    enabledTemplates: number;
-    totalInstances: number;
-    instancesByStatus: Record<ReminderContracts.ReminderStatus, number>;
-    categoryDistribution: Record<string, number>;
-    priorityDistribution: Record<ReminderContracts.ReminderPriority, number>;
-  }> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  // ===== 聚合根事件处理 =====
-
-  async getAggregateEvents(
-    uuid: string,
-    since?: Date,
-  ): Promise<
-    Array<{
-      eventType: string;
-      aggregateId: string;
-      occurredOn: Date;
-      payload: any;
-    }>
-  > {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async clearProcessedEvents(uuid: string, eventIds: string[]): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  // ===== 聚合根一致性检查 =====
-
-  async validateAggregateInvariants(uuid: string): Promise<{
-    isValid: boolean;
-    violations: string[];
-  }> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async repairAggregateConsistency(uuid: string): Promise<{
-    repaired: boolean;
-    issues: string[];
-    actions: string[];
-  }> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  // ===== 聚合根快照和恢复 =====
-
-  async createAggregateSnapshot(uuid: string): Promise<{
-    snapshotId: string;
-    timestamp: Date;
-    version: number;
-  }> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async restoreFromSnapshot(uuid: string, snapshotId: string): Promise<void> {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
-  }
-
-  async getAggregateSnapshots(uuid: string): Promise<
-    Array<{
-      snapshotId: string;
-      timestamp: Date;
-      version: number;
-      description?: string;
-    }>
-  > {
-    throw new Error('暂未实现 - 需要实际的Prisma数据库模式');
   }
 }

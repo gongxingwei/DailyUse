@@ -7,7 +7,6 @@ export { ReminderDomainService } from './domain/index.js';
 // 导出接口层
 export {
   ReminderTemplateController,
-  ReminderInstanceController,
-  ReminderController,
+  ReminderTemplateGroupController,
   reminderRouter,
 } from './interface/index.js';

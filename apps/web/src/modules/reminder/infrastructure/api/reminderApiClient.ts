@@ -6,7 +6,7 @@ import { apiClient } from '@/shared/api/instances';
  * 基于聚合根控制模式的 API 接口
  */
 class ReminderApiClient {
-  private readonly baseUrl = '/reminder-aggregates';
+  private readonly baseUrl = '/reminders/templates';
 
   // ===== 模板聚合根操作 =====
 
@@ -57,7 +57,7 @@ class ReminderApiClient {
     groupUuid?: string;
     enabled?: boolean;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderListResponse> {
+  }): Promise<ReminderContracts.IReminderTemplate[]> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }
@@ -182,6 +182,61 @@ class ReminderApiClient {
   async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse> {
     const data = await apiClient.get(`${this.baseUrl}/stats`);
     return data;
+  }
+
+  // ===== 分组操作 =====
+
+  /**
+   * 创建提醒模板分组
+   */
+  async createReminderTemplateGroup(
+    request: ReminderContracts.CreateReminderTemplateGroupRequest,
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+    const data = await apiClient.post('/reminders/groups', request);
+    return data;
+  }
+
+  /**
+   * 更新提醒模板分组
+   */
+  async updateReminderTemplateGroup(
+    groupUuid: string,
+    request: ReminderContracts.UpdateReminderTemplateGroupRequest,
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+    const data = await apiClient.put(`/reminders/groups/${groupUuid}`, request);
+    return data;
+  }
+
+  /**
+   * 获取提醒模板分组详情
+   */
+  async getReminderTemplateGroup(
+    groupUuid: string,
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+    const data = await apiClient.get(`/reminders/groups/${groupUuid}`);
+    return data;
+  }
+
+  /**
+   * 删除提醒模板分组
+   */
+  async deleteReminderTemplateGroup(groupUuid: string): Promise<void> {
+    await apiClient.delete(`/reminders/groups/${groupUuid}`);
+  }
+
+  /**
+   * 获取提醒模板分组列表
+   */
+  async getReminderTemplateGroups(): Promise<ReminderContracts.ReminderTemplateGroupResponse[]> {
+    const data = await apiClient.get('/reminders/groups');
+    return data;
+  }
+
+  /**
+   * 切换分组启用状态
+   */
+  async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
+    await apiClient.patch(`/reminders/groups/${groupUuid}/toggle`, { enabled });
   }
 }
 

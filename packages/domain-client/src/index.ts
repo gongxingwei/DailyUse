@@ -19,3 +19,6 @@ export { Resource as RepositoryResource } from './repository';
 
 // Editor domain client exports
 export * from './editor';
+
+// Reminder domain client exports
+export * from './reminder';

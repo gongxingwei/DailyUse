@@ -240,6 +240,17 @@ export interface IReminderTemplate {
   category: string;
   /** 标签 */
   tags: string[];
+  /** 图标 */
+  icon?: string;
+  /** 颜色 */
+  color?: string;
+  /** 在网格中的位置 */
+  position?: {
+    x: number;
+    y: number;
+  };
+  /** 显示顺序 */
+  displayOrder: number;
   /** 通知设置 */
   notificationSettings?: NotificationSettings;
   /** 稍后提醒配置 */
@@ -264,7 +275,7 @@ export interface IReminderTemplate {
 }
 
 /**
- * 提醒模板分组接口
+ * 提醒模板分组接口（简化版，不支持嵌套）
  */
 export interface IReminderTemplateGroup {
   /** 组UUID */
@@ -277,20 +288,20 @@ export interface IReminderTemplateGroup {
   enabled: boolean;
   /** 启用模式 */
   enableMode: ReminderTemplateEnableMode;
-  /** 包含的模板 */
-  templates: IReminderTemplate[];
-  /** 父级组UUID */
+  /** 父组UUID */
   parentUuid?: string;
   /** 组图标 */
   icon?: string;
   /** 组颜色 */
   color?: string;
-  /** 排序权重 */
-  sortOrder?: number;
+  /** 排序顺序 */
+  sortOrder: number;
+  /** 包含的模板 */
+  templates?: IReminderTemplate[];
   /** 创建时间 */
-  createdAt?: Date;
+  createdAt: Date;
   /** 更新时间 */
-  updatedAt?: Date;
+  updatedAt: Date;
 }
 
 /**
@@ -464,11 +475,79 @@ export interface ReminderStats {
 }
 
 /**
+ * 网格项基础接口
+ */
+export interface IGridItem {
+  uuid: string;
+  name: string;
+  type: 'template' | 'group';
+  position?: {
+    x: number;
+    y: number;
+  };
+  displayOrder?: number;
+}
+
+/**
+ * 提醒模板网格项
+ */
+export interface IReminderTemplateGridItem extends IGridItem {
+  type: 'template';
+  template: IReminderTemplate;
+  groupUuid?: string;
+}
+
+/**
+ * 提醒组网格项
+ */
+export interface IReminderGroupGridItem extends IGridItem {
+  type: 'group';
+  group: IReminderTemplateGroup;
+  templateCount: number;
+  activeTemplateCount: number;
+}
+
+/**
  * 网格项类型（提醒模板或提醒组）
  */
-export type GridItem = IReminderTemplate | IReminderTemplateGroup;
+export type GridItem = IReminderTemplateGridItem | IReminderGroupGridItem;
+
+/**
+ * 网格布局配置
+ */
+export interface GridLayoutConfig {
+  columns: number;
+  rows: number;
+  itemSize: number;
+  gap: number;
+  padding: number;
+}
+
+/**
+ * 右键菜单项
+ */
+export interface ContextMenuItem {
+  id: string;
+  label: string;
+  icon?: string;
+  disabled?: boolean;
+  divider?: boolean;
+  action?: () => void;
+  children?: ContextMenuItem[];
+}
 
 /**
  * 系统根组ID常量
  */
-export const SYSTEM_GROUP_ID = 'system-root';
+export const SYSTEM_ROOT_GROUP_ID = 'system-root';
+
+/**
+ * 默认网格配置
+ */
+export const DEFAULT_GRID_CONFIG: GridLayoutConfig = {
+  columns: 4,
+  rows: 8,
+  itemSize: 80,
+  gap: 12,
+  padding: 24,
+};

@@ -1,39 +1,11 @@
-import type { ReminderContracts } from '@dailyuse/contracts';
-import { AggregateRoot } from '@dailyuse/utils';
+import { ReminderInstanceCore } from '@dailyuse/domain-core';
+import { ReminderContracts } from '@dailyuse/contracts';
 
 /**
  * 提醒实例实体 - 客户端实现
+ * 继承核心 ReminderInstance 类，添加客户端特有功能
  */
-export class ReminderInstance extends AggregateRoot {
-  protected _uuid: string;
-  protected _templateUuid: string;
-  protected _title?: string;
-  protected _message: string;
-  protected _scheduledTime: Date;
-  protected _triggeredTime?: Date;
-  protected _acknowledgedTime?: Date;
-  protected _dismissedTime?: Date;
-  protected _snoozedUntil?: Date;
-  protected _status: ReminderContracts.ReminderStatus;
-  protected _priority: ReminderContracts.ReminderPriority;
-  protected _metadata: {
-    category: string;
-    tags: string[];
-    sourceType?: 'template' | 'task' | 'goal' | 'manual';
-    sourceId?: string;
-  };
-  protected _snoozeHistory: Array<{
-    snoozedAt: Date;
-    snoozeUntil: Date;
-    snoozeType?: ReminderContracts.SnoozeType;
-    customMinutes?: number;
-    reason?: string;
-  }>;
-  protected _currentSnoozeCount: number;
-  protected _createdAt: Date;
-  protected _updatedAt: Date;
-  protected _version: number;
-
+export class ReminderInstance extends ReminderInstanceCore {
   constructor(params: {
     uuid?: string;
     templateUuid: string;
@@ -59,135 +31,104 @@ export class ReminderInstance extends AggregateRoot {
       customMinutes?: number;
       reason?: string;
     }>;
-    currentSnoozeCount?: number;
     createdAt?: Date;
     updatedAt?: Date;
     version?: number;
   }) {
-    super(params.uuid || AggregateRoot.generateUUID());
-
-    this._uuid = params.uuid || AggregateRoot.generateUUID();
-    this._templateUuid = params.templateUuid;
-    this._title = params.title;
-    this._message = params.message;
-    this._scheduledTime = params.scheduledTime;
-    this._triggeredTime = params.triggeredTime;
-    this._acknowledgedTime = params.acknowledgedTime;
-    this._dismissedTime = params.dismissedTime;
-    this._snoozedUntil = params.snoozedUntil;
-    this._status = params.status;
-    this._priority = params.priority;
-    this._metadata = params.metadata;
-    this._snoozeHistory = params.snoozeHistory || [];
-    this._currentSnoozeCount = params.currentSnoozeCount || 0;
-    this._createdAt = params.createdAt || new Date();
-    this._updatedAt = params.updatedAt || new Date();
-    this._version = params.version || 1;
+    super(params);
   }
 
-  // ===== 业务方法 =====
+  // ===== 抽象方法实现 =====
 
   /**
-   * 更新提醒状态
+   * 克隆实例
    */
-  updateStatus(status: ReminderContracts.ReminderStatus, timestamp?: Date): void {
-    const now = timestamp || new Date();
-    this._status = status;
-    this._updatedAt = now;
+  clone(): ReminderInstance {
+    return ReminderInstance.fromDTO(this.toDTO());
+  }
 
-    switch (status) {
-      case 'triggered':
-        this._triggeredTime = now;
-        break;
-      case 'acknowledged':
-        this._acknowledgedTime = now;
-        break;
-      case 'dismissed':
-        this._dismissedTime = now;
-        break;
+  // ===== 客户端特有方法 =====
+
+  /**
+   * 获取状态颜色（UI相关）
+   */
+  get statusColor(): string {
+    switch (this.status) {
+      case ReminderContracts.ReminderStatus.PENDING:
+        return '#2196F3';
+      case ReminderContracts.ReminderStatus.TRIGGERED:
+        return '#FF9800';
+      case ReminderContracts.ReminderStatus.ACKNOWLEDGED:
+        return '#4CAF50';
+      case ReminderContracts.ReminderStatus.DISMISSED:
+        return '#9E9E9E';
+      case ReminderContracts.ReminderStatus.SNOOZED:
+        return '#9C27B0';
+      default:
+        return '#000000';
     }
-
-    this._version++;
   }
 
   /**
-   * 稍后提醒
+   * 获取状态文本
    */
-  snooze(snoozeUntil: Date, reason?: string): void {
-    this._snoozedUntil = snoozeUntil;
-    this._status = 'snoozed' as ReminderContracts.ReminderStatus;
-    this._currentSnoozeCount++;
-
-    this._snoozeHistory.push({
-      snoozedAt: new Date(),
-      snoozeUntil,
-      reason,
-    });
-
-    this._updatedAt = new Date();
-    this._version++;
+  get statusText(): string {
+    switch (this.status) {
+      case ReminderContracts.ReminderStatus.PENDING:
+        return '待触发';
+      case ReminderContracts.ReminderStatus.TRIGGERED:
+        return '已触发';
+      case ReminderContracts.ReminderStatus.ACKNOWLEDGED:
+        return '已确认';
+      case ReminderContracts.ReminderStatus.DISMISSED:
+        return '已忽略';
+      case ReminderContracts.ReminderStatus.SNOOZED:
+        return '已延后';
+      default:
+        return '未知';
+    }
   }
 
   /**
-   * 取消稍后提醒
+   * 获取优先级颜色
    */
-  cancelSnooze(): void {
-    this._snoozedUntil = undefined;
-    this._status = 'pending' as ReminderContracts.ReminderStatus;
-    this._updatedAt = new Date();
-    this._version++;
-  }
-
-  // ===== 计算属性 =====
-
-  get isOverdue(): boolean {
-    if (this._status !== 'pending') {
-      return false;
+  get priorityColor(): string {
+    switch (this.priority) {
+      case ReminderContracts.ReminderPriority.LOW:
+        return '#4CAF50';
+      case ReminderContracts.ReminderPriority.NORMAL:
+        return '#2196F3';
+      case ReminderContracts.ReminderPriority.HIGH:
+        return '#FF9800';
+      case ReminderContracts.ReminderPriority.URGENT:
+        return '#F44336';
+      default:
+        return '#000000';
     }
-    return new Date() > this._scheduledTime;
   }
 
-  get isSnoozed(): boolean {
-    return this._snoozedUntil ? new Date() < this._snoozedUntil : false;
+  /**
+   * 检查是否可以编辑
+   */
+  get canEdit(): boolean {
+    return this.status === ReminderContracts.ReminderStatus.PENDING;
   }
 
-  get shouldTrigger(): boolean {
-    if (this._status !== 'pending') {
-      return false;
-    }
-    if (this.isSnoozed) {
-      return false;
-    }
-    return new Date() >= this._scheduledTime;
+  /**
+   * 检查是否可以删除
+   */
+  get canDelete(): boolean {
+    return true; // 实例总是可以删除的
   }
 
-  get timeUntilScheduled(): number {
-    return this._scheduledTime.getTime() - Date.now();
+  /**
+   * 检查是否可以延后
+   */
+  get canSnooze(): boolean {
+    return this.status === ReminderContracts.ReminderStatus.TRIGGERED;
   }
 
   // ===== 序列化方法 =====
-
-  toDTO(): ReminderContracts.IReminderInstance {
-    return {
-      uuid: this._uuid,
-      templateUuid: this._templateUuid,
-      title: this._title,
-      message: this._message,
-      scheduledTime: this._scheduledTime,
-      triggeredTime: this._triggeredTime,
-      acknowledgedTime: this._acknowledgedTime,
-      dismissedTime: this._dismissedTime,
-      snoozedUntil: this._snoozedUntil,
-      status: this._status,
-      priority: this._priority,
-      metadata: this._metadata,
-      snoozeHistory: this._snoozeHistory,
-      currentSnoozeCount: this._currentSnoozeCount,
-      createdAt: this._createdAt,
-      updatedAt: this._updatedAt,
-      version: this._version,
-    };
-  }
 
   static fromDTO(dto: ReminderContracts.IReminderInstance): ReminderInstance {
     return new ReminderInstance({
@@ -203,8 +144,7 @@ export class ReminderInstance extends AggregateRoot {
       status: dto.status,
       priority: dto.priority,
       metadata: dto.metadata,
-      snoozeHistory: dto.snoozeHistory || [],
-      currentSnoozeCount: dto.currentSnoozeCount,
+      snoozeHistory: dto.snoozeHistory,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
       version: dto.version,
@@ -212,79 +152,69 @@ export class ReminderInstance extends AggregateRoot {
   }
 
   /**
-   * 克隆当前对象（深拷贝）
+   * 转换为 API 响应格式
    */
-  clone(): ReminderInstance {
-    return ReminderInstance.fromDTO(this.toDTO());
+  toApiResponse(): ReminderContracts.ReminderInstanceResponse {
+    const dto = this.toDTO();
+    return {
+      ...dto,
+      scheduledTime: dto.scheduledTime.toISOString(),
+      triggeredTime: dto.triggeredTime?.toISOString(),
+      acknowledgedTime: dto.acknowledgedTime?.toISOString(),
+      dismissedTime: dto.dismissedTime?.toISOString(),
+      snoozedUntil: dto.snoozedUntil?.toISOString(),
+      snoozeHistory: dto.snoozeHistory.map((item) => ({
+        ...item,
+        snoozedAt: item.snoozedAt.toISOString(),
+        snoozeUntil: item.snoozeUntil.toISOString(),
+      })),
+    };
   }
 
-  // ===== Getters =====
-
-  get uuid(): string {
-    return this._uuid;
+  /**
+   * 从 API 响应创建实例
+   */
+  static fromResponse(response: any): ReminderInstance {
+    return new ReminderInstance({
+      uuid: response.uuid,
+      templateUuid: response.templateUuid,
+      title: response.title,
+      message: response.message,
+      scheduledTime: response.scheduledTime ? new Date(response.scheduledTime) : new Date(),
+      triggeredTime: response.triggeredTime ? new Date(response.triggeredTime) : undefined,
+      acknowledgedTime: response.acknowledgedTime ? new Date(response.acknowledgedTime) : undefined,
+      dismissedTime: response.dismissedTime ? new Date(response.dismissedTime) : undefined,
+      snoozedUntil: response.snoozedUntil ? new Date(response.snoozedUntil) : undefined,
+      status: response.status,
+      priority: response.priority,
+      metadata: response.metadata,
+      snoozeHistory: response.snoozeHistory || [],
+      createdAt: response.createdAt ? new Date(response.createdAt) : new Date(),
+      updatedAt: response.updatedAt ? new Date(response.updatedAt) : new Date(),
+      version: response.version,
+    });
   }
 
-  get templateUuid(): string {
-    return this._templateUuid;
-  }
-
-  get title(): string | undefined {
-    return this._title;
-  }
-
-  get message(): string {
-    return this._message;
-  }
-
-  get scheduledTime(): Date {
-    return this._scheduledTime;
-  }
-
-  get triggeredTime(): Date | undefined {
-    return this._triggeredTime;
-  }
-
-  get acknowledgedTime(): Date | undefined {
-    return this._acknowledgedTime;
-  }
-
-  get dismissedTime(): Date | undefined {
-    return this._dismissedTime;
-  }
-
-  get snoozedUntil(): Date | undefined {
-    return this._snoozedUntil;
-  }
-
-  get status(): ReminderContracts.ReminderStatus {
-    return this._status;
-  }
-
-  get priority(): ReminderContracts.ReminderPriority {
-    return this._priority;
-  }
-
-  get metadata(): typeof this._metadata {
-    return this._metadata;
-  }
-
-  get snoozeHistory(): typeof this._snoozeHistory {
-    return this._snoozeHistory;
-  }
-
-  get currentSnoozeCount(): number {
-    return this._currentSnoozeCount;
-  }
-
-  get createdAt(): Date {
-    return this._createdAt;
-  }
-
-  get updatedAt(): Date {
-    return this._updatedAt;
-  }
-
-  get version(): number {
-    return this._version;
+  /**
+   * 创建一个空的实例（用于新建表单）
+   */
+  static forCreate(templateUuid: string): ReminderInstance {
+    const now = new Date();
+    return new ReminderInstance({
+      templateUuid,
+      message: '',
+      scheduledTime: now,
+      status: ReminderContracts.ReminderStatus.PENDING,
+      priority: ReminderContracts.ReminderPriority.NORMAL,
+      metadata: {
+        category: '',
+        tags: [],
+        sourceType: 'template',
+        sourceId: templateUuid,
+      },
+      snoozeHistory: [],
+      createdAt: now,
+      updatedAt: now,
+    });
   }
 }

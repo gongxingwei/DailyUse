@@ -1,5 +1,5 @@
 import type { ReminderContracts } from '@dailyuse/contracts';
-import { ReminderDomainService } from '../../domain/index.js';
+import { ReminderDomainService } from '../../domain/services/ReminderDomainService';
 
 type CreateReminderTemplateRequest = ReminderContracts.CreateReminderTemplateRequest;
 type UpdateReminderTemplateRequest = ReminderContracts.UpdateReminderTemplateRequest;
@@ -15,6 +15,81 @@ export class ReminderApplicationService {
   constructor() {
     this.reminderDomainService = new ReminderDomainService();
   }
+
+  // ========== 应用层协调逻辑 ==========
+
+  /**
+   * 创建提醒模板并执行应用层业务逻辑
+   */
+  async createTemplateWithValidation(
+    request: CreateReminderTemplateRequest,
+    accountUuid: string,
+  ): Promise<ReminderTemplateResponse> {
+    // 应用层验证
+    if (!request.name?.trim()) {
+      throw new Error('提醒模板名称不能为空');
+    }
+
+    if (!request.message?.trim()) {
+      throw new Error('提醒消息不能为空');
+    }
+
+    // 调用领域服务
+    const template = await this.reminderDomainService.createReminderTemplate(accountUuid, request);
+
+    // 执行应用层后置处理（如发送事件、记录日志等）
+    console.log(`Created reminder template: ${template.uuid} for account: ${accountUuid}`);
+
+    const result = await this.reminderDomainService.getTemplateById(template.uuid);
+    if (!result) {
+      throw new Error('创建的模板无法找到');
+    }
+
+    return result;
+  }
+
+  /**
+   * 更新提醒模板并执行应用层业务逻辑
+   */
+  async updateTemplateWithValidation(
+    id: string,
+    request: UpdateReminderTemplateRequest,
+  ): Promise<ReminderTemplateResponse> {
+    // 应用层验证
+    const existingTemplate = await this.reminderDomainService.getTemplateById(id);
+    if (!existingTemplate) {
+      throw new Error('提醒模板不存在');
+    }
+
+    // 调用领域服务
+    const updatedTemplate = await this.reminderDomainService.updateTemplate(id, request);
+
+    // 执行应用层后置处理
+    console.log(`Updated reminder template: ${id}`);
+
+    return updatedTemplate;
+  }
+
+  /**
+   * 删除提醒模板并清理相关数据
+   */
+  async deleteTemplateWithCleanup(id: string): Promise<void> {
+    // 检查是否可以删除
+    const template = await this.reminderDomainService.getTemplateById(id);
+    if (!template) {
+      throw new Error('提醒模板不存在');
+    }
+
+    // TODO: 检查是否有依赖的实例
+
+    // 调用领域服务
+    await this.reminderDomainService.deleteTemplate(id);
+
+    // 应用层清理逻辑
+    console.log(`Deleted reminder template: ${id} and cleaned up related data`);
+  }
+
+  // ========== 直接委托给领域服务的方法 ==========
 
   // 提醒模板相关方法
   async createTemplate(request: CreateReminderTemplateRequest): Promise<ReminderTemplateResponse> {
@@ -33,11 +108,11 @@ export class ReminderApplicationService {
     id: string,
     request: UpdateReminderTemplateRequest,
   ): Promise<ReminderTemplateResponse> {
-    return this.reminderDomainService.updateTemplate(id, request);
+    return this.updateTemplateWithValidation(id, request);
   }
 
   async deleteTemplate(id: string): Promise<void> {
-    return this.reminderDomainService.deleteTemplate(id);
+    return this.deleteTemplateWithCleanup(id);
   }
 
   async activateTemplate(id: string): Promise<ReminderTemplateResponse> {
@@ -134,5 +209,88 @@ export class ReminderApplicationService {
   // 统计方法
   async getReminderStats(queryParams: any): Promise<any> {
     return this.reminderDomainService.getReminderStats(queryParams);
+  }
+
+  // ===== 分组管理方法 =====
+
+  /**
+   * 创建提醒模板分组并执行应用层业务逻辑
+   */
+  async createReminderTemplateGroupWithValidation(accountUuid: string, request: any): Promise<any> {
+    // 应用层业务逻辑：验证输入
+    if (!request.name?.trim()) {
+      throw new Error('分组名称不能为空');
+    }
+
+    if (request.name.length < 2) {
+      throw new Error('分组名称至少需要2个字符');
+    }
+
+    return this.reminderDomainService.createReminderTemplateGroup(accountUuid, request);
+  }
+
+  /**
+   * 更新提醒模板分组并执行应用层业务逻辑
+   */
+  async updateReminderTemplateGroupWithValidation(groupUuid: string, request: any): Promise<any> {
+    // 应用层业务逻辑：验证输入
+    if (request.name && !request.name.trim()) {
+      throw new Error('分组名称不能为空');
+    }
+
+    if (request.name && request.name.length < 2) {
+      throw new Error('分组名称至少需要2个字符');
+    }
+
+    return this.reminderDomainService.updateReminderTemplateGroup(groupUuid, request);
+  }
+
+  /**
+   * 删除提醒模板分组并清理相关数据
+   */
+  async deleteReminderTemplateGroupWithCleanup(groupUuid: string): Promise<void> {
+    // 应用层业务逻辑：检查是否有子分组或模板
+    const group = await this.reminderDomainService.getReminderTemplateGroup(groupUuid);
+    if (!group) {
+      throw new Error('分组不存在');
+    }
+
+    // 如果有子分组，需要先处理
+    if (group.children && group.children.length > 0) {
+      throw new Error('请先删除子分组');
+    }
+
+    // 如果有模板，需要先处理
+    if (group.templates && group.templates.length > 0) {
+      throw new Error('请先删除或移动分组内的模板');
+    }
+
+    return this.reminderDomainService.deleteReminderTemplateGroup(groupUuid);
+  }
+
+  // ========== 直接委托给领域服务的分组方法 ==========
+
+  async createReminderTemplateGroup(accountUuid: string, request: any): Promise<any> {
+    return this.reminderDomainService.createReminderTemplateGroup(accountUuid, request);
+  }
+
+  async getReminderTemplateGroups(accountUuid: string): Promise<any[]> {
+    return this.reminderDomainService.getReminderTemplateGroupsByAccount(accountUuid);
+  }
+
+  async getReminderTemplateGroupById(groupUuid: string): Promise<any | null> {
+    return this.reminderDomainService.getReminderTemplateGroup(groupUuid);
+  }
+
+  async updateReminderTemplateGroup(groupUuid: string, request: any): Promise<any> {
+    return this.reminderDomainService.updateReminderTemplateGroup(groupUuid, request);
+  }
+
+  async deleteReminderTemplateGroup(groupUuid: string): Promise<void> {
+    return this.reminderDomainService.deleteReminderTemplateGroup(groupUuid);
+  }
+
+  async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
+    return this.reminderDomainService.toggleReminderTemplateGroupEnabled(groupUuid, enabled);
   }
 }

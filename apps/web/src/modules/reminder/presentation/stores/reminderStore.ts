@@ -60,6 +60,11 @@ export const useReminderStore = defineStore('reminder', () => {
   const getAllReminderGroups = computed(() => reminderGroups.value);
 
   /**
+   * 获取所有提醒模板分组 (别名)
+   */
+  const reminderTemplateGroups = computed(() => reminderGroups.value);
+
+  /**
    * 获取所有提醒实例
    */
   const getAllReminderInstances = computed(() => reminderInstances.value);
@@ -186,9 +191,28 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
+   * 设置提醒模板分组列表 (别名方法，兼容ReminderWebApplicationService)
+   */
+  const setReminderTemplateGroups = (groups: ReminderTemplateGroup[]) => {
+    reminderGroups.value = groups;
+  };
+
+  /**
    * 添加或更新提醒分组
    */
   const addOrUpdateReminderGroup = (group: ReminderTemplateGroup) => {
+    const index = reminderGroups.value.findIndex((g) => g.uuid === group.uuid);
+    if (index >= 0) {
+      reminderGroups.value[index] = group;
+    } else {
+      reminderGroups.value.push(group);
+    }
+  };
+
+  /**
+   * 添加或更新提醒模板分组 (别名方法，兼容ReminderWebApplicationService)
+   */
+  const addOrUpdateReminderTemplateGroup = (group: ReminderTemplateGroup) => {
     const index = reminderGroups.value.findIndex((g) => g.uuid === group.uuid);
     if (index >= 0) {
       reminderGroups.value[index] = group;
@@ -208,9 +232,26 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
+   * 删除提醒模板分组 (别名方法，兼容ReminderWebApplicationService)
+   */
+  const removeReminderTemplateGroup = (uuid: string) => {
+    const index = reminderGroups.value.findIndex((g) => g.uuid === uuid);
+    if (index >= 0) {
+      reminderGroups.value.splice(index, 1);
+    }
+  };
+
+  /**
    * 根据UUID获取提醒分组
    */
   const getReminderGroupByUuid = (uuid: string): ReminderTemplateGroup | null => {
+    return reminderGroups.value.find((g) => g.uuid === uuid) || null;
+  };
+
+  /**
+   * 根据UUID获取提醒模板分组 (别名方法，兼容ReminderWebApplicationService)
+   */
+  const getReminderTemplateGroupByUuid = (uuid: string): ReminderTemplateGroup | null => {
     return reminderGroups.value.find((g) => g.uuid === uuid) || null;
   };
 
@@ -325,6 +366,7 @@ export const useReminderStore = defineStore('reminder', () => {
     // 状态
     reminderTemplates: getAllReminderTemplates,
     reminderGroups: getAllReminderGroups,
+    reminderTemplateGroups, // 添加这个别名
     reminderInstances: getAllReminderInstances,
     selectedTemplate,
     selectedGroup,
@@ -352,9 +394,13 @@ export const useReminderStore = defineStore('reminder', () => {
 
     // 提醒分组操作
     setReminderGroups,
+    setReminderTemplateGroups,
     addOrUpdateReminderGroup,
+    addOrUpdateReminderTemplateGroup,
     removeReminderGroup,
+    removeReminderTemplateGroup,
     getReminderGroupByUuid,
+    getReminderTemplateGroupByUuid,
     setSelectedGroup,
 
     // 提醒实例操作

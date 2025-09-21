@@ -75,10 +75,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue';
-import { ReminderTemplate } from '@renderer/modules/Reminder/domain/entities/reminderTemplate';
-import { ImportanceLevel } from '@dailyuse/contracts';
-import { RecurrenceRuleHelper } from '@renderer/shared/utils/recurrenceRuleHelpre';
+import { ref, watch, computed } from 'vue'
+import { ReminderTemplate } from '@dailyuse/domain-client'
+import { ImportanceLevel } from '@dailyuse/contracts'
+// TODO: 实现RecurrenceRuleHelper
+// import { RecurrenceRuleHelper } from '@renderer/shared/utils/recurrenceRuleHelpre'
 
 // =====================
 // Props & Emits

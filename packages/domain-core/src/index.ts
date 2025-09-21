@@ -37,7 +37,7 @@ export * from './repository/entities/Resource';
 export * from './editor/aggregates/EditorCore';
 
 // Reminder domain exports
-export * from './reminder/aggregates/ReminderCore';
+export * from './reminder';
 
 // Setting domain exports
 export * from './setting/SettingCore';

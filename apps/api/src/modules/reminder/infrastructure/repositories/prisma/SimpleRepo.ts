@@ -1,0 +1,42 @@
+import type { PrismaClient } from '@prisma/client';
+
+export class PrismaReminderAggregateRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async getAggregatesByAccountUuid(accountUuid: string): Promise<any[]> {
+    try {
+      const templates = await this.prisma.reminderTemplate.findMany({
+        where: { accountUuid },
+        include: {
+          instances: true,
+          schedules: true,
+          group: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return templates.map((template) => ({
+        uuid: template.uuid,
+        accountUuid: template.accountUuid,
+        name: template.name,
+        description: template.description,
+        message: template.message,
+        enabled: template.enabled,
+        priority: template.priority,
+        category: template.category,
+        tags: template.tags ? JSON.parse(template.tags) : [],
+        groupUuid: template.groupUuid,
+        version: template.version || 1,
+        createdAt: template.createdAt,
+        updatedAt: template.updatedAt,
+        instances: template.instances || [],
+        schedules: template.schedules || [],
+      }));
+    } catch (error) {
+      console.error('获取聚合根列表错误:', error);
+      throw new Error(
+        `获取账户聚合根列表失败: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+}

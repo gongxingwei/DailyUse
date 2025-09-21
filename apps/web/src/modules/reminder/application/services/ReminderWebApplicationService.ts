@@ -1,36 +1,5 @@
 import type { ReminderContracts } from '@dailyuse/contracts';
-// 暂时使用临时类型定义，等待domain-client中的实现
-interface ReminderTemplate {
-  uuid: string;
-  enabled: boolean;
-  groupUuid?: string;
-  priority: string;
-  toDTO(): any;
-}
-
-interface ReminderTemplateGroup {
-  uuid: string;
-}
-
-interface ReminderInstance {
-  uuid: string;
-  templateUuid: string;
-  status: string;
-  toDTO(): any;
-}
-
-// 临时从响应构建实体的方法
-const ReminderTemplate = {
-  fromResponse: (data: any): ReminderTemplate => data as ReminderTemplate,
-};
-
-const ReminderTemplateGroup = {
-  fromResponse: (data: any): ReminderTemplateGroup => data as ReminderTemplateGroup,
-};
-
-const ReminderInstance = {
-  fromResponse: (data: any): ReminderInstance => data as ReminderInstance,
-};
+import { ReminderTemplate, ReminderTemplateGroup, ReminderInstance } from '@dailyuse/domain-client';
 
 import { reminderApiClient } from '../../infrastructure/api/reminderApiClient';
 import { useReminderStore } from '../../presentation/stores/reminderStore';
@@ -67,7 +36,7 @@ export class ReminderWebApplicationService {
       const templateData = await reminderApiClient.createReminderTemplate(request);
 
       // 创建客户端实体并同步到 store
-      const template = ReminderTemplate.fromResponse(templateData);
+      const template = ReminderTemplate.fromApiResponse(templateData);
       this.reminderStore.addOrUpdateReminderTemplate(template);
 
       this.snackbar.showSuccess('提醒模板创建成功');
@@ -92,28 +61,23 @@ export class ReminderWebApplicationService {
     enabled?: boolean;
     priority?: ReminderContracts.ReminderPriority;
     forceRefresh?: boolean;
-  }): Promise<ReminderContracts.ReminderListResponse> {
+  }): Promise<void> {
     try {
-      // 缓存优先策略：如果已有数据且不强制刷新，直接返回缓存
+      // 缓存优先策略：如果已有数据且不强制刷新，直接返回
       if (!params?.forceRefresh && this.reminderStore.reminderTemplates.length > 0) {
-        return {
-          reminders: this.reminderStore.reminderTemplates.map((t) => t.toDTO()),
-          total: this.reminderStore.reminderTemplates.length,
-          page: 1,
-          limit: this.reminderStore.reminderTemplates.length,
-        };
+        return;
       }
 
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
 
-      const templatesData = await reminderApiClient.getReminderTemplates(params);
+      const templatesResponse = await reminderApiClient.getReminderTemplates(params);
 
-      // 转换为客户端实体并更新 store
-      const templates = templatesData.reminders.map((data) => ReminderTemplate.fromResponse(data));
+      // templatesResponse 已经是模板数组，直接转换为客户端实体
+      const templates = (Array.isArray(templatesResponse) ? templatesResponse : []).map(
+        (data: any) => ReminderTemplate.fromApiResponse(data),
+      );
       this.reminderStore.setReminderTemplates(templates);
-
-      return templatesData;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取提醒模板失败';
       this.reminderStore.setError(errorMessage);
@@ -134,7 +98,7 @@ export class ReminderWebApplicationService {
       // 优先从 store 获取
       const cachedTemplate = this.reminderStore.getReminderTemplateByUuid(uuid);
       if (cachedTemplate) {
-        return cachedTemplate.toDTO();
+        return cachedTemplate.toApiResponse();
       }
 
       this.reminderStore.setLoading(true);
@@ -143,7 +107,7 @@ export class ReminderWebApplicationService {
       const templateData = await reminderApiClient.getReminderTemplate(uuid);
 
       // 转换为客户端实体并更新 store
-      const template = ReminderTemplate.fromResponse(templateData);
+      const template = ReminderTemplate.fromApiResponse(templateData);
       this.reminderStore.addOrUpdateReminderTemplate(template);
 
       return templateData;
@@ -171,7 +135,7 @@ export class ReminderWebApplicationService {
       const templateData = await reminderApiClient.updateReminderTemplate(uuid, request);
 
       // 转换为客户端实体并更新 store
-      const template = ReminderTemplate.fromResponse(templateData);
+      const template = ReminderTemplate.fromApiResponse(templateData);
       this.reminderStore.addOrUpdateReminderTemplate(template);
 
       this.snackbar.showSuccess('提醒模板更新成功');
@@ -263,10 +227,11 @@ export class ReminderWebApplicationService {
         const cachedInstances = this.reminderStore.getReminderInstancesByTemplate(templateUuid);
         if (cachedInstances.length > 0) {
           return {
-            reminders: cachedInstances.map((i) => i.toDTO()),
+            reminders: cachedInstances.map((i) => i.toApiResponse()),
             total: cachedInstances.length,
             page: 1,
             limit: cachedInstances.length,
+            hasMore: false,
           };
         }
       }
@@ -469,5 +434,177 @@ export class ReminderWebApplicationService {
    */
   clearCache(): void {
     this.reminderStore.clearAll();
+  }
+
+  // ===== 分组管理操作 =====
+
+  /**
+   * 创建提醒模板分组
+   */
+  async createReminderTemplateGroup(
+    request: ReminderContracts.CreateReminderTemplateGroupRequest,
+  ): Promise<ReminderTemplateGroup> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const groupData = await reminderApiClient.createReminderTemplateGroup(request);
+
+      // 根据axios响应封装系统，groupData 已经是解包后的响应数据
+      // 使用 fromResponse 方法处理 API 响应数据
+      const group = ReminderTemplateGroup.fromResponse(groupData);
+      this.reminderStore.addOrUpdateReminderTemplateGroup(group);
+
+      this.snackbar.showSuccess('提醒分组创建成功');
+      return group;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '创建提醒分组失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 获取提醒模板分组列表
+   */
+  async getReminderTemplateGroups(params?: {
+    forceRefresh?: boolean;
+  }): Promise<ReminderTemplateGroup[]> {
+    try {
+      // 缓存优先策略：如果已有数据且不强制刷新，直接返回缓存
+      if (!params?.forceRefresh && this.reminderStore.reminderTemplateGroups.length > 0) {
+        return this.reminderStore.reminderTemplateGroups;
+      }
+
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const groupsData = await reminderApiClient.getReminderTemplateGroups();
+
+      // 转换为客户端实体并更新 store
+      const groups = groupsData.map((data: any) => ReminderTemplateGroup.fromResponse(data));
+      this.reminderStore.setReminderTemplateGroups(groups);
+
+      return groups;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取提醒分组失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 获取提醒模板分组详情
+   */
+  async getReminderTemplateGroup(groupUuid: string): Promise<any | null> {
+    try {
+      // 优先从 store 获取
+      const cachedGroup = this.reminderStore.getReminderTemplateGroupByUuid(groupUuid);
+      if (cachedGroup) {
+        return cachedGroup;
+      }
+
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const groupData = await reminderApiClient.getReminderTemplateGroup(groupUuid);
+
+      // 根据axios响应封装系统，groupData 已经是解包后的响应数据
+      const group = ReminderTemplateGroup.fromResponse(groupData);
+      this.reminderStore.addOrUpdateReminderTemplateGroup(group);
+
+      return group;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取提醒分组详情失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 更新提醒模板分组
+   */
+  async updateReminderTemplateGroup(groupUuid: string, request: any): Promise<any> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const groupData = await reminderApiClient.updateReminderTemplateGroup(groupUuid, request);
+
+      // 转换为客户端实体并更新 store
+      const group = ReminderTemplateGroup.fromResponse(groupData);
+      this.reminderStore.addOrUpdateReminderTemplateGroup(group);
+
+      this.snackbar.showSuccess('提醒分组更新成功');
+      return group;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '更新提醒分组失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 删除提醒模板分组
+   */
+  async deleteReminderTemplateGroup(groupUuid: string): Promise<void> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      await reminderApiClient.deleteReminderTemplateGroup(groupUuid);
+
+      // 从 store 中移除
+      this.reminderStore.removeReminderTemplateGroup(groupUuid);
+
+      this.snackbar.showSuccess('提醒分组删除成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '删除提醒分组失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 切换分组启用状态
+   */
+  async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      await reminderApiClient.toggleReminderTemplateGroupEnabled(groupUuid, enabled);
+
+      // 更新 store 中的状态
+      const group = this.reminderStore.getReminderTemplateGroupByUuid(groupUuid);
+      if (group) {
+        group.toggleEnabled(enabled);
+        this.reminderStore.addOrUpdateReminderTemplateGroup(group);
+      }
+
+      this.snackbar.showSuccess(`分组${enabled ? '启用' : '禁用'}成功`);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '切换分组状态失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
   }
 }
