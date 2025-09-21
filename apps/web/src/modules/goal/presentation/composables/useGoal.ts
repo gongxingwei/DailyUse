@@ -2,7 +2,7 @@ import { ref, computed, reactive } from 'vue';
 import type { GoalContracts } from '@dailyuse/contracts';
 import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { GoalWebApplicationService } from '../../application/services/GoalWebApplicationService';
-import { useGoalStore } from '../stores/goalStore';
+import { getGoalStore } from '../stores/goalStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 
 /**
@@ -11,7 +11,7 @@ import { useSnackbar } from '../../../../shared/composables/useSnackbar';
  */
 export function useGoal() {
   const goalService = new GoalWebApplicationService();
-  const goalStore = useGoalStore();
+  const goalStore = getGoalStore();
   const snackbar = useSnackbar();
 
   // ===== 响应式状态 =====

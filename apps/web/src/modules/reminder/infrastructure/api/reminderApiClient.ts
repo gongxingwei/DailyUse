@@ -49,6 +49,15 @@ class ReminderApiClient {
   }
 
   /**
+   * 移动提醒模板到指定分组
+   */
+  async moveTemplateToGroup(templateUuid: string, targetGroupUuid: string): Promise<void> {
+    await apiClient.patch(`${this.baseUrl}/${templateUuid}/move`, {
+      targetGroupUuid,
+    });
+  }
+
+  /**
    * 获取提醒模板列表
    */
   async getReminderTemplates(params?: {

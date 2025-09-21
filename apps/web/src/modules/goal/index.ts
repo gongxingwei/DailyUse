@@ -19,7 +19,7 @@ export function getGoalWebService(): GoalWebApplicationService {
 
 // 导出类型和服务
 export { GoalWebApplicationService } from './application/services/GoalWebApplicationService';
-export { useGoalStore } from './presentation/stores/goalStore';
+export { useGoalStore, getGoalStore } from './presentation/stores/goalStore';
 export { useGoal } from './presentation/composables/useGoal';
 
 // 导出初始化相关

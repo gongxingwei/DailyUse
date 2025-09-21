@@ -1,7 +1,7 @@
 import type { GoalContracts } from '@dailyuse/contracts';
 import { Goal, GoalDir } from '@dailyuse/domain-client';
 import { goalApiClient, goalDirApiClient } from '../../infrastructure/api/goalApiClient';
-import { useGoalStore } from '../../presentation/stores/goalStore';
+import { getGoalStore } from '../../presentation/stores/goalStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 
 /**
@@ -17,7 +17,7 @@ export class GoalWebApplicationService {
    * 避免在 Pinia 初始化之前调用
    */
   private get goalStore() {
-    return useGoalStore();
+    return getGoalStore();
   }
 
   // ===== Goal CRUD 操作 =====

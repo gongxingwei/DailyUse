@@ -1,7 +1,7 @@
 import { ref, computed } from 'vue';
 import type { ReminderTemplate, ReminderTemplateGroup } from '@dailyuse/domain-client';
 import type { ReminderContracts } from '@dailyuse/contracts';
-import { ReminderWebApplicationService } from '../application/services/ReminderWebApplicationService';
+import { getReminderService } from '../application/services/ReminderWebApplicationService';
 import { useReminderStore } from '../presentation/stores/reminderStore';
 
 /**
@@ -9,8 +9,8 @@ import { useReminderStore } from '../presentation/stores/reminderStore';
  * 提供完整的聚合根式CRUD操作
  */
 export const useReminder = () => {
-  // 应用服务实例
-  const reminderService = new ReminderWebApplicationService();
+  // 应用服务实例 - 懒加载
+  const reminderService = getReminderService();
   const reminderStore = useReminderStore();
 
   // 响应式状态

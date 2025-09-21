@@ -30,7 +30,7 @@ interface GoalStoreState {
  * 职责：缓存目标和目录数据，提供响应式查询接口
  */
 export const useGoalStore = defineStore('goal', {
-  state: () => ({
+  state: (): GoalStoreState => ({
     // ===== 缓存数据 =====
     goals: [] as any[], // 暂时使用 any 避免类型冲突
     goalDirs: [] as any[], // 暂时使用 any 避免类型冲突
@@ -292,6 +292,24 @@ export const useGoalStore = defineStore('goal', {
     // ===== 检查方法 =====
 
     /**
+     * 获取目录树结构
+     */
+    getGoalDirTree(): any[] {
+      // 构建目录树
+      const buildTree = (parentUuid?: string): any[] => {
+        return this.goalDirs
+          .filter((dir) => dir.parentUuid === parentUuid)
+          .map((dir) => ({
+            ...dir,
+            children: buildTree(dir.uuid),
+            goals: this.goals.filter((goal) => goal.dirUuid === dir.uuid),
+          }));
+      };
+
+      return buildTree();
+    },
+
+    /**
      * 检查是否为系统目录
      */
     isSystemGoalDir(): (dirUuid: string) => boolean {
@@ -521,7 +539,7 @@ export const useGoalStore = defineStore('goal', {
       'selectedDirUuid',
       'lastSyncTime',
       'isInitialized',
-    ] as any,
+    ],
     // 自定义序列化器，确保实体类的正确序列化
     serializer: {
       serialize: (state: any) => {
@@ -551,4 +569,50 @@ export const useGoalStore = defineStore('goal', {
   },
 });
 
+// 导出 store 类型
 export type GoalStore = ReturnType<typeof useGoalStore>;
+
+// 明确的类型导出，确保 TypeScript 能正确推断 actions
+export interface GoalStoreActions {
+  setLoading: (loading: boolean) => void;
+  setError: (error: string | null) => void;
+  setInitialized: (initialized: boolean) => void;
+  setGoals: (goals: any[]) => void;
+  addOrUpdateGoal: (goal: any) => void;
+  addOrUpdateGoals: (goals: any[]) => void;
+  removeGoal: (uuid: string) => void;
+  clearGoals: () => void;
+  setGoalDirs: (goalDirs: any[]) => void;
+  addOrUpdateGoalDir: (goalDir: any) => void;
+  addOrUpdateGoalDirs: (goalDirs: any[]) => void;
+  removeGoalDir: (uuid: string) => void;
+  clearGoalDirs: () => void;
+  setPagination: (
+    pagination: Partial<{
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    }>,
+  ) => void;
+  setFilters: (
+    filters: Partial<{
+      status: 'all' | 'active' | 'completed' | 'paused' | 'archived';
+      dirUuid: string | undefined;
+      searchQuery: string;
+    }>,
+  ) => void;
+  setSelectedGoal: (uuid: string | null) => void;
+  setSelectedGoalDir: (uuid: string | null) => void;
+  resetFilters: () => void;
+  clearAll: () => void;
+  initialize: () => void;
+  shouldRefreshCache: () => boolean;
+  // Getters
+  getGoalDirTree: any[];
+}
+
+// 创建一个类型安全的 store 获取器
+export function getGoalStore(): GoalStore & GoalStoreActions {
+  return useGoalStore() as GoalStore & GoalStoreActions;
+}

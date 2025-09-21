@@ -37,7 +37,7 @@
                 <v-btn icon size="large" @click="templateDialogRef?.openDialog()" class="dock-btn">
                     <v-icon>mdi-plus</v-icon>
                 </v-btn>
-                <v-btn icon size="large" @click="groupDialogRef?.openDialog()" class="dock-btn">
+                <v-btn icon size="large" @click="openGroupView()" class="dock-btn">
                     <v-icon>mdi-folder-plus</v-icon>
                 </v-btn>
                 <v-btn icon size="large" @click="refresh" :loading="isLoading" class="dock-btn">
@@ -47,17 +47,15 @@
         </div>
 
         <!-- 右键菜单 -->
-        <v-menu v-model="contextMenu.show"
-            :style="`left: ${contextMenu.x}px; top: ${contextMenu.y}px; position: fixed;`" absolute>
-            <v-list>
-                <v-list-item v-for="item in contextMenu.items" :key="item.title" @click="item.action">
-                    <template #prepend>
-                        <v-icon>{{ item.icon }}</v-icon>
-                    </template>
-                    <v-list-item-title>{{ item.title }}</v-list-item-title>
-                </v-list-item>
-            </v-list>
-        </v-menu>
+        <div v-if="contextMenu.show" class="context-menu-overlay" @click="contextMenu.show = false"
+            @contextmenu.prevent="contextMenu.show = false">
+            <div class="context-menu" :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }">
+                <div v-for="item in contextMenu.items" :key="item.title" class="context-menu-item" @click="item.action">
+                    <v-icon class="mr-2" size="small">{{ item.icon }}</v-icon>
+                    {{ item.title }}
+                </div>
+            </div>
+        </div>
 
         <!-- 确认删除对话框 -->
         <v-dialog v-model="deleteDialog.show" max-width="400">
@@ -90,6 +88,15 @@
             @template-updated="handleTemplateUpdated" />
         <SimpleGroupDialog ref="groupDialogRef" @group-created="handleGroupCreated"
             @group-updated="handleGroupUpdated" />
+        <TemplateMoveDialog v-model="moveDialog.show" :template="moveDialog.template" @moved="handleTemplateMoved"
+            @closed="moveDialog.show = false" />
+
+        <!-- 模板卡片组件 -->
+        <!-- TemplateCard 组件 -->
+        <TemplateCard ref="templateCardRef" />
+
+        <!-- GroupDialog 组件 -->
+        <GroupDialog ref="groupDialogRef" />
     </v-container>
 </template>
 
@@ -99,12 +106,16 @@ import { ref, computed, onMounted, reactive } from 'vue'
 // 组件导入
 import SimpleTemplateDialog from '../components/dialogs/SimpleTemplateDialog.vue'
 import SimpleGroupDialog from '../components/dialogs/SimpleGroupDialog.vue'
+import TemplateMoveDialog from '../components/dialogs/TemplateMoveDialog.vue'
+import TemplateCard from '../components/cards/TemplateCard.vue'
+import GroupDialog from '../components/GroupDialog.vue'
 
 // Composables
 import { useReminder } from '../composables/useReminder'
+import { useSnackbar } from '@/shared/composables/useSnackbar'
 
 // 应用服务
-import { ReminderWebApplicationService } from '../../application/services/ReminderWebApplicationService'
+import { getReminderService } from '../../application/services/ReminderWebApplicationService'
 
 // 类型导入 - 使用 domain-client 实体
 import type { ReminderTemplate, ReminderTemplateGroup } from '@dailyuse/domain-client'
@@ -119,9 +130,11 @@ const {
     deleteTemplate
 } = useReminder()
 
-// 直接使用应用服务获取分组数据
-const reminderService = new ReminderWebApplicationService()
-const reminderTemplateGroups = ref<ReminderTemplateGroup[]>([])
+const snackbar = useSnackbar()
+
+// 直接使用应用服务获取分组数据 - 懒加载
+const reminderService = getReminderService()
+const reminderTemplateGroups = ref<any[]>([])
 
 // 别名以保持兼容性
 const templates = computed(() => reminderTemplates.value)
@@ -151,7 +164,8 @@ const deleteGroup = async (uuid: string) => {
 
 // Dialog refs
 const templateDialogRef = ref<InstanceType<typeof SimpleTemplateDialog> | null>(null)
-const groupDialogRef = ref<InstanceType<typeof SimpleGroupDialog> | null>(null)
+const groupDialogRef = ref<InstanceType<typeof GroupDialog> | null>(null)
+const templateCardRef = ref<InstanceType<typeof TemplateCard> | null>(null)
 
 // 响应式数据
 const showError = ref(false)
@@ -176,14 +190,20 @@ const deleteDialog = reactive({
     name: ''
 })
 
+// 移动对话框状态
+const moveDialog = reactive({
+    show: false,
+    template: null as ReminderTemplate | null
+})
+
 // ===== 事件处理 =====
 
 /**
  * 处理模板点击
  */
 const handleTemplateClick = (template: ReminderTemplate) => {
-    // 打开模板详情或编辑
-    templateDialogRef.value?.openForEdit(template)
+    // 显示模板卡片而非编辑对话框
+    templateCardRef.value?.open(template)
 }
 
 /**
@@ -191,7 +211,23 @@ const handleTemplateClick = (template: ReminderTemplate) => {
  */
 const handleGroupClick = (group: ReminderTemplateGroup) => {
     // 打开分组详情或编辑
-    groupDialogRef.value?.openForEdit(group)
+    groupDialogRef.value?.open(group)
+}
+
+/**
+ * 打开组视图
+ */
+const openGroupView = (group?: ReminderTemplateGroup) => {
+    if (group) {
+        groupDialogRef.value?.open(group)
+    } else {
+        // 显示第一个组或提示选择组
+        if (reminderTemplateGroups.value.length > 0) {
+            groupDialogRef.value?.open(reminderTemplateGroups.value[0])
+        } else {
+            snackbar.showInfo('暂无可用的模板组')
+        }
+    }
 }
 
 /**
@@ -202,6 +238,14 @@ const handleTemplateContextMenu = (template: ReminderTemplate, event: MouseEvent
     contextMenu.y = event.clientY
     contextMenu.items = [
         {
+            title: '查看详情',
+            icon: 'mdi-information',
+            action: () => {
+                templateCardRef.value?.open(template)
+                contextMenu.show = false
+            }
+        },
+        {
             title: '编辑模板',
             icon: 'mdi-pencil',
             action: () => {
@@ -210,10 +254,34 @@ const handleTemplateContextMenu = (template: ReminderTemplate, event: MouseEvent
             }
         },
         {
+            title: '移动到分组',
+            icon: 'mdi-folder-move',
+            action: () => {
+                openMoveDialog(template)
+                contextMenu.show = false
+            }
+        },
+        {
+            title: '复制模板',
+            icon: 'mdi-content-copy',
+            action: () => {
+                duplicateTemplate(template)
+                contextMenu.show = false
+            }
+        },
+        {
             title: template.enabled ? '禁用' : '启用',
             icon: template.enabled ? 'mdi-pause' : 'mdi-play',
             action: () => {
                 toggleTemplateEnabled(template)
+                contextMenu.show = false
+            }
+        },
+        {
+            title: '测试模板',
+            icon: 'mdi-play-circle',
+            action: () => {
+                testTemplate(template)
                 contextMenu.show = false
             }
         },
@@ -237,10 +305,18 @@ const handleGroupContextMenu = (group: ReminderTemplateGroup, event: MouseEvent)
     contextMenu.y = event.clientY
     contextMenu.items = [
         {
+            title: '查看分组',
+            icon: 'mdi-folder-open',
+            action: () => {
+                showGroupTemplates(group)
+                contextMenu.show = false
+            }
+        },
+        {
             title: '编辑分组',
             icon: 'mdi-pencil',
             action: () => {
-                groupDialogRef.value?.openForEdit(group)
+                groupDialogRef.value?.open(group)
                 contextMenu.show = false
             }
         },
@@ -249,6 +325,14 @@ const handleGroupContextMenu = (group: ReminderTemplateGroup, event: MouseEvent)
             icon: 'mdi-plus',
             action: () => {
                 templateDialogRef.value?.openForCreate(group.uuid)
+                contextMenu.show = false
+            }
+        },
+        {
+            title: '复制分组',
+            icon: 'mdi-content-copy',
+            action: () => {
+                duplicateGroup(group)
                 contextMenu.show = false
             }
         },
@@ -283,7 +367,25 @@ const handleDesktopContextMenu = (event: MouseEvent) => {
             title: '新建分组',
             icon: 'mdi-folder-plus',
             action: () => {
-                groupDialogRef.value?.openDialog()
+                // GroupDialog 目前没有创建功能，使用现有对话框
+                templateDialogRef.value?.openDialog()
+                contextMenu.show = false
+            }
+        },
+        {
+            title: '刷新',
+            icon: 'mdi-refresh',
+            action: () => {
+                initialize()
+                contextMenu.show = false
+            }
+        },
+        {
+            title: '整理桌面',
+            icon: 'mdi-view-grid',
+            action: () => {
+                // TODO: 实现桌面整理功能
+                console.log('整理桌面')
                 contextMenu.show = false
             }
         }
@@ -308,10 +410,98 @@ const toggleTemplateEnabled = async (template: ReminderTemplate) => {
 }
 
 /**
+ * 复制模板
+ */
+const duplicateTemplate = async (template: ReminderTemplate) => {
+    try {
+        // 使用模板数据创建新模板请求
+        const createRequest = {
+            name: `${template.name} - 副本`,
+            message: template.message,
+            category: template.category,
+            priority: template.priority,
+            timeConfig: {
+                type: template.timeConfig.type === 'absolute' || template.timeConfig.type === 'relative'
+                    ? 'custom'
+                    : template.timeConfig.type,
+                times: template.timeConfig.times || [],
+                weekdays: template.timeConfig.weekdays,
+                monthDays: template.timeConfig.monthDays,
+                customPattern: template.timeConfig.customPattern
+            },
+            groupUuid: template.groupUuid,
+            tags: template.tags
+        }
+
+        // 调用应用服务创建新模板
+        await reminderService.createReminderTemplate(createRequest)
+        // 刷新数据
+        await initialize()
+        console.log('模板复制成功')
+    } catch (error) {
+        console.error('复制模板失败:', error)
+    }
+}
+
+/**
+ * 测试模板
+ */
+const testTemplate = async (template: ReminderTemplate) => {
+    try {
+        // 这里可以创建一个临时实例来测试
+        console.log('测试模板:', template.name)
+        // 可以显示一个通知或者创建一个测试提醒
+        alert(`测试模板: ${template.name}\n消息: ${template.message}`)
+    } catch (error) {
+        console.error('模板测试失败:', error)
+    }
+}
+
+/**
+ * 显示分组内的模板（以桌面形式）
+ */
+const showGroupTemplates = (group: ReminderTemplateGroup) => {
+    // 这里可以实现一个新的对话框显示分组内的模板
+    // 暂时先用简单的方式显示
+    const groupTemplates = templates.value.filter(t => t.groupUuid === group.uuid)
+    console.log(`分组 "${group.name}" 包含 ${groupTemplates.length} 个模板:`, groupTemplates)
+    // TODO: 创建 GroupDetailDialog 组件来以桌面形式显示分组内的模板
+}
+
+/**
+ * 复制分组
+ */
+const duplicateGroup = async (group: ReminderTemplateGroup) => {
+    try {
+        // 创建分组副本
+        const createRequest = {
+            name: `${group.name} - 副本`,
+            description: group.description,
+            color: group.color,
+            icon: group.icon
+        }
+
+        await reminderService.createReminderTemplateGroup(createRequest)
+        await initialize()
+        console.log('分组复制成功')
+    } catch (error) {
+        console.error('复制分组失败:', error)
+    }
+}
+
+/**
  * 获取分组中的模板数量
  */
 const getGroupTemplateCount = (group: ReminderTemplateGroup): number => {
     return templates.value.filter(t => t.groupUuid === group.uuid).length
+}
+
+/**
+ * 打开移动对话框
+ */
+const openMoveDialog = (template: ReminderTemplate) => {
+    moveDialog.template = template
+    moveDialog.show = true
 }
 
 /**
@@ -356,6 +546,15 @@ const handleTemplateCreated = async (template: ReminderTemplate) => {
 const handleTemplateUpdated = async (template: ReminderTemplate) => {
     console.log('模板已更新:', template)
     await refresh()
+}
+
+/**
+ * 处理模板移动事件
+ */
+const handleTemplateMoved = async (templateUuid: string, targetGroupUuid: string) => {
+    console.log('模板已移动:', templateUuid, '到分组:', targetGroupUuid)
+    await refresh()
+    moveDialog.show = false
 }
 
 /**
@@ -507,5 +706,50 @@ onMounted(async () => {
         grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
         gap: 10px;
     }
+}
+
+/* 上下文菜单样式 */
+.context-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 999;
+    background: transparent;
+}
+
+.context-menu {
+    position: fixed;
+    z-index: 1000;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+
+.context-menu-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    transition: background-color 0.2s ease;
+    color: #333;
+}
+
+.context-menu-item:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.context-menu-item:first-child {
+    border-radius: 8px 8px 0 0;
+}
+
+.context-menu-item:last-child {
+    border-radius: 0 0 8px 8px;
 }
 </style>

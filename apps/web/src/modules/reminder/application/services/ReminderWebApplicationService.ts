@@ -11,14 +11,20 @@ import { useSnackbar } from '../../../../shared/composables/useSnackbar';
  * 集成全局 Snackbar 提示系统
  */
 export class ReminderWebApplicationService {
-  private snackbar = useSnackbar();
-
   /**
    * 懒加载获取 Reminder Store
    * 避免在 Pinia 初始化之前调用
    */
   private get reminderStore() {
     return useReminderStore();
+  }
+
+  /**
+   * 懒加载获取 Snackbar
+   * 避免在 Pinia 初始化之前调用
+   */
+  private get snackbar() {
+    return useSnackbar();
   }
 
   // ===== 提醒模板 CRUD 操作 =====
@@ -168,6 +174,30 @@ export class ReminderWebApplicationService {
       this.snackbar.showSuccess('提醒模板删除成功');
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '删除提醒模板失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 移动提醒模板到指定分组
+   */
+  async moveTemplateToGroup(templateUuid: string, targetGroupUuid: string): Promise<void> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      await reminderApiClient.moveTemplateToGroup(templateUuid, targetGroupUuid);
+
+      // 刷新模板数据
+      await this.getReminderTemplates();
+
+      this.snackbar.showSuccess('模板移动成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '移动模板失败';
       this.reminderStore.setError(errorMessage);
       this.snackbar.showError(errorMessage);
       throw error;
@@ -474,11 +504,6 @@ export class ReminderWebApplicationService {
     forceRefresh?: boolean;
   }): Promise<ReminderTemplateGroup[]> {
     try {
-      // 缓存优先策略：如果已有数据且不强制刷新，直接返回缓存
-      if (!params?.forceRefresh && this.reminderStore.reminderTemplateGroups.length > 0) {
-        return this.reminderStore.reminderTemplateGroups;
-      }
-
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
 
@@ -608,3 +633,30 @@ export class ReminderWebApplicationService {
     }
   }
 }
+
+/**
+ * 全局单例实例 - 懒加载
+ */
+let _reminderService: ReminderWebApplicationService | null = null;
+
+export const getReminderService = (): ReminderWebApplicationService => {
+  if (!_reminderService) {
+    _reminderService = new ReminderWebApplicationService();
+  }
+  return _reminderService;
+};
+
+/**
+ * @deprecated 使用 getReminderService() 代替
+ * 为了向后兼容暂时保留，但建议迁移到懒加载方式
+ */
+export const reminderService = new Proxy({} as ReminderWebApplicationService, {
+  get(target, prop) {
+    const service = getReminderService();
+    const value = (service as any)[prop];
+    if (typeof value === 'function') {
+      return value.bind(service);
+    }
+    return value;
+  },
+});

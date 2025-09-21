@@ -216,35 +216,6 @@ export const appRoutes: RouteRecordRaw[] = [
               requiresAuth: true,
             },
           },
-          {
-            path: 'create',
-            name: 'reminder-create',
-            component: () => import('@/modules/reminder/presentation/views/ReminderCreateView.vue'),
-            meta: {
-              title: '创建提醒',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: ':id',
-            name: 'reminder-detail',
-            component: () => import('@/modules/reminder/presentation/views/ReminderDetailView.vue'),
-            meta: {
-              title: '提醒详情',
-              requiresAuth: true,
-            },
-            props: true,
-          },
-          {
-            path: ':id/edit',
-            name: 'reminder-edit',
-            component: () => import('@/modules/reminder/presentation/views/ReminderEditView.vue'),
-            meta: {
-              title: '编辑提醒',
-              requiresAuth: true,
-            },
-            props: true,
-          },
         ],
       },
 
