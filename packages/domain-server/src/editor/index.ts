@@ -3,8 +3,16 @@
  * 编辑器模块服务端领域层导出
  */
 
-// Editor模块仓储接口导出
-export type { IEditorRepository } from './repositories/iEditorRepository.js';
+// 仓储实现导出
+export { DocumentRepository } from './repositories/DocumentRepository';
+export { WorkspaceRepository } from './repositories/WorkspaceRepository';
 
-// Editor模块服务导出
+// 应用服务导出
+export {
+  DocumentApplicationService,
+  WorkspaceApplicationService,
+} from './services/EditorApplicationService';
+
+// 现有的导出保持不变
+export type { IEditorRepository } from './repositories/iEditorRepository.js';
 export * from './services/index.js';

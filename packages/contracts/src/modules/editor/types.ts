@@ -1,477 +1,882 @@
 /**
- * Editor Module Types
- * 编辑器模块类型定义
+ * Editor Module Types - DDD Architecture
+ * 编辑器模块类型定义 - 领域驱动设计架构
  */
 
-// ============ Core Editor Types ============
+// ===== 基础共享类型 =====
 
-/**
- * 编辑器标签页
- */
-export interface IEditorTab {
-  /** 唯一标识符 */
-  uuid: string;
-  /** 标签页标题 */
-  title: string;
-  /** 文件路径 */
-  path: string;
-  /** 是否激活 */
-  active: boolean;
-  /** 是否为预览模式 */
-  isPreview?: boolean;
-  /** 文件类型 */
-  fileType?: string;
-  /** 是否已修改 */
-  isDirty?: boolean;
-  /** 最后修改时间 */
-  lastModified?: Date;
-}
-
-/**
- * 编辑器组
- */
-export interface IEditorGroup {
-  /** 唯一标识符 */
-  uuid: string;
-  /** 是否激活 */
-  active: boolean;
-  /** 宽度 */
-  width: number;
-  /** 标签页列表 */
-  tabs: IEditorTab[];
-  /** 当前激活的标签页ID */
-  activeTabId: string | null;
-  /** 组标题 */
-  title?: string;
-  /** 最后访问时间 */
-  lastAccessed?: Date;
-}
-
-/**
- * 编辑器布局配置
- */
-export interface IEditorLayout {
-  /** 活动栏宽度 */
-  activityBarWidth: number;
-  /** 侧边栏宽度 */
-  sidebarWidth: number;
-  /** 最小侧边栏宽度 */
-  minSidebarWidth: number;
-  /** 调整手柄宽度 */
-  resizeHandleWidth: number;
-  /** 最小编辑器宽度 */
-  minEditorWidth: number;
-  /** 编辑器标签宽度 */
-  editorTabWidth: number;
-  /** 窗口宽度 */
-  windowWidth: number;
-  /** 窗口高度 */
-  windowHeight: number;
-}
-
-/**
- * 编辑器会话
- */
-export interface IEditorSession {
-  /** 唯一标识符 */
-  uuid: string;
-  /** 所属账户UUID */
-  accountUuid: string;
-  /** 会话名称 */
-  name: string;
-  /** 编辑器组列表 */
-  groups: IEditorGroup[];
-  /** 活动编辑器组ID */
-  activeGroupId: string | null;
-  /** 布局配置 */
-  layout: IEditorLayout;
-  /** 是否自动保存 */
-  autoSave: boolean;
-  /** 自动保存间隔（秒） */
-  autoSaveInterval: number;
-  /** 最后保存时间 */
-  lastSavedAt?: Date;
-  /** 创建时间 */
+export interface EntityLifecycle {
   createdAt: Date;
-  /** 更新时间 */
   updatedAt: Date;
+  deletedAt?: Date;
+  version: number;
 }
 
-/**
- * 文件操作类型
- */
-export enum FileOperationType {
-  CREATE = 'create',
-  OPEN = 'open',
-  SAVE = 'save',
-  DELETE = 'delete',
-  RENAME = 'rename',
-  COPY = 'copy',
-  MOVE = 'move',
-}
+// ===== 枚举定义 =====
 
-/**
- * 文件类型
- */
-export enum SupportedFileType {
+export enum DocumentFormat {
   MARKDOWN = 'markdown',
-  JAVASCRIPT = 'javascript',
-  TYPESCRIPT = 'typescript',
-  JSON = 'json',
+  PLAINTEXT = 'plaintext',
   HTML = 'html',
-  CSS = 'css',
-  PYTHON = 'python',
-  TEXT = 'text',
-  UNKNOWN = 'unknown',
+  JSON = 'json',
+  TYPESCRIPT = 'typescript',
+  JAVASCRIPT = 'javascript',
 }
 
-// ============ Editor Commands ============
-
-/**
- * 打开文件命令
- */
-export interface IOpenFileCommand {
-  /** 文件路径 */
-  path: string;
-  /** 目标编辑器组ID */
-  groupId?: string;
-  /** 是否为预览模式 */
-  isPreview?: boolean;
-  /** 是否强制重新打开 */
-  forceReopen?: boolean;
+export enum RenderingMode {
+  SOURCE_ONLY = 'source',
+  PREVIEW_ONLY = 'preview',
+  SPLIT_VIEW = 'split',
+  WYSIWYG = 'wysiwyg',
 }
 
-/**
- * 关闭标签页命令
- */
-export interface ICloseTabCommand {
-  /** 编辑器组ID */
-  groupId: string;
-  /** 标签页ID */
-  tabId: string;
-  /** 是否保存修改 */
-  saveChanges?: boolean;
+export enum ViewMode {
+  EDITOR_ONLY = 'editor',
+  PREVIEW_ONLY = 'preview',
+  SPLIT_HORIZONTAL = 'split-h',
+  SPLIT_VERTICAL = 'split-v',
+  TYPORA_MODE = 'typora',
 }
 
-/**
- * 分割编辑器命令
- */
-export interface ISplitEditorCommand {
-  /** 源编辑器组ID */
-  sourceGroupId: string;
-  /** 分割方向 */
-  direction: 'horizontal' | 'vertical';
-  /** 是否复制当前标签页 */
-  copyCurrentTab?: boolean;
+export enum SidebarTab {
+  FILE_EXPLORER = 'files',
+  TAG_BROWSER = 'tags',
+  SEARCH = 'search',
+  OUTLINE = 'outline',
+  RESOURCES = 'resources',
 }
 
-/**
- * 调整编辑器大小命令
- */
-export interface IResizeEditorCommand {
-  /** 编辑器组ID */
-  groupId: string;
-  /** 新宽度 */
-  width: number;
-  /** 新高度 */
-  height?: number;
+export enum SearchType {
+  FULL_TEXT = 'fulltext',
+  REGEX = 'regex',
+  TAG = 'tag',
+  FILE_NAME = 'filename',
 }
 
-// ============ Editor Events ============
-
-/**
- * 编辑器事件基类
- */
-export interface IEditorEvent {
-  /** 事件类型 */
-  type: string;
-  /** 事件时间戳 */
-  timestamp: Date;
-  /** 事件源 */
-  source: string;
-  /** 事件数据 */
-  data?: any;
+export enum ResourceType {
+  IMAGE = 'image',
+  VIDEO = 'video',
+  AUDIO = 'audio',
+  DOCUMENT = 'document',
+  ARCHIVE = 'archive',
 }
 
-/**
- * 文件打开事件
- */
-export interface IFileOpenedEvent extends IEditorEvent {
-  type: 'file-opened';
-  data: {
-    tab: IEditorTab;
-    groupId: string;
-  };
+export enum ChangeType {
+  INSERT = 'insert',
+  DELETE = 'delete',
+  REPLACE = 'replace',
 }
 
-/**
- * 文件关闭事件
- */
-export interface IFileClosedEvent extends IEditorEvent {
-  type: 'file-closed';
-  data: {
-    tabId: string;
-    groupId: string;
-    path: string;
-  };
+export enum SelectionDirection {
+  FORWARD = 'forward',
+  BACKWARD = 'backward',
 }
 
-/**
- * 文件保存事件
- */
-export interface IFileSavedEvent extends IEditorEvent {
-  type: 'file-saved';
-  data: {
-    path: string;
-    content: string;
-    groupId: string;
-    tabId: string;
-  };
+// ===== 值对象接口 =====
+
+export interface Position {
+  line: number;
+  column: number;
+  offset: number;
 }
 
-/**
- * 编辑器组创建事件
- */
-export interface IEditorGroupCreatedEvent extends IEditorEvent {
-  type: 'editor-group-created';
-  data: {
-    group: IEditorGroup;
-  };
+export interface ScrollPosition {
+  x: number;
+  y: number;
 }
 
-/**
- * 编辑器组删除事件
- */
-export interface IEditorGroupRemovedEvent extends IEditorEvent {
-  type: 'editor-group-removed';
-  data: {
-    groupId: string;
-  };
+export interface TextSelection {
+  start: Position;
+  end: Position;
+  direction: SelectionDirection;
 }
 
-/**
- * 编辑器布局变化事件
- */
-export interface IEditorLayoutChangedEvent extends IEditorEvent {
-  type: 'editor-layout-changed';
-  data: {
-    layout: IEditorLayout;
-  };
+export interface CursorPosition {
+  position: Position;
+  isActive: boolean;
+  blinkState: boolean;
 }
 
-// ============ Editor Service Interfaces ============
-
-/**
- * 编辑器管理服务接口
- */
-export interface IEditorService {
-  /** 打开文件 */
-  openFile(command: IOpenFileCommand): Promise<IEditorTab>;
-
-  /** 关闭标签页 */
-  closeTab(command: ICloseTabCommand): Promise<void>;
-
-  /** 关闭所有标签页 */
-  closeAllTabs(groupId?: string): Promise<void>;
-
-  /** 保存文件 */
-  saveFile(groupId: string, tabId: string): Promise<void>;
-
-  /** 保存所有文件 */
-  saveAllFiles(groupId?: string): Promise<void>;
-
-  /** 分割编辑器 */
-  splitEditor(command: ISplitEditorCommand): Promise<IEditorGroup>;
-
-  /** 调整编辑器大小 */
-  resizeEditor(command: IResizeEditorCommand): Promise<void>;
-
-  /** 获取所有编辑器组 */
-  getEditorGroups(): Promise<IEditorGroup[]>;
-
-  /** 获取编辑器组 */
-  getEditorGroup(groupId: string): Promise<IEditorGroup | null>;
-
-  /** 获取活动编辑器组 */
-  getActiveEditorGroup(): Promise<IEditorGroup | null>;
-
-  /** 设置活动编辑器组 */
-  setActiveEditorGroup(groupId: string): Promise<void>;
+export interface EditorTheme {
+  name: string;
+  isDark: boolean;
+  colors: ThemeColors;
 }
 
-/**
- * 文件服务接口
- */
-export interface IFileService {
-  /** 读取文件内容 */
-  readFile(path: string): Promise<string>;
-
-  /** 写入文件内容 */
-  writeFile(path: string, content: string): Promise<void>;
-
-  /** 检查文件是否存在 */
-  fileExists(path: string): Promise<boolean>;
-
-  /** 获取文件信息 */
-  getFileInfo(path: string): Promise<{
-    size: number;
-    lastModified: Date;
-    type: SupportedFileType;
-  } | null>;
-
-  /** 监听文件变化 */
-  watchFile(path: string, callback: (event: string) => void): Promise<void>;
-
-  /** 停止监听文件变化 */
-  unwatchFile(path: string): Promise<void>;
+export interface ThemeColors {
+  background: string;
+  foreground: string;
+  accent: string;
+  border: string;
+  selection: string;
+  lineNumber: string;
+  [key: string]: string;
 }
 
-/**
- * 布局服务接口
- */
-export interface ILayoutService {
-  /** 获取当前布局 */
-  getCurrentLayout(): Promise<IEditorLayout>;
-
-  /** 更新布局 */
-  updateLayout(layout: Partial<IEditorLayout>): Promise<void>;
-
-  /** 重置布局 */
-  resetLayout(): Promise<void>;
-
-  /** 保存布局配置 */
-  saveLayoutConfig(): Promise<void>;
-
-  /** 加载布局配置 */
-  loadLayoutConfig(): Promise<void>;
+export interface AutoSaveSettings {
+  enabled: boolean;
+  interval: number;
+  onFocusLoss: boolean;
 }
 
-// ============ Query/Response DTOs ============
-
-/**
- * 编辑器状态查询响应
- */
-export interface IEditorStateResponse {
-  /** 编辑器组列表 */
-  groups: IEditorGroup[];
-  /** 活动编辑器组ID */
-  activeGroupId: string | null;
-  /** 布局配置 */
-  layout: IEditorLayout;
-  /** 总标签页数 */
-  totalTabs: number;
-  /** 未保存的文件数 */
-  unsavedFiles: number;
+export interface SyntaxSettings {
+  highlightEnabled: boolean;
+  language: string;
+  markdownPreview: boolean;
+  livePreview: boolean;
 }
 
-/**
- * 文件内容查询响应
- */
-export interface IFileContentResponse {
-  /** 文件路径 */
-  path: string;
-  /** 文件内容 */
-  content: string;
-  /** 文件类型 */
-  fileType: SupportedFileType;
-  /** 文件大小 */
+export interface EditorSettings {
+  theme: EditorTheme;
+  fontSize: number;
+  fontFamily: string;
+  lineHeight: number;
+  tabSize: number;
+  wordWrap: boolean;
+  lineNumbers: boolean;
+  minimap: boolean;
+  autoSave: AutoSaveSettings;
+  syntax: SyntaxSettings;
+}
+
+export interface DocumentMetadata {
+  tags: string[];
+  category: string;
+  wordCount: number;
+  characterCount: number;
+  readingTime: number;
+  lastSavedAt?: number;
+  isReadOnly: boolean;
+  encoding: string;
+  language: string;
+}
+
+export interface LinkedResource {
+  uuid: string;
+  type: ResourceType;
+  relativePath: string;
   size: number;
-  /** 最后修改时间 */
-  lastModified: Date;
-  /** 是否只读 */
-  readonly: boolean;
+  mimeType: string;
+  thumbnailPath?: string;
 }
 
-/**
- * 编辑器功能图标
- */
-export interface IEditorFunctionIcon {
-  /** 唯一标识符 */
+// ===== 实体接口 =====
+
+export interface IContentChange {
   uuid: string;
-  /** 图标标题 */
+  type: ChangeType;
+  position: Position;
+  length: number;
+  oldText: string;
+  newText: string;
+  timestamp: number;
+}
+
+export interface IDocumentVersion {
+  uuid: string;
+  documentUuid: string;
+  versionNumber: number;
+  content: string;
+  changeSet: IContentChange[];
+  author: string;
+  createdAt: number;
+  description?: string;
+}
+
+export interface FileTreeNode {
+  uuid: string;
+  name: string;
+  path: string;
+  type: 'file' | 'directory';
+  size?: number;
+  extension?: string;
+  tags: string[];
+  children?: FileTreeNode[];
+  metadata?: FileMetadata;
+  isExpanded: boolean;
+  isSelected: boolean;
+}
+
+export interface FileMetadata {
+  createdAt: number;
+  modifiedAt: number;
+  size: number;
+  permissions: string;
+  mimeType?: string;
+}
+
+// ===== 复杂值对象 =====
+
+export interface RenderingState {
+  mode: RenderingMode;
+  isLivePreview: boolean;
+  cursorInRenderedView: boolean;
+  renderedContent: RenderedContent;
+  sourceMap: SourceMap;
+}
+
+export interface RenderedContent {
+  html: string;
+  toc: TableOfContents;
+  codeBlocks: CodeBlock[];
+  mathBlocks: MathBlock[];
+  imageReferences: ImageReference[];
+}
+
+export interface SourceMap {
+  mappings: SourceMapping[];
+}
+
+export interface SourceMapping {
+  sourceStart: Position;
+  sourceEnd: Position;
+  renderedStart: Position;
+  renderedEnd: Position;
+  elementType: string;
+}
+
+export interface TableOfContents {
+  items: TocItem[];
+}
+
+export interface TocItem {
+  level: number;
   title: string;
-  /** 图标类名 */
+  anchor: string;
+  children: TocItem[];
+}
+
+export interface CodeBlock {
+  uuid: string;
+  language: string;
+  code: string;
+  startLine: number;
+  endLine: number;
+}
+
+export interface MathBlock {
+  uuid: string;
+  formula: string;
+  isInline: boolean;
+  startPosition: Position;
+  endPosition: Position;
+}
+
+export interface ImageReference {
+  uuid: string;
+  src: string;
+  alt: string;
+  title?: string;
+  position: Position;
+}
+
+export interface SidebarState {
+  isVisible: boolean;
+  width: number;
+  activeTab: SidebarTab;
+  tabs: SidebarTabConfig[];
+}
+
+export interface SidebarTabConfig {
+  id: SidebarTab;
+  title: string;
   icon: string;
-  /** 点击动作 */
-  action: () => void;
-  /** 是否可见 */
-  visible?: boolean;
-  /** 是否禁用 */
-  disabled?: boolean;
+  isEnabled: boolean;
+  order: number;
 }
 
-/**
- * 更多功能选项
- */
-export interface IMoreFunction {
-  /** 唯一标识符 */
+export interface WorkspaceLayout {
+  sidebarWidth: number;
+  editorWidth: number;
+  previewWidth: number;
+  isPreviewVisible: boolean;
+  panelSizes: PanelSizes;
+  viewMode: ViewMode;
+}
+
+export interface PanelSizes {
+  sidebar: number;
+  editor: number;
+  preview: number;
+}
+
+export interface SearchScope {
+  includeContent: boolean;
+  includeFileNames: boolean;
+  includeTags: boolean;
+  fileTypes: string[];
+  directories: string[];
+}
+
+export interface SearchFilter {
+  key: string;
+  value: string;
+  operator: 'equals' | 'contains' | 'startsWith' | 'endsWith' | 'regex';
+}
+
+export interface SearchResult {
   uuid: string;
-  /** 显示标签 */
-  label: string;
-  /** 功能标题 */
+  fileUuid: string;
+  fileName: string;
+  filePath: string;
+  matches: SearchMatch[];
+  score: number;
+}
+
+export interface SearchMatch {
+  line: number;
+  column: number;
+  length: number;
+  context: string;
+  highlightedContext: string;
+}
+
+// ===== 聚合根接口 =====
+
+export interface IDocument {
+  uuid: string;
+  repositoryUuid: string;
+  relativePath: string;
+  fileName: string;
   title: string;
-  /** 点击动作 */
-  action: () => void;
-  /** 图标 */
-  icon?: string;
-  /** 是否可见 */
-  visible?: boolean;
-  /** 是否禁用 */
-  disabled?: boolean;
+  content: string;
+  format: DocumentFormat;
+  metadata: DocumentMetadata;
+  tags: string[];
+  resources: LinkedResource[];
+  versions: IDocumentVersion[];
+  renderingState: RenderingState;
+  lifecycle: EntityLifecycle;
 }
 
-// ============ Error Types ============
-
-/**
- * 编辑器错误基类
- */
-export class EditorError extends Error {
-  constructor(
-    message: string,
-    public code: string,
-    public details?: any,
-  ) {
-    super(message);
-    this.name = 'EditorError';
-  }
+export interface OpenDocument {
+  documentUuid: string;
+  tabTitle: string;
+  isDirty: boolean;
+  lastActiveAt: number;
+  cursorPosition: Position;
+  scrollPosition: ScrollPosition;
 }
 
-/**
- * 文件操作错误
- */
-export class FileOperationError extends EditorError {
-  constructor(
-    message: string,
-    public operation: FileOperationType,
-    public path: string,
-  ) {
-    super(message, 'FILE_OPERATION_ERROR', { operation, path });
-    this.name = 'FileOperationError';
-  }
+export interface IEditorWorkspace {
+  uuid: string;
+  name: string;
+  repositoryUuid: string;
+  currentDocumentUuid?: string;
+  openDocuments: OpenDocument[];
+  sidebarState: SidebarState;
+  layout: WorkspaceLayout;
+  settings: EditorSettings;
+  searchState: SearchState;
+  lifecycle: EntityLifecycle;
 }
 
-/**
- * 编辑器组错误
- */
-export class EditorGroupError extends EditorError {
-  constructor(
-    message: string,
-    public groupId: string,
-  ) {
-    super(message, 'EDITOR_GROUP_ERROR', { groupId });
-    this.name = 'EditorGroupError';
-  }
+export interface SearchState {
+  currentQuery: string;
+  searchType: SearchType;
+  isSearching: boolean;
+  results: SearchResult[];
+  selectedResultIndex: number;
 }
 
-/**
- * 布局错误
- */
-export class LayoutError extends EditorError {
-  constructor(
-    message: string,
-    public layoutConfig?: Partial<IEditorLayout>,
-  ) {
-    super(message, 'LAYOUT_ERROR', { layoutConfig });
-    this.name = 'LayoutError';
-  }
+export interface IRepositoryExplorer {
+  uuid: string;
+  repositoryUuid: string;
+  rootPath: string;
+  fileTree: FileTreeNode[];
+  filteredTree: FileTreeNode[];
+  expandedNodes: string[];
+  selectedNodes: string[];
+  lastScanAt: number;
+}
+
+export interface ISearchQuery {
+  uuid: string;
+  query: string;
+  type: SearchType;
+  scope: SearchScope;
+  filters: SearchFilter[];
+  results: SearchResult[];
+  executedAt: number;
+}
+
+export interface SavedSearch {
+  uuid: string;
+  name: string;
+  query: ISearchQuery;
+  createdAt: number;
+}
+
+export interface SearchIndexState {
+  isBuilding: boolean;
+  lastBuiltAt: number;
+  indexedFileCount: number;
+  totalFileCount: number;
+}
+
+export interface ISearchEngine {
+  uuid: string;
+  workspaceUuid: string;
+  searchHistory: ISearchQuery[];
+  savedSearches: SavedSearch[];
+  indexState: SearchIndexState;
+}
+
+// ===== 辅助类型 =====
+
+export interface RepositoryContent {
+  uuid: string;
+  name: string;
+  rootPath: string;
+  fileTree: FileTreeNode[];
+  totalFiles: number;
+  totalSize: number;
+  lastScanAt: number;
+}
+
+export interface TagInfo {
+  name: string;
+  count: number;
+  color?: string;
+  description?: string;
+}
+
+export interface SyncResult {
+  success: boolean;
+  addedFiles: string[];
+  modifiedFiles: string[];
+  deletedFiles: string[];
+  errors: string[];
+}
+
+export interface RepositoryInfo {
+  uuid: string;
+  name: string;
+  path: string;
+  description?: string;
+  isActive: boolean;
+}
+
+// ===== 领域服务接口 =====
+
+export interface IDocumentParser {
+  parseMarkdown(content: string): Promise<ParsedDocument>;
+  parseHtml(content: string): Promise<ParsedDocument>;
+  convertToMarkdown(document: ParsedDocument): Promise<string>;
+  convertToHtml(document: ParsedDocument): Promise<string>;
+  extractMetadata(content: string, format: DocumentFormat): DocumentMetadata;
+}
+
+export interface ISyntaxHighlighter {
+  highlight(code: string, language: string): HighlightedContent;
+  getSupportedLanguages(): string[];
+  getTheme(name: string): SyntaxTheme;
+}
+
+export interface IAutoComplete {
+  getSuggestions(context: CompletionContext): CompletionSuggestion[];
+  getSnippets(language: string): CodeSnippet[];
+}
+
+export interface IRepositoryIntegrationService {
+  loadRepositoryContent(repositoryUuid: string): Promise<RepositoryContent>;
+  syncWithRepository(workspaceUuid: string): Promise<SyncResult>;
+  watchRepositoryChanges(repositoryUuid: string): Promise<void>;
+  getTagsFromRepository(repositoryUuid: string): Promise<TagInfo[]>;
+  searchByTags(repositoryUuid: string, tags: string[]): Promise<FileTreeNode[]>;
+  resolveResourcePath(relativePath: string, repositoryUuid: string): Promise<string>;
+  generateThumbnail(resourceUuid: string): Promise<string>;
+}
+
+export interface IWysiwygRenderer {
+  renderToWysiwyg(content: string, format: DocumentFormat): Promise<RenderedContent>;
+  parseWysiwygToSource(renderedContent: RenderedContent): Promise<string>;
+  handleInlineEdit(element: HTMLElement, newContent: string): Promise<SourceChange>;
+  mapCursorPosition(
+    position: Position,
+    fromMode: RenderingMode,
+    toMode: RenderingMode,
+  ): Promise<Position>;
+  registerRenderer(format: DocumentFormat, renderer: CustomRenderer): void;
+  getAvailableThemes(): RenderingTheme[];
+}
+
+export interface ISearchService {
+  searchFullText(query: string, scope: SearchScope): Promise<SearchResult[]>;
+  searchRegex(pattern: string, flags: string, scope: SearchScope): Promise<SearchResult[]>;
+  searchByTags(tags: string[], operator: 'AND' | 'OR'): Promise<SearchResult[]>;
+  searchFileNames(pattern: string, isRegex: boolean): Promise<SearchResult[]>;
+  buildSearchIndex(repositoryUuid: string): Promise<void>;
+  updateSearchIndex(changedFiles: string[]): Promise<void>;
+}
+
+// ===== 扩展类型 =====
+
+export interface CustomRenderer {
+  format: DocumentFormat;
+  render: (content: string) => Promise<string>;
+  parse: (rendered: string) => Promise<string>;
+}
+
+export interface RenderingTheme {
+  name: string;
+  css: string;
+  isDark: boolean;
+}
+
+export interface CompletionContext {
+  content: string;
+  position: Position;
+  language: string;
+  triggerCharacter?: string;
+}
+
+export interface CompletionSuggestion {
+  label: string;
+  insertText: string;
+  detail?: string;
+  documentation?: string;
+  kind:
+    | 'text'
+    | 'method'
+    | 'function'
+    | 'constructor'
+    | 'field'
+    | 'variable'
+    | 'class'
+    | 'interface'
+    | 'module'
+    | 'property'
+    | 'unit'
+    | 'value'
+    | 'enum'
+    | 'keyword'
+    | 'snippet'
+    | 'color'
+    | 'file'
+    | 'reference';
+}
+
+export interface CodeSnippet {
+  name: string;
+  prefix: string;
+  body: string[];
+  description: string;
+  scope: string;
+}
+
+export interface HighlightedContent {
+  html: string;
+  tokens: SyntaxToken[];
+}
+
+export interface SyntaxToken {
+  type: string;
+  content: string;
+  startPosition: Position;
+  endPosition: Position;
+}
+
+export interface SyntaxTheme {
+  name: string;
+  colors: { [tokenType: string]: string };
+}
+
+export interface ParsedDocument {
+  content: string;
+  metadata: DocumentMetadata;
+  structure: DocumentStructure;
+}
+
+export interface DocumentStructure {
+  headings: HeadingInfo[];
+  links: LinkInfo[];
+  images: ImageInfo[];
+  codeBlocks: CodeBlockInfo[];
+}
+
+export interface HeadingInfo {
+  level: number;
+  text: string;
+  anchor: string;
+  position: Position;
+}
+
+export interface LinkInfo {
+  text: string;
+  url: string;
+  title?: string;
+  position: Position;
+}
+
+export interface ImageInfo {
+  src: string;
+  alt: string;
+  title?: string;
+  position: Position;
+}
+
+export interface CodeBlockInfo {
+  language: string;
+  code: string;
+  startLine: number;
+  endLine: number;
+}
+
+export interface SourceChange {
+  changes: IContentChange[];
+  newContent: string;
+  affectedRange: TextSelection;
+}
+
+// ===== DTOs (数据传输对象) =====
+
+export interface CreateDocumentDTO {
+  repositoryUuid: string;
+  title: string;
+  relativePath: string;
+  format: DocumentFormat;
+  content?: string;
+  tags?: string[];
+  metadata?: Partial<DocumentMetadata>;
+}
+
+export interface UpdateDocumentDTO {
+  title?: string;
+  content?: string;
+  tags?: string[];
+  metadata?: Partial<DocumentMetadata>;
+}
+
+export interface CreateWorkspaceDTO {
+  name: string;
+  repositoryUuid: string;
+  settings?: Partial<EditorSettings>;
+}
+
+export interface UpdateWorkspaceDTO {
+  name?: string;
+  settings?: Partial<EditorSettings>;
+  layout?: Partial<WorkspaceLayout>;
+  sidebarState?: Partial<SidebarState>;
+}
+
+export interface CreateSearchQueryDTO {
+  query: string;
+  type: SearchType;
+  scope?: SearchScope;
+  filters?: SearchFilter[];
+}
+
+export interface SaveSearchDTO {
+  name: string;
+  queryUuid: string;
+}
+
+export interface DocumentSummaryDTO {
+  uuid: string;
+  title: string;
+  relativePath: string;
+  format: DocumentFormat;
+  tags: string[];
+  wordCount: number;
+  lastModified: number;
+  isReadOnly: boolean;
+}
+
+export interface WorkspaceSummaryDTO {
+  uuid: string;
+  name: string;
+  repositoryUuid: string;
+  documentCount: number;
+  lastAccessed: number;
+  isActive: boolean;
+}
+
+export interface SearchResultDTO {
+  queryUuid: string;
+  results: SearchResult[];
+  totalResults: number;
+  searchTime: number;
+  hasMore: boolean;
+}
+
+// ===== 领域事件 =====
+
+export interface DomainEvent {
+  eventId: string;
+  eventType: string;
+  aggregateId: string;
+  aggregateType: string;
+  eventData: any;
+  occurredOn: Date;
+  eventVersion: number;
+}
+
+export interface DocumentCreatedEvent extends DomainEvent {
+  eventType: 'DocumentCreated';
+  eventData: {
+    documentUuid: string;
+    repositoryUuid: string;
+    title: string;
+    relativePath: string;
+    format: DocumentFormat;
+  };
+}
+
+export interface DocumentUpdatedEvent extends DomainEvent {
+  eventType: 'DocumentUpdated';
+  eventData: {
+    documentUuid: string;
+    changes: IContentChange[];
+    newWordCount?: number;
+    updatedTags?: string[];
+  };
+}
+
+export interface DocumentDeletedEvent extends DomainEvent {
+  eventType: 'DocumentDeleted';
+  eventData: {
+    documentUuid: string;
+    repositoryUuid: string;
+    relativePath: string;
+  };
+}
+
+export interface WorkspaceCreatedEvent extends DomainEvent {
+  eventType: 'WorkspaceCreated';
+  eventData: {
+    workspaceUuid: string;
+    name: string;
+    repositoryUuid: string;
+  };
+}
+
+export interface WorkspaceActivatedEvent extends DomainEvent {
+  eventType: 'WorkspaceActivated';
+  eventData: {
+    workspaceUuid: string;
+    previousActiveWorkspaceUuid?: string;
+  };
+}
+
+export interface DocumentOpenedEvent extends DomainEvent {
+  eventType: 'DocumentOpened';
+  eventData: {
+    workspaceUuid: string;
+    documentUuid: string;
+    tabTitle: string;
+  };
+}
+
+export interface SearchPerformedEvent extends DomainEvent {
+  eventType: 'SearchPerformed';
+  eventData: {
+    searchEngineUuid: string;
+    query: ISearchQuery;
+    resultCount: number;
+    searchTime: number;
+  };
+}
+
+// ===== 仓储接口 =====
+
+export interface IDocumentRepository {
+  getById(uuid: string): Promise<IDocument | null>;
+  getByPath(repositoryUuid: string, relativePath: string): Promise<IDocument | null>;
+  getByRepository(repositoryUuid: string): Promise<IDocument[]>;
+  getByTags(repositoryUuid: string, tags: string[]): Promise<IDocument[]>;
+  save(document: IDocument): Promise<void>;
+  delete(uuid: string): Promise<void>;
+  search(criteria: DocumentSearchCriteria): Promise<IDocument[]>;
+}
+
+export interface IWorkspaceRepository {
+  getById(uuid: string): Promise<IEditorWorkspace | null>;
+  getByRepository(repositoryUuid: string): Promise<IEditorWorkspace[]>;
+  getActive(): Promise<IEditorWorkspace | null>;
+  save(workspace: IEditorWorkspace): Promise<void>;
+  delete(uuid: string): Promise<void>;
+}
+
+export interface IRepositoryExplorerRepository {
+  getByRepository(repositoryUuid: string): Promise<IRepositoryExplorer | null>;
+  save(explorer: IRepositoryExplorer): Promise<void>;
+  delete(repositoryUuid: string): Promise<void>;
+}
+
+export interface ISearchEngineRepository {
+  getByWorkspace(workspaceUuid: string): Promise<ISearchEngine | null>;
+  save(searchEngine: ISearchEngine): Promise<void>;
+  delete(workspaceUuid: string): Promise<void>;
+}
+
+export interface DocumentSearchCriteria {
+  repositoryUuid?: string;
+  formats?: DocumentFormat[];
+  tags?: string[];
+  createdAfter?: Date;
+  createdBefore?: Date;
+  modifiedAfter?: Date;
+  modifiedBefore?: Date;
+  textContains?: string;
+  titleContains?: string;
+  limit?: number;
+  offset?: number;
+}
+
+// ===== 应用服务接口 =====
+
+export interface IDocumentApplicationService {
+  createDocument(command: CreateDocumentDTO): Promise<string>;
+  updateDocument(uuid: string, command: UpdateDocumentDTO): Promise<void>;
+  deleteDocument(uuid: string): Promise<void>;
+  getDocument(uuid: string): Promise<IDocument | null>;
+  getDocumentsByRepository(repositoryUuid: string): Promise<DocumentSummaryDTO[]>;
+  searchDocuments(criteria: DocumentSearchCriteria): Promise<DocumentSummaryDTO[]>;
+  exportDocument(uuid: string, format: DocumentFormat): Promise<string>;
+  importDocument(filePath: string, repositoryUuid: string): Promise<string>;
+  getDocumentContent(uuid: string): Promise<string>;
+  updateDocumentContent(uuid: string, content: string, changes: IContentChange[]): Promise<void>;
+  addTagsToDocument(uuid: string, tags: string[]): Promise<void>;
+  removeTagsFromDocument(uuid: string, tags: string[]): Promise<void>;
+}
+
+export interface IWorkspaceApplicationService {
+  createWorkspace(command: CreateWorkspaceDTO): Promise<string>;
+  updateWorkspace(uuid: string, command: UpdateWorkspaceDTO): Promise<void>;
+  deleteWorkspace(uuid: string): Promise<void>;
+  getWorkspace(uuid: string): Promise<IEditorWorkspace | null>;
+  getWorkspacesByRepository(repositoryUuid: string): Promise<WorkspaceSummaryDTO[]>;
+  activateWorkspace(uuid: string): Promise<void>;
+  openDocument(workspaceUuid: string, documentUuid: string): Promise<void>;
+  closeDocument(workspaceUuid: string, documentUuid: string): Promise<void>;
+  updateWorkspaceLayout(uuid: string, layout: Partial<WorkspaceLayout>): Promise<void>;
+  updateSidebarState(uuid: string, sidebarState: Partial<SidebarState>): Promise<void>;
+}
+
+export interface ISearchApplicationService {
+  performSearch(workspaceUuid: string, request: CreateSearchQueryDTO): Promise<SearchResultDTO>;
+  saveSearch(workspaceUuid: string, command: SaveSearchDTO): Promise<void>;
+  getSavedSearches(workspaceUuid: string): Promise<SavedSearch[]>;
+  deleteSavedSearch(workspaceUuid: string, searchUuid: string): Promise<void>;
+  getSearchHistory(workspaceUuid: string): Promise<ISearchQuery[]>;
+  clearSearchHistory(workspaceUuid: string): Promise<void>;
+  rebuildSearchIndex(repositoryUuid: string): Promise<void>;
+  getSearchIndexState(repositoryUuid: string): Promise<SearchIndexState>;
+}
+
+export interface IRepositoryExplorerApplicationService {
+  getExplorer(repositoryUuid: string): Promise<IRepositoryExplorer | null>;
+  refreshExplorer(repositoryUuid: string): Promise<void>;
+  expandNode(repositoryUuid: string, nodeUuid: string): Promise<void>;
+  collapseNode(repositoryUuid: string, nodeUuid: string): Promise<void>;
+  selectNode(repositoryUuid: string, nodeUuid: string, multiSelect?: boolean): Promise<void>;
+  searchFiles(repositoryUuid: string, query: string): Promise<FileTreeNode[]>;
+  getFilesByTags(repositoryUuid: string, tags: string[]): Promise<FileTreeNode[]>;
+  updateFileMetadata(
+    repositoryUuid: string,
+    filePath: string,
+    metadata: Partial<FileMetadata>,
+  ): Promise<void>;
 }

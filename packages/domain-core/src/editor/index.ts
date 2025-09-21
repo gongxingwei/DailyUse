@@ -3,4 +3,6 @@
  * 编辑器领域核心导出
  */
 
-export * from './aggregates/EditorCore';
+export * from './value-objects';
+export * from './entities';
+export * from './aggregates';

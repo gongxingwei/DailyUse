@@ -1,421 +1,268 @@
 /**
  * Editor Application Service
- * 编辑器应用层服务 - 协调业务流程
+ * 编辑器应用层服务 - 协调业务流程和基础设施
+ *
+ * 职责：
+ * 1. 协调领域服务和基础设施服务
+ * 2. 管理事务和数据持久化
+ * 3. 处理跨聚合的业务流程
+ * 4. 暴露给接口层使用
+ *
+ * 架构说明：
+ * - 基于Document/Workspace聚合根的DDD架构
+ * - Document聚合根：管理单个文档的内容、版本、元数据
+ * - Workspace聚合根：管理工作区状态、打开的文档、布局配置
  */
 
 import { EditorContracts } from '@dailyuse/contracts';
-import { EditorDomainService } from '../../domain/services/EditorDomainService.js';
+import { EditorDomainService } from '@dailyuse/domain-server';
+import type { IDocumentRepository } from '../../infrastructure/repositories/interfaces/IDocumentRepository';
+import type { IWorkspaceRepository } from '../../infrastructure/repositories/interfaces/IWorkspaceRepository';
 
-// 使用类型别名来简化类型引用
-type IEditorTab = EditorContracts.IEditorTab;
-type IEditorGroup = EditorContracts.IEditorGroup;
-type IEditorLayout = EditorContracts.IEditorLayout;
-type IOpenFileCommand = EditorContracts.IOpenFileCommand;
-type ICloseTabCommand = EditorContracts.ICloseTabCommand;
-type ISplitEditorCommand = EditorContracts.ISplitEditorCommand;
-type IResizeEditorCommand = EditorContracts.IResizeEditorCommand;
-type IEditorStateResponse = EditorContracts.IEditorStateResponse;
-type IFileContentResponse = EditorContracts.IFileContentResponse;
+// 使用现有contracts中的类型别名
+type IDocument = EditorContracts.IDocument;
+type IEditorWorkspace = EditorContracts.IEditorWorkspace;
+type CreateDocumentDTO = EditorContracts.CreateDocumentDTO;
+type UpdateDocumentDTO = EditorContracts.UpdateDocumentDTO;
+type CreateWorkspaceDTO = EditorContracts.CreateWorkspaceDTO;
+type UpdateWorkspaceDTO = EditorContracts.UpdateWorkspaceDTO;
 
 export class EditorApplicationService {
-  constructor(private readonly editorDomainService: EditorDomainService) {}
+  constructor(
+    private readonly editorDomainService: EditorDomainService,
+    private readonly documentRepository: IDocumentRepository,
+    private readonly workspaceRepository: IWorkspaceRepository,
+  ) {}
+
+  // ============ 文档管理 ============
 
   /**
-   * 打开文件
+   * 创建新文档
    */
-  async openFile(command: IOpenFileCommand): Promise<IEditorTab> {
-    try {
-      // 验证文件路径
-      this.editorDomainService.validateFilePath(command.path);
+  async createDocument(
+    accountUuid: string,
+    createDocumentDTO: CreateDocumentDTO,
+  ): Promise<IDocument> {
+    this.editorDomainService.validateFilePath(createDocumentDTO.relativePath);
 
-      // 检查文件是否存在 (TODO: 实现文件系统检查)
-      const fileExists = await this.checkFileExists(command.path);
-      if (!fileExists) {
-        throw new EditorContracts.FileOperationError(
-          `File not found: ${command.path}`,
-          EditorContracts.FileOperationType.OPEN,
-          command.path,
-        );
-      }
-
-      // 创建标签页
-      const tab = this.editorDomainService.createEditorTab(command);
-
-      // TODO: 实现标签页持久化逻辑
-      // await this.editorRepository.saveTab(tab);
-
-      // TODO: 发布文件打开事件
-      // await this.eventBus.publish(new FileOpenedEvent({ tab, groupId: command.groupId }));
-
-      return tab;
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to open file: ${(error as Error).message}`,
-        'OPEN_FILE_FAILED',
-        { command, error },
-      );
+    if (!createDocumentDTO.title?.trim()) {
+      throw new Error('文档标题不能为空');
     }
+
+    const detectedFormat = this.editorDomainService.determineFileType(
+      createDocumentDTO.relativePath,
+    );
+
+    const documentData: Omit<IDocument, 'uuid' | 'lifecycle'> = {
+      repositoryUuid: createDocumentDTO.repositoryUuid,
+      relativePath: createDocumentDTO.relativePath,
+      fileName: this.extractFileName(createDocumentDTO.relativePath),
+      title: createDocumentDTO.title.trim(),
+      content: createDocumentDTO.content || '',
+      format: createDocumentDTO.format || (detectedFormat as EditorContracts.DocumentFormat),
+      metadata: {
+        tags: createDocumentDTO.tags || [],
+        category: '',
+        wordCount: this.calculateWordCount(createDocumentDTO.content || ''),
+        characterCount: (createDocumentDTO.content || '').length,
+        readingTime: Math.ceil(this.calculateWordCount(createDocumentDTO.content || '') / 200),
+        isReadOnly: false,
+        encoding: 'utf-8',
+        language: detectedFormat,
+      },
+      tags: createDocumentDTO.tags || [],
+      resources: [],
+      versions: [],
+      renderingState: {
+        mode: EditorContracts.RenderingMode.SOURCE_ONLY,
+        isLivePreview: false,
+        cursorInRenderedView: false,
+        renderedContent: {
+          html: '',
+          toc: { items: [] },
+          codeBlocks: [],
+          mathBlocks: [],
+          imageReferences: [],
+        },
+        sourceMap: { mappings: [] },
+      },
+    };
+
+    // 使用仓储创建文档
+    const document = await this.documentRepository.create(accountUuid, documentData);
+    return document;
   }
 
   /**
-   * 关闭标签页
+   * 创建工作区
    */
-  async closeTab(command: ICloseTabCommand): Promise<void> {
-    try {
-      // TODO: 检查是否有未保存的更改
-      // const hasUnsavedChanges = await this.checkUnsavedChanges(command.tabId);
-      // if (hasUnsavedChanges && !command.saveChanges) {
-      //   throw new EditorError('Tab has unsaved changes', 'UNSAVED_CHANGES');
-      // }
-      // TODO: 如果需要保存，执行保存操作
-      // if (command.saveChanges) {
-      //   await this.saveFile(command.groupId, command.tabId);
-      // }
-      // TODO: 从存储中移除标签页
-      // await this.editorRepository.removeTab(command.groupId, command.tabId);
-      // TODO: 发布文件关闭事件
-      // await this.eventBus.publish(new FileClosedEvent({ ...command }));
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to close tab: ${(error as Error).message}`,
-        'CLOSE_TAB_FAILED',
-        { command, error },
-      );
-    }
+  async createWorkspace(
+    accountUuid: string,
+    createWorkspaceDTO: CreateWorkspaceDTO,
+  ): Promise<IEditorWorkspace> {
+    this.editorDomainService.validateSessionCreation(createWorkspaceDTO.name);
+
+    const workspaceData: Omit<IEditorWorkspace, 'uuid' | 'lifecycle'> = {
+      name: createWorkspaceDTO.name.trim(),
+      repositoryUuid: createWorkspaceDTO.repositoryUuid,
+      currentDocumentUuid: undefined,
+      openDocuments: [],
+      sidebarState: {
+        isVisible: true,
+        activeTab: EditorContracts.SidebarTab.FILE_EXPLORER,
+        width: 300,
+        tabs: [
+          {
+            id: EditorContracts.SidebarTab.FILE_EXPLORER,
+            title: 'Files',
+            icon: 'folder',
+            isEnabled: true,
+            order: 1,
+          },
+        ],
+      },
+      layout: {
+        sidebarWidth: 300,
+        editorWidth: 800,
+        previewWidth: 800,
+        isPreviewVisible: false,
+        panelSizes: {
+          sidebar: 300,
+          editor: 800,
+          preview: 800,
+        },
+        viewMode: EditorContracts.ViewMode.EDITOR_ONLY,
+      },
+      settings: {
+        theme: {
+          name: 'dark',
+          isDark: true,
+          colors: {
+            background: '#1e1e1e',
+            foreground: '#d4d4d4',
+            accent: '#007acc',
+            border: '#3c3c3c',
+            selection: '#264f78',
+            lineNumber: '#858585',
+          },
+        },
+        autoSave: createWorkspaceDTO.settings?.autoSave || {
+          enabled: true,
+          interval: 30,
+          onFocusLoss: false,
+        },
+        syntax: {
+          highlightEnabled: true,
+          language: 'markdown',
+          markdownPreview: true,
+          livePreview: false,
+        },
+        fontSize: 14,
+        fontFamily: 'Consolas, Monaco, monospace',
+        lineHeight: 1.5,
+        tabSize: 2,
+        wordWrap: true,
+        lineNumbers: true,
+        minimap: true,
+      },
+      searchState: {
+        currentQuery: '',
+        searchType: EditorContracts.SearchType.FULL_TEXT,
+        isSearching: false,
+        results: [],
+        selectedResultIndex: -1,
+      },
+    };
+
+    // 使用仓储创建工作区
+    const workspace = await this.workspaceRepository.create(accountUuid, workspaceData);
+    return workspace;
   }
 
-  /**
-   * 关闭所有标签页
-   */
-  async closeAllTabs(groupId?: string): Promise<void> {
-    try {
-      // TODO: 获取所有标签页
-      // const tabs = groupId
-      //   ? await this.editorRepository.getTabsByGroup(groupId)
-      //   : await this.editorRepository.getAllTabs();
-      // TODO: 检查未保存的更改
-      // const unsavedTabs = tabs.filter(tab => tab.isDirty);
-      // if (unsavedTabs.length > 0) {
-      //   throw new EditorError(`${unsavedTabs.length} tabs have unsaved changes`, 'UNSAVED_CHANGES');
-      // }
-      // TODO: 逐个关闭标签页
-      // for (const tab of tabs) {
-      //   await this.closeTab({ groupId: groupId || tab.groupId, tabId: tab.uuid });
-      // }
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to close all tabs: ${(error as Error).message}`,
-        'CLOSE_ALL_TABS_FAILED',
-        { groupId, error },
-      );
-    }
-  }
+  // ============ 兼容性方法 ============
+  // 为了与现有的EditorController兼容
 
-  /**
-   * 保存文件
-   */
-  async saveFile(groupId: string, tabId: string): Promise<void> {
-    try {
-      // TODO: 获取标签页信息
-      // const tab = await this.editorRepository.getTab(groupId, tabId);
-      // if (!tab) {
-      //   throw new EditorError('Tab not found', 'TAB_NOT_FOUND');
-      // }
-      // TODO: 获取文件内容
-      // const content = await this.getFileContent(tab.path);
-      // TODO: 写入文件
-      // await this.fileService.writeFile(tab.path, content);
-      // TODO: 更新标签页状态
-      // tab.isDirty = false;
-      // tab.lastModified = new Date();
-      // await this.editorRepository.updateTab(tab);
-      // TODO: 发布文件保存事件
-      // await this.eventBus.publish(new FileSavedEvent({ path: tab.path, content, groupId, tabId }));
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to save file: ${(error as Error).message}`,
-        'SAVE_FILE_FAILED',
-        { groupId, tabId, error },
-      );
-    }
-  }
-
-  /**
-   * 保存所有文件
-   */
-  async saveAllFiles(groupId?: string): Promise<void> {
-    try {
-      // TODO: 获取所有需要保存的标签页
-      // const dirtyTabs = groupId
-      //   ? await this.editorRepository.getDirtyTabsByGroup(groupId)
-      //   : await this.editorRepository.getAllDirtyTabs();
-      // TODO: 逐个保存文件
-      // for (const tab of dirtyTabs) {
-      //   await this.saveFile(tab.groupId, tab.uuid);
-      // }
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to save all files: ${(error as Error).message}`,
-        'SAVE_ALL_FILES_FAILED',
-        { groupId, error },
-      );
-    }
-  }
-
-  /**
-   * 分割编辑器
-   */
-  async splitEditor(command: ISplitEditorCommand): Promise<IEditorGroup> {
-    try {
-      // TODO: 获取源编辑器组
-      // const sourceGroup = await this.editorRepository.getGroup(command.sourceGroupId);
-      // if (!sourceGroup) {
-      //   throw new EditorGroupError('Source editor group not found', command.sourceGroupId);
-      // }
-
-      // 计算分割后的尺寸
-      const mockSourceGroup: IEditorGroup = {
-        uuid: command.sourceGroupId,
-        active: true,
-        width: 800,
-        tabs: [],
-        activeTabId: null,
-      };
-
-      const dimensions = this.editorDomainService.calculateSplitGroupDimensions(
-        mockSourceGroup,
-        command.direction,
-      );
-
-      // 创建新的编辑器组
-      const newGroup = this.editorDomainService.createEditorGroup(dimensions.newWidth);
-
-      // TODO: 如果需要复制当前标签页
-      // if (command.copyCurrentTab && sourceGroup.activeTabId) {
-      //   const activeTab = sourceGroup.tabs.find(tab => tab.uuid === sourceGroup.activeTabId);
-      //   if (activeTab) {
-      //     const newTab = { ...activeTab, uuid: this.editorDomainService.generateTabId(activeTab.path) };
-      //     newGroup.tabs.push(newTab);
-      //     newGroup.activeTabId = newTab.uuid;
-      //   }
-      // }
-
-      // TODO: 更新源组尺寸
-      // sourceGroup.width = dimensions.sourceWidth;
-      // await this.editorRepository.updateGroup(sourceGroup);
-
-      // TODO: 保存新组
-      // await this.editorRepository.saveGroup(newGroup);
-
-      // TODO: 发布编辑器组创建事件
-      // await this.eventBus.publish(new EditorGroupCreatedEvent({ group: newGroup }));
-
-      return newGroup;
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to split editor: ${(error as Error).message}`,
-        'SPLIT_EDITOR_FAILED',
-        { command, error },
-      );
-    }
-  }
-
-  /**
-   * 调整编辑器大小
-   */
-  async resizeEditor(command: IResizeEditorCommand): Promise<void> {
-    try {
-      // TODO: 获取编辑器组
-      // const group = await this.editorRepository.getGroup(command.groupId);
-      // if (!group) {
-      //   throw new EditorGroupError('Editor group not found', command.groupId);
-      // }
-
-      // 验证新尺寸
-      if (command.width < 200) {
-        throw new EditorContracts.EditorGroupError(
-          'Editor width must be at least 200px',
-          command.groupId,
-        );
-      }
-
-      // TODO: 更新组尺寸
-      // group.width = command.width;
-      // if (command.height) {
-      //   group.height = command.height;
-      // }
-      // await this.editorRepository.updateGroup(group);
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to resize editor: ${(error as Error).message}`,
-        'RESIZE_EDITOR_FAILED',
-        { command, error },
-      );
-    }
-  }
-
-  /**
-   * 获取所有编辑器组
-   */
-  async getEditorGroups(): Promise<IEditorGroup[]> {
-    try {
-      // TODO: 从存储获取所有编辑器组
-      // return await this.editorRepository.getAllGroups();
-
-      // 临时返回空数组
-      return [];
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to get editor groups: ${(error as Error).message}`,
-        'GET_EDITOR_GROUPS_FAILED',
-        { error },
-      );
-    }
-  }
-
-  /**
-   * 获取编辑器组
-   */
-  async getEditorGroup(groupId: string): Promise<IEditorGroup | null> {
-    try {
-      // TODO: 从存储获取编辑器组
-      // return await this.editorRepository.getGroup(groupId);
-
-      // 临时返回null
-      return null;
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to get editor group: ${(error as Error).message}`,
-        'GET_EDITOR_GROUP_FAILED',
-        { groupId, error },
-      );
-    }
-  }
-
-  /**
-   * 获取活动编辑器组
-   */
-  async getActiveEditorGroup(): Promise<IEditorGroup | null> {
-    try {
-      // TODO: 从存储获取活动编辑器组
-      // return await this.editorRepository.getActiveGroup();
-
-      // 临时返回null
-      return null;
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to get active editor group: ${(error as Error).message}`,
-        'GET_ACTIVE_EDITOR_GROUP_FAILED',
-        { error },
-      );
-    }
-  }
-
-  /**
-   * 设置活动编辑器组
-   */
-  async setActiveEditorGroup(groupId: string): Promise<void> {
-    try {
-      // TODO: 更新活动编辑器组
-      // const group = await this.editorRepository.getGroup(groupId);
-      // if (!group) {
-      //   throw new EditorGroupError('Editor group not found', groupId);
-      // }
-      // TODO: 取消其他组的活动状态
-      // await this.editorRepository.deactivateAllGroups();
-      // TODO: 激活指定组
-      // group.active = true;
-      // await this.editorRepository.updateGroup(group);
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to set active editor group: ${(error as Error).message}`,
-        'SET_ACTIVE_EDITOR_GROUP_FAILED',
-        { groupId, error },
-      );
-    }
-  }
-
-  /**
-   * 获取编辑器状态
-   */
-  async getEditorState(): Promise<IEditorStateResponse> {
-    try {
-      // TODO: 获取所有相关数据
-      const groups = await this.getEditorGroups();
-      const activeGroup = await this.getActiveEditorGroup();
-      // const layout = await this.layoutService.getCurrentLayout();
-
-      const totalTabs = groups.reduce((sum, group) => sum + group.tabs.length, 0);
-      const unsavedFiles = groups.reduce(
-        (sum, group) => sum + group.tabs.filter((tab) => tab.isDirty).length,
-        0,
-      );
-
-      return {
-        groups,
-        activeGroupId: activeGroup?.uuid || null,
-        layout: this.getDefaultLayout(), // TODO: 从配置获取
-        totalTabs,
-        unsavedFiles,
-      };
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to get editor state: ${(error as Error).message}`,
-        'GET_EDITOR_STATE_FAILED',
-        { error },
-      );
-    }
-  }
-
-  /**
-   * 获取文件内容
-   */
-  async getFileContent(path: string): Promise<IFileContentResponse> {
-    try {
-      // TODO: 实现文件读取
-      // const content = await this.fileService.readFile(path);
-      // const fileInfo = await this.fileService.getFileInfo(path);
-
-      const fileType = this.editorDomainService.determineFileType(path);
-
-      return {
-        path,
-        content: '', // TODO: 实际文件内容
-        fileType,
-        size: 0, // TODO: 实际文件大小
-        lastModified: new Date(),
-        readonly: false, // TODO: 检查文件权限
-      };
-    } catch (error) {
-      throw new EditorContracts.EditorError(
-        `Failed to get file content: ${(error as Error).message}`,
-        'GET_FILE_CONTENT_FAILED',
-        { path, error },
-      );
-    }
-  }
-
-  /**
-   * 获取默认布局配置
-   */
-  private getDefaultLayout(): IEditorLayout {
+  async getEditorState(): Promise<any> {
     return {
-      activityBarWidth: 45,
-      sidebarWidth: 300,
-      minSidebarWidth: 200,
-      resizeHandleWidth: 5,
-      minEditorWidth: 300,
-      editorTabWidth: 150,
-      windowWidth: 1200,
-      windowHeight: 800,
+      groups: [],
+      activeGroupId: null,
+      totalTabs: 0,
+      unsavedFiles: 0,
     };
   }
 
-  /**
-   * 检查文件是否存在
-   */
-  private async checkFileExists(path: string): Promise<boolean> {
-    // TODO: 实现实际的文件存在检查
-    return true;
+  async getEditorGroups(): Promise<any[]> {
+    return [];
+  }
+
+  async getActiveEditorGroup(): Promise<any> {
+    return null;
+  }
+
+  async setActiveEditorGroup(groupId: string): Promise<void> {
+    // TODO: 实现
+  }
+
+  async openFile(command: any): Promise<any> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async closeTab(command: any): Promise<void> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async closeAllTabs(groupId?: string): Promise<void> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async saveFile(groupId: string, tabId: string): Promise<void> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async saveAllFiles(groupId?: string): Promise<void> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async splitEditor(command: any): Promise<any> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async resizeEditor(command: any): Promise<void> {
+    throw new Error('Method needs implementation for new architecture');
+  }
+
+  async getEditorGroup(groupId: string): Promise<any> {
+    return null;
+  }
+
+  async getFileContent(path: string): Promise<any> {
+    this.editorDomainService.validateFilePath(path);
+    const fileType = this.editorDomainService.determineFileType(path);
+
+    return {
+      path,
+      content: '',
+      fileType,
+      size: 0,
+      lastModified: new Date(),
+      readonly: false,
+    };
+  }
+
+  // ============ 私有辅助方法 ============
+
+  private extractFileName(path: string): string {
+    return path.split('/').pop() || path.split('\\').pop() || path;
+  }
+
+  private calculateWordCount(content: string): number {
+    return content
+      .trim()
+      .split(/\s+/)
+      .filter((word) => word.length > 0).length;
+  }
+
+  private calculateLineCount(content: string): number {
+    return content.split('\n').length;
   }
 }

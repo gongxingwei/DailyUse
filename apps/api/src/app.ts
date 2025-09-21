@@ -14,9 +14,11 @@ import { authenticationRoutes } from './modules/authentication';
 import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
-import { createEditorRoutes, EditorController } from './modules/editor';
+import { createEditorRoutes, EditorController, EditorAggregateController } from './modules/editor';
+import { EditorDomainService } from '@dailyuse/domain-server';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
-import { EditorDomainService } from './modules/editor/domain/services/EditorDomainService.js';
+import { InMemoryDocumentRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryDocumentRepository.js';
+import { InMemoryWorkspaceRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryWorkspaceRepository.js';
 import { RepositoryController, createRepositoryRoutes } from './modules/repository/index.js';
 import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
 import {
@@ -82,7 +84,13 @@ api.use('/reminders', authMiddleware, reminderRouter);
 
 // 挂载编辑器路由 - 需要认证
 const editorDomainService = new EditorDomainService();
-const editorApplicationService = new EditorApplicationService(editorDomainService);
+const documentRepository = new InMemoryDocumentRepository();
+const workspaceRepository = new InMemoryWorkspaceRepository();
+const editorApplicationService = new EditorApplicationService(
+  editorDomainService,
+  documentRepository,
+  workspaceRepository,
+);
 EditorController.initialize(editorApplicationService);
 const editorRoutes = createEditorRoutes();
 api.use('/editor', authMiddleware, editorRoutes);

@@ -3,6 +3,4 @@
  * 编辑器模块契约定义
  */
 
-export * from './types.js';
-export * from './dtos.js';
-export * from './events.js';
+export * from './types';
