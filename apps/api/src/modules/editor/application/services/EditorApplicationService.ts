@@ -179,6 +179,224 @@ export class EditorApplicationService {
     return workspace;
   }
 
+  // ============ 文档操作 ============
+
+  /**
+   * 获取文档
+   */
+  async getDocument(accountUuid: string, uuid: string): Promise<IDocument | null> {
+    return await this.documentRepository.findByUuid(accountUuid, uuid);
+  }
+
+  /**
+   * 更新文档内容
+   */
+  async updateDocumentContent(
+    accountUuid: string,
+    documentUuid: string,
+    content: string,
+  ): Promise<IDocument> {
+    const document = await this.documentRepository.findByUuid(accountUuid, documentUuid);
+    if (!document) {
+      throw new Error(`Document with UUID ${documentUuid} not found`);
+    }
+
+    const updates: Partial<IDocument> = {
+      content,
+      metadata: {
+        ...document.metadata,
+        wordCount: this.calculateWordCount(content),
+        characterCount: content.length,
+        readingTime: Math.ceil(this.calculateWordCount(content) / 200),
+      },
+    };
+
+    return await this.documentRepository.update(accountUuid, documentUuid, updates);
+  }
+
+  /**
+   * 更新文档元数据
+   */
+  async updateDocument(
+    accountUuid: string,
+    documentUuid: string,
+    updateDocumentDTO: UpdateDocumentDTO,
+  ): Promise<IDocument> {
+    const document = await this.documentRepository.findByUuid(accountUuid, documentUuid);
+    if (!document) {
+      throw new Error(`Document with UUID ${documentUuid} not found`);
+    }
+
+    const updates: Partial<IDocument> = {};
+
+    if (updateDocumentDTO.title !== undefined) {
+      updates.title = updateDocumentDTO.title.trim();
+    }
+    if (updateDocumentDTO.content !== undefined) {
+      updates.content = updateDocumentDTO.content;
+      updates.metadata = {
+        ...document.metadata,
+        wordCount: this.calculateWordCount(updateDocumentDTO.content),
+        characterCount: updateDocumentDTO.content.length,
+        readingTime: Math.ceil(this.calculateWordCount(updateDocumentDTO.content) / 200),
+      };
+    }
+    if (updateDocumentDTO.tags !== undefined) {
+      updates.tags = updateDocumentDTO.tags;
+    }
+
+    return await this.documentRepository.update(accountUuid, documentUuid, updates);
+  }
+
+  /**
+   * 删除文档
+   */
+  async deleteDocument(accountUuid: string, documentUuid: string): Promise<void> {
+    const document = await this.documentRepository.findByUuid(accountUuid, documentUuid);
+    if (!document) {
+      throw new Error(`Document with UUID ${documentUuid} not found`);
+    }
+
+    await this.documentRepository.delete(accountUuid, documentUuid);
+  }
+
+  /**
+   * 搜索文档
+   */
+  async searchDocuments(
+    accountUuid: string,
+    query: string,
+    repositoryUuid?: string,
+  ): Promise<IDocument[]> {
+    const searchOptions = {
+      repositoryUuid,
+      limit: 50,
+    };
+    return await this.documentRepository.searchContent(accountUuid, query, searchOptions);
+  }
+
+  /**
+   * 获取仓储中的所有文档
+   */
+  async getDocumentsByRepository(
+    accountUuid: string,
+    repositoryUuid: string,
+  ): Promise<IDocument[]> {
+    return await this.documentRepository.findByRepository(accountUuid, repositoryUuid);
+  }
+
+  // ============ 工作区操作 ============
+
+  /**
+   * 获取工作区
+   */
+  async getWorkspace(accountUuid: string, uuid: string): Promise<IEditorWorkspace | null> {
+    return await this.workspaceRepository.findByUuid(accountUuid, uuid);
+  }
+
+  /**
+   * 更新工作区
+   */
+  async updateWorkspace(
+    accountUuid: string,
+    workspaceUuid: string,
+    updateWorkspaceDTO: UpdateWorkspaceDTO,
+  ): Promise<IEditorWorkspace> {
+    const workspace = await this.workspaceRepository.findByUuid(accountUuid, workspaceUuid);
+    if (!workspace) {
+      throw new Error(`Workspace with UUID ${workspaceUuid} not found`);
+    }
+
+    const updates: Partial<IEditorWorkspace> = {};
+
+    if (updateWorkspaceDTO.name !== undefined) {
+      this.editorDomainService.validateSessionCreation(updateWorkspaceDTO.name);
+      updates.name = updateWorkspaceDTO.name.trim();
+    }
+    if (updateWorkspaceDTO.settings !== undefined) {
+      updates.settings = { ...workspace.settings, ...updateWorkspaceDTO.settings };
+    }
+    if (updateWorkspaceDTO.layout !== undefined) {
+      updates.layout = { ...workspace.layout, ...updateWorkspaceDTO.layout };
+    }
+
+    return await this.workspaceRepository.update(accountUuid, workspaceUuid, updates);
+  }
+
+  /**
+   * 在工作区中打开文档
+   */
+  async openDocumentInWorkspace(
+    accountUuid: string,
+    workspaceUuid: string,
+    documentUuid: string,
+  ): Promise<IEditorWorkspace> {
+    const document = await this.documentRepository.findByUuid(accountUuid, documentUuid);
+    if (!document) {
+      throw new Error(`Document with UUID ${documentUuid} not found`);
+    }
+
+    const openDocument = {
+      documentUuid,
+      tabTitle: document.title,
+      isDirty: false,
+      lastActiveAt: Date.now(),
+      cursorPosition: { line: 1, column: 1, offset: 0 },
+      scrollPosition: { x: 0, y: 0 },
+    };
+
+    return await this.workspaceRepository.addOpenDocument(accountUuid, workspaceUuid, openDocument);
+  }
+
+  /**
+   * 从工作区关闭文档
+   */
+  async closeDocumentInWorkspace(
+    accountUuid: string,
+    workspaceUuid: string,
+    documentUuid: string,
+  ): Promise<IEditorWorkspace> {
+    return await this.workspaceRepository.removeOpenDocument(
+      accountUuid,
+      workspaceUuid,
+      documentUuid,
+    );
+  }
+
+  /**
+   * 设置工作区的当前活动文档
+   */
+  async setCurrentDocumentInWorkspace(
+    accountUuid: string,
+    workspaceUuid: string,
+    documentUuid: string,
+  ): Promise<IEditorWorkspace> {
+    return await this.workspaceRepository.setCurrentDocument(
+      accountUuid,
+      workspaceUuid,
+      documentUuid,
+    );
+  }
+
+  /**
+   * 获取用户的所有工作区
+   */
+  async getUserWorkspaces(accountUuid: string): Promise<IEditorWorkspace[]> {
+    return await this.workspaceRepository.findByAccount(accountUuid);
+  }
+
+  /**
+   * 删除工作区
+   */
+  async deleteWorkspace(accountUuid: string, workspaceUuid: string): Promise<void> {
+    const workspace = await this.workspaceRepository.findByUuid(accountUuid, workspaceUuid);
+    if (!workspace) {
+      throw new Error(`Workspace with UUID ${workspaceUuid} not found`);
+    }
+
+    await this.workspaceRepository.delete(accountUuid, workspaceUuid);
+  }
+
   // ============ 兼容性方法 ============
   // 为了与现有的EditorController兼容
 

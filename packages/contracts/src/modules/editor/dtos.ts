@@ -3,14 +3,7 @@
  * 编辑器模块数据传输对象定义
  */
 
-import type {
-  IEditorTab,
-  IEditorGroup,
-  IEditorLayout,
-  IEditorSession,
-  SupportedFileType,
-  FileOperationType,
-} from './types.js';
+import type { SupportedFileType, FileOperationType } from './types';
 
 // ============ DTO 基础类型 ============
 

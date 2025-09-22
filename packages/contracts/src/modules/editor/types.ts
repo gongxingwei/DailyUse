@@ -23,6 +23,54 @@ export enum DocumentFormat {
   JAVASCRIPT = 'javascript',
 }
 
+export enum SupportedFileType {
+  MARKDOWN = 'markdown',
+  TYPESCRIPT = 'typescript',
+  JAVASCRIPT = 'javascript',
+  JSON = 'json',
+  HTML = 'html',
+  CSS = 'css',
+  SCSS = 'scss',
+  LESS = 'less',
+  YAML = 'yaml',
+  TOML = 'toml',
+  XML = 'xml',
+  PYTHON = 'python',
+  JAVA = 'java',
+  CSHARP = 'csharp',
+  CPP = 'cpp',
+  C = 'c',
+  GO = 'go',
+  RUST = 'rust',
+  PHP = 'php',
+  RUBY = 'ruby',
+  SHELL = 'shell',
+  POWERSHELL = 'powershell',
+  SQL = 'sql',
+  PLAINTEXT = 'plaintext',
+  TEXT = 'text',
+  LOG = 'log',
+  DOCKERFILE = 'dockerfile',
+  GITIGNORE = 'gitignore',
+  README = 'readme',
+  LICENSE = 'license',
+  CONFIG = 'config',
+  UNKNOWN = 'unknown',
+}
+
+export enum FileOperationType {
+  CREATE = 'create',
+  READ = 'read',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  RENAME = 'rename',
+  MOVE = 'move',
+  COPY = 'copy',
+  SAVE = 'save',
+  RESTORE = 'restore',
+  BACKUP = 'backup',
+}
+
 export enum RenderingMode {
   SOURCE_ONLY = 'source',
   PREVIEW_ONLY = 'preview',
@@ -879,4 +927,98 @@ export interface IRepositoryExplorerApplicationService {
     filePath: string,
     metadata: Partial<FileMetadata>,
   ): Promise<void>;
+}
+
+// ===== 错误类型 =====
+
+export class EditorError extends Error {
+  public readonly code: string;
+  public readonly context?: any;
+
+  constructor(message: string, code: string, context?: any) {
+    super(message);
+    this.name = 'EditorError';
+    this.code = code;
+    this.context = context;
+  }
+}
+
+export class EditorGroupError extends EditorError {
+  public readonly groupUuid: string;
+
+  constructor(message: string, groupUuid: string, context?: any) {
+    super(message, 'EDITOR_GROUP_ERROR', context);
+    this.name = 'EditorGroupError';
+    this.groupUuid = groupUuid;
+  }
+}
+
+export class DocumentError extends EditorError {
+  public readonly documentUuid: string;
+
+  constructor(message: string, documentUuid: string, context?: any) {
+    super(message, 'DOCUMENT_ERROR', context);
+    this.name = 'DocumentError';
+    this.documentUuid = documentUuid;
+  }
+}
+
+export class WorkspaceError extends EditorError {
+  public readonly workspaceUuid: string;
+
+  constructor(message: string, workspaceUuid: string, context?: any) {
+    super(message, 'WORKSPACE_ERROR', context);
+    this.name = 'WorkspaceError';
+    this.workspaceUuid = workspaceUuid;
+  }
+}
+
+// ===== 命令接口 (临时兼容旧代码) =====
+
+export interface IEditorTab {
+  uuid: string;
+  title: string;
+  path: string;
+  active: boolean;
+  isDirty: boolean;
+  fileType: SupportedFileType;
+}
+
+export interface IEditorGroup {
+  uuid: string;
+  title: string;
+  activeTabId?: string;
+  tabs: IEditorTab[];
+}
+
+export interface IEditorLayout {
+  uuid: string;
+  name: string;
+  configuration: any;
+}
+
+export interface IOpenFileCommand {
+  filePath: string;
+  path: string; // 添加兼容性属性
+  groupId?: string;
+  activate?: boolean;
+}
+
+export interface ICloseTabCommand {
+  tabId: string;
+  groupId?: string; // 添加兼容性属性
+  saveChanges?: boolean;
+}
+
+export interface ISplitEditorCommand {
+  direction: 'horizontal' | 'vertical';
+  sourceTabId?: string; // 改为可选，兼容旧代码
+  sourceGroupId?: string; // 添加兼容性属性
+  copyCurrentTab?: boolean; // 添加兼容性属性
+}
+
+export interface IResizeEditorCommand {
+  groupId: string;
+  width: number;
+  height: number;
 }

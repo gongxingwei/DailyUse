@@ -9,8 +9,8 @@ import type {
   EditorLayoutDTO,
   EditorSessionDTO,
   FileOperationResponse,
-} from './dtos.js';
-import type { SupportedFileType, FileOperationType } from './types.js';
+} from './dtos';
+import type { SupportedFileType, FileOperationType } from './types';
 
 // ============ Base Event Interface ============
 

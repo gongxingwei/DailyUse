@@ -6,7 +6,7 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { EditorContracts } from '@dailyuse/contracts';
-import { EditorApplicationService } from '../../application/services/EditorApplicationService.js';
+import { EditorApplicationService } from '../../../application/services/EditorApplicationService.js';
 
 // 使用类型别名来简化类型引用
 type IOpenFileCommand = EditorContracts.IOpenFileCommand;

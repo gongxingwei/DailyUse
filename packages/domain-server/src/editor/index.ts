@@ -7,12 +7,6 @@
 export { DocumentRepository } from './repositories/DocumentRepository';
 export { WorkspaceRepository } from './repositories/WorkspaceRepository';
 
-// 应用服务导出
-export {
-  DocumentApplicationService,
-  WorkspaceApplicationService,
-} from './services/EditorApplicationService';
-
 // 现有的导出保持不变
 export type { IEditorRepository } from './repositories/iEditorRepository.js';
 export * from './services/index.js';

@@ -14,7 +14,7 @@ import { authenticationRoutes } from './modules/authentication';
 import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
-import { createEditorRoutes, EditorController, EditorAggregateController } from './modules/editor';
+import { createEditorRoutes, EditorAggregateController } from './modules/editor';
 import { EditorDomainService } from '@dailyuse/domain-server';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
 import { InMemoryDocumentRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryDocumentRepository.js';
@@ -91,7 +91,7 @@ const editorApplicationService = new EditorApplicationService(
   documentRepository,
   workspaceRepository,
 );
-EditorController.initialize(editorApplicationService);
+EditorAggregateController.initialize(editorApplicationService);
 const editorRoutes = createEditorRoutes();
 api.use('/editor', authMiddleware, editorRoutes);
 
