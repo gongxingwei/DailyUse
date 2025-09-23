@@ -86,66 +86,80 @@ export function useEditor() {
 
   const files = {
     /**
-     * 创建文件
+     * 创建文件 (暂未实现)
      */
     async create(request: { path: string; content?: string; type?: string }) {
-      return await getApplicationService().createFile(request);
+      console.warn('createFile not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 获取文件列表
+     * 获取文件列表 (暂未实现)
      */
     async getAll(params?: { directory?: string; type?: string; limit?: number }) {
-      return await getApplicationService().getFiles(params);
+      console.warn('getFiles not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 获取文件内容
+     * 获取文件内容 (暂未实现)
      */
     async getContent(path: string) {
-      return await getApplicationService().getFileContent(path);
+      console.warn('getFileContent not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 保存文件内容
+     * 保存文件内容 (暂未实现)
      */
     async saveContent(path: string, content: string) {
-      return await getApplicationService().saveFileContent(path, content);
+      console.warn('saveFileContent not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 删除文件
+     * 删除文件 (暂未实现)
      */
     async delete(path: string) {
-      return await getApplicationService().deleteFile(path);
+      console.warn('deleteFile not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 重命名文件
+     * 重命名文件 (暂未实现)
      */
     async rename(oldPath: string, newPath: string) {
-      return await getApplicationService().renameFile(oldPath, newPath);
+      console.warn('renameFile not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 打开文件
+     * 打开文件 (需要会话和组信息)
      */
-    async open(path: string) {
-      return await getApplicationService().openFile(path);
+    async open(path: string, sessionUuid?: string, groupUuid?: string) {
+      if (!sessionUuid || !groupUuid) {
+        console.warn('openFile requires sessionUuid and groupUuid in new architecture');
+        throw new Error('sessionUuid and groupUuid are required');
+      }
+      return await getApplicationService().openFile(sessionUuid, groupUuid, path);
     },
 
     /**
-     * 关闭文件
+     * 关闭文件 (需要会话和组信息)
      */
-    close(path: string) {
-      return getApplicationService().closeFile(path);
+    async close(tabUuid: string, sessionUuid?: string, groupUuid?: string) {
+      if (!sessionUuid || !groupUuid) {
+        console.warn('closeFile requires sessionUuid and groupUuid in new architecture');
+        throw new Error('sessionUuid and groupUuid are required');
+      }
+      return await getApplicationService().closeFile(sessionUuid, groupUuid, tabUuid);
     },
 
     /**
-     * 切换到文件
+     * 切换到文件 (暂未实现)
      */
     switchTo(file: any) {
-      return getApplicationService().switchToFile(file);
+      editorStore.setCurrentFile(file);
     },
 
     /**
@@ -167,24 +181,43 @@ export function useEditor() {
 
   const editorGroups = {
     /**
-     * 创建编辑器组
+     * 创建编辑器组 (需要会话信息)
      */
-    async create(request: { name: string; position?: 'left' | 'right' | 'top' | 'bottom' }) {
-      return await getApplicationService().createEditorGroup(request);
+    async create(
+      request: { name: string; position?: 'left' | 'right' | 'top' | 'bottom' },
+      sessionUuid?: string,
+    ) {
+      if (!sessionUuid) {
+        console.warn('createGroup requires sessionUuid in new architecture');
+        throw new Error('sessionUuid is required');
+      }
+      return await getApplicationService().createGroup(sessionUuid, {
+        width: 400,
+        title: request.name,
+        order: 0,
+      });
     },
 
     /**
-     * 获取所有编辑器组
+     * 获取所有编辑器组 (需要会话信息)
      */
-    async getAll() {
-      return await getApplicationService().getEditorGroups();
+    async getAll(sessionUuid?: string) {
+      if (!sessionUuid) {
+        console.warn('getGroups requires sessionUuid in new architecture');
+        throw new Error('sessionUuid is required');
+      }
+      return await getApplicationService().getGroups(sessionUuid);
     },
 
     /**
-     * 删除编辑器组
+     * 删除编辑器组 (需要会话信息)
      */
-    async delete(uuid: string) {
-      return await getApplicationService().deleteEditorGroup(uuid);
+    async delete(uuid: string, sessionUuid?: string) {
+      if (!sessionUuid) {
+        console.warn('deleteGroup requires sessionUuid in new architecture');
+        throw new Error('sessionUuid is required');
+      }
+      return await getApplicationService().deleteGroup(sessionUuid, uuid);
     },
 
     /**
@@ -202,42 +235,47 @@ export function useEditor() {
     },
   };
 
-  // ===== 源码控制操作 =====
+  // ===== 源码控制操作 (暂未实现) =====
 
   const sourceControl = {
     /**
-     * 获取仓库列表
+     * 获取仓库列表 (暂未实现)
      */
     async getRepositories() {
-      return await getApplicationService().getSourceControlRepositories();
+      console.warn('Source control not implemented in new architecture');
+      return [];
     },
 
     /**
-     * 获取文件变更
+     * 获取文件变更 (暂未实现)
      */
     async getFileChanges(repositoryPath?: string) {
-      return await getApplicationService().getFileChanges(repositoryPath);
+      console.warn('Source control not implemented in new architecture');
+      return [];
     },
 
     /**
-     * 暂存文件
+     * 暂存文件 (暂未实现)
      */
     async stageFile(filePath: string) {
-      return await getApplicationService().stageFile(filePath);
+      console.warn('Source control not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 取消暂存文件
+     * 取消暂存文件 (暂未实现)
      */
     async unstageFile(filePath: string) {
-      return await getApplicationService().unstageFile(filePath);
+      console.warn('Source control not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
 
     /**
-     * 提交变更
+     * 提交变更 (暂未实现)
      */
     async commitChanges(message: string) {
-      return await getApplicationService().commitChanges(message);
+      console.warn('Source control not implemented in new architecture');
+      throw new Error('Method not implemented in new architecture');
     },
   };
 

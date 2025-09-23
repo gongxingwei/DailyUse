@@ -1,48 +1,50 @@
-import { defineStore } from 'pinia'
+import { defineStore } from 'pinia';
 
 interface FileState {
-  currentFilePath: string | null
+  currentFilePath: string | null;
   openedFiles: Array<{
-    uuid: string
-    path: string
-    title: string
-  }>
+    uuid: string;
+    path: string;
+    title: string;
+  }>;
 }
 
 export const useFileStore = defineStore('file', {
   state: (): FileState => ({
     currentFilePath: null,
-    openedFiles: []
+    openedFiles: [],
   }),
 
   actions: {
     setCurrentFile(path: string | null) {
-      this.currentFilePath = path
+      this.currentFilePath = path;
     },
 
     openFile(path: string) {
-      const title = window.shared.path.basename(path)
-      const uuid = path // 使用路径作为唯一标识
+      // 使用简单的路径解析代替 window.shared.path.basename
+      const title = path.split('/').pop() || path.split('\\').pop() || path;
+      const uuid = path; // 使用路径作为唯一标识
 
-      if (!this.openedFiles.find(f => f.uuid === uuid)) {
-        this.openedFiles.push({ uuid, path, title })
+      if (!this.openedFiles.find((f) => f.uuid === uuid)) {
+        this.openedFiles.push({ uuid, path, title });
       }
-      this.setCurrentFile(path)
+      this.setCurrentFile(path);
     },
 
     closeFile(uuid: string) {
-      const index = this.openedFiles.findIndex(f => f.uuid === uuid)
+      const index = this.openedFiles.findIndex((f) => f.uuid === uuid);
       if (index > -1) {
-        this.openedFiles.splice(index, 1)
-        
+        this.openedFiles.splice(index, 1);
+
         // 如果关闭的是当前文件，切换到其他文件
         if (this.currentFilePath === uuid) {
-          const nextFile = this.openedFiles[index] || this.openedFiles[index - 1]
-          this.setCurrentFile(nextFile?.path || null)
+          const nextFile = this.openedFiles[index] || this.openedFiles[index - 1];
+          this.setCurrentFile(nextFile?.path || null);
         }
       }
-    }
+    },
   },
 
-  persist: true // 持久化存储
-})
+  // 暂时注释持久化，避免类型错误
+  // persist: true, // 持久化存储
+});

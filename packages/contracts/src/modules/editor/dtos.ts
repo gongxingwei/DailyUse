@@ -276,6 +276,209 @@ export type EditorTabResponse = EditorTabDTO;
 export type EditorLayoutResponse = EditorLayoutDTO;
 
 /**
+ * 编辑器标签页列表响应
+ */
+export interface EditorTabListResponse {
+  /** 标签页列表 */
+  tabs: EditorTabResponse[];
+  /** 总数量 */
+  total: number;
+  /** 当前页码 */
+  page: number;
+  /** 每页数量 */
+  limit: number;
+  /** 是否有更多数据 */
+  hasMore: boolean;
+}
+
+/**
+ * 编辑器布局列表响应
+ */
+export interface EditorLayoutListResponse {
+  /** 布局列表 */
+  layouts: EditorLayoutResponse[];
+  /** 总数量 */
+  total: number;
+  /** 当前页码 */
+  page: number;
+  /** 每页数量 */
+  limit: number;
+  /** 是否有更多数据 */
+  hasMore: boolean;
+}
+
+/**
+ * 批量创建标签页响应
+ */
+export type BatchCreateTabsResponse = BatchOperationResponse<EditorTabResponse>;
+
+/**
+ * 标签页搜索响应
+ */
+export interface TabSearchResponse {
+  /** 搜索结果 */
+  results: {
+    /** 标签页信息 */
+    tab: EditorTabResponse;
+    /** 匹配的行号 */
+    lineNumbers: number[];
+    /** 匹配的内容片段 */
+    snippets: {
+      line: number;
+      content: string;
+      matchStart: number;
+      matchEnd: number;
+    }[];
+  }[];
+  /** 总匹配数 */
+  totalMatches: number;
+  /** 搜索查询 */
+  query: string;
+  /** 搜索时间 */
+  searchTime: number;
+}
+
+/**
+ * 会话聚合响应
+ */
+export interface EditorSessionAggregateResponse {
+  /** 会话信息 */
+  session: EditorSessionResponse;
+  /** 编辑器组列表 */
+  groups: EditorGroupResponse[];
+  /** 所有标签页 */
+  tabs: EditorTabResponse[];
+  /** 布局信息 */
+  layout: EditorLayoutResponse;
+  /** 统计信息 */
+  statistics: EditorStatistics;
+}
+
+// ============ 文件操作 DTOs ============
+
+/**
+ * 打开文件请求
+ */
+export interface OpenFileRequest {
+  /** 文件路径 */
+  filePath: string;
+  /** 是否为预览模式 */
+  isPreview?: boolean;
+  /** 文件类型（可选，系统会自动检测） */
+  fileType?: SupportedFileType;
+}
+
+/**
+ * 打开文件响应
+ */
+export type OpenFileResponse = EditorTabResponse;
+
+/**
+ * 保存文件请求
+ */
+export interface SaveFileRequest {
+  /** 文件内容 */
+  content: string;
+  /** 文件路径（可选，用于另存为） */
+  filePath?: string;
+}
+
+/**
+ * 保存文件响应
+ */
+export interface SaveFileResponse {
+  /** 是否保存成功 */
+  success: boolean;
+  /** 文件路径 */
+  filePath: string;
+  /** 保存时间 */
+  savedAt: number;
+  /** 文件大小 */
+  fileSize: number;
+}
+
+/**
+ * 关闭文件响应
+ */
+export interface CloseFileResponse {
+  /** 是否关闭成功 */
+  success: boolean;
+  /** 关闭的标签页ID */
+  tabId: string;
+  /** 是否有未保存的更改 */
+  hadUnsavedChanges: boolean;
+}
+
+// ============ 会话状态管理 DTOs ============
+
+/**
+ * 保存会话状态请求
+ */
+export interface SaveSessionStateRequest {
+  /** 布局配置 */
+  layout?: Partial<EditorLayoutDTO>;
+  /** 编辑器组配置 */
+  groups?: Array<{
+    uuid: string;
+    active: boolean;
+    width: number;
+    height?: number;
+    activeTabId: string | null;
+    order: number;
+  }>;
+  /** 标签页状态 */
+  tabs?: Array<{
+    uuid: string;
+    path: string;
+    active: boolean;
+    isPreview: boolean;
+    isDirty: boolean;
+    content?: string;
+  }>;
+}
+
+/**
+ * 更新会话聚合请求
+ */
+export interface UpdateSessionAggregateRequest {
+  /** 会话更新 */
+  session?: UpdateEditorSessionRequest;
+  /** 布局更新 */
+  layout?: UpdateEditorLayoutRequest;
+  /** 组更新列表 */
+  groups?: Array<{
+    uuid?: string;
+    operation: 'create' | 'update' | 'delete';
+    data?: CreateEditorGroupRequest | UpdateEditorGroupRequest;
+  }>;
+  /** 标签页更新列表 */
+  tabs?: Array<{
+    uuid?: string;
+    groupUuid: string;
+    operation: 'create' | 'update' | 'delete';
+    data?: CreateEditorTabRequest | UpdateEditorTabRequest;
+  }>;
+}
+
+// ============ 布局模板 DTOs ============
+
+/**
+ * 创建布局模板请求
+ */
+export interface CreateLayoutTemplateRequest {
+  /** 模板名称 */
+  name: string;
+  /** 模板描述 */
+  description?: string;
+  /** 模板分类 */
+  category?: string;
+  /** 布局配置 */
+  layout: Omit<EditorLayoutDTO, 'uuid' | 'accountUuid' | 'createdAt' | 'updatedAt'>;
+  /** 是否为公共模板 */
+  isPublic?: boolean;
+}
+
+/**
  * 编辑器会话列表响应
  */
 export interface EditorSessionListResponse {

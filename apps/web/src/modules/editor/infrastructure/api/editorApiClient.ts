@@ -1,5 +1,5 @@
-import { apiClient } from '@/shared/api/instances';
-import { type EditorContracts } from '@dailyuse/contracts';
+import { apiClient } from '../../../../shared/api/instances';
+import type * as EditorContracts from '../../../../../../../packages/contracts/src/modules/editor';
 
 /**
  * Editor Session API 客户端
@@ -80,6 +80,14 @@ export class EditorSessionApiClient {
   }
 
   /**
+   * 获取会话的编辑器组列表 (别名方法)
+   */
+  async getSessionGroups(sessionUuid: string): Promise<EditorContracts.EditorGroupDTO[]> {
+    const response = await apiClient.get(`${this.baseUrl}/${sessionUuid}/groups`);
+    return response.data || response;
+  }
+
+  /**
    * 更新编辑器组
    */
   async updateGroup(
@@ -142,6 +150,17 @@ export class EditorSessionApiClient {
   }
 
   /**
+   * 获取组内标签页列表 (别名方法)
+   */
+  async getGroupTabs(
+    sessionUuid: string,
+    groupUuid: string,
+  ): Promise<EditorContracts.EditorTabDTO[]> {
+    const response = await apiClient.get(`${this.baseUrl}/${sessionUuid}/groups/${groupUuid}/tabs`);
+    return response.data || response;
+  }
+
+  /**
    * 更新编辑器标签页
    */
   async updateTab(
@@ -193,11 +212,11 @@ export class EditorSessionApiClient {
   async openFile(
     sessionUuid: string,
     groupUuid: string,
-    request: EditorContracts.OpenFileRequest,
-  ): Promise<EditorContracts.OpenFileResponse> {
+    filePath: string,
+  ): Promise<EditorContracts.EditorTabDTO> {
     const data = await apiClient.post(
       `${this.baseUrl}/${sessionUuid}/groups/${groupUuid}/open-file`,
-      request,
+      { filePath },
     );
     return data;
   }
@@ -209,27 +228,21 @@ export class EditorSessionApiClient {
     sessionUuid: string,
     groupUuid: string,
     tabUuid: string,
-    request: EditorContracts.SaveFileRequest,
-  ): Promise<EditorContracts.SaveFileResponse> {
-    const data = await apiClient.post(
+    content: string,
+  ): Promise<void> {
+    await apiClient.post(
       `${this.baseUrl}/${sessionUuid}/groups/${groupUuid}/tabs/${tabUuid}/save`,
-      request,
+      { content },
     );
-    return data;
   }
 
   /**
    * 关闭文件
    */
-  async closeFile(
-    sessionUuid: string,
-    groupUuid: string,
-    tabUuid: string,
-  ): Promise<EditorContracts.CloseFileResponse> {
-    const data = await apiClient.post(
+  async closeFile(sessionUuid: string, groupUuid: string, tabUuid: string): Promise<void> {
+    await apiClient.post(
       `${this.baseUrl}/${sessionUuid}/groups/${groupUuid}/tabs/${tabUuid}/close`,
     );
-    return data;
   }
 
   // ===== Session State Management =====
@@ -324,6 +337,29 @@ export class EditorSessionApiClient {
  */
 export class EditorLayoutApiClient {
   private readonly baseUrl = '/editor/layouts';
+
+  // ===== Layout CRUD =====
+
+  /**
+   * 创建布局
+   */
+  async createLayout(
+    request: Partial<EditorContracts.EditorLayoutDTO>,
+  ): Promise<EditorContracts.EditorLayoutDTO> {
+    const data = await apiClient.post(this.baseUrl, request);
+    return data;
+  }
+
+  /**
+   * 更新布局
+   */
+  async updateLayout(
+    uuid: string,
+    request: EditorContracts.UpdateEditorLayoutRequest,
+  ): Promise<EditorContracts.EditorLayoutDTO> {
+    const data = await apiClient.put(`${this.baseUrl}/${uuid}`, request);
+    return data;
+  }
 
   // ===== Layout Templates =====
 

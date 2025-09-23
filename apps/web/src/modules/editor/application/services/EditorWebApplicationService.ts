@@ -1,9 +1,10 @@
 import type { EditorContracts } from '@dailyuse/contracts';
 import { useEditorStore } from '../../presentation/stores/editorStore';
-import {
-  editorSessionApiClient,
-  editorLayoutApiClient,
-} from '../../infrastructure/api/editorApiClient';
+// 暂时注释掉 API 客户端导入，避免 shared API 依赖问题
+// import {
+//   editorSessionApiClient,
+//   editorLayoutApiClient,
+// } from '../../infrastructure/api/editorApiClient';
 
 /**
  * Editor Web 应用服务 - 新架构

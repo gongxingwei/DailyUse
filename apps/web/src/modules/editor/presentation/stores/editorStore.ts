@@ -7,6 +7,9 @@ import { defineStore } from 'pinia';
  */
 export const useEditorStore = defineStore('editor', {
   state: () => ({
+    // ===== 会话管理 (兼容现有架构) =====
+    currentSession: null as any,
+
     // ===== 文件管理 =====
     files: [] as any[], // 所有文件对象
     openedFiles: [] as any[], // 已打开的文件
@@ -394,6 +397,83 @@ export const useEditorStore = defineStore('editor', {
       }
     },
 
+    // ===== Session 操作 (为了兼容现有的 EditorWebApplicationService) =====
+
+    /**
+     * 设置当前会话 (兼容方法)
+     */
+    setCurrentSession(session: any | null) {
+      this.currentSession = session;
+      this.updateLastSyncTime();
+    },
+
+    // ===== 已打开文件操作 =====
+
+    /**
+     * 添加已打开文件
+     */
+    addOpenedFile(file: any) {
+      if (!this.openedFiles.find((f) => f.uuid === file.uuid || f.path === file.path)) {
+        this.openedFiles.push(file);
+        this.updateLastSyncTime();
+      }
+    },
+
+    /**
+     * 更新已打开文件
+     */
+    updateOpenedFile(uuid: string, file: any) {
+      const index = this.openedFiles.findIndex((f) => f.uuid === uuid);
+      if (index !== -1) {
+        this.openedFiles[index] = { ...this.openedFiles[index], ...file };
+        this.updateLastSyncTime();
+      }
+    },
+
+    /**
+     * 移除已打开文件
+     */
+    removeOpenedFile(uuid: string) {
+      const index = this.openedFiles.findIndex((f) => f.uuid === uuid);
+      if (index !== -1) {
+        const file = this.openedFiles[index];
+        this.openedFiles.splice(index, 1);
+
+        // 如果删除的是当前文件，清除当前文件状态
+        if (this.currentFile?.uuid === uuid) {
+          this.currentFile = null;
+        }
+
+        this.updateLastSyncTime();
+      }
+    },
+
+    /**
+     * 更新文件内容
+     */
+    updateFileContent(uuid: string, content: string) {
+      // 更新已打开文件中的内容
+      const openedFileIndex = this.openedFiles.findIndex((f) => f.uuid === uuid);
+      if (openedFileIndex !== -1) {
+        this.openedFiles[openedFileIndex] = {
+          ...this.openedFiles[openedFileIndex],
+          content,
+          isModified: false,
+        };
+      }
+
+      // 更新当前文件内容
+      if (this.currentFile?.uuid === uuid) {
+        this.currentFile = {
+          ...this.currentFile,
+          content,
+          isModified: false,
+        };
+      }
+
+      this.updateLastSyncTime();
+    },
+
     // ===== 编辑器组操作 =====
 
     /**
@@ -454,6 +534,14 @@ export const useEditorStore = defineStore('editor', {
     },
 
     // ===== 布局操作 =====
+
+    /**
+     * 更新布局配置
+     */
+    updateLayout(layout: any) {
+      this.layout = { ...this.layout, ...layout };
+      this.updateLastSyncTime();
+    },
 
     /**
      * 更新窗口尺寸
@@ -591,6 +679,7 @@ export const useEditorStore = defineStore('editor', {
      * 清除所有数据
      */
     clearAllData() {
+      this.currentSession = null;
       this.files = [];
       this.openedFiles = [];
       this.currentFile = null;

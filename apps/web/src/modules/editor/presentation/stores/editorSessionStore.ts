@@ -1,5 +1,4 @@
 import { defineStore } from 'pinia';
-import { EditorSession, EditorGroup, EditorTab } from '@dailyuse/domain-client';
 import type { EditorContracts } from '@dailyuse/contracts';
 
 // 简化的 store 实现
@@ -84,16 +83,9 @@ export const useEditorSessionStore = defineStore('editorSession', {
           updatedAt: Date.now(),
         };
 
-        const session = new EditorSession(sessionDto);
+        const session = sessionDto;
 
-        // 创建默认编辑器组
-        const defaultGroup = session.createGroup({
-          width: 800,
-          height: 600,
-          title: '主编辑器',
-          order: 0,
-        });
-
+        // 简化的会话创建，不需要域对象
         this.sessions.push(session);
         this.currentSessionUuid = session.uuid;
 
@@ -119,7 +111,7 @@ export const useEditorSessionStore = defineStore('editorSession', {
           updatedAt: Date.now(),
         };
 
-        const session = new EditorSession(sessionDto);
+        const session = sessionDto;
 
         this.sessions.push(session);
         this.addNotification('success', `创建会话: ${params.name}`);
