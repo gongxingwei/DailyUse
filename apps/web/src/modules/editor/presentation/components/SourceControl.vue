@@ -40,8 +40,7 @@
                     </div>
                 </div>
                 <div v-show="isStagedExpanded" class="section-content">
-                    <div v-for="file in store.changes.staged" :key="file" class="change-item"
-                        >
+                    <div v-for="file in store.changes.staged" :key="file" class="change-item">
                         <v-icon size="small" color="green">mdi-plus</v-icon>
                         <span class="file-name">{{ getFileName(file) }}</span>
                         <v-icon class="action-button" size="small" @click.stop="store.unstageFile(file)">
@@ -142,7 +141,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useSourceControlStore } from '../stores/sourceControlStore'
-import ConfirmDialog from '@renderer/shared/components/ConfirmDialog.vue';
+import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import GitGraph from './GitGraph.vue'
 
 const props = defineProps<{

@@ -12,13 +12,15 @@
         :title="icon.title" @click="icon.action">
         <v-icon>{{ icon.icon }}</v-icon>
       </button>
+      <!-- 暂时注释掉Menu组件
       <Menu :items="editorFunctionIconStore.moreFunctions" placement="bottom-end">
         <template #trigger>
           <button class="function-icon">
             <v-icon>mdi-dots-horizontal</v-icon>
           </button>
         </template>
-      </Menu>
+</Menu>
+-->
     </div>
   </div>
 </template>
@@ -27,7 +29,7 @@
 import { watch } from 'vue'
 import { useEditorLayoutStore } from '../stores/editorLayoutStore';
 import { useEditorFunctionIconStore } from '../stores/editorFunctionIconStore';
-import Menu from '@renderer/shared/components/Menu.vue';
+// import Menu from '@renderer/shared/components/Menu.vue';
 import type { EditorTab } from '../stores/editorGroupStore';
 
 const props = defineProps<{

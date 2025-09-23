@@ -1,20 +1,15 @@
 <template>
   <div class="activity-bar">
-    <button 
-      v-for="item in store.activityBarItems" 
-      class="function-icon"
-      :class="{ 'active': store.activeActivityBarItemId === item.uuid }"
-      :key="item.uuid"
-      :title="item.title"
-      @click="store.setActiveActivityBarItemId(item.uuid)"
-    >
+    <button v-for="item in store.activityBarItems" class="function-icon"
+      :class="{ 'active': store.activeActivityBarItemId === item.uuid }" :key="item.uuid" :title="item.title"
+      @click="store.setActiveActivityBarItemId(item.uuid)">
       <v-icon>{{ item.icon }}</v-icon>
     </button>
   </div>
 </template>
 
 <script setup lang="ts">
-import { useActivityBarStore } from '@renderer/modules/Editor/stores/activityBarStore';
+import { useActivityBarStore } from '../stores/activityBarStore';
 const store = useActivityBarStore();
 </script>
 
