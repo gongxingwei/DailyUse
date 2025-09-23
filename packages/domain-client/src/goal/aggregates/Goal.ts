@@ -1331,6 +1331,96 @@ export class Goal extends GoalCore {
     return `goal_${this.uuid}`;
   }
 
+  // ===== Goal Domain Service 所需的方法 =====
+
+  /**
+   * 清空所有记录
+   * 用于目标克隆时选择性清空记录
+   */
+  clearAllRecords(): void {
+    this.records = [];
+    this._changeTracker.records = { created: [], updated: [], deleted: [] };
+    this.updateVersion();
+  }
+
+  /**
+   * 清空所有复盘
+   * 用于目标克隆时选择性清空复盘
+   */
+  clearAllReviews(): void {
+    this.reviews = [];
+    this._changeTracker.reviews = { created: [], updated: [], deleted: [] };
+    this.updateVersion();
+  }
+
+  /**
+   * 重置目标以便克隆
+   * 生成新的UUID，重置特定字段
+   */
+  resetForClone(): void {
+    // 生成新的UUID
+    (this as any)._uuid = this.generateUUID();
+
+    // 重置状态为活跃
+    this._lifecycle.status = 'active';
+    this._lifecycle.createdAt = new Date();
+    this._lifecycle.updatedAt = new Date();
+
+    // 重置版本号
+    this._version = 1;
+
+    // 为所有关键结果生成新的UUID并重置进度
+    this.keyResults.forEach((kr) => {
+      (kr as any).uuid = this.generateUUID();
+      (kr as any).goalUuid = this.uuid;
+      // 使用实体的方法来重置进度到起始值
+      kr.resetProgress();
+    });
+
+    // 清空变更跟踪器
+    this._clearChangeTracker();
+  }
+
+  /**
+   * 调整优先级权重
+   * 用于批量目标权重调整
+   */
+  adjustPriorityWeight(newWeight: number): void {
+    if (newWeight < 0 || newWeight > 100) {
+      throw new Error('目标权重必须在0-100%之间');
+    }
+
+    // 扩展元数据以包含权重信息
+    this._metadata = {
+      tags: this._metadata.tags || [],
+      category: this._metadata.category || '',
+      priorityWeight: newWeight,
+    } as any;
+    this.updateVersion();
+  }
+
+  /**
+   * 获取目标总持续时间（天数）
+   * 别名方法，映射到父类的 durationInDays 属性
+   */
+  get totalDuration(): number {
+    return this.durationInDays;
+  }
+
+  /**
+   * 更新时间框架
+   * 用于调整目标的开始和结束时间
+   */
+  updateTimeframe(startTime: Date, endTime: Date): void {
+    if (startTime.getTime() >= endTime.getTime()) {
+      throw new Error('开始时间必须早于结束时间');
+    }
+
+    this._startTime = startTime;
+    this._endTime = endTime;
+    this.updateVersion();
+  }
+
   /**
    * 转换为更新请求格式
    * 使用变更跟踪系统生成具体的创建、更新、删除操作

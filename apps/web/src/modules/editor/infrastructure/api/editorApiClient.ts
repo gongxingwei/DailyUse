@@ -1,5 +1,5 @@
-import { apiClient } from '../../../../shared/api/instances';
-import type * as EditorContracts from '../../../../../../../packages/contracts/src/modules/editor';
+import { apiClient } from '@/shared/api/instances';
+import type * as EditorContracts from '@dailyuse/contracts/modules/editor';
 
 /**
  * Editor Session API 客户端
