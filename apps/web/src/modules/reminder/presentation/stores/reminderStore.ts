@@ -74,7 +74,7 @@ export const useReminderStore = defineStore('reminder', () => {
    */
   const getActiveReminderInstances = computed(() =>
     reminderInstances.value.filter(
-      (instance) => instance.status === 'scheduled' || instance.status === 'overdue',
+      (instance) => instance.status === 'active' || instance.status === 'overdue',
     ),
   );
 

@@ -464,15 +464,6 @@ const getThemeIcon = (theme: string) => {
   return icons[theme] || 'mdi-monitor'
 }
 
-// 初始化
-onMounted(async () => {
-  try {
-    const isAutoLaunch = await window.shared?.ipcRenderer.invoke('get-auto-launch')
-    autoLaunch.value = isAutoLaunch
-  } catch (error) {
-    console.error('获取开机自启动状态失败:', error)
-  }
-})
 </script>
 
 <style scoped>

@@ -48,7 +48,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { TaskTemplate } from '@/modules/task/domain/aggregates/taskTemplate';
+import { TaskTemplate } from '@dailyuse/domain-client';
 
 type SnoozeConfig = TaskTemplate['reminderConfig']['snooze'];
 

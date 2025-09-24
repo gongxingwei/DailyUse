@@ -1,16 +1,15 @@
-import { InitializationManager, InitializationPhase, InitializationTask } from '@main/shared/initialization/initializationManager';
-import { getRepositoryApplicationService } from '../application/services/repositoryApplicationService';
+import { InitializationManager, InitializationPhase, type InitializationTask } from '@dailyuse/utils';
+import { RepositoryWebApplicationService } from '../application/services/RepositoryWebApplicationService';
 
-
-const repositorySyncStatusRask: InitializationTask = {
+const repositorySyncStatusTask: InitializationTask = {
   name: 'repository-sync-status',
   phase: InitializationPhase.USER_LOGIN,
   priority: 20,
   dependencies: [],
   initialize: async () => {
     // 初始化仓库同步状态处理器
-    const repositoryService = getRepositoryApplicationService();
-    repositoryService.syncAllState();
+    const repositoryService = new RepositoryWebApplicationService();
+    repositoryService.syncAllRepositories();
     console.log('✓ Repository sync status handlers registered');
   }
 };
@@ -18,7 +17,7 @@ const repositorySyncStatusRask: InitializationTask = {
 
 export function registerRepositoryInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  manager.registerTask(repositorySyncStatusRask);
+  manager.registerTask(repositorySyncStatusTask);
   
   console.log('Repository module initialization tasks registered');
 }
