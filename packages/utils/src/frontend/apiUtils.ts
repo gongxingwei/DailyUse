@@ -18,7 +18,7 @@ export interface EnvironmentConfig {
  */
 export function getEnvironmentConfig(): EnvironmentConfig {
   // 安全地访问环境变量，在构建时避免 TypeScript 错误
-  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+  const env = (globalThis as any).import?.meta?.env || (globalThis as any).process?.env || {};
 
   const config: EnvironmentConfig = {
     apiBaseUrl: env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
@@ -44,7 +44,7 @@ export function createAuthHeader(token: string): Record<string, string> {
  * 检查是否为开发环境
  */
 export function isDevelopment(): boolean {
-  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+  const env = (globalThis as any).import?.meta?.env || (globalThis as any).process?.env || {};
   return env.DEV || env.NODE_ENV === 'development';
 }
 
@@ -52,7 +52,7 @@ export function isDevelopment(): boolean {
  * 检查是否为生产环境
  */
 export function isProduction(): boolean {
-  const env = (globalThis as any).import?.meta?.env || (process as any)?.env || {};
+  const env = (globalThis as any).import?.meta?.env || (globalThis as any).process?.env || {};
   return env.PROD || env.NODE_ENV === 'production';
 }
 
@@ -233,7 +233,7 @@ export function throttle<T extends (...args: any[]) => any>(
   func: T,
   wait: number,
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
   let previous = 0;
 
   return function (this: any, ...args: Parameters<T>) {
@@ -265,7 +265,7 @@ export function debounce<T extends (...args: any[]) => any>(
   wait: number,
   immediate?: boolean,
 ): (...args: Parameters<T>) => void {
-  let timeout: NodeJS.Timeout | null = null;
+  let timeout: ReturnType<typeof setTimeout> | null = null;
 
   return function (this: any, ...args: Parameters<T>) {
     const callNow = immediate && !timeout;

@@ -196,8 +196,14 @@ class EventBus extends CrossPlatformEventBus {
 
     return {
       ...baseStats,
-      uptime: typeof process !== 'undefined' ? process.uptime() : Date.now(),
-      memoryUsage: typeof process !== 'undefined' ? process.memoryUsage() : {},
+      uptime:
+        typeof (globalThis as any).process !== 'undefined'
+          ? (globalThis as any).process.uptime()
+          : Date.now(),
+      memoryUsage:
+        typeof (globalThis as any).process !== 'undefined'
+          ? (globalThis as any).process.memoryUsage()
+          : {},
     };
   }
 

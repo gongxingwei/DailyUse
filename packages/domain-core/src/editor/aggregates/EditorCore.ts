@@ -10,7 +10,7 @@ import { EditorContracts } from '@dailyuse/contracts';
 type IEditorGroup = EditorContracts.IEditorGroup;
 type IEditorTab = EditorContracts.IEditorTab;
 type IEditorLayout = EditorContracts.IEditorLayout;
-type IEditorSession = EditorContracts.IEditorSession;
+type IEditorSession = EditorContracts.EditorSessionDTO;
 type SupportedFileType = EditorContracts.SupportedFileType;
 type EditorGroupDTO = EditorContracts.EditorGroupDTO;
 type EditorTabDTO = EditorContracts.EditorTabDTO;

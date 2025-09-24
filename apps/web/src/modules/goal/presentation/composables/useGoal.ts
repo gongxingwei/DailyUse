@@ -812,6 +812,34 @@ export function useGoal() {
    */
   const hasSelection = computed(() => !!currentGoal.value);
 
+  // ===== 工具方法 =====
+  /**
+   * Goal 的时间进度
+   * @param goal 目标实体
+   * @returns 0 到 1 之间的数值，表示时间进度百分比
+   */
+  const getTimeProgress = (goal: Goal) => {
+    const now = new Date();
+    if (goal.startTime && goal.endTime) {
+      const start = new Date(goal.startTime);
+      const end = new Date(goal.endTime);
+      if (now < start) return 0;
+      if (now > end) return 1;
+      return (now.getTime() - start.getTime()) / (end.getTime() - start.getTime());
+    }
+    return 0;
+  }
+
+  const getRemainingDays = (goal: Goal) => {
+    if (goal.endTime) {
+      const now = new Date();
+      const end = new Date(goal.endTime);
+      const diff = end.getTime() - now.getTime();
+      return Math.ceil(diff / (1000 * 3600 * 24));
+    }
+    return 0;
+  }
+
   return {
     // 响应式状态
     isLoading,
@@ -869,6 +897,8 @@ export function useGoal() {
     // 工具方法
     refresh,
     initialize,
+    getTimeProgress,
+    getRemainingDays,
 
     // ===== DDD聚合根控制：KeyResult管理 =====
     createKeyResultForGoal,

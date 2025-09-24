@@ -5,7 +5,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import VChart from 'vue-echarts'
-import type { Goal } from '@renderer/modules/Goal/domain/aggregates/goal'
+import { Goal } from '@dailyuse/domain-client'
 import { useTheme } from 'vuetify'
 
 const props = defineProps<{

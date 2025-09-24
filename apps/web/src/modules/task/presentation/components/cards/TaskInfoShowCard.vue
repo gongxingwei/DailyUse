@@ -18,8 +18,8 @@
                         </div>
                         
                         <div class="task-status">
-                            <v-icon :icon="task.status === 'completed' ? 'mdi-check-circle' : 'mdi-clock-outline'" />
-                            <span>{{ getStatusText(task.status) }}</span>
+                            <v-icon :icon="task.execution.status === 'completed' ? 'mdi-check-circle' : 'mdi-clock-outline'" />
+                            <span>{{ getStatusText(task.execution.status) }}</span>
                         </div>
                         
                         <div class="task-time">
@@ -29,9 +29,9 @@
                     </div>
 
                     <!-- Key Results Progress -->
-                    <div class="key-results" v-if="task.keyResultLinks?.length">
+                    <div class="key-results" v-if="task.goalLinks?.length">
                         <h4>关联的关键结果</h4>
-                        <div v-for="link in task.keyResultLinks" :key="link.keyResultId" class="kr-item">
+                        <div v-for="link in task.goalLinks" :key="link.keyResultId" class="kr-item">
                             <span>{{ getKeyResultName(link) }}</span>
                             <span>完成后 +{{ link.incrementValue }}</span>
                         </div>
@@ -44,7 +44,7 @@
 
 <script setup lang="ts">
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import { TaskInstance } from '@/modules/task/domain/aggregates/taskInstance';
+import { TaskInstance, KeyResult, Goal } from '@dailyuse/domain-client';
 const props = defineProps<{
     visible: boolean;
     task: TaskInstance;
@@ -69,8 +69,8 @@ const getStatusText = (status: string) => {
 };
 
 const getKeyResultName = (link: any) => {
-    const goal = goalStore.getGoalByUuid(link.goalUuid);
-    const kr = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
+    const goal: Goal = goalStore.getGoalByUuid(link.goalUuid);
+    const kr: KeyResult | undefined = goal?.keyResults.find(kr => kr.uuid === link.keyResultId);
     return `${goal?.name} - ${kr?.name}`;
 };
 

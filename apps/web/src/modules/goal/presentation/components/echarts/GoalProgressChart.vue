@@ -19,6 +19,10 @@ import type {
   GridComponentOption
 } from 'echarts/components'
 import VChart from 'vue-echarts';
+// composables
+import { useGoal } from '../../composables/useGoal'
+
+const { getTimeProgress, getRemainingDays } = useGoal()
 use([TitleComponent, TooltipComponent, GridComponent, BarChart, CanvasRenderer])
 
 type EChartsOption = ComposeOption<
@@ -28,7 +32,7 @@ type EChartsOption = ComposeOption<
   | BarSeriesOption>
 
 import { computed } from 'vue'
-import type { Goal } from '@renderer/modules/Goal/domain/aggregates/goal'
+import { Goal } from '@dailyuse/domain-client'
 import { useTheme } from 'vuetify'
 import { format } from 'date-fns'
 const theme = useTheme()
@@ -47,8 +51,8 @@ const surfaceColor = theme.current.value.colors.surface
 const fontColor = theme.current.value.colors.font // 获取主题主色
 
 const progressOption = computed<EChartsOption>(() => {
-  const progress = props.goal?.progress ?? 0
-  const timeProgress = Math.round((props.goal?.TimeProgress ?? 0) * 100)
+  const progress = props.goal?.weightedProgress ?? 0
+  const timeProgress = Math.round((getTimeProgress(props.goal!) ?? 0) * 100)
 
   let bgColor = safe_color
   if (timeProgress - progress >= danger_threshold) {
@@ -76,7 +80,7 @@ const progressOption = computed<EChartsOption>(() => {
           // 假设 goal 有 startTime, endTime, leftDays 属性
           const start = props.goal?.startTime ?? '';
           const end = props.goal?.endTime ?? '';
-          const leftDays = props.goal?.remainingDays ?? '';
+          const leftDays = getRemainingDays(props.goal!);
           return `
         <div>
           <strong>时间进度</strong><br/>
@@ -85,8 +89,8 @@ const progressOption = computed<EChartsOption>(() => {
         </div>
       `;
         } else if (name === '目标完成进度') {
-          const progress = props.goal?.progress ?? 0;
-          const timeProgress = Math.round((props.goal?.TimeProgress ?? 0) * 100);
+          const progress = props.goal?.weightedProgress ?? 0;
+          const timeProgress = Math.round((getTimeProgress(props.goal!) ?? 0) * 100);
           const diff = progress - timeProgress;
           const status = diff > 0 ? '领先' : '落后';
           return `

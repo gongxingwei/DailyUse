@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { Goal } from '@dailyuse/domain-client'
-import { useGoal } from '../composables/useGoal'
+import { useGoal } from '../../composables/useGoal';
 import GoalCard from '../components/cards/GoalCard.vue'
 
 const goalComposable = useGoal()

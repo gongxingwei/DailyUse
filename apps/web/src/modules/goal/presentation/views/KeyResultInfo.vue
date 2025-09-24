@@ -73,7 +73,7 @@
             </div>
             <v-list v-else lines="two" density="comfortable">
               <v-list-item v-for="record in records" :key="record.uuid" class="mb-2">
-                <GoalRecordCard :record="GoalRecord.ensureGoalRecordNeverNull(record)" />
+                <GoalRecordCard :record="(record as GoalRecord)" />
               </v-list-item>
             </v-list>
           </div>
@@ -90,14 +90,12 @@ import { computed, onMounted, ref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 // stores
 import { useGoalStore } from '../stores/goalStore';
-import { useTaskStore } from '@renderer/modules/Task/presentation/stores/taskStore';
+
 // 组件
 import KeyResultCard from '../components/cards/KeyResultCard.vue';
 import GoalRecordCard from '../components/cards/GoalRecordCard.vue';
 // domain
-import { KeyResult } from '../../domain/entities/keyResult';
-import { Goal } from '../../domain/aggregates/goal';
-import { GoalRecord } from '../../domain/entities/record';
+import { KeyResult, Goal, GoalRecord } from '@dailyuse/domain-client';
 
 const router = useRouter();
 const route = useRoute();
@@ -105,7 +103,8 @@ const goalUuid = route.params.goalUuid as string; // 从路由参数中获取目
 const keyResultUuid = route.params.keyResultUuid as string; // 从路由参数中获取关键结果ID
 
 const goalStore = useGoalStore();
-const taskStore = useTaskStore();
+// TODO: 实现task store
+// const taskStore = useTaskStore();
 
 const taskTemplates = ref<any>([]);
 const goal = computed(() => {
@@ -113,7 +112,7 @@ const goal = computed(() => {
   if (!goal) {
     throw new Error('Goal not found');
   }
-  return Goal.ensureGoalNeverNull(goal);
+  return goal as Goal;
 });
 // 目标的颜色
 
@@ -123,7 +122,7 @@ const keyResult = computed(() => {
   if (!keyResult) {
     throw new Error('Key result not found');
   }
-  return KeyResult.ensureKeyResultNeverNull(keyResult);
+  return keyResult as KeyResult;
 });
 
 const activeTab = ref(0);
@@ -133,16 +132,13 @@ const tabs = [
 ];
 
 onMounted(async () => {
-  taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
+  // taskTemplates.value = await taskStore.getTaskTemplatesByKeyResultUuid(keyResultUuid);
 
 })
 
 // 计算所有记录
 const records = computed(() => {
-  const records = goal.value.getGoalRecordsByKeyResultUuid(keyResultUuid);
-  console.log('all GoalRecords:', goal.value.records);
-  console.log('GoalRecords for Key Result:', records);
-  console.log(goalStore.getGoalByUuid(goalUuid));
+  const records = goal.value.records.filter(record => record.keyResultUuid === keyResultUuid);
   return records;
 });
 </script>

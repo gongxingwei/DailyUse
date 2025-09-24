@@ -27,16 +27,16 @@
       <!-- 有任务时显示 -->
       <v-list v-if="todayTasks.length > 0" class="py-0">
         <v-list-item v-for="(task, index) in todayTasks" :key="task.uuid"
-          :class="{ 'task-completed': task.status === 'completed' }" class="task-item pa-4"
+          :class="{ 'task-completed': task.execution.status === 'completed' }" class="task-item pa-4"
           :style="{ '--task-index': index }">
           <template v-slot:prepend>
-            <v-checkbox :model-value="task.status === 'completed'" @update:model-value="toggleTaskComplete(task)"
+            <v-checkbox :model-value="task.execution.status === 'completed'" @update:model-value="toggleTaskComplete(task)"
               hide-details color="primary" class="task-checkbox" />
           </template>
 
           <div class="task-content-wrapper flex-grow-1">
             <v-list-item-title
-              :class="{ 'text-decoration-line-through text-medium-emphasis': task.status === 'completed' }"
+              :class="{ 'text-decoration-line-through text-medium-emphasis': task.execution.status === 'completed' }"
               class="task-title font-weight-medium mb-1">
               {{ task.title }}
             </v-list-item-title>
@@ -51,8 +51,8 @@
 
           <template v-slot:append>
             <!-- 关键结果链接 -->
-            <div v-if="task.keyResultLinks && task.keyResultLinks.length > 0" class="key-results-container">
-              <v-chip v-for="link in task.keyResultLinks" :key="link.keyResultId" size="small" variant="tonal"
+            <div v-if="task.goalLinks && task.goalLinks.length > 0" class="key-results-container">
+              <v-chip v-for="link in task.goalLinks" :key="link.keyResultId" size="small" variant="tonal"
                 color="primary" class="mr-1 mb-1 result-chip">
                 <v-icon start size="12">mdi-target</v-icon>
                 {{ getKeyResultName(link) }}
@@ -111,7 +111,7 @@ const navigateToTaskManagement = () => {
 // ✅ 获取今日任务列表 - 使用新的状态字段
 const todayTasks = computed(() => {
   let tasks = taskStore.getTodayTaskInstances.filter(task =>
-    task.status === 'pending' || task.status === 'inProgress'
+    task.execution.status === 'pending' || task.execution.status === 'inProgress'
   );
   return tasks;
 });
@@ -119,7 +119,7 @@ const todayTasks = computed(() => {
 // ✅ 计算完成百分比 - 使用新的状态字段
 const completionPercentage = computed(() => {
   const allTasks = taskStore.getTodayTaskInstances;
-  const completedTasks = allTasks.filter(task => task.status === 'completed');
+  const completedTasks = allTasks.filter(task => task.execution.status === 'completed');
   return allTasks.length > 0 ? Math.round((completedTasks.length / allTasks.length) * 100) : 0;
 });
 

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
-// import { GitStatus, GiApiResponse, GitLogResponse } from '@renderer/shared/types/git'
+// TODO: 实现web版本的git相关类型
+// import { GitStatus, GiApiResponse, GitLogResponse } from '@/shared/types/git'
 
 // 简化版本的类型定义
 interface GitStatus {

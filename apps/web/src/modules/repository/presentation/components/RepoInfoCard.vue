@@ -37,7 +37,7 @@
 
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
-import { Repository } from '../../domain/aggregates/repository'
+import { Repository } from '@dailyuse/domain-client'
 import { useI18n } from 'vue-i18n'
 import { format } from 'date-fns';
 

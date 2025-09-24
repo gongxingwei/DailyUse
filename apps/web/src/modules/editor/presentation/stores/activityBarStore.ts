@@ -1,8 +1,9 @@
 import { defineStore } from 'pinia';
 import { type Component, markRaw } from 'vue';
 // 暂时注释 Vue 组件导入，避免类型检查问题
-// import FileExplorer from '@renderer/modules/Editor/components/Explorer.vue';
-// import Search from "@renderer/modules/Editor/components/Search.vue";
+// TODO: 实现web版本的文件浏览器和搜索组件
+// import FileExplorer from '../components/Explorer.vue';
+// import Search from "../components/Search.vue";
 // import SourceControl from '../components/SourceControl.vue';
 // import GoalPlugin from "../components/GoalPlugin.vue";
 

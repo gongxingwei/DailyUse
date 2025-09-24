@@ -33,19 +33,19 @@ export { FormValidator } from './form-validator';
 // 内置校验规则
 export { BuiltinValidators } from './builtin-validators';
 
-// 框架适配器
-export type {
-  ReactFieldState,
-  ReactFormState,
-  ReactFormMethods,
-  ReactFormReturn,
-  UseFormValidationOptions,
-} from './adapters/react-adapter';
+// 框架适配器 - React 相关功能暂时禁用
+// export type {
+//   ReactFieldState,
+//   ReactFormState,
+//   ReactFormMethods,
+//   ReactFormReturn,
+//   UseFormValidationOptions,
+// } from './adapters/react-adapter';
 
-export {
-  useFormValidation as useReactFormValidation,
-  useFieldValidation as useReactFieldValidation,
-} from './adapters/react-adapter';
+// export {
+//   useFormValidation as useReactFormValidation,
+//   useFieldValidation as useReactFieldValidation,
+// } from './adapters/react-adapter';
 
 // 使用示例
 export {

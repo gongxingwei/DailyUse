@@ -111,8 +111,8 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
-import { useGoalStore } from '@renderer/modules/Goal/presentation/stores/goalStore';
-import { Goal } from '@renderer/modules/Goal/domain/aggregates/goal';
+import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
+import { Goal } from '@dailyuse/domain-client';
 
 const goalStore = useGoalStore();
 const dayWidth = 32; // 每个日期的宽度
@@ -195,7 +195,7 @@ const getGoalBarStyle = (goal: Goal, isFill: boolean) => {
   ) + 1;
 
   const width = isFill ?
-    (duration * dayWidth * (goal.progress / 100)) :
+    (duration * dayWidth * (goal.weightedProgress / 100)) :
     (duration * dayWidth);
 
   return {
