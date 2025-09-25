@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import path from 'node:path';
@@ -28,6 +29,13 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       sourcemap: isDev,
+    },
+    test: {
+      globals: true,
+      environment: 'happy-dom',
+      setupFiles: ['./src/test/setup.ts'],
+      include: ['src/**/__tests__/**/*.test.ts'],
+      exclude: ['node_modules', 'dist', '.git', '.cache'],
     },
   };
 });

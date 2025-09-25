@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useReminder } from '../useReminder';
+import { createTestPinia, nextTick } from '@/test/helpers';
 
 // Mock 依赖
 vi.mock('../../application/services/ReminderWebApplicationService', () => ({
@@ -34,6 +35,7 @@ vi.mock('../stores/reminderStore', () => ({
 describe('useReminder', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    createTestPinia(); // 为每个测试创建新的 Pinia 实例
   });
 
   afterEach(() => {

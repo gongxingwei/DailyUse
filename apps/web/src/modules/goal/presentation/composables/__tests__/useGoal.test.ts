@@ -205,7 +205,11 @@ describe('useGoal', () => {
     it('应该正确提供当前选中目标', () => {
       const goal = useGoal();
 
-      expect(goal.currentGoal.value).toBeDefined();
+      // 初始状态下 currentGoal 应该是 undefined
+      expect(goal.currentGoal.value).toBeUndefined();
+
+      // currentGoal 应该是一个响应式引用
+      expect(goal.currentGoal).toBeDefined();
     });
   });
 

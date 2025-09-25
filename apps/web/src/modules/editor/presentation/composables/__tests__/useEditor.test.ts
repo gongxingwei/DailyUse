@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useEditor } from '../useEditor';
 import { useEditorStore } from '../../stores/editorStore';
 import { EditorWebApplicationService } from '../../../application/services/EditorWebApplicationService';
-import { createMockStore } from '../../../../../../../tests/utils/testHelpers';
+import { createMockStore, createTestPinia } from '@/test/helpers';
 
 // Mock dependencies
 vi.mock('../../stores/editorStore');
@@ -13,24 +13,32 @@ describe('useEditor', () => {
   let mockApplicationService: any;
 
   beforeEach(() => {
+    createTestPinia(); // 初始化 Pinia
     // 创建 mock store
-    mockEditorStore = createMockStore({
-      getAllFiles: [],
-      currentFile: null,
-      openedFiles: [],
-      recentFiles: [],
-      getAllEditorGroups: [],
-      activeEditorGroup: null,
-      getSourceControlRepositories: [],
-      getFileChanges: [],
-      getStagedChanges: [],
-      layout: { sidebarWidth: 250 },
-      ui: { isSidebarVisible: true, activePanel: null },
-      settings: { theme: 'light' },
-      isLoading: false,
-      error: null,
-      isInitialized: false,
-    });
+    mockEditorStore = {
+      ...createMockStore({
+        getAllFiles: [],
+        currentFile: null,
+        openedFiles: [],
+        recentFiles: [],
+        getAllEditorGroups: [],
+        activeEditorGroup: null,
+        getSourceControlRepositories: [],
+        getFileChanges: [],
+        getStagedChanges: [],
+        layout: { sidebarWidth: 250 },
+        ui: { isSidebarVisible: true, activePanel: null },
+        settings: { theme: 'light' },
+        isLoading: false,
+        error: null,
+        isInitialized: false,
+      }),
+      // 添加缺少的方法
+      toggleSidebarVisibility: vi.fn(),
+      setActivePanel: vi.fn(),
+      updateSettings: vi.fn(),
+      setError: vi.fn(),
+    };
 
     // 创建 mock application service
     mockApplicationService = {

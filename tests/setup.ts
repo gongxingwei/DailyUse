@@ -1,13 +1,41 @@
 import { config } from '@vue/test-utils';
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import { createPinia, setActivePinia } from 'pinia';
 
-// 全局测试配置
+// 全局测试配置 - Pinia 已通过 mock 处理
 config.global.stubs = {
   // 暂时禁用路由相关组件
   'router-link': true,
   'router-view': true,
 };
+
+// Mock Pinia globally for better test compatibility
+vi.mock('pinia', () => ({
+  defineStore: vi.fn((id: string, setupFunction: any) => {
+    return () => {
+      const mockState = setupFunction ? setupFunction() : {};
+      return {
+        ...mockState,
+        $id: id,
+        $state: mockState,
+        $patch: vi.fn(),
+        $reset: vi.fn(),
+        $subscribe: vi.fn(),
+        $dispose: vi.fn(),
+      };
+    };
+  }),
+  createPinia: vi.fn(() => ({
+    install: vi.fn(),
+    use: vi.fn(),
+    _s: new Map(),
+  })),
+  setActivePinia: vi.fn(),
+  getActivePinia: vi.fn(() => ({
+    _s: new Map(),
+  })),
+}));
 
 // 模拟 Pinia store
 const mockStore = {

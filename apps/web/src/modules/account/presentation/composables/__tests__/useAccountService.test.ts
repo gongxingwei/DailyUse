@@ -4,6 +4,7 @@ import { useSnackbar } from '@/shared/composables/useSnackbar';
 import { ApplicationService } from '../../../application/services/ApplicationService';
 import { AccountType } from '@dailyuse/contracts';
 import type { RegistrationByUsernameAndPasswordForm } from '@dailyuse/contracts';
+// Pinia setup is handled globally in tests/setup.ts
 
 // Mock dependencies
 vi.mock('@/shared/composables/useSnackbar');
