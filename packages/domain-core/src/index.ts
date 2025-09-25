@@ -29,6 +29,12 @@ export * from './task/aggregates/TaskTemplate';
 export * from './task/entities/TaskInstance';
 export * from './task/entities/TaskMetaTemplate';
 
+// Task Schedule Integration
+export {
+  TaskScheduleIntegrationService,
+  type TaskReminderConfig,
+} from './task/services/TaskScheduleIntegrationService';
+
 // Repository domain exports
 export * from './repository/aggregates/RepositoryCore';
 export * from './repository/entities/Resource';
