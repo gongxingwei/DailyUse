@@ -228,7 +228,7 @@ export interface IReminderTemplate {
   message: string;
   /** 是否启用 */
   enabled: boolean;
-  /** 模板自身的启用状态 */
+  /** 模板自身的启用状态（模式） */
   selfEnabled: boolean;
   /** 重要性级别 */
   importanceLevel?: ImportanceLevel;

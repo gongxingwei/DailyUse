@@ -1,7 +1,12 @@
 import { ref, computed, onMounted } from 'vue';
-import type { ReminderContracts } from '@dailyuse/contracts';
+import { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderWebApplicationService } from '../../application/services/ReminderWebApplicationService';
 import { useReminderStore } from '../stores/reminderStore';
+import type {
+  ReminderTemplateGroup,
+  ReminderInstance,
+  ReminderTemplate,
+} from '@dailyuse/domain-client';
 
 /**
  * useReminder Composable
@@ -18,8 +23,8 @@ export function useReminder() {
 
   // ===== 本地状态 =====
   const isInitialized = ref(false);
-  const currentTemplate = ref<any | null>(null);
-  const currentInstances = ref<any[]>([]);
+  const currentTemplate = ref<ReminderTemplate | null>(null);
+  const currentInstances = ref<ReminderInstance[]>([]);
 
   // ===== 计算属性 =====
 
@@ -41,12 +46,12 @@ export function useReminder() {
   /**
    * 启用的提醒模板
    */
-  const enabledTemplates = computed(() => reminderStore.enabledTemplates);
+  const enabledTemplates = computed(() => reminderStore.getEnabledReminderTemplates);
 
   /**
    * 活跃的提醒实例
    */
-  const activeInstances = computed(() => reminderStore.activeInstances);
+  const activeInstances = computed(() => reminderStore.getActiveReminderInstances);
 
   /**
    * 当前模板的实例
@@ -57,14 +62,140 @@ export function useReminder() {
   });
 
   /**
+   * 所有提醒分组
+   */
+  const reminderGroups = computed(() => reminderStore.reminderGroups);
+
+  /**
+   * 启用的提醒分组
+   */
+  const enabledGroups = computed(() => reminderGroups.value.filter((group) => group.enabled));
+
+  /**
    * 统计信息
    */
   const stats = computed(() => ({
+    totalGroups: reminderGroups.value.length,
+    enabledGroups: enabledGroups.value.length,
     totalTemplates: reminderTemplates.value.length,
     enabledTemplates: enabledTemplates.value.length,
     activeInstances: activeInstances.value.length,
-    pendingReminders: activeInstances.value.filter((i) => i.status === 'pending').length,
+    pendingReminders: activeInstances.value.filter(
+      (i) => (i as ReminderInstance).status === ReminderContracts.ReminderStatus.PENDING,
+    ).length,
   }));
+
+  // ===== 提醒分组操作 =====
+
+  /**
+   * 创建提醒分组
+   */
+  const createGroup = async (
+    request: ReminderContracts.CreateReminderGroupRequest,
+  ): Promise<ReminderTemplateGroup> => {
+    return await reminderService.createReminderTemplateGroup(request);
+  };
+
+  /**
+   * 获取提醒分组列表
+   */
+  const getGroups = async (params?: {
+    page?: number;
+    limit?: number;
+    forceRefresh?: boolean;
+  }): Promise<void> => {
+    await reminderService.getReminderTemplateGroups(params);
+  };
+
+  /**
+   * 获取提醒分组详情
+   */
+  const getGroup = async (uuid: string): Promise<ReminderTemplateGroup | null> => {
+    return await reminderService.getReminderTemplateGroup(uuid);
+  };
+
+  /**
+   * 更新提醒分组
+   */
+  const updateGroup = async (
+    uuid: string,
+    request: Partial<ReminderContracts.CreateReminderGroupRequest>,
+  ): Promise<ReminderTemplateGroup> => {
+    return await reminderService.updateReminderTemplateGroup(uuid, request);
+  };
+
+  /**
+   * 删除提醒分组
+   */
+  const deleteGroup = async (uuid: string): Promise<void> => {
+    await reminderService.deleteReminderTemplateGroup(uuid);
+  };
+
+  /**
+   * 切换分组启用状态
+   */
+  const toggleGroupEnabled = async (uuid: string): Promise<ReminderTemplateGroup | null> => {
+    const group = reminderStore.getReminderGroupByUuid(uuid);
+    if (group) {
+      const updatedGroup = await updateGroup(uuid, { enabled: !group.enabled });
+      return updatedGroup;
+    }
+    return null;
+  };
+
+  /**
+   * 切换分组启用模式 (group/individual)
+   */
+  const toggleGroupEnableMode = async (
+    uuid: string,
+    enableMode: ReminderContracts.ReminderTemplateEnableMode,
+  ): Promise<ReminderTemplateGroup | null> => {
+    const group = reminderStore.getReminderGroupByUuid(uuid);
+    if (group) {
+      const updatedGroup = await updateGroup(uuid, { enableMode });
+      return updatedGroup;
+    }
+    return null;
+  };
+
+  /**
+   * 批量设置分组下模板的启用状态
+   */
+  const batchSetGroupTemplatesEnabled = async (
+    groupUuid: string,
+    enabled: boolean,
+  ): Promise<void> => {
+    const templates = getGroupTemplates(groupUuid);
+    const templateUuids = templates.map((t) => t.uuid);
+    if (templateUuids.length > 0) {
+      await reminderService.batchUpdateTemplatesEnabled(templateUuids, enabled);
+    }
+  };
+
+  /**
+   * 获取分组下的所有模板
+   */
+  const getGroupTemplates = (groupUuid: string): ReminderTemplate[] => {
+    return reminderStore.reminderTemplates.filter((template) => template.groupUuid === groupUuid);
+  };
+
+  /**
+   * 获取分组统计信息
+   */
+  const getGroupStats = (groupUuid: string) => {
+    const templates = getGroupTemplates(groupUuid);
+    const enabledTemplates = templates.filter((t) => t.enabled);
+    const activeInstances = reminderStore.getActiveReminderInstances.filter((instance) =>
+      templates.some((t) => t.uuid === instance.templateUuid),
+    );
+
+    return {
+      totalTemplates: templates.length,
+      enabledTemplates: enabledTemplates.length,
+      activeInstances: activeInstances.length,
+      completionRate: templates.length > 0 ? (enabledTemplates.length / templates.length) * 100 : 0,
+    };
+  };
 
   // ===== 提醒模板操作 =====
 
@@ -76,6 +207,7 @@ export function useReminder() {
 
     try {
       await reminderService.getReminderTemplates({ forceRefresh: true });
+      await reminderService.getReminderTemplateGroups({ forceRefresh: true });
       isInitialized.value = true;
     } catch (error) {
       console.error('Failed to initialize reminder module:', error);
@@ -102,16 +234,14 @@ export function useReminder() {
     enabled?: boolean;
     priority?: ReminderContracts.ReminderPriority;
     forceRefresh?: boolean;
-  }): Promise<ReminderContracts.ReminderListResponse> => {
-    return await reminderService.getReminderTemplates(params);
+  }): Promise<void> => {
+    await reminderService.getReminderTemplates(params);
   };
 
   /**
-   * 获取提醒模板详情
+   * 获取提醒模板详情 (返回域实体对象)
    */
-  const getTemplate = async (
-    uuid: string,
-  ): Promise<ReminderContracts.ReminderTemplateResponse | null> => {
+  const getTemplate = async (uuid: string): Promise<ReminderTemplate | null> => {
     const template = await reminderService.getReminderTemplate(uuid);
     if (template) {
       currentTemplate.value = template;
@@ -125,7 +255,7 @@ export function useReminder() {
   const updateTemplate = async (
     uuid: string,
     request: Partial<ReminderContracts.CreateReminderTemplateRequest>,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> => {
+  ): Promise<ReminderTemplate> => {
     const template = await reminderService.updateReminderTemplate(uuid, request);
     if (currentTemplate.value?.uuid === uuid) {
       currentTemplate.value = template;
@@ -171,7 +301,7 @@ export function useReminder() {
   };
 
   /**
-   * 获取模板的实例列表
+   * 获取模板的实例列表 (返回域实体对象)
    */
   const getInstances = async (
     templateUuid: string,
@@ -183,7 +313,13 @@ export function useReminder() {
       endDate?: string;
       forceRefresh?: boolean;
     },
-  ): Promise<ReminderContracts.ReminderListResponse> => {
+  ): Promise<{
+    reminders: ReminderInstance[];
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  }> => {
     const result = await reminderService.getReminderInstances(templateUuid, params);
     if (currentTemplate.value?.uuid === templateUuid) {
       currentInstances.value = result.reminders;
@@ -357,13 +493,27 @@ export function useReminder() {
 
     // 计算属性
     reminderTemplates,
+    reminderGroups,
     enabledTemplates,
+    enabledGroups,
     activeInstances,
     templateInstances,
     stats,
 
     // 初始化
     initialize,
+
+    // 提醒分组操作
+    createGroup,
+    getGroups,
+    getGroup,
+    updateGroup,
+    deleteGroup,
+    toggleGroupEnabled,
+    toggleGroupEnableMode,
+    batchSetGroupTemplatesEnabled,
+    getGroupTemplates,
+    getGroupStats,
 
     // 提醒模板操作
     createTemplate,

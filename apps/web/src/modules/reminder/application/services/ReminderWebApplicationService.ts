@@ -1,9 +1,9 @@
-import type { ReminderContracts } from '@dailyuse/contracts';
-import { ReminderTemplate, ReminderTemplateGroup, ReminderInstance } from '@dailyuse/domain-client';
+import { ReminderContracts } from '@dailyuse/contracts';
 
 import { reminderApiClient } from '../../infrastructure/api/reminderApiClient';
 import { useReminderStore } from '../../presentation/stores/reminderStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
+import { ReminderTemplate, ReminderInstance, ReminderTemplateGroup } from '@dailyuse/domain-client';
 
 /**
  * Reminder Web 应用服务
@@ -97,16 +97,8 @@ export class ReminderWebApplicationService {
   /**
    * 获取提醒模板详情
    */
-  async getReminderTemplate(
-    uuid: string,
-  ): Promise<ReminderContracts.ReminderTemplateResponse | null> {
+  async getReminderTemplate(uuid: string): Promise<ReminderTemplate | null> {
     try {
-      // 优先从 store 获取
-      const cachedTemplate = this.reminderStore.getReminderTemplateByUuid(uuid);
-      if (cachedTemplate) {
-        return cachedTemplate.toApiResponse();
-      }
-
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
 
@@ -116,7 +108,7 @@ export class ReminderWebApplicationService {
       const template = ReminderTemplate.fromApiResponse(templateData);
       this.reminderStore.addOrUpdateReminderTemplate(template);
 
-      return templateData;
+      return template;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取提醒模板详情失败';
       this.reminderStore.setError(errorMessage);
@@ -133,7 +125,7 @@ export class ReminderWebApplicationService {
   async updateReminderTemplate(
     uuid: string,
     request: Partial<ReminderContracts.CreateReminderTemplateRequest>,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+  ): Promise<ReminderTemplate> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -145,7 +137,7 @@ export class ReminderWebApplicationService {
       this.reminderStore.addOrUpdateReminderTemplate(template);
 
       this.snackbar.showSuccess('提醒模板更新成功');
-      return templateData;
+      return template;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '更新提醒模板失败';
       this.reminderStore.setError(errorMessage);
@@ -238,7 +230,7 @@ export class ReminderWebApplicationService {
   }
 
   /**
-   * 获取提醒实例列表
+   * 获取提醒实例列表 (返回域实体对象)
    */
   async getReminderInstances(
     templateUuid: string,
@@ -250,14 +242,20 @@ export class ReminderWebApplicationService {
       endDate?: string;
       forceRefresh?: boolean;
     },
-  ): Promise<ReminderContracts.ReminderListResponse> {
+  ): Promise<{
+    reminders: ReminderInstance[];
+    total: number;
+    page: number;
+    limit: number;
+    hasMore: boolean;
+  }> {
     try {
       // 缓存优先策略
       if (!params?.forceRefresh) {
         const cachedInstances = this.reminderStore.getReminderInstancesByTemplate(templateUuid);
         if (cachedInstances.length > 0) {
           return {
-            reminders: cachedInstances.map((i) => i.toApiResponse()),
+            reminders: cachedInstances,
             total: cachedInstances.length,
             page: 1,
             limit: cachedInstances.length,
@@ -275,7 +273,13 @@ export class ReminderWebApplicationService {
       const instances = instancesData.reminders.map((data) => ReminderInstance.fromResponse(data));
       this.reminderStore.addOrUpdateReminderInstances(instances);
 
-      return instancesData;
+      return {
+        reminders: instances,
+        total: instancesData.total,
+        page: instancesData.page,
+        limit: instancesData.limit,
+        hasMore: instancesData.hasMore,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取提醒实例失败';
       this.reminderStore.setError(errorMessage);
@@ -443,6 +447,170 @@ export class ReminderWebApplicationService {
     }
   }
 
+  // ===== 启用状态控制方法 =====
+
+  /**
+   * 切换分组启用模式
+   */
+  async toggleGroupEnableMode(
+    groupUuid: string,
+    enableMode: ReminderContracts.ReminderTemplateEnableMode,
+    enabled?: boolean,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const response = await reminderApiClient.toggleGroupEnableMode(groupUuid, {
+        enableMode,
+        enabled,
+      });
+
+      // 刷新相关数据
+      await this.getReminderTemplateGroups({ forceRefresh: true });
+      await this.getReminderTemplates({ forceRefresh: true });
+
+      this.snackbar.showSuccess(
+        `分组启用模式已切换为${enableMode === 'group' ? '按组控制' : '单独控制'}，影响了${response.affectedTemplates}个模板`,
+      );
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '切换分组启用模式失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 切换分组启用状态
+   */
+  async toggleGroupEnabled(
+    groupUuid: string,
+    enabled: boolean,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const response = await reminderApiClient.toggleGroupEnabled(groupUuid, { enabled });
+
+      // 刷新相关数据
+      await this.getReminderTemplateGroups({ forceRefresh: true });
+      await this.getReminderTemplates({ forceRefresh: true });
+
+      this.snackbar.showSuccess(
+        `分组${enabled ? '启用' : '禁用'}成功，影响了${response.affectedTemplates}个模板`,
+      );
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '切换分组启用状态失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 切换模板自我启用状态
+   */
+  async toggleTemplateSelfEnabled(
+    templateUuid: string,
+    selfEnabled: boolean,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const response = await reminderApiClient.toggleTemplateSelfEnabled(templateUuid, {
+        selfEnabled,
+      });
+
+      // 刷新相关数据
+      await this.getReminderTemplates({ forceRefresh: true });
+
+      this.snackbar.showSuccess(
+        `模板自我启用状态${selfEnabled ? '启用' : '禁用'}成功，${response.addedInstances > 0 ? `新增${response.addedInstances}个实例` : ''}${response.removedInstances > 0 ? `移除${response.removedInstances}个实例` : ''}`,
+      );
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '切换模板自我启用状态失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 批量更新模板启用状态
+   */
+  async batchUpdateTemplatesEnabled(
+    templateUuids: string[],
+    enabled?: boolean,
+    selfEnabled?: boolean,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const response = await reminderApiClient.batchUpdateTemplatesEnabled({
+        templateUuids,
+        enabled,
+        selfEnabled,
+      });
+
+      // 刷新相关数据
+      await this.getReminderTemplates({ forceRefresh: true });
+
+      this.snackbar.showSuccess(`批量更新成功，影响了${response.affectedTemplates}个模板`);
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '批量更新模板启用状态失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 获取即将到来的提醒实例
+   */
+  async getUpcomingReminders(params?: {
+    limit?: number;
+    days?: number;
+    priorities?: string[];
+    categories?: string[];
+    tags?: string[];
+  }): Promise<ReminderContracts.UpcomingRemindersResponse> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const response = await reminderApiClient.getUpcomingReminders(params || {});
+
+      return response;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取即将到来的提醒失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
   // ===== 缓存管理 =====
 
   /**
@@ -452,6 +620,7 @@ export class ReminderWebApplicationService {
     try {
       this.reminderStore.clearAll();
       await this.getReminderTemplates({ forceRefresh: true });
+      await this.getReminderTemplateGroups({ forceRefresh: true });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '刷新数据失败';
       this.snackbar.showError(errorMessage);
@@ -527,7 +696,7 @@ export class ReminderWebApplicationService {
   /**
    * 获取提醒模板分组详情
    */
-  async getReminderTemplateGroup(groupUuid: string): Promise<any | null> {
+  async getReminderTemplateGroup(groupUuid: string): Promise<ReminderTemplateGroup | null> {
     try {
       // 优先从 store 获取
       const cachedGroup = this.reminderStore.getReminderTemplateGroupByUuid(groupUuid);
@@ -558,7 +727,10 @@ export class ReminderWebApplicationService {
   /**
    * 更新提醒模板分组
    */
-  async updateReminderTemplateGroup(groupUuid: string, request: any): Promise<any> {
+  async updateReminderTemplateGroup(
+    groupUuid: string,
+    request: any,
+  ): Promise<ReminderTemplateGroup> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);

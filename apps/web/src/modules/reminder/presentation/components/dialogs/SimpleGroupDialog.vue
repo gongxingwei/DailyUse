@@ -1,40 +1,34 @@
 <template>
-    <v-dialog v-model="isVisible" max-width="500" persistent>
+    <v-dialog :model-value="visible" max-width="500" persistent>
         <v-card>
-            <v-card-title class="d-flex align-center">
-                <v-icon class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-folder-plus' }}</v-icon>
-                {{ isEditing ? '编辑提醒分组' : '新建提醒分组' }}
-                <v-spacer />
-                <v-btn icon variant="text" @click="closeDialog">
-                    <v-icon>mdi-close</v-icon>
-                </v-btn>
+            <v-card-title class="pa-4">
+                <v-icon size="24" class="mr-2">{{ isEditing ? 'mdi-pencil' : 'mdi-folder-plus' }}</v-icon>
+                {{ isEditing ? '编辑提醒分组' : '创建提醒分组' }}
             </v-card-title>
 
-            <v-divider />
-
-            <v-card-text class="pa-6">
-                <v-form ref="formRef" v-model="isFormValid">
+            <v-form ref="formRef">
+                <v-card-text class="pa-4">
                     <!-- 分组名称 -->
-                    <v-text-field v-model="formData.name" label="分组名称" :rules="nameRules" required class="mb-4" />
+                    <v-text-field v-model="name" label="分组名称" variant="outlined" density="compact" :rules="nameRules"
+                        class="mb-3" @keyup.enter="handleSave" />
 
                     <!-- 描述 -->
-                    <v-textarea v-model="formData.description" label="描述" rows="2" class="mb-4" />
+                    <v-textarea v-model="description" label="描述" variant="outlined" density="compact" rows="2"
+                        class="mb-3" />
 
                     <!-- 启用模式 -->
-                    <v-select v-model="formData.enableMode" :items="enableModeOptions" label="启用模式" class="mb-4" />
+                    <v-select v-model="enableMode" :items="enableModeOptions" label="启用模式" variant="outlined"
+                        density="compact" item-title="title" item-value="value" class="mb-3" />
 
                     <!-- 启用开关 -->
-                    <v-switch v-model="formData.enabled" label="启用分组" color="primary" class="mb-4" />
-                </v-form>
-            </v-card-text>
+                    <v-switch v-model="enabled" label="启用分组" color="primary" class="mb-3" />
+                </v-card-text>
+            </v-form>
 
-            <v-card-actions class="pa-6 pt-0">
-                <v-spacer />
-                <v-btn variant="text" @click="closeDialog">
-                    取消
-                </v-btn>
-                <v-btn color="primary" :disabled="!isFormValid" @click="handleSubmit">
-                    {{ isEditing ? '更新' : '创建' }}
+            <v-card-actions class="pa-4">
+                <v-btn variant="text" @click="handleCancel">取消</v-btn>
+                <v-btn color="primary" class="ml-2" @click="handleSave" variant="elevated" :disabled="!isFormValid">
+                    确定
                 </v-btn>
             </v-card-actions>
         </v-card>
@@ -42,146 +36,123 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
-import type { ReminderTemplateGroup } from '@dailyuse/domain-client'
-import { useReminder } from '../../../composables/useReminder'
+import { computed, watch, ref } from 'vue';
+import { ReminderTemplateGroup } from '@dailyuse/domain-client';
+import { ReminderContracts } from '@dailyuse/contracts';
+// composables
+import { useReminder } from '../../composables/useReminder';
 
-// 使用reminder composable
-const {
-    createGroup,
-    updateGroup,
-    isLoading
-} = useReminder()
+const { createGroup, updateGroup } = useReminder();
 
-// 定义事件
-const emit = defineEmits<{
-    'group-created': [group: ReminderTemplateGroup]
-    'group-updated': [group: ReminderTemplateGroup]
-}>()
+const visible = ref(false);
+const propReminderTemplateGroup = ref<ReminderTemplateGroup | null>(null);
+const localReminderTemplateGroup = ref<ReminderTemplateGroup>(ReminderTemplateGroup.forCreate());
 
-// =====================
-// 状态管理
-// =====================
-const isVisible = ref(false)
-const isEditing = ref(false)
-const currentGroup = ref<ReminderTemplateGroup | null>(null)
+const isEditing = computed(() => !!propReminderTemplateGroup.value);
+const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
+const isFormValid = computed(() => {
+    return formRef.value?.isValid ?? false;
+});
 
-// 表单数据
-const formData = reactive({
-    name: '',
-    description: '',
-    enabled: true,
-    enableMode: 'group' as 'group' | 'individual'
-})
+const name = computed({
+    get: () => localReminderTemplateGroup.value.name,
+    set: (val: string) => {
+        localReminderTemplateGroup.value.updateBasicInfo({ name: val });
+    }
+});
 
-// 表单引用和验证
-const formRef = ref()
-const isFormValid = ref(false)
+const description = computed({
+    get: () => localReminderTemplateGroup.value.description || '',
+    set: (val: string) => {
+        localReminderTemplateGroup.value.updateBasicInfo({ description: val });
+    }
+});
 
-// 验证规则
+const enabled = computed({
+    get: () => localReminderTemplateGroup.value.enabled,
+    set: (val: boolean) => {
+        localReminderTemplateGroup.value.toggleEnabled(val);
+    }
+});
+
+// EnableMode 需要特殊处理，类似 priority
+const enableMode = ref<ReminderContracts.ReminderTemplateEnableMode>(ReminderContracts.ReminderTemplateEnableMode.GROUP);
+
+const enableModeOptions = [
+    { title: '按组启用', value: ReminderContracts.ReminderTemplateEnableMode.GROUP },
+    { title: '单独启用', value: ReminderContracts.ReminderTemplateEnableMode.INDIVIDUAL }
+];
+
 const nameRules = [
     (v: string) => !!v || '分组名称不能为空',
-    (v: string) => v.length >= 2 || '分组名称至少2个字符'
-]
+    (v: string) => (v && v.length >= 1) || '分组名称至少需要1个字符',
+    (v: string) => (v && v.length <= 50) || '分组名称不能超过50个字符'
+];
 
-// 启用模式选项
-const enableModeOptions = [
-    { title: '按组启用', value: 'group' },
-    { title: '单独启用', value: 'individual' }
-]
-
-// =====================
-// 暴露的方法
-// =====================
-
-/**
- * 打开新建对话框
- */
-const openDialog = () => {
-    isEditing.value = false
-    currentGroup.value = null
-    resetForm()
-    isVisible.value = true
-}
-
-/**
- * 打开编辑对话框
- */
-const openForEdit = (group: ReminderTemplateGroup) => {
-    isEditing.value = true
-    currentGroup.value = group
-    loadFormData(group)
-    isVisible.value = true
-}
-
-/**
- * 关闭对话框
- */
-const closeDialog = () => {
-    isVisible.value = false
-    formRef.value?.resetValidation?.()
-}
-
-/**
- * 重置表单
- */
-const resetForm = () => {
-    formData.name = ''
-    formData.description = ''
-    formData.enabled = true
-    formData.enableMode = 'group'
-}
-
-/**
- * 加载表单数据
- */
-const loadFormData = (group: ReminderTemplateGroup) => {
-    formData.name = group.name
-    formData.description = group.description || ''
-    formData.enabled = group.enabled || true
-    formData.enableMode = (group as any).enableMode || 'group'
-}
-
-/**
- * 提交表单
- */
-const handleSubmit = async () => {
-    if (!isFormValid.value) return
+const handleSave = async () => {
+    if (!isFormValid.value) return;
 
     try {
-        if (isEditing.value && currentGroup.value) {
-            // 更新分组
-            const updateRequest = {
-                name: formData.name,
-                description: formData.description,
-                enabled: formData.enabled,
-                enableMode: formData.enableMode
-            }
-
-            const updatedGroup = await updateGroup(currentGroup.value.uuid, updateRequest)
-            emit('group-updated', updatedGroup)
+        if (propReminderTemplateGroup.value) {
+            // 编辑模式
+            await updateGroup(localReminderTemplateGroup.value.uuid, {
+                name: localReminderTemplateGroup.value.name,
+                description: localReminderTemplateGroup.value.description,
+                enabled: localReminderTemplateGroup.value.enabled,
+                enableMode: enableMode.value,
+            });
         } else {
-            // 创建新分组
-            const createRequest = {
-                name: formData.name,
-                description: formData.description,
-                enabled: formData.enabled,
-                enableMode: formData.enableMode
-            }
-
-            const newGroup = await createGroup(createRequest)
-            emit('group-created', newGroup)
+            // 创建模式
+            await createGroup({
+                name: localReminderTemplateGroup.value.name,
+                description: localReminderTemplateGroup.value.description || '',
+                enabled: localReminderTemplateGroup.value.enabled,
+                enableMode: enableMode.value,
+            });
         }
-
-        closeDialog()
+        closeDialog();
     } catch (error) {
-        console.error('保存分组失败:', error)
+        console.error('保存提醒分组失败:', error);
     }
-}
+};
 
-// 暴露方法给父组件
+const handleCancel = () => {
+    closeDialog();
+};
+
+const openDialog = (reminderTemplateGroup?: ReminderTemplateGroup) => {
+    visible.value = true;
+    propReminderTemplateGroup.value = reminderTemplateGroup || null;
+};
+
+const openForCreate = () => {
+    openDialog();
+};
+
+const openForEdit = (reminderTemplateGroup: ReminderTemplateGroup) => {
+    openDialog(reminderTemplateGroup);
+};
+
+const closeDialog = () => {
+    visible.value = false;
+};
+
+watch(
+    [() => visible.value, () => propReminderTemplateGroup.value],
+    ([show]) => {
+        if (show) {
+            localReminderTemplateGroup.value = propReminderTemplateGroup.value ? propReminderTemplateGroup.value.clone() : ReminderTemplateGroup.forCreate();
+            enableMode.value = (localReminderTemplateGroup.value as any).enableMode || ReminderContracts.ReminderTemplateEnableMode.GROUP;
+        } else {
+            localReminderTemplateGroup.value = ReminderTemplateGroup.forCreate();
+            enableMode.value = ReminderContracts.ReminderTemplateEnableMode.GROUP;
+        }
+    },
+    { immediate: true }
+);
+
 defineExpose({
-    openDialog,
-    openForEdit
-})
+    openForCreate,
+    openForEdit,
+});
 </script>

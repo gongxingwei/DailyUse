@@ -1,10 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import type {
-  ReminderTemplate,
-  ReminderTemplateGroup,
-  ReminderInstance,
-} from '@dailyuse/domain-client';
+import { ReminderContracts } from '@dailyuse/contracts';
+import { ReminderTemplate, ReminderTemplateGroup, ReminderInstance } from '@dailyuse/domain-client';
 
 /**
  * Reminder Store - 状态管理
@@ -13,19 +10,19 @@ import type {
 export const useReminderStore = defineStore('reminder', () => {
   // ===== 状态 =====
 
-  // 提醒模板
+  // 提醒模板 (存储域实体对象)
   const reminderTemplates = ref<ReminderTemplate[]>([]);
 
-  // 提醒分组
+  // 提醒分组 (存储域实体对象)
   const reminderGroups = ref<ReminderTemplateGroup[]>([]);
 
-  // 提醒实例
+  // 提醒实例 (存储域实体对象)
   const reminderInstances = ref<ReminderInstance[]>([]);
 
-  // 当前选中的模板
+  // 当前选中的模板 (域实体对象)
   const selectedTemplate = ref<ReminderTemplate | null>(null);
 
-  // 当前选中的分组
+  // 当前选中的分组 (域实体对象)
   const selectedGroup = ref<ReminderTemplateGroup | null>(null);
 
   // UI状态
@@ -39,6 +36,17 @@ export const useReminderStore = defineStore('reminder', () => {
     enabled: null as boolean | null,
     status: '',
   });
+
+  // 启用状态控制状态
+  const enableStatusOperation = ref({
+    isProcessing: false,
+    operationType: null as string | null,
+    targetUuid: null as string | null,
+  });
+
+  // 即将到来的提醒缓存
+  const upcomingReminders = ref<any>(null);
+  const upcomingRemindersLastUpdate = ref<Date | null>(null);
 
   // ===== 计算属性 =====
 
@@ -74,12 +82,14 @@ export const useReminderStore = defineStore('reminder', () => {
    */
   const getActiveReminderInstances = computed(() =>
     reminderInstances.value.filter(
-      (instance) => instance.status === 'active' || instance.status === 'overdue',
+      (instance) =>
+        instance.status === ReminderContracts.ReminderStatus.TRIGGERED ||
+        instance.status === ReminderContracts.ReminderStatus.PENDING,
     ),
   );
 
   /**
-   * 根据模板分组的实例
+   * 根据模板分组的实例 (域实体对象)
    */
   const getInstancesByTemplate = computed(() => {
     const grouped: Record<string, ReminderInstance[]> = {};
@@ -87,7 +97,7 @@ export const useReminderStore = defineStore('reminder', () => {
       if (!grouped[instance.templateUuid]) {
         grouped[instance.templateUuid] = [];
       }
-      grouped[instance.templateUuid].push(instance);
+      grouped[instance.templateUuid].push(instance as ReminderInstance);
     });
     return grouped;
   });
@@ -139,14 +149,14 @@ export const useReminderStore = defineStore('reminder', () => {
   // ===== 提醒模板管理 =====
 
   /**
-   * 设置提醒模板列表
+   * 设置提醒模板列表 (域实体对象)
    */
   const setReminderTemplates = (templates: ReminderTemplate[]) => {
     reminderTemplates.value = templates;
   };
 
   /**
-   * 添加或更新提醒模板
+   * 添加或更新提醒模板 (域实体对象)
    */
   const addOrUpdateReminderTemplate = (template: ReminderTemplate) => {
     const index = reminderTemplates.value.findIndex((t) => t.uuid === template.uuid);
@@ -168,14 +178,14 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
-   * 根据UUID获取提醒模板
+   * 根据UUID获取提醒模板 (返回域实体对象)
    */
   const getReminderTemplateByUuid = (uuid: string): ReminderTemplate | null => {
     return reminderTemplates.value.find((t) => t.uuid === uuid) || null;
   };
 
   /**
-   * 设置选中的模板
+   * 设置选中的模板 (域实体对象)
    */
   const setSelectedTemplate = (template: ReminderTemplate | null) => {
     selectedTemplate.value = template;
@@ -184,21 +194,21 @@ export const useReminderStore = defineStore('reminder', () => {
   // ===== 提醒分组管理 =====
 
   /**
-   * 设置提醒分组列表
+   * 设置提醒分组列表 (域实体对象)
    */
   const setReminderGroups = (groups: ReminderTemplateGroup[]) => {
     reminderGroups.value = groups;
   };
 
   /**
-   * 设置提醒模板分组列表 (别名方法，兼容ReminderWebApplicationService)
+   * 设置提醒模板分组列表 (别名方法，兼容ReminderWebApplicationService) (域实体对象)
    */
   const setReminderTemplateGroups = (groups: ReminderTemplateGroup[]) => {
     reminderGroups.value = groups;
   };
 
   /**
-   * 添加或更新提醒分组
+   * 添加或更新提醒分组 (域实体对象)
    */
   const addOrUpdateReminderGroup = (group: ReminderTemplateGroup) => {
     const index = reminderGroups.value.findIndex((g) => g.uuid === group.uuid);
@@ -210,7 +220,7 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
-   * 添加或更新提醒模板分组 (别名方法，兼容ReminderWebApplicationService)
+   * 添加或更新提醒模板分组 (别名方法，兼容ReminderWebApplicationService) (域实体对象)
    */
   const addOrUpdateReminderTemplateGroup = (group: ReminderTemplateGroup) => {
     const index = reminderGroups.value.findIndex((g) => g.uuid === group.uuid);
@@ -242,21 +252,21 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
-   * 根据UUID获取提醒分组
+   * 根据UUID获取提醒分组 (返回域实体对象)
    */
   const getReminderGroupByUuid = (uuid: string): ReminderTemplateGroup | null => {
-    return reminderGroups.value.find((g) => g.uuid === uuid) || null;
+    return (reminderGroups.value.find((g) => g.uuid === uuid) as ReminderTemplateGroup) || null;
   };
 
   /**
-   * 根据UUID获取提醒模板分组 (别名方法，兼容ReminderWebApplicationService)
+   * 根据UUID获取提醒模板分组 (别名方法，兼容ReminderWebApplicationService) (返回域实体对象)
    */
   const getReminderTemplateGroupByUuid = (uuid: string): ReminderTemplateGroup | null => {
-    return reminderGroups.value.find((g) => g.uuid === uuid) || null;
+    return (reminderGroups.value.find((g) => g.uuid === uuid) as ReminderTemplateGroup) || null;
   };
 
   /**
-   * 设置选中的分组
+   * 设置选中的分组 (域实体对象)
    */
   const setSelectedGroup = (group: ReminderTemplateGroup | null) => {
     selectedGroup.value = group;
@@ -265,14 +275,14 @@ export const useReminderStore = defineStore('reminder', () => {
   // ===== 提醒实例管理 =====
 
   /**
-   * 设置提醒实例列表
+   * 设置提醒实例列表 (域实体对象)
    */
   const setReminderInstances = (instances: ReminderInstance[]) => {
     reminderInstances.value = instances;
   };
 
   /**
-   * 添加或更新提醒实例
+   * 添加或更新提醒实例 (域实体对象)
    */
   const addOrUpdateReminderInstance = (instance: ReminderInstance) => {
     const index = reminderInstances.value.findIndex((i) => i.uuid === instance.uuid);
@@ -284,7 +294,7 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
-   * 批量添加或更新提醒实例
+   * 批量添加或更新提醒实例 (域实体对象)
    */
   const addOrUpdateReminderInstances = (instances: ReminderInstance[]) => {
     instances.forEach((instance) => {
@@ -303,17 +313,19 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   /**
-   * 根据UUID获取提醒实例
+   * 根据UUID获取提醒实例 (返回域实体对象)
    */
   const getReminderInstanceByUuid = (uuid: string): ReminderInstance | null => {
-    return reminderInstances.value.find((i) => i.uuid === uuid) || null;
+    return (reminderInstances.value.find((i) => i.uuid === uuid) as ReminderInstance) || null;
   };
 
   /**
-   * 根据模板UUID获取提醒实例列表
+   * 根据模板UUID获取提醒实例列表 (返回域实体对象数组)
    */
   const getReminderInstancesByTemplate = (templateUuid: string): ReminderInstance[] => {
-    return reminderInstances.value.filter((i) => i.templateUuid === templateUuid);
+    return reminderInstances.value.filter(
+      (i) => i.templateUuid === templateUuid,
+    ) as ReminderInstance[];
   };
 
   // ===== 过滤器管理 =====
@@ -337,6 +349,58 @@ export const useReminderStore = defineStore('reminder', () => {
     };
   };
 
+  // ===== 启用状态控制管理 =====
+
+  /**
+   * 设置启用状态操作
+   */
+  const setEnableStatusOperation = (
+    isProcessing: boolean,
+    operationType?: string,
+    targetUuid?: string,
+  ) => {
+    enableStatusOperation.value = {
+      isProcessing,
+      operationType: operationType || null,
+      targetUuid: targetUuid || null,
+    };
+  };
+
+  /**
+   * 清除启用状态操作
+   */
+  const clearEnableStatusOperation = () => {
+    enableStatusOperation.value = {
+      isProcessing: false,
+      operationType: null,
+      targetUuid: null,
+    };
+  };
+
+  /**
+   * 设置即将到来的提醒缓存
+   */
+  const setUpcomingReminders = (data: any) => {
+    upcomingReminders.value = data;
+    upcomingRemindersLastUpdate.value = new Date();
+  };
+
+  /**
+   * 清除即将到来的提醒缓存
+   */
+  const clearUpcomingReminders = () => {
+    upcomingReminders.value = null;
+    upcomingRemindersLastUpdate.value = null;
+  };
+
+  /**
+   * 检查即将到来的提醒缓存是否有效
+   */
+  const isUpcomingRemindersCacheValid = (maxAgeMs: number = 60000): boolean => {
+    if (!upcomingRemindersLastUpdate.value) return false;
+    return Date.now() - upcomingRemindersLastUpdate.value.getTime() < maxAgeMs;
+  };
+
   // ===== 缓存管理 =====
 
   /**
@@ -350,6 +414,8 @@ export const useReminderStore = defineStore('reminder', () => {
     selectedGroup.value = null;
     error.value = null;
     clearFilters();
+    clearEnableStatusOperation();
+    clearUpcomingReminders();
   };
 
   /**
@@ -373,6 +439,9 @@ export const useReminderStore = defineStore('reminder', () => {
     isLoading,
     error,
     filters,
+    enableStatusOperation,
+    upcomingReminders,
+    upcomingRemindersLastUpdate,
 
     // 计算属性
     getEnabledReminderTemplates,
@@ -414,6 +483,15 @@ export const useReminderStore = defineStore('reminder', () => {
     // 过滤器操作
     setFilters,
     clearFilters,
+
+    // 启用状态控制操作
+    setEnableStatusOperation,
+    clearEnableStatusOperation,
+
+    // 即将到来的提醒操作
+    setUpcomingReminders,
+    clearUpcomingReminders,
+    isUpcomingRemindersCacheValid,
 
     // 缓存管理
     clearAll,

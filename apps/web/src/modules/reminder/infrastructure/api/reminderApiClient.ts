@@ -247,6 +247,61 @@ class ReminderApiClient {
   async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
     await apiClient.patch(`/reminders/groups/${groupUuid}/toggle`, { enabled });
   }
+
+  // ===== 启用状态控制操作 =====
+
+  /**
+   * 切换分组启用模式
+   */
+  async toggleGroupEnableMode(
+    groupUuid: string,
+    request: ReminderContracts.ToggleGroupEnableModeRequest,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    const data = await apiClient.put(`/reminders/groups/${groupUuid}/enable-mode`, request);
+    return data;
+  }
+
+  /**
+   * 切换分组启用状态
+   */
+  async toggleGroupEnabled(
+    groupUuid: string,
+    request: ReminderContracts.ToggleGroupEnabledRequest,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    const data = await apiClient.put(`/reminders/groups/${groupUuid}/enabled`, request);
+    return data;
+  }
+
+  /**
+   * 切换模板自我启用状态
+   */
+  async toggleTemplateSelfEnabled(
+    templateUuid: string,
+    request: ReminderContracts.ToggleTemplateSelfEnabledRequest,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    const data = await apiClient.put(`${this.baseUrl}/${templateUuid}/self-enabled`, request);
+    return data;
+  }
+
+  /**
+   * 批量更新模板启用状态
+   */
+  async batchUpdateTemplatesEnabled(
+    request: ReminderContracts.BatchUpdateTemplatesEnabledRequest,
+  ): Promise<ReminderContracts.EnableStatusChangeResponse> {
+    const data = await apiClient.put(`${this.baseUrl}/batch-enabled`, request);
+    return data;
+  }
+
+  /**
+   * 获取即将到来的提醒实例
+   */
+  async getUpcomingReminders(
+    request: ReminderContracts.GetUpcomingRemindersRequest,
+  ): Promise<ReminderContracts.UpcomingRemindersResponse> {
+    const data = await apiClient.get('/reminders/upcoming', { params: request });
+    return data;
+  }
 }
 
 // 导出单例实例

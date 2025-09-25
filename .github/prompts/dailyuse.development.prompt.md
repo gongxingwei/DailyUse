@@ -492,3 +492,177 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
 2. **关注点分离** - 每层职责明确
 3. **接口隔离** - 通过接口而非具体实现通信
 4. **可测试性** - 支持单元测试和模拟
+
+## 前端实体编辑对话框开发规范
+
+### 实体方法
+
+domain-client 下的实体类应包含以下方法：
+- forCreate(): 创建新实体的静态方法,名称属性 传空值，其他必要的属性传默认值，不必要的属性不传
+- clone(): 克隆当前实体的实例方法
+
+### 目录结构
+
+src/modules/{module}/presentation/components/dialogs/xxxDialog.vue
+
+### 组件结构
+
+- 使用 `<script setup>` 语法糖
+- 使用 `defineExpose` 暴露打开对话框的方法
+- 使用 `ref` 绑定表单元素，进行表单验证
+- 使用 `computed` 计算属性绑定实体属性
+- 使用 `v-model` 双向绑定表单输入
+- 使用 `v-dialog` 作为对话框容器
+- 使用 `v-form` 包裹表单内容
+- 使用 `v-text-field`、`v-select` 等 Vuetify 表单组件
+- 使用 `v-btn` 作为操作按钮
+- 使用 `v-icon` 显示图标选择
+- 使用 `v-card` 作为对话框内容容器
+- 使用 `v-card-title`、`v-card-text`、`v-card-actions` 分隔对话框内容
+- 使用 `v-list` 和 `v-list-item` 显示下拉选项
+- 使用 `v-skeleton-loader` 显示加载状态
+- 不发送事件，直接调用 composables 方法，直接在组件内使用，实现业务逻辑
+
+### 参考代码
+
+```vue
+<template>
+    <v-dialog :model-value="visible" max-width="400" persistent>
+        <v-card>
+            <v-card-title class="pa-4">
+                <v-icon size="24" class="mr-2">mdi-folder-plus</v-icon>
+                {{ isEditing ? '编辑目标节点' : '创建目标节点' }}
+            </v-card-title>
+
+            <v-form ref="formRef">
+                <v-card-text class="pa-4">
+                <v-text-field v-model="name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
+                    @keyup.enter="handleSave">
+                </v-text-field>
+
+                <v-select v-model="icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
+                    item-title="text" item-value="value">
+                    <template v-slot:item="{ props, item }">
+                        <v-list-item v-bind="props">
+                            <template v-slot:prepend>
+                                <v-icon>{{ item.raw.value }}</v-icon>
+                            </template>
+                          
+                        </v-list-item>
+                    </template>
+                </v-select>
+            </v-card-text>
+            </v-form>
+            
+
+            <v-card-actions class="pa-4">
+                <v-btn variant="text" @click="handleCancel">取消</v-btn>
+                <v-btn color="primary" class="ml-2" @click="handleSave" variant="elevated" :disabled="!isFormValid">
+                    确定
+                </v-btn>
+            </v-card-actions>
+
+        </v-card>
+    </v-dialog>
+</template>
+
+<script setup lang="ts">
+import { computed, watch, ref } from 'vue';
+import { GoalDir } from '@dailyuse/domain-client';
+// composables
+import { useGoal } from '../../composables/useGoal';
+import { vi } from 'date-fns/locale';
+
+const { createGoalDir, updateGoalDir } = useGoal();
+
+const visible = ref(false);
+const propGoalDir = ref<GoalDir | null>(null);
+const localGoalDir = ref<GoalDir>(GoalDir.forCreate({ accountUuid: '' }));
+
+const isEditing = computed(() => !!propGoalDir.value);
+const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
+const isFormValid = computed(() => {
+    return formRef.value?.isValid ?? false;
+})
+
+const name = computed({
+    get: () => localGoalDir.value.name,
+    set: (val: string) => {
+        localGoalDir.value.updateInfo({ name: val });
+    }
+})
+
+const icon = computed({
+    get: () => localGoalDir.value.icon,
+    set: (val: string) => {
+        localGoalDir.value.updateInfo({ icon: val });
+    }
+});
+
+const iconOptions = [
+    { text: '文件夹', value: 'mdi-folder' },
+    { text: '目标', value: 'mdi-target' },
+    { text: '学习', value: 'mdi-school' },
+    { text: '工作', value: 'mdi-briefcase' },
+    { text: '生活', value: 'mdi-home' },
+    { text: '健康', value: 'mdi-heart' },
+];
+
+const nameRules = [
+    (v: string) => !!v || '名称不能为空',
+    (v: string) => (v && v.length >= 1) || '名称至少需要2个字符',
+    (v: string) => (v && v.length <= 50) || '名称不能超过50个字符'
+];
+
+
+const handleSave = () => {
+    if (!isFormValid.value) return;
+    if (propGoalDir.value) {
+        // 编辑模式
+        updateGoalDir(localGoalDir.value.uuid, localGoalDir.value.toDTO());
+    } else {
+        // 创建模式
+        createGoalDir(localGoalDir.value.toDTO());
+    }
+    closeDialog();
+};
+
+const handleCancel = () => {
+    closeDialog();
+};
+
+const openDialog = (goalDir?: GoalDir) => {
+    visible.value = true;
+    propGoalDir.value = goalDir || null;
+};
+
+const openForCreate = () => {
+    openDialog();
+};
+
+const openForEdit = (goalDir: GoalDir) => {
+    openDialog(goalDir);
+};
+
+const closeDialog = () => {
+    visible.value = false;
+};
+
+watch(
+    [() => visible.value, () => propGoalDir.value],
+    ([show]) => {
+        if (show) {
+            localGoalDir.value = propGoalDir.value ? propGoalDir.value.clone() : GoalDir.forCreate({ accountUuid: '' });
+        } else {
+            localGoalDir.value = GoalDir.forCreate({ accountUuid: '' });
+        }
+    },
+    { immediate: true }
+);
+
+defineExpose({
+    openForCreate,
+    openForEdit,
+});
+</script>
+```
