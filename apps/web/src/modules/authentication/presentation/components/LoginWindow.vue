@@ -73,14 +73,14 @@ import { computed, ref } from 'vue';
 // types
 import type { AuthByPasswordForm } from '@dailyuse/contracts';
 // components
-import { useAuthenticationService } from '../composables/useAuthenticationService';
+import { useAuthentication } from '../composables/useAuthentication';
 // utils
 import { usernameRules, passwordRules } from '@/shared/utils/validations/rules';
 // services
 
 
-const { handleLogin, loading: authLoading, isInitializing } = useAuthenticationService();
-const loading = computed(() => authLoading.value || isInitializing.value);
+const { login: handleLogin, isLoading: authLoading } = useAuthentication();
+const loading = computed(() => authLoading.value);
 const formRef = ref();
 const isCurrentFormValid = computed(() => {
     return formRef.value?.isValid ?? false;

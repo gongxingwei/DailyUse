@@ -865,6 +865,196 @@ export class InitializationService {
 - **良好的性能**: 应用启动快速，数据按需同步
 - **易于维护**: 代码结构清晰，便于扩展和测试
 
+### Composables 应用场景分层规范
+
+#### 核心业务模块 - 只读模式 Composables
+
+**适用模块**: Goal, Task, Reminder, Authentication, Account, Repository, Editor 等涉及 ApplicationService 的核心业务模块
+
+**职责划分**:
+
+- **ApplicationService**: 负责所有业务逻辑、API调用、状态修改
+- **Composables (useXXX)**: 只读数据访问、响应式包装、本地UI状态
+
+**命名规范**:
+
+- ✅ 正确: `useGoal`, `useTask`, `useAuthentication`
+- ❌ 错误: `useGoalService`, `useTaskService`, `useAuthenticationService`
+
+**标准实现**:
+
+```typescript
+// ✅ 核心业务模块 - 只读模式
+export function useAuthentication() {
+  const authStore = useAuthStore();
+  const authService = getAuthService(); // 获取 ApplicationService 实例
+
+  // ===== 只读响应式数据 =====
+  const isAuthenticated = computed(() => authStore.isAuthenticated);
+  const user = computed(() => authStore.user);
+  const isLoading = computed(() => authStore.isLoading);
+  const error = computed(() => authStore.error);
+
+  // ===== 本地 UI 状态 =====
+  const loginFormVisible = ref(false);
+
+  // ===== 只读查询方法 =====
+  const getUserProfile = () => authStore.user;
+  const hasPermission = (permission: string) => authStore.hasPermission(permission);
+
+  // ===== 业务操作（委托给 ApplicationService）=====
+  const login = async (credentials) => {
+    return await authService.login(credentials);
+  };
+
+  const logout = async () => {
+    return await authService.logout();
+  };
+
+  // ===== 本地 UI 状态管理 =====
+  const showLoginForm = () => (loginFormVisible.value = true);
+  const hideLoginForm = () => (loginFormVisible.value = false);
+
+  return {
+    // 只读响应式数据
+    isAuthenticated,
+    user,
+    isLoading,
+    error,
+
+    // 本地 UI 状态
+    loginFormVisible,
+
+    // 只读查询方法
+    getUserProfile,
+    hasPermission,
+
+    // 业务操作（委托模式）
+    login,
+    logout,
+
+    // 本地状态管理
+    showLoginForm,
+    hideLoginForm,
+  };
+}
+```
+
+#### 简单工具模块 - 完整 Composables
+
+**适用场景**: UI状态管理、工具函数、不涉及复杂业务逻辑的功能
+
+**标准实现**:
+
+```typescript
+// ✅ 简单工具模块 - 完整模式
+export function useModal() {
+  const isOpen = ref(false);
+  const title = ref('');
+  const content = ref('');
+
+  const open = (modalTitle?: string, modalContent?: string) => {
+    title.value = modalTitle || '';
+    content.value = modalContent || '';
+    isOpen.value = true;
+  };
+
+  const close = () => {
+    isOpen.value = false;
+    title.value = '';
+    content.value = '';
+  };
+
+  const toggle = () => {
+    isOpen.value ? close() : open();
+  };
+
+  return {
+    // 状态
+    isOpen,
+    title,
+    content,
+
+    // 操作
+    open,
+    close,
+    toggle,
+  };
+}
+
+export function useTheme() {
+  const theme = ref<'light' | 'dark'>('light');
+
+  const toggleTheme = () => {
+    theme.value = theme.value === 'light' ? 'dark' : 'light';
+    localStorage.setItem('theme', theme.value);
+    document.documentElement.setAttribute('data-theme', theme.value);
+  };
+
+  const setTheme = (newTheme: 'light' | 'dark') => {
+    theme.value = newTheme;
+    localStorage.setItem('theme', newTheme);
+    document.documentElement.setAttribute('data-theme', newTheme);
+  };
+
+  // 初始化主题
+  onMounted(() => {
+    const savedTheme = localStorage.getItem('theme') as 'light' | 'dark';
+    if (savedTheme) {
+      setTheme(savedTheme);
+    }
+  });
+
+  return {
+    theme: readonly(theme),
+    toggleTheme,
+    setTheme,
+  };
+}
+```
+
+#### 混合模式 Composables（不推荐）
+
+**使用场景**: 遗留代码迁移期间的临时方案
+
+```typescript
+// ⚠️ 混合模式 - 仅用于遗留代码迁移
+export function useGoalLegacy() {
+  const store = useGoalStore();
+  const service = getGoalService();
+
+  return {
+    // 只读数据访问
+    goals: computed(() => store.goals),
+    isLoading: computed(() => store.isLoading),
+
+    // 业务操作入口（委托给 ApplicationService）
+    createGoal: (data) => service.createGoal(data),
+    updateGoal: (id, data) => service.updateGoal(id, data),
+
+    // 避免直接暴露 store 修改方法
+  };
+}
+```
+
+#### 架构选择决策表
+
+| 模块类型     | Composables模式     | ApplicationService | 示例                       |
+| ------------ | ------------------- | ------------------ | -------------------------- |
+| 核心业务模块 | 只读模式            | 必需               | Goal, Task, Authentication |
+| 简单UI工具   | 完整模式            | 不需要             | Modal, Theme, Counter      |
+| 工具函数库   | 完整模式            | 不需要             | Clipboard, LocalStorage    |
+| 遗留代码     | 混合模式 → 只读模式 | 逐步引入           | 迁移期间使用               |
+
+#### 重构指导原则
+
+1. **新功能**: 直接使用对应的模式
+2. **现有代码**: 逐步重构，优先重构复杂业务逻辑
+3. **命名统一**: 所有 composables 使用 `useXXX` 命名，去掉 `Service` 后缀
+4. **职责清晰**: 明确区分业务逻辑（ApplicationService）和数据访问（Composables）
+
+这种分层架构确保了代码的**一致性**、**可维护性**和**可扩展性**。
+
 #### 仓储接口设计规范
 
 **核心原则**: 仓储接口必须返回DTO对象，而不是领域实体
