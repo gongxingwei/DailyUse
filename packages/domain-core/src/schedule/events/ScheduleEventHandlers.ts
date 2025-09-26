@@ -313,7 +313,219 @@ export class ScheduleEventHandlers {
    * 注册Reminder模块相关的事件处理器
    */
   private registerReminderEventHandlers(): void {
-    // 提醒模板激活
+    // 提醒模板状态变化处理
+    eventBus.on(
+      'ReminderTemplateStatusChanged',
+      async (event: {
+        payload: {
+          templateUuid: string;
+          oldEnabled: boolean;
+          newEnabled: boolean;
+          template: any;
+          accountUuid: string;
+        };
+      }) => {
+        console.log('[Schedule] 处理提醒模板状态变化事件:', event.payload.templateUuid);
+
+        const { ReminderScheduleIntegrationService } = await import(
+          '../../reminder/services/ReminderScheduleIntegrationService'
+        );
+        const integrationService = ReminderScheduleIntegrationService.getInstance();
+
+        const result = await integrationService.handleTemplateStatusChange({
+          templateUuid: event.payload.templateUuid,
+          oldEnabled: event.payload.oldEnabled,
+          newEnabled: event.payload.newEnabled,
+          template: event.payload.template,
+          accountUuid: event.payload.accountUuid,
+        });
+
+        if (result.success) {
+          console.log(`✅ [Schedule] 提醒模板状态同步成功: ${event.payload.templateUuid}`);
+        } else {
+          console.error(`❌ [Schedule] 提醒模板状态同步失败: ${result.error}`);
+        }
+      },
+    );
+
+    // 提醒模板时间配置变化处理
+    eventBus.on(
+      'ReminderTemplateTimeConfigChanged',
+      async (event: {
+        payload: {
+          templateUuid: string;
+          oldTimeConfig: any;
+          newTimeConfig: any;
+          template: any;
+          accountUuid: string;
+        };
+      }) => {
+        console.log('[Schedule] 处理提醒模板时间配置变化事件:', event.payload.templateUuid);
+
+        const { ReminderScheduleIntegrationService } = await import(
+          '../../reminder/services/ReminderScheduleIntegrationService'
+        );
+        const integrationService = ReminderScheduleIntegrationService.getInstance();
+
+        const result = await integrationService.handleTemplateTimeConfigChange({
+          templateUuid: event.payload.templateUuid,
+          oldTimeConfig: event.payload.oldTimeConfig,
+          newTimeConfig: event.payload.newTimeConfig,
+          template: event.payload.template,
+          accountUuid: event.payload.accountUuid,
+        });
+
+        if (result.success) {
+          console.log(`✅ [Schedule] 提醒模板时间配置同步成功: ${event.payload.templateUuid}`);
+        } else {
+          console.error(`❌ [Schedule] 提醒模板时间配置同步失败: ${result.error}`);
+        }
+      },
+    );
+
+    // 提醒模板删除处理
+    eventBus.on(
+      'ReminderTemplateDeleted',
+      async (event: {
+        payload: {
+          templateUuid: string;
+          accountUuid: string;
+          template: any;
+        };
+      }) => {
+        console.log('[Schedule] 处理提醒模板删除事件:', event.payload.templateUuid);
+
+        const { ReminderScheduleIntegrationService } = await import(
+          '../../reminder/services/ReminderScheduleIntegrationService'
+        );
+        const integrationService = ReminderScheduleIntegrationService.getInstance();
+
+        const result = await integrationService.handleTemplateDeleted({
+          templateUuid: event.payload.templateUuid,
+          accountUuid: event.payload.accountUuid,
+        });
+
+        if (result.success) {
+          console.log(`✅ [Schedule] 提醒模板删除同步成功: ${event.payload.templateUuid}`);
+        } else {
+          console.error(`❌ [Schedule] 提醒模板删除同步失败: ${result.error}`);
+        }
+      },
+    );
+
+    // 批量提醒模板更新处理
+    eventBus.on(
+      'ReminderTemplateBatchUpdated',
+      async (event: {
+        payload: {
+          templateUuid: string;
+          batchId: string;
+          accountUuid: string;
+          changes: string[];
+          oldState: any;
+          newState: any;
+          template: any;
+        };
+      }) => {
+        console.log('[Schedule] 处理批量提醒模板更新事件:', event.payload.batchId);
+
+        // 检查是否影响调度的变更
+        const scheduleAffectingChanges = ['enabled', 'timeConfig', 'priority'];
+        const hasScheduleChanges = event.payload.changes.some((change) =>
+          scheduleAffectingChanges.includes(change),
+        );
+
+        if (!hasScheduleChanges) {
+          console.log('[Schedule] 批量更新不影响调度，跳过处理');
+          return;
+        }
+
+        const { ReminderScheduleIntegrationService } = await import(
+          '../../reminder/services/ReminderScheduleIntegrationService'
+        );
+        const integrationService = ReminderScheduleIntegrationService.getInstance();
+
+        // 取消现有调度
+        await integrationService.cancelScheduleForTemplate({
+          templateUuid: event.payload.templateUuid,
+          accountUuid: event.payload.accountUuid,
+        });
+
+        // 如果新状态需要调度，重新创建
+        if (event.payload.newState.enabled) {
+          await integrationService.createScheduleForTemplate({
+            template: event.payload.template,
+            accountUuid: event.payload.accountUuid,
+          });
+        }
+      },
+    );
+
+    // 提醒同步请求处理
+    eventBus.on(
+      'ReminderTemplateSyncRequested',
+      async (event: {
+        payload: {
+          templateUuid: string;
+          accountUuid: string;
+          operation: 'create' | 'update' | 'delete';
+          reason?: string;
+          template: any;
+        };
+      }) => {
+        console.log(
+          '[Schedule] 处理提醒同步请求:',
+          event.payload.operation,
+          event.payload.templateUuid,
+        );
+
+        const { ReminderScheduleIntegrationService } = await import(
+          '../../reminder/services/ReminderScheduleIntegrationService'
+        );
+        const integrationService = ReminderScheduleIntegrationService.getInstance();
+
+        try {
+          switch (event.payload.operation) {
+            case 'create':
+              await integrationService.createScheduleForTemplate({
+                template: event.payload.template,
+                accountUuid: event.payload.accountUuid,
+              });
+              break;
+
+            case 'update':
+              // 先取消再重新创建
+              await integrationService.cancelScheduleForTemplate({
+                templateUuid: event.payload.templateUuid,
+                accountUuid: event.payload.accountUuid,
+              });
+
+              if (event.payload.template.enabled) {
+                await integrationService.createScheduleForTemplate({
+                  template: event.payload.template,
+                  accountUuid: event.payload.accountUuid,
+                });
+              }
+              break;
+
+            case 'delete':
+              await integrationService.cancelScheduleForTemplate({
+                templateUuid: event.payload.templateUuid,
+                accountUuid: event.payload.accountUuid,
+              });
+              break;
+          }
+
+          console.log(`✅ [Schedule] 提醒同步操作完成: ${event.payload.operation}`);
+        } catch (error) {
+          console.error(`❌ [Schedule] 提醒同步操作失败:`, error);
+        }
+      },
+    );
+
+    // ===== 兼容性事件处理 =====
+
+    // 提醒模板激活（兼容旧版本）
     eventBus.on(
       'reminder:template-activated',
       async (data: {
@@ -323,7 +535,7 @@ export class ScheduleEventHandlers {
         scheduleTime: string;
         accountUuid: string;
       }) => {
-        console.log('[Schedule] 处理提醒模板激活事件:', data.templateId);
+        console.log('[Schedule] 处理提醒模板激活事件（兼容）:', data.templateId);
 
         await this.scheduleService.createQuickReminder({
           title: data.title,
@@ -334,7 +546,7 @@ export class ScheduleEventHandlers {
       },
     );
 
-    // 一次性提醒创建
+    // 一次性提醒创建（兼容旧版本）
     eventBus.on(
       'reminder:create-once',
       async (data: {
@@ -345,7 +557,7 @@ export class ScheduleEventHandlers {
         alertMethods?: AlertMethod[];
         accountUuid: string;
       }) => {
-        console.log('[Schedule] 处理一次性提醒创建事件');
+        console.log('[Schedule] 处理一次性提醒创建事件（兼容）');
 
         await this.scheduleService.createQuickReminder({
           title: data.title,
@@ -436,6 +648,11 @@ export class ScheduleEventHandlers {
     eventBus.off('goal:completed');
 
     // 注销Reminder事件
+    eventBus.off('ReminderTemplateStatusChanged');
+    eventBus.off('ReminderTemplateTimeConfigChanged');
+    eventBus.off('ReminderTemplateDeleted');
+    eventBus.off('ReminderTemplateBatchUpdated');
+    eventBus.off('ReminderTemplateSyncRequested');
     eventBus.off('reminder:template-activated');
     eventBus.off('reminder:create-once');
 

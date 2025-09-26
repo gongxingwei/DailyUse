@@ -8,3 +8,13 @@ export { ReminderInstanceCore } from './entities/ReminderInstanceCore';
 
 // 重新导出原有的枚举和类型
 export { ReminderType, RecurrenceType, ReminderStatus } from './aggregates/ReminderCore';
+
+// 服务
+export {
+  ReminderScheduleIntegrationService,
+  reminderScheduleIntegration,
+} from './services/ReminderScheduleIntegrationService';
+export {
+  ReminderScheduleSyncManager,
+  reminderScheduleSyncManager,
+} from './services/ReminderScheduleSyncManager';

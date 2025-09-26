@@ -5,7 +5,6 @@ import { type AuthByPasswordForm, type AuthResponseDTO } from '@dailyuse/contrac
 import { AuthApplicationService } from '../../application/services/AuthApplicationService';
 import { useAuthStore } from '../stores/useAuthStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/useAccountStore';
-import { useGlobalInitialization } from '@/composables/useGlobalInitialization';
 
 /**
  * 认证服务 Composable
@@ -25,13 +24,6 @@ export function useAuthenticationService() {
   const authStore = useAuthStore();
   const accountStore = useAccountStore();
 
-  // 全局初始化服务
-  const {
-    initializeForUser,
-    isInitializing,
-    initializationError,
-    clearError: clearInitializationError,
-  } = useGlobalInitialization();
 
   /**
    * 处理登录
@@ -40,7 +32,6 @@ export function useAuthenticationService() {
     try {
       authStore.setLoading(true);
       authStore.clearError();
-      clearInitializationError();
       showInfo('正在登录...');
 
       const authService = await AuthApplicationService.getInstance();

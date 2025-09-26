@@ -452,6 +452,419 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
 
 这种架构既保证了性能（缓存优先），又保证了数据的准确性（支持强制刷新），同时符合DDD的分层原则。
 
+## 模块初始化系统架构规范
+
+### 初始化系统设计原则
+
+**核心原则**：
+
+- **分层职责明确**: ApplicationService 负责数据操作，Composables 只读取数据
+- **统一初始化流程**: 所有模块遵循相同的初始化生命周期
+- **错误隔离**: 单个模块初始化失败不影响整个应用启动
+- **可扩展性**: 支持新模块的便捷接入
+
+### 模块初始化架构分层
+
+#### 1. ApplicationService 层
+
+**职责**:
+
+- **直接操作 Store**: 使用 `getReminderStore()` 等工厂函数直接修改 store 数据
+- **API 调用**: 负责所有与后端的数据交互
+- **业务逻辑协调**: 处理复杂的业务用例
+- **初始化管理**: 提供 `initializeModule()` 和 `initializeModuleData()` 方法
+
+**规范实现**:
+
+```typescript
+// ApplicationService 标准结构
+export class ModuleWebApplicationService {
+  /**
+   * 直接获取 Store（不使用 composables）
+   */
+  private get moduleStore() {
+    return getModuleStore(); // 使用工厂函数，不是 useModuleStore()
+  }
+
+  /**
+   * 仅初始化模块（应用启动时调用）
+   * 只初始化 store 和本地状态，不进行网络同步
+   */
+  async initializeModule(): Promise<void> {
+    try {
+      this.moduleStore.initialize();
+      console.log('Module 基础初始化完成（仅本地缓存）');
+    } catch (error) {
+      console.error('Module 初始化失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 初始化模块数据（用户登录时调用）
+   * 从服务器同步所有数据到 store
+   */
+  async initializeModuleData(): Promise<void> {
+    try {
+      await this.syncAllModuleData();
+      console.log('Module 数据同步完成');
+    } catch (error) {
+      console.error('Module 数据同步失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 同步所有模块数据
+   */
+  async syncAllModuleData(): Promise<void> {
+    // 并行获取数据
+    const [dataA, dataB] = await Promise.all([
+      this.apiClient.getDataA(),
+      this.apiClient.getDataB(),
+    ]);
+
+    // 转换并存储到 store
+    const entitiesA = dataA.map((dto) => EntityA.fromDTO(dto));
+    const entitiesB = dataB.map((dto) => EntityB.fromDTO(dto));
+
+    this.moduleStore.setDataA(entitiesA);
+    this.moduleStore.setDataB(entitiesB);
+  }
+}
+```
+
+#### 2. Store 层
+
+**职责**:
+
+- **纯数据存储**: 只负责数据的存储和基本查询
+- **工厂函数**: 提供 `getModuleStore()` 供 ApplicationService 使用
+- **初始化状态**: 管理模块的初始化状态和缓存策略
+
+**规范实现**:
+
+```typescript
+// Store 标准结构
+export const useModuleStore = defineStore('module', {
+  state: () => ({
+    // 数据缓存
+    entities: [] as Entity[],
+
+    // UI 状态
+    isLoading: false,
+    error: null,
+
+    // 初始化状态
+    isInitialized: false,
+    lastSyncTime: null,
+  }),
+
+  getters: {
+    // 纯数据查询方法
+    getEntityByUuid: (state) => (uuid: string) => state.entities.find((e) => e.uuid === uuid),
+  },
+
+  actions: {
+    // 数据操作方法（供 ApplicationService 调用）
+    setEntities(entities: Entity[]) {
+      this.entities = entities;
+    },
+
+    addOrUpdateEntity(entity: Entity) {
+      const index = this.entities.findIndex((e) => e.uuid === entity.uuid);
+      if (index >= 0) {
+        this.entities[index] = entity;
+      } else {
+        this.entities.push(entity);
+      }
+    },
+
+    // 初始化相关
+    initialize() {
+      this.isInitialized = true;
+      this.lastSyncTime = new Date();
+    },
+
+    shouldRefreshCache(): boolean {
+      if (!this.lastSyncTime) return true;
+      const cacheAge = Date.now() - this.lastSyncTime.getTime();
+      return cacheAge > 30 * 60 * 1000; // 30分钟过期
+    },
+  },
+});
+
+/**
+ * Store 工厂函数
+ * 供 ApplicationService 使用，避免响应式依赖
+ */
+export const getModuleStore = () => {
+  return useModuleStore();
+};
+```
+
+#### 3. Composables 层（只读模式）
+
+**职责**:
+
+- **只读数据访问**: 从 store 获取数据，提供响应式接口
+- **不修改状态**: 绝不直接调用 store 的修改方法
+- **UI 状态管理**: 管理纯本地 UI 状态（如当前选中项）
+
+**规范实现**:
+
+```typescript
+// Composables 只读模式标准结构
+export function useModule() {
+  const moduleStore = useModuleStore();
+
+  // ===== 响应式数据（只读）=====
+  const entities = computed(() => moduleStore.entities);
+  const isLoading = computed(() => moduleStore.isLoading);
+  const error = computed(() => moduleStore.error);
+
+  // ===== 本地 UI 状态 =====
+  const currentEntity = ref<Entity | null>(null);
+
+  // ===== 数据查询方法（只读）=====
+  const getEntityByUuid = (uuid: string): Entity | null => {
+    return moduleStore.getEntityByUuid(uuid);
+  };
+
+  // ===== 本地状态管理 =====
+  const setCurrentEntity = (entity: Entity | null): void => {
+    currentEntity.value = entity;
+  };
+
+  return {
+    // 响应式数据（只读）
+    entities,
+    isLoading,
+    error,
+    currentEntity,
+
+    // 数据查询方法（只读）
+    getEntityByUuid,
+
+    // 本地状态管理
+    setCurrentEntity,
+  };
+}
+```
+
+#### 4. 模块 Index 层
+
+**职责**:
+
+- **统一导出**: 提供模块的统一入口
+- **工厂函数**: 提供服务实例的工厂方法
+- **初始化函数**: 导出模块初始化函数
+
+**规范实现**:
+
+```typescript
+// modules/module/index.ts 标准结构
+import { ModuleWebApplicationService } from './application/services/ModuleWebApplicationService';
+
+/**
+ * 全局单例服务实例 - 懒加载
+ */
+let _moduleService: ModuleWebApplicationService | null = null;
+
+/**
+ * 获取 Module Web 应用服务实例
+ */
+export const getModuleWebService = (): ModuleWebApplicationService => {
+  if (!_moduleService) {
+    _moduleService = new ModuleWebApplicationService();
+  }
+  return _moduleService;
+};
+
+/**
+ * 初始化 Module 模块
+ * 供初始化系统调用
+ */
+export const initializeModuleModule = async (): Promise<void> => {
+  const service = getModuleWebService();
+  await service.initializeModule();
+};
+
+// 导出其他必要的类型和组件
+export type { ModuleWebApplicationService };
+export { useModule } from './presentation/composables/useModule';
+```
+
+### 初始化系统流程
+
+#### 1. 注册初始化任务
+
+**规范实现**:
+
+```typescript
+// modules/module/initialization/moduleInitialization.ts
+export function registerModuleInitializationTasks(): void {
+  const manager = InitializationManager.getInstance();
+
+  // 模块基础初始化任务（应用启动时）
+  const moduleInitTask: InitializationTask = {
+    name: 'module-init',
+    phase: InitializationPhase.APP_STARTUP,
+    priority: 30,
+    initialize: async () => {
+      console.log('📦 [Module] 开始初始化 Module 模块...');
+      try {
+        await new Promise((resolve) => setTimeout(resolve, 100)); // 确保 Pinia 初始化
+        const service = getModuleWebService();
+        await service.initializeModule(); // 只初始化，不同步数据
+        console.log('✅ [Module] Module 模块初始化完成');
+      } catch (error) {
+        console.error('❌ [Module] Module 模块初始化失败:', error);
+        console.warn('Module 模块初始化失败，但应用将继续启动');
+      }
+    },
+    cleanup: async () => {
+      const service = getModuleWebService();
+      service.cleanup();
+    },
+  };
+
+  // 用户数据同步任务（用户登录时）
+  const moduleDataSyncTask: InitializationTask = {
+    name: 'module-data-sync',
+    phase: InitializationPhase.USER_LOGIN,
+    priority: 20,
+    initialize: async (context?: { accountUuid?: string }) => {
+      console.log(`📦 [Module] 开始用户数据同步: ${context?.accountUuid}`);
+      try {
+        const service = getModuleWebService();
+        await service.initializeModuleData(); // 同步数据
+        console.log(`✅ [Module] 用户数据同步完成: ${context?.accountUuid}`);
+      } catch (error) {
+        console.error(`❌ [Module] 用户数据同步失败: ${context?.accountUuid}`, error);
+        console.warn('Module 数据同步失败，但用户登录将继续');
+      }
+    },
+    cleanup: async () => {
+      const service = getModuleWebService();
+      service.cleanup();
+    },
+  };
+
+  manager.registerTask(moduleInitTask);
+  manager.registerTask(moduleDataSyncTask);
+}
+```
+
+#### 2. 全局初始化服务
+
+**规范实现**:
+
+```typescript
+// shared/services/InitializationService.ts
+export class InitializationService {
+  async initializeUserData(accountUuid: string): Promise<void> {
+    // 并行初始化所有模块数据
+    await Promise.all([
+      this.initializeGoalModule(),
+      this.initializeReminderModule(),
+      this.initializeTaskModule(),
+      // ...其他模块
+    ]);
+  }
+
+  private async initializeReminderModule(): Promise<void> {
+    const reminderService = getReminderWebService();
+    await reminderService.initializeModuleData();
+  }
+}
+```
+
+### 关键架构原则总结
+
+#### ✅ 正确的做法
+
+1. **ApplicationService 直接操作 Store**
+
+   ```typescript
+   // ✅ 正确 - ApplicationService 中
+   private get reminderStore() {
+     return getReminderStore(); // 使用工厂函数
+   }
+
+   async createTemplate(data) {
+     const template = Template.fromData(data);
+     this.reminderStore.addTemplate(template); // 直接修改 store
+   }
+   ```
+
+2. **Composables 只读数据**
+
+   ```typescript
+   // ✅ 正确 - Composables 中
+   export function useReminder() {
+     const store = useReminderStore();
+
+     return {
+       templates: computed(() => store.templates), // 只读
+       getTemplateById: (id) => store.getTemplateById(id), // 只读查询
+     };
+   }
+   ```
+
+3. **分层初始化**
+
+   ```typescript
+   // ✅ 正确 - 分阶段初始化
+   // 应用启动时：只初始化模块
+   await service.initializeModule();
+
+   // 用户登录时：同步数据
+   await service.initializeModuleData();
+   ```
+
+#### ❌ 错误的做法
+
+1. **Composables 修改 Store**
+
+   ```typescript
+   // ❌ 错误 - Composables 中不应该有状态修改
+   export function useReminder() {
+     const store = useReminderStore();
+
+     const createTemplate = async (data) => {
+       store.addTemplate(data); // 错误：composables 不应修改 store
+     };
+   }
+   ```
+
+2. **ApplicationService 使用 Composables**
+
+   ```typescript
+   // ❌ 错误 - ApplicationService 中不应使用 composables
+   export class ReminderWebApplicationService {
+     async createTemplate(data) {
+       const { createTemplate } = useReminder(); // 错误：不应使用 composables
+       return await createTemplate(data);
+     }
+   }
+   ```
+
+3. **混乱的初始化顺序**
+   ```typescript
+   // ❌ 错误 - 在应用启动时同步网络数据
+   async initializeModule() {
+     await this.syncAllDataFromServer(); // 错误：应用启动时不应进行网络请求
+   }
+   ```
+
+这种架构确保了：
+
+- **清晰的职责分离**: 每层职责明确，不越界
+- **一致的初始化流程**: 所有模块遵循相同的初始化生命周期
+- **良好的性能**: 应用启动快速，数据按需同步
+- **易于维护**: 代码结构清晰，便于扩展和测试
+
 #### 仓储接口设计规范
 
 **核心原则**: 仓储接口必须返回DTO对象，而不是领域实体
@@ -498,6 +911,7 @@ const refresh = () => fetchGoals(true); // 强制从API刷新
 ### 实体方法
 
 domain-client 下的实体类应包含以下方法：
+
 - forCreate(): 创建新实体的静态方法,名称属性 传空值，其他必要的属性传默认值，不必要的属性不传
 - clone(): 克隆当前实体的实例方法
 
@@ -527,43 +941,59 @@ src/modules/{module}/presentation/components/dialogs/xxxDialog.vue
 
 ```vue
 <template>
-    <v-dialog :model-value="visible" max-width="400" persistent>
-        <v-card>
-            <v-card-title class="pa-4">
-                <v-icon size="24" class="mr-2">mdi-folder-plus</v-icon>
-                {{ isEditing ? '编辑目标节点' : '创建目标节点' }}
-            </v-card-title>
+  <v-dialog :model-value="visible" max-width="400" persistent>
+    <v-card>
+      <v-card-title class="pa-4">
+        <v-icon size="24" class="mr-2">mdi-folder-plus</v-icon>
+        {{ isEditing ? '编辑目标节点' : '创建目标节点' }}
+      </v-card-title>
 
-            <v-form ref="formRef">
-                <v-card-text class="pa-4">
-                <v-text-field v-model="name" label="节点名称" variant="outlined" density="compact" :rules="nameRules"
-                    @keyup.enter="handleSave">
-                </v-text-field>
+      <v-form ref="formRef">
+        <v-card-text class="pa-4">
+          <v-text-field
+            v-model="name"
+            label="节点名称"
+            variant="outlined"
+            density="compact"
+            :rules="nameRules"
+            @keyup.enter="handleSave"
+          >
+          </v-text-field>
 
-                <v-select v-model="icon" :items="iconOptions" label="选择图标" variant="outlined" density="compact"
-                    item-title="text" item-value="value">
-                    <template v-slot:item="{ props, item }">
-                        <v-list-item v-bind="props">
-                            <template v-slot:prepend>
-                                <v-icon>{{ item.raw.value }}</v-icon>
-                            </template>
-                          
-                        </v-list-item>
-                    </template>
-                </v-select>
-            </v-card-text>
-            </v-form>
-            
+          <v-select
+            v-model="icon"
+            :items="iconOptions"
+            label="选择图标"
+            variant="outlined"
+            density="compact"
+            item-title="text"
+            item-value="value"
+          >
+            <template v-slot:item="{ props, item }">
+              <v-list-item v-bind="props">
+                <template v-slot:prepend>
+                  <v-icon>{{ item.raw.value }}</v-icon>
+                </template>
+              </v-list-item>
+            </template>
+          </v-select>
+        </v-card-text>
+      </v-form>
 
-            <v-card-actions class="pa-4">
-                <v-btn variant="text" @click="handleCancel">取消</v-btn>
-                <v-btn color="primary" class="ml-2" @click="handleSave" variant="elevated" :disabled="!isFormValid">
-                    确定
-                </v-btn>
-            </v-card-actions>
-
-        </v-card>
-    </v-dialog>
+      <v-card-actions class="pa-4">
+        <v-btn variant="text" @click="handleCancel">取消</v-btn>
+        <v-btn
+          color="primary"
+          class="ml-2"
+          @click="handleSave"
+          variant="elevated"
+          :disabled="!isFormValid"
+        >
+          确定
+        </v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
 </template>
 
 <script setup lang="ts">
@@ -582,87 +1012,88 @@ const localGoalDir = ref<GoalDir>(GoalDir.forCreate({ accountUuid: '' }));
 const isEditing = computed(() => !!propGoalDir.value);
 const formRef = ref<InstanceType<typeof HTMLFormElement> | null>(null);
 const isFormValid = computed(() => {
-    return formRef.value?.isValid ?? false;
-})
+  return formRef.value?.isValid ?? false;
+});
 
 const name = computed({
-    get: () => localGoalDir.value.name,
-    set: (val: string) => {
-        localGoalDir.value.updateInfo({ name: val });
-    }
-})
+  get: () => localGoalDir.value.name,
+  set: (val: string) => {
+    localGoalDir.value.updateInfo({ name: val });
+  },
+});
 
 const icon = computed({
-    get: () => localGoalDir.value.icon,
-    set: (val: string) => {
-        localGoalDir.value.updateInfo({ icon: val });
-    }
+  get: () => localGoalDir.value.icon,
+  set: (val: string) => {
+    localGoalDir.value.updateInfo({ icon: val });
+  },
 });
 
 const iconOptions = [
-    { text: '文件夹', value: 'mdi-folder' },
-    { text: '目标', value: 'mdi-target' },
-    { text: '学习', value: 'mdi-school' },
-    { text: '工作', value: 'mdi-briefcase' },
-    { text: '生活', value: 'mdi-home' },
-    { text: '健康', value: 'mdi-heart' },
+  { text: '文件夹', value: 'mdi-folder' },
+  { text: '目标', value: 'mdi-target' },
+  { text: '学习', value: 'mdi-school' },
+  { text: '工作', value: 'mdi-briefcase' },
+  { text: '生活', value: 'mdi-home' },
+  { text: '健康', value: 'mdi-heart' },
 ];
 
 const nameRules = [
-    (v: string) => !!v || '名称不能为空',
-    (v: string) => (v && v.length >= 1) || '名称至少需要2个字符',
-    (v: string) => (v && v.length <= 50) || '名称不能超过50个字符'
+  (v: string) => !!v || '名称不能为空',
+  (v: string) => (v && v.length >= 1) || '名称至少需要2个字符',
+  (v: string) => (v && v.length <= 50) || '名称不能超过50个字符',
 ];
 
-
 const handleSave = () => {
-    if (!isFormValid.value) return;
-    if (propGoalDir.value) {
-        // 编辑模式
-        updateGoalDir(localGoalDir.value.uuid, localGoalDir.value.toDTO());
-    } else {
-        // 创建模式
-        createGoalDir(localGoalDir.value.toDTO());
-    }
-    closeDialog();
+  if (!isFormValid.value) return;
+  if (propGoalDir.value) {
+    // 编辑模式
+    updateGoalDir(localGoalDir.value.uuid, localGoalDir.value.toDTO());
+  } else {
+    // 创建模式
+    createGoalDir(localGoalDir.value.toDTO());
+  }
+  closeDialog();
 };
 
 const handleCancel = () => {
-    closeDialog();
+  closeDialog();
 };
 
 const openDialog = (goalDir?: GoalDir) => {
-    visible.value = true;
-    propGoalDir.value = goalDir || null;
+  visible.value = true;
+  propGoalDir.value = goalDir || null;
 };
 
 const openForCreate = () => {
-    openDialog();
+  openDialog();
 };
 
 const openForEdit = (goalDir: GoalDir) => {
-    openDialog(goalDir);
+  openDialog(goalDir);
 };
 
 const closeDialog = () => {
-    visible.value = false;
+  visible.value = false;
 };
 
 watch(
-    [() => visible.value, () => propGoalDir.value],
-    ([show]) => {
-        if (show) {
-            localGoalDir.value = propGoalDir.value ? propGoalDir.value.clone() : GoalDir.forCreate({ accountUuid: '' });
-        } else {
-            localGoalDir.value = GoalDir.forCreate({ accountUuid: '' });
-        }
-    },
-    { immediate: true }
+  [() => visible.value, () => propGoalDir.value],
+  ([show]) => {
+    if (show) {
+      localGoalDir.value = propGoalDir.value
+        ? propGoalDir.value.clone()
+        : GoalDir.forCreate({ accountUuid: '' });
+    } else {
+      localGoalDir.value = GoalDir.forCreate({ accountUuid: '' });
+    }
+  },
+  { immediate: true },
 );
 
 defineExpose({
-    openForCreate,
-    openForEdit,
+  openForCreate,
+  openForEdit,
 });
 </script>
 ```

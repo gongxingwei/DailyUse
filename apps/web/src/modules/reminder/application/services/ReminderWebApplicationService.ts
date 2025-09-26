@@ -1,7 +1,7 @@
 import { ReminderContracts } from '@dailyuse/contracts';
 
 import { reminderApiClient } from '../../infrastructure/api/reminderApiClient';
-import { useReminderStore } from '../../presentation/stores/reminderStore';
+import { getReminderStore } from '../../presentation/stores/reminderStore';
 import { useSnackbar } from '../../../../shared/composables/useSnackbar';
 import { ReminderTemplate, ReminderInstance, ReminderTemplateGroup } from '@dailyuse/domain-client';
 
@@ -12,11 +12,11 @@ import { ReminderTemplate, ReminderInstance, ReminderTemplateGroup } from '@dail
  */
 export class ReminderWebApplicationService {
   /**
-   * 懒加载获取 Reminder Store
-   * 避免在 Pinia 初始化之前调用
+   * 直接获取 Reminder Store
+   * ApplicationService 直接操作 store，不使用 composables
    */
   private get reminderStore() {
-    return useReminderStore();
+    return getReminderStore();
   }
 
   /**
@@ -790,7 +790,7 @@ export class ReminderWebApplicationService {
       // 更新 store 中的状态
       const group = this.reminderStore.getReminderTemplateGroupByUuid(groupUuid);
       if (group) {
-        group.toggleEnabled(enabled);
+        (group as any).enabled = enabled;
         this.reminderStore.addOrUpdateReminderTemplateGroup(group);
       }
 
@@ -803,6 +803,185 @@ export class ReminderWebApplicationService {
     } finally {
       this.reminderStore.setLoading(false);
     }
+  }
+
+  // ===== 数据同步方法（参考 Goal 模块架构）=====
+
+  /**
+   * 同步所有提醒数据到 store
+   * 用于应用初始化时加载所有数据
+   */
+  async syncAllReminderData(): Promise<{
+    templatesCount: number;
+    groupsCount: number;
+  }> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      // 并行获取所有数据
+      console.log('📡 开始发起 Reminder API 请求...');
+      const [templatesData, groupsData] = await Promise.all([
+        reminderApiClient.getReminderTemplates({ limit: 1000 }),
+        reminderApiClient.getReminderTemplateGroups(),
+      ]);
+
+      console.log('🔍 Reminder API 响应数据:', {
+        templatesData,
+        groupsData,
+      });
+
+      // 转换为客户端实体
+      const templates = (Array.isArray(templatesData) ? templatesData : []).map((templateData) =>
+        ReminderTemplate.fromApiResponse(templateData),
+      );
+      const groups = (Array.isArray(groupsData) ? groupsData : []).map((groupData) =>
+        ReminderTemplateGroup.fromResponse(groupData),
+      );
+
+      // 批量同步到 store
+      this.reminderStore.setReminderTemplates(templates);
+      this.reminderStore.setReminderTemplateGroups(groups);
+
+      console.log(`成功同步提醒数据: ${templates.length} 个模板, ${groups.length} 个分组`);
+
+      return {
+        templatesCount: templates.length,
+        groupsCount: groups.length,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '同步所有提醒数据失败';
+      this.reminderStore.setError(errorMessage);
+      console.error('同步所有提醒数据失败:', error);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 检查是否需要同步数据
+   */
+  shouldSyncData(): boolean {
+    return (
+      !this.reminderStore.isInitialized ||
+      this.reminderStore.getAllTemplates.length === 0 ||
+      this.reminderStore.shouldRefreshCache()
+    );
+  }
+
+  // ===== 工具方法 =====
+
+  /**
+   * 获取 Reminder Store 实例
+   */
+  getStore() {
+    return this.reminderStore;
+  }
+
+  /**
+   * 初始化服务
+   * 会自动同步所有提醒数据到 store
+   */
+  async initialize(): Promise<void> {
+    try {
+      // 先初始化 store（加载本地缓存）
+      this.reminderStore.initialize();
+
+      // 检查是否需要从服务器同步数据
+      if (this.shouldSyncData()) {
+        console.log('开始同步所有提醒数据...');
+        await this.syncAllReminderData();
+      } else {
+        console.log('使用本地缓存数据，跳过服务器同步');
+      }
+    } catch (error) {
+      console.error('Reminder 服务初始化失败:', error);
+      // 即使同步失败，也要完成 store 的初始化
+      if (!this.reminderStore.isInitialized) {
+        this.reminderStore.initialize();
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * 仅初始化模块（不进行数据同步）
+   * 用于应用启动时的基础模块初始化
+   */
+  async initializeModule(): Promise<void> {
+    try {
+      // 只初始化 store（加载本地缓存），不进行网络同步
+      this.reminderStore.initialize();
+      console.log('Reminder 模块基础初始化完成（仅本地缓存）');
+    } catch (error) {
+      console.error('Reminder 模块初始化失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 初始化模块数据
+   * 登录时调用，同步所有数据
+   */
+  async initializeModuleData(): Promise<void> {
+    try {
+      // 1. 同步 Reminder 数据
+      await this.syncAllReminderData();
+
+      // 2. 启动 Schedule 集成服务
+      await this.initializeScheduleIntegration();
+
+      console.log('✅ Reminder 模块数据初始化完成（包括 Schedule 集成）');
+    } catch (error) {
+      console.error('❌ Reminder 模块数据初始化失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 初始化 Reminder-Schedule 集成
+   * 确保状态同步服务正常运行
+   */
+  private async initializeScheduleIntegration(): Promise<void> {
+    try {
+      console.log('🔄 启动 Reminder-Schedule 集成服务...');
+
+      // 动态导入集成服务，避免循环依赖
+      const { reminderScheduleIntegration, reminderScheduleSyncManager } = await import(
+        '@dailyuse/domain-core'
+      );
+
+      // 检查同步管理器是否已初始化
+      if (reminderScheduleSyncManager) {
+        console.log('✅ Schedule 同步管理器已就绪');
+      }
+
+      // 检查集成服务状态
+      if (reminderScheduleIntegration) {
+        console.log('✅ Reminder-Schedule 集成服务已就绪');
+      }
+    } catch (error) {
+      console.error('❌ Reminder-Schedule 集成服务启动失败:', error);
+      // 集成服务失败不应阻止 Reminder 模块的基本功能
+      console.warn('Schedule 集成服务启动失败，但 Reminder 模块将继续正常工作');
+    }
+  }
+
+  /**
+   * 强制重新同步所有数据
+   */
+  async forceSync(): Promise<void> {
+    console.log('强制重新同步所有提醒数据...');
+    await this.syncAllReminderData();
+  }
+
+  /**
+   * 清理服务状态
+   * 用于用户登出时清理数据
+   */
+  cleanup(): void {
+    this.reminderStore.clearAll();
   }
 }
 

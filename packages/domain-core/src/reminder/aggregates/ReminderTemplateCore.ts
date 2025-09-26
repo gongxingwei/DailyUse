@@ -524,10 +524,28 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 更新时间配置
    */
-  updateTimeConfig(timeConfig: ReminderContracts.ReminderTimeConfig): void {
+  updateTimeConfig(
+    timeConfig: ReminderContracts.ReminderTimeConfig,
+    context?: { accountUuid: string },
+  ): void {
+    const oldTimeConfig = { ...this._timeConfig };
     this.validateTimeConfig(timeConfig);
     this._timeConfig = timeConfig;
     this.updateVersion();
+
+    // 发布时间配置变化事件，供 Schedule 模块监听
+    this.addDomainEvent({
+      eventType: 'ReminderTemplateTimeConfigChanged',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        oldTimeConfig,
+        newTimeConfig: timeConfig,
+        template: this.toDTO(),
+        accountUuid: context?.accountUuid,
+      },
+    });
   }
 
   /**
@@ -549,17 +567,52 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 切换启用状态
    */
-  toggleEnabled(enabled: boolean): void {
+  toggleEnabled(enabled: boolean, context?: { accountUuid: string }): void {
+    const oldEnabled = this._enabled;
     this._enabled = enabled;
     this.updateVersion();
+
+    // 发布状态变化领域事件，供 Schedule 模块监听
+    this.addDomainEvent({
+      eventType: 'ReminderTemplateStatusChanged',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        oldEnabled,
+        newEnabled: enabled,
+        template: this.toDTO(),
+        accountUuid: context?.accountUuid,
+      },
+    });
   }
 
   /**
    * 切换自身启用状态
    */
-  toggleSelfEnabled(selfEnabled: boolean): void {
+  toggleSelfEnabled(selfEnabled: boolean, context?: { accountUuid: string }): void {
+    const oldSelfEnabled = this._selfEnabled;
     this._selfEnabled = selfEnabled;
     this.updateVersion();
+
+    // 自身启用状态变化也影响整体启用状态
+    const oldActualEnabled = oldSelfEnabled && this._enabled;
+    const newActualEnabled = selfEnabled && this._enabled;
+
+    if (oldActualEnabled !== newActualEnabled) {
+      this.addDomainEvent({
+        eventType: 'ReminderTemplateStatusChanged',
+        aggregateId: this.uuid,
+        occurredOn: new Date(),
+        payload: {
+          templateUuid: this.uuid,
+          oldEnabled: oldActualEnabled,
+          newEnabled: newActualEnabled,
+          template: this.toDTO(),
+          accountUuid: context?.accountUuid,
+        },
+      });
+    }
   }
 
   /**
@@ -602,6 +655,200 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   recordSnooze(): void {
     this._analytics.snoozeCount++;
     this.updateVersion();
+  }
+
+  // ===== Schedule 集成相关业务方法 =====
+
+  /**
+   * 删除模板（触发 Schedule 清理）
+   */
+  markForDeletion(context: { accountUuid: string }): void {
+    // 发布模板删除事件，供 Schedule 模块监听
+    this.addDomainEvent({
+      eventType: 'ReminderTemplateDeleted',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        accountUuid: context.accountUuid,
+        template: this.toDTO(),
+      },
+    });
+  }
+
+  /**
+   * 同步到调度系统
+   */
+  requestScheduleSync(context: {
+    accountUuid: string;
+    operation: 'create' | 'update' | 'delete';
+    reason?: string;
+  }): void {
+    this.addDomainEvent({
+      eventType: 'ReminderTemplateSyncRequested',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        accountUuid: context.accountUuid,
+        operation: context.operation,
+        reason: context.reason,
+        template: this.toDTO(),
+      },
+    });
+  }
+
+  /**
+   * 处理来自 Schedule 的触发请求
+   */
+  handleScheduleTrigger(params: {
+    scheduledTime: Date;
+    scheduleTaskId: string;
+    metadata?: Record<string, any>;
+  }): string {
+    // 创建实例来响应 Schedule 触发
+    const instanceId = this.createInstance(params.scheduledTime, {
+      sourceType: 'schedule',
+      sourceId: params.scheduleTaskId,
+      metadata: params.metadata,
+    });
+
+    // 记录触发统计
+    this.recordTrigger();
+
+    // 发布实例已创建事件
+    this.addDomainEvent({
+      eventType: 'ReminderInstanceCreatedFromSchedule',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        instanceUuid: instanceId,
+        scheduleTaskId: params.scheduleTaskId,
+        scheduledTime: params.scheduledTime,
+        metadata: params.metadata,
+      },
+    });
+
+    return instanceId;
+  }
+
+  /**
+   * 批量处理状态变化
+   */
+  batchUpdateStatus(params: {
+    enabled?: boolean;
+    timeConfig?: ReminderContracts.ReminderTimeConfig;
+    priority?: ReminderContracts.ReminderPriority;
+    notificationSettings?: ReminderContracts.NotificationSettings;
+    context: { accountUuid: string; batchId: string };
+  }): void {
+    const changes: string[] = [];
+    const oldState = {
+      enabled: this._enabled,
+      timeConfig: { ...this._timeConfig },
+      priority: this._priority,
+    };
+
+    if (params.enabled !== undefined && params.enabled !== this._enabled) {
+      this._enabled = params.enabled;
+      changes.push('enabled');
+    }
+
+    if (
+      params.timeConfig &&
+      JSON.stringify(params.timeConfig) !== JSON.stringify(this._timeConfig)
+    ) {
+      this.validateTimeConfig(params.timeConfig);
+      this._timeConfig = params.timeConfig;
+      changes.push('timeConfig');
+    }
+
+    if (params.priority && params.priority !== this._priority) {
+      this._priority = params.priority;
+      changes.push('priority');
+    }
+
+    if (params.notificationSettings) {
+      this._notificationSettings = params.notificationSettings;
+      changes.push('notificationSettings');
+    }
+
+    if (changes.length > 0) {
+      this.updateVersion();
+
+      // 发布批量更新事件
+      this.addDomainEvent({
+        eventType: 'ReminderTemplateBatchUpdated',
+        aggregateId: this.uuid,
+        occurredOn: new Date(),
+        payload: {
+          templateUuid: this.uuid,
+          batchId: params.context.batchId,
+          accountUuid: params.context.accountUuid,
+          changes,
+          oldState,
+          newState: {
+            enabled: this._enabled,
+            timeConfig: { ...this._timeConfig },
+            priority: this._priority,
+          },
+          template: this.toDTO(),
+        },
+      });
+    }
+  }
+
+  /**
+   * 检查是否需要同步到 Schedule 系统
+   */
+  needsScheduleSync(): boolean {
+    // 如果模板启用且有有效的时间配置，则需要同步
+    return this.isActuallyEnabled && this.isValidTimeConfig();
+  }
+
+  /**
+   * 验证时间配置是否有效
+   */
+  private isValidTimeConfig(): boolean {
+    if (!this._timeConfig) return false;
+
+    switch (this._timeConfig.type) {
+      case 'daily':
+      case 'weekly':
+      case 'monthly':
+        return true;
+      case 'absolute':
+        return !!this._timeConfig.schedule;
+      case 'custom':
+        return !!this._timeConfig.customPattern;
+      case 'relative':
+        return !!this._timeConfig.duration;
+      default:
+        return false;
+    }
+  }
+
+  /**
+   * 获取调度同步状态
+   */
+  getScheduleSyncStatus(): {
+    needsSync: boolean;
+    reason?: string;
+    lastSyncAt?: Date;
+    syncErrors?: string[];
+  } {
+    const needsSync = this.needsScheduleSync();
+
+    return {
+      needsSync,
+      reason: needsSync
+        ? '模板已启用且时间配置有效'
+        : this.isActuallyEnabled
+          ? '时间配置无效'
+          : '模板未启用',
+      // TODO: 从元数据或外部状态获取实际的同步时间和错误信息
+    };
   }
 
   // ===== 抽象方法（由子类实现）=====

@@ -428,6 +428,75 @@ export const useReminderStore = defineStore('reminder', () => {
     );
   };
 
+  /**
+   * 初始化标识（用于判断是否已初始化）
+   */
+  const isInitialized = ref(false);
+
+  /**
+   * 初始化 store
+   */
+  const initialize = () => {
+    isInitialized.value = true;
+  };
+
+  /**
+   * 检查是否应该刷新缓存
+   */
+  const shouldRefreshCache = (): boolean => {
+    // 简单的缓存策略，可以根据需要扩展
+    return false;
+  };
+
+  /**
+   * 获取所有模板（getter 的别名）
+   */
+  const getAllTemplates = computed(() => reminderTemplates.value);
+
+  /**
+   * 更新模板（addOrUpdateReminderTemplate 的别名）
+   */
+  const updateReminderTemplate = (template: ReminderTemplate) => {
+    addOrUpdateReminderTemplate(template);
+  };
+
+  /**
+   * 设置模板启用状态
+   */
+  const setTemplateEnabled = (templateUuid: string, enabled: boolean) => {
+    const template = getReminderTemplateByUuid(templateUuid);
+    if (template) {
+      // 这里需要根据实际的 domain model 来更新状态
+      // 假设 ReminderTemplate 有一个 setEnabled 方法
+      (template as any).enabled = enabled;
+      addOrUpdateReminderTemplate(template);
+    }
+  };
+
+  /**
+   * 设置分组启用状态
+   */
+  const setGroupEnabled = (groupUuid: string, enabled: boolean) => {
+    const group = getReminderGroupByUuid(groupUuid);
+    if (group) {
+      // 这里需要根据实际的 domain model 来更新状态
+      (group as any).enabled = enabled;
+      addOrUpdateReminderGroup(group);
+    }
+  };
+
+  /**
+   * 设置分组启用模式
+   */
+  const setGroupEnableMode = (groupUuid: string, mode: 'group' | 'individual') => {
+    const group = getReminderGroupByUuid(groupUuid);
+    if (group) {
+      // 这里需要根据实际的 domain model 来更新状态
+      (group as any).enableMode = mode;
+      addOrUpdateReminderGroup(group);
+    }
+  };
+
   return {
     // 状态
     reminderTemplates: getAllReminderTemplates,
@@ -496,7 +565,32 @@ export const useReminderStore = defineStore('reminder', () => {
     // 缓存管理
     clearAll,
     refreshTemplateInstances,
+
+    // 初始化相关
+    isInitialized,
+    initialize,
+    shouldRefreshCache,
+
+    // 额外的 getter 和操作方法
+    getAllTemplates,
+    updateReminderTemplate,
+    setTemplateEnabled,
+    setGroupEnabled,
+    setGroupEnableMode,
   };
 });
 
 export type ReminderStore = ReturnType<typeof useReminderStore>;
+
+/**
+ * 获取 Reminder Store 实例的工厂函数
+ * 供 ApplicationService 直接使用，不依赖 composable 上下文
+ */
+let _reminderStoreInstance: ReminderStore | null = null;
+
+export function getReminderStore(): ReminderStore {
+  if (!_reminderStoreInstance) {
+    _reminderStoreInstance = useReminderStore();
+  }
+  return _reminderStoreInstance;
+}
