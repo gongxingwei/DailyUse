@@ -5,12 +5,50 @@ import {
   type IRepositoryRepository,
   type IResourceRepository,
 } from '@dailyuse/domain-server';
+import { RepositoryContainer } from '../../infrastructure/di/RepositoryContainer';
 
 export class RepositoryApplicationService {
+  private static instance: RepositoryApplicationService;
+  private repositoryRepository: IRepositoryRepository;
+  private resourceRepository: IResourceRepository;
+
   constructor(
-    private repositoryRepository: IRepositoryRepository,
-    private resourceRepository: IResourceRepository,
-  ) {}
+    repositoryRepository: IRepositoryRepository,
+    resourceRepository: IResourceRepository,
+  ) {
+    this.repositoryRepository = repositoryRepository;
+    this.resourceRepository = resourceRepository;
+  }
+
+  /**
+   * 创建实例时注入依赖，支持默认选项
+   */
+  static async createInstance(
+    repositoryRepository?: IRepositoryRepository,
+    resourceRepository?: IResourceRepository,
+  ): Promise<RepositoryApplicationService> {
+    const container = RepositoryContainer.getInstance();
+    const finalRepositoryRepository =
+      repositoryRepository || (await container.getPrismaRepositoryRepository());
+    const finalResourceRepository =
+      resourceRepository || (await container.getPrismaResourceRepository());
+
+    this.instance = new RepositoryApplicationService(
+      finalRepositoryRepository,
+      finalResourceRepository,
+    );
+    return this.instance;
+  }
+
+  /**
+   * 获取服务实例
+   */
+  static async getInstance(): Promise<RepositoryApplicationService> {
+    if (!this.instance) {
+      RepositoryApplicationService.instance = await RepositoryApplicationService.createInstance();
+    }
+    return this.instance;
+  }
 
   // ===== Repository 管理 =====
 

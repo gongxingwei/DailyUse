@@ -12,6 +12,7 @@
     "types": ["node"],
     "typeRoots": ["./src/modules/users/types", "./node_modules/@types"],
     "paths": {
+      "@/*": ["./src/*"],
       "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
       "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
       "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],

@@ -2,14 +2,35 @@ import type { GoalContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 import { Goal, type IGoalRepository, UserDataInitializationService } from '@dailyuse/domain-server';
 import { GoalAggregateService } from './goalAggregateService';
+import { GoalContainer } from '../../infrastructure/di/GoalContainer';
 
 export class GoalApplicationService {
+  private static instance: GoalApplicationService;
   private aggregateService: GoalAggregateService;
   private userInitService: UserDataInitializationService;
-
-  constructor(private goalRepository: IGoalRepository) {
+  private goalRepository: IGoalRepository;
+  constructor(goalRepository: IGoalRepository) {
     this.aggregateService = new GoalAggregateService(goalRepository);
     this.userInitService = new UserDataInitializationService(goalRepository);
+    this.goalRepository = goalRepository;
+  }
+
+  static async createInstance(
+    goalRepository?: IGoalRepository
+  ): Promise<GoalApplicationService> {
+    const goalContainer = GoalContainer.getInstance();
+    goalRepository =
+      goalRepository || (await goalContainer.getPrismaGoalRepository());
+    this.instance = new GoalApplicationService(goalRepository);
+    return this.instance;
+  }
+
+  static async getInstance(): Promise<GoalApplicationService> {
+    if (!this.instance) {
+      GoalApplicationService.instance =
+        await GoalApplicationService.createInstance();
+    }
+    return this.instance;
   }
 
   // ===== 用户数据初始化 =====

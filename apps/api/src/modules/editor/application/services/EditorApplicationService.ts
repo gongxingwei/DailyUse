@@ -18,6 +18,7 @@ import { EditorContracts } from '@dailyuse/contracts';
 import { EditorDomainService } from '@dailyuse/domain-server';
 import type { IDocumentRepository } from '../../infrastructure/repositories/interfaces/IDocumentRepository';
 import type { IWorkspaceRepository } from '../../infrastructure/repositories/interfaces/IWorkspaceRepository';
+import { EditorContainer } from '../../infrastructure/di/EditorContainer';
 
 // 使用现有contracts中的类型别名
 type IDocument = EditorContracts.IDocument;
@@ -28,11 +29,53 @@ type CreateWorkspaceDTO = EditorContracts.CreateWorkspaceDTO;
 type UpdateWorkspaceDTO = EditorContracts.UpdateWorkspaceDTO;
 
 export class EditorApplicationService {
+  private static instance: EditorApplicationService;
+  private readonly editorDomainService: EditorDomainService;
+  private readonly documentRepository: IDocumentRepository;
+  private readonly workspaceRepository: IWorkspaceRepository;
+
   constructor(
-    private readonly editorDomainService: EditorDomainService,
-    private readonly documentRepository: IDocumentRepository,
-    private readonly workspaceRepository: IWorkspaceRepository,
-  ) {}
+    editorDomainService: EditorDomainService,
+    documentRepository: IDocumentRepository,
+    workspaceRepository: IWorkspaceRepository,
+  ) {
+    this.editorDomainService = editorDomainService;
+    this.documentRepository = documentRepository;
+    this.workspaceRepository = workspaceRepository;
+  }
+
+  /**
+   * 创建实例时注入依赖，支持默认选项
+   */
+  static async createInstance(
+    editorDomainService?: EditorDomainService,
+    documentRepository?: IDocumentRepository,
+    workspaceRepository?: IWorkspaceRepository,
+  ): Promise<EditorApplicationService> {
+    const container = EditorContainer.getInstance();
+    const finalEditorDomainService =
+      editorDomainService || (await container.getEditorDomainService());
+    const finalDocumentRepository = documentRepository || (await container.getDocumentRepository());
+    const finalWorkspaceRepository =
+      workspaceRepository || (await container.getWorkspaceRepository());
+
+    this.instance = new EditorApplicationService(
+      finalEditorDomainService,
+      finalDocumentRepository,
+      finalWorkspaceRepository,
+    );
+    return this.instance;
+  }
+
+  /**
+   * 获取服务实例
+   */
+  static async getInstance(): Promise<EditorApplicationService> {
+    if (!this.instance) {
+      EditorApplicationService.instance = await EditorApplicationService.createInstance();
+    }
+    return this.instance;
+  }
 
   // ============ 文档管理 ============
 

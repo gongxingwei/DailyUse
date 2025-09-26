@@ -1055,6 +1055,83 @@ export function useGoalLegacy() {
 
 这种分层架构确保了代码的**一致性**、**可维护性**和**可扩展性**。
 
+#### 应用服务层依赖注入规范
+
+**核心原则**: 基础设施层通过 di/xxcontainer 来管理依赖，在 ApplicationService 通过 createInstance 来注入依赖，或者默认选项。然后通过 getInstance 来获取服务实例。
+
+1. **依赖注入容器** (`packages/domain-server/src/{module}/di/`)
+
+   ```typescript
+   // XxxContainer.ts - 依赖注入容器
+   export class GoalContainer {
+     private static instance: GoalContainer;
+     private prismaGoalRepository?: PrismaGoalRepository;
+
+     static getInstance(): GoalContainer {
+       if (!this.instance) {
+         this.instance = new GoalContainer();
+       }
+       return this.instance;
+     }
+
+     async getPrismaGoalRepository(): Promise<PrismaGoalRepository> {
+       if (!this.prismaGoalRepository) {
+         const prismaClient = await getPrismaClient();
+         this.prismaGoalRepository = new PrismaGoalRepository(prismaClient);
+       }
+       return this.prismaGoalRepository;
+     }
+   }
+   ```
+
+2. **应用服务依赖注入** (`ApplicationService`)
+
+   ```typescript
+   export class GoalApplicationService {
+     private static instance: GoalApplicationService;
+     private goalRepository: IGoalRepository;
+
+     constructor(goalRepository: IGoalRepository) {
+       this.goalRepository = goalRepository;
+     }
+
+     // 创建实例时注入依赖，支持默认选项
+     static async createInstance(
+       goalRepository?: IGoalRepository,
+     ): Promise<GoalApplicationService> {
+       const goalContainer = GoalContainer.getInstance();
+       goalRepository = goalRepository || (await goalContainer.getPrismaGoalRepository());
+       this.instance = new GoalApplicationService(goalRepository);
+       return this.instance;
+     }
+
+     // 获取服务实例
+     static async getInstance(): Promise<GoalApplicationService> {
+       if (!this.instance) {
+         GoalApplicationService.instance = await GoalApplicationService.createInstance();
+       }
+       return this.instance;
+     }
+   }
+   ```
+
+3. **依赖注入优势**
+   - **可测试性**: 可以注入模拟仓储进行单元测试
+   - **灵活性**: 可以在不同环境注入不同实现
+   - **解耦**: 应用层不直接依赖具体的基础设施实现
+   - **单例管理**: 确保服务实例的一致性
+
+4. **使用示例**
+
+   ```typescript
+   // 生产环境 - 使用默认依赖
+   const goalService = await GoalApplicationService.getInstance();
+
+   // 测试环境 - 注入模拟依赖
+   const mockRepository = new MockGoalRepository();
+   const goalService = await GoalApplicationService.createInstance(mockRepository);
+   ```
+
 #### 仓储接口设计规范
 
 **核心原则**: 仓储接口必须返回DTO对象，而不是领域实体

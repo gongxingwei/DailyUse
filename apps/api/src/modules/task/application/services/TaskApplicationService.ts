@@ -9,6 +9,7 @@ import {
   type ITaskStatsRepository,
 } from '@dailyuse/domain-server';
 import { eventBus } from '@dailyuse/utils';
+import { TaskContainer } from '../../infrastructure/di/TaskContainer';
 
 // 为了简化类型引用，创建类型别名
 type TaskTemplateDTO = TaskContracts.TaskTemplateDTO;
@@ -33,12 +34,61 @@ type TaskStatsDTO = TaskContracts.TaskStatsDTO;
  * 任务应用服务 - 协调业务流程
  */
 export class TaskApplicationService {
+  private static instance: TaskApplicationService;
+  private taskTemplateRepository: ITaskTemplateRepository;
+  private taskInstanceRepository: ITaskInstanceRepository;
+  private taskMetaTemplateRepository: ITaskMetaTemplateRepository;
+  private taskStatsRepository: ITaskStatsRepository;
+
   constructor(
-    private taskTemplateRepository: ITaskTemplateRepository,
-    private taskInstanceRepository: ITaskInstanceRepository,
-    private taskMetaTemplateRepository: ITaskMetaTemplateRepository,
-    private taskStatsRepository: ITaskStatsRepository,
-  ) {}
+    taskTemplateRepository: ITaskTemplateRepository,
+    taskInstanceRepository: ITaskInstanceRepository,
+    taskMetaTemplateRepository: ITaskMetaTemplateRepository,
+    taskStatsRepository: ITaskStatsRepository,
+  ) {
+    this.taskTemplateRepository = taskTemplateRepository;
+    this.taskInstanceRepository = taskInstanceRepository;
+    this.taskMetaTemplateRepository = taskMetaTemplateRepository;
+    this.taskStatsRepository = taskStatsRepository;
+  }
+
+  /**
+   * 创建实例时注入依赖，支持默认选项
+   */
+  static async createInstance(
+    taskTemplateRepository?: ITaskTemplateRepository,
+    taskInstanceRepository?: ITaskInstanceRepository,
+    taskMetaTemplateRepository?: ITaskMetaTemplateRepository,
+    taskStatsRepository?: ITaskStatsRepository,
+  ): Promise<TaskApplicationService> {
+    const container = TaskContainer.getInstance();
+    const finalTaskTemplateRepository =
+      taskTemplateRepository || (await container.getPrismaTaskTemplateRepository());
+    const finalTaskInstanceRepository =
+      taskInstanceRepository || (await container.getPrismaTaskInstanceRepository());
+    const finalTaskMetaTemplateRepository =
+      taskMetaTemplateRepository || (await container.getPrismaTaskMetaTemplateRepository());
+    const finalTaskStatsRepository =
+      taskStatsRepository || (await container.getPrismaTaskStatsRepository());
+
+    this.instance = new TaskApplicationService(
+      finalTaskTemplateRepository,
+      finalTaskInstanceRepository,
+      finalTaskMetaTemplateRepository,
+      finalTaskStatsRepository,
+    );
+    return this.instance;
+  }
+
+  /**
+   * 获取服务实例
+   */
+  static async getInstance(): Promise<TaskApplicationService> {
+    if (!this.instance) {
+      TaskApplicationService.instance = await TaskApplicationService.createInstance();
+    }
+    return this.instance;
+  }
 
   // ===================== 任务模板管理 =====================
 

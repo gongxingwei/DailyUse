@@ -1,5 +1,6 @@
 import type { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderDomainService } from '../../domain/services/ReminderDomainService';
+import { ReminderContainer } from '../../infrastructure/di/ReminderContainer';
 
 type CreateReminderTemplateRequest = ReminderContracts.CreateReminderTemplateRequest;
 type UpdateReminderTemplateRequest = ReminderContracts.UpdateReminderTemplateRequest;
@@ -10,10 +11,34 @@ type ReminderInstanceResponse = ReminderContracts.ReminderInstanceResponse;
 type ReminderListResponse = ReminderContracts.ReminderListResponse;
 
 export class ReminderApplicationService {
+  private static instance: ReminderApplicationService;
   private reminderDomainService: ReminderDomainService;
 
-  constructor() {
-    this.reminderDomainService = new ReminderDomainService();
+  constructor(reminderDomainService: ReminderDomainService) {
+    this.reminderDomainService = reminderDomainService;
+  }
+
+  /**
+   * 创建实例时注入依赖，支持默认选项
+   */
+  static async createInstance(
+    reminderDomainService?: ReminderDomainService,
+  ): Promise<ReminderApplicationService> {
+    const finalReminderDomainService =
+      reminderDomainService || (await ReminderContainer.getInstance().getReminderDomainService());
+
+    this.instance = new ReminderApplicationService(finalReminderDomainService);
+    return this.instance;
+  }
+
+  /**
+   * 获取服务实例
+   */
+  static async getInstance(): Promise<ReminderApplicationService> {
+    if (!this.instance) {
+      ReminderApplicationService.instance = await ReminderApplicationService.createInstance();
+    }
+    return this.instance;
   }
 
   // ========== 应用层协调逻辑 ==========
