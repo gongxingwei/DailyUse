@@ -318,4 +318,40 @@ export class ReminderApplicationService {
   async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
     return this.reminderDomainService.toggleReminderTemplateGroupEnabled(groupUuid, enabled);
   }
+
+  // ========== 实例和调度管理方法 ==========
+
+  /**
+   * 为指定模板生成实例和调度
+   */
+  async generateInstancesAndSchedules(
+    templateUuid: string,
+    options?: { days?: number; regenerate?: boolean },
+  ): Promise<{ instanceCount: number; scheduleCount: number }> {
+    // 应用层验证
+    if (!templateUuid) {
+      throw new Error('模板UUID不能为空');
+    }
+
+    const { days = 7, regenerate = false } = options || {};
+
+    if (days < 1 || days > 30) {
+      throw new Error('生成天数必须在1-30之间');
+    }
+
+    console.log(`开始为模板 ${templateUuid} 生成 ${days} 天的实例和调度...`);
+
+    try {
+      const result = await this.reminderDomainService.generateInstancesAndSchedulesForTemplate(
+        templateUuid,
+        { days, regenerate },
+      );
+
+      console.log(`生成完成: ${result.instanceCount} 个实例, ${result.scheduleCount} 个调度`);
+      return result;
+    } catch (error) {
+      console.error(`生成实例和调度失败:`, error);
+      throw error;
+    }
+  }
 }

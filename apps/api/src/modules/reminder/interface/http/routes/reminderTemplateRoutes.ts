@@ -28,6 +28,12 @@ router.get('/', ReminderTemplateController.getTemplatesByAccount);
 router.get('/search', ReminderTemplateController.searchTemplates);
 
 /**
+ * 获取活跃的提醒模板
+ * GET /api/reminders/templates/active
+ */
+router.get('/active', ReminderTemplateController.getActiveTemplates);
+
+/**
  * 获取账户统计信息
  * GET /api/reminders/templates/account-stats
  */
@@ -62,5 +68,14 @@ router.patch('/:templateUuid/toggle', ReminderTemplateController.toggleTemplateE
  * GET /api/reminders/templates/:templateUuid/stats
  */
 router.get('/:templateUuid/stats', ReminderTemplateController.getTemplateStats);
+
+/**
+ * 为指定模板生成实例和调度
+ * POST /api/reminders/templates/:templateUuid/generate-instances
+ */
+router.post(
+  '/:templateUuid/generate-instances',
+  ReminderTemplateController.generateInstancesAndSchedules,
+);
 
 export default router;

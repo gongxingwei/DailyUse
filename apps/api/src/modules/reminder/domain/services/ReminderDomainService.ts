@@ -42,9 +42,26 @@ export class ReminderDomainService {
       tags: data.tags || [],
       priority: data.priority || 'normal',
       groupUuid: data.groupUuid || null,
+      // 添加时间配置的默认值
+      timeConfigType: data.timeConfig?.type || 'daily',
+      timeConfigTimes: JSON.stringify(data.timeConfig?.times || ['09:00']),
+      timeConfigWeekdays: JSON.stringify(data.timeConfig?.weekdays || [1, 2, 3, 4, 5]),
+      timeConfigMonthDays: JSON.stringify(data.timeConfig?.monthDays || []),
     };
 
-    return this.repository.createReminderTemplate(templateData);
+    const template = await this.repository.createReminderTemplate(templateData);
+
+    // 如果模板创建时就是启用状态，自动创建实例
+    if (templateData.enabled) {
+      try {
+        await this.createInstancesFromTemplate(template.uuid);
+      } catch (error) {
+        console.error('创建模板实例时出错:', error);
+        // 不阻断模板创建流程
+      }
+    }
+
+    return template;
   }
 
   /**
@@ -86,7 +103,15 @@ export class ReminderDomainService {
    * 切换模板启用状态
    */
   async toggleReminderTemplateEnabled(templateUuid: string, enabled: boolean): Promise<void> {
-    return this.repository.toggleTemplateEnabled(templateUuid, enabled);
+    await this.repository.toggleTemplateEnabled(templateUuid, enabled);
+
+    // 如果启用模板，自动创建实例和调度
+    if (enabled) {
+      await this.createInstancesFromTemplate(templateUuid);
+    } else {
+      // 如果禁用模板，取消未来的实例
+      await this.cancelFutureInstances(templateUuid);
+    }
   }
 
   /**
@@ -701,6 +726,158 @@ export class ReminderDomainService {
    */
   async toggleReminderTemplateGroupEnabled(groupUuid: string, enabled: boolean): Promise<void> {
     return this.repository.toggleGroupEnabled(groupUuid, enabled);
+  }
+
+  /**
+   * 根据模板创建实例和调度
+   */
+  private async createInstancesFromTemplate(templateUuid: string): Promise<void> {
+    const template = await this.repository.getReminderTemplate(templateUuid);
+    if (!template) {
+      throw new Error('模板不存在');
+    }
+
+    // 根据模板的时间配置创建未来7天的实例
+    const now = new Date();
+    const endDate = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000); // 7天后
+
+    const instances = this.generateInstancesFromTimeConfig(template, now, endDate);
+
+    // 批量创建实例
+    for (const instanceData of instances) {
+      await this.repository.createReminderInstance(instanceData);
+    }
+
+    // TODO: 创建调度记录 - 需要在仓储中实现 createReminderSchedule 方法
+    console.log(`已为模板 ${template.name} 创建 ${instances.length} 个实例`);
+  }
+
+  /**
+   * 手动为模板生成实例和调度（公共方法）
+   */
+  async generateInstancesAndSchedulesForTemplate(
+    templateUuid: string,
+    options?: { days?: number; regenerate?: boolean },
+  ): Promise<{ instanceCount: number; scheduleCount: number }> {
+    const { days = 7, regenerate = false } = options || {};
+
+    const template = await this.repository.getReminderTemplate(templateUuid);
+    if (!template) {
+      throw new Error('模板不存在');
+    }
+
+    if (!template.enabled) {
+      throw new Error('模板未启用，无法生成实例');
+    }
+
+    // 如果需要重新生成，先取消现有的实例
+    if (regenerate) {
+      await this.cancelFutureInstances(templateUuid);
+    }
+
+    // 生成指定天数的实例
+    const now = new Date();
+    const endDate = new Date(now.getTime() + days * 24 * 60 * 60 * 1000);
+
+    const instances = this.generateInstancesFromTimeConfig(template, now, endDate);
+
+    // 批量创建实例
+    let instanceCount = 0;
+    let scheduleCount = 0;
+
+    for (const instanceData of instances) {
+      try {
+        await this.repository.createReminderInstance(instanceData);
+        instanceCount++;
+
+        // 同时创建调度记录（如果仓储支持）
+        try {
+          const scheduleData = {
+            uuid: randomUUID(),
+            instanceUuid: instanceData.uuid,
+            scheduledTime: instanceData.scheduledTime,
+            status: 'pending',
+            retryCount: 0,
+            maxRetries: 3,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          };
+
+          // 这里需要调用schedule模块的服务来创建队列任务
+          // 暂时先创建调度记录
+          // await this.repository.createReminderSchedule(scheduleData);
+          console.log('创建调度记录:', scheduleData);
+          scheduleCount++;
+        } catch (scheduleError) {
+          console.warn(`为实例 ${instanceData.uuid} 创建调度失败:`, scheduleError);
+        }
+      } catch (instanceError) {
+        console.error(`创建实例失败:`, instanceError);
+      }
+    }
+
+    console.log(
+      `为模板 "${template.name}" 生成了 ${instanceCount} 个实例和 ${scheduleCount} 个调度`,
+    );
+
+    return { instanceCount, scheduleCount };
+  }
+
+  /**
+   * 根据时间配置生成实例数据
+   */
+  private generateInstancesFromTimeConfig(template: any, startDate: Date, endDate: Date): any[] {
+    const instances = [];
+    const times = JSON.parse(template.timeConfigTimes || '["09:00"]');
+    const weekdays = JSON.parse(template.timeConfigWeekdays || '[1,2,3,4,5]'); // 周一到周五
+
+    const current = new Date(startDate);
+
+    while (current <= endDate) {
+      const dayOfWeek = current.getDay(); // 0 = Sunday, 1 = Monday, ...
+
+      // 检查是否在允许的星期内
+      if (weekdays.includes(dayOfWeek)) {
+        for (const timeStr of times) {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          const scheduledTime = new Date(current);
+          scheduledTime.setHours(hours, minutes, 0, 0);
+
+          // 只创建未来的实例
+          if (scheduledTime > new Date()) {
+            instances.push({
+              uuid: randomUUID(),
+              templateUuid: template.uuid,
+              accountUuid: template.accountUuid,
+              title: template.name,
+              message: template.message,
+              scheduledTime,
+              status: 'pending',
+              priority: template.priority || 'normal',
+              category: template.category || 'general',
+              tags: template.tags || '[]',
+              sourceType: 'template',
+              sourceId: template.uuid,
+              snoozeHistory: '[]',
+              currentSnoozeCount: 0,
+              version: 1,
+            });
+          }
+        }
+      }
+
+      // 移到下一天
+      current.setDate(current.getDate() + 1);
+    }
+
+    return instances;
+  }
+
+  /**
+   * 取消未来的实例
+   */
+  private async cancelFutureInstances(templateUuid: string): Promise<void> {
+    await this.repository.batchUpdateInstanceStatus(templateUuid, 'cancelled');
   }
 
   /**

@@ -117,6 +117,9 @@
             </v-card-text>
 
             <v-card-actions>
+                <v-btn color="success" variant="text" @click="generateInstances" :loading="isGenerating">
+                    生成实例
+                </v-btn>
                 <v-spacer />
                 <v-btn color="grey" variant="text" @click="close">
                     关闭
@@ -139,9 +142,14 @@ import { format } from 'date-fns'
 const visible = ref(false)
 const template = ref<ReminderTemplate | null>(null)
 const enabled = ref(false)
+const isGenerating = ref(false)
 
 // 服务
 const snackbar = useSnackbar()
+
+// 获取reminder服务
+import { getReminderService } from '../../../application/services/ReminderWebApplicationService'
+const reminderService = getReminderService()
 
 // 计算属性
 const priorityColor = computed(() => {
@@ -235,6 +243,39 @@ const toggleEnabled = async () => {
         // 回滚状态
         enabled.value = !enabled.value
         snackbar.showError('操作失败：' + (error instanceof Error ? error.message : '未知错误'))
+    }
+}
+
+const generateInstances = async () => {
+    if (!template.value) return
+
+    isGenerating.value = true
+    try {
+        // 调用后端API生成实例和调度
+        const response = await fetch(`/api/v1/reminders/templates/${template.value.uuid}/generate-instances`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token')}` // 假设token存在localStorage
+            },
+            body: JSON.stringify({
+                days: 7, // 生成7天的实例
+                regenerate: false // 不重新生成现有的
+            })
+        })
+
+        const data = await response.json()
+
+        if (data.success) {
+            snackbar.showSuccess(`${data.message}`)
+        } else {
+            snackbar.showError(`生成失败: ${data.error}`)
+        }
+    } catch (error) {
+        console.error('生成实例失败:', error)
+        snackbar.showError('生成实例失败: ' + (error instanceof Error ? error.message : '未知错误'))
+    } finally {
+        isGenerating.value = false
     }
 }
 

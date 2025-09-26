@@ -97,10 +97,10 @@
 
                 <!-- 模板用于展示item的信息和状态切换的卡片组件 -->
                 <!-- TemplateCard 组件 -->
-                <TemplateDesktopCard ref="templateCardRef" />
+                <TemplateDesktopCard ref="templateDesktopCardRef" />
 
                 <!-- GroupDesktopCard 组件 -->
-                <GroupDesktopCard ref="groupDialogRef" />
+                <GroupDesktopCard ref="groupDesktopCardRef" />
             </div>
         </div>
 
@@ -215,6 +215,7 @@ const moveDialog = reactive({
  */
 const handleTemplateClick = (template: ReminderTemplate) => {
     // 显示模板卡片而非编辑对话框
+    console.log('点击模板:', template)
     templateDesktopCardRef.value?.open(template)
 }
 

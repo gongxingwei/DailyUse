@@ -44,6 +44,72 @@
 
                     <!-- 自我启用开关 (当分组为individual模式时显示) -->
                     <v-switch v-model="selfEnabled" label="自我启用" color="secondary" class="mb-3" />
+
+                    <!-- 时间配置区域 -->
+                    <v-card variant="outlined" class="mb-3">
+                        <v-card-title class="pa-3 text-h6">时间配置</v-card-title>
+                        <v-card-text class="pa-3">
+                            <!-- 重复类型选择 -->
+                            <v-select v-model="timeConfigType" :items="timeConfigOptions" label="重复类型"
+                                variant="outlined" density="compact" item-title="title" item-value="value"
+                                class="mb-3" />
+
+                            <!-- 时间选择 -->
+                            <div class="mb-3">
+                                <v-text-field v-for="(time, index) in timeConfigTimes" :key="index"
+                                    v-model="timeConfigTimes[index]" :label="`时间 ${index + 1}`" type="time"
+                                    variant="outlined" density="compact" class="mb-2">
+                                    <template v-slot:append>
+                                        <v-btn v-if="timeConfigTimes.length > 1" icon size="small"
+                                            @click="removeTime(index)">
+                                            <v-icon>mdi-minus</v-icon>
+                                        </v-btn>
+                                    </template>
+                                </v-text-field>
+
+                                <v-btn v-if="timeConfigTimes.length < 5" size="small" prepend-icon="mdi-plus"
+                                    variant="outlined" @click="addTime">
+                                    添加时间
+                                </v-btn>
+                            </div>
+
+                            <!-- 每周重复选项 -->
+                            <div v-if="timeConfigType === 'weekly'" class="mb-3">
+                                <v-label class="mb-2">选择星期几</v-label>
+                                <v-chip-group v-model="weekdays" multiple color="primary">
+                                    <v-chip v-for="(day, index) in weekdayOptions" :key="index" :value="index" filter
+                                        variant="outlined">
+                                        {{ day }}
+                                    </v-chip>
+                                </v-chip-group>
+                            </div>
+
+                            <!-- 每月重复选项 -->
+                            <div v-if="timeConfigType === 'monthly'" class="mb-3">
+                                <v-label class="mb-2">选择日期</v-label>
+                                <v-chip-group v-model="monthDays" multiple color="primary">
+                                    <v-chip v-for="day in 31" :key="day" :value="day" filter variant="outlined">
+                                        {{ day }}日
+                                    </v-chip>
+                                </v-chip-group>
+                            </div>
+
+                            <!-- 自定义间隔选项 -->
+                            <div v-if="timeConfigType === 'custom'" class="mb-3">
+                                <v-row>
+                                    <v-col cols="6">
+                                        <v-text-field v-model.number="customInterval" label="间隔时间" type="number"
+                                            variant="outlined" density="compact" min="1" />
+                                    </v-col>
+                                    <v-col cols="6">
+                                        <v-select v-model="customUnit" :items="customUnitOptions" label="时间单位"
+                                            variant="outlined" density="compact" item-title="title"
+                                            item-value="value" />
+                                    </v-col>
+                                </v-row>
+                            </div>
+                        </v-card-text>
+                    </v-card>
                 </v-card-text>
             </v-form>
 
@@ -129,6 +195,14 @@ const selfEnabled = computed({
 // 我们使用临时的响应式变量来处理
 const priority = ref<ReminderContracts.ReminderPriority>(ReminderContracts.ReminderPriority.NORMAL);
 
+// 时间配置相关状态
+const timeConfigType = ref<'daily' | 'weekly' | 'monthly' | 'custom'>('daily');
+const timeConfigTimes = ref<string[]>(['09:00']);
+const weekdays = ref<number[]>([]);
+const monthDays = ref<number[]>([]);
+const customInterval = ref<number>(1);
+const customUnit = ref<'minutes' | 'hours' | 'days'>('hours');
+
 const iconOptions = [
     { text: '提醒', value: 'mdi-bell' },
     { text: '工作', value: 'mdi-briefcase' },
@@ -145,6 +219,21 @@ const priorityOptions = [
     { title: '紧急', value: ReminderContracts.ReminderPriority.URGENT }
 ];
 
+const timeConfigOptions = [
+    { title: '每天', value: 'daily' },
+    { title: '每周', value: 'weekly' },
+    { title: '每月', value: 'monthly' },
+    { title: '自定义', value: 'custom' }
+];
+
+const weekdayOptions = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+
+const customUnitOptions = [
+    { title: '分钟', value: 'minutes' },
+    { title: '小时', value: 'hours' },
+    { title: '天', value: 'days' }
+];
+
 const nameRules = [
     (v: string) => !!v || '名称不能为空',
     (v: string) => (v && v.length >= 1) || '名称至少需要1个字符',
@@ -156,10 +245,50 @@ const messageRules = [
     (v: string) => (v && v.length <= 200) || '消息不能超过200个字符'
 ];
 
+// 时间配置管理方法
+const addTime = () => {
+    if (timeConfigTimes.value.length < 5) {
+        timeConfigTimes.value.push('09:00');
+    }
+};
+
+const removeTime = (index: number) => {
+    if (timeConfigTimes.value.length > 1) {
+        timeConfigTimes.value.splice(index, 1);
+    }
+};
+
+// 构建时间配置对象
+const buildTimeConfig = () => {
+    const baseConfig = {
+        type: timeConfigType.value,
+        times: timeConfigTimes.value,
+    } as any;
+
+    if (timeConfigType.value === 'weekly' && weekdays.value.length > 0) {
+        baseConfig.weekdays = weekdays.value;
+    }
+
+    if (timeConfigType.value === 'monthly' && monthDays.value.length > 0) {
+        baseConfig.monthDays = monthDays.value;
+    }
+
+    if (timeConfigType.value === 'custom') {
+        baseConfig.customPattern = {
+            interval: customInterval.value,
+            unit: customUnit.value,
+        };
+    }
+
+    return baseConfig;
+};
+
 const handleSave = async () => {
     if (!isFormValid.value) return;
 
     try {
+        const timeConfig = buildTimeConfig();
+
         if (propReminderTemplate.value) {
             // 编辑模式
             await updateTemplate(localReminderTemplate.value.uuid, {
@@ -170,6 +299,7 @@ const handleSave = async () => {
                 priority: priority.value as any,
                 enabled: localReminderTemplate.value.enabled,
                 selfEnabled: localReminderTemplate.value.selfEnabled,
+                timeConfig,
             });
         } else {
             // 创建模式
@@ -182,10 +312,7 @@ const handleSave = async () => {
                 tags: [],
                 enabled: localReminderTemplate.value.enabled,
                 selfEnabled: localReminderTemplate.value.selfEnabled,
-                timeConfig: {
-                    type: 'daily',
-                    times: ['09:00'],
-                },
+                timeConfig,
             });
         }
         closeDialog();
@@ -215,15 +342,44 @@ const closeDialog = () => {
     visible.value = false;
 };
 
+// 初始化时间配置数据
+const initTimeConfig = (template?: ReminderTemplate) => {
+    if (template && template.timeConfig) {
+        const config = template.timeConfig;
+        timeConfigType.value = config.type as any;
+        timeConfigTimes.value = config.times && config.times.length > 0 ? [...config.times] : ['09:00'];
+        weekdays.value = config.weekdays ? [...config.weekdays] : [];
+        monthDays.value = config.monthDays ? [...config.monthDays] : [];
+
+        if (config.customPattern) {
+            customInterval.value = config.customPattern.interval || 1;
+            customUnit.value = config.customPattern.unit || 'hours';
+        } else {
+            customInterval.value = 1;
+            customUnit.value = 'hours';
+        }
+    } else {
+        // 重置为默认值
+        timeConfigType.value = 'daily';
+        timeConfigTimes.value = ['09:00'];
+        weekdays.value = [];
+        monthDays.value = [];
+        customInterval.value = 1;
+        customUnit.value = 'hours';
+    }
+};
+
 watch(
     [() => visible.value, () => propReminderTemplate.value],
     ([show]) => {
         if (show) {
             localReminderTemplate.value = propReminderTemplate.value ? propReminderTemplate.value.clone() : ReminderTemplate.forCreate();
             priority.value = localReminderTemplate.value.priority;
+            initTimeConfig(propReminderTemplate.value || undefined);
         } else {
             localReminderTemplate.value = ReminderTemplate.forCreate();
             priority.value = ReminderContracts.ReminderPriority.NORMAL;
+            initTimeConfig();
         }
     },
     { immediate: true }

@@ -1,8 +1,6 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { GoalApplicationService } from '../../../application/services/GoalApplicationService';
-import { PrismaGoalRepository } from '../../../infrastructure/repositories/prismaGoalRepository';
-import { prisma } from '../../../../../config/prisma';
 import type { GoalContracts } from '@dailyuse/contracts';
 
 /**
@@ -21,7 +19,17 @@ import type { GoalContracts } from '@dailyuse/contracts';
  * - GET /goals/:goalId/aggregate (获取完整聚合视图)
  */
 export class GoalAggregateController {
-  private static goalService = new GoalApplicationService(new PrismaGoalRepository(prisma));
+  private static goalService: GoalApplicationService | null = null;
+
+  /**
+   * 获取 GoalApplicationService 实例（使用依赖注入容器）
+   */
+  private static async getGoalService(): Promise<GoalApplicationService> {
+    if (!this.goalService) {
+      this.goalService = await GoalApplicationService.getInstance();
+    }
+    return this.goalService;
+  }
 
   /**
    * 从请求中提取用户账户UUID
@@ -59,11 +67,8 @@ export class GoalAggregateController {
       const { goalId } = req.params;
       const request = req.body;
 
-      const keyResult = await GoalAggregateController.goalService.createKeyResult(
-        accountUuid,
-        goalId,
-        request,
-      );
+      const goalService = await GoalAggregateController.getGoalService();
+      const keyResult = await goalService.createKeyResult(accountUuid, goalId, request);
 
       res.status(201).json({
         success: true,
@@ -88,7 +93,8 @@ export class GoalAggregateController {
       const { goalId, keyResultId } = req.params;
       const request = req.body;
 
-      const keyResult = await GoalAggregateController.goalService.updateKeyResult(
+      const goalService = await GoalAggregateController.getGoalService();
+      const keyResult = await goalService.updateKeyResult(
         accountUuid,
         goalId,
         keyResultId,
@@ -122,7 +128,8 @@ export class GoalAggregateController {
       const accountUuid = GoalAggregateController.extractAccountUuid(req);
       const { goalId, keyResultId } = req.params;
 
-      await GoalAggregateController.goalService.deleteKeyResult(accountUuid, goalId, keyResultId);
+      const goalService = await GoalAggregateController.getGoalService();
+      await goalService.deleteKeyResult(accountUuid, goalId, keyResultId);
 
       res.json({
         success: true,
@@ -153,11 +160,8 @@ export class GoalAggregateController {
       const { goalId } = req.params;
       const request = req.body;
 
-      const record = await GoalAggregateController.goalService.createGoalRecord(
-        accountUuid,
-        goalId,
-        request,
-      );
+      const goalService = await GoalAggregateController.getGoalService();
+      const record = await goalService.createGoalRecord(accountUuid, goalId, request);
 
       res.status(201).json({
         success: true,
@@ -189,11 +193,8 @@ export class GoalAggregateController {
       const { goalId } = req.params;
       const request = req.body;
 
-      const review = await GoalAggregateController.goalService.createGoalReview(
-        accountUuid,
-        goalId,
-        request,
-      );
+      const goalService = await GoalAggregateController.getGoalService();
+      const review = await goalService.createGoalReview(accountUuid, goalId, request);
 
       res.status(201).json({
         success: true,
@@ -227,10 +228,8 @@ export class GoalAggregateController {
       const accountUuid = GoalAggregateController.extractAccountUuid(req);
       const { goalId } = req.params;
 
-      const aggregateView = await GoalAggregateController.goalService.getGoalAggregateView(
-        accountUuid,
-        goalId,
-      );
+      const goalService = await GoalAggregateController.getGoalService();
+      const aggregateView = await goalService.getGoalAggregateView(accountUuid, goalId);
 
       res.json({
         success: true,
@@ -272,14 +271,12 @@ export class GoalAggregateController {
       }
 
       // 通过聚合根逐个更新（保证业务规则）
+      const goalService = await GoalAggregateController.getGoalService();
       const updatedKeyResults = [];
       for (const krUpdate of keyResults) {
-        const updated = await GoalAggregateController.goalService.updateKeyResult(
-          accountUuid,
-          goalId,
-          krUpdate.uuid,
-          { weight: krUpdate.weight },
-        );
+        const updated = await goalService.updateKeyResult(accountUuid, goalId, krUpdate.uuid, {
+          weight: krUpdate.weight,
+        });
         updatedKeyResults.push(updated);
       }
 
@@ -311,20 +308,19 @@ export class GoalAggregateController {
       const { goalId } = req.params;
       const { newName, newDescription } = req.body;
 
+      const goalService = await GoalAggregateController.getGoalService();
+
       // 获取完整聚合视图
-      const originalAggregate = await GoalAggregateController.goalService.getGoalAggregateView(
-        accountUuid,
-        goalId,
-      );
+      const originalAggregate = await goalService.getGoalAggregateView(accountUuid, goalId);
 
       // 创建新目标
-      const newGoal = await GoalAggregateController.goalService.createGoal(accountUuid, {
+      const newGoal = await goalService.createGoal(accountUuid, {
         name: newName || `${originalAggregate.goal.name} (Copy)`,
         description: newDescription || originalAggregate.goal.description,
         color: originalAggregate.goal.color,
         dirUuid: originalAggregate.goal.dirUuid,
-        startTime: new Date().toISOString(),
-        endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30天后
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30天后
         note: originalAggregate.goal.note,
         analysis: originalAggregate.goal.analysis,
         metadata: originalAggregate.goal.metadata,
@@ -333,20 +329,16 @@ export class GoalAggregateController {
       // 复制所有关键结果
       const clonedKeyResults = [];
       for (const kr of originalAggregate.keyResults) {
-        const clonedKr = await GoalAggregateController.goalService.createKeyResult(
-          accountUuid,
-          newGoal.uuid,
-          {
-            name: kr.name,
-            description: kr.description,
-            startValue: kr.startValue,
-            targetValue: kr.targetValue,
-            currentValue: kr.startValue, // 重置为起始值
-            unit: kr.unit,
-            weight: kr.weight,
-            calculationMethod: kr.calculationMethod,
-          },
-        );
+        const clonedKr = await goalService.createKeyResult(accountUuid, newGoal.uuid, {
+          name: kr.name,
+          description: kr.description,
+          startValue: kr.startValue,
+          targetValue: kr.targetValue,
+          currentValue: kr.startValue, // 重置为起始值
+          unit: kr.unit,
+          weight: kr.weight,
+          calculationMethod: kr.calculationMethod,
+        });
         clonedKeyResults.push(clonedKr);
       }
 

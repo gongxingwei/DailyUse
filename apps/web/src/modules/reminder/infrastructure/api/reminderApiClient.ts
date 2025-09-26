@@ -67,8 +67,13 @@ class ReminderApiClient {
     enabled?: boolean;
     priority?: ReminderContracts.ReminderPriority;
   }): Promise<ReminderContracts.IReminderTemplate[]> {
-    const data = await apiClient.get(this.baseUrl, { params });
-    return data;
+    const response = await apiClient.get(this.baseUrl, { params });
+    // 处理新的响应格式：{ data: { reminders: [...], total, page, limit, hasMore } }
+    if (response && typeof response === 'object' && 'reminders' in response) {
+      return response.reminders;
+    }
+    // 兼容旧格式直接返回数组的情况
+    return Array.isArray(response) ? response : [];
   }
 
   // ===== 实例管理 (通过聚合根) =====

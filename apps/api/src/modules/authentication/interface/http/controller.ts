@@ -40,6 +40,7 @@ export class AuthenticationController {
             message: !username ? '用户名不能为空' : '密码不能为空',
           },
         ]);
+        return;
       }
 
       // 提取客户端信息
@@ -88,6 +89,7 @@ export class AuthenticationController {
             message: !sessionId ? 'Session ID 不能为空' : 'MFA 验证码不能为空',
           },
         ]);
+        return;
       }
 
       // TODO: 实现MFA验证逻辑
@@ -108,6 +110,7 @@ export class AuthenticationController {
 
       if (!sessionId) {
         badRequest(res, 'Session ID 不能为空');
+        return;
       }
 
       // TODO: 实现登出逻辑
@@ -128,6 +131,7 @@ export class AuthenticationController {
 
       if (!refreshToken) {
         badRequest(res, 'Refresh token 不能为空');
+        return;
       }
 
       // TODO: 实现令牌刷新逻辑
@@ -154,6 +158,7 @@ export class AuthenticationController {
             message: !accountUuid ? '账户ID不能为空' : '设备类型不能为空',
           },
         ]);
+        return;
       }
 
       // TODO: 实现MFA设备创建逻辑
@@ -174,6 +179,7 @@ export class AuthenticationController {
 
       if (!accountUuid) {
         badRequest(res, '账户ID不能为空');
+        return;
       }
 
       // TODO: 实现获取MFA设备列表逻辑
@@ -202,6 +208,7 @@ export class AuthenticationController {
             message: !deviceUuid ? '设备ID不能为空' : '账户ID不能为空',
           },
         ]);
+        return;
       }
 
       // TODO: 调用应用服务的deleteMFADevice方法
@@ -222,6 +229,7 @@ export class AuthenticationController {
 
       if (!accountUuid) {
         badRequest(res, '账户ID不能为空');
+        return;
       }
 
       // TODO: 调用应用服务的getSessions方法（需要在ApplicationService中添加）
@@ -250,6 +258,7 @@ export class AuthenticationController {
             message: !sessionId ? '会话ID不能为空' : '账户ID不能为空',
           },
         ]);
+        return;
       }
 
       // TODO: 实现会话终止逻辑

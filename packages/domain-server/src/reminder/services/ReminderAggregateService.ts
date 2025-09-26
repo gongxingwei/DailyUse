@@ -360,7 +360,7 @@ export class ReminderAggregateService {
     }
 
     // 通过聚合根切换状态
-    aggregate.toggleEnabled();
+    aggregate.toggleEnabled(!aggregate.enabled);
 
     // 保存聚合根变更
     await this.reminderAggregateRepository.saveAggregate(aggregate);

@@ -27,8 +27,8 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
     super(params);
 
     this.templates =
-      params.templates?.map((tmpl) => 
-        tmpl instanceof ReminderTemplate ? tmpl : ReminderTemplate.fromDTO(tmpl)
+      params.templates?.map((tmpl) =>
+        tmpl instanceof ReminderTemplate ? tmpl : ReminderTemplate.fromDTO(tmpl),
       ) || [];
   }
 
@@ -50,10 +50,10 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
       if (template) {
         switch (operation) {
           case 'enable':
-            template.enable();
+            template.toggleEnabled(true);
             break;
           case 'disable':
-            template.disable();
+            template.toggleEnabled(false);
             break;
           case 'delete':
             this.removeTemplate(templateUuid);
@@ -99,7 +99,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
    */
   enableAllTemplates(): void {
     this.templates.forEach((template) => {
-      template.enable();
+      template.toggleEnabled(true);
     });
     this.updateTimestamp();
   }
@@ -109,7 +109,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
    */
   disableAllTemplates(): void {
     this.templates.forEach((template) => {
-      template.disable();
+      template.toggleEnabled(false);
     });
     this.updateTimestamp();
   }
@@ -130,7 +130,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
       if (criteria.category && template.category !== criteria.category) {
         return false;
       }
-      if (criteria.tags && !criteria.tags.every(tag => template.tags.includes(tag))) {
+      if (criteria.tags && !criteria.tags.every((tag) => template.tags.includes(tag))) {
         return false;
       }
       if (criteria.priority && template.priority !== criteria.priority) {
@@ -152,13 +152,13 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
     completedInstances: number;
   } {
     const totalTemplates = this.templates.length;
-    const enabledTemplates = this.templates.filter(t => t.enabled).length;
+    const enabledTemplates = this.templates.filter((t) => t.enabled).length;
     const disabledTemplates = totalTemplates - enabledTemplates;
-    
-    const allInstances = this.templates.flatMap(t => t.instances);
+
+    const allInstances = this.templates.flatMap((t) => t.instances);
     const totalInstances = allInstances.length;
-    const activeInstances = allInstances.filter(i => i.isActive).length;
-    const completedInstances = allInstances.filter(i => i.isCompleted).length;
+    const activeInstances = allInstances.filter((i) => i.isActive).length;
+    const completedInstances = allInstances.filter((i) => i.isCompleted).length;
 
     return {
       totalTemplates,
@@ -179,7 +179,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
   } {
     return {
       group: this.toDTO(),
-      templates: this.templates.map(t => t.toDTO()),
+      templates: this.templates.map((t) => t.toDTO()),
     };
   }
 
@@ -210,7 +210,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
     templates: ReminderContracts.IReminderTemplate[];
   }): ReminderTemplateGroup {
     const group = ReminderTemplateGroup.fromDTO(config.group);
-    group.templates = config.templates.map(dto => ReminderTemplate.fromDTO(dto));
+    group.templates = config.templates.map((dto) => ReminderTemplate.fromDTO(dto));
     return group;
   }
 }

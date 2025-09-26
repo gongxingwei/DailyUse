@@ -17,8 +17,18 @@ interface AuthenticatedRequest extends Request {
  * 使用正确的DDD架构：应用服务协调领域服务
  */
 export class ReminderTemplateController {
-  private static applicationService = new ReminderApplicationService();
+  private static applicationService: ReminderApplicationService | null = null;
   private static domainService = new ReminderDomainService();
+
+  /**
+   * 获取 ReminderApplicationService 实例（使用依赖注入容器）
+   */
+  private static async getApplicationService(): Promise<ReminderApplicationService> {
+    if (!this.applicationService) {
+      this.applicationService = await ReminderApplicationService.getInstance();
+    }
+    return this.applicationService;
+  }
 
   /**
    * 创建提醒模板聚合根
@@ -54,14 +64,21 @@ export class ReminderTemplateController {
   static async getTemplatesByAccount(req: Request, res: Response) {
     try {
       const accountUuid = (req as any).accountUuid; // 从认证中间件获取
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
 
       const templates =
         await ReminderTemplateController.domainService.getReminderTemplatesByAccount(accountUuid);
 
       res.json({
         success: true,
-        data: templates,
-        total: templates.length,
+        data: {
+          reminders: templates,
+          total: templates.length,
+          page,
+          limit,
+          hasMore: templates.length >= limit,
+        },
         message: '获取提醒模板列表成功',
       });
     } catch (error) {
@@ -186,6 +203,8 @@ export class ReminderTemplateController {
     try {
       const accountUuid = (req as any).accountUuid; // 从认证中间件获取
       const { q: searchTerm } = req.query;
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
 
       if (!searchTerm || typeof searchTerm !== 'string') {
         return res.status(400).json({
@@ -201,9 +220,14 @@ export class ReminderTemplateController {
 
       res.json({
         success: true,
-        data: templates,
-        total: templates.length,
-        query: searchTerm,
+        data: {
+          reminders: templates,
+          total: templates.length,
+          page,
+          limit,
+          query: searchTerm,
+          hasMore: templates.length >= limit,
+        },
         message: '搜索提醒模板成功',
       });
     } catch (error) {
@@ -257,6 +281,70 @@ export class ReminderTemplateController {
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : '获取账户统计信息失败',
+      });
+    }
+  }
+
+  /**
+   * 获取活跃的提醒模板
+   * GET /reminders/templates/active
+   */
+  static async getActiveTemplates(req: Request, res: Response) {
+    try {
+      const accountUuid = (req as any).accountUuid; // 从认证中间件获取
+      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
+      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
+
+      // 获取所有模板，然后过滤出活跃的
+      const allTemplates =
+        await ReminderTemplateController.domainService.getReminderTemplatesByAccount(accountUuid);
+      const activeTemplates = allTemplates
+        .filter((template) => template.enabled === true)
+        .slice(0, limit);
+
+      res.json({
+        success: true,
+        data: {
+          reminders: activeTemplates,
+          total: activeTemplates.length,
+          page,
+          limit,
+          hasMore: activeTemplates.length >= limit,
+        },
+        message: '获取活跃提醒模板成功',
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '获取活跃提醒模板失败',
+      });
+    }
+  }
+
+  /**
+   * 为指定模板生成实例和调度
+   * POST /reminders/templates/:templateUuid/generate-instances
+   */
+  static async generateInstancesAndSchedules(req: Request, res: Response) {
+    try {
+      const { templateUuid } = req.params;
+      const { days = 7, regenerate = false } = req.body;
+
+      const applicationService = await ReminderTemplateController.getApplicationService();
+      const result = await applicationService.generateInstancesAndSchedules(templateUuid, {
+        days: parseInt(days, 10),
+        regenerate,
+      });
+
+      res.json({
+        success: true,
+        data: result,
+        message: `成功生成 ${result.instanceCount} 个实例和 ${result.scheduleCount} 个调度`,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: error instanceof Error ? error.message : '生成实例和调度失败',
       });
     }
   }

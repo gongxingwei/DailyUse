@@ -219,6 +219,28 @@ export interface ReminderListResponse {
 }
 
 /**
+ * 提醒模板列表响应 DTO
+ */
+export interface ReminderTemplateListResponse {
+  reminders: ReminderTemplateResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  query?: string; // For search responses
+}
+
+/**
+ * 标准API响应包装器
+ */
+export interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message: string;
+  error?: string;
+}
+
+/**
  * 提醒统计响应 DTO
  */
 export interface ReminderStatsResponse {
