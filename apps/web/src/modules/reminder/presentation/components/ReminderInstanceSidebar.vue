@@ -177,7 +177,7 @@
               </div>
 
               <!-- 操作按钮 -->
-              <template #append>
+              <!-- <template #append>
                 <div class="reminder-actions">
                   <v-btn
                     icon
@@ -207,7 +207,7 @@
                     <v-icon>mdi-close</v-icon>
                   </v-btn>
                 </div>
-              </template>
+              </template> -->
             </v-list-item>
           </v-list>
           
@@ -343,7 +343,7 @@ const emit = defineEmits<Emits>();
 
 // ===== Composables =====
 const router = useRouter();
-const { getActiveReminders, isLoading, error, snoozeReminder: snoozeReminderAction, completeReminder: completeReminderAction, dismissReminder: dismissReminderAction } = useReminder();
+const { getActiveReminders, isLoading, error } = useReminder();
 
 // ===== 响应式状态 =====
 const showFilters = ref(false);
@@ -367,7 +367,7 @@ const settings = ref({
 });
 
 // 自动刷新定时器
-let refreshTimer: number | null = null;
+let refreshTimer: ReturnType<typeof setInterval> | null = null;
 
 // ===== 计算属性 =====
 
@@ -511,44 +511,44 @@ function handleReminderClick(reminder: any): void {
   router.push(`/reminders/templates/${reminder.templateUuid}/instances/${reminder.uuid}`);
 }
 
-/**
- * 延期提醒
- */
-async function snoozeReminder(reminder: any): Promise<void> {
-  emit('reminder-action', 'snooze', reminder);
-  try {
-    await snoozeReminderAction(reminder.templateUuid, reminder.uuid, 300); // 延期5分钟
-    await refreshUpcoming();
-  } catch (err) {
-    console.error('延期提醒失败:', err);
-  }
-}
+// /**
+//  * 延期提醒
+//  */
+// async function snoozeReminder(reminder: any): Promise<void> {
+//   emit('reminder-action', 'snooze', reminder);
+//   try {
+//     await snoozeReminderAction(reminder.templateUuid, reminder.uuid, 300); // 延期5分钟
+//     await refreshUpcoming();
+//   } catch (err) {
+//     console.error('延期提醒失败:', err);
+//   }
+// }
 
-/**
- * 完成提醒
- */
-async function completeReminder(reminder: any): Promise<void> {
-  emit('reminder-action', 'complete', reminder);
-  try {
-    await completeReminderAction(reminder.templateUuid, reminder.uuid);
-    await refreshUpcoming();
-  } catch (err) {
-    console.error('完成提醒失败:', err);
-  }
-}
+// /**
+//  * 完成提醒
+//  */
+// async function completeReminder(reminder: any): Promise<void> {
+//   emit('reminder-action', 'complete', reminder);
+//   try {
+//     await completeReminderAction(reminder.templateUuid, reminder.uuid);
+//     await refreshUpcoming();
+//   } catch (err) {
+//     console.error('完成提醒失败:', err);
+//   }
+// }
 
-/**
- * 忽略提醒
- */
-async function dismissReminder(reminder: any): Promise<void> {
-  emit('reminder-action', 'dismiss', reminder);
-  try {
-    await dismissReminderAction(reminder.templateUuid, reminder.uuid);
-    await refreshUpcoming();
-  } catch (err) {
-    console.error('忽略提醒失败:', err);
-  }
-}
+// /**
+//  * 忽略提醒
+//  */
+// async function dismissReminder(reminder: any): Promise<void> {
+//   emit('reminder-action', 'dismiss', reminder);
+//   try {
+//     await dismissReminderAction(reminder.templateUuid, reminder.uuid);
+//     await refreshUpcoming();
+//   } catch (err) {
+//     console.error('忽略提醒失败:', err);
+//   }
+// }
 
 /**
  * 切换过滤器显示

@@ -14,6 +14,7 @@ import { authenticationRoutes } from './modules/authentication';
 import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
+import { scheduleRoutes } from './modules/schedule';
 import { createEditorRoutes, EditorAggregateController } from './modules/editor';
 import { EditorDomainService } from '@dailyuse/domain-server';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
@@ -81,6 +82,9 @@ api.use('/goal-dirs', authMiddleware, goalDirRouter);
 
 // 挂载提醒管理路由 - 需要认证
 api.use('/reminders', authMiddleware, reminderRouter);
+
+// 挂载任务调度管理路由 - 需要认证
+api.use('/schedules', authMiddleware, scheduleRoutes);
 
 // 挂载编辑器路由 - 需要认证
 const editorDomainService = new EditorDomainService();

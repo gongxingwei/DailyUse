@@ -114,7 +114,7 @@ const handleEditorDidMount = (instance: any) => {
         }
       }
     }
-    console.group('Clipboard Data')
+
     console.log('Available Types:', Array.from(clipboardData.types))
     console.log('Items:', Array.from(clipboardData.items).map(item => ({
       type: item.type,

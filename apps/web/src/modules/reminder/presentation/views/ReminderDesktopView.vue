@@ -1,102 +1,112 @@
 <template>
     <v-container fluid class="pa-0 h-100">
-        <!-- 手机桌面风格的网格布局 -->
-        <div class="phone-desktop">
-            <!-- 网格容器 -->
-            <div class="desktop-grid" @contextmenu.prevent="handleDesktopContextMenu">
-                <!-- 模板项（应用图标风格） -->
-                <div v-for="template in reminderTemplates" :key="template.uuid" class="app-icon"
-                    :class="{ disabled: !template.enabled }" @click="handleTemplateClick(template)"
-                    @contextmenu.prevent="handleTemplateContextMenu(template, $event)">
-                    <div class="icon-circle">
-                        <v-icon :color="template.enabled ? '#2196F3' : '#999'" size="32">
-                            mdi-bell
-                        </v-icon>
-                    </div>
-                    <div class="app-name">{{ template.name }}</div>
-                </div>
+        <div class="d-flex h-100">
+            <!-- 左侧主要内容区域 -->
+            <div class="flex-grow-1">
+                <!-- 手机桌面风格的网格布局 -->
+                <div class="phone-desktop">
+                    <!-- 网格容器 -->
+                    <div class="desktop-grid" @contextmenu.prevent="handleDesktopContextMenu">
+                        <!-- 模板项（应用图标风格） -->
+                        <div v-for="template in reminderTemplates" :key="template.uuid" class="app-icon"
+                            :class="{ disabled: !template.enabled }" @click="handleTemplateClick(template)"
+                            @contextmenu.prevent="handleTemplateContextMenu(template, $event)">
+                            <div class="icon-circle">
+                                <v-icon :color="template.enabled ? '#2196F3' : '#999'" size="32">
+                                    mdi-bell
+                                </v-icon>
+                            </div>
+                            <div class="app-name">{{ template.name }}</div>
+                        </div>
 
-                <!-- 分组项（文件夹风格） -->
-                <div v-for="group in templateGroups" :key="group.uuid" class="folder-icon"
-                    :class="{ disabled: !group.enabled }" @click="handleGroupClick(group)"
-                    @contextmenu.prevent="handleGroupContextMenu(group, $event)">
-                    <div class="folder-circle">
-                        <v-icon :color="group.enabled ? '#4CAF50' : '#999'" size="32">
-                            mdi-folder
-                        </v-icon>
-                        <div class="folder-badge" v-if="getGroupTemplateCount(group) > 0">
-                            {{ getGroupTemplateCount(group) }}
+                        <!-- 分组项（文件夹风格） -->
+                        <div v-for="group in templateGroups" :key="group.uuid" class="folder-icon"
+                            :class="{ disabled: !group.enabled }" @click="handleGroupClick(group)"
+                            @contextmenu.prevent="handleGroupContextMenu(group, $event)">
+                            <div class="folder-circle">
+                                <v-icon :color="group.enabled ? '#4CAF50' : '#999'" size="32">
+                                    mdi-folder
+                                </v-icon>
+                                <div class="folder-badge" v-if="getGroupTemplateCount(group) > 0">
+                                    {{ getGroupTemplateCount(group) }}
+                                </div>
+                            </div>
+                            <div class="folder-name">{{ group.name }}</div>
                         </div>
                     </div>
-                    <div class="folder-name">{{ group.name }}</div>
-                </div>
-            </div>
 
-            <!-- 底部工具栏 -->
-            <div class="bottom-dock">
-                <v-btn icon size="large" @click="templateDialogRef?.openDialog()" class="dock-btn">
-                    <v-icon>mdi-plus</v-icon>
-                </v-btn>
-                <v-btn icon size="large" @click="openGroupView()" class="dock-btn">
-                    <v-icon>mdi-folder-plus</v-icon>
-                </v-btn>
-                <v-btn icon size="large" @click="refresh" :loading="isLoading" class="dock-btn">
-                    <v-icon>mdi-refresh</v-icon>
-                </v-btn>
+                    <!-- 底部工具栏 -->
+                    <div class="bottom-dock">
+                        <v-btn icon size="large" @click="templateDialogRef?.openForCreate()" class="dock-btn">
+                            <v-icon>mdi-plus</v-icon>
+                        </v-btn>
+                        <v-btn icon size="large" @click="groupDialogRef?.openForCreate()" class="dock-btn">
+                            <v-icon>mdi-folder-plus</v-icon>
+                        </v-btn>
+                        <v-btn icon size="large" @click="refresh" :loading="isLoading" class="dock-btn">
+                            <v-icon>mdi-refresh</v-icon>
+                        </v-btn>
+                    </div>
+                </div>
+
+                <!-- 右键菜单 -->
+                <div v-if="contextMenu.show" class="context-menu-overlay" @click="contextMenu.show = false"
+                    @contextmenu.prevent="contextMenu.show = false">
+                    <div class="context-menu" :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }">
+                        <div v-for="item in contextMenu.items" :key="item.title" class="context-menu-item"
+                            @click="item.action">
+                            <v-icon class="mr-2" size="small">{{ item.icon }}</v-icon>
+                            {{ item.title }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 确认删除对话框 -->
+                <v-dialog v-model="deleteDialog.show" max-width="400">
+                    <v-card>
+                        <v-card-title>确认删除</v-card-title>
+                        <v-card-text>
+                            确定要删除{{ deleteDialog.type === 'template' ? '模板' : '分组' }}
+                            "{{ deleteDialog.name }}" 吗？
+                        </v-card-text>
+                        <v-card-actions>
+                            <v-spacer />
+                            <v-btn @click="deleteDialog.show = false">取消</v-btn>
+                            <v-btn color="error" @click="confirmDelete">删除</v-btn>
+                        </v-card-actions>
+                    </v-card>
+                </v-dialog>
+
+                <!-- 加载状态 -->
+                <v-overlay v-model="isLoading" class="align-center justify-center">
+                    <v-progress-circular size="64" indeterminate color="primary" />
+                </v-overlay>
+
+                <!-- 错误提示 -->
+                <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
+                    {{ error }}
+                </v-snackbar>
+
+                <!-- 对话框组件 -->
+                <TemplateDialog ref="templateDialogRef" @template-created="handleTemplateCreated"
+                    @template-updated="handleTemplateUpdated" />
+                <GroupDialog ref="groupDialogRef" @group-created="handleGroupCreated"
+                    @group-updated="handleGroupUpdated" />
+                <TemplateMoveDialog v-model="moveDialog.show" :template="moveDialog.template"
+                    @moved="handleTemplateMoved" @closed="moveDialog.show = false" />
+
+                <!-- 模板用于展示item的信息和状态切换的卡片组件 -->
+                <!-- TemplateCard 组件 -->
+                <TemplateDesktopCard ref="templateCardRef" />
+
+                <!-- GroupDesktopCard 组件 -->
+                <GroupDesktopCard ref="groupDialogRef" />
             </div>
         </div>
 
-        <!-- 右键菜单 -->
-        <div v-if="contextMenu.show" class="context-menu-overlay" @click="contextMenu.show = false"
-            @contextmenu.prevent="contextMenu.show = false">
-            <div class="context-menu" :style="{ left: contextMenu.x + 'px', top: contextMenu.y + 'px' }">
-                <div v-for="item in contextMenu.items" :key="item.title" class="context-menu-item" @click="item.action">
-                    <v-icon class="mr-2" size="small">{{ item.icon }}</v-icon>
-                    {{ item.title }}
-                </div>
-            </div>
-        </div>
+        <!-- 右侧 Sidebar -->
+        <ReminderInstanceSidebar />
 
-        <!-- 确认删除对话框 -->
-        <v-dialog v-model="deleteDialog.show" max-width="400">
-            <v-card>
-                <v-card-title>确认删除</v-card-title>
-                <v-card-text>
-                    确定要删除{{ deleteDialog.type === 'template' ? '模板' : '分组' }}
-                    "{{ deleteDialog.name }}" 吗？
-                </v-card-text>
-                <v-card-actions>
-                    <v-spacer />
-                    <v-btn @click="deleteDialog.show = false">取消</v-btn>
-                    <v-btn color="error" @click="confirmDelete">删除</v-btn>
-                </v-card-actions>
-            </v-card>
-        </v-dialog>
-
-        <!-- 加载状态 -->
-        <v-overlay v-model="isLoading" class="align-center justify-center">
-            <v-progress-circular size="64" indeterminate color="primary" />
-        </v-overlay>
-
-        <!-- 错误提示 -->
-        <v-snackbar v-model="showError" color="error" timeout="5000" location="top">
-            {{ error }}
-        </v-snackbar>
-
-        <!-- 对话框组件 -->
-        <SimpleTemplateDialog ref="templateDialogRef" @template-created="handleTemplateCreated"
-            @template-updated="handleTemplateUpdated" />
-        <SimpleGroupDialog ref="groupDialogRef" @group-created="handleGroupCreated"
-            @group-updated="handleGroupUpdated" />
-        <TemplateMoveDialog v-model="moveDialog.show" :template="moveDialog.template" @moved="handleTemplateMoved"
-            @closed="moveDialog.show = false" />
-
-        <!-- 模板卡片组件 -->
-        <!-- TemplateCard 组件 -->
-        <TemplateCard ref="templateCardRef" />
-
-        <!-- GroupDialog 组件 -->
-        <GroupDialog ref="groupDialogRef" />
     </v-container>
 </template>
 
@@ -104,11 +114,12 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 
 // 组件导入
-import SimpleTemplateDialog from '../components/dialogs/SimpleTemplateDialog.vue'
-import SimpleGroupDialog from '../components/dialogs/SimpleGroupDialog.vue'
+import TemplateDialog from '../components/dialogs/TemplateDialog.vue'
+import GroupDialog from '../components/dialogs/GroupDialog.vue'
 import TemplateMoveDialog from '../components/dialogs/TemplateMoveDialog.vue'
-import TemplateCard from '../components/cards/TemplateCard.vue'
-import GroupDialog from '../components/GroupDialog.vue'
+import TemplateDesktopCard from '../components/cards/TemplateDesktopCard.vue'
+import GroupDesktopCard from '../components/cards/GroupDesktopCard.vue'
+import ReminderInstanceSidebar from '../components/ReminderInstanceSidebar.vue'
 
 // Composables
 import { useReminder } from '../composables/useReminder'
@@ -163,9 +174,10 @@ const deleteGroup = async (uuid: string) => {
 }
 
 // Dialog refs
-const templateDialogRef = ref<InstanceType<typeof SimpleTemplateDialog> | null>(null)
-const groupDialogRef = ref<InstanceType<typeof GroupDialog> | null>(null)
-const templateCardRef = ref<InstanceType<typeof TemplateCard> | null>(null)
+const templateDialogRef = ref<InstanceType<typeof TemplateDialog> | null>(null)  // 用于编辑和创建模板
+const groupDialogRef = ref<InstanceType<typeof GroupDialog> | null>(null)  // 用于编辑和创建分组
+const templateDesktopCardRef = ref<InstanceType<typeof TemplateDesktopCard> | null>(null)  // 用于展示和切换模板 enabled 状态
+const groupDesktopCardRef = ref<InstanceType<typeof GroupDesktopCard> | null>(null)  // 用于展示和切换分组 enabled 状态
 
 // 响应式数据
 const showError = ref(false)
@@ -203,7 +215,7 @@ const moveDialog = reactive({
  */
 const handleTemplateClick = (template: ReminderTemplate) => {
     // 显示模板卡片而非编辑对话框
-    templateCardRef.value?.open(template)
+    templateDesktopCardRef.value?.open(template)
 }
 
 /**
@@ -211,23 +223,7 @@ const handleTemplateClick = (template: ReminderTemplate) => {
  */
 const handleGroupClick = (group: ReminderTemplateGroup) => {
     // 打开分组详情或编辑
-    groupDialogRef.value?.open(group)
-}
-
-/**
- * 打开组视图
- */
-const openGroupView = (group?: ReminderTemplateGroup) => {
-    if (group) {
-        groupDialogRef.value?.open(group)
-    } else {
-        // 显示第一个组或提示选择组
-        if (reminderTemplateGroups.value.length > 0) {
-            groupDialogRef.value?.open(reminderTemplateGroups.value[0])
-        } else {
-            snackbar.showInfo('暂无可用的模板组')
-        }
-    }
+    groupDesktopCardRef.value?.open(group)
 }
 
 /**
@@ -237,14 +233,6 @@ const handleTemplateContextMenu = (template: ReminderTemplate, event: MouseEvent
     contextMenu.x = event.clientX
     contextMenu.y = event.clientY
     contextMenu.items = [
-        {
-            title: '查看详情',
-            icon: 'mdi-information',
-            action: () => {
-                templateCardRef.value?.open(template)
-                contextMenu.show = false
-            }
-        },
         {
             title: '编辑模板',
             icon: 'mdi-pencil',
@@ -316,7 +304,7 @@ const handleGroupContextMenu = (group: ReminderTemplateGroup, event: MouseEvent)
             title: '编辑分组',
             icon: 'mdi-pencil',
             action: () => {
-                groupDialogRef.value?.open(group)
+                groupDialogRef.value?.openForEdit(group)
                 contextMenu.show = false
             }
         },
@@ -324,7 +312,7 @@ const handleGroupContextMenu = (group: ReminderTemplateGroup, event: MouseEvent)
             title: '添加模板',
             icon: 'mdi-plus',
             action: () => {
-                templateDialogRef.value?.openForCreate(group.uuid)
+                templateDialogRef.value?.openForCreate()
                 contextMenu.show = false
             }
         },
@@ -359,7 +347,7 @@ const handleDesktopContextMenu = (event: MouseEvent) => {
             title: '新建模板',
             icon: 'mdi-plus',
             action: () => {
-                templateDialogRef.value?.openDialog()
+                templateDialogRef.value?.openForCreate()
                 contextMenu.show = false
             }
         },
@@ -368,7 +356,7 @@ const handleDesktopContextMenu = (event: MouseEvent) => {
             icon: 'mdi-folder-plus',
             action: () => {
                 // GroupDialog 目前没有创建功能，使用现有对话框
-                templateDialogRef.value?.openDialog()
+                groupDialogRef.value?.openForCreate()
                 contextMenu.show = false
             }
         },

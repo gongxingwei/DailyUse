@@ -26,7 +26,6 @@ export class ModuleDebugger {
   static async printModuleStatus(): Promise<void> {
     const status = await this.getModuleStatus();
     
-    console.group('📦 Module Status');
     console.table(status);
     
     const total = Object.keys(status).length;

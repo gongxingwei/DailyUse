@@ -98,9 +98,9 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ReminderTemplateGroup, ReminderTemplate } from '@dailyuse/domain-client'
-import { reminderService } from '../../application/services/ReminderWebApplicationService'
+import { reminderService } from '../../../application/services/ReminderWebApplicationService'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
-import TemplateCard from './cards/TemplateCard.vue'
+import TemplateCard from './TemplateDesktopCard.vue'
 
 // 组件状态
 const visible = ref(false)

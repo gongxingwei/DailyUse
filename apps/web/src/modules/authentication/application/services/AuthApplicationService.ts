@@ -11,6 +11,7 @@ import { AuthApiService } from '../../infrastructure/api/ApiClient';
 import { AuthManager } from '../../../../shared/api/core/interceptors';
 import { publishUserLoggedInEvent, publishUserLoggedOutEvent } from '../events/authEvents';
 import { AppInitializationManager } from '../../../../shared/initialization/AppInitializationManager';
+import { useAuthStore } from '../../presentation/stores/useAuthStore';
 
 /**
  * Authentication Application Service
@@ -21,6 +22,10 @@ export class AuthApplicationService {
   // private readonly authRepository: IAuthRepository | null = null;
   // private readonly registrationRepository: IRegistrationRepository | null = null;
 
+  private get authStore() {
+    return useAuthStore();
+  }
+  
   private constructor() {
     // 不再需要实例化ApiClient，直接使用静态方法
   }
@@ -67,6 +72,21 @@ export class AuthApplicationService {
           response.data.rememberToken,
           response.data.expiresIn || 3600, // 默认1小时
         );
+
+        // 同步到 authStore (重要：确保路由守卫能立即检测到认证状态)
+        
+
+        this.authStore.setTokens({
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+          rememberToken: response.data.rememberToken,
+          expiresIn: response.data.expiresIn || 3600,
+        });
+
+        // 临时设置基本用户信息，等待事件处理器获取完整信息
+        if (response.data) {
+          this.authStore.setUser(response.data);
+        }
       }
 
       console.log('登录成功，你好', response.data);
@@ -153,6 +173,9 @@ export class AuthApplicationService {
 
       // 清除所有令牌
       AuthManager.clearTokens();
+
+      // 同步清除 authStore
+      this.authStore.clearAuth();
     }
   }
 

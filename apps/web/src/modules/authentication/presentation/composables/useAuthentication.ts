@@ -84,9 +84,10 @@ export function useAuthentication() {
   const login = async (credentials: any): Promise<void> => {
     currentOperation.value = 'login';
     try {
+      console.log('Attempting login with credentials:', credentials);
       const authService = await AuthApplicationService.getInstance();
       await authService.login(credentials);
-
+      console.log('Login successful=========================================================');
       // 登录成功后跳转
       await router.push({ name: 'dashboard' });
     } finally {

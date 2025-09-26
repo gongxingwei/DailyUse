@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DailyUse Schedule API Test</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+        background: #1e1e1e;
+        color: #ffffff;
+      }
+      .test-container {
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+      .header {
+        background: #2d2d2d;
+        padding: 16px;
+        border-bottom: 1px solid #444;
+      }
+      .header h1 {
+        margin: 0;
+        color: #ffffff;
+        font-size: 24px;
+      }
+      .content {
+        flex: 1;
+        padding: 20px;
+        overflow: auto;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .test-section {
+        background: #252525;
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #4caf50;
+      }
+      .test-section h3 {
+        margin-top: 0;
+        color: #4caf50;
+      }
+      button {
+        background: #007acc;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+        font-size: 14px;
+      }
+      button:hover {
+        background: #005a9e;
+      }
+      button:disabled {
+        background: #555;
+        cursor: not-allowed;
+      }
+      .response {
+        background: #333;
+        border: 1px solid #555;
+        border-radius: 4px;
+        padding: 10px;
+        margin-top: 10px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      .success {
+        color: #4caf50;
+      }
+      .error {
+        color: #f44336;
+      }
+      .warning {
+        color: #ff9800;
+      }
+      .input-group {
+        margin: 10px 0;
+      }
+      .input-group label {
+        display: block;
+        margin-bottom: 5px;
+        color: #ccc;
+      }
+      .input-group input,
+      .input-group textarea {
+        width: 100%;
+        padding: 8px;
+        background: #333;
+        border: 1px solid #555;
+        border-radius: 4px;
+        color: white;
+        font-family: inherit;
+      }
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 10px;
+        margin: 15px 0;
+      }
+      .stat-card {
+        background: #333;
+        padding: 10px;
+        border-radius: 4px;
+        text-align: center;
+      }
+      .stat-value {
+        font-size: 24px;
+        font-weight: bold;
+        color: #4caf50;
+      }
+      .stat-label {
+        font-size: 12px;
+        color: #ccc;
+        margin-top: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="test-container">
+      <div class="header">
+        <h1>Schedule API Test Page</h1>
+        <p>测试任务调度模块的各种 API 接口功能</p>
+      </div>
+
+      <div class="content">
+        <!-- 基础 CRUD 操作 -->
+        <div class="test-section">
+          <h3>📋 基础 CRUD 操作</h3>
+
+          <button onclick="getAllSchedules()">获取所有任务</button>
+          <button onclick="getScheduleById('1')">获取任务详情</button>
+          <button onclick="createTestSchedule()">创建测试任务</button>
+          <button onclick="updateSchedule('1')">更新任务</button>
+          <button onclick="deleteSchedule('1')">删除任务</button>
+
+          <div class="input-group">
+            <label>创建新任务：</label>
+            <input type="text" id="scheduleName" placeholder="任务名称" value="测试任务" />
+            <input type="text" id="scheduleCron" placeholder="Cron 表达式" value="0 */5 * * * *" />
+            <textarea id="scheduleDesc" placeholder="任务描述">这是一个测试任务</textarea>
+          </div>
+
+          <div id="crudResponse" class="response"></div>
+        </div>
+
+        <!-- 任务控制操作 -->
+        <div class="test-section">
+          <h3>⚡ 任务控制操作</h3>
+
+          <button onclick="startSchedule('1')">启动任务</button>
+          <button onclick="stopSchedule('1')">停止任务</button>
+          <button onclick="pauseSchedule('1')">暂停任务</button>
+          <button onclick="resumeSchedule('1')">恢复任务</button>
+          <button onclick="triggerSchedule('1')">手动触发</button>
+
+          <div class="input-group">
+            <label>选择任务 ID：</label>
+            <input type="text" id="controlTaskId" placeholder="任务ID" value="1" />
+          </div>
+
+          <div id="controlResponse" class="response"></div>
+        </div>
+
+        <!-- 状态监控 -->
+        <div class="test-section">
+          <h3>📊 状态监控</h3>
+
+          <button onclick="getScheduleStatus('1')">获取任务状态</button>
+          <button onclick="getScheduleHistory('1')">获取执行历史</button>
+          <button onclick="getActiveSchedules()">获取活跃任务</button>
+          <button onclick="getScheduleStats()">获取统计信息</button>
+
+          <div class="stats" id="statsDisplay">
+            <div class="stat-card">
+              <div class="stat-value">-</div>
+              <div class="stat-label">总任务数</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">-</div>
+              <div class="stat-label">活跃任务</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">-</div>
+              <div class="stat-label">成功率</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-value">-</div>
+              <div class="stat-label">今日执行</div>
+            </div>
+          </div>
+
+          <div id="monitorResponse" class="response"></div>
+        </div>
+
+        <!-- 批量操作测试 -->
+        <div class="test-section">
+          <h3>🚀 批量测试</h3>
+
+          <button onclick="runComprehensiveTest()">综合测试</button>
+          <button onclick="performanceTest()">性能测试</button>
+          <button onclick="errorHandlingTest()">错误处理测试</button>
+          <button onclick="clearAllResponses()">清空响应</button>
+
+          <div class="input-group">
+            <label>测试设置：</label>
+            <input type="number" id="testCount" placeholder="测试次数" value="5" min="1" max="50" />
+            <input
+              type="number"
+              id="testDelay"
+              placeholder="延迟(ms)"
+              value="1000"
+              min="100"
+              max="5000"
+            />
+          </div>
+
+          <div id="batchResponse" class="response"></div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // API 基础配置
+      const API_BASE_URL = 'http://localhost:3001/api';
+      const SCHEDULE_API_URL = `${API_BASE_URL}/schedules`;
+
+      // 通用请求函数
+      async function makeRequest(url, options = {}) {
+        try {
+          const response = await fetch(url, {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: 'Bearer your-token-here', // 需要替换为实际的 token
+              ...options.headers,
+            },
+            ...options,
+          });
+
+          const data = await response.json();
+          return { success: response.ok, data, status: response.status };
+        } catch (error) {
+          return { success: false, error: error.message };
+        }
+      }
+
+      // 显示响应结果
+      function displayResponse(elementId, result, label = '') {
+        const element = document.getElementById(elementId);
+        const timestamp = new Date().toLocaleTimeString();
+        const statusClass = result.success ? 'success' : 'error';
+
+        const logEntry = `[${timestamp}] ${label}\n${JSON.stringify(result, null, 2)}\n\n`;
+        element.innerHTML += `<div class="${statusClass}">${logEntry}</div>`;
+        element.scrollTop = element.scrollHeight;
+      }
+
+      // ============ 基础 CRUD 操作 ============
+
+      async function getAllSchedules() {
+        const result = await makeRequest(SCHEDULE_API_URL);
+        displayResponse('crudResponse', result, '获取所有任务');
+      }
+
+      async function getScheduleById(id) {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${id}`);
+        displayResponse('crudResponse', result, `获取任务 ${id}`);
+      }
+
+      async function createTestSchedule() {
+        const name = document.getElementById('scheduleName').value;
+        const cron = document.getElementById('scheduleCron').value;
+        const description = document.getElementById('scheduleDesc').value;
+
+        const scheduleData = {
+          name,
+          description,
+          cron,
+          type: 'test',
+          enabled: true,
+        };
+
+        const result = await makeRequest(SCHEDULE_API_URL, {
+          method: 'POST',
+          body: JSON.stringify(scheduleData),
+        });
+
+        displayResponse('crudResponse', result, '创建任务');
+      }
+
+      async function updateSchedule(id) {
+        const updateData = {
+          name: '更新后的任务名称',
+          description: '这是一个更新后的任务描述',
+          enabled: true,
+        };
+
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${id}`, {
+          method: 'PUT',
+          body: JSON.stringify(updateData),
+        });
+
+        displayResponse('crudResponse', result, `更新任务 ${id}`);
+      }
+
+      async function deleteSchedule(id) {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${id}`, {
+          method: 'DELETE',
+        });
+
+        displayResponse('crudResponse', result, `删除任务 ${id}`);
+      }
+
+      // ============ 任务控制操作 ============
+
+      async function startSchedule(id) {
+        const taskId = document.getElementById('controlTaskId').value || id;
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${taskId}/start`, {
+          method: 'POST',
+        });
+        displayResponse('controlResponse', result, `启动任务 ${taskId}`);
+      }
+
+      async function stopSchedule(id) {
+        const taskId = document.getElementById('controlTaskId').value || id;
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${taskId}/stop`, {
+          method: 'POST',
+        });
+        displayResponse('controlResponse', result, `停止任务 ${taskId}`);
+      }
+
+      async function pauseSchedule(id) {
+        const taskId = document.getElementById('controlTaskId').value || id;
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${taskId}/pause`, {
+          method: 'POST',
+        });
+        displayResponse('controlResponse', result, `暂停任务 ${taskId}`);
+      }
+
+      async function resumeSchedule(id) {
+        const taskId = document.getElementById('controlTaskId').value || id;
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${taskId}/resume`, {
+          method: 'POST',
+        });
+        displayResponse('controlResponse', result, `恢复任务 ${taskId}`);
+      }
+
+      async function triggerSchedule(id) {
+        const taskId = document.getElementById('controlTaskId').value || id;
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${taskId}/trigger`, {
+          method: 'POST',
+        });
+        displayResponse('controlResponse', result, `手动触发任务 ${taskId}`);
+      }
+
+      // ============ 状态监控 ============
+
+      async function getScheduleStatus(id) {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${id}/status`);
+        displayResponse('monitorResponse', result, `获取任务状态 ${id}`);
+      }
+
+      async function getScheduleHistory(id) {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/${id}/history`);
+        displayResponse('monitorResponse', result, `获取执行历史 ${id}`);
+      }
+
+      async function getActiveSchedules() {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/active`);
+        displayResponse('monitorResponse', result, '获取活跃任务');
+      }
+
+      async function getScheduleStats() {
+        const result = await makeRequest(`${SCHEDULE_API_URL}/stats`);
+        displayResponse('monitorResponse', result, '获取统计信息');
+
+        // 更新统计卡片
+        if (result.success && result.data?.data) {
+          const stats = result.data.data;
+          const statCards = document.querySelectorAll('#statsDisplay .stat-card .stat-value');
+
+          if (statCards.length >= 4) {
+            statCards[0].textContent = stats.total || '-';
+            statCards[1].textContent = stats.active || '-';
+            statCards[2].textContent = stats.successRate ? `${stats.successRate}%` : '-';
+            statCards[3].textContent = stats.todayExecutions || '-';
+          }
+        }
+      }
+
+      // ============ 批量测试 ============
+
+      async function runComprehensiveTest() {
+        displayResponse('batchResponse', { info: '开始综合测试...' }, '综合测试');
+
+        const tests = [
+          { name: '获取所有任务', fn: () => getAllSchedules() },
+          { name: '获取任务详情', fn: () => getScheduleById('1') },
+          { name: '获取任务状态', fn: () => getScheduleStatus('1') },
+          { name: '获取活跃任务', fn: () => getActiveSchedules() },
+          { name: '获取统计信息', fn: () => getScheduleStats() },
+        ];
+
+        const delay = parseInt(document.getElementById('testDelay').value) || 1000;
+
+        for (const test of tests) {
+          displayResponse('batchResponse', { info: `执行: ${test.name}` }, '综合测试');
+          await test.fn();
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+
+        displayResponse('batchResponse', { success: true, message: '综合测试完成' }, '综合测试');
+      }
+
+      async function performanceTest() {
+        const count = parseInt(document.getElementById('testCount').value) || 5;
+        displayResponse('batchResponse', { info: `开始性能测试 (${count} 次请求)...` }, '性能测试');
+
+        const startTime = performance.now();
+        const promises = [];
+
+        for (let i = 0; i < count; i++) {
+          promises.push(makeRequest(SCHEDULE_API_URL));
+        }
+
+        try {
+          const results = await Promise.all(promises);
+          const endTime = performance.now();
+          const totalTime = endTime - startTime;
+          const avgTime = totalTime / count;
+
+          const successCount = results.filter((r) => r.success).length;
+
+          displayResponse(
+            'batchResponse',
+            {
+              success: true,
+              message: '性能测试完成',
+              stats: {
+                totalRequests: count,
+                successfulRequests: successCount,
+                failedRequests: count - successCount,
+                totalTime: `${totalTime.toFixed(2)}ms`,
+                averageTime: `${avgTime.toFixed(2)}ms`,
+                requestsPerSecond: (count / (totalTime / 1000)).toFixed(2),
+              },
+            },
+            '性能测试',
+          );
+        } catch (error) {
+          displayResponse('batchResponse', { success: false, error: error.message }, '性能测试');
+        }
+      }
+
+      async function errorHandlingTest() {
+        displayResponse('batchResponse', { info: '开始错误处理测试...' }, '错误处理测试');
+
+        const errorTests = [
+          { name: '无效ID', fn: () => makeRequest(`${SCHEDULE_API_URL}/invalid-id`) },
+          { name: '不存在的任务', fn: () => makeRequest(`${SCHEDULE_API_URL}/99999`) },
+          {
+            name: '无效数据创建',
+            fn: () =>
+              makeRequest(SCHEDULE_API_URL, {
+                method: 'POST',
+                body: JSON.stringify({ invalid: 'data' }),
+              }),
+          },
+          {
+            name: '无效操作',
+            fn: () =>
+              makeRequest(`${SCHEDULE_API_URL}/1/invalid-action`, {
+                method: 'POST',
+              }),
+          },
+        ];
+
+        for (const test of errorTests) {
+          const result = await test.fn();
+          displayResponse('batchResponse', result, `错误测试: ${test.name}`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        }
+
+        displayResponse(
+          'batchResponse',
+          { success: true, message: '错误处理测试完成' },
+          '错误处理测试',
+        );
+      }
+
+      function clearAllResponses() {
+        document.getElementById('crudResponse').innerHTML = '';
+        document.getElementById('controlResponse').innerHTML = '';
+        document.getElementById('monitorResponse').innerHTML = '';
+        document.getElementById('batchResponse').innerHTML = '';
+
+        // 重置统计卡片
+        document.querySelectorAll('#statsDisplay .stat-value').forEach((card) => {
+          card.textContent = '-';
+        });
+      }
+
+      // 页面加载完成后自动获取统计信息
+      window.addEventListener('load', () => {
+        setTimeout(() => {
+          getScheduleStats();
+        }, 1000);
+      });
+    </script>
+  </body>
+</html>
