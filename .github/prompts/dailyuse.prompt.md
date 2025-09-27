@@ -19,6 +19,22 @@ github/prompts 文件夹下的 prompt 文件
    Account：Test1；
    Password：Llh123123
 
+## API 配置规范
+
+### axios 基础配置
+
+- axios 实例已经预配置了 `http://localhost:3888/api/v1` 作为 baseURL
+- **所有API客户端的 baseUrl 只需配置相对路径，不要重复添加 `/api/v1` 前缀**
+- 示例：
+
+  ```typescript
+  // ✅ 正确
+  private readonly baseUrl = '/schedules';
+
+  // ❌ 错误 - 会导致重复路径 /api/v1/api/v1/schedules
+  private readonly baseUrl = '/api/v1/schedules';
+  ```
+
 ## API 响应结构规范
 
 ### 前端数据需求

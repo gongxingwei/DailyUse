@@ -58,3 +58,6 @@ export * from './editor';
 
 // Setting domain exports
 export * from './setting/aggregates/SettingDefinition';
+
+// Schedule domain exports
+export * from './schedule';

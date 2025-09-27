@@ -83,8 +83,20 @@ api.use('/goal-dirs', authMiddleware, goalDirRouter);
 // 挂载提醒管理路由 - 需要认证
 api.use('/reminders', authMiddleware, reminderRouter);
 
-// 挂载任务调度管理路由 - 需要认证
-api.use('/schedules', authMiddleware, scheduleRoutes);
+// 挂载任务调度管理路由 - 部分需要认证
+// SSE事件流端点不需要认证，其他端点需要认证
+api.use(
+  '/schedules',
+  (req, res, next) => {
+    // SSE 事件流端点不需要认证
+    if (req.path.startsWith('/events')) {
+      return next();
+    }
+    // 其他端点需要认证
+    return authMiddleware(req, res, next);
+  },
+  scheduleRoutes,
+);
 
 // 挂载编辑器路由 - 需要认证
 const editorDomainService = new EditorDomainService();

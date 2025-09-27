@@ -34,3 +34,17 @@ export type {
   SnoozeReminderRequestDto as SnoozeReminderRequest,
   UpcomingTasksResponseDto as UpcomingTasksResponse,
 } from './dtos';
+
+// 额外的API类型 (从types.ts导出)
+export type {
+  CreateScheduleTaskRequest as CreateScheduleTaskRequestApi,
+  UpdateScheduleTaskRequest as UpdateScheduleTaskRequestApi,
+  ScheduleTask as ScheduleTaskApi,
+  ScheduleExecution as ScheduleExecutionApi,
+  SSEConnectionInfo,
+  ScheduleTaskListResponse as ScheduleTaskListResponseApi,
+  ScheduleExecutionListResponse,
+  ScheduleStatisticsResponse,
+  ScheduleTaskResponse as ScheduleTaskResponseApi,
+  ScheduleTaskActionResponse,
+} from './types';

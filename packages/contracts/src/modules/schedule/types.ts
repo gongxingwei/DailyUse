@@ -269,3 +269,195 @@ export interface IScheduleTaskStatistics {
   /** 成功率 */
   successRate: number;
 }
+
+// ========================= API 请求响应类型 =========================
+
+/**
+ * 创建调度任务请求
+ */
+export interface CreateScheduleTaskRequest {
+  /** 任务名称 */
+  name: string;
+  /** 任务描述 */
+  description?: string;
+  /** 任务类型 */
+  taskType: string;
+  /** Cron表达式 */
+  cronExpression: string;
+  /** 任务载荷 */
+  payload?: any;
+  /** 优先级 */
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  /** 状态 */
+  status?: 'ACTIVE' | 'PAUSED';
+  /** 配置 */
+  config?: any;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * 更新调度任务请求
+ */
+export interface UpdateScheduleTaskRequest {
+  /** 任务名称 */
+  name?: string;
+  /** 任务描述 */
+  description?: string;
+  /** 任务类型 */
+  taskType?: string;
+  /** Cron表达式 */
+  cronExpression?: string;
+  /** 任务载荷 */
+  payload?: any;
+  /** 优先级 */
+  priority?: 'LOW' | 'MEDIUM' | 'HIGH';
+  /** 状态 */
+  status?: 'ACTIVE' | 'PAUSED';
+  /** 配置 */
+  config?: any;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * 调度任务响应 (简化版本，适配前端显示)
+ */
+export interface ScheduleTask {
+  /** 任务ID */
+  id: string;
+  /** 任务名称 */
+  name: string;
+  /** 任务描述 */
+  description?: string;
+  /** 任务类型 */
+  taskType: string;
+  /** Cron表达式 */
+  cronExpression: string;
+  /** 状态 */
+  status: 'ACTIVE' | 'PAUSED' | 'COMPLETED' | 'FAILED';
+  /** 任务载荷 */
+  payload?: any;
+  /** 优先级 */
+  priority: 'HIGH' | 'MEDIUM' | 'LOW';
+  /** 创建时间 */
+  createdAt: string;
+  /** 更新时间 */
+  updatedAt: string;
+  /** 下次执行时间 */
+  nextExecutionTime?: string;
+  /** 配置 */
+  config?: any;
+  /** 元数据 */
+  metadata?: any;
+}
+
+/**
+ * 调度执行记录
+ */
+export interface ScheduleExecution {
+  /** 执行记录ID */
+  id: string;
+  /** 任务ID */
+  taskId: string;
+  /** 任务名称 */
+  taskName: string;
+  /** 任务类型 */
+  taskType: string;
+  /** 执行状态 */
+  status: 'SUCCESS' | 'FAILED' | 'RUNNING' | 'CANCELLED';
+  /** 执行时间 */
+  executedAt: string;
+  /** 执行结果 */
+  result?: any;
+  /** 错误信息 */
+  error?: string;
+  /** 执行耗时 */
+  duration?: number;
+}
+
+/**
+ * SSE连接信息
+ */
+export interface SSEConnectionInfo {
+  /** SSE连接URL */
+  url: string;
+  /** 连接令牌 */
+  token?: string;
+  /** 连接ID */
+  connectionId?: string;
+}
+
+/**
+ * 调度任务列表响应
+ */
+export interface ScheduleTaskListResponse {
+  /** 任务列表 */
+  tasks: ScheduleTask[];
+  /** 总数 */
+  total: number;
+  /** 当前页 */
+  page: number;
+  /** 每页限制 */
+  limit: number;
+  /** 是否有更多 */
+  hasMore: boolean;
+}
+
+/**
+ * 调度执行记录列表响应
+ */
+export interface ScheduleExecutionListResponse {
+  /** 执行记录列表 */
+  executions: ScheduleExecution[];
+  /** 总数 */
+  total: number;
+  /** 当前页 */
+  page: number;
+  /** 每页限制 */
+  limit: number;
+  /** 是否有更多 */
+  hasMore: boolean;
+}
+
+/**
+ * 调度任务统计响应
+ */
+export interface ScheduleStatisticsResponse {
+  /** 总任务数 */
+  totalTasks: number;
+  /** 活跃任务数 */
+  activeTasks: number;
+  /** 暂停任务数 */
+  pausedTasks: number;
+  /** 今日执行次数 */
+  todayExecutions: number;
+  /** 成功执行次数 */
+  successExecutions: number;
+  /** 失败执行次数 */
+  failedExecutions: number;
+  /** 按类型统计 */
+  byType?: Record<string, number>;
+  /** 按状态统计 */
+  byStatus?: Record<string, number>;
+}
+
+/**
+ * 单个调度任务响应
+ */
+export interface ScheduleTaskResponse {
+  /** 调度任务 */
+  task: ScheduleTask;
+}
+
+/**
+ * 调度任务操作响应
+ */
+export interface ScheduleTaskActionResponse {
+  /** 操作成功 */
+  success: boolean;
+  /** 消息 */
+  message: string;
+  /** 任务信息 */
+  task?: ScheduleTask;
+}

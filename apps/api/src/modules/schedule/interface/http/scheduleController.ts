@@ -1,4 +1,5 @@
 import type { Request, Response } from 'express';
+import type { ScheduleContracts } from '@dailyuse/contracts';
 import {
   ok,
   created,
@@ -6,11 +7,34 @@ import {
   notFound,
   error as apiError,
 } from '../../../../shared/utils/apiResponse';
+import { ScheduleContainer } from '../../infrastructure/di/ScheduleContainer';
+import { PrismaClient } from '@prisma/client';
+
+type CreateScheduleTaskRequestDto = ScheduleContracts.CreateScheduleTaskRequestDto;
+type UpdateScheduleTaskRequestDto = ScheduleContracts.UpdateScheduleTaskRequestDto;
+type BatchScheduleTaskOperationRequestDto = ScheduleContracts.BatchScheduleTaskOperationRequestDto;
+type QuickReminderRequestDto = ScheduleContracts.QuickReminderRequestDto;
+type SnoozeReminderRequestDto = ScheduleContracts.SnoozeReminderRequestDto;
 
 /**
  * 任务调度控制器
  */
 export class ScheduleController {
+  private prisma = new PrismaClient();
+
+  private get scheduleService() {
+    return ScheduleContainer.getInstance(this.prisma).scheduleApplicationService;
+  }
+
+  // 从请求中获取账户 UUID (从认证中间件中获取)
+  private getAccountUuid(req: Request): string {
+    const accountUuid = (req as any).accountUuid;
+    if (!accountUuid) {
+      throw new Error('用户未认证，无法获取账户UUID');
+    }
+    return accountUuid;
+  }
+
   // ===== Schedule Management =====
 
   /**
@@ -18,39 +42,54 @@ export class ScheduleController {
    */
   async getAllSchedules(req: Request, res: Response): Promise<void> {
     try {
-      const { page = 1, limit = 20, status, type, search } = req.query;
+      const accountUuid = this.getAccountUuid(req);
+      const { page = 1, limit = 50, status, taskType, enabled, tags } = req.query;
 
-      // TODO: 实现获取计划任务列表的业务逻辑
-      const mockSchedules = [
-        {
-          id: '1',
-          name: '每日数据备份',
-          description: '每天凌晨2点执行数据库备份',
-          cron: '0 2 * * *',
-          type: 'backup',
-          status: 'active',
-          enabled: true,
-          nextRun: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
-          lastRun: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+      // 构建查询参数
+      const query: ScheduleContracts.IScheduleTaskQuery = {
+        createdBy: accountUuid,
+        pagination: {
+          offset: (Number(page) - 1) * Number(limit),
+          limit: Number(limit),
         },
-        {
-          id: '2',
-          name: '周报生成',
-          description: '每周一生成上周工作报告',
-          cron: '0 9 * * 1',
-          type: 'report',
-          status: 'active',
-          enabled: true,
-          nextRun: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-          lastRun: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+        sorting: {
+          field: 'scheduledTime',
+          order: 'asc',
         },
-      ];
+      };
 
-      ok(res, mockSchedules, '获取计划任务列表成功');
+      // 添加过滤条件
+      if (status) {
+        const statusArray = Array.isArray(status) ? status : [status];
+        query.status = statusArray.map((s) => s as ScheduleContracts.ScheduleStatus);
+      }
+
+      if (taskType) {
+        const taskTypeArray = Array.isArray(taskType) ? taskType : [taskType];
+        query.taskType = taskTypeArray.map((t) => t as ScheduleContracts.ScheduleTaskType);
+      }
+
+      if (enabled !== undefined) {
+        query.enabled = enabled === 'true';
+      }
+
+      if (tags) {
+        const tagsArray = Array.isArray(tags) ? tags : [tags];
+        query.tags = tagsArray.map((tag) => tag as string);
+      }
+
+      const result = await this.scheduleService.getScheduleTasks(accountUuid, query);
+
+      // 遵循 API 响应结构规范
+      const responseData = {
+        schedules: result.tasks,
+        total: result.total,
+        page: Number(page),
+        limit: Number(limit),
+        hasMore: result.pagination.hasMore,
+      };
+
+      ok(res, responseData, '获取计划任务列表成功');
     } catch (error) {
       console.error('获取计划任务列表失败:', error);
       apiError(res, '获取计划任务列表失败');
@@ -62,21 +101,20 @@ export class ScheduleController {
    */
   async getScheduleById(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const mockSchedule = {
-        id,
-        name: '每日数据备份',
-        description: '每天凌晨2点执行数据库备份',
-        cron: '0 2 * * *',
-        type: 'backup',
-        status: 'active',
-        enabled: true,
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, mockSchedule, '获取计划任务成功');
+      const schedule = await this.scheduleService.getScheduleTask(accountUuid, uuid);
+
+      if (!schedule) {
+        notFound(res, '计划任务不存在');
+        return;
+      }
+
+      ok(res, { schedule }, '获取计划任务成功');
     } catch (error) {
       console.error('获取计划任务失败:', error);
-      notFound(res, '计划任务不存在');
+      apiError(res, '获取计划任务失败');
     }
   }
 
@@ -85,20 +123,18 @@ export class ScheduleController {
    */
   async createSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const scheduleData = req.body;
-      const newSchedule = {
-        id: Date.now().toString(),
-        ...scheduleData,
-        status: 'inactive',
-        enabled: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      };
+      const accountUuid = this.getAccountUuid(req);
+      const scheduleData: CreateScheduleTaskRequestDto = req.body;
 
-      created(res, newSchedule, '创建计划任务成功');
+      const newSchedule = await this.scheduleService.createScheduleTaskWithValidation(
+        accountUuid,
+        scheduleData,
+      );
+
+      created(res, { schedule: newSchedule }, '创建计划任务成功');
     } catch (error) {
       console.error('创建计划任务失败:', error);
-      badRequest(res, '创建计划任务失败');
+      badRequest(res, error instanceof Error ? error.message : '创建计划任务失败');
     }
   }
 
@@ -107,18 +143,20 @@ export class ScheduleController {
    */
   async updateSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const updateData = req.body;
-      const updatedSchedule = {
-        id,
-        ...updateData,
-        updatedAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
+      const updateData: UpdateScheduleTaskRequestDto = req.body;
 
-      ok(res, updatedSchedule, '更新计划任务成功');
+      const updatedSchedule = await this.scheduleService.updateScheduleTask(
+        accountUuid,
+        uuid,
+        updateData,
+      );
+
+      ok(res, { schedule: updatedSchedule }, '更新计划任务成功');
     } catch (error) {
       console.error('更新计划任务失败:', error);
-      badRequest(res, '更新计划任务失败');
+      badRequest(res, error instanceof Error ? error.message : '更新计划任务失败');
     }
   }
 
@@ -127,48 +165,69 @@ export class ScheduleController {
    */
   async deleteSchedule(req: Request, res: Response): Promise<void> {
     try {
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
+
+      await this.scheduleService.deleteScheduleTask(accountUuid, uuid);
+
       ok(res, null, '删除计划任务成功');
     } catch (error) {
       console.error('删除计划任务失败:', error);
-      badRequest(res, '删除计划任务失败');
+      badRequest(res, error instanceof Error ? error.message : '删除计划任务失败');
+    }
+  }
+
+  // ===== Schedule Operations =====
+
+  /**
+   * 执行计划任务
+   */
+  async executeSchedule(req: Request, res: Response): Promise<void> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
+      const { force } = req.body;
+
+      const result = await this.scheduleService.executeScheduleTask(accountUuid, uuid, force);
+
+      ok(res, { executionResult: result }, '执行计划任务成功');
+    } catch (error) {
+      console.error('执行计划任务失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '执行计划任务失败');
     }
   }
 
   /**
-   * 启动计划任务
+   * 启用计划任务
    */
-  async startSchedule(req: Request, res: Response): Promise<void> {
+  async enableSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const result = {
-        id,
-        status: 'active',
-        startedAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, result, '启动计划任务成功');
+      const schedule = await this.scheduleService.enableScheduleTask(accountUuid, uuid);
+
+      ok(res, { schedule }, '启用计划任务成功');
     } catch (error) {
-      console.error('启动计划任务失败:', error);
-      badRequest(res, '启动计划任务失败');
+      console.error('启用计划任务失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '启用计划任务失败');
     }
   }
 
   /**
-   * 停止计划任务
+   * 禁用计划任务
    */
-  async stopSchedule(req: Request, res: Response): Promise<void> {
+  async disableSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const result = {
-        id,
-        status: 'inactive',
-        stoppedAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, result, '停止计划任务成功');
+      const schedule = await this.scheduleService.disableScheduleTask(accountUuid, uuid);
+
+      ok(res, { schedule }, '禁用计划任务成功');
     } catch (error) {
-      console.error('停止计划任务失败:', error);
-      badRequest(res, '停止计划任务失败');
+      console.error('禁用计划任务失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '禁用计划任务失败');
     }
   }
 
@@ -177,17 +236,15 @@ export class ScheduleController {
    */
   async pauseSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const result = {
-        id,
-        status: 'paused',
-        pausedAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, result, '暂停计划任务成功');
+      const schedule = await this.scheduleService.pauseScheduleTask(accountUuid, uuid);
+
+      ok(res, { schedule }, '暂停计划任务成功');
     } catch (error) {
       console.error('暂停计划任务失败:', error);
-      badRequest(res, '暂停计划任务失败');
+      badRequest(res, error instanceof Error ? error.message : '暂停计划任务失败');
     }
   }
 
@@ -196,117 +253,135 @@ export class ScheduleController {
    */
   async resumeSchedule(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const result = {
-        id,
-        status: 'active',
-        resumedAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, result, '恢复计划任务成功');
+      const schedule = await this.scheduleService.resumeScheduleTask(accountUuid, uuid);
+
+      ok(res, { schedule }, '恢复计划任务成功');
     } catch (error) {
       console.error('恢复计划任务失败:', error);
-      badRequest(res, '恢复计划任务失败');
+      badRequest(res, error instanceof Error ? error.message : '恢复计划任务失败');
     }
   }
 
   /**
-   * 手动触发计划任务
+   * 延后提醒
    */
-  async triggerSchedule(req: Request, res: Response): Promise<void> {
+  async snoozeReminder(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const result = {
-        id,
-        executionId: Date.now().toString(),
-        triggeredAt: new Date().toISOString(),
-      };
+      const { uuid } = req.params;
+      const accountUuid = this.getAccountUuid(req);
+      const { snoozeMinutes, reason }: SnoozeReminderRequestDto = req.body;
 
-      ok(res, result, '手动触发计划任务成功');
+      const schedule = await this.scheduleService.snoozeReminder(accountUuid, {
+        taskUuid: uuid,
+        snoozeMinutes,
+        reason,
+      });
+
+      ok(res, { schedule }, '延后提醒成功');
     } catch (error) {
-      console.error('触发计划任务失败:', error);
-      badRequest(res, '触发计划任务失败');
+      console.error('延后提醒失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '延后提醒失败');
     }
   }
 
-  /**
-   * 获取计划任务状态
-   */
-  async getScheduleStatus(req: Request, res: Response): Promise<void> {
-    try {
-      const { id } = req.params;
-      const mockStatus = {
-        id,
-        status: 'active',
-        enabled: true,
-        isRunning: false,
-      };
+  // ===== Additional Features =====
 
-      ok(res, mockStatus, '获取计划任务状态成功');
+  /**
+   * 获取即将到来的任务
+   */
+  async getUpcomingSchedules(req: Request, res: Response): Promise<void> {
+    try {
+      const accountUuid = this.getAccountUuid(req);
+      const { withinMinutes = 60, limit = 100 } = req.query;
+
+      const result = await this.scheduleService.getUpcomingTasks(
+        accountUuid,
+        Number(withinMinutes),
+        Number(limit),
+      );
+
+      ok(res, result, '获取即将到来的任务成功');
     } catch (error) {
-      console.error('获取计划任务状态失败:', error);
-      badRequest(res, '获取计划任务状态失败');
+      console.error('获取即将到来的任务失败:', error);
+      apiError(res, '获取即将到来的任务失败');
     }
   }
 
   /**
-   * 获取计划任务执行历史
+   * 快速创建提醒
    */
-  async getScheduleHistory(req: Request, res: Response): Promise<void> {
+  async createQuickReminder(req: Request, res: Response): Promise<void> {
     try {
-      const { id } = req.params;
-      const mockHistory = [
-        {
-          id: '1',
-          scheduleId: id,
-          executionId: Date.now().toString(),
-          status: 'success',
-        },
-      ];
+      const accountUuid = this.getAccountUuid(req);
+      const reminderData: QuickReminderRequestDto = req.body;
 
-      ok(res, mockHistory, '获取计划任务执行历史成功');
+      const schedule = await this.scheduleService.createQuickReminder(accountUuid, reminderData);
+
+      created(res, { schedule }, '快速创建提醒成功');
     } catch (error) {
-      console.error('获取计划任务执行历史失败:', error);
-      badRequest(res, '获取计划任务执行历史失败');
+      console.error('快速创建提醒失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '快速创建提醒失败');
     }
   }
 
   /**
-   * 获取所有活跃的计划任务
+   * 批量操作计划任务
    */
-  async getActiveSchedules(req: Request, res: Response): Promise<void> {
+  async batchOperateSchedules(req: Request, res: Response): Promise<void> {
     try {
-      const mockActiveSchedules = [
-        {
-          id: '1',
-          name: '每日数据备份',
-          status: 'active',
-        },
-      ];
+      const accountUuid = this.getAccountUuid(req);
+      const batchRequest: BatchScheduleTaskOperationRequestDto = req.body;
 
-      ok(res, mockActiveSchedules, '获取活跃计划任务成功');
+      const result = await this.scheduleService.batchOperateScheduleTasks(
+        accountUuid,
+        batchRequest,
+      );
+
+      ok(res, result, '批量操作计划任务成功');
     } catch (error) {
-      console.error('获取活跃计划任务失败:', error);
-      apiError(res, '获取活跃计划任务失败');
+      console.error('批量操作计划任务失败:', error);
+      badRequest(res, error instanceof Error ? error.message : '批量操作计划任务失败');
     }
   }
 
   /**
-   * 获取计划任务统计信息
+   * 获取执行历史
    */
-  async getScheduleStats(req: Request, res: Response): Promise<void> {
+  async getExecutionHistory(req: Request, res: Response): Promise<void> {
     try {
+      // 这个功能需要通过仓储层实现，暂时返回空
+      ok(res, { history: [], total: 0 }, '获取执行历史成功');
+    } catch (error) {
+      console.error('获取执行历史失败:', error);
+      apiError(res, '获取执行历史失败');
+    }
+  }
+
+  /**
+   * 获取统计信息
+   */
+  async getStatistics(req: Request, res: Response): Promise<void> {
+    try {
+      // 这个功能需要通过仓储层实现，暂时返回模拟数据
       const mockStats = {
-        total: 5,
-        active: 3,
-        inactive: 1,
-        paused: 1,
+        totalTasks: 0,
+        activeTasks: 0,
+        completedTasks: 0,
+        failedTasks: 0,
+        byStatus: {},
+        byType: {},
+        byPriority: {},
+        averageExecutionTime: 0,
+        successRate: 0,
       };
 
-      ok(res, mockStats, '获取计划任务统计信息成功');
+      ok(res, mockStats, '获取统计信息成功');
     } catch (error) {
-      console.error('获取计划任务统计信息失败:', error);
-      apiError(res, '获取计划任务统计信息失败');
+      console.error('获取统计信息失败:', error);
+      apiError(res, '获取统计信息失败');
     }
   }
 }

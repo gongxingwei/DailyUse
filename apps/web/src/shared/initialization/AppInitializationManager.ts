@@ -15,6 +15,9 @@ import { registerAuthenticationInitializationTasks } from '../../modules/authent
 import { registerGoalInitializationTasks } from '../../modules/goal';
 import { registerTaskInitializationTasks } from '../../modules/task';
 import { registerReminderInitializationTasks } from '../../modules/reminder';
+import { registerNotificationInitializationTasks } from '../../modules/notification';
+import { registerSSEInitializationTasks } from '../../modules/notification/initialization/sseInitialization';
+import { registerScheduleInitializationTasks } from '../../modules/schedule';
 
 /**
  * 注册基础设施的初始化任务
@@ -68,6 +71,9 @@ function registerAllInitializationTasks(): void {
   // 2. 注册各个模块的初始化任务
   registerAuthenticationInitializationTasks();
   registerAccountInitializationTasks();
+  registerNotificationInitializationTasks(); // 在用户模块之前初始化通知系统
+  registerSSEInitializationTasks(); // 初始化 SSE 连接
+  registerScheduleInitializationTasks(); // 初始化调度模块
   registerGoalInitializationTasks();
   registerTaskInitializationTasks();
   registerReminderInitializationTasks();
@@ -100,15 +106,25 @@ export class AppInitializationManager {
       // 1. 注册所有初始化任务
       registerAllInitializationTasks();
 
-      // 2. 执行应用启动阶段的初始化
+      // 2. 执行应用启动阶段的初始化（使用容错模式）
       const manager = InitializationManager.getInstance();
-      await manager.executePhase(InitializationPhase.APP_STARTUP);
+
+      try {
+        await manager.executePhase(InitializationPhase.APP_STARTUP);
+        console.log('✅ [AppInitializationManager] 所有模块初始化完成');
+      } catch (error) {
+        console.warn('⚠️ [AppInitializationManager] 部分模块初始化失败，但应用将继续启动:', error);
+        // 不抛出错误，允许应用在部分模块失败的情况下继续运行
+      }
 
       AppInitializationManager.initialized = true;
       console.log('✅ [AppInitializationManager] 应用初始化完成');
     } catch (error) {
-      console.error('❌ [AppInitializationManager] 应用初始化失败', error);
-      throw error;
+      console.error('❌ [AppInitializationManager] 应用核心初始化失败', error);
+
+      // 即使核心初始化失败，也设置为已初始化，避免阻塞应用
+      AppInitializationManager.initialized = true;
+      console.warn('⚠️ [AppInitializationManager] 以降级模式完成初始化');
     }
   }
 

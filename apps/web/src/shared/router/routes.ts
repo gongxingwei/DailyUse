@@ -201,9 +201,35 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'reminder-desktop',
-            component: () => import('@/modules/reminder/presentation/views/ReminderDesktopView.vue'),
+            component: () =>
+              import('@/modules/reminder/presentation/views/ReminderDesktopView.vue'),
             meta: {
               title: '提醒列表',
+              requiresAuth: true,
+            },
+          },
+        ],
+      },
+
+      // 调度管理
+      {
+        path: '/schedule',
+        name: 'schedule',
+        meta: {
+          title: '调度管理',
+          showInNav: true,
+          icon: 'mdi-calendar-clock',
+          order: 4.5,
+          requiresAuth: true,
+        },
+        children: [
+          {
+            path: '',
+            name: 'schedule-management',
+            component: () =>
+              import('@/modules/schedule/presentation/views/ScheduleManagementView.vue'),
+            meta: {
+              title: '调度管理',
               requiresAuth: true,
             },
           },
@@ -259,7 +285,8 @@ export const appRoutes: RouteRecordRaw[] = [
           {
             path: '',
             name: 'repository-list',
-            component: () => import('@/modules/repository/presentation/views/RepositoryListView.vue'),
+            component: () =>
+              import('@/modules/repository/presentation/views/RepositoryListView.vue'),
             meta: {
               title: '仓储列表',
               requiresAuth: true,

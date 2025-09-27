@@ -1,4 +1,4 @@
-import { createApp } from 'vue';
+import { createApp, nextTick } from 'vue';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 import App from './App.vue';
@@ -6,6 +6,13 @@ import router from './shared/router';
 import vuetify from './shared/vuetify';
 import { i18n } from './shared/i18n';
 import { AppInitializationManager } from './shared/initialization/AppInitializationManager';
+import { eventBus } from '@dailyuse/utils';
+
+// 将 eventBus 挂载到全局 window 对象，供调试脚本使用
+if (typeof window !== 'undefined') {
+  (window as any).eventBus = eventBus;
+  console.log('🌐 [Main] 已将 eventBus 挂载到全局 window 对象');
+}
 
 // 导入事件系统示例（开发环境）
 if (import.meta.env.DEV) {
@@ -22,13 +29,8 @@ async function startApp() {
 
   app.use(pinia).use(router).use(vuetify).use(i18n);
 
-  // app.config.globalProperties.$api = api as any;
-
-  // declare module 'vue' {
-  //   interface ComponentCustomProperties {
-  //     $api: typeof api;
-  //   }
-  // }
+  let vueAppInstance: any = null;
+  let isAppMounted = false;
 
   try {
     // 先完成应用模块初始化（包括认证状态恢复）
@@ -38,17 +40,37 @@ async function startApp() {
 
     // 然后挂载应用
     console.log('🎯 挂载应用到DOM...');
-    app.mount('#app').$nextTick(() => {
+    vueAppInstance = app.mount('#app');
+    isAppMounted = true;
+    console.log('✅ 应用已成功挂载到DOM');
+
+    // 等待下一个 tick 并确认挂载成功
+    await nextTick(() => {
       console.log('🎉 应用启动成功！');
+      console.log('🔍 [Debug] 当前路由:', window.location.pathname);
+      console.log('🔍 [Debug] Vue应用实例:', vueAppInstance);
+      console.log('🔍 [Debug] DOM根节点:', document.getElementById('app'));
     });
   } catch (error) {
     console.error('❌ 应用启动失败:', error);
 
-    // 即使初始化失败，也要挂载应用（但可能没有认证状态）
-    console.log('🔄 尝试降级启动...');
-    app.mount('#app').$nextTick(() => {
-      console.log('⚠️ 应用以降级模式启动');
-    });
+    // 如果应用还没挂载，尝试降级启动
+    if (!isAppMounted) {
+      console.log('🔄 尝试降级启动（应用未挂载）...');
+      try {
+        vueAppInstance = app.mount('#app');
+        isAppMounted = true;
+        console.log('⚠️ 应用以降级模式启动');
+        console.log('🔍 [Debug] 降级模式 - 当前路由:', window.location.pathname);
+        console.log('🔍 [Debug] 降级模式 - Vue应用实例:', vueAppInstance);
+      } catch (mountError) {
+        console.error('💥 应用挂载彻底失败:', mountError);
+      }
+    } else {
+      console.log('⚠️ 应用已挂载，但初始化后处理失败');
+      console.log('🔍 [Debug] 当前状态 - 路由:', window.location.pathname);
+      console.log('🔍 [Debug] 当前状态 - Vue应用实例:', vueAppInstance);
+    }
   }
 }
 

@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DailyUse 通知测试页面</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      .status-card {
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+      }
+      .status-ok {
+        border-color: #4caf50;
+        background-color: #f1f8e9;
+      }
+      .status-warning {
+        border-color: #ff9800;
+        background-color: #fff3e0;
+      }
+      .status-error {
+        border-color: #f44336;
+        background-color: #ffebee;
+      }
+
+      .btn {
+        background: #2196f3;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 4px;
+        cursor: pointer;
+        margin: 5px;
+      }
+      .btn:hover {
+        background: #1976d2;
+      }
+
+      .log-area {
+        background: #263238;
+        color: #fff;
+        padding: 15px;
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        max-height: 300px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        margin: 10px 0;
+      }
+
+      .notification-demo {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 15px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        max-width: 300px;
+        display: none;
+        z-index: 1000;
+      }
+
+      .notification-demo.show {
+        display: block;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🔔 DailyUse 通知系统测试</h1>
+
+      <!-- 系统状态 -->
+      <div id="system-status">
+        <h3>📊 系统状态</h3>
+        <div id="api-status" class="status-card status-warning">
+          <strong>API连接:</strong> <span id="api-status-text">检测中...</span>
+        </div>
+        <div id="notification-permission" class="status-card status-warning">
+          <strong>通知权限:</strong> <span id="permission-text">检测中...</span>
+        </div>
+        <div id="scheduler-status" class="status-card status-warning">
+          <strong>调度器状态:</strong> <span id="scheduler-text">检测中...</span>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div style="margin: 20px 0">
+        <h3>🎯 测试操作</h3>
+        <button class="btn" onclick="requestNotificationPermission()">申请通知权限</button>
+        <button class="btn" onclick="testLocalNotification()">测试本地通知</button>
+        <button class="btn" onclick="testScheduleAPI()">测试调度API</button>
+        <button class="btn" onclick="clearLog()">清空日志</button>
+      </div>
+
+      <!-- 实时日志 -->
+      <div>
+        <h3>📝 实时日志</h3>
+        <div id="log-output" class="log-area"></div>
+      </div>
+    </div>
+
+    <!-- 模拟通知弹窗 -->
+    <div id="notification-demo" class="notification-demo">
+      <div
+        style="
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 10px;
+        "
+      >
+        <strong id="demo-title">通知标题</strong>
+        <button
+          onclick="hideNotificationDemo()"
+          style="background: none; border: none; font-size: 18px; cursor: pointer"
+        >
+          ×
+        </button>
+      </div>
+      <div id="demo-message">通知消息内容</div>
+      <div style="margin-top: 10px">
+        <button class="btn" onclick="hideNotificationDemo()">知道了</button>
+      </div>
+    </div>
+
+    <script>
+      let logOutput = document.getElementById('log-output');
+      let notificationCount = 0;
+
+      // 日志功能
+      function log(message, type = 'info') {
+        const timestamp = new Date().toLocaleTimeString();
+        const prefix =
+          {
+            info: '📋',
+            success: '✅',
+            warning: '⚠️',
+            error: '❌',
+          }[type] || '📋';
+
+        const logEntry = `[${timestamp}] ${prefix} ${message}\n`;
+        logOutput.textContent += logEntry;
+        logOutput.scrollTop = logOutput.scrollHeight;
+
+        console.log(`${prefix} ${message}`);
+      }
+
+      function clearLog() {
+        logOutput.textContent = '';
+      }
+
+      // 更新状态
+      function updateStatus(elementId, text, status) {
+        const element = document.getElementById(elementId);
+        const textElement = element.querySelector('span');
+        textElement.textContent = text;
+
+        element.className = `status-card status-${status}`;
+      }
+
+      // 检查API连接
+      async function checkAPIConnection() {
+        try {
+          const response = await fetch('http://localhost:3888/api/v1/health');
+          if (response.ok) {
+            updateStatus('api-status', '✅ 连接正常', 'ok');
+            log('API服务器连接成功', 'success');
+            return true;
+          } else {
+            throw new Error(`HTTP ${response.status}`);
+          }
+        } catch (error) {
+          updateStatus('api-status', `❌ 连接失败: ${error.message}`, 'error');
+          log(`API连接失败: ${error.message}`, 'error');
+          return false;
+        }
+      }
+
+      // 检查通知权限
+      async function checkNotificationPermission() {
+        if (!('Notification' in window)) {
+          updateStatus('notification-permission', '❌ 浏览器不支持', 'error');
+          log('浏览器不支持桌面通知', 'error');
+          return false;
+        }
+
+        const permission = Notification.permission;
+        const statusMap = {
+          granted: { text: '✅ 已授权', status: 'ok' },
+          denied: { text: '❌ 已拒绝', status: 'error' },
+          default: { text: '⚠️ 待授权', status: 'warning' },
+        };
+
+        const { text, status } = statusMap[permission];
+        updateStatus('notification-permission', text, status);
+        log(`通知权限状态: ${permission}`, permission === 'granted' ? 'success' : 'warning');
+
+        return permission === 'granted';
+      }
+
+      // 申请通知权限
+      async function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+          log('浏览器不支持桌面通知', 'error');
+          return false;
+        }
+
+        try {
+          const permission = await Notification.requestPermission();
+          log(`通知权限申请结果: ${permission}`, permission === 'granted' ? 'success' : 'warning');
+          await checkNotificationPermission();
+          return permission === 'granted';
+        } catch (error) {
+          log(`通知权限申请失败: ${error.message}`, 'error');
+          return false;
+        }
+      }
+
+      // 测试本地通知
+      async function testLocalNotification() {
+        const hasPermission = await checkNotificationPermission();
+        if (!hasPermission) {
+          const granted = await requestNotificationPermission();
+          if (!granted) {
+            log('无法显示通知：权限未授权', 'warning');
+            return;
+          }
+        }
+
+        try {
+          const notification = new Notification('🧪 DailyUse 测试通知', {
+            body: `这是第 ${++notificationCount} 个测试通知`,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico',
+            tag: 'dailyuse-test',
+            requireInteraction: false,
+          });
+
+          notification.onclick = () => {
+            log('测试通知被点击', 'info');
+            notification.close();
+            window.focus();
+          };
+
+          notification.onshow = () => {
+            log('测试通知已显示', 'success');
+          };
+
+          notification.onerror = (error) => {
+            log(`测试通知显示失败: ${error}`, 'error');
+          };
+
+          // 3秒后自动关闭
+          setTimeout(() => {
+            notification.close();
+          }, 3000);
+
+          // 同时显示模拟弹窗
+          showNotificationDemo('🧪 测试通知', `这是第 ${notificationCount} 个测试通知`);
+        } catch (error) {
+          log(`创建测试通知失败: ${error.message}`, 'error');
+        }
+      }
+
+      // 显示模拟通知弹窗
+      function showNotificationDemo(title, message) {
+        document.getElementById('demo-title').textContent = title;
+        document.getElementById('demo-message').textContent = message;
+        document.getElementById('notification-demo').classList.add('show');
+
+        // 5秒后自动隐藏
+        setTimeout(hideNotificationDemo, 5000);
+      }
+
+      function hideNotificationDemo() {
+        document.getElementById('notification-demo').classList.remove('show');
+      }
+
+      // 测试调度API
+      async function testScheduleAPI() {
+        try {
+          log('开始测试调度API...', 'info');
+
+          // 1. 登录
+          log('正在登录...', 'info');
+          const loginResponse = await fetch('http://localhost:3888/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              username: 'Test1',
+              password: 'Llh123123',
+            }),
+          });
+
+          if (!loginResponse.ok) {
+            throw new Error('登录失败');
+          }
+
+          const loginData = await loginResponse.json();
+          const token = loginData.data.accessToken;
+          log('登录成功', 'success');
+
+          // 2. 查询现有调度任务
+          log('查询现有调度任务...', 'info');
+          const schedulesResponse = await fetch('http://localhost:3888/api/v1/schedules', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+
+          if (schedulesResponse.ok) {
+            const schedulesData = await schedulesResponse.json();
+            log(`发现 ${schedulesData.data.total} 个现有调度任务`, 'success');
+            updateStatus(
+              'scheduler-status',
+              `✅ 运行中 (${schedulesData.data.total} 个任务)`,
+              'ok',
+            );
+          } else {
+            throw new Error('查询调度任务失败');
+          }
+
+          log('调度API测试完成', 'success');
+        } catch (error) {
+          log(`调度API测试失败: ${error.message}`, 'error');
+          updateStatus('scheduler-status', `❌ 测试失败`, 'error');
+        }
+      }
+
+      // 监听后端事件（如果有 WebSocket 或 EventSource）
+      function setupEventListeners() {
+        // 这里可以添加 WebSocket 连接监听后端事件
+        log('设置事件监听器...', 'info');
+
+        // 监听页面可见性变化
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            log('页面已隐藏', 'info');
+          } else {
+            log('页面已显示', 'info');
+          }
+        });
+
+        // 监听通知权限变化
+        if ('permissions' in navigator) {
+          navigator.permissions.query({ name: 'notifications' }).then((result) => {
+            result.onchange = () => {
+              log(`通知权限变更为: ${result.state}`, 'info');
+              checkNotificationPermission();
+            };
+          });
+        }
+      }
+
+      // 页面加载时的初始化
+      async function initialize() {
+        log('初始化通知测试页面...', 'info');
+
+        // 检查各项状态
+        await checkAPIConnection();
+        await checkNotificationPermission();
+
+        // 设置事件监听
+        setupEventListeners();
+
+        log('页面初始化完成', 'success');
+        log('👀 请观察后端terminal的调度器日志，每分钟会执行一次调度检查', 'info');
+        log('💡 如果调度器发现待执行的任务，会发送提醒事件', 'info');
+      }
+
+      // 页面加载完成后初始化
+      window.addEventListener('load', initialize);
+    </script>
+  </body>
+</html>

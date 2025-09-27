@@ -46,8 +46,6 @@ export const authGuard = async (
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ) => {
-  const authStore = useAuthStore();
-
   // 检查路由是否需要认证
   const requiresAuth = to.matched.some((record) => record.meta.requiresAuth);
 
@@ -62,18 +60,34 @@ export const authGuard = async (
 
   // 如果应用还没初始化完成，稍等一下
   if (!AppInitializationManager.isInitialized()) {
-    console.log('⏳ 等待应用初始化完成...');
-    // 等待最多3秒
+    console.log('⏳ [AuthGuard] 等待应用初始化完成...');
+    // 等待最多2秒，减少等待时间
     let attempts = 0;
-    while (!AppInitializationManager.isInitialized() && attempts < 30) {
+    while (!AppInitializationManager.isInitialized() && attempts < 20) {
       await new Promise((resolve) => setTimeout(resolve, 100));
       attempts++;
     }
+
+    if (!AppInitializationManager.isInitialized()) {
+      console.warn('⚠️ [AuthGuard] 应用初始化超时，但继续认证检查');
+    } else {
+      console.log('✅ [AuthGuard] 应用初始化完成');
+    }
   }
+
+  // 在应用初始化完成后，才安全地调用 store
+  const authStore = useAuthStore();
+
+  console.log('🔍 [AuthGuard] 检查认证状态:', {
+    isAuthenticated: authStore.isAuthenticated,
+    hasAccessToken: !!authStore.accessToken,
+    isTokenExpired: authStore.isTokenExpired,
+    route: to.path,
+  });
 
   // 检查用户是否已认证
   if (!authStore.isAuthenticated) {
-    console.log('🔒 路由需要认证，但用户未登录，重定向到登录页');
+    console.log('🔒 [AuthGuard] 路由需要认证，但用户未登录，重定向到登录页');
     next({
       name: 'auth',
       query: {
@@ -86,7 +100,7 @@ export const authGuard = async (
 
   // 检查token是否过期
   if (authStore.isTokenExpired) {
-    console.log('⏰ Token已过期，重定向到登录页');
+    console.log('⏰ [AuthGuard] Token已过期，重定向到登录页');
     authStore.clearAuth();
     next({
       name: 'auth',
@@ -99,7 +113,7 @@ export const authGuard = async (
   }
 
   // 如果认证有效，继续导航
-  console.log('✅ 认证检查通过，继续导航');
+  console.log('✅ [AuthGuard] 认证检查通过，继续导航');
   next();
 };
 
@@ -171,21 +185,42 @@ export const titleGuard = (
 /**
  * 登录重定向守卫 - 已登录用户访问认证页面时重定向
  */
-export const loginRedirectGuard = (
+export const loginRedirectGuard = async (
   to: RouteLocationNormalized,
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ) => {
+  // 等待应用初始化完成
+  const { AppInitializationManager } = await import('../initialization/AppInitializationManager');
+
+  // 如果应用还没初始化完成，稍等一下
+  if (!AppInitializationManager.isInitialized()) {
+    console.log('⏳ [LoginRedirectGuard] 等待应用初始化完成...');
+    let attempts = 0;
+    while (!AppInitializationManager.isInitialized() && attempts < 20) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      attempts++;
+    }
+
+    if (!AppInitializationManager.isInitialized()) {
+      console.warn('⚠️ [LoginRedirectGuard] 应用初始化超时，但继续导航检查');
+    } else {
+      console.log('✅ [LoginRedirectGuard] 应用初始化完成');
+    }
+  }
+
   const authStore = useAuthStore();
 
   // 如果访问登录页面但已经认证，重定向到首页
   if (to.name === 'auth' && authStore.isAuthenticated) {
+    console.log('🔄 [LoginRedirectGuard] 用户已认证，重定向到首页');
     const redirect = (to.query.redirect as string) || '/';
     next(redirect);
     return;
   }
 
   // 如果未认证或访问的不是认证页面，继续导航
+  console.log('✅ [LoginRedirectGuard] 继续导航到认证页面');
   next();
 };
 
@@ -201,9 +236,11 @@ export const applyRouterGuards = (router: any) => {
       next: NavigationGuardNext,
     ) => {
       try {
+        console.log(`🔀 [Router] 导航: ${from.path} → ${to.path}`);
+
         // 1. 登录重定向检查
         if (to.name === 'auth') {
-          loginRedirectGuard(to, from, next);
+          await loginRedirectGuard(to, from, next);
           return;
         }
 
@@ -212,7 +249,7 @@ export const applyRouterGuards = (router: any) => {
 
         // authGuard 会处理所有情况并调用 next()
       } catch (error) {
-        console.error('Router guard error:', error);
+        console.error('❌ [Router] 路由守卫错误:', error);
         next({ name: 'error', query: { message: 'Navigation failed' } });
       }
     },

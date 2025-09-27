@@ -1,0 +1,616 @@
+<template>
+    <v-container fluid class="schedule-management">
+        <!-- 页面标题 -->
+        <div class="d-flex align-center justify-space-between mb-6">
+            <div>
+                       </v-card>
+            </v-tabs-window-item>
+
+            <!-- 任务管理标签页 -->
+            <v-tabs-window-item value="tasks">
+                <!-- 过滤和搜索 -->
+                <v-card class="mb-6">
+                    <v-card-text>
+                        <v-row>
+                            <v-col cols="12" md="4">
+                                <v-text-field v-model="searchQuery" label="搜索任务" prepend-inner-icon="mdi-magnify"
+                                    variant="outlined" density="compact" clearable />
+                            </v-col>
+                            <v-col cols="12" md="3">
+                                <v-select v-model="statusFilter" :items="statusOptions" label="状态筛选" variant="outlined"
+                                    density="compact" clearable />
+                            </v-col>
+                            <v-col cols="12" md="3">
+                                <v-select v-model="priorityFilter" :items="priorityOptions" label="优先级筛选" variant="outlined"
+                                    density="compact" clearable />
+                            </v-col>
+                            <v-col cols="12" md="2">
+                                <v-btn @click="refreshTasks" color="primary" variant="outlined" block :loading="loading">
+                                    刷新
+                                </v-btn>
+                            </v-col>
+                        </v-row>
+                    </v-card-text>
+                </v-card>
+
+                <!-- 任务列表 -->
+                <v-card>
+                    <v-card-title class="d-flex align-center">
+                        <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                        调度任务列表
+                        <v-spacer></v-spacer>
+                        <v-chip v-if="filteredTasks.length > 0" color="primary" variant="outlined">
+                            {{ filteredTasks.length }} 个任务
+                        </v-chip>
+                    </v-card-title>
+
+                    <v-divider></v-divider>
+
+                    <v-list v-if="filteredTasks.length > 0" class="pa-0">
+                        <template v-for="(task, index) in filteredTasks" :key="task.id">
+                            <v-list-item class="px-4 py-3">
+                                <v-list-item-title class="d-flex align-center">
+                                    <v-icon :color="getTaskStatusColor(task)" class="mr-3">
+                                        {{ getTaskIcon(task) }}
+                                    </v-icon>
+                                    <span class="font-weight-bold">{{ task.name }}</span>
+                                </v-list-item-title>
+
+                                <v-list-item-subtitle class="mt-2">
+                                    <div class="text-body-2">{{ task.description || '无描述' }}</div>
+                                    <div class="d-flex align-center mt-2">
+                                        <v-chip size="small" :color="getTaskStatusColor(task)" variant="outlined">
+                                            {{ getTaskStatusText(task) }}
+                                        </v-chip>
+                                        <span class="text-caption text-medium-emphasis">
+                                            下次执行: {{ formatNextExecution(task.nextExecutionTime) }}
+                                        </span>
+                                    </div>
+                                </v-list-item-subtitle>
+
+                                <template #append>
+                                    <div class="d-flex align-center">
+                                        <v-btn :color="task.enabled ? 'warning' : 'success'"
+                                            :icon="task.enabled ? 'mdi-pause' : 'mdi-play'" variant="text" size="small"
+                                            @click="toggleTask(task)"></v-btn>
+                                        <v-btn color="primary" icon="mdi-pencil" variant="text" size="small"
+                                            @click="editTask(task)"></v-btn>
+                                        <v-btn color="error" icon="mdi-delete" variant="text" size="small"
+                                            @click="deleteTask(task)"></v-btn>
+                                    </div>
+                                </template>
+                            </v-list-item>
+                            <v-divider v-if="index < filteredTasks.length - 1"></v-divider>
+                        </template>
+                    </v-list>
+
+                    <v-card-text v-else class="text-center py-8">
+                        <v-icon size="64" color="grey-lighten-2" class="mb-4">mdi-calendar-clock</v-icon>
+                        <div class="text-h6 text-medium-emphasis">暂无调度任务</div>
+                        <div class="text-body-2 text-medium-emphasis mt-2">点击上方按钮创建您的第一个调度任务</div>
+                    </v-card-text>
+                </v-card>
+            </v-tabs-window-item>
+
+            <!-- 模块集成标签页 -->
+            <v-tabs-window-item value="integration">
+                <ScheduleIntegrationPanel />
+            </v-tabs-window-item>
+        </v-tabs-window>
+
+        <!-- 任务创建/编辑对话框 -->
+        <ScheduleTaskDialog v-model="dialogVisible" :task="selectedTask" @saved="onTaskSaved" /> class="text-h4 font-weight-bold">调度管理</h1>
+                <p class="text-body-1 text-medium-emphasis mt-1">管理和监控自动化任务调度</p>
+            </div>
+            <v-btn color="primary" prepend-icon="mdi-plus" @click="openCreateDialog" size="large">
+                创建调度任务
+            </v-btn>
+        </div>
+
+        <!-- 标签页导航 -->
+        <v-card class="mb-6">
+            <v-tabs v-model="activeTab" bg-color="transparent" color="primary">
+                <v-tab value="overview">
+                    <v-icon start>mdi-view-dashboard</v-icon>
+                    概览
+                </v-tab>
+                <v-tab value="tasks">
+                    <v-icon start>mdi-format-list-checks</v-icon>
+                    任务管理
+                </v-tab>
+                <v-tab value="integration">
+                    <v-icon start>mdi-link-variant</v-icon>
+                    模块集成
+                </v-tab>
+            </v-tabs>
+        </v-card>
+
+        <!-- 标签页内容 -->
+        <v-tabs-window v-model="activeTab">
+            <!-- 概览标签页 -->
+            <v-tabs-window-item value="overview">
+                <!-- 统计卡片 -->
+                <v-row class="mb-6">
+            <v-col cols="12" sm="6" md="3">
+                <v-card class="text-center pa-4">
+                    <v-icon color="primary" size="40" class="mb-2">mdi-clock-outline</v-icon>
+                    <div class="text-h5 font-weight-bold">{{ statistics.total }}</div>
+                    <div class="text-body-2 text-medium-emphasis">总任务数</div>
+                </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+                <v-card class="text-center pa-4">
+                    <v-icon color="success" size="40" class="mb-2">mdi-play-circle</v-icon>
+                    <div class="text-h5 font-weight-bold">{{ statistics.enabled }}</div>
+                    <div class="text-body-2 text-medium-emphasis">启用中</div>
+                </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+                <v-card class="text-center pa-4">
+                    <v-icon color="warning" size="40" class="mb-2">mdi-pause-circle</v-icon>
+                    <div class="text-h5 font-weight-bold">{{ statistics.disabled }}</div>
+                    <div class="text-body-2 text-medium-emphasis">已禁用</div>
+                </v-card>
+            </v-col>
+            <v-col cols="12" sm="6" md="3">
+                <v-card class="text-center pa-4">
+                    <v-icon color="info" size="40" class="mb-2">mdi-calendar-clock</v-icon>
+                    <div class="text-h5 font-weight-bold">{{ statistics.upcoming }}</div>
+                    <div class="text-body-2 text-medium-emphasis">即将执行</div>
+                </v-card>
+            </v-col>
+        </v-row>
+
+        <!-- 实时连接状态 -->
+        <v-card class="mb-6" :color="connectionStatus.connected ? 'success' : 'error'">
+            <v-card-text class="d-flex align-center">
+                <v-icon :color="connectionStatus.connected ? 'white' : 'white'" class="mr-3">
+                    {{ connectionStatus.connected ? 'mdi-wifi' : 'mdi-wifi-off' }}
+                </v-icon>
+                <div>
+                    <div class="font-weight-bold">
+                        {{ connectionStatus.connected ? '实时连接正常' : '实时连接中断' }}
+                    </div>
+                    <div class="text-body-2" style="opacity: 0.8">
+                        {{ connectionStatus.connected ? '正在接收调度事件' : `重连尝试: ${connectionStatus.reconnectAttempts}` }}
+                    </div>
+                </div>
+                <v-spacer></v-spacer>
+                <v-btn v-if="!connectionStatus.connected" variant="outlined" color="white" @click="reconnectSSE"
+                    :loading="reconnecting">
+                    重新连接
+                </v-btn>
+            </v-card-text>
+        </v-card>
+
+        <!-- 过滤和搜索 -->
+        <v-card class="mb-6">
+            <v-card-text>
+                <v-row>
+                    <v-col cols="12" md="4">
+                        <v-text-field v-model="searchQuery" label="搜索任务" prepend-inner-icon="mdi-magnify"
+                            variant="outlined" density="compact" clearable />
+                    </v-col>
+                    <v-col cols="12" md="3">
+                        <v-select v-model="statusFilter" :items="statusOptions" label="状态筛选" variant="outlined"
+                            density="compact" clearable />
+                    </v-col>
+                    <v-col cols="12" md="3">
+                        <v-select v-model="priorityFilter" :items="priorityOptions" label="优先级筛选" variant="outlined"
+                            density="compact" clearable />
+                    </v-col>
+                    <v-col cols="12" md="2">
+                        <v-btn @click="refreshTasks" color="primary" variant="outlined" block :loading="loading">
+                            刷新
+                        </v-btn>
+                    </v-col>
+                </v-row>
+            </v-card-text>
+        </v-card>
+
+        <!-- 任务列表 -->
+        <v-card>
+            <v-card-title class="d-flex align-center">
+                <v-icon class="mr-2">mdi-format-list-bulleted</v-icon>
+                调度任务列表
+                <v-spacer></v-spacer>
+                <v-chip v-if="filteredTasks.length > 0" color="primary" variant="outlined">
+                    {{ filteredTasks.length }} 个任务
+                </v-chip>
+            </v-card-title>
+
+            <v-divider></v-divider>
+
+            <div v-if="loading" class="text-center pa-8">
+                <v-progress-circular indeterminate color="primary" size="48"></v-progress-circular>
+                <div class="mt-4 text-body-1">正在加载任务...</div>
+            </div>
+
+            <div v-else-if="filteredTasks.length === 0" class="text-center pa-8">
+                <v-icon size="64" color="disabled" class="mb-4">mdi-calendar-remove</v-icon>
+                <div class="text-h6 text-disabled mb-2">
+                    {{ tasks.length === 0 ? '暂无调度任务' : '没有符合条件的任务' }}
+                </div>
+                <div class="text-body-2 text-medium-emphasis mb-4">
+                    {{ tasks.length === 0 ? '开始创建你的第一个调度任务' : '请调整筛选条件或搜索关键词' }}
+                </div>
+                <v-btn v-if="tasks.length === 0" color="primary" prepend-icon="mdi-plus" @click="openCreateDialog">
+                    创建调度任务
+                </v-btn>
+            </div>
+
+            <div v-else>
+                <v-list lines="three">
+                    <template v-for="(task, index) in filteredTasks" :key="task.uuid">
+                        <v-list-item>
+                            <template #prepend>
+                                <v-avatar :color="getTaskStatusColor(task)" size="40">
+                                    <v-icon color="white">{{ getTaskIcon(task) }}</v-icon>
+                                </v-avatar>
+                            </template>
+
+                            <v-list-item-title class="font-weight-medium">
+                                {{ task.name }}
+                            </v-list-item-title>
+
+                            <v-list-item-subtitle class="mt-1">
+                                <div>{{ task.description }}</div>
+                                <div class="d-flex align-center mt-2">
+                                    <v-chip :color="getTaskStatusColor(task)" variant="tonal" size="x-small"
+                                        class="mr-2">
+                                        {{ getTaskStatusText(task) }}
+                                    </v-chip>
+                                    <v-chip :color="getPriorityColor(task.priority)" variant="outlined" size="x-small"
+                                        class="mr-2">
+                                        {{ task.priority }}
+                                    </v-chip>
+                                    <span class="text-caption text-medium-emphasis">
+                                        下次执行: {{ formatNextExecution(task.nextExecutionTime) }}
+                                    </span>
+                                </div>
+                            </v-list-item-subtitle>
+
+                            <template #append>
+                                <div class="d-flex align-center">
+                                    <v-btn :color="task.enabled ? 'warning' : 'success'"
+                                        :icon="task.enabled ? 'mdi-pause' : 'mdi-play'" variant="text" size="small"
+                                        @click="toggleTask(task)"></v-btn>
+                                    <v-btn color="primary" icon="mdi-pencil" variant="text" size="small"
+                                        @click="editTask(task)"></v-btn>
+                                    <v-btn color="error" icon="mdi-delete" variant="text" size="small"
+                                        @click="deleteTask(task)"></v-btn>
+                                </div>
+                            </template>
+                        </v-list-item>
+                        <v-divider v-if="index < filteredTasks.length - 1"></v-divider>
+                    </template>
+                </v-list>
+            </div>
+        </v-card>
+
+        <!-- 创建/编辑对话框 -->
+        <ScheduleTaskDialog v-model="dialogVisible" :task="selectedTask" @saved="onTaskSaved" />
+
+        <!-- 删除确认对话框 -->
+        <v-dialog v-model="deleteDialogVisible" max-width="400">
+            <v-card>
+                <v-card-title class="text-h6">确认删除</v-card-title>
+                <v-card-text>
+                    确定要删除调度任务 "{{ taskToDelete?.name }}" 吗？此操作无法撤销。
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer></v-spacer>
+                    <v-btn @click="deleteDialogVisible = false">取消</v-btn>
+                    <v-btn color="error" @click="confirmDelete" :loading="deleting">
+                        删除
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
+    </v-container>
+</template>
+
+<script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted } from 'vue';
+import { useSnackbar } from '@/shared/composables/useSnackbar';
+import { sseClient } from '@/modules/notification/infrastructure/sse/SSEClient';
+import { eventBus } from '@dailyuse/utils';
+import ScheduleTaskDialog from './components/ScheduleTaskDialog.vue';
+
+// 响应式数据
+const loading = ref(false);
+const reconnecting = ref(false);
+const tasks = ref([]);
+const statistics = ref({
+    total: 0,
+    enabled: 0,
+    disabled: 0,
+    upcoming: 0,
+});
+const connectionStatus = ref({
+    connected: false,
+    reconnectAttempts: 0,
+});
+
+// 筛选和搜索
+const searchQuery = ref('');
+const statusFilter = ref(null);
+const priorityFilter = ref(null);
+
+const statusOptions = [
+    { title: '启用', value: 'enabled' },
+    { title: '禁用', value: 'disabled' },
+    { title: '暂停', value: 'paused' },
+];
+
+const priorityOptions = [
+    { title: '高', value: 'HIGH' },
+    { title: '中', value: 'MEDIUM' },
+    { title: '低', value: 'LOW' },
+];
+
+// 对话框状态
+const dialogVisible = ref(false);
+const selectedTask = ref(null);
+const deleteDialogVisible = ref(false);
+const taskToDelete = ref(null);
+const deleting = ref(false);
+
+// 工具函数
+const { showSuccess, showError } = useSnackbar();
+
+// 计算属性
+const filteredTasks = computed(() => {
+    let filtered = tasks.value;
+
+    // 搜索过滤
+    if (searchQuery.value) {
+        const query = searchQuery.value.toLowerCase();
+        filtered = filtered.filter(
+            task =>
+                task.name.toLowerCase().includes(query) ||
+                task.description.toLowerCase().includes(query)
+        );
+    }
+
+    // 状态过滤
+    if (statusFilter.value) {
+        filtered = filtered.filter(task => {
+            switch (statusFilter.value) {
+                case 'enabled':
+                    return task.enabled;
+                case 'disabled':
+                    return !task.enabled;
+                case 'paused':
+                    return task.paused;
+                default:
+                    return true;
+            }
+        });
+    }
+
+    // 优先级过滤
+    if (priorityFilter.value) {
+        filtered = filtered.filter(task => task.priority === priorityFilter.value);
+    }
+
+    return filtered;
+});
+
+// 方法
+async function loadTasks() {
+    loading.value = true;
+    try {
+        const response = await fetch('/api/v1/schedules', {
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('加载调度任务失败');
+        }
+
+        const data = await response.json();
+        tasks.value = data.data?.items || [];
+
+        // 计算统计信息
+        statistics.value = {
+            total: tasks.value.length,
+            enabled: tasks.value.filter(t => t.enabled).length,
+            disabled: tasks.value.filter(t => !t.enabled).length,
+            upcoming: tasks.value.filter(t => t.enabled && new Date(t.nextExecutionTime) > new Date()).length,
+        };
+    } catch (error) {
+        console.error('加载调度任务失败:', error);
+        showError('加载调度任务失败');
+    } finally {
+        loading.value = false;
+    }
+}
+
+function refreshTasks() {
+    loadTasks();
+}
+
+function updateConnectionStatus() {
+    const status = sseClient.getStatus();
+    connectionStatus.value = {
+        connected: status.connected,
+        reconnectAttempts: status.reconnectAttempts,
+    };
+}
+
+async function reconnectSSE() {
+    reconnecting.value = true;
+    try {
+        await sseClient.connect();
+        updateConnectionStatus();
+        showSuccess('重新连接成功');
+    } catch (error) {
+        console.error('重新连接失败:', error);
+        showError('重新连接失败');
+    } finally {
+        reconnecting.value = false;
+    }
+}
+
+function openCreateDialog() {
+    selectedTask.value = null;
+    dialogVisible.value = true;
+}
+
+function editTask(task) {
+    selectedTask.value = task;
+    dialogVisible.value = true;
+}
+
+async function toggleTask(task) {
+    try {
+        const action = task.enabled ? 'disable' : 'enable';
+        const response = await fetch(`/api/v1/schedules/${task.uuid}/${action}`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error(`${task.enabled ? '禁用' : '启用'}任务失败`);
+        }
+
+        await loadTasks();
+        showSuccess(`任务已${task.enabled ? '禁用' : '启用'}`);
+    } catch (error) {
+        console.error('切换任务状态失败:', error);
+        showError('操作失败');
+    }
+}
+
+function deleteTask(task) {
+    taskToDelete.value = task;
+    deleteDialogVisible.value = true;
+}
+
+async function confirmDelete() {
+    if (!taskToDelete.value) return;
+
+    deleting.value = true;
+    try {
+        const response = await fetch(`/api/v1/schedules/${taskToDelete.value.uuid}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+        });
+
+        if (!response.ok) {
+            throw new Error('删除任务失败');
+        }
+
+        await loadTasks();
+        deleteDialogVisible.value = false;
+        taskToDelete.value = null;
+        showSuccess('任务已删除');
+    } catch (error) {
+        console.error('删除任务失败:', error);
+        showError('删除失败');
+    } finally {
+        deleting.value = false;
+    }
+}
+
+function onTaskSaved() {
+    loadTasks();
+    dialogVisible.value = false;
+}
+
+// 工具方法
+function getTaskStatusColor(task) {
+    if (!task.enabled) return 'error';
+    if (task.paused) return 'warning';
+    return 'success';
+}
+
+function getTaskStatusText(task) {
+    if (!task.enabled) return '已禁用';
+    if (task.paused) return '已暂停';
+    return '运行中';
+}
+
+function getTaskIcon(task) {
+    if (!task.enabled) return 'mdi-stop';
+    if (task.paused) return 'mdi-pause';
+    return 'mdi-play';
+}
+
+function getPriorityColor(priority) {
+    switch (priority) {
+        case 'HIGH':
+            return 'error';
+        case 'MEDIUM':
+            return 'warning';
+        case 'LOW':
+            return 'info';
+        default:
+            return 'primary';
+    }
+}
+
+function formatNextExecution(nextTime) {
+    if (!nextTime) return '未设置';
+    const date = new Date(nextTime);
+    const now = new Date();
+    const diff = date.getTime() - now.getTime();
+
+    if (diff < 0) return '已过期';
+    if (diff < 60000) return '即将执行';
+    if (diff < 3600000) return `${Math.floor(diff / 60000)} 分钟后`;
+    if (diff < 86400000) return `${Math.floor(diff / 3600000)} 小时后`;
+
+    return date.toLocaleString();
+}
+
+// 生命周期
+onMounted(() => {
+    loadTasks();
+    updateConnectionStatus();
+
+    // 定时更新连接状态
+    const statusInterval = setInterval(updateConnectionStatus, 5000);
+
+    // 监听 SSE 事件
+    eventBus.on('sse:connected', () => {
+        updateConnectionStatus();
+        showSuccess('实时连接已建立');
+    });
+
+    eventBus.on('schedule:task-executed', (data) => {
+        console.log('任务执行事件:', data);
+        loadTasks(); // 重新加载任务状态
+    });
+
+    // 清理函数
+    onUnmounted(() => {
+        clearInterval(statusInterval);
+        eventBus.off('sse:connected');
+        eventBus.off('schedule:task-executed');
+    });
+});
+</script>
+
+<style scoped>
+.schedule-management {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.v-card {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.v-chip {
+    font-weight: 500;
+}
+</style>

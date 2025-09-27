@@ -13,8 +13,8 @@
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
-    "@dailyuse/utils": "workspace:*",
     "@dailyuse/domain-server": "workspace:*",
+    "@dailyuse/utils": "workspace:*",
     "@prisma/client": "^6.15.0",
     "bcryptjs": "^2.4.3",
     "compression": "^1.7.4",
@@ -23,6 +23,7 @@
     "express": "^4.21.2",
     "helmet": "^7.2.0",
     "jsonwebtoken": "^9.0.2",
+    "node-cron": "^4.2.1",
     "zod": "^3.25.76"
   },
   "devDependencies": {
@@ -33,6 +34,7 @@
     "@types/express": "^4.17.23",
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.17.1",
+    "@types/node-cron": "^3.0.11",
     "prisma": "^6.15.0",
     "tsx": "^4.17.0",
     "typescript": "^5.8.3"
