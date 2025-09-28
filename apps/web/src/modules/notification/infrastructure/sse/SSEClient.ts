@@ -30,6 +30,7 @@ export class SSEClient {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       if (this.isConnecting || this.eventSource) {
+        console.log('[SSE Client] 连接已存在或正在连接中');
         resolve();
         return;
       }
@@ -39,12 +40,21 @@ export class SSEClient {
 
       console.log('[SSE Client] 连接到:', url);
 
+      // 设置连接超时定时器
+      const connectionTimeout = setTimeout(() => {
+        console.log('[SSE Client] 连接超时，但继续尝试...');
+        this.isConnecting = false;
+        // 不 reject，让连接继续尝试
+        resolve();
+      }, 5000); // 5秒超时
+
       try {
         this.eventSource = new EventSource(url);
 
         // 连接成功
         this.eventSource.onopen = () => {
           console.log('[SSE Client] ✅ 连接成功');
+          clearTimeout(connectionTimeout);
           this.reconnectAttempts = 0;
           this.isConnecting = false;
           resolve();
@@ -96,19 +106,29 @@ export class SSEClient {
         // 连接错误
         this.eventSource.onerror = (error) => {
           console.error('[SSE Client] ❌ 连接错误:', error);
+          clearTimeout(connectionTimeout);
           this.isConnecting = false;
 
-          if (this.eventSource?.readyState === EventSource.CLOSED) {
+          // 检查连接状态
+          if (this.eventSource?.readyState === EventSource.CONNECTING) {
+            console.log('[SSE Client] 正在连接中...');
+            // 不 reject，继续尝试
+            resolve();
+          } else if (this.eventSource?.readyState === EventSource.CLOSED) {
             console.log('[SSE Client] 连接已关闭，准备重连');
             this.attemptReconnect();
+            resolve(); // 不 reject，让初始化继续
+          } else {
+            console.log('[SSE Client] 连接遇到问题，但继续尝试');
+            resolve(); // 不 reject
           }
-
-          reject(error);
         };
       } catch (error) {
         console.error('[SSE Client] 创建连接失败:', error);
+        clearTimeout(connectionTimeout);
         this.isConnecting = false;
-        reject(error);
+        // 不 reject，让初始化继续
+        resolve();
       }
     });
   }
@@ -177,16 +197,20 @@ export class SSEClient {
     }
 
     this.reconnectAttempts++;
-    const delay = this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1); // 指数退避
+    const delay = Math.min(this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1), 30000); // 最大30秒
 
     console.log(`[SSE Client] 第 ${this.reconnectAttempts} 次重连尝试，延迟 ${delay}ms`);
 
     setTimeout(() => {
       if (!this.isDestroyed) {
         this.disconnect();
-        this.connect().catch((error) => {
-          console.error('[SSE Client] 重连失败:', error);
-        });
+        this.connect()
+          .then(() => {
+            console.log('[SSE Client] 重连尝试完成');
+          })
+          .catch((error) => {
+            console.error('[SSE Client] 重连失败:', error);
+          });
       }
     }, delay);
   }

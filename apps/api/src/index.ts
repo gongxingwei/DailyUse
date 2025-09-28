@@ -4,7 +4,7 @@ import { initializeApp } from './shared/initialization/initializer';
 import { ScheduleTaskScheduler } from './modules/schedule/infrastructure/scheduler/ScheduleTaskScheduler';
 import { eventBus } from '@dailyuse/utils';
 
-const port = Number(process.env.PORT ?? 3888);
+const PORT = process.env.PORT || 3888;
 
 (async () => {
   try {
@@ -15,8 +15,8 @@ const port = Number(process.env.PORT ?? 3888);
     const scheduler = ScheduleTaskScheduler.getInstance(prisma, eventBus);
     scheduler.start();
 
-    app.listen(port, () => {
-      console.log(`[api] listening on http://localhost:${port}`);
+    app.listen(PORT, () => {
+      console.log(`[api] listening on http://localhost:${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err);

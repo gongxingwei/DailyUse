@@ -2,6 +2,13 @@ import { Router } from 'express';
 import { GoalAggregateController } from '../controllers/GoalAggregateController.js';
 
 /**
+ * @swagger
+ * tags:
+ *   - name: Goal Aggregates
+ *     description: 目标聚合根管理相关接口（DDD模式）
+ */
+
+/**
  * Goal聚合根控制路由
  * 体现DDD聚合根控制模式的REST API设计
  *
@@ -18,56 +25,164 @@ const router = Router();
 // 体现DDD原则：KeyResult只能通过Goal聚合根操作
 
 /**
- * 通过Goal聚合根创建关键结果
- * POST /api/v1/goals/:goalId/key-results
- *
- * 请求体示例：
- * {
- *   "name": "增加用户活跃度",
- *   "description": "通过功能优化提升用户活跃度",
- *   "startValue": 0,
- *   "targetValue": 80,
- *   "currentValue": 45,
- *   "unit": "%",
- *   "weight": 30,
- *   "calculationMethod": "average"
- * }
- *
- * 聚合根控制体现：
- * - 验证权重总和不超过100%
- * - 自动关联到指定目标
- * - 维护聚合一致性
+ * @swagger
+ * /goals/{goalId}/key-results:
+ *   post:
+ *     tags: [Goal Aggregates]
+ *     summary: 创建关键结果
+ *     description: 通过目标聚合根创建关键结果，维护业务规则一致性
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: goalId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 目标ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, startValue, targetValue, unit, weight]
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 关键结果名称
+ *               description:
+ *                 type: string
+ *                 description: 关键结果描述
+ *               startValue:
+ *                 type: number
+ *                 description: 起始值
+ *               targetValue:
+ *                 type: number
+ *                 description: 目标值
+ *               currentValue:
+ *                 type: number
+ *                 description: 当前值
+ *                 default: 0
+ *               unit:
+ *                 type: string
+ *                 description: 单位
+ *               weight:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *                 description: 权重（%）
+ *               calculationMethod:
+ *                 type: string
+ *                 enum: [sum, average, ratio]
+ *                 description: 计算方法
+ *     responses:
+ *       201:
+ *         description: 关键结果创建成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: 请求参数错误或权重超限
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.post('/:goalId/key-results', GoalAggregateController.createKeyResult);
 
 /**
- * 通过Goal聚合根更新关键结果
- * PUT /api/v1/goals/:goalId/key-results/:keyResultId
- *
- * 请求体示例：
- * {
- *   "name": "新的关键结果名称",
- *   "currentValue": 60,
- *   "weight": 25,
- *   "status": "active"
- * }
- *
- * 聚合根控制体现：
- * - 重新验证权重总和
- * - 更新聚合根版本
- * - 维护业务规则
+ * @swagger
+ * /goals/{goalId}/key-results/{keyResultId}:
+ *   put:
+ *     tags: [Goal Aggregates]
+ *     summary: 更新关键结果
+ *     description: 通过目标聚合根更新关键结果，重新验证权重总和
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: goalId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 目标ID
+ *       - in: path
+ *         name: keyResultId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 关键结果ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 description: 新的关键结果名称
+ *               currentValue:
+ *                 type: number
+ *                 description: 当前值
+ *               weight:
+ *                 type: number
+ *                 minimum: 0
+ *                 maximum: 100
+ *                 description: 权重（%）
+ *               status:
+ *                 type: string
+ *                 enum: [active, paused, completed]
+ *                 description: 状态
+ *     responses:
+ *       200:
+ *         description: 关键结果更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       400:
+ *         description: 权重超限或参数错误
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *   delete:
+ *     tags: [Goal Aggregates]
+ *     summary: 删除关键结果
+ *     description: 通过目标聚合根删除关键结果，级联删除相关记录
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: goalId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 目标ID
+ *       - in: path
+ *         name: keyResultId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 关键结果ID
+ *     responses:
+ *       200:
+ *         description: 关键结果删除成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: 关键结果不存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.put('/:goalId/key-results/:keyResultId', GoalAggregateController.updateKeyResult);
-
-/**
- * 通过Goal聚合根删除关键结果
- * DELETE /api/v1/goals/:goalId/key-results/:keyResultId
- *
- * 聚合根控制体现：
- * - 级联删除相关记录
- * - 维护聚合一致性
- * - 发布领域事件
- */
 router.delete('/:goalId/key-results/:keyResultId', GoalAggregateController.deleteKeyResult);
 
 // ===== 聚合根控制：目标记录管理 =====

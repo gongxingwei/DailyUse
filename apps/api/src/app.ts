@@ -28,6 +28,7 @@ import {
 } from './modules/repository/infrastructure/index.js';
 import { prisma } from './config/prisma.js';
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
+import { setupSwagger } from './config/swagger.js';
 
 const app: Express = express();
 
@@ -121,6 +122,9 @@ const repositoryApplicationService = new RepositoryApplicationService(
 RepositoryController.initialize(repositoryApplicationService);
 const repositoryRoutes = createRepositoryRoutes();
 api.use('/repositories', authMiddleware, repositoryRoutes);
+
+// Setup Swagger documentation
+setupSwagger(app);
 
 app.use('/api/v1', api);
 

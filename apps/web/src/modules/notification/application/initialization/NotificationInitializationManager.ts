@@ -153,17 +153,23 @@ export class NotificationInitializationManager {
 
     // 使用非阻塞方式连接，避免阻塞应用启动
     try {
-      // 设置连接超时，避免无限等待
-      const connectPromise = sseClient.connect();
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('SSE 连接超时')), 5000); // 5秒超时
-      });
+      // 直接连接，不使用超时（SSE客户端已经处理超时）
+      await sseClient.connect();
 
-      await Promise.race([connectPromise, timeoutPromise]);
-      this.sseConnected = true;
-      console.log('[NotificationInit] ✅ SSE 连接建立成功');
+      // 检查连接状态
+      const status = sseClient.getStatus();
+      this.sseConnected = status.connected;
+
+      if (status.connected) {
+        console.log('[NotificationInit] ✅ SSE 连接建立成功');
+      } else {
+        console.log('[NotificationInit] SSE 连接未建立，但将在后台继续尝试');
+
+        // 在后台重试连接
+        this.retrySSEConnectionInBackground();
+      }
     } catch (error) {
-      console.warn('[NotificationInit] ⚠️ SSE 连接失败，将使用本地事件:', error);
+      console.warn('[NotificationInit] ⚠️ SSE 初始化失败，但继续执行:', error);
       this.sseConnected = false;
       // SSE 连接失败不应该阻止通知模块初始化
 
@@ -182,8 +188,14 @@ export class NotificationInitializationManager {
       if (!this.sseConnected) {
         try {
           await sseClient.connect();
-          this.sseConnected = true;
-          console.log('[NotificationInit] ✅ SSE 后台重连成功');
+          const status = sseClient.getStatus();
+          this.sseConnected = status.connected;
+
+          if (status.connected) {
+            console.log('[NotificationInit] ✅ SSE 后台重连成功');
+          } else {
+            console.log('[NotificationInit] SSE 后台连接尝试完成，状态:', status);
+          }
         } catch (error) {
           console.warn('[NotificationInit] SSE 后台重连失败:', error);
           // 可以设置更长时间的重试
