@@ -15,22 +15,36 @@
 import { onMounted, ref } from 'vue';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
+import { useThemeInit } from '@/modules/theme';
 import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
 
 const isLoading = ref(true);
 const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 
+// 初始化主题系统
+const { themeStore } = useThemeInit();
+
 onMounted(async () => {
   try {
-    // 初始化设置
-    await settingStore.initializeSettings();
+    // 并行初始化各个系统
+    await Promise.all([
+      // 初始化设置
+      settingStore.initializeSettings(),
+
+      // 初始化主题系统
+      themeStore.initialize().catch((error: unknown) => {
+        console.warn('主题系统初始化失败，使用默认主题:', error);
+      })
+    ]);
 
     // 恢复账户信息
     accountStore.restoreAccount();
 
     // 初始化完成
     isLoading.value = false;
+
+    console.log('应用初始化完成');
   } catch (error) {
     console.error('应用初始化失败:', error);
     isLoading.value = false;

@@ -30,23 +30,111 @@
                 <v-icon size="20" class="mr-2 text-medium-emphasis">mdi-palette</v-icon>
                 <span class="font-weight-medium">主题模式</span>
               </div>
-              <v-select v-model="themeMode" :items="themeOptions" item-title="title" item-value="value"
-                variant="outlined" density="comfortable" hide-details>
+              <v-select :model-value="currentThemeId" @update:model-value="handleThemeChange"
+                :items="availableThemeOptions" item-title="title" item-value="value" variant="outlined"
+                density="comfortable" hide-details :loading="themeStore.loading.applying">
                 <template #item="{ props, item }">
                   <v-list-item v-bind="props">
                     <template #prepend>
-                      <v-icon :icon="item.raw.icon"></v-icon>
+                      <v-icon :icon="item.raw.icon" :color="item.raw.color"></v-icon>
+                    </template>
+                    <template #append>
+                      <v-chip v-if="item.raw.isBuiltIn" size="x-small" color="primary" variant="outlined">
+                        系统
+                      </v-chip>
+                      <v-chip v-else-if="item.raw.isActive" size="x-small" color="success" variant="flat">
+                        当前
+                      </v-chip>
                     </template>
                   </v-list-item>
                 </template>
                 <template #selection="{ item }">
                   <div class="d-flex align-center">
-                    <v-icon size="16" class="mr-2">{{ getThemeIcon(item.value) }}</v-icon>
+                    <v-icon size="16" class="mr-2" :color="item.raw.color">{{ item.raw.icon }}</v-icon>
                     {{ item.title }}
                   </div>
                 </template>
               </v-select>
+
+              <!-- 主题演示按钮 -->
+              <div class="mt-3">
+                <v-btn variant="outlined" color="primary" size="small" prepend-icon="mdi-eye"
+                  @click="$router.push('/settings/themes')">
+                  主题预览与演示
+                </v-btn>
+              </div>
             </div>
+          </v-col>
+
+          <!-- 主题配置选项 -->
+          <v-col cols="12">
+            <v-divider class="my-4"></v-divider>
+            <h4 class="text-subtitle-1 font-weight-medium mb-4 d-flex align-center">
+              <v-icon class="mr-2" color="primary">mdi-cog-outline</v-icon>
+              主题配置
+            </h4>
+
+            <v-row>
+              <v-col cols="12" md="6" lg="4">
+                <v-card variant="outlined" class="pa-4 switch-card">
+                  <div class="d-flex align-center justify-space-between">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-center mb-1">
+                        <v-icon size="20" class="mr-2"
+                          :color="themeStore.config?.followSystemTheme ? 'primary' : 'medium-emphasis'">
+                          mdi-monitor
+                        </v-icon>
+                        <span class="font-weight-medium">跟随系统</span>
+                      </div>
+                      <p class="text-caption text-medium-emphasis mb-0">自动根据系统主题切换</p>
+                    </div>
+                    <v-switch :model-value="themeStore.config?.followSystemTheme"
+                      @update:model-value="handleFollowSystemChange" color="primary" density="compact" hide-details
+                      :loading="themeStore.loading.config" />
+                  </div>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" md="6" lg="4">
+                <v-card variant="outlined" class="pa-4 switch-card">
+                  <div class="d-flex align-center justify-space-between">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-center mb-1">
+                        <v-icon size="20" class="mr-2"
+                          :color="themeStore.config?.enableTransitions ? 'primary' : 'medium-emphasis'">
+                          mdi-transition
+                        </v-icon>
+                        <span class="font-weight-medium">动画过渡</span>
+                      </div>
+                      <p class="text-caption text-medium-emphasis mb-0">主题切换时的动画效果</p>
+                    </div>
+                    <v-switch :model-value="themeStore.config?.enableTransitions"
+                      @update:model-value="handleTransitionChange" color="primary" density="compact" hide-details
+                      :loading="themeStore.loading.config" />
+                  </div>
+                </v-card>
+              </v-col>
+
+              <v-col cols="12" md="6" lg="4">
+                <v-card variant="outlined" class="pa-4 switch-card">
+                  <div class="d-flex align-center justify-space-between">
+                    <div class="flex-grow-1">
+                      <div class="d-flex align-center mb-1">
+                        <v-icon size="20" class="mr-2"
+                          :color="themeStore.config?.autoSwitchTheme ? 'primary' : 'medium-emphasis'">
+                          mdi-clock-outline
+                        </v-icon>
+                        <span class="font-weight-medium">定时切换</span>
+                      </div>
+                      <p class="text-caption text-medium-emphasis mb-0">根据时间自动切换主题</p>
+                    </div>
+                    <v-switch :model-value="themeStore.config?.autoSwitchTheme"
+                      @update:model-value="handleAutoSwitchChange" color="primary" density="compact" hide-details
+                      :loading="themeStore.loading.config" />
+                  </div>
+                </v-card>
+              </v-col>
+            </v-row>
           </v-col>
 
           <v-col cols="12" md="6">
@@ -264,18 +352,94 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useSettingStore } from '../stores/settingStore'
+import { useThemeStore } from '../../../theme/themeStroe'
+import type { IThemeDefinition } from '@dailyuse/contracts'
 
 const settingStore = useSettingStore()
+const themeStore = useThemeStore()
 
-// 主题选项
-const themeOptions = [
-  { title: '跟随系统', value: 'system', icon: 'mdi-monitor' },
-  { title: '深色模式', value: 'dark', icon: 'mdi-weather-night' },
-  { title: '浅色模式', value: 'light', icon: 'mdi-weather-sunny' },
-  { title: '蓝绿主题', value: 'blueGreen', icon: 'mdi-water' }
-];
+// 主题相关计算属性
+const currentThemeId = computed(() => themeStore.activeTheme?.id || '')
+
+const availableThemeOptions = computed(() => {
+  return themeStore.themes.map(theme => ({
+    title: theme.name,
+    value: theme.id,
+    icon: getThemeIconByType(theme.type),
+    color: getThemeColorByType(theme.type),
+    isBuiltIn: theme.isBuiltIn,
+    isActive: theme.id === themeStore.activeTheme?.id
+  }))
+})
+
+// 主题相关方法
+function getThemeIconByType(type: string): string {
+  switch (type) {
+    case 'light':
+      return 'mdi-weather-sunny'
+    case 'dark':
+      return 'mdi-weather-night'
+    case 'auto':
+      return 'mdi-monitor'
+    case 'custom':
+      return 'mdi-palette'
+    default:
+      return 'mdi-help-circle'
+  }
+}
+
+function getThemeColorByType(type: string): string {
+  switch (type) {
+    case 'light':
+      return 'orange'
+    case 'dark':
+      return 'blue-grey'
+    case 'auto':
+      return 'primary'
+    case 'custom':
+      return 'purple'
+    default:
+      return 'grey'
+  }
+}
+
+async function handleThemeChange(themeId: string) {
+  try {
+    await themeStore.applyTheme(themeId)
+  } catch (error) {
+    console.error('切换主题失败:', error)
+  }
+}
+
+async function handleFollowSystemChange(enabled: boolean) {
+  try {
+    await themeStore.updateConfig({ followSystemTheme: enabled })
+
+    if (enabled) {
+      await themeStore.switchToSystemTheme()
+    }
+  } catch (error) {
+    console.error('更新系统跟随设置失败:', error)
+  }
+}
+
+async function handleTransitionChange(enabled: boolean) {
+  try {
+    await themeStore.updateConfig({ enableTransitions: enabled })
+  } catch (error) {
+    console.error('更新动画设置失败:', error)
+  }
+}
+
+async function handleAutoSwitchChange(enabled: boolean) {
+  try {
+    await themeStore.updateConfig({ autoSwitchTheme: enabled })
+  } catch (error) {
+    console.error('更新定时切换设置失败:', error)
+  }
+}
 
 // 语言选项
 const languageOptions = [
@@ -343,14 +507,7 @@ const booleanSettings = [
   }
 ];
 
-// 计算属性
-const themeMode = computed({
-  get: () => settingStore.themeMode,
-  set: (value) => {
-    settingStore.setTheme(value)
-  }
-})
-
+// 保持原有设置Store的功能
 const editorSettings = computed({
   get: () => settingStore.editor,
   set: (value) => settingStore.updateEditorSettings(value)
@@ -363,18 +520,22 @@ const language = computed({
   }
 })
 
-// 方法
-const getThemeIcon = (theme: string) => {
-  return settingStore.getThemeIcon(theme);
-}
-
+// 保持兼容的方法
 const getSettingValue = (key: string) => {
   return settingStore.editor[key as keyof typeof settingStore.editor];
 }
 
 // 初始化
 onMounted(async () => {
+  // 初始化原有设置
   await settingStore.initializeSettings();
+
+  // 初始化新的主题系统
+  try {
+    await themeStore.initialize();
+  } catch (error) {
+    console.error('主题系统初始化失败:', error);
+  }
 })
 </script>
 

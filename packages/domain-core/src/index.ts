@@ -51,5 +51,8 @@ export * from './setting/SettingCore';
 // Schedule domain exports
 export * from './schedule';
 
+// Theme domain exports
+export * from './theme';
+
 // Notification domain exports
 // export * from './notification/NotificationCore';

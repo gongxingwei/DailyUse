@@ -370,6 +370,15 @@ export const appRoutes: RouteRecordRaw[] = [
               requiresAuth: true,
             },
           },
+          {
+            path: 'themes',
+            name: 'settings-themes',
+            component: () => import('@/views/ThemeDemo.vue'),
+            meta: {
+              title: '主题预览',
+              requiresAuth: true,
+            },
+          },
         ],
       },
 
