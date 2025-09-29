@@ -307,15 +307,15 @@
                   <v-list density="compact">
                     <v-list-item v-for="job in scheduleJobs" :key="job.id" class="px-0">
                       <template v-slot:prepend>
-                        <v-icon :color="job.status === 'active' ? 'success' : 'grey'">
-                          {{ job.status === 'active' ? 'mdi-play-circle' : 'mdi-pause-circle' }}
+                        <v-icon :color="job.status === 'ACTIVE' ? 'success' : 'grey'">
+                          {{ job.status === 'ACTIVE' ? 'mdi-play-circle' : 'mdi-pause-circle' }}
                         </v-icon>
                       </template>
                       <v-list-item-title>{{ job.name }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ job.schedule }} - {{ job.status }}</v-list-item-subtitle>
+                      <v-list-item-subtitle>{{ job.cronExpression }} - {{ formatScheduleStatus(job.status) }}</v-list-item-subtitle>
                       <template v-slot:append>
                         <v-btn @click="toggleJob(job)" icon size="x-small" variant="text">
-                          <v-icon>{{ job.status === 'active' ? 'mdi-pause' : 'mdi-play' }}</v-icon>
+                          <v-icon>{{ job.status === 'ACTIVE' ? 'mdi-pause' : 'mdi-play' }}</v-icon>
                         </v-btn>
                       </template>
                     </v-list-item>
@@ -980,7 +980,12 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useSnackbar } from '@/shared/composables/useSnackbar';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import ProfileAvatar from '@/modules/account/presentation/components/ProfileAvatar.vue';
-import { scheduleApiClient, type ScheduleJob } from '@/modules/schedule/infrastructure/api/scheduleApiClient';
+import { scheduleApiClient } from '@/modules/schedule/infrastructure/api/scheduleApiClient';
+import type {
+  CreateScheduleTaskRequestApi,
+  ScheduleTaskApi,
+  ScheduleStatisticsResponse,
+} from '@dailyuse/contracts/modules/schedule';
 
 // Notification 模块导入
 import {
@@ -1009,16 +1014,29 @@ const timeout = ref(false);
 
 // Schedule 功能测试相关
 const scheduleLoading = ref(false);
-const scheduleJobs = ref<ScheduleJob[]>([]);
-const scheduleStats = ref({
+const scheduleJobs = ref<ScheduleTaskApi[]>([]);
+
+type ScheduleStatsView = {
+  total: number;
+  active: number;
+  paused: number;
+  completed: number;
+  failed: number;
+  todayExecuted: number;
+  queueSize: number;
+};
+
+const createEmptyStats = (): ScheduleStatsView => ({
   total: 0,
   active: 0,
   paused: 0,
   completed: 0,
   failed: 0,
   todayExecuted: 0,
-  queueSize: 0
+  queueSize: 0,
 });
+
+const scheduleStats = ref<ScheduleStatsView>(createEmptyStats());
 
 // Notification 模块状态
 const notificationPermission = ref<NotificationPermission>('default');
@@ -1130,26 +1148,50 @@ async function handleTest() {
 }
 
 // Schedule 功能相关方法
+const mapStatisticsToView = (stats: ScheduleStatisticsResponse): ScheduleStatsView => ({
+  total: stats.totalTasks ?? 0,
+  active: stats.activeTasks ?? stats.byStatus?.ACTIVE ?? 0,
+  paused: stats.pausedTasks ?? stats.byStatus?.PAUSED ?? 0,
+  completed: stats.byStatus?.COMPLETED ?? stats.successExecutions ?? 0,
+  failed: stats.failedExecutions ?? stats.byStatus?.FAILED ?? 0,
+  todayExecuted: stats.todayExecutions ?? 0,
+  queueSize: stats.byStatus?.PENDING ?? 0,
+});
+
+const formatScheduleStatus = (status: ScheduleTaskApi['status']): string => {
+  switch (status) {
+    case 'ACTIVE':
+      return '启用';
+    case 'PAUSED':
+      return '暂停';
+    case 'COMPLETED':
+      return '已完成';
+    case 'FAILED':
+      return '失败';
+    default:
+      return status;
+  }
+};
+
 const createScheduleJob = async () => {
   try {
     scheduleLoading.value = true;
 
-    const jobData = {
+    const request: CreateScheduleTaskRequestApi = {
       name: `测试任务-${Date.now()}`,
-      type: 'test',
-      schedule: '0 */2 * * *', // 每2小时执行一次
+      description: '这是一个测试任务',
+      taskType: 'GENERAL_REMINDER',
+      cronExpression: '0 */2 * * *',
       payload: { description: '这是一个测试任务' },
-      maxAttempts: 3
+      priority: 'MEDIUM',
+      status: 'ACTIVE'
     };
 
-    const response = await scheduleApiClient.createJob(jobData);
+    const task = await scheduleApiClient.createScheduleTask(request);
 
-    if (response.success && response.data) {
-      await getScheduleJobs(); // 刷新任务列表
-      showSuccess(`创建调度任务成功: ${response.data.name}`);
-    } else {
-      throw new Error(response.message || '创建任务失败');
-    }
+  await getScheduleJobs(); // 刷新任务列表
+  await getScheduleStats(); // 刷新统计信息
+    showSuccess(`创建调度任务成功: ${task.name}`);
   } catch (error: any) {
     console.error('创建调度任务失败:', error);
     showError(`创建调度任务失败: ${error.message}`);
@@ -1161,14 +1203,9 @@ const createScheduleJob = async () => {
 const getScheduleJobs = async () => {
   scheduleLoading.value = true;
   try {
-    const response = await scheduleApiClient.getJobs({ limit: 50 });
-
-    if (response) {
-      scheduleJobs.value = response.jobs;
-      showInfo(`已刷新 ${response.data.jobs.length} 个调度任务`);
-    } else {
-      throw new Error(response.message || '获取任务列表失败');
-    }
+    const tasks = await scheduleApiClient.getScheduleTasks({ limit: 50 });
+    scheduleJobs.value = tasks;
+    showInfo(`已刷新 ${tasks.length} 个调度任务`);
   } catch (error: any) {
     console.error('获取调度任务失败:', error);
     showError(`获取调度任务失败: ${error.message}`);
@@ -1181,39 +1218,40 @@ const getScheduleJobs = async () => {
 
 const getScheduleStats = async () => {
   try {
-    const response = await scheduleApiClient.getStats();
-
-    if (response.success && response.data) {
-      scheduleStats.value = response.data;
-    } else {
-      throw new Error(response.message || '获取统计信息失败');
-    }
+    const stats = await scheduleApiClient.getScheduleStatistics();
+    scheduleStats.value = mapStatisticsToView(stats);
   } catch (error: any) {
     console.error('获取调度统计失败:', error);
     showError(`获取调度统计失败: ${error.message}`);
+    scheduleStats.value = createEmptyStats();
   }
 };
 
-const toggleJob = async (job: ScheduleJob) => {
+const toggleJob = async (job: ScheduleTaskApi) => {
   try {
-    const response = job.status === 'active'
-      ? await scheduleApiClient.pauseJob(job.id)
-      : await scheduleApiClient.startJob(job.id);
+    const isActive = job.status === 'ACTIVE';
+    const actionResult = isActive
+      ? await scheduleApiClient.pauseScheduleTask(job.id)
+      : await scheduleApiClient.enableScheduleTask(job.id);
 
-    if (response.success && response.data) {
-      // 更新本地状态
-      const index = scheduleJobs.value.findIndex(j => j.id === job.id);
-      if (index !== -1) {
-        scheduleJobs.value[index] = response.data;
-      }
-
-      showInfo(`任务 ${job.name} 已${response.data.status === 'active' ? '启用' : '暂停'}`);
-
-      // 刷新统计信息
-      await getScheduleStats();
-    } else {
-      throw new Error(response.message || '操作失败');
+    if (!actionResult.success) {
+      throw new Error(actionResult.message || '操作失败');
     }
+
+    const updatedTask = actionResult.task;
+    if (updatedTask) {
+      const index = scheduleJobs.value.findIndex((j) => j.id === job.id);
+      if (index !== -1) {
+        scheduleJobs.value[index] = updatedTask;
+      }
+    } else {
+      await getScheduleJobs();
+    }
+
+  const statusCode = (updatedTask?.status ?? (isActive ? 'PAUSED' : 'ACTIVE')) as ScheduleTaskApi['status'];
+  showInfo(`任务 ${job.name} 状态已更新为 ${formatScheduleStatus(statusCode)}`);
+
+    await getScheduleStats();
   } catch (error: any) {
     console.error('切换任务状态失败:', error);
     showError(`切换任务状态失败: ${error.message}`);
@@ -1228,12 +1266,16 @@ const clearAllJobs = async () => {
 
   try {
     const jobIds = scheduleJobs.value.map(job => job.id);
-    await scheduleApiClient.batchDelete(jobIds);
+    const result = await scheduleApiClient.batchOperateScheduleTasks(jobIds, 'delete');
 
     await getScheduleJobs(); // 刷新任务列表
     await getScheduleStats(); // 刷新统计信息
 
-    showSuccess(`已清空 ${jobIds.length} 个调度任务`);
+    if (result.failed.length > 0) {
+      showWarning(`成功删除 ${result.success.length} 个任务，有 ${result.failed.length} 个任务删除失败`);
+    } else {
+      showSuccess(`已清空 ${result.success.length} 个调度任务`);
+    }
   } catch (error: any) {
     console.error('清空任务失败:', error);
     showError(`清空任务失败: ${error.message}`);
@@ -1350,20 +1392,16 @@ const testScheduleAPI = async () => {
 
   try {
     // 调用真实的调度 API
-    const response = await scheduleApiClient.getStats();
+    const stats = await scheduleApiClient.getScheduleStatistics();
 
-    if (response.success && response.data) {
-      apiTestResult.value = {
-        success: true,
-        title: 'Schedule API 测试成功',
-        message: '获取调度统计信息成功',
-        data: response.data
-      };
+    apiTestResult.value = {
+      success: true,
+      title: 'Schedule API 测试成功',
+      message: '获取调度统计信息成功',
+      data: stats
+    };
 
-      showSuccess('Schedule API 测试通过');
-    } else {
-      throw new Error(response.message || 'API 调用失败');
-    }
+    showSuccess('Schedule API 测试通过');
   } catch (error) {
     apiTestResult.value = {
       success: false,

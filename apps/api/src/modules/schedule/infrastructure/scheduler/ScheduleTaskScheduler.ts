@@ -54,7 +54,6 @@ export class ScheduleTaskScheduler {
         await this.checkAndExecuteTasks();
       },
       {
-        scheduled: true,
         timezone: 'Asia/Shanghai',
       },
     );

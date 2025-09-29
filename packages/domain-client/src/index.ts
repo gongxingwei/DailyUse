@@ -22,3 +22,6 @@ export * from './editor';
 
 // Reminder domain client exports
 export * from './reminder';
+
+// Schedule domain client exports
+export * from './schedule';

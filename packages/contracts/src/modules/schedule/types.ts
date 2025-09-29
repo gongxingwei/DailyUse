@@ -148,11 +148,9 @@ export interface IAlertConfig {
 }
 
 /**
- * 调度任务接口
+ * 调度任务基本信息
  */
-export interface IScheduleTask {
-  /** 唯一标识 */
-  uuid: string;
+export interface IScheduleTaskBasic {
   /** 任务名称 */
   name: string;
   /** 任务描述 */
@@ -161,6 +159,14 @@ export interface IScheduleTask {
   taskType: ScheduleTaskType;
   /** 任务载荷 */
   payload: IScheduleTaskPayload;
+  /** 创建者 */
+  createdBy: string;
+}
+
+/**
+ * 调度任务调度信息
+ */
+export interface IScheduleTaskScheduling {
   /** 计划执行时间 */
   scheduledTime: Date;
   /** 重复规则(可选) */
@@ -169,16 +175,14 @@ export interface IScheduleTask {
   priority: SchedulePriority;
   /** 状态 */
   status: ScheduleStatus;
-  /** 提醒配置 */
-  alertConfig: IAlertConfig;
-  /** 创建者 */
-  createdBy: string;
-  /** 创建时间 */
-  createdAt: Date;
-  /** 更新时间 */
-  updatedAt: Date;
   /** 下次执行时间 */
   nextExecutionTime?: Date;
+}
+
+/**
+ * 调度任务执行信息
+ */
+export interface IScheduleTaskExecution {
   /** 执行次数 */
   executionCount: number;
   /** 最大重试次数 */
@@ -187,10 +191,54 @@ export interface IScheduleTask {
   currentRetries: number;
   /** 超时时间(秒) */
   timeoutSeconds?: number;
+}
+
+/**
+ * 调度任务生命周期信息
+ */
+export interface IScheduleTaskLifecycle {
+  /** 创建时间 */
+  createdAt: Date;
+  /** 更新时间 */
+  updatedAt: Date;
+}
+
+/**
+ * 调度任务元数据
+ */
+export interface IScheduleTaskMetadata {
   /** 标签 */
   tags?: string[];
   /** 是否启用 */
   enabled: boolean;
+  /** 版本号 */
+  version?: number;
+}
+
+/**
+ * 调度任务接口 - 层级结构
+ */
+export interface IScheduleTask {
+  /** 唯一标识 */
+  uuid: string;
+
+  /** 基本信息 */
+  basic: IScheduleTaskBasic;
+
+  /** 调度信息 */
+  scheduling: IScheduleTaskScheduling;
+
+  /** 执行信息 */
+  execution: IScheduleTaskExecution;
+
+  /** 提醒配置 */
+  alertConfig: IAlertConfig;
+
+  /** 生命周期信息 */
+  lifecycle: IScheduleTaskLifecycle;
+
+  /** 元数据 */
+  metadata: IScheduleTaskMetadata;
 }
 
 /**

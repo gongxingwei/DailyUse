@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
+import { ScheduleStatus } from '@dailyuse/contracts';
 
 type CreateScheduleTaskRequestDto = ScheduleContracts.CreateScheduleTaskRequestDto;
 type UpdateScheduleTaskRequestDto = ScheduleContracts.UpdateScheduleTaskRequestDto;
@@ -12,7 +13,6 @@ type IScheduleTaskStatistics = ScheduleContracts.IScheduleTaskStatistics;
 type ScheduleExecutionResultResponseDto = ScheduleContracts.ScheduleExecutionResultResponseDto;
 type ScheduleTaskLogResponseDto = ScheduleContracts.ScheduleTaskLogResponseDto;
 type UpcomingTasksResponseDto = ScheduleContracts.UpcomingTasksResponseDto;
-type ScheduleStatus = ScheduleContracts.ScheduleStatus;
 type ScheduleTaskType = ScheduleContracts.ScheduleTaskType;
 type SchedulePriority = ScheduleContracts.SchedulePriority;
 
@@ -31,12 +31,12 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       name: task.title, // 数据库字段是 title
       description: task.description,
       taskType: task.taskType as ScheduleTaskType,
-      payload: task.payload, // Prisma 自动解析 JSON
+      payload: task.payload as any, // Prisma JSON 字段
       scheduledTime: task.scheduledTime,
-      recurrence: task.recurrence, // Prisma 自动解析 JSON
+      recurrence: task.recurrence as any, // Prisma JSON 字段
       priority: task.priority as SchedulePriority,
       status: task.status as ScheduleStatus,
-      alertConfig: task.alertConfig, // Prisma 自动解析 JSON
+      alertConfig: task.alertConfig as any, // Prisma JSON 字段
       createdBy: task.accountUuid, // 数据库字段是 accountUuid
       createdAt: task.createdAt,
       updatedAt: task.updatedAt,
@@ -54,11 +54,11 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     return {
       id: execution.uuid,
       taskUuid: execution.taskUuid,
-      executedAt: execution.executedAt,
+      executedAt: execution.startedAt || execution.createdAt, // 使用 startedAt 或 createdAt
       status: execution.status as ScheduleStatus,
-      result: execution.result ? JSON.parse(execution.result) : undefined,
-      error: execution.error,
-      duration: execution.duration,
+      result: execution.result, // Prisma 自动解析 JSON
+      error: execution.errorMessage, // 使用 errorMessage 字段
+      duration: execution.duration || 0,
       retryCount: execution.retryCount,
     };
   }
@@ -76,15 +76,15 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       data: {
         uuid,
         accountUuid: createdBy, // 将 createdBy 作为 accountUuid
-        title: request.title || request.name, // 数据库字段是 title
+        title: request.name, // 使用 request.name 作为 title
         description: request.description,
         taskType: request.taskType,
-        payload: request.payload, // Prisma 自动处理 JSON
-        scheduledTime: request.scheduledTime,
-        recurrence: request.recurrence, // Prisma 自动处理 JSON
+        payload: request.payload as any, // Prisma JSON 字段
+        scheduledTime: request.scheduledTime, // 必需字段
+        recurrence: request.recurrence as any, // Prisma JSON 字段
         priority: request.priority,
         status: 'pending', // 数据库默认值是小写
-        alertConfig: request.alertConfig, // Prisma 自动处理 JSON
+        alertConfig: request.alertConfig as any, // Prisma JSON 字段
         tags: request.tags || [], // Prisma 自动处理数组
         enabled: request.enabled !== false, // 默认启用
         nextScheduledAt: request.scheduledTime, // 数据库字段是 nextScheduledAt
@@ -179,25 +179,26 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   ): Promise<ScheduleTaskResponseDto> {
     const updateData: any = { updatedAt: new Date() };
 
-    if (request.name !== undefined) updateData.name = request.name;
+    if (request.name !== undefined) updateData.title = request.name; // 数据库字段是 title
     if (request.description !== undefined) updateData.description = request.description;
-    if (request.scheduledTime !== undefined) updateData.scheduledTime = request.scheduledTime;
+    if (request.scheduledTime !== undefined) {
+      updateData.scheduledTime = request.scheduledTime;
+      updateData.nextScheduledAt = request.scheduledTime; // 同时更新下次执行时间
+    }
     if (request.priority !== undefined) updateData.priority = request.priority;
     if (request.status !== undefined) updateData.status = request.status;
-    if (request.maxRetries !== undefined) updateData.maxRetries = request.maxRetries;
-    if (request.timeoutSeconds !== undefined) updateData.timeoutSeconds = request.timeoutSeconds;
     if (request.enabled !== undefined) updateData.enabled = request.enabled;
 
     if (request.recurrence !== undefined) {
-      updateData.recurrence = request.recurrence ? JSON.stringify(request.recurrence) : null;
+      updateData.recurrence = request.recurrence as any; // Prisma JSON 字段
     }
 
     if (request.alertConfig !== undefined) {
-      updateData.alertConfig = JSON.stringify(request.alertConfig);
+      updateData.alertConfig = request.alertConfig as any; // Prisma JSON 字段
     }
 
     if (request.tags !== undefined) {
-      updateData.tags = JSON.stringify(request.tags);
+      updateData.tags = request.tags; // Prisma 自动处理数组
     }
 
     const updated = await this.prisma.scheduleTask.update({
@@ -231,11 +232,11 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   }
 
   async pause(uuid: string): Promise<ScheduleTaskResponseDto> {
-    return this.update(uuid, { status: 'PAUSED' as ScheduleStatus });
+    return this.update(uuid, { status: ScheduleStatus.PAUSED });
   }
 
   async resume(uuid: string): Promise<ScheduleTaskResponseDto> {
-    return this.update(uuid, { status: 'PENDING' as ScheduleStatus });
+    return this.update(uuid, { status: ScheduleStatus.PENDING });
   }
 
   async updateStatus(uuid: string, status: ScheduleStatus): Promise<ScheduleTaskResponseDto> {
@@ -271,7 +272,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
         taskType: task.taskType as ScheduleTaskType,
         scheduledTime: task.scheduledTime,
         priority: task.priority as SchedulePriority,
-        alertConfig: JSON.parse(task.alertConfig),
+        alertConfig: task.alertConfig ? JSON.parse(task.alertConfig as string) : null,
         minutesUntil: Math.floor((task.scheduledTime.getTime() - now.getTime()) / (1000 * 60)),
       })),
       withinHours: withinMinutes / 60,
@@ -392,7 +393,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     await this.prisma.scheduleTask.update({
       where: { uuid },
       data: {
-        currentRetries: { increment: 1 },
+        failureCount: { increment: 1 }, // 使用实际的数据库字段名
         updatedAt: new Date(),
       },
     });
@@ -402,7 +403,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     await this.prisma.scheduleTask.update({
       where: { uuid },
       data: {
-        nextExecutionTime: nextTime,
+        nextScheduledAt: nextTime, // 使用实际的数据库字段名
         updatedAt: new Date(),
       },
     });
@@ -426,12 +427,12 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
         uuid: executionUuid,
         taskUuid: result.taskUuid,
         accountUuid: task.accountUuid,
-        executedAt: result.executedAt,
         status: result.status,
-        result: result.result ? JSON.stringify(result.result) : null,
-        error: result.error,
+        startedAt: result.executedAt, // 使用 startedAt 字段
+        completedAt: result.executedAt, // 使用 completedAt 字段
         duration: result.duration,
-        nextExecutionTime: result.nextExecutionTime,
+        result: result.result as any, // Prisma JSON 字段
+        errorMessage: result.error, // 使用 errorMessage 字段
       },
     });
 
@@ -454,7 +455,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     const [executions, total] = await Promise.all([
       this.prisma.scheduleExecution.findMany({
         where: { taskUuid },
-        orderBy: { executedAt: 'desc' },
+        orderBy: { createdAt: 'desc' }, // 使用 createdAt 字段
         skip: offset,
         take: limit,
       }),
@@ -576,7 +577,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     // 如果指定了保留数量，需要更复杂的逻辑
     const result = await this.prisma.scheduleExecution.deleteMany({
       where: {
-        executedAt: { lt: beforeDate },
+        createdAt: { lt: beforeDate }, // 使用 createdAt 字段
       },
     });
 
@@ -629,7 +630,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   async execute(uuid: string, force?: boolean): Promise<any> {
     // 这里应该实际执行调度任务
     // 为了简化，我们只更新状态为 RUNNING
-    await this.updateStatus(uuid, 'RUNNING');
+    await this.updateStatus(uuid, ScheduleStatus.RUNNING);
 
     // 实际的执行逻辑应该在应用服务中处理
     return { executed: true, taskUuid: uuid };

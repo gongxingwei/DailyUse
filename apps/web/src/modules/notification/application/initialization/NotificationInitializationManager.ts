@@ -19,6 +19,9 @@ export class NotificationInitializationManager {
   private eventHandlers: NotificationEventHandlers | null = null;
   private isInitialized = false;
   private sseConnected = false;
+  private permissionRequestScheduled = false;
+  private permissionRequestHandler: ((event: Event) => void) | null = null;
+  private readonly permissionRequestEventNames = ['click', 'keydown', 'pointerdown'] as const;
 
   private constructor() {}
 
@@ -129,6 +132,15 @@ export class NotificationInitializationManager {
       const currentPermission = this.notificationService.getPermission();
 
       if (currentPermission === 'default') {
+        const userActivation = (navigator as any)?.userActivation;
+        const hasActiveUserGesture = !!userActivation?.isActive;
+
+        if (!hasActiveUserGesture) {
+          console.log('[NotificationInit] 当前无用户交互，已延迟通知权限请求至下一次用户操作');
+          this.schedulePermissionRequestOnNextInteraction();
+          return;
+        }
+
         console.log('[NotificationInit] 请求通知权限...');
         const permission = await this.notificationService.requestPermission();
 
@@ -143,6 +155,55 @@ export class NotificationInitializationManager {
     } catch (error) {
       console.error('[NotificationInit] 请求通知权限失败:', error);
     }
+  }
+
+  private schedulePermissionRequestOnNextInteraction(): void {
+    if (this.permissionRequestScheduled || typeof document === 'undefined') {
+      return;
+    }
+
+    this.permissionRequestScheduled = true;
+
+    const handler = async () => {
+      this.clearScheduledPermissionRequest();
+
+      if (!this.notificationService) {
+        return;
+      }
+
+      try {
+        const permission = await this.notificationService.requestPermission();
+        if (permission === 'granted') {
+          console.log('[NotificationInit] ✅ （延迟）通知权限已授予');
+        } else {
+          console.warn('[NotificationInit] ⚠️ （延迟）通知权限被拒绝');
+        }
+      } catch (error) {
+        console.error('[NotificationInit] 请求通知权限失败（延迟）:', error);
+      }
+    };
+
+    this.permissionRequestHandler = handler;
+    this.permissionRequestEventNames.forEach((eventName) => {
+      document.addEventListener(eventName, handler, { once: true });
+    });
+
+    console.log('[NotificationInit] 已注册用户交互监听以请求通知权限');
+  }
+
+  private clearScheduledPermissionRequest(): void {
+    if (!this.permissionRequestScheduled) {
+      return;
+    }
+
+    if (this.permissionRequestHandler && typeof document !== 'undefined') {
+      this.permissionRequestEventNames.forEach((eventName) => {
+        document.removeEventListener(eventName, this.permissionRequestHandler as EventListener);
+      });
+    }
+
+    this.permissionRequestHandler = null;
+    this.permissionRequestScheduled = false;
   }
 
   /**
@@ -372,6 +433,8 @@ export class NotificationInitializationManager {
         sseClient.destroy();
         this.sseConnected = false;
       }
+
+      this.clearScheduledPermissionRequest();
 
       this.isInitialized = false;
       console.log('[NotificationInit] ✅ Notification模块已销毁');

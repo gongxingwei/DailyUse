@@ -365,20 +365,14 @@ export class ScheduleController {
    */
   async getStatistics(req: Request, res: Response): Promise<void> {
     try {
-      // 这个功能需要通过仓储层实现，暂时返回模拟数据
-      const mockStats = {
-        totalTasks: 0,
-        activeTasks: 0,
-        completedTasks: 0,
-        failedTasks: 0,
-        byStatus: {},
-        byType: {},
-        byPriority: {},
-        averageExecutionTime: 0,
-        successRate: 0,
-      };
+      const accountUuid = this.getAccountUuid(req);
 
-      ok(res, mockStats, '获取统计信息成功');
+      // 直接通过容器获取仓储实例来实现统计
+      const container = ScheduleContainer.getInstance(this.prisma);
+      const repository = container.scheduleRepository;
+      const stats = await repository.getStatistics(accountUuid);
+
+      ok(res, stats, '获取统计信息成功');
     } catch (error) {
       console.error('获取统计信息失败:', error);
       apiError(res, '获取统计信息失败');

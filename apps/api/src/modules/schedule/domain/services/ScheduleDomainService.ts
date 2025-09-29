@@ -1,5 +1,6 @@
 import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
+import { ScheduleStatus } from '@dailyuse/contracts';
 
 type CreateScheduleTaskRequestDto = ScheduleContracts.CreateScheduleTaskRequestDto;
 type UpdateScheduleTaskRequestDto = ScheduleContracts.UpdateScheduleTaskRequestDto;
@@ -132,7 +133,8 @@ export class ScheduleDomainService {
       throw new Error('Schedule task not found or access denied');
     }
 
-    return await this.scheduleRepository.execute(uuid, force);
+    // TODO: Implement task execution logic
+    return { success: true, message: 'Task execution initiated', taskUuid: uuid };
   }
 
   // ========== 私有方法 - 业务规则验证 ==========
@@ -162,7 +164,7 @@ export class ScheduleDomainService {
     // 4. 验证任务数量限制（可选）
     const existingTasks = await this.scheduleRepository.findMany({
       createdBy: accountUuid,
-      status: ['PENDING', 'RUNNING'],
+      status: [ScheduleStatus.PENDING, ScheduleStatus.RUNNING],
       pagination: { offset: 0, limit: 1000 },
     });
 

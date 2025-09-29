@@ -17,6 +17,11 @@ export * from './events';
 // 类型简化别名
 export type {
   IScheduleTask as ScheduleTask,
+  IScheduleTaskBasic as ScheduleTaskBasic,
+  IScheduleTaskScheduling as ScheduleTaskScheduling,
+  IScheduleTaskExecution as ScheduleTaskExecution,
+  IScheduleTaskLifecycle as ScheduleTaskLifecycle,
+  IScheduleTaskMetadata as ScheduleTaskMetadata,
   IScheduleTaskPayload as ScheduleTaskPayload,
   IRecurrenceRule as RecurrenceRule,
   IAlertConfig as AlertConfig,
