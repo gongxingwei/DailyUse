@@ -19,6 +19,14 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
   // ===== 数据库实体到DTO的转换 =====
 
   private mapTaskInstanceToDTO(instance: any): TaskInstanceDTO {
+    // 安全转换日期字段为ISO字符串
+    const safeToISOString = (date: any): string | undefined => {
+      if (!date) return undefined;
+      if (date instanceof Date) return date.toISOString();
+      if (typeof date === 'string') return new Date(date).toISOString();
+      return undefined;
+    };
+
     return {
       uuid: instance.uuid,
       templateUuid: instance.templateUuid,
@@ -27,7 +35,7 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       description: instance.description,
       timeConfig: {
         timeType: instance.timeType as TaskContracts.TaskTimeType,
-        scheduledDate: instance.scheduledDate.toISOString(),
+        scheduledDate: safeToISOString(instance.scheduledDate) || new Date().toISOString(),
         startTime: instance.startTime,
         endTime: instance.endTime,
         estimatedDuration: instance.estimatedDuration,
@@ -36,10 +44,10 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       reminderStatus: {
         enabled: instance.reminderEnabled,
         status: instance.reminderStatus as 'pending' | 'triggered' | 'dismissed' | 'snoozed',
-        scheduledTime: instance.reminderScheduledTime?.toISOString(),
-        triggeredAt: instance.reminderTriggeredAt?.toISOString(),
+        scheduledTime: safeToISOString(instance.reminderScheduledTime),
+        triggeredAt: safeToISOString(instance.reminderTriggeredAt),
         snoozeCount: instance.reminderSnoozeCount,
-        snoozeUntil: instance.reminderSnoozeUntil?.toISOString(),
+        snoozeUntil: safeToISOString(instance.reminderSnoozeUntil),
       },
       execution: {
         status: instance.executionStatus as
@@ -48,8 +56,8 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
           | 'completed'
           | 'cancelled'
           | 'overdue',
-        actualStartTime: instance.actualStartTime?.toISOString(),
-        actualEndTime: instance.actualEndTime?.toISOString(),
+        actualStartTime: safeToISOString(instance.actualStartTime),
+        actualEndTime: safeToISOString(instance.actualEndTime),
         actualDuration: instance.actualDuration,
         progressPercentage: instance.progressPercentage,
         notes: instance.executionNotes,
@@ -61,8 +69,8 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
         tags: instance.tags ? JSON.parse(instance.tags) : [],
       },
       lifecycle: {
-        createdAt: instance.createdAt.toISOString(),
-        updatedAt: instance.updatedAt.toISOString(),
+        createdAt: safeToISOString(instance.createdAt) || new Date().toISOString(),
+        updatedAt: safeToISOString(instance.updatedAt) || new Date().toISOString(),
         events: instance.lifecycleEvents ? JSON.parse(instance.lifecycleEvents) : [],
       },
       goalLinks: instance.goalLinks ? JSON.parse(instance.goalLinks) : [],

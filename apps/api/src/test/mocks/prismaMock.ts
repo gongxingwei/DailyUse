@@ -1,0 +1,328 @@
+/**
+ * Prisma Mock for Testing
+ * @description 为API测试提供Prisma客户端的完整Mock实现
+ */
+
+import { vi } from 'vitest';
+import type { PrismaClient } from '@prisma/client';
+
+// Mock数据存储
+const mockDataStore = {
+  scheduleTask: new Map(),
+  scheduleExecution: new Map(),
+  account: new Map(),
+  // Task相关表
+  taskTemplate: new Map(),
+  taskInstance: new Map(),
+  taskMetaTemplate: new Map(),
+  // 添加其他需要的表...
+};
+
+// 生成测试用的UUID
+function generateTestUuid(prefix = 'test'): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// 创建Mock的Prisma模型操作
+function createMockModel(tableName: keyof typeof mockDataStore) {
+  const store = mockDataStore[tableName];
+
+  return {
+    findMany: vi.fn(async (args?: any) => {
+      const allRecords = Array.from(store.values());
+
+      // 简单的where条件处理
+      let filteredRecords = allRecords;
+      if (args?.where) {
+        filteredRecords = allRecords.filter((record) => {
+          return Object.entries(args.where).every(([key, value]) => {
+            if (typeof value === 'object' && value !== null) {
+              // 处理复杂条件，比如 { gte: date }
+              const valueObj = value as any;
+              if (valueObj.gte && record[key]) {
+                return new Date(record[key]) >= new Date(valueObj.gte);
+              }
+              if (valueObj.lte && record[key]) {
+                return new Date(record[key]) <= new Date(valueObj.lte);
+              }
+              if (valueObj.in && Array.isArray(valueObj.in)) {
+                return valueObj.in.includes(record[key]);
+              }
+            }
+            return record[key] === value;
+          });
+        });
+      }
+
+      // 处理分页
+      if (args?.skip || args?.take) {
+        const skip = args.skip || 0;
+        const take = args.take || filteredRecords.length;
+        filteredRecords = filteredRecords.slice(skip, skip + take);
+      }
+
+      // 处理排序
+      if (args?.orderBy) {
+        const orderBy = Array.isArray(args.orderBy) ? args.orderBy[0] : args.orderBy;
+        const field = Object.keys(orderBy)[0];
+        const direction = orderBy[field];
+
+        filteredRecords.sort((a, b) => {
+          const aVal = a[field];
+          const bVal = b[field];
+
+          if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+          if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+          return 0;
+        });
+      }
+
+      return filteredRecords;
+    }),
+
+    findUnique: vi.fn(async (args?: any) => {
+      if (!args?.where) return null;
+
+      const key = Object.keys(args.where)[0];
+      const value = args.where[key];
+
+      return Array.from(store.values()).find((record) => record[key] === value) || null;
+    }),
+
+    findFirst: vi.fn(async (args?: any) => {
+      const allRecords = Array.from(store.values());
+
+      if (!args?.where) {
+        return allRecords[0] || null;
+      }
+
+      return (
+        allRecords.find((record) => {
+          return Object.entries(args.where).every(([key, value]) => record[key] === value);
+        }) || null
+      );
+    }),
+
+    create: vi.fn(async (args?: any) => {
+      // 处理 upsert 的情况
+      const data = args?.data || args?.create || {};
+      const uuid = data.uuid || generateTestUuid();
+      const now = new Date();
+
+      const newRecord = {
+        uuid,
+        createdAt: now,
+        updatedAt: now,
+        ...data,
+      };
+
+      store.set(uuid, newRecord);
+      return newRecord;
+    }),
+
+    update: vi.fn(async (args?: any) => {
+      const where = args?.where || {};
+      const data = args?.data || {};
+
+      const key = Object.keys(where)[0];
+      const value = where[key];
+
+      const existingRecord = Array.from(store.values()).find((record) => record[key] === value);
+      if (!existingRecord) {
+        throw new Error(`Record not found`);
+      }
+
+      const updatedRecord = {
+        ...existingRecord,
+        ...data,
+        updatedAt: new Date(),
+      };
+
+      store.set(existingRecord.uuid, updatedRecord);
+      return updatedRecord;
+    }),
+
+    delete: vi.fn(async (args?: any) => {
+      const where = args?.where || {};
+      const key = Object.keys(where)[0];
+      const value = where[key];
+
+      const recordToDelete = Array.from(store.values()).find((record) => record[key] === value);
+      if (!recordToDelete) {
+        throw new Error(`Record not found`);
+      }
+
+      store.delete(recordToDelete.uuid);
+      return recordToDelete;
+    }),
+
+    deleteMany: vi.fn(async (args?: any) => {
+      const where = args?.where || {};
+      let deletedCount = 0;
+
+      if (Object.keys(where).length === 0) {
+        // 删除所有记录
+        deletedCount = store.size;
+        store.clear();
+      } else {
+        // 根据条件删除
+        const recordsToDelete = Array.from(store.values()).filter((record) => {
+          return Object.entries(where).every(([key, value]) => {
+            if (Array.isArray(value)) {
+              return value.includes(record[key]);
+            }
+            return record[key] === value;
+          });
+        });
+
+        recordsToDelete.forEach((record) => {
+          store.delete(record.uuid);
+          deletedCount++;
+        });
+      }
+
+      return { count: deletedCount };
+    }),
+
+    count: vi.fn(async (args?: any) => {
+      if (!args?.where) {
+        return store.size;
+      }
+
+      const filteredRecords = Array.from(store.values()).filter((record) => {
+        return Object.entries(args.where).every(([key, value]) => {
+          if (typeof value === 'object' && value !== null) {
+            // 处理复杂条件
+            const valueObj = value as any;
+            if (valueObj.gte && record[key]) {
+              return new Date(record[key]) >= new Date(valueObj.gte);
+            }
+            if (valueObj.lte && record[key]) {
+              return new Date(record[key]) <= new Date(valueObj.lte);
+            }
+            if (valueObj.in && Array.isArray(valueObj.in)) {
+              return valueObj.in.includes(record[key]);
+            }
+          }
+          return record[key] === value;
+        });
+      });
+
+      return filteredRecords.length;
+    }),
+
+    aggregate: vi.fn(async (args?: any) => {
+      // 简单的聚合实现
+      const allRecords = Array.from(store.values());
+
+      return {
+        _count: { _all: allRecords.length },
+        _avg: {},
+        _sum: {},
+        _min: {},
+        _max: {},
+      };
+    }),
+
+    groupBy: vi.fn(async (args?: any) => {
+      // 简单的分组实现
+      return [];
+    }),
+
+    upsert: vi.fn(async (args?: any) => {
+      const where = args?.where || {};
+      const create = args?.create || {};
+      const update = args?.update || {};
+
+      const key = Object.keys(where)[0];
+      const value = where[key];
+
+      const existingRecord = Array.from(store.values()).find((record) => record[key] === value);
+
+      if (existingRecord) {
+        // 更新
+        const updatedRecord = {
+          ...existingRecord,
+          ...update,
+          updatedAt: new Date(),
+        };
+        store.set(existingRecord.uuid, updatedRecord);
+        return updatedRecord;
+      } else {
+        // 创建
+        const uuid = create.uuid || generateTestUuid();
+        const now = new Date();
+        const newRecord = {
+          uuid,
+          createdAt: now,
+          updatedAt: now,
+          ...create,
+        };
+        store.set(uuid, newRecord);
+        return newRecord;
+      }
+    }),
+  };
+}
+
+// 创建Mock的Prisma客户端
+export const mockPrismaClient = {
+  // Schedule相关表
+  scheduleTask: createMockModel('scheduleTask'),
+  scheduleExecution: createMockModel('scheduleExecution'),
+
+  // Account相关表
+  account: createMockModel('account'),
+
+  // Task相关表
+  taskTemplate: createMockModel('taskTemplate'),
+  taskInstance: createMockModel('taskInstance'),
+  taskMetaTemplate: createMockModel('taskMetaTemplate'),
+
+  // 事务和连接操作
+  $transaction: vi.fn(async (operations: any[]) => {
+    // 简单的事务模拟：依次执行所有操作
+    const results = [];
+    for (const operation of operations) {
+      results.push(await operation);
+    }
+    return results;
+  }),
+
+  $connect: vi.fn(async () => {
+    // 模拟连接成功
+  }),
+
+  $disconnect: vi.fn(async () => {
+    // 模拟断开连接
+  }),
+
+  $executeRaw: vi.fn(async () => {
+    return 0;
+  }),
+
+  $queryRaw: vi.fn(async () => {
+    return [];
+  }),
+} as unknown as PrismaClient;
+
+// 工具函数：重置Mock数据
+export function resetMockData() {
+  Object.values(mockDataStore).forEach((store) => store.clear());
+}
+
+// 工具函数：设置测试数据
+export function setMockData<T>(tableName: keyof typeof mockDataStore, data: T[]) {
+  const store = mockDataStore[tableName];
+  store.clear();
+
+  data.forEach((item: any) => {
+    const uuid = item.uuid || generateTestUuid();
+    store.set(uuid, { ...item, uuid });
+  });
+}
+
+// 工具函数：获取Mock数据
+export function getMockData(tableName: keyof typeof mockDataStore) {
+  return Array.from(mockDataStore[tableName].values());
+}

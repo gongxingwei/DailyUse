@@ -3,15 +3,13 @@ import { TaskAggregateService } from '../../../application/services/TaskAggregat
 import { PrismaTaskTemplateRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskTemplateRepository';
 import { PrismaTaskInstanceRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskInstanceRepository';
 import { PrismaTaskMetaTemplateRepository } from '../../../infrastructure/repositories/prisma/PrismaTaskMetaTemplateRepository';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../../config/prisma';
 import type { TaskContracts } from '@dailyuse/contracts';
+import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
 
 type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
 type CreateTaskInstanceRequest = TaskContracts.CreateTaskInstanceRequest;
 type UpdateTaskInstanceRequest = TaskContracts.UpdateTaskInstanceRequest;
-
-// 创建真实的Prisma客户端实例
-const prisma = new PrismaClient();
 
 // 创建聚合服务实例
 const createAggregateService = () => {
@@ -34,11 +32,11 @@ export class TaskAggregateController {
    * 创建任务模板聚合根
    * POST /api/v1/tasks/templates
    */
-  static async createTemplateAggregate(req: Request, res: Response) {
+  static async createTemplateAggregate(req: AuthenticatedRequest, res: Response) {
     try {
       const request: CreateTaskTemplateRequest = req.body;
       // 从认证中间件获取accountUuid，而不是从路径参数
-      const accountUuid = (req as any).accountUuid;
+      const accountUuid = req.accountUuid;
 
       if (!accountUuid) {
         return res.status(400).json({

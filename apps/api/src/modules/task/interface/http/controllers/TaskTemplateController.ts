@@ -1,12 +1,11 @@
 import type { Request, Response } from 'express';
 import { TaskTemplateApplicationService } from '../../../application/services/TaskTemplateApplicationService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../../config/prisma';
 import type { TaskContracts } from '@dailyuse/contracts';
+import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
 
 type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
 type UpdateTaskTemplateRequest = TaskContracts.UpdateTaskTemplateRequest;
-
-const prisma = new PrismaClient();
 
 export class TaskTemplateController {
   private static taskService = new TaskTemplateApplicationService(prisma);
@@ -14,15 +13,18 @@ export class TaskTemplateController {
   /**
    * 创建任务模板
    */
-  static async createTemplate(req: Request, res: Response) {
+  static async createTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       const request: CreateTaskTemplateRequest = req.body;
-      const { accountUuid } = req.params; // 假设 accountUuid 从路径参数获取
+      const accountUuid = req.accountUuid!;
       const templateUuid = await TaskTemplateController.taskService.create(accountUuid, request);
+
+      // 获取创建后的完整模板数据
+      const template = await TaskTemplateController.taskService.getById(templateUuid);
 
       res.status(201).json({
         success: true,
-        data: { uuid: templateUuid },
+        data: { template },
         message: '任务模板创建成功',
       });
     } catch (error) {
@@ -36,9 +38,9 @@ export class TaskTemplateController {
   /**
    * 获取任务模板列表
    */
-  static async getTemplates(req: Request, res: Response) {
+  static async getTemplates(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid } = req.params;
+      const accountUuid = req.accountUuid!;
       const { limit, offset, sortBy, sortOrder } = req.query;
 
       const options = {
@@ -68,7 +70,7 @@ export class TaskTemplateController {
   /**
    * 根据ID获取任务模板
    */
-  static async getTemplateById(req: Request, res: Response) {
+  static async getTemplateById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const template = await TaskTemplateController.taskService.getById(id);
@@ -82,7 +84,7 @@ export class TaskTemplateController {
 
       res.json({
         success: true,
-        data: template,
+        data: { template },
       });
     } catch (error) {
       res.status(500).json({
@@ -95,7 +97,7 @@ export class TaskTemplateController {
   /**
    * 更新任务模板
    */
-  static async updateTemplate(req: Request, res: Response) {
+  static async updateTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const request: UpdateTaskTemplateRequest = req.body;
@@ -106,7 +108,7 @@ export class TaskTemplateController {
 
       res.json({
         success: true,
-        data: template,
+        data: { template },
         message: '任务模板更新成功',
       });
     } catch (error) {
@@ -120,7 +122,7 @@ export class TaskTemplateController {
   /**
    * 删除任务模板
    */
-  static async deleteTemplate(req: Request, res: Response) {
+  static async deleteTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskTemplateController.taskService.delete(id);
@@ -140,7 +142,7 @@ export class TaskTemplateController {
   /**
    * 激活任务模板
    */
-  static async activateTemplate(req: Request, res: Response) {
+  static async activateTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskTemplateController.taskService.activate(id);
@@ -150,7 +152,7 @@ export class TaskTemplateController {
 
       res.json({
         success: true,
-        data: template,
+        data: { template },
         message: '任务模板已激活',
       });
     } catch (error) {
@@ -164,7 +166,7 @@ export class TaskTemplateController {
   /**
    * 暂停任务模板
    */
-  static async pauseTemplate(req: Request, res: Response) {
+  static async pauseTemplate(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskTemplateController.taskService.pause(id);
@@ -174,7 +176,7 @@ export class TaskTemplateController {
 
       res.json({
         success: true,
-        data: template,
+        data: { template },
         message: '任务模板已暂停',
       });
     } catch (error) {

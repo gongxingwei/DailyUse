@@ -19,8 +19,8 @@ const router = Router();
 
 // ============ DDD聚合根控制路由（推荐使用）============
 // 体现DDD聚合根控制模式，通过TaskTemplate聚合根管理TaskInstance实体
-// 注意：必须在通用路由之前注册，避免路由冲突
-router.use('/', taskAggregateRoutes);
+// 使用 /aggregates 前缀避免与传统CRUD路由冲突
+router.use('/aggregates', taskAggregateRoutes);
 
 // ============ 传统CRUD路由（向后兼容）============
 // 注意：这些路由要放在聚合路由之后，避免 /:id 匹配到聚合路由

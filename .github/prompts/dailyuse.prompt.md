@@ -62,3 +62,14 @@ github/prompts 文件夹下的 prompt 文件
 - **不要在根级别放置 `total`、`limit`、`page` 等字段**
 - axios 默认只返回 `response.data`，所以前端需要的所有信息都要在 `data` 字段中
 - 确保分页、统计、查询等信息都嵌套在 `data` 对象内
+
+## 新模块开发流程
+
+1. **定义类型**: 在 `packages/contracts/src/modules/{module}` 下创建或更新类型定义
+2. **核心逻辑**: 在 `packages/domain-core/src/{module}` 下实现核心抽象类
+3. **服务端实现**: 在 `packages/domain-server/src/{module}` 下实现服务端业务逻辑
+4. **客户端实现**: 在 `packages/domain-client/src/{module}` 下实现客户端状态管理
+5. **前端集成**: 在 `apps/web/src/modules/{module}` 下集成前端组件和视图
+6. **测试验证**: 编写测试脚本，确保各层功能正确
+7. **文档更新**: 更新相关文档，确保使用说明完整
+8. **代码审查**: 提交代码并进行审查，确保符合规范和质量要求

@@ -5,13 +5,12 @@
 
 import type { Request, Response } from 'express';
 import { TaskInstanceApplicationService } from '../../../application/services/TaskInstanceApplicationService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../../../config/prisma';
 import type { TaskContracts } from '@dailyuse/contracts';
+import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
 
 type CreateTaskInstanceRequest = TaskContracts.CreateTaskInstanceRequest;
 type UpdateTaskInstanceRequest = TaskContracts.UpdateTaskInstanceRequest;
-
-const prisma = new PrismaClient();
 
 export class TaskInstanceController {
   private static taskService = new TaskInstanceApplicationService(prisma);
@@ -19,15 +18,18 @@ export class TaskInstanceController {
   /**
    * 创建任务实例
    */
-  static async createInstance(req: Request, res: Response) {
+  static async createInstance(req: AuthenticatedRequest, res: Response) {
     try {
       const request: CreateTaskInstanceRequest = req.body;
-      const { accountUuid } = req.params;
+      const accountUuid = req.accountUuid!;
       const instanceUuid = await TaskInstanceController.taskService.create(accountUuid, request);
+
+      // 获取创建后的完整实例数据
+      const instance = await TaskInstanceController.taskService.getById(instanceUuid);
 
       res.status(201).json({
         success: true,
-        data: { uuid: instanceUuid },
+        data: { instance },
         message: '任务实例创建成功',
       });
     } catch (error) {
@@ -41,9 +43,10 @@ export class TaskInstanceController {
   /**
    * 获取任务实例列表
    */
-  static async getInstances(req: Request, res: Response) {
+  static async getInstances(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid } = req.params;
+      console.log('[TaskInstanceController] getInstances called, accountUuid:', req.accountUuid);
+      const accountUuid = req.accountUuid!;
       const { limit, offset, sortBy, sortOrder } = req.query;
 
       const options = {
@@ -69,6 +72,7 @@ export class TaskInstanceController {
         data: instances,
       });
     } catch (error) {
+      console.error('[TaskInstanceController] Error in getInstances:', error);
       res.status(500).json({
         success: false,
         error: error instanceof Error ? error.message : '获取任务实例列表失败',
@@ -79,7 +83,7 @@ export class TaskInstanceController {
   /**
    * 根据ID获取任务实例
    */
-  static async getInstanceById(req: Request, res: Response) {
+  static async getInstanceById(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const instance = await TaskInstanceController.taskService.getById(id);
@@ -93,7 +97,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
       });
     } catch (error) {
       res.status(500).json({
@@ -106,7 +110,7 @@ export class TaskInstanceController {
   /**
    * 更新任务实例
    */
-  static async updateInstance(req: Request, res: Response) {
+  static async updateInstance(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const request: UpdateTaskInstanceRequest = req.body;
@@ -117,7 +121,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务实例更新成功',
       });
     } catch (error) {
@@ -131,7 +135,7 @@ export class TaskInstanceController {
   /**
    * 删除任务实例
    */
-  static async deleteInstance(req: Request, res: Response) {
+  static async deleteInstance(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskInstanceController.taskService.delete(id);
@@ -151,7 +155,7 @@ export class TaskInstanceController {
   /**
    * 开始任务
    */
-  static async startTask(req: Request, res: Response) {
+  static async startTask(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskInstanceController.taskService.start(id);
@@ -161,7 +165,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务已开始',
       });
     } catch (error) {
@@ -175,7 +179,7 @@ export class TaskInstanceController {
   /**
    * 完成任务
    */
-  static async completeTask(req: Request, res: Response) {
+  static async completeTask(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const { notes } = req.body;
@@ -186,7 +190,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务已完成',
       });
     } catch (error) {
@@ -200,7 +204,7 @@ export class TaskInstanceController {
   /**
    * 取消任务
    */
-  static async cancelTask(req: Request, res: Response) {
+  static async cancelTask(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const { reason } = req.body;
@@ -211,7 +215,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务已取消',
       });
     } catch (error) {
@@ -225,18 +229,28 @@ export class TaskInstanceController {
   /**
    * 重新安排任务
    */
-  static async rescheduleTask(req: Request, res: Response) {
+  static async rescheduleTask(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
-      const { newScheduledDate, reason } = req.body;
-      await TaskInstanceController.taskService.reschedule(id, newScheduledDate, reason);
+      // 兼容两种字段名: newDueDate (测试用) 和 newScheduledDate
+      const { newScheduledDate, newDueDate, reason } = req.body;
+      const actualNewDate = newScheduledDate || newDueDate;
+
+      if (!actualNewDate) {
+        return res.status(400).json({
+          success: false,
+          error: '缺少必填字段: newScheduledDate 或 newDueDate',
+        });
+      }
+
+      await TaskInstanceController.taskService.reschedule(id, actualNewDate, reason);
 
       // 获取更新后的实例
       const instance = await TaskInstanceController.taskService.getById(id);
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务重新安排成功',
       });
     } catch (error) {
@@ -250,7 +264,7 @@ export class TaskInstanceController {
   /**
    * 更新任务进度
    */
-  static async updateProgress(req: Request, res: Response) {
+  static async updateProgress(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       const { progressPercentage } = req.body;
@@ -261,7 +275,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务进度更新成功',
       });
     } catch (error) {
@@ -275,9 +289,9 @@ export class TaskInstanceController {
   /**
    * 获取今天的任务
    */
-  static async getTodayTasks(req: Request, res: Response) {
+  static async getTodayTasks(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid } = req.params;
+      const accountUuid = req.accountUuid!;
       const { limit, offset } = req.query;
 
       const options = {
@@ -302,9 +316,9 @@ export class TaskInstanceController {
   /**
    * 获取过期任务
    */
-  static async getOverdueTasks(req: Request, res: Response) {
+  static async getOverdueTasks(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid } = req.params;
+      const accountUuid = req.accountUuid!;
       const { limit, offset } = req.query;
 
       const options = {
@@ -329,9 +343,10 @@ export class TaskInstanceController {
   /**
    * 按状态获取任务
    */
-  static async getTasksByStatus(req: Request, res: Response) {
+  static async getTasksByStatus(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid, status } = req.params;
+      const accountUuid = req.accountUuid!;
+      const { status } = req.params;
       const { limit, offset } = req.query;
 
       const options = {
@@ -360,9 +375,9 @@ export class TaskInstanceController {
   /**
    * 获取任务统计
    */
-  static async getTaskStats(req: Request, res: Response) {
+  static async getTaskStats(req: AuthenticatedRequest, res: Response) {
     try {
-      const { accountUuid } = req.params;
+      const accountUuid = req.accountUuid!;
       const stats = await TaskInstanceController.taskService.getCountByStatus(accountUuid);
 
       res.json({
@@ -380,7 +395,7 @@ export class TaskInstanceController {
   /**
    * 批量更新任务状态
    */
-  static async batchUpdateStatus(req: Request, res: Response) {
+  static async batchUpdateStatus(req: AuthenticatedRequest, res: Response) {
     try {
       const { uuids, status } = req.body;
       await TaskInstanceController.taskService.batchUpdateStatus(uuids, status);
@@ -400,7 +415,7 @@ export class TaskInstanceController {
   /**
    * 撤销完成任务
    */
-  static async undoComplete(req: Request, res: Response) {
+  static async undoComplete(req: AuthenticatedRequest, res: Response) {
     try {
       const { id } = req.params;
       await TaskInstanceController.taskService.undoComplete(id);
@@ -410,7 +425,7 @@ export class TaskInstanceController {
 
       res.json({
         success: true,
-        data: instance,
+        data: { instance },
         message: '任务完成状态已撤销',
       });
     } catch (error) {
@@ -424,7 +439,7 @@ export class TaskInstanceController {
   /**
    * 触发提醒
    */
-  static async triggerReminder(req: Request, res: Response) {
+  static async triggerReminder(req: AuthenticatedRequest, res: Response) {
     try {
       const { id, alertId } = req.params;
       // TODO: 实现提醒触发逻辑
@@ -444,7 +459,7 @@ export class TaskInstanceController {
   /**
    * 延后提醒
    */
-  static async snoozeReminder(req: Request, res: Response) {
+  static async snoozeReminder(req: AuthenticatedRequest, res: Response) {
     try {
       const { id, alertId } = req.params;
       const { snoozeMinutes } = req.body;
@@ -465,7 +480,7 @@ export class TaskInstanceController {
   /**
    * 忽略提醒
    */
-  static async dismissReminder(req: Request, res: Response) {
+  static async dismissReminder(req: AuthenticatedRequest, res: Response) {
     try {
       const { id, alertId } = req.params;
       // TODO: 实现提醒忽略逻辑
@@ -485,7 +500,7 @@ export class TaskInstanceController {
   /**
    * 批量删除任务
    */
-  static async batchDelete(req: Request, res: Response) {
+  static async batchDelete(req: AuthenticatedRequest, res: Response) {
     try {
       const { uuids } = req.body;
       await TaskInstanceController.taskService.batchDelete(uuids);

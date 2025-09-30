@@ -11,7 +11,12 @@
     "docs:serve": "echo 'API 文档访问地址: http://localhost:3888/api-docs'",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev --name init",
-    "prisma:studio": "prisma studio"
+    "prisma:studio": "prisma studio",
+    "test": "vitest",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui"
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
@@ -41,8 +46,13 @@
     "@types/jsonwebtoken": "^9.0.6",
     "@types/node": "^22.17.1",
     "@types/node-cron": "^3.0.11",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^3.2.4",
+    "@vitest/ui": "^3.2.4",
     "prisma": "^6.15.0",
+    "supertest": "^7.1.4",
     "tsx": "^4.17.0",
-    "typescript": "^5.8.3"
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
   }
 }

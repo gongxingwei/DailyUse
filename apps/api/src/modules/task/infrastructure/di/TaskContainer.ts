@@ -7,6 +7,7 @@ import type {
 import { PrismaTaskTemplateRepository } from '../repositories/prisma/PrismaTaskTemplateRepository';
 import { PrismaTaskInstanceRepository } from '../repositories/prisma/PrismaTaskInstanceRepository';
 import { PrismaTaskMetaTemplateRepository } from '../repositories/prisma/PrismaTaskMetaTemplateRepository';
+import { PrismaTaskStatsRepository } from '../repositories/prisma/PrismaTaskStatsRepository';
 import { prisma } from '@/config/prisma';
 
 export class TaskContainer {
@@ -14,6 +15,7 @@ export class TaskContainer {
   private taskTemplateRepository?: ITaskTemplateRepository;
   private taskInstanceRepository?: ITaskInstanceRepository;
   private taskMetaTemplateRepository?: ITaskMetaTemplateRepository;
+  private taskStatsRepository?: ITaskStatsRepository;
 
   private constructor() {}
 
@@ -55,11 +57,13 @@ export class TaskContainer {
   }
 
   /**
-   * 获取 TaskStats 仓库实例 (临时实现)
+   * 获取 TaskStats 仓库实例
    */
   async getPrismaTaskStatsRepository(): Promise<ITaskStatsRepository> {
-    // TODO: 实现 TaskStats 仓库
-    throw new Error('TaskStats repository not implemented yet');
+    if (!this.taskStatsRepository) {
+      this.taskStatsRepository = new PrismaTaskStatsRepository(prisma);
+    }
+    return this.taskStatsRepository;
   }
 
   // 用于测试时替换实现
