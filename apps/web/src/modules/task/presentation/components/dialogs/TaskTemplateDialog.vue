@@ -107,7 +107,7 @@ import { ref, computed, watch, reactive, nextTick, defineEmits } from 'vue';
 import TaskTemplateForm from '../TaskTemplateForm/TaskTemplateForm.vue';
 import { TaskTemplate, TaskMetaTemplate } from '@dailyuse/domain-client';
 import { TaskTimeType, TaskScheduleMode } from '@dailyuse/contracts/modules/task';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts/core';
+import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts/shared/index';
 import { useTask } from '../../composables/useTask';
 import { useTaskStore } from '../../stores/taskStore';
 

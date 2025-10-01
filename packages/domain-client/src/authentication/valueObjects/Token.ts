@@ -1,5 +1,8 @@
-import { TokenCore, TokenType } from '@dailyuse/domain-core';
+import { TokenCore } from '@dailyuse/domain-core';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { type ITokenClient } from '../types';
+
+type TokenType = AuthenticationContracts.TokenType;
 
 /**
  * 客户端令牌值对象 - 包含UI相关的令牌管理
@@ -79,14 +82,13 @@ export class Token extends TokenCore implements ITokenClient {
   // ===== 客户端特定的业务方法 =====
   getTypeDisplayName(): string {
     const typeMap = {
-      [TokenType.REMEMBER_ME]: '记住我令牌',
-      [TokenType.ACCESS_TOKEN]: '访问令牌',
-      [TokenType.REFRESH_TOKEN]: '刷新令牌',
-      [TokenType.EMAIL_VERIFICATION]: '邮箱验证令牌',
-      [TokenType.PASSWORD_RESET]: '密码重置令牌',
+      [AuthenticationContracts.TokenType.REMEMBER_ME]: '记住我令牌',
+      [AuthenticationContracts.TokenType.ACCESS]: '访问令牌',
+      [AuthenticationContracts.TokenType.REFRESH]: '刷新令牌',
+      [AuthenticationContracts.TokenType.PASSWORD_RESET]: '密码重置令牌',
     };
 
-    return typeMap[this.type] || '未知令牌类型';
+    return '未知令牌类型';
   }
 
   getExpiryStatus(): 'valid' | 'expiring' | 'expired' {
@@ -156,7 +158,7 @@ export class Token extends TokenCore implements ITokenClient {
 
     return new Token({
       value,
-      type: TokenType.REMEMBER_ME,
+      type: AuthenticationContracts.TokenType.REMEMBER_ME,
       accountUuid,
       expiresAt,
       deviceInfo,
@@ -169,7 +171,7 @@ export class Token extends TokenCore implements ITokenClient {
 
     return new Token({
       value,
-      type: TokenType.ACCESS_TOKEN,
+      type: AuthenticationContracts.TokenType.ACCESS,
       accountUuid,
       expiresAt,
       deviceInfo,

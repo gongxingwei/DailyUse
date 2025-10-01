@@ -1,8 +1,9 @@
 import { TaskTemplateCore } from '@dailyuse/domain-core';
-import type { TaskContracts } from '@dailyuse/contracts';
-import type { ITaskTemplate, ITaskInstance } from '@dailyuse/contracts';
+import { TaskContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 import { TaskInstance } from '../entities/TaskInstance';
+
+type ITaskTemplate = TaskContracts.ITaskTemplate;
 
 /**
  * 任务模板聚合根 - 添加客户端特有功能和聚合根控制模式

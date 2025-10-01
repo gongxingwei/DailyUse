@@ -1,5 +1,8 @@
 import { AddressCore } from '@dailyuse/domain-core';
+import { AccountContracts } from '@dailyuse/contracts';
 import { type IAddressClient } from '../types';
+
+type AddressDTO = AccountContracts.AddressDTO;
 
 /**
  * 客户端地址值对象 - 包含UI相关的地址操作
@@ -275,5 +278,16 @@ export class Address extends AddressCore implements IAddressClient {
       { code: 'DE', name: '德国', flag: '🇩🇪' },
       { code: 'FR', name: '法国', flag: '🇫🇷' },
     ];
+  }
+
+  toDTO(): AddressDTO {
+    return {
+      country: this.country,
+      province: this.state,
+      city: this.city,
+      district: '', // 客户端不处理区县
+      street: this.street,
+      postalCode: this.postalCode,
+    };
   }
 }

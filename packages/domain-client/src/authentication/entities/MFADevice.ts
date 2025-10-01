@@ -1,4 +1,5 @@
-import { MFADeviceCore, MFADeviceType } from '@dailyuse/domain-core';
+import { MFADeviceCore } from '@dailyuse/domain-core';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { type IMFADeviceClient } from '../types';
 
 /**
@@ -7,20 +8,21 @@ import { type IMFADeviceClient } from '../types';
 export class MFADevice extends MFADeviceCore implements IMFADeviceClient {
   // ===== IMFADeviceClient 方法 =====
   async renderQRCode(): Promise<string> {
-    if (this.type !== MFADeviceType.TOTP) {
-      throw new Error('QR Code is only available for TOTP devices');
-    }
+    // if (this.type !== AuthenticationContracts.MFADeviceType.TOTP) {
+    //   throw new Error('QR Code is only available for TOTP devices');
+    // }
 
-    if (!this.secretKey) {
-      throw new Error('Secret key is required for QR code generation');
-    }
+    // if (!this.secretKey) {
+    //   throw new Error('Secret key is required for QR code generation');
+    // }
 
-    // 生成 TOTP QR 码 URL
-    const issuer = 'DailyUse';
-    const label = `${issuer}:${this.name}`;
-    const qrUrl = `otpauth://totp/${encodeURIComponent(label)}?secret=${this.secretKey}&issuer=${encodeURIComponent(issuer)}`;
+    // // 生成 TOTP QR 码 URL
+    // const issuer = 'DailyUse';
+    // const label = `${issuer}:${this.name}`;
+    // const qrUrl = `otpauth://totp/${encodeURIComponent(label)}?secret=${this.secretKey}&issuer=${encodeURIComponent(issuer)}`;
 
-    return qrUrl;
+    // return qrUrl;
+    return 'not_implemented';
   }
 
   async showActivationDialog(): Promise<boolean> {
@@ -68,19 +70,19 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceClient {
   // ===== 客户端特定的业务方法 =====
   getFormattedType(): string {
     const typeMap = {
-      [MFADeviceType.TOTP]: '身份验证器应用',
-      [MFADeviceType.SMS]: '短信验证',
-      [MFADeviceType.EMAIL]: '邮箱验证',
-      [MFADeviceType.HARDWARE_KEY]: '硬件密钥',
-      [MFADeviceType.BACKUP_CODES]: '备用验证码',
+      // [AuthenticationContracts.MFADeviceType.TOTP]: '身份验证器应用',
+      [AuthenticationContracts.MFADeviceType.SMS]: '短信验证',
+      [AuthenticationContracts.MFADeviceType.EMAIL]: '邮箱验证',
+      // [AuthenticationContracts.MFADeviceType.HARDWARE_KEY]: '硬件密钥',
+      // [AuthenticationContracts.MFADeviceType.BACKUP_CODES]: '备用验证码',
     };
 
-    return typeMap[this.type] || '未知设备类型';
+    return '未知设备类型';
   }
 
-  canShowQRCode(): boolean {
-    return this.type === MFADeviceType.TOTP && !!this.secretKey;
-  }
+  // canShowQRCode(): boolean {
+  //   return this.type === AuthenticationContracts.MFADeviceType.TOTP && !!this.secretKey;
+  // }
 
   getStatusText(): string {
     if (!this.isVerified) {
@@ -98,7 +100,7 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceClient {
   // ===== 静态工厂方法 =====
   static create(params: {
     accountUuid: string;
-    type: MFADeviceType;
+    type: AuthenticationContracts.MFADeviceType;
     name: string;
     secretKey?: string;
     phoneNumber?: string;
@@ -128,7 +130,7 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceClient {
   static fromPersistence(params: {
     uuid: string;
     accountUuid: string;
-    type: MFADeviceType;
+    type: AuthenticationContracts.MFADeviceType;
     name: string;
     secretKey?: string;
     phoneNumber?: string;
@@ -165,5 +167,13 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceClient {
     (device as any)._verificationAttempts = params.verificationAttempts;
 
     return device;
+  }
+
+  toDatabase() {
+    return 'not_implemented';
+  }
+
+  toDTO() {
+    console.log('not_implemented');
   }
 }

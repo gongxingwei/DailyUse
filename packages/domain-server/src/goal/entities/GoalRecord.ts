@@ -8,7 +8,6 @@ import { type GoalContracts } from '@dailyuse/contracts';
 export class GoalRecord extends GoalRecordCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     keyResultUuid: string;
     value: number;
@@ -64,7 +63,6 @@ export class GoalRecord extends GoalRecordCore {
   static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       goalUuid: dto.goalUuid,
       keyResultUuid: dto.keyResultUuid,
       value: dto.value,
@@ -79,5 +77,35 @@ export class GoalRecord extends GoalRecordCore {
       ...dto,
       xxxx: '', // 预留字段默认值
     };
+  }
+
+  // ===== 数据库转换方法 =====
+
+  /**
+   * 转换为数据库 DTO（扁平化存储）
+   */
+  toDatabase(): any {
+    return {
+      uuid: this.uuid,
+      keyResultUuid: this.keyResultUuid,
+      // 记录信息
+      value: this._value,
+      note: this._note,
+      createdAt: this._createdAt,
+    };
+  }
+
+  /**
+   * 从数据库 DTO 创建实例
+   */
+  static fromDatabase(dbData: any): GoalRecord {
+    return new GoalRecord({
+      uuid: dbData.uuid,
+      goalUuid: dbData.goalUuid || '', // 这个需要从上层传递
+      keyResultUuid: dbData.keyResultUuid,
+      value: dbData.value,
+      note: dbData.note,
+      createdAt: dbData.createdAt,
+    });
   }
 }

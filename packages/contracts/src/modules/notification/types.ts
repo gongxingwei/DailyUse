@@ -4,73 +4,15 @@
  * 定义通知相关的接口、枚举和类型
  */
 
-// ========== 枚举类型 ==========
-
-/**
- * 通知类型枚举
- */
-export enum NotificationType {
-  /** 信息通知 */
-  INFO = 'info',
-  /** 成功通知 */
-  SUCCESS = 'success',
-  /** 警告通知 */
-  WARNING = 'warning',
-  /** 错误通知 */
-  ERROR = 'error',
-  /** 提醒通知 */
-  REMINDER = 'reminder',
-  /** 系统通知 */
-  SYSTEM = 'system',
-}
-
-/**
- * 通知状态枚举
- */
-export enum NotificationStatus {
-  /** 待处理 */
-  PENDING = 'pending',
-  /** 已发送 */
-  SENT = 'sent',
-  /** 已读 */
-  READ = 'read',
-  /** 已忽略 */
-  DISMISSED = 'dismissed',
-  /** 发送失败 */
-  FAILED = 'failed',
-  /** 已过期 */
-  EXPIRED = 'expired',
-}
-
-/**
- * 通知优先级枚举
- */
-export enum NotificationPriority {
-  /** 低优先级 */
-  LOW = 'low',
-  /** 普通优先级 */
-  NORMAL = 'normal',
-  /** 高优先级 */
-  HIGH = 'high',
-  /** 紧急 */
-  URGENT = 'urgent',
-}
-
-/**
- * 通知渠道枚举
- */
-export enum NotificationChannel {
-  /** 应用内通知 */
-  IN_APP = 'in_app',
-  /** 系统通知 */
-  SYSTEM = 'system',
-  /** 邮件 */
-  EMAIL = 'email',
-  /** 短信 */
-  SMS = 'sms',
-  /** 推送通知 */
-  PUSH = 'push',
-}
+import {
+  NotificationActionType,
+  NotificationChannel,
+  NotificationPriority,
+  NotificationSortField,
+  NotificationStatus,
+  NotificationType,
+  SortOrder,
+} from './enums';
 
 // ========== 接口定义 ==========
 
@@ -85,7 +27,7 @@ export interface NotificationAction {
   /** 动作图标 */
   icon?: string;
   /** 动作类型 */
-  type: 'primary' | 'secondary' | 'danger';
+  type: NotificationActionType;
   /** 点击回调 */
   callback?: () => void;
 }
@@ -290,7 +232,7 @@ export interface NotificationQueryParams {
   /** 分页限制 */
   limit?: number;
   /** 排序字段 */
-  sortBy?: string;
+  sortBy?: NotificationSortField;
   /** 排序方向 */
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
 }

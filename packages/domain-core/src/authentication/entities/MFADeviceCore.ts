@@ -1,13 +1,16 @@
 import { Entity } from '@dailyuse/utils';
-import { type IMFADeviceCore, MFADeviceType, type MFADeviceDTO } from '../types';
+import { AuthenticationContracts } from '@dailyuse/contracts';
+
+type IMFADeviceCore = AuthenticationContracts.IMFADeviceCore;
+
 
 /**
  * MFA设备实体
  * 管理多因素认证设备的绑定、验证和管理
  */
-export class MFADeviceCore extends Entity implements IMFADeviceCore {
+export abstract class MFADeviceCore extends Entity implements IMFADeviceCore {
   private _accountUuid: string;
-  private _type: MFADeviceType;
+  private _type: AuthenticationContracts.MFADeviceType;
   private _name: string;
   private _secretKey?: string; // TOTP密钥
   private _phoneNumber?: string; // SMS设备的手机号
@@ -23,7 +26,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
   constructor(params: {
     uuid?: string;
     accountUuid: string;
-    type: MFADeviceType;
+    type: AuthenticationContracts.MFADeviceType;
     name: string;
     maxAttempts: number;
   }) {
@@ -47,7 +50,7 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     return this._accountUuid;
   }
 
-  get type(): MFADeviceType {
+  get type(): AuthenticationContracts.MFADeviceType {
     return this._type;
   }
 
@@ -96,20 +99,10 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
   }
 
   /**
-   * 设置TOTP密钥
-   */
-  setTOTPSecret(secretKey: string): void {
-    if (this._type !== MFADeviceType.TOTP) {
-      throw new Error('This device is not a TOTP device');
-    }
-    this._secretKey = secretKey;
-  }
-
-  /**
    * 设置SMS设备的手机号
    */
   setSMSPhoneNumber(phoneNumber: string): void {
-    if (this._type !== MFADeviceType.SMS) {
+    if (this._type !== AuthenticationContracts.MFADeviceType.SMS) {
       throw new Error('This device is not an SMS device');
     }
     this._phoneNumber = phoneNumber;
@@ -119,21 +112,12 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
    * 设置Email设备的邮箱
    */
   setEmailAddress(emailAddress: string): void {
-    if (this._type !== MFADeviceType.EMAIL) {
+    if (this._type !== AuthenticationContracts.MFADeviceType.EMAIL) {
       throw new Error('This device is not an Email device');
     }
     this._emailAddress = emailAddress;
   }
 
-  /**
-   * 设置备用验证码
-   */
-  setBackupCodes(codes: string[]): void {
-    if (this._type !== MFADeviceType.BACKUP_CODES) {
-      throw new Error('This device is not a backup codes device');
-    }
-    this._backupCodes = [...codes];
-  }
 
   /**
    * 验证MFA代码
@@ -146,18 +130,9 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     let isValid = false;
 
     switch (this._type) {
-      case MFADeviceType.TOTP:
-        isValid = this.verifyTOTPCode(code);
-        break;
-      case MFADeviceType.SMS:
-      case MFADeviceType.EMAIL:
+      case AuthenticationContracts.MFADeviceType.SMS:
+      case AuthenticationContracts.MFADeviceType.EMAIL:
         isValid = this.verifyTemporaryCode(code);
-        break;
-      case MFADeviceType.BACKUP_CODES:
-        isValid = this.verifyBackupCode(code);
-        break;
-      case MFADeviceType.HARDWARE_KEY:
-        isValid = this.verifyHardwareKey(code);
         break;
       default:
         isValid = false;
@@ -202,19 +177,6 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     this._verificationAttempts = 0;
   }
 
-  /**
-   * 生成TOTP代码（用于测试或显示）
-   */
-  generateTOTPCode(): string {
-    if (this._type !== MFADeviceType.TOTP || !this._secretKey) {
-      throw new Error('Cannot generate TOTP code for this device');
-    }
-
-    // 简化的TOTP实现（实际应用中应使用专业的TOTP库）
-    const timeStep = Math.floor(Date.now() / 30000); // 30秒时间窗口
-    const hash = this.simpleHash(this._secretKey + timeStep.toString());
-    return (hash % 1000000).toString().padStart(6, '0');
-  }
 
   /**
    * 生成备用验证码
@@ -308,102 +270,6 @@ export class MFADeviceCore extends Entity implements IMFADeviceCore {
     return result;
   }
 
-  /**
-   * 转换为DTO对象
-   */
-  toDTO(): MFADeviceDTO {
-    return {
-      uuid: this._uuid,
-      accountUuid: this._accountUuid,
-      type: this._type,
-      name: this._name,
-      secret: this._secretKey,
-      phoneNumber: this._phoneNumber,
-      email: this._emailAddress,
-      isVerified: this._isVerified,
-      isEnabled: this._isEnabled,
-      createdAt: this._createdAt.getTime(),
-      lastUsedAt: this._lastUsedAt?.getTime(),
-      verificationAttempts: this._verificationAttempts,
-      maxAttempts: this._maxAttempts,
-    };
-  }
-
-  /**
-   * 从数据库行创建 MFADevice 对象
-   */
-  static fromDatabase(row: {
-    uuid: string;
-    account_uuid: string;
-    type: string;
-    name: string;
-    secret_key?: string;
-    phone_number?: string;
-    email_address?: string;
-    backup_codes?: string;
-    is_verified: number;
-    is_enabled: number;
-    verification_attempts: number;
-    max_attempts: number;
-    created_at: number;
-    last_used_at?: number;
-  }): MFADeviceCore {
-    const device = new MFADeviceCore({
-      uuid: row.uuid,
-      accountUuid: row.account_uuid,
-      type: row.type as MFADeviceType,
-      name: row.name,
-      maxAttempts: row.max_attempts,
-    });
-
-    // 设置从数据库读取的属性
-    (device as any)._secretKey = row.secret_key;
-    (device as any)._phoneNumber = row.phone_number;
-    (device as any)._emailAddress = row.email_address;
-    (device as any)._backupCodes = row.backup_codes ? JSON.parse(row.backup_codes) : undefined;
-    (device as any)._isVerified = Boolean(row.is_verified);
-    (device as any)._isEnabled = Boolean(row.is_enabled);
-    (device as any)._verificationAttempts = row.verification_attempts;
-    (device as any)._createdAt = new Date(row.created_at);
-    (device as any)._lastUsedAt = row.last_used_at ? new Date(row.last_used_at) : undefined;
-
-    return device;
-  }
-
-  /**
-   * 转换为数据库格式
-   */
-  toDatabaseFormat(): {
-    uuid: string;
-    account_uuid: string;
-    type: string;
-    name: string;
-    secret_key?: string;
-    phone_number?: string;
-    email_address?: string;
-    backup_codes?: string;
-    is_verified: number;
-    is_enabled: number;
-    verification_attempts: number;
-    max_attempts: number;
-    created_at: number;
-    last_used_at?: number;
-  } {
-    return {
-      uuid: this._uuid,
-      account_uuid: this._accountUuid,
-      type: this._type,
-      name: this._name,
-      secret_key: this._secretKey,
-      phone_number: this._phoneNumber,
-      email_address: this._emailAddress,
-      backup_codes: this._backupCodes ? JSON.stringify(this._backupCodes) : undefined,
-      is_verified: this._isVerified ? 1 : 0,
-      is_enabled: this._isEnabled ? 1 : 0,
-      verification_attempts: this._verificationAttempts,
-      max_attempts: this._maxAttempts,
-      created_at: this._createdAt.getTime(),
-      last_used_at: this._lastUsedAt?.getTime(),
-    };
-  }
+  abstract toDatabase(): any;
+  abstract toDTO(): any;
 }

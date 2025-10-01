@@ -1,6 +1,8 @@
 import { Entity } from '@dailyuse/utils';
-import type { ITaskInstance, TaskContracts } from '@dailyuse/contracts';
+import { TaskContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+
+type ITaskInstance = TaskContracts.ITaskInstance;
 
 /**
  * 任务实例核心基类

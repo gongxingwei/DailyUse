@@ -3,7 +3,7 @@
  * 编辑器模块数据传输对象定义
  */
 
-import type { SupportedFileType, FileOperationType } from './types';
+import { SupportedFileType, FileOperationType } from './enums';
 
 // ============ DTO 基础类型 ============
 

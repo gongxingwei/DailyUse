@@ -1,11 +1,12 @@
 import { Entity } from '@dailyuse/utils';
-import { type GoalContracts, type IGoalRecord } from '@dailyuse/contracts';
+import { type GoalContracts } from '@dailyuse/contracts';
+
+type IGoalRecord = GoalContracts.IGoalRecord;
 
 /**
  * GoalRecord 核心基类 - 目标记录实体
  */
 export abstract class GoalRecordCore extends Entity implements IGoalRecord {
-  protected _accountUuid: string;
   protected _goalUuid: string;
   protected _keyResultUuid: string;
   protected _value: number;
@@ -14,7 +15,6 @@ export abstract class GoalRecordCore extends Entity implements IGoalRecord {
 
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     keyResultUuid: string;
     value: number;
@@ -23,7 +23,6 @@ export abstract class GoalRecordCore extends Entity implements IGoalRecord {
   }) {
     super(params.uuid || Entity.generateUUID());
 
-    this._accountUuid = params.accountUuid;
     this._goalUuid = params.goalUuid;
     this._keyResultUuid = params.keyResultUuid;
     this._value = params.value;
@@ -32,10 +31,6 @@ export abstract class GoalRecordCore extends Entity implements IGoalRecord {
   }
 
   // ===== 只读属性 =====
-  get accountUuid(): string {
-    return this._accountUuid;
-  }
-
   get goalUuid(): string {
     return this._goalUuid;
   }
@@ -81,11 +76,10 @@ export abstract class GoalRecordCore extends Entity implements IGoalRecord {
   }
 
   // ===== 序列化方法 =====
-  toDTO(context?: { accountUuid?: string; goalUuid?: string }): GoalContracts.GoalRecordDTO {
+  toDTO(): GoalContracts.GoalRecordDTO {
     return {
       uuid: this.uuid,
-      accountUuid: context?.accountUuid || '', // 从上下文获取
-      goalUuid: context?.goalUuid || '', // 从上下文获取
+      goalUuid: this._goalUuid,
       keyResultUuid: this._keyResultUuid,
       value: this._value,
       note: this._note,

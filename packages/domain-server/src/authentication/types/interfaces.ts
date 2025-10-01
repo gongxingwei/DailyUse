@@ -1,10 +1,11 @@
-import {
-  type IMFADeviceCore,
-  type ISessionCore,
-  type ITokenCore,
-  type IPasswordCore,
-  type IAuthCredentialCore,
-} from '@dailyuse/domain-core';
+import { AuthenticationContracts } from '@dailyuse/contracts';
+
+// ======== MFA Device Types ========
+type IMFADeviceCore = AuthenticationContracts.IMFADeviceCore;
+type ISessionCore = AuthenticationContracts.ISessionCore;
+type ITokenCore = AuthenticationContracts.ITokenCore;
+type IPasswordCore = AuthenticationContracts.IPasswordCore;
+type IAuthCredentialCore = AuthenticationContracts.IAuthCredentialCore;
 
 // ======== MFA Device Server Interface ========
 export interface IMFADeviceServer extends IMFADeviceCore {

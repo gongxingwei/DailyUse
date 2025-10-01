@@ -7,6 +7,10 @@
 // 核心类型和接口
 export * from './types';
 
+export * from './enums';
+
+export * from './persistence-dtos';
+
 // 数据传输对象
 export * from './dtos';
 

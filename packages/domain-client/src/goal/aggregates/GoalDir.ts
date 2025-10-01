@@ -8,7 +8,6 @@ import { type GoalContracts } from '@dailyuse/contracts';
 export class GoalDir extends GoalDirCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     name: string;
     description?: string;
     icon: string;
@@ -108,10 +107,26 @@ export class GoalDir extends GoalDirCore {
 
   // ===== 序列化方法 =====
 
+  toDTO(): GoalContracts.GoalDirDTO {
+    return {
+      uuid: this._uuid,
+      name: this._name,
+      description: this._description,
+      icon: this._icon,
+      color: this._color,
+      parentUuid: this._parentUuid,
+      sortConfig: this._sortConfig,
+      lifecycle: {
+        status: this._lifecycle.status,
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+      },
+    };
+  }
+
   static fromDTO(dto: GoalContracts.GoalDirDTO): GoalDir {
     return new GoalDir({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       icon: dto.icon,
@@ -131,13 +146,8 @@ export class GoalDir extends GoalDirCore {
   /**
    * 创建一个空的目录实例（用于新建表单）
    */
-  static forCreate({
-    accountUuid,
-  }: {
-    accountUuid: string;
-  }): GoalDir {
+  static forCreate(): GoalDir {
     return new GoalDir({
-      accountUuid,
       name: '',
       icon: 'mdi-folder',
       color: '#2196F3',

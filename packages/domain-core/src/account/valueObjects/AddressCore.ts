@@ -1,5 +1,8 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type IAddressCore } from '../types';
+import { type AccountContracts } from "@dailyuse/contracts";
+
+type IAddressCore = AccountContracts.IAddressCore;
+
 /**
  * 地址值对象核心类
  */

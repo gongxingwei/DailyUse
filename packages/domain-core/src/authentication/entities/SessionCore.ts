@@ -1,12 +1,14 @@
 import { Entity } from '@dailyuse/utils';
-import { type ISessionCore, type SessionDTO } from '../types';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { isValid } from 'date-fns';
+
+type ISessionCore = AuthenticationContracts.ISessionCore;
 
 /**
  * 会话实体
  * 管理用户登录会话的生命周期
  */
-export class SessionCore extends Entity implements ISessionCore {
+export abstract class SessionCore extends Entity implements ISessionCore {
   private _accountUuid: string;
   private _token: string;
   private _deviceInfo: string;
@@ -197,41 +199,4 @@ export class SessionCore extends Entity implements ISessionCore {
     }
   }
 
-  /**
-   * 转换为DTO对象
-   */
-  toDTO(): SessionDTO {
-    return {
-      uuid: this._uuid,
-      accountUuid: this._accountUuid,
-      token: this._token,
-      deviceInfo: this._deviceInfo,
-      ipAddress: this._ipAddress,
-      userAgent: this._userAgent,
-      createdAt: this._createdAt.getTime(),
-      lastActiveAt: this._lastActiveAt.getTime(),
-      expiresAt: this._expiresAt.getTime(),
-      isActive: this._isActive,
-      terminatedAt: this._terminatedAt?.getTime(),
-      terminationReason: this._terminationReason,
-    };
-  }
-
-  static fromDTO(dto: SessionDTO): SessionCore {
-    const session = new SessionCore({
-      uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
-      token: dto.token,
-      deviceInfo: dto.deviceInfo,
-      ipAddress: dto.ipAddress,
-      userAgent: dto.userAgent,
-      sessionDurationInMinutes: 60 * 24, // 默认24小时
-    });
-    session.createdAt = isValid(dto.createdAt) ? new Date(dto.createdAt) : new Date();
-    session.lastActiveAt = isValid(dto.lastActiveAt) ? new Date(dto.lastActiveAt) : new Date();
-    session.expiresAt = isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date();
-    session.terminatedAt =
-      dto.terminatedAt && isValid(dto.terminatedAt) ? new Date(dto.terminatedAt) : undefined;
-    return session;
-  }
 }

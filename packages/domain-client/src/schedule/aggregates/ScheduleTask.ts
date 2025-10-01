@@ -37,6 +37,34 @@ export class ScheduleTask extends ScheduleTaskCore {
     super(data);
   }
 
+  get currentRetries(): number {
+    return this.currentRetries;
+  }
+
+  get status(): ScheduleStatus {
+    return this.status;
+  }
+
+  set status(value: ScheduleStatus) {
+    this.status = value;
+  }
+
+  set currentRetries(value: number) {
+    this.currentRetries = value;
+  }
+
+  set nextExecutionTime(value: Date | undefined) {
+    this.nextExecutionTime = value;
+  }
+
+  startExecution(): void {
+    this.startExecution();
+  }
+
+  completeExecution(result: IScheduleExecutionResult): void {
+    this.completeExecution(result);
+  }
+
   /**
    * 执行任务 - 客户端版本
    * 主要用于UI更新和用户交互
@@ -384,4 +412,10 @@ export class ScheduleTask extends ScheduleTaskCore {
       this.nextExecutionTime = originalTime;
     }
   }
+
+  calculateNextExecutionTime(): Date | undefined {
+    console.log('客户端计算下次执行时间');
+    return this.nextExecutionTime;
+  }
 }
+  

@@ -1,5 +1,6 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type ISexCore } from '../types';
+import { type AccountContracts } from "@dailyuse/contracts";
+type ISexCore = AccountContracts.ISexCore;
 /**
  * 性别值对象核心类
  */

@@ -300,4 +300,44 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
       isPositiveReview: this.isPositiveReview,
     };
   }
+
+  // ===== 数据库转换方法 =====
+
+  /**
+   * 转换为数据库 DTO（扁平化存储）
+   */
+  toDatabase(): any {
+    return {
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      // 评审信息
+      title: this._title,
+      type: this._type,
+      reviewDate: this._reviewDate,
+      content: JSON.stringify(this._content), // 序列化为 JSON
+      rating: JSON.stringify(this._rating), // 序列化为 JSON
+      snapshot: JSON.stringify(this._snapshot), // 序列化为 JSON
+      // 生命周期
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
+  /**
+   * 从数据库 DTO 创建实例
+   */
+  static fromDatabase(dbData: any): GoalReview {
+    return new GoalReview({
+      uuid: dbData.uuid,
+      goalUuid: dbData.goalUuid,
+      title: dbData.title,
+      type: dbData.type,
+      reviewDate: dbData.reviewDate,
+      content: JSON.parse(dbData.content),
+      snapshot: JSON.parse(dbData.snapshot),
+      rating: JSON.parse(dbData.rating),
+      createdAt: dbData.createdAt,
+      updatedAt: dbData.updatedAt,
+    });
+  }
 }

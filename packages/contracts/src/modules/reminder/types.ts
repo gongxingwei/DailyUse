@@ -1,100 +1,16 @@
-import { ImportanceLevel } from '../../core';
-
-// ========== 枚举类型 ==========
-
-/**
- * 提醒类型枚举
- */
-export enum ReminderType {
-  /** 绝对时间提醒 */
-  ABSOLUTE = 'absolute',
-  /** 相对时间提醒 */
-  RELATIVE = 'relative',
-  /** 基于位置的提醒 */
-  LOCATION_BASED = 'location_based',
-  /** 基于事件的提醒 */
-  EVENT_BASED = 'event_based',
-}
-
-/**
- * 提醒状态枚举
- */
-export enum ReminderStatus {
-  /** 待处理 */
-  PENDING = 'pending',
-  /** 已触发 */
-  TRIGGERED = 'triggered',
-  /** 已确认 */
-  ACKNOWLEDGED = 'acknowledged',
-  /** 已忽略 */
-  DISMISSED = 'dismissed',
-  /** 已稍后提醒 */
-  SNOOZED = 'snoozed',
-  /** 已过期 */
-  EXPIRED = 'expired',
-  /** 已取消 */
-  CANCELLED = 'cancelled',
-}
-
-/**
- * 提醒优先级枚举
- */
-export enum ReminderPriority {
-  /** 低优先级 */
-  LOW = 'low',
-  /** 普通优先级 */
-  NORMAL = 'normal',
-  /** 高优先级 */
-  HIGH = 'high',
-  /** 紧急 */
-  URGENT = 'urgent',
-}
-
-/**
- * 重复模式枚举
- */
-export enum RecurrencePattern {
-  /** 不重复 */
-  NONE = 'none',
-  /** 每日 */
-  DAILY = 'daily',
-  /** 每周 */
-  WEEKLY = 'weekly',
-  /** 每月 */
-  MONTHLY = 'monthly',
-  /** 每年 */
-  YEARLY = 'yearly',
-  /** 自定义 */
-  CUSTOM = 'custom',
-}
-
-/**
- * 稍后提醒类型枚举
- */
-export enum SnoozeType {
-  /** 5分钟后 */
-  FIVE_MINUTES = '5_minutes',
-  /** 10分钟后 */
-  TEN_MINUTES = '10_minutes',
-  /** 30分钟后 */
-  THIRTY_MINUTES = '30_minutes',
-  /** 1小时后 */
-  ONE_HOUR = '1_hour',
-  /** 明天 */
-  TOMORROW = 'tomorrow',
-  /** 自定义时间 */
-  CUSTOM = 'custom',
-}
-
-/**
- * 提醒模板启用模式
- */
-export enum ReminderTemplateEnableMode {
-  /** 按组启用 */
-  GROUP = 'group',
-  /** 单独启用 */
-  INDIVIDUAL = 'individual',
-}
+import { ImportanceLevel } from '../../shared/index';
+import {
+  ReminderPriority,
+  ReminderStatus,
+  ReminderTemplateEnableMode,
+  ReminderTimeConfigType,
+  ReminderType,
+  RecurrencePattern,
+  SnoozeType,
+  SortOrder,
+  ReminderSortField,
+  ReminderDurationUnit,
+} from './enums';
 
 // ========== 接口定义 ==========
 
@@ -182,13 +98,13 @@ export interface AbsoluteTimeConfig {
  * 提醒时间配置
  */
 export interface ReminderTimeConfig {
-  type: 'daily' | 'weekly' | 'monthly' | 'custom' | 'absolute' | 'relative';
+  type: ReminderTimeConfigType;
   times?: string[]; // HH:mm format for daily/weekly/monthly
   weekdays?: number[]; // 0-6, 0=Sunday
   monthDays?: number[]; // 1-31
   customPattern?: {
     interval: number;
-    unit: 'minutes' | 'hours' | 'days';
+    unit: ReminderDurationUnit;
   };
   // 新增的配置选项
   duration?: number | TimeRange; // 用于相对时间
@@ -439,9 +355,9 @@ export interface ReminderQueryParams {
   /** 分页限制 */
   limit?: number;
   /** 排序字段 */
-  sortBy?: string;
+  sortBy?: ReminderSortField;
   /** 排序方向 */
-  sortOrder?: 'asc' | 'desc';
+  sortOrder?: SortOrder;
 }
 
 /**

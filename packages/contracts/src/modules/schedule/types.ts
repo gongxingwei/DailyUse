@@ -5,91 +5,14 @@
  * @date 2025-01-09
  */
 
-/**
- * 调度任务状态枚举
- */
-export enum ScheduleStatus {
-  /** 等待中 */
-  PENDING = 'PENDING',
-  /** 运行中 */
-  RUNNING = 'RUNNING',
-  /** 已完成 */
-  COMPLETED = 'COMPLETED',
-  /** 已取消 */
-  CANCELLED = 'CANCELLED',
-  /** 失败 */
-  FAILED = 'FAILED',
-  /** 已暂停 */
-  PAUSED = 'PAUSED',
-}
-
-/**
- * 调度任务优先级枚举
- */
-export enum SchedulePriority {
-  /** 低优先级 */
-  LOW = 'LOW',
-  /** 正常优先级 */
-  NORMAL = 'NORMAL',
-  /** 高优先级 */
-  HIGH = 'HIGH',
-  /** 紧急优先级 */
-  URGENT = 'URGENT',
-}
-
-/**
- * 调度任务类型枚举
- */
-export enum ScheduleTaskType {
-  /** 任务提醒 */
-  TASK_REMINDER = 'TASK_REMINDER',
-  /** 目标提醒 */
-  GOAL_REMINDER = 'GOAL_REMINDER',
-  /** 通用提醒 */
-  GENERAL_REMINDER = 'GENERAL_REMINDER',
-  /** 系统维护 */
-  SYSTEM_MAINTENANCE = 'SYSTEM_MAINTENANCE',
-  /** 数据备份 */
-  DATA_BACKUP = 'DATA_BACKUP',
-  /** 清理任务 */
-  CLEANUP_TASK = 'CLEANUP_TASK',
-}
-
-/**
- * 重复规则类型枚举
- */
-export enum RecurrenceType {
-  /** 不重复 */
-  NONE = 'NONE',
-  /** 每天 */
-  DAILY = 'DAILY',
-  /** 每周 */
-  WEEKLY = 'WEEKLY',
-  /** 每月 */
-  MONTHLY = 'MONTHLY',
-  /** 每年 */
-  YEARLY = 'YEARLY',
-  /** 自定义 */
-  CUSTOM = 'CUSTOM',
-}
-
-/**
- * 提醒方式枚举
- */
-export enum AlertMethod {
-  /** 弹窗通知 */
-  POPUP = 'POPUP',
-  /** 声音提醒 */
-  SOUND = 'SOUND',
-  /** 系统通知 */
-  SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
-  /** 邮件提醒 */
-  EMAIL = 'EMAIL',
-  /** 短信提醒 */
-  SMS = 'SMS',
-  /** 桌面闪烁 */
-  DESKTOP_FLASH = 'DESKTOP_FLASH',
-}
+import {
+  AlertActionStyle,
+  AlertMethod,
+  RecurrenceType,
+  SchedulePriority,
+  ScheduleStatus,
+  ScheduleTaskType,
+} from './enums';
 
 /**
  * 重复规则接口
@@ -143,7 +66,7 @@ export interface IAlertConfig {
   customActions?: {
     label: string;
     action: string;
-    style?: 'primary' | 'secondary' | 'success' | 'warning' | 'danger';
+    style?: AlertActionStyle;
   }[];
 }
 

@@ -4,49 +4,7 @@
  * 定义应用程序相关的接口、枚举和类型
  */
 
-// ========== 枚举类型 ==========
-
-/**
- * 应用状态枚举
- */
-export enum AppStatus {
-  /** 启动中 */
-  STARTING = 'starting',
-  /** 运行中 */
-  RUNNING = 'running',
-  /** 暂停 */
-  PAUSED = 'paused',
-  /** 停止 */
-  STOPPED = 'stopped',
-  /** 错误 */
-  ERROR = 'error',
-}
-
-/**
- * 应用环境枚举
- */
-export enum AppEnvironment {
-  /** 开发环境 */
-  DEVELOPMENT = 'development',
-  /** 测试环境 */
-  TESTING = 'testing',
-  /** 生产环境 */
-  PRODUCTION = 'production',
-}
-
-/**
- * 窗口状态枚举
- */
-export enum WindowState {
-  /** 正常 */
-  NORMAL = 'normal',
-  /** 最小化 */
-  MINIMIZED = 'minimized',
-  /** 最大化 */
-  MAXIMIZED = 'maximized',
-  /** 全屏 */
-  FULLSCREEN = 'fullscreen',
-}
+import { AppEnvironment, AppStatus, WindowState } from './enums';
 
 // ========== 接口定义 ==========
 

@@ -1,11 +1,12 @@
 import { Entity } from '@dailyuse/utils';
-import { type GoalContracts, type IKeyResult } from '@dailyuse/contracts';
+import { type GoalContracts } from '@dailyuse/contracts';
+
+type IKeyResult = GoalContracts.IKeyResult;
 
 /**
  * KeyResult 核心基类 - 关键结果实体
  */
 export abstract class KeyResultCore extends Entity implements IKeyResult {
-  protected _accountUuid: string;
   protected _goalUuid: string;
   protected _name: string;
   protected _description?: string;
@@ -23,7 +24,6 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
 
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     name: string;
     description?: string;
@@ -40,7 +40,6 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     super(params.uuid || Entity.generateUUID());
     const now = new Date();
 
-    this._accountUuid = params.accountUuid;
     this._goalUuid = params.goalUuid;
     this._name = params.name;
     this._description = params.description;
@@ -58,10 +57,6 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   }
 
   // ===== 只读属性 =====
-  get accountUuid(): string {
-    return this._accountUuid;
-  }
-
   get goalUuid(): string {
     return this._goalUuid;
   }
@@ -347,10 +342,9 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   }
 
   // ===== 序列化方法 =====
-  toDTO(context?: { accountUuid?: string }): GoalContracts.KeyResultDTO {
+  toDTO(): GoalContracts.KeyResultDTO {
     return {
       uuid: this.uuid,
-      accountUuid: context?.accountUuid || '', // 从上下文获取
       goalUuid: this._goalUuid,
       name: this._name,
       description: this._description,

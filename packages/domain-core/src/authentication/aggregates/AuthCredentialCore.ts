@@ -1,23 +1,19 @@
 import { AggregateRoot } from '@dailyuse/utils';
 import {
-  type IAuthCredentialCore,
-  type IPasswordCore,
-  type ISessionCore,
-  type IMFADeviceCore,
-  type ITokenCore,
-  TokenType,
-  type ClientInfo,
-} from '../types';
+  AuthenticationContracts
+} from '@dailyuse/contracts';
 import { PasswordCore } from '../valueObjects/PasswordCore';
 import { TokenCore } from '../valueObjects/TokenCore';
 import { SessionCore } from '../entities/SessionCore';
 import { MFADeviceCore } from '../entities/MFADeviceCore';
 
+
+
 /**
  * 核心认证凭据 - 仅包含数据和基础计算
  * 前后端共享的基础模型
  */
-export abstract class AuthCredentialCore extends AggregateRoot implements IAuthCredentialCore {
+export abstract class AuthCredentialCore extends AggregateRoot implements AuthenticationContracts.IAuthCredentialCore {
   protected _accountUuid: string;
   protected _password: PasswordCore;
   protected _sessions: Map<string, SessionCore>;
@@ -62,19 +58,19 @@ export abstract class AuthCredentialCore extends AggregateRoot implements IAuthC
     return this._accountUuid;
   }
 
-  get password(): IPasswordCore {
+  get password(): AuthenticationContracts.IPasswordCore {
     return this._password;
   }
 
-  get sessions(): Map<string, ISessionCore> {
+  get sessions(): Map<string, AuthenticationContracts.ISessionCore> {
     return this._sessions;
   }
 
-  get mfaDevices(): Map<string, IMFADeviceCore> {
+  get mfaDevices(): Map<string, AuthenticationContracts.IMFADeviceCore> {
     return this._mfaDevices;
   }
 
-  get tokens(): Map<string, ITokenCore> {
+  get tokens(): Map<string, AuthenticationContracts.ITokenCore> {
     return this._tokens;
   }
 
@@ -117,20 +113,20 @@ export abstract class AuthCredentialCore extends AggregateRoot implements IAuthC
   }
 
   // ===== 记住我令牌相关方法 =====
-  getRememberTokens(): ITokenCore[] {
-    const rememberTokens: ITokenCore[] = [];
+  getRememberTokens(): AuthenticationContracts.ITokenCore[] {
+    const rememberTokens: AuthenticationContracts.ITokenCore[] = [];
     for (const token of this._tokens.values()) {
-      if (token.type === TokenType.REMEMBER_ME && token.isValid()) {
+      if (token.type === AuthenticationContracts.TokenType.REMEMBER_ME && token.isValid()) {
         rememberTokens.push(token);
       }
     }
     return rememberTokens;
   }
 
-  getRememberTokenForDevice(deviceInfo: string): ITokenCore | undefined {
+  getRememberTokenForDevice(deviceInfo: string): AuthenticationContracts.ITokenCore | undefined {
     for (const token of this._tokens.values()) {
       if (
-        token.type === TokenType.REMEMBER_ME &&
+        token.type === AuthenticationContracts.TokenType.REMEMBER_ME &&
         token.isValid() &&
         token.deviceInfo === deviceInfo
       ) {

@@ -1,11 +1,19 @@
-import { ImportanceLevel, UrgencyLevel } from '../../core';
+import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
+import {
+  GoalDirStatus,
+  GoalReviewType,
+  GoalStatus,
+  GoalSortField,
+  KeyResultCalculationMethod,
+  KeyResultStatus,
+  SortOrder,
+} from './enums';
 
 /**
  * 关键结果接口
  */
 export interface IKeyResult {
   uuid: string;
-  accountUuid: string;
   goalUuid: string;
 
   name: string;
@@ -16,12 +24,12 @@ export interface IKeyResult {
   currentValue: number;
   unit: string;
   weight: number;
-  calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
+  calculationMethod: KeyResultCalculationMethod;
 
   lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'archived';
+    status: KeyResultStatus;
   };
 }
 
@@ -30,7 +38,6 @@ export interface IKeyResult {
  */
 export interface IGoalRecord {
   uuid: string;
-  accountUuid: string;
   goalUuid: string;
   keyResultUuid: string;
 
@@ -46,7 +53,7 @@ export interface IGoalReview {
   uuid: string;
   goalUuid: string;
   title: string;
-  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  type: GoalReviewType;
   reviewDate: Date;
   content: {
     achievements: string;
@@ -104,7 +111,7 @@ export interface IGoal {
   lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'paused' | 'archived';
+    status: GoalStatus;
   };
   metadata: {
     tags: string[];
@@ -118,7 +125,6 @@ export interface IGoal {
  */
 export interface IGoalDir {
   uuid: string;
-  accountUuid: string;
   parentUuid?: string;
 
   name: string;
@@ -127,14 +133,14 @@ export interface IGoalDir {
   color: string;
 
   sortConfig: {
-    sortKey: string;
+    sortKey: GoalSortField;
     sortOrder: number;
   };
 
   lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'archived';
+    status: GoalDirStatus;
   };
 }
 
@@ -177,9 +183,9 @@ export interface GoalQueryParams {
   page?: number;
   limit?: number;
   search?: string;
-  status?: 'active' | 'completed' | 'paused' | 'archived';
-  sortBy?: 'name' | 'createdAt' | 'endTime' | 'progress';
-  sortOrder?: 'asc' | 'desc';
+  status?: GoalStatus;
+  sortBy?: GoalSortField;
+  sortOrder?: SortOrder;
   dirUuid?: string;
   offset?: number;
   tags?: string[];

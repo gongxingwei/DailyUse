@@ -1,6 +1,6 @@
 import type { DomainEvent, AccountStatus } from './types';
 import { EVENT_TYPES } from './constants';
-import type { AccountDTO } from '../core';
+import type { AccountDTO } from '../modules/account';
 
 // =================== 账户状态验证事件 ===================
 export interface AccountStatusVerificationResponse

@@ -1,5 +1,8 @@
 import { PermissionCore } from '@dailyuse/domain-core';
 import { type IPermissionClient } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type PermissionDTO = AccountContracts.PermissionDTO;
 
 /**
  * 客户端权限实体 - 包含UI相关的权限操作
@@ -9,7 +12,6 @@ export class Permission extends PermissionCore implements IPermissionClient {
     uuid?: string;
     code: string;
     name: string;
-    description?: string;
     module: string;
   }) {
     super(params);
@@ -149,7 +151,6 @@ export class Permission extends PermissionCore implements IPermissionClient {
         uuid: data.uuid,
         code: data.code,
         name: data.name,
-        description: data.description,
         module: data.module,
       });
     } catch (error) {
@@ -179,16 +180,22 @@ export class Permission extends PermissionCore implements IPermissionClient {
     return Permission.fromDTO(this.toDTO());
   }
 
+  toDTO(): PermissionDTO {
+    return {
+      uuid: this.uuid,
+      name: this.name,
+    };
+  }
+
   /**
    * 从 DTO 创建权限实例（覆盖父类方法以返回 Permission 类型）
    */
-  static fromDTO(dto: import('@dailyuse/domain-core').PermissionDTO): Permission {
+  static fromDTO(dto: PermissionDTO): Permission {
     return new Permission({
       uuid: dto.uuid,
-      code: dto.code,
       name: dto.name,
-      description: dto.description,
-      module: dto.module,
+      code: '', // DTO 中没有 code 信息，需另行处理
+      module: '', // DTO 中没有 module 信息，需另行处理
     });
   }
 }

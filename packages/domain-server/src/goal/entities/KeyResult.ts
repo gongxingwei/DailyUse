@@ -8,7 +8,6 @@ import { type GoalContracts } from '@dailyuse/contracts';
 export class KeyResult extends KeyResultCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     name: string;
     description?: string;
@@ -253,7 +252,6 @@ export class KeyResult extends KeyResultCore {
   static fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
     return new KeyResult({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       goalUuid: dto.goalUuid,
       name: dto.name,
       description: dto.description,
@@ -278,5 +276,53 @@ export class KeyResult extends KeyResultCore {
       isCompleted: this.isCompleted,
       remaining: this.remaining,
     };
+  }
+
+  // ===== 数据库转换方法 =====
+
+  /**
+   * 转换为数据库 DTO（扁平化存储）
+   */
+  toDatabase(): any {
+    return {
+      uuid: this.uuid,
+      goalUuid: this.goalUuid,
+      // 基本信息
+      name: this._name,
+      description: this._description,
+      unit: this._unit,
+      weight: this._weight,
+      // 数值信息
+      startValue: this._startValue,
+      targetValue: this._targetValue,
+      currentValue: this._currentValue,
+      // 计算配置
+      calculationMethod: this._calculationMethod,
+      // 生命周期
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+      status: this._lifecycle.status,
+    };
+  }
+
+  /**
+   * 从数据库 DTO 创建实例
+   */
+  static fromDatabase(dbData: any): KeyResult {
+    return new KeyResult({
+      uuid: dbData.uuid,
+      goalUuid: dbData.goalUuid,
+      name: dbData.name,
+      description: dbData.description,
+      startValue: dbData.startValue,
+      targetValue: dbData.targetValue,
+      currentValue: dbData.currentValue,
+      unit: dbData.unit,
+      weight: dbData.weight,
+      calculationMethod: dbData.calculationMethod,
+      status: dbData.status,
+      createdAt: dbData.createdAt,
+      updatedAt: dbData.updatedAt,
+    });
   }
 }

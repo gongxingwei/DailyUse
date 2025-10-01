@@ -1,10 +1,6 @@
 import { GoalCore } from '@dailyuse/domain-core';
 import {
   type GoalContracts,
-  type IGoal,
-  type IKeyResult,
-  type IGoalRecord,
-  type IGoalReview,
 } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
@@ -222,34 +218,7 @@ export class Goal extends GoalCore {
   /**
    * 添加关键结果
    */
-  addKeyResult(keyResult: IKeyResult): void {
-    // 验证权重总和不超过100
-    const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0) + keyResult.weight;
-    if (totalWeight > 100) {
-      throw new Error('关键结果权重总和不能超过100%');
-    }
-
-    // 转换为 DTO 格式再调用 fromDTO
-    const keyResultDTO: GoalContracts.KeyResultDTO = {
-      uuid: keyResult.uuid,
-      accountUuid: keyResult.accountUuid,
-      goalUuid: keyResult.goalUuid,
-      name: keyResult.name,
-      description: keyResult.description,
-      startValue: keyResult.startValue,
-      targetValue: keyResult.targetValue,
-      currentValue: keyResult.currentValue,
-      unit: keyResult.unit,
-      weight: keyResult.weight,
-      calculationMethod: keyResult.calculationMethod,
-      lifecycle: {
-        createdAt: keyResult.lifecycle.createdAt.getTime(),
-        updatedAt: keyResult.lifecycle.updatedAt.getTime(),
-        status: keyResult.lifecycle.status,
-      },
-    };
-
-    const keyResultEntity = KeyResult.fromDTO(keyResultDTO);
+  addKeyResult(keyResultEntity: KeyResult): void {
     this.keyResults.push(keyResultEntity);
     this.updateVersion();
   }
@@ -263,24 +232,7 @@ export class Goal extends GoalCore {
       throw new Error('关键结果不存在');
     }
 
-    // 使用实体的业务方法更新进度
     keyResult.updateProgress(increment, 'increment');
-
-    // 创建记录 DTO
-    const now = new Date();
-    const recordDTO: GoalContracts.GoalRecordDTO = {
-      uuid: this.generateUUID(),
-      accountUuid: keyResult.accountUuid,
-      goalUuid: this.uuid,
-      keyResultUuid,
-      value: increment,
-      note,
-      createdAt: now.getTime(), // 使用时间戳
-    };
-
-    // 使用 fromDTO 创建实体对象
-    const recordEntity = GoalRecord.fromDTO(recordDTO) as GoalRecord;
-    this.records.push(recordEntity);
     this.updateVersion();
   }
 
@@ -746,7 +698,6 @@ export class Goal extends GoalCore {
 
     const newRecord = new GoalRecord({
       uuid: recordUuid,
-      accountUuid: '', // 由应用层设置
       goalUuid: this.uuid,
       keyResultUuid: recordData.keyResultUuid,
       value: recordData.value,
@@ -893,7 +844,7 @@ export class Goal extends GoalCore {
       })),
     };
 
-    const newReview: IGoalReview = {
+    const newReview: GoalContracts.IGoalReview = {
       uuid: reviewUuid,
       goalUuid: this.uuid,
       title: reviewData.title,
@@ -907,7 +858,8 @@ export class Goal extends GoalCore {
     };
 
     // 使用父类方法添加到聚合
-    this.addReview(newReview);
+    this.reviews.push(new GoalReview(newReview));
+    this.updateVersion();
 
     this.publishDomainEvent('GoalReviewCreated', {
       goalUuid: this.uuid,
@@ -925,8 +877,8 @@ export class Goal extends GoalCore {
     reviewUuid: string,
     updates: {
       title?: string;
-      content?: Partial<IGoalReview['content']>;
-      rating?: Partial<IGoalReview['rating']>;
+      content?: Partial<GoalContracts.IGoalReview['content']>;
+      rating?: Partial<GoalContracts.IGoalReview['rating']>;
     },
   ): void {
     const review = this.reviews.find((r) => r.uuid === reviewUuid);
@@ -1010,21 +962,21 @@ export class Goal extends GoalCore {
   /**
    * 获取活跃的关键结果
    */
-  getActiveKeyResults(): IKeyResult[] {
+  getActiveKeyResults(): GoalContracts.IKeyResult[] {
     return this.keyResults.filter((kr) => kr.lifecycle.status === 'active');
   }
 
   /**
    * 获取指定关键结果的记录
    */
-  getRecordsForKeyResult(keyResultUuid: string): IGoalRecord[] {
+  getRecordsForKeyResult(keyResultUuid: string): GoalContracts.IGoalRecord[] {
     return this.records.filter((r) => r.keyResultUuid === keyResultUuid);
   }
 
   /**
    * 获取最近的记录
    */
-  getRecentRecords(limit: number = 10): IGoalRecord[] {
+  getRecentRecords(limit: number = 10): GoalContracts.IGoalRecord[] {
     return this.records
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, limit);
@@ -1033,14 +985,14 @@ export class Goal extends GoalCore {
   /**
    * 获取指定类型的复盘
    */
-  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): IGoalReview[] {
+  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): GoalContracts.IGoalReview[] {
     return this.reviews.filter((r) => r.type === type);
   }
 
   /**
    * 获取最新的复盘
    */
-  getLatestReview(): IGoalReview | undefined {
+  getLatestReview(): GoalContracts.IGoalReview | undefined {
     return this.reviews.sort((a, b) => b.reviewDate.getTime() - a.reviewDate.getTime())[0];
   }
 
@@ -1266,27 +1218,6 @@ export class Goal extends GoalCore {
     });
   }
 
-  static fromResponse(response: GoalContracts.GoalResponse): Goal {
-    const goal = Goal.fromDTO(response);
-
-    // 设置关键结果（如果存在）
-    if (response.keyResults && response.keyResults.length > 0) {
-      goal.keyResults = response.keyResults.map((kr) => KeyResult.fromDTO(kr));
-    }
-
-    // 设置记录（如果存在）
-    if (response.records && response.records.length > 0) {
-      goal.records = response.records.map((record) => GoalRecord.fromDTO(record));
-    }
-
-    // 设置复盘（如果存在）
-    if (response.reviews && response.reviews.length > 0) {
-      goal.reviews = response.reviews.map((review) => GoalReview.fromDTO(review));
-    }
-
-    return goal;
-  }
-
   /**
    * 创建一个空的目标实例（用于新建表单）
    */
@@ -1306,14 +1237,29 @@ export class Goal extends GoalCore {
    * 重写父类的 toDTO 方法，包含子实体数据
    * 确保客户端的 clone 操作能保持完整的聚合根数据
    */
-  toDTO(context?: { accountUuid?: string }): GoalContracts.GoalDTO {
-    const baseDTO = super.toDTO(context);
-    return {
-      ...baseDTO,
+  toDTO(): GoalContracts.GoalDTO {
+    const GoalDTO: GoalContracts.GoalDTO = {
+      uuid: this.uuid,
+      name: this._name,
+      description: this._description,
+      color: this._color,
+      dirUuid: this._dirUuid,
+      startTime: this._startTime.getTime(),
+      endTime: this._endTime.getTime(),
+      note: this._note,
+      analysis: { ...this._analysis },
+      lifecycle: {
+        status: this._lifecycle.status,
+        createdAt: this._lifecycle.createdAt.getTime(),
+        updatedAt: this._lifecycle.updatedAt.getTime(),
+      },
+      version: this._version,
+      metadata: this._metadata,
       keyResults: this.keyResults.map((kr) => kr.toDTO()),
       records: this.records.map((r) => r.toDTO()),
       reviews: this.reviews.map((rev) => rev.toDTO()),
     };
+    return GoalDTO;
   }
 
   /**

@@ -1,10 +1,12 @@
 import { Entity } from "@dailyuse/utils";
-import { type PermissionDTO } from "../types";
-export class PermissionCore extends Entity {
+import { type AccountContracts } from "@dailyuse/contracts";
+export abstract class PermissionCore extends Entity implements AccountContracts.IPermissionCore {
   private _code: string; // 权限代码，如 'user:read', 'task:create'
   private _name: string;
   private _description: string;
   private _module: string; // 所属模块
+  private _resource: string; // 资源列表
+  private _action: string; // 可执行的操作列表
 
   /**
    * 构造函数
@@ -18,12 +20,16 @@ export class PermissionCore extends Entity {
     name: string;
     description?: string;
     module: string;
+    resource?: string[];
+    action?: string[];
   }) {
     super(params.uuid || Entity.generateUUID());
     this._code = params.code;
     this._name = params.name;
     this._description = params.description ?? "";
     this._module = params.module;
+    this._resource = JSON.stringify(params.resource) || '[]';
+    this._action = JSON.stringify(params.action) || '[]';
   }
 
   get code(): string {
@@ -40,6 +46,14 @@ export class PermissionCore extends Entity {
 
   get module(): string {
     return this._module;
+  }
+
+  get resource(): string {
+    return this._resource;
+  }
+
+  get action(): string {
+    return this._action;
   }
 
   /**
@@ -59,66 +73,5 @@ export class PermissionCore extends Entity {
     return codeRegex.test(code);
   }
 
-  // ======================== 辅助方法 ========================
-
-  /**
-   * 转为接口数据（DTO）
-   */
-  toDTO(): PermissionDTO {
-    return {
-      uuid: this._uuid,
-      code: this._code,
-      name: this._name,
-      description: this._description,
-      module: this._module,
-    };
-  }
-
-  /**
-   * 从接口数据创建实例
-   */
-  static fromDTO(dto: PermissionDTO): PermissionCore {
-    return new PermissionCore({
-      uuid: dto.uuid,
-      code: dto.code,
-      name: dto.name,
-      description: dto.description,
-      module: dto.module,
-    });
-  }
-
-  /**
-   * 克隆当前对象
-   */
-  clone(): PermissionCore {
-    return PermissionCore.fromDTO(this.toDTO());
-  }
-
-  /**
-   * 创建一个初始化对象（用于新建表单）
-   */
-  static forCreate(): PermissionCore {
-    return new PermissionCore({
-      uuid: "",
-      code: "",
-      name: "",
-      description: "",
-      module: "",
-    });
-  }
-
-  /**
-   * 判断对象是否为 Permission 实例
-   */
-  static isPermission(obj: any): obj is PermissionCore {
-    return (
-      obj instanceof PermissionCore ||
-      (obj &&
-        typeof obj === "object" &&
-        "uuid" in obj &&
-        "code" in obj &&
-        "name" in obj &&
-        "module" in obj)
-    );
-  }
+  abstract toDTO(): AccountContracts.PermissionDTO
 }

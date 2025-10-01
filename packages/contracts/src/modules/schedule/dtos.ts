@@ -5,16 +5,14 @@
  * @date 2025-01-09
  */
 
-import type {
-  ScheduleStatus,
-  SchedulePriority,
-  ScheduleTaskType,
-  RecurrenceType,
+import {
   AlertMethod,
-  IRecurrenceRule,
-  IAlertConfig,
-  IScheduleTaskPayload,
-} from './types';
+  ScheduleBatchOperationType,
+  SchedulePriority,
+  ScheduleStatus,
+  ScheduleTaskType,
+} from './enums';
+import type { IAlertConfig, IRecurrenceRule, IScheduleTaskPayload } from './types';
 
 /**
  * 创建调度任务请求DTO
@@ -202,7 +200,7 @@ export interface BatchScheduleTaskOperationRequestDto {
   /** 任务UUID列表 */
   taskUuids: string[];
   /** 操作类型 */
-  operation: 'enable' | 'disable' | 'cancel' | 'delete' | 'pause' | 'resume';
+  operation: ScheduleBatchOperationType;
 }
 
 /**

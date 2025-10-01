@@ -1,10 +1,13 @@
-import { AccountCore, type IUserCore, AccountType } from '@dailyuse/domain-core';
+import { AccountCore } from '@dailyuse/domain-core';
+import { AccountContracts } from '@dailyuse/contracts';
 import { type IAccountClient } from '../types';
 import { User } from '../entities/User';
 import { Email } from '../valueObjects/Email';
 import { PhoneNumber } from '../valueObjects/PhoneNumber';
 import { Address } from '../valueObjects/Address';
-import { type AccountDTO } from '@dailyuse/domain-core';
+
+type AccountDTO = AccountContracts.AccountDTO;
+type AccountType = AccountContracts.AccountType;
 
 /**
  * 客户端账户聚合根 - 包含UI相关的账户管理
@@ -17,7 +20,7 @@ export class Account extends AccountCore implements IAccountClient {
     user: User;
     email?: Email;
     phoneNumber?: PhoneNumber;
-    address?: Address;
+
     roleUuids?: Set<string>;
     createdAt?: Date;
     updatedAt?: Date;
@@ -27,7 +30,6 @@ export class Account extends AccountCore implements IAccountClient {
       ...params,
       email: params.email as any,
       phoneNumber: params.phoneNumber as any,
-      address: params.address as any,
       user: params.user as any,
     };
     super(coreParams);
@@ -186,10 +188,9 @@ export class Account extends AccountCore implements IAccountClient {
       uuid: dto.uuid,
       username: dto.username,
       accountType: dto.accountType,
-      roleUuids: new Set(dto.roleIds || []),
+      roleUuids: undefined,
       email: dto.email ? new Email(dto.email) : undefined,
-      phoneNumber: dto.phone ? new PhoneNumber(dto.phone) : undefined,
-      address: undefined,
+      phoneNumber: dto.phoneNumber ? new PhoneNumber(dto.phoneNumber) : undefined,
       user: User.fromDTO(dto.user),
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),
@@ -213,11 +214,10 @@ export class Account extends AccountCore implements IAccountClient {
     return new Account({
       uuid: '', // 将由 UUID 生成
       username: '',
-      accountType: AccountType.LOCAL,
+      accountType: AccountContracts.AccountType.LOCAL,
       user,
       email: undefined,
       phoneNumber: undefined,
-      address: undefined,
       roleUuids: new Set(),
       createdAt: now,
       updatedAt: now,
@@ -275,16 +275,31 @@ export class Account extends AccountCore implements IAccountClient {
 
     const account = new Account({
       username: params.username,
-      accountType: AccountType.LOCAL, // 默认为本地账户
+      accountType: AccountContracts.AccountType.LOCAL, // 默认为本地账户
       user,
       email,
       phoneNumber,
-      address,
     });
 
     // 自动缓存新创建的账户
     account.cacheAccountData();
 
     return account;
+  }
+
+  toDTO(): AccountDTO {
+    return {
+      uuid: this.uuid,
+      username: this.username,
+      accountType: this.accountType,
+      email: this.email?.value,
+      user: this.user.toDTO(),
+      phoneNumber: this.phoneNumber?.value,
+      status: this.status,
+      isEmailVerified: this.isEmailVerified,
+      isPhoneVerified: this.isPhoneVerified,
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
+    };
   }
 }

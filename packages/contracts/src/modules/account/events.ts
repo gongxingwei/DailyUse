@@ -4,7 +4,7 @@
  * 定义账户管理相关的领域事件，用于模块间通信
  */
 
-import { type AccountDTO, type UserDTO, type SessionDTO, type MFADeviceDTO } from './dtos';
+import { type AccountDTO, type UserDTO } from './dtos';
 
 // ========== 账户事件 ==========
 
@@ -231,20 +231,6 @@ export interface PermissionRevokedEvent {
 }
 
 // ========== MFA事件 ==========
-
-/**
- * MFA设备已注册事件
- */
-export interface MFADeviceRegisteredEvent {
-  type: 'MFADeviceRegistered';
-  accountUuid: string;
-  device: MFADeviceDTO;
-  timestamp: string;
-  metadata: {
-    setupMethod: string;
-    backupCodes?: boolean;
-  };
-}
 
 /**
  * MFA设备已验证事件
@@ -513,7 +499,6 @@ export type AccountEvent =
   | AllSessionsTerminatedEvent
   | PermissionGrantedEvent
   | PermissionRevokedEvent
-  | MFADeviceRegisteredEvent
   | MFADeviceVerifiedEvent
   | MFADeviceDeactivatedEvent
   | PasswordChangedEvent

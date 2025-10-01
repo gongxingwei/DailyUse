@@ -1,11 +1,6 @@
 import { GoalCore } from '@dailyuse/domain-core';
 import {
-  type GoalContracts,
-  type IGoal,
-  type IGoalDir,
-  type IKeyResult,
-  type IGoalRecord,
-  type IGoalReview,
+  GoalContracts,
   ImportanceLevel,
   UrgencyLevel,
 } from '@dailyuse/contracts';
@@ -13,16 +8,15 @@ import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
 import { GoalReview } from '../entities/GoalReview';
 
+type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
+
 /**
  * 服务端 Goal 实体
  * 继承核心 Goal 类，添加服务端特有功能
  */
 export class Goal extends GoalCore {
-  public readonly accountUuid: string; // 添加账户UUID属性
-
   constructor(params: {
     uuid?: string;
-    accountUuid: string; // 添加到构造函数参数
     name: string;
     description?: string;
     color: string;
@@ -45,8 +39,6 @@ export class Goal extends GoalCore {
     version?: number;
   }) {
     super(params);
-
-    this.accountUuid = params.accountUuid; // 设置账户UUID
 
     // 服务端特有的实体创建逻辑
     this.keyResults = params.keyResults || [];
@@ -1332,6 +1324,69 @@ export class Goal extends GoalCore {
 
   // ===== 序列化方法 =====
 
+  /**
+   * 转换为数据库 DTO（扁平化存储）
+   */
+  toDatabase(): any {
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      // 基本信息
+      name: this._name,
+      description: this._description,
+      color: this._color,
+      dirUuid: this._dirUuid,
+      startTime: this._startTime,
+      endTime: this._endTime,
+      note: this._note,
+      // 分析信息 - 扁平化
+      motive: this._analysis.motive,
+      feasibility: this._analysis.feasibility,
+      importanceLevel: this._analysis.importanceLevel,
+      urgencyLevel: this._analysis.urgencyLevel,
+      // 生命周期
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+      status: this._lifecycle.status,
+      // 元数据 - JSON 存储
+      tags: JSON.stringify(this._metadata.tags),
+      category: this._metadata.category,
+      // 版本控制
+      version: this._version,
+    };
+  }
+
+  /**
+   * 从数据库 DTO 创建实体（不包含子实体）
+   */
+  static fromDatabase(dbData: any): Goal {
+    return new Goal({
+      uuid: dbData.uuid,
+      accountUuid: dbData.accountUuid,
+      name: dbData.name,
+      description: dbData.description,
+      color: dbData.color,
+      dirUuid: dbData.dirUuid,
+      startTime: dbData.startTime,
+      endTime: dbData.endTime,
+      note: dbData.note,
+      motive: dbData.motive,
+      feasibility: dbData.feasibility,
+      importanceLevel: dbData.importanceLevel,
+      urgencyLevel: dbData.urgencyLevel,
+      status: dbData.status,
+      createdAt: dbData.createdAt,
+      updatedAt: dbData.updatedAt,
+      tags: JSON.parse(dbData.tags || '[]'),
+      category: dbData.category,
+      version: dbData.version,
+      // 子实体在加载时单独设置
+      keyResults: [],
+      records: [],
+      reviews: [],
+    });
+  }
+
   static fromDTO(dto: GoalContracts.GoalDTO): Goal {
     return new Goal({
       uuid: dto.uuid,
@@ -1345,9 +1400,13 @@ export class Goal extends GoalCore {
       note: dto.note,
       motive: dto.analysis.motive,
       feasibility: dto.analysis.feasibility,
+      importanceLevel: dto.analysis.importanceLevel,
+      urgencyLevel: dto.analysis.urgencyLevel,
       status: dto.lifecycle.status,
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
+      tags: dto.metadata.tags,
+      category: dto.metadata.category,
       version: dto.version,
       keyResults: dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [],
       records: dto.records?.map((record) => GoalRecord.fromDTO(record)) || [],
@@ -1357,6 +1416,99 @@ export class Goal extends GoalCore {
 
   toResponse(): GoalContracts.GoalResponse {
     const baseDTO = this.toDTO({ accountUuid: this.accountUuid });
+
+    const today = new Date();
+    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
+
+    // 计算今日记录统计
+    const todayRecords = this.records.filter(
+      (record) =>
+        record.createdAt.getTime() >= todayStart.getTime() &&
+        record.createdAt.getTime() < todayEnd.getTime(),
+    );
+
+    const todayRecordsStats = {
+      totalRecords: todayRecords.length,
+      keyResultsWithRecords: new Set(todayRecords.map((r) => r.keyResultUuid)).size,
+      averageRecordValue:
+        todayRecords.length > 0
+          ? todayRecords.reduce((sum, r) => sum + r.value, 0) / todayRecords.length
+          : 0,
+      totalRecordValue: todayRecords.reduce((sum, r) => sum + r.value, 0),
+    };
+
+    // 计算进度相关
+    const completedKeyResults = this.keyResults.filter(
+      (kr) => kr.currentValue >= kr.targetValue,
+    ).length;
+    const totalKeyResults = this.keyResults.length;
+    const keyResultCompletionRate =
+      totalKeyResults > 0 ? (completedKeyResults / totalKeyResults) * 100 : 0;
+
+    // 计算整体进度
+    const overallProgress =
+      totalKeyResults > 0
+        ? this.keyResults.reduce(
+            (sum, kr) => sum + Math.min((kr.currentValue / kr.targetValue) * 100, 100),
+            0,
+          ) / totalKeyResults
+        : 0;
+
+    // 计算加权进度（基于关键结果重要性）
+    const weightedProgress = overallProgress; // 简化版本，可以后续增加权重逻辑
+
+    // 计算今日进度
+    const yesterdayEnd = new Date(todayStart.getTime() - 1);
+    const yesterdayRecords = this.records.filter(
+      (record) => record.createdAt.getTime() < todayStart.getTime(),
+    );
+    const todayProgressValue = todayRecordsStats.totalRecordValue;
+    const todayProgress = todayProgressValue; // 简化版本
+
+    // 计算剩余天数
+    const daysRemaining = this.endTime
+      ? Math.max(0, Math.ceil((this.endTime.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
+      : 0;
+
+    // 判断进度状态
+    let progressStatus:
+      | 'not-started'
+      | 'in-progress'
+      | 'nearly-completed'
+      | 'completed'
+      | 'over-achieved';
+    if (overallProgress === 0) {
+      progressStatus = 'not-started';
+    } else if (overallProgress >= 100) {
+      progressStatus = completedKeyResults > totalKeyResults ? 'over-achieved' : 'completed';
+    } else if (overallProgress >= 80) {
+      progressStatus = 'nearly-completed';
+    } else {
+      progressStatus = 'in-progress';
+    }
+
+    // 计算健康度评分
+    const timeProgress = this.endTime
+      ? ((Date.now() - this.startTime.getTime()) /
+          (this.endTime.getTime() - this.startTime.getTime())) *
+        100
+      : 50;
+    const healthScore = Math.max(0, Math.min(100, overallProgress - timeProgress + 50));
+
+    // 判断今日进度等级
+    let todayProgressLevel: 'none' | 'low' | 'medium' | 'high' | 'excellent';
+    if (todayRecordsStats.totalRecords === 0) {
+      todayProgressLevel = 'none';
+    } else if (todayRecordsStats.totalRecords <= 1) {
+      todayProgressLevel = 'low';
+    } else if (todayRecordsStats.totalRecords <= 3) {
+      todayProgressLevel = 'medium';
+    } else if (todayRecordsStats.totalRecords <= 5) {
+      todayProgressLevel = 'high';
+    } else {
+      todayProgressLevel = 'excellent';
+    }
 
     return {
       ...baseDTO,
@@ -1384,6 +1536,25 @@ export class Goal extends GoalCore {
         createdAt: review.createdAt.getTime(),
         updatedAt: review.updatedAt.getTime(),
       })),
+      // 计算属性 - 进度相关
+      overallProgress,
+      weightedProgress,
+      calculatedProgress: overallProgress, // 与 overallProgress 相同
+      todayProgress,
+      // 计算属性 - 关键结果统计
+      completedKeyResults,
+      totalKeyResults,
+      keyResultCompletionRate,
+      // 计算属性 - 状态分析
+      progressStatus,
+      healthScore,
+      // 计算属性 - 时间相关
+      daysRemaining,
+      isOverdue: this.endTime ? this.endTime.getTime() < Date.now() : false,
+      // 今日进度相关的计算属性
+      hasTodayProgress: todayRecordsStats.totalRecords > 0,
+      todayProgressLevel,
+      todayRecordsStats,
     };
   }
 

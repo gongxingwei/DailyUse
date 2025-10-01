@@ -1,13 +1,12 @@
 import { KeyResultCore } from '@dailyuse/domain-core';
-import { type GoalContracts, type IKeyResult } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 
 /**
  * KeyResult 核心基类 - 关键结果实体
  */
-export class KeyResult extends KeyResultCore implements IKeyResult {
+export class KeyResult extends KeyResultCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     name: string;
     description?: string;
@@ -28,7 +27,6 @@ export class KeyResult extends KeyResultCore implements IKeyResult {
   toDTO(): GoalContracts.KeyResultDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this._accountUuid,
       goalUuid: this._goalUuid,
       name: this._name,
       description: this._description,
@@ -49,7 +47,6 @@ export class KeyResult extends KeyResultCore implements IKeyResult {
   static fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
     return new KeyResult({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       goalUuid: dto.goalUuid,
       name: dto.name,
       description: dto.description,
@@ -82,7 +79,6 @@ export class KeyResult extends KeyResultCore implements IKeyResult {
     weight?: number;
   }): KeyResult {
     return new KeyResult({
-      accountUuid: params.accountUuid,
       goalUuid: params.goalUuid,
       name: params.name || '',
       targetValue: params.targetValue || 10,

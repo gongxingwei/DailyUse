@@ -1,11 +1,12 @@
 import { AggregateRoot } from '@dailyuse/utils';
 
 import {
-  type ITaskTemplate,
-  type TaskContracts,
+  TaskContracts,
   ImportanceLevel,
   UrgencyLevel,
 } from '@dailyuse/contracts';
+
+type ITaskTemplate = TaskContracts.ITaskTemplate;
 
 /**
  * 任务模板核心基类 - 包含共享属性和基础计算

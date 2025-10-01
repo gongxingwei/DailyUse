@@ -1,6 +1,11 @@
-import { type IGoalReview } from "@dailyuse/contracts";
+import { type GoalContracts } from "@dailyuse/contracts";
 import { Entity } from "@dailyuse/utils";
 
+type IGoalReview = GoalContracts.IGoalReview;
+
+/**
+ * GoalReview 核心基类 - 目标复盘实体
+ */
 export class GoalReview extends Entity implements IGoalReview {
   goalUuid: string;
   title: string;

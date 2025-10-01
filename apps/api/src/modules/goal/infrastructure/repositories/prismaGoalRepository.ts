@@ -2,6 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import type { IGoalRepository } from '@dailyuse/domain-server';
 import type { GoalContracts } from '@dailyuse/contracts';
+import { Goal, KeyResult, GoalRecord, GoalReview } from '@dailyuse/domain-server';
 
 export class PrismaGoalRepository implements IGoalRepository {
   constructor(private prisma: PrismaClient) {}
@@ -9,7 +10,63 @@ export class PrismaGoalRepository implements IGoalRepository {
   // ===== 数据库实体到DTO的转换 =====
 
   private mapGoalToDTO(goal: any): GoalContracts.GoalDTO {
-    // 收集所有 records，从 keyResults 中提取
+    try {
+      // 使用领域实体的 fromDatabase 方法创建实体
+      const goalEntity = Goal.fromDatabase({
+        ...goal,
+        tags: JSON.parse(goal.tags || '[]'),
+      });
+
+      // 转换子实体
+      if (goal.keyResults) {
+        goalEntity.keyResults = goal.keyResults.map((kr: any) =>
+          KeyResult.fromDatabase({
+            ...kr,
+            accountUuid: goal.accountUuid,
+          }),
+        );
+      }
+
+      // 收集所有 records
+      const allRecords: any[] = [];
+      if (goal.keyResults) {
+        goal.keyResults.forEach((kr: any) => {
+          if (kr.records) {
+            kr.records.forEach((record: any) => {
+              allRecords.push({
+                ...record,
+                goalUuid: goal.uuid,
+                accountUuid: goal.accountUuid,
+              });
+            });
+          }
+        });
+      }
+
+      goalEntity.records = allRecords.map((record: any) => GoalRecord.fromDatabase(record));
+
+      if (goal.reviews) {
+        goalEntity.reviews = goal.reviews.map((review: any) =>
+          GoalReview.fromDatabase({
+            ...review,
+            content: JSON.parse(review.content || '{}'),
+            snapshot: JSON.parse(review.snapshot || '{}'),
+            rating: JSON.parse(review.rating || '{}'),
+          }),
+        );
+      }
+
+      // 使用实体的 toDTO 方法
+      return goalEntity.toDTO({ accountUuid: goal.accountUuid });
+    } catch (error) {
+      console.error('Error mapping goal to DTO:', error);
+      // 回退到手动映射
+      return this.mapGoalToDTOFallback(goal);
+    }
+  }
+
+  // 保留原有的手动映射作为回退方案
+  private mapGoalToDTOFallback(goal: any): GoalContracts.GoalDTO {
     const allRecords: any[] = [];
     if (goal.keyResults) {
       goal.keyResults.forEach((kr: any) => {
@@ -17,8 +74,8 @@ export class PrismaGoalRepository implements IGoalRepository {
           kr.records.forEach((record: any) => {
             allRecords.push({
               ...record,
-              goalUuid: goal.uuid, // 添加 goalUuid
-              accountUuid: goal.accountUuid, // 从 goal 获取 accountUuid
+              goalUuid: goal.uuid,
+              accountUuid: goal.accountUuid,
             });
           });
         }
@@ -51,13 +108,12 @@ export class PrismaGoalRepository implements IGoalRepository {
         category: goal.category || '',
       },
       version: goal.version || 1,
-      // 添加关联数据的映射
       keyResults: goal.keyResults
-        ? goal.keyResults.map((kr: any) => this.mapKeyResultToDTO(kr, goal.accountUuid))
+        ? goal.keyResults.map((kr: any) => this.mapKeyResultToDTOFallback(kr, goal.accountUuid))
         : [],
-      records: allRecords.map((record: any) => this.mapGoalRecordToDTO(record)),
+      records: allRecords.map((record: any) => this.mapGoalRecordToDTOFallback(record)),
       reviews: goal.reviews
-        ? goal.reviews.map((review: any) => this.mapGoalReviewToDTO(review))
+        ? goal.reviews.map((review: any) => this.mapGoalReviewToDTOFallback(review))
         : [],
     };
   }
@@ -84,9 +140,28 @@ export class PrismaGoalRepository implements IGoalRepository {
   }
 
   private mapKeyResultToDTO(keyResult: any, accountUuid?: string): GoalContracts.KeyResultDTO {
+    try {
+      // 使用实体的 fromDatabase 和 toDTO 方法
+      const keyResultEntity = KeyResult.fromDatabase({
+        ...keyResult,
+        accountUuid: accountUuid || '',
+      });
+      return keyResultEntity.toDTO({ accountUuid: accountUuid || '' });
+    } catch (error) {
+      console.error('Error mapping KeyResult to DTO:', error);
+      // 回退到手动映射
+      return this.mapKeyResultToDTOFallback(keyResult, accountUuid);
+    }
+  }
+
+  // 保留原有的手动映射作为回退方案
+  private mapKeyResultToDTOFallback(
+    keyResult: any,
+    accountUuid?: string,
+  ): GoalContracts.KeyResultDTO {
     return {
       uuid: keyResult.uuid,
-      accountUuid: accountUuid || '', // 从参数获取
+      accountUuid: accountUuid || '',
       goalUuid: keyResult.goalUuid,
       name: keyResult.name,
       description: keyResult.description,
@@ -110,6 +185,42 @@ export class PrismaGoalRepository implements IGoalRepository {
     accountUuid: string,
     goalData: Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'>,
   ): Promise<GoalContracts.GoalDTO> {
+    try {
+      // 使用 Goal.fromDTO 创建实体
+      const goalEntity = Goal.fromDTO({
+        ...goalData,
+        uuid: randomUUID(),
+        lifecycle: {
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          status: 'active',
+        },
+      });
+
+      // 使用实体的 toDatabase 方法转换为数据库格式
+      const databaseData = goalEntity.toDatabase();
+
+      const created = await this.prisma.goal.create({
+        data: {
+          ...databaseData,
+          accountUuid,
+          tags: JSON.stringify(databaseData.tags || []),
+        },
+      });
+
+      return this.mapGoalToDTO(created);
+    } catch (error) {
+      console.error('Error creating goal with entity:', error);
+      // 回退到原有实现
+      return this.createGoalFallback(accountUuid, goalData);
+    }
+  }
+
+  // 保留原有实现作为回退方案
+  private async createGoalFallback(
+    accountUuid: string,
+    goalData: Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'>,
+  ): Promise<GoalContracts.GoalDTO> {
     const uuid = randomUUID();
     const now = new Date();
 
@@ -120,19 +231,16 @@ export class PrismaGoalRepository implements IGoalRepository {
         name: goalData.name,
         description: goalData.description,
         color: goalData.color,
-        dirUuid: goalData.dirUuid || null, // 处理空字符串，转换为 null
+        dirUuid: goalData.dirUuid || null,
         startTime: new Date(goalData.startTime),
         endTime: new Date(goalData.endTime),
         note: goalData.note,
-        // 展开analysis字段
         motive: goalData.analysis?.motive || '',
         feasibility: goalData.analysis?.feasibility || '',
         importanceLevel: goalData.analysis?.importanceLevel || 'moderate',
         urgencyLevel: goalData.analysis?.urgencyLevel || 'medium',
-        // 展开metadata字段
         tags: JSON.stringify(goalData.metadata?.tags || []),
         category: goalData.metadata?.category || '',
-        // 生命周期状态
         status: 'active',
         version: goalData.version || 1,
         createdAt: now,
@@ -398,6 +506,38 @@ export class PrismaGoalRepository implements IGoalRepository {
     accountUuid: string,
     keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'>,
   ): Promise<GoalContracts.KeyResultDTO> {
+    try {
+      // 使用 KeyResult.fromDTO 创建实体
+      const keyResultEntity = KeyResult.fromDTO({
+        ...keyResultData,
+        uuid: randomUUID(),
+        lifecycle: {
+          createdAt: Date.now(),
+          updatedAt: Date.now(),
+          status: 'active',
+        },
+      });
+
+      // 使用实体的 toDatabase 方法
+      const databaseData = keyResultEntity.toDatabase();
+
+      const created = await this.prisma.keyResult.create({
+        data: databaseData,
+      });
+
+      return this.mapKeyResultToDTO(created, accountUuid);
+    } catch (error) {
+      console.error('Error creating KeyResult with entity:', error);
+      // 回退到原有实现
+      return this.createKeyResultFallback(accountUuid, keyResultData);
+    }
+  }
+
+  // 保留原有实现作为回退方案
+  private async createKeyResultFallback(
+    accountUuid: string,
+    keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'>,
+  ): Promise<GoalContracts.KeyResultDTO> {
     const uuid = randomUUID();
     const now = new Date();
 
@@ -620,6 +760,38 @@ export class PrismaGoalRepository implements IGoalRepository {
     accountUuid: string,
     recordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'>,
   ): Promise<GoalContracts.GoalRecordDTO> {
+    try {
+      // 使用 GoalRecord.fromDTO 创建实体
+      const recordEntity = GoalRecord.fromDTO({
+        ...recordData,
+        uuid: randomUUID(),
+        createdAt: Date.now(),
+      });
+
+      // 使用实体的 toDatabase 方法
+      const databaseData = recordEntity.toDatabase();
+
+      const created = await this.prisma.goalRecord.create({
+        data: databaseData,
+      });
+
+      return this.mapGoalRecordToDTO({
+        ...created,
+        accountUuid,
+        goalUuid: recordData.goalUuid,
+      });
+    } catch (error) {
+      console.error('Error creating GoalRecord with entity:', error);
+      // 回退到原有实现
+      return this.createGoalRecordFallback(accountUuid, recordData);
+    }
+  }
+
+  // 保留原有实现作为回退方案
+  private async createGoalRecordFallback(
+    accountUuid: string,
+    recordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'>,
+  ): Promise<GoalContracts.GoalRecordDTO> {
     const uuid = randomUUID();
     const now = new Date();
 
@@ -782,6 +954,35 @@ export class PrismaGoalRepository implements IGoalRepository {
     accountUuid: string,
     reviewData: Omit<GoalContracts.GoalReviewDTO, 'uuid' | 'createdAt' | 'updatedAt'>,
   ): Promise<GoalContracts.GoalReviewDTO> {
+    try {
+      // 使用 GoalReview.fromDTO 创建实体
+      const reviewEntity = GoalReview.fromDTO({
+        ...reviewData,
+        uuid: randomUUID(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      });
+
+      // 使用实体的 toDatabase 方法
+      const databaseData = reviewEntity.toDatabase();
+
+      const created = await this.prisma.goalReview.create({
+        data: databaseData,
+      });
+
+      return this.mapGoalReviewToDTO(created);
+    } catch (error) {
+      console.error('Error creating GoalReview with entity:', error);
+      // 回退到原有实现
+      return this.createGoalReviewFallback(accountUuid, reviewData);
+    }
+  }
+
+  // 保留原有实现作为回退方案
+  private async createGoalReviewFallback(
+    accountUuid: string,
+    reviewData: Omit<GoalContracts.GoalReviewDTO, 'uuid' | 'createdAt' | 'updatedAt'>,
+  ): Promise<GoalContracts.GoalReviewDTO> {
     const uuid = randomUUID();
     const now = new Date();
 
@@ -877,10 +1078,30 @@ export class PrismaGoalRepository implements IGoalRepository {
   // ===== 映射方法 =====
 
   private mapGoalRecordToDTO(record: any): GoalContracts.GoalRecordDTO {
+    try {
+      // 使用实体的 fromDatabase 和 toDTO 方法
+      const recordEntity = GoalRecord.fromDatabase({
+        ...record,
+        accountUuid: record.accountUuid || '',
+        goalUuid: record.goalUuid || '',
+      });
+      return recordEntity.toDTO({
+        accountUuid: record.accountUuid || '',
+        goalUuid: record.goalUuid || '',
+      });
+    } catch (error) {
+      console.error('Error mapping GoalRecord to DTO:', error);
+      // 回退到手动映射
+      return this.mapGoalRecordToDTOFallback(record);
+    }
+  }
+
+  // 保留原有的手动映射作为回退方案
+  private mapGoalRecordToDTOFallback(record: any): GoalContracts.GoalRecordDTO {
     return {
       uuid: record.uuid,
-      accountUuid: record.accountUuid || '', // 从关联的goal获取
-      goalUuid: record.goalUuid || '', // 从关联获取
+      accountUuid: record.accountUuid || '',
+      goalUuid: record.goalUuid || '',
       keyResultUuid: record.keyResultUuid,
       value: record.value,
       note: record.note,
@@ -889,7 +1110,25 @@ export class PrismaGoalRepository implements IGoalRepository {
   }
 
   private mapGoalReviewToDTO(review: any): GoalContracts.GoalReviewDTO {
-    // Parse JSON strings from database
+    try {
+      // 使用实体的 fromDatabase 和 toDTO 方法
+      const reviewEntity = GoalReview.fromDatabase({
+        ...review,
+        content: typeof review.content === 'string' ? JSON.parse(review.content) : review.content,
+        snapshot:
+          typeof review.snapshot === 'string' ? JSON.parse(review.snapshot) : review.snapshot,
+        rating: typeof review.rating === 'string' ? JSON.parse(review.rating) : review.rating,
+      });
+      return reviewEntity.toDTO();
+    } catch (error) {
+      console.error('Error mapping GoalReview to DTO:', error);
+      // 回退到手动映射
+      return this.mapGoalReviewToDTOFallback(review);
+    }
+  }
+
+  // 保留原有的手动映射作为回退方案
+  private mapGoalReviewToDTOFallback(review: any): GoalContracts.GoalReviewDTO {
     const content =
       typeof review.content === 'string' ? JSON.parse(review.content) : review.content;
     const snapshot =
@@ -1302,5 +1541,185 @@ export class PrismaGoalRepository implements IGoalRepository {
     // 注意：这里需要有审计表才能实现完整的历史记录
     // 目前返回空数组，后续可以根据审计表结构实现
     return [];
+  }
+
+  // ===== DDD 实体数据转换演示方法 =====
+
+  /**
+   * 演示方法：使用领域实体的数据转换方法保存 Goal
+   * 展示 Contract First + DDD 的正确数据流：
+   * 客户端实体 -> DTO -> 服务端实体 -> Database DTO -> Prisma 数据库
+   */
+  async saveGoalEntityDemo(accountUuid: string, goal: Goal): Promise<Goal> {
+    try {
+      // 1. 使用实体的 toDatabase 方法转换为数据库 DTO
+      const goalDatabaseData = goal.toDatabase();
+
+      // 转换子实体为数据库格式（需要强制类型转换）
+      const keyResultsDatabaseData = goal.keyResults.map((kr) => (kr as KeyResult).toDatabase());
+      const recordsDatabaseData = goal.records.map((record) => (record as GoalRecord).toDatabase());
+      const reviewsDatabaseData = goal.reviews.map((review) => (review as GoalReview).toDatabase());
+
+      // 2. 在事务中保存所有数据
+      const result = await this.prisma.$transaction(async (tx) => {
+        // 保存 Goal 主实体
+        const savedGoal = await tx.goal.upsert({
+          where: { uuid: goalDatabaseData.uuid },
+          create: {
+            ...goalDatabaseData,
+            accountUuid: accountUuid,
+            tags: JSON.stringify(goalDatabaseData.tags || []),
+          },
+          update: {
+            ...goalDatabaseData,
+            tags: JSON.stringify(goalDatabaseData.tags || []),
+          },
+        });
+
+        // 保存 KeyResults
+        for (const krData of keyResultsDatabaseData) {
+          await tx.keyResult.upsert({
+            where: { uuid: krData.uuid },
+            create: krData,
+            update: krData,
+          });
+        }
+
+        // 保存 Records
+        for (const recordData of recordsDatabaseData) {
+          await tx.goalRecord.upsert({
+            where: { uuid: recordData.uuid },
+            create: {
+              ...recordData,
+              goalUuid: goalDatabaseData.uuid,
+              accountUuid: accountUuid,
+            },
+            update: recordData,
+          });
+        }
+
+        // 保存 Reviews
+        for (const reviewData of reviewsDatabaseData) {
+          await tx.goalReview.upsert({
+            where: { uuid: reviewData.uuid },
+            create: reviewData,
+            update: reviewData,
+          });
+        }
+
+        return savedGoal;
+      });
+
+      // 3. 从数据库重新加载完整的聚合根
+      const reloadedAggregate = await this.loadGoalAggregate(accountUuid, goal.uuid);
+      if (!reloadedAggregate) {
+        throw new Error('Failed to reload saved goal aggregate');
+      }
+
+      // 4. 使用实体的 fromDatabase 方法重建实体（演示）
+      // 注意：在实际应用中，您可能会直接返回 DTO，
+      // 但这里演示如何重建实体以保持完整的 DDD 数据流
+      const reconstructedGoal = Goal.fromDatabase({
+        ...result,
+        accountUuid: accountUuid,
+      });
+
+      // 重建子实体
+      reconstructedGoal.keyResults = reloadedAggregate.keyResults.map((krDto) =>
+        KeyResult.fromDatabase({
+          ...krDto,
+          accountUuid: accountUuid,
+        }),
+      );
+
+      reconstructedGoal.records = reloadedAggregate.records.map((recordDto) =>
+        GoalRecord.fromDatabase({
+          ...recordDto,
+          accountUuid: accountUuid,
+          goalUuid: goal.uuid,
+        }),
+      );
+
+      reconstructedGoal.reviews = reloadedAggregate.reviews.map((reviewDto) =>
+        GoalReview.fromDatabase(reviewDto),
+      );
+
+      return reconstructedGoal;
+    } catch (error) {
+      console.error('Error saving goal entity:', error);
+      throw new Error(
+        `Failed to save goal entity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
+  }
+
+  /**
+   * 演示方法：使用领域实体的数据转换方法加载 Goal
+   * 展示 Contract First + DDD 的正确数据流：
+   * Prisma 数据库 -> Database DTO -> 服务端实体 -> DTO -> 客户端实体
+   */
+  async loadGoalEntityDemo(accountUuid: string, goalUuid: string): Promise<Goal | null> {
+    try {
+      // 1. 从数据库加载原始数据
+      const dbGoal = await this.prisma.goal.findFirst({
+        where: { uuid: goalUuid, accountUuid },
+        include: {
+          keyResults: {
+            include: {
+              records: true,
+            },
+          },
+          reviews: true,
+        },
+      });
+
+      if (!dbGoal) {
+        return null;
+      }
+
+      // 2. 使用实体的 fromDatabase 方法构建主实体
+      const goalEntity = Goal.fromDatabase({
+        ...dbGoal,
+        tags: JSON.parse(dbGoal.tags || '[]'),
+      });
+
+      // 3. 构建子实体
+      goalEntity.keyResults = dbGoal.keyResults.map((kr) =>
+        KeyResult.fromDatabase({
+          ...kr,
+          accountUuid: accountUuid,
+        }),
+      );
+
+      // 收集所有记录
+      const allRecords: any[] = [];
+      dbGoal.keyResults.forEach((kr) => {
+        kr.records.forEach((record) => {
+          allRecords.push({
+            ...record,
+            accountUuid: accountUuid,
+            goalUuid: goalUuid,
+          });
+        });
+      });
+
+      goalEntity.records = allRecords.map((record) => GoalRecord.fromDatabase(record));
+
+      goalEntity.reviews = dbGoal.reviews.map((review) =>
+        GoalReview.fromDatabase({
+          ...review,
+          content: JSON.parse(review.content),
+          snapshot: JSON.parse(review.snapshot),
+          rating: JSON.parse(review.rating),
+        }),
+      );
+
+      return goalEntity;
+    } catch (error) {
+      console.error('Error loading goal entity:', error);
+      throw new Error(
+        `Failed to load goal entity: ${error instanceof Error ? error.message : 'Unknown error'}`,
+      );
+    }
   }
 }

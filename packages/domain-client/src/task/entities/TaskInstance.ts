@@ -1,6 +1,5 @@
 import { TaskInstanceCore } from '@dailyuse/domain-core';
 import type { TaskContracts } from '@dailyuse/contracts';
-import type { ITaskInstance } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 /**

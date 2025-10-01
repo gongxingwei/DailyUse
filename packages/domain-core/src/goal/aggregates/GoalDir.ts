@@ -1,12 +1,10 @@
 import { AggregateRoot } from '@dailyuse/utils';
 import { type GoalContracts } from '@dailyuse/contracts';
-import type { IGoalDir } from '@dailyuse/contracts';
 
 /**
  * GoalDir核心基类 - 目标目录
  */
-export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
-  protected _accountUuid: string;
+export abstract class GoalDirCore extends AggregateRoot implements GoalContracts.IGoalDir {
   protected _name: string;
   protected _description?: string;
   protected _icon: string;
@@ -24,7 +22,6 @@ export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
 
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     name: string;
     description?: string;
     icon: string;
@@ -41,7 +38,6 @@ export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
     super(params.uuid || AggregateRoot.generateUUID());
     const now = new Date();
 
-    this._accountUuid = params.accountUuid;
     this._name = params.name;
     this._description = params.description;
     this._icon = params.icon;
@@ -59,9 +55,6 @@ export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
   }
 
   // ===== 共享只读属性 =====
-  get accountUuid(): string {
-    return this._accountUuid;
-  }
   get name(): string {
     return this._name;
   }
@@ -155,30 +148,10 @@ export abstract class GoalDirCore extends AggregateRoot implements IGoalDir {
     }
   }
 
-  // ===== 序列化方法 =====
-  toDTO(): GoalContracts.GoalDirDTO {
-    return {
-      uuid: this.uuid,
-      accountUuid: this._accountUuid,
-      name: this._name,
-      description: this._description,
-      icon: this._icon,
-      color: this._color,
-      parentUuid: this._parentUuid,
-      sortConfig: this._sortConfig,
-      lifecycle: {
-        createdAt: this._lifecycle.createdAt.getTime(),
-        updatedAt: this._lifecycle.updatedAt.getTime(),
-        status: this._lifecycle.status,
-      },
-    };
-  }
 
-  static fromDTO(dto: GoalContracts.GoalDirDTO): GoalDirCore {
-    throw new Error('Method not implemented. Use subclass implementations.');
-  }
 
   // ===== 抽象方法（由子类实现）=====
+  abstract toDTO(): GoalContracts.GoalDirDTO;
   abstract archive(): void;
   abstract activate(): void;
 }

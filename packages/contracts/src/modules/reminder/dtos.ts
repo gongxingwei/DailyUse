@@ -4,8 +4,13 @@ import type {
   IReminderInstance,
   ReminderQueryParams,
   ReminderTimeConfig,
-  ReminderTemplateEnableMode,
 } from './types';
+import {
+  ReminderTemplateEnableMode,
+  ReminderPriority,
+  ReminderTimeConfigType,
+  ReminderDurationUnit,
+} from './enums';
 
 /**
  * 创建提醒模板请求 DTO
@@ -18,16 +23,16 @@ export interface CreateReminderTemplateRequest {
   enabled?: boolean;
   selfEnabled?: boolean;
   timeConfig: {
-    type: 'daily' | 'weekly' | 'monthly' | 'custom';
+    type: ReminderTimeConfigType;
     times: string[];
     weekdays?: number[];
     monthDays?: number[];
     customPattern?: {
       interval: number;
-      unit: 'minutes' | 'hours' | 'days';
+      unit: ReminderDurationUnit;
     };
   };
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: ReminderPriority;
   category: string;
   tags: string[];
 }
@@ -82,7 +87,7 @@ export interface CreateReminderInstanceRequest {
   templateUuid: string;
   scheduledTime: string; // ISO date string
   message?: string; // 可以覆盖模板消息
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: ReminderPriority;
   metadata?: {
     category?: string;
     tags?: string[];
@@ -97,7 +102,7 @@ export interface CreateReminderInstanceRequest {
 export interface UpdateReminderInstanceRequest {
   scheduledTime?: string; // ISO date string
   message?: string;
-  priority?: 'low' | 'normal' | 'high' | 'urgent';
+  priority?: ReminderPriority;
   metadata?: {
     category?: string;
     tags?: string[];

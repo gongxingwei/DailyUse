@@ -1,6 +1,6 @@
 import type { DomainEvent, ClientInfo, LoginResult } from './types';
 import { EVENT_TYPES } from './constants';
-import type { IAccount, ISessionCore } from '../core';
+import type { IAccount} from '../modules/account';
 
 // =================== 认证请求事件 ===================
 export interface AccountInfoGetterByUuidRequested
@@ -53,7 +53,6 @@ export interface LoginAttemptEvent
 export interface UserLoggedInEvent
   extends DomainEvent<{
     account: IAccount;
-    session: ISessionCore;
     clientInfo: ClientInfo;
   }> {
   eventType: typeof EVENT_TYPES.AUTH.USER_LOGGED_IN;

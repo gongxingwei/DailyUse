@@ -1,5 +1,6 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type IEmailCore } from '../types';
+import { type AccountContracts } from "@dailyuse/contracts";
+type IEmailCore = AccountContracts.IEmailCore;
 /**
  * 邮箱值对象核心类
  */

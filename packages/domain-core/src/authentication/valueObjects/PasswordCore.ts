@@ -1,5 +1,7 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type IPasswordCore } from '../types';
+import { AuthenticationContracts } from '@dailyuse/contracts';
+
+type IPasswordCore = AuthenticationContracts.IPasswordCore;
 
 /**
  * 密码值对象

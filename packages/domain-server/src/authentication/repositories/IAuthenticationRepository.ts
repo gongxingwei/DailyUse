@@ -2,12 +2,14 @@ import type { AuthCredential } from '../aggregates/AuthCredential';
 import type { Session } from '../entities/Session';
 import type { MFADevice } from '../entities/MFADevice';
 import type { Token } from '../valueObjects/Token';
-import type {
-  AuthCredentialPersistenceDTO,
-  UserSessionPersistenceDTO,
-  AuthTokenPersistenceDTO,
-  MFADevicePersistenceDTO,
+import {
+  AuthenticationContracts
 } from '@dailyuse/contracts';
+
+type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
+type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceDTO;
+type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
+type MFADevicePersistenceDTO = AuthenticationContracts.MFADevicePersistenceDTO;
 
 /**
  * 认证凭证存储库接口

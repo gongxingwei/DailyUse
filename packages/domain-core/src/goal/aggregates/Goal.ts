@@ -1,10 +1,14 @@
 import { AggregateRoot } from '@dailyuse/utils';
 import { type GoalContracts } from '@dailyuse/contracts';
-import type { IGoal, IKeyResult, IGoalRecord, IGoalReview } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 import { KeyResultCore } from '../entities/KeyResult';
 import { GoalRecordCore } from '../entities/GoalRecord';
 import { GoalReview } from '../entities/GoalReview';
+
+type IGoal = GoalContracts.IGoal;
+type IKeyResult = GoalContracts.IKeyResult;
+type IGoalRecord = GoalContracts.IGoalRecord;
+type IGoalReview = GoalContracts.IGoalReview;
 
 /**
  * Goal核心基类 - 包含共享属性和基础计算
@@ -575,60 +579,16 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
     this.updateVersion();
   }
 
-  /**
-   * 添加关键结果（抽象方法，由子类实现）
-   */
-  abstract addKeyResult(keyResult: IKeyResult): void;
-
-  /**
-   * 更新关键结果进度（抽象方法，由子类实现）
-   */
-  abstract updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void;
-
-  /**
-   * 添加复盘
-   */
-  addReview(review: IGoalReview): void {
-    // 将DTO转换为实体对象
-    const reviewEntity = new GoalReview(review);
-    this.reviews.push(reviewEntity);
-    this.updateVersion();
-  }
-
   // ===== 共享辅助方法 =====
   protected updateVersion(): void {
     this._version++;
     this._lifecycle.updatedAt = new Date();
   }
 
-  // ===== 序列化方法 =====
-  toDTO(context?: { accountUuid?: string }): GoalContracts.GoalDTO {
-    return {
-      uuid: this.uuid,
-      accountUuid: context?.accountUuid || '', // 从上下文获取，或使用空字符串
-      name: this._name,
-      description: this._description,
-      color: this._color,
-      dirUuid: this._dirUuid,
-      startTime: this._startTime.getTime(),
-      endTime: this._endTime.getTime(),
-      note: this._note,
-      analysis: this._analysis,
-      lifecycle: {
-        createdAt: this._lifecycle.createdAt.getTime(),
-        updatedAt: this._lifecycle.updatedAt.getTime(),
-        status: this._lifecycle.status,
-      },
-      metadata: this._metadata,
-      version: this._version,
-    };
-  }
-
-  static fromDTO(dto: GoalContracts.GoalDTO): GoalCore {
-    throw new Error('Method not implemented. Use subclass implementations.');
-  }
-
   // ===== 抽象方法（由子类实现）=====
+  abstract toDTO(): GoalContracts.GoalDTO;
+
+  // static abstract fromDTO<T extends GoalCore>(dto: GoalContracts.GoalDTO): T; 子类中实现
   abstract pause(): void;
   abstract activate(): void;
   abstract complete(): void;

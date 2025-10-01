@@ -1,15 +1,17 @@
 import {
   AuthCredentialCore,
-  TokenType,
-  type ISessionCore,
-  type IMFADeviceCore,
-  type ITokenCore,
 } from '@dailyuse/domain-core';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { type IAuthCredentialClient } from '../types';
 import { Password } from '../valueObjects/Password';
 import { Token } from '../valueObjects/Token';
 import { Session } from '../entities/Session';
 import { MFADevice } from '../entities/MFADevice';
+
+type TokenType = AuthenticationContracts.TokenType;
+type ISessionCore = AuthenticationContracts.ISessionCore;
+type ITokenCore = AuthenticationContracts.ITokenCore;
+type IMFADeviceCore = AuthenticationContracts.IMFADeviceCore;
 
 /**
  * 客户端认证凭据 - 包含UI相关的认证管理
@@ -134,18 +136,18 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     let token: Token;
 
     switch (type) {
-      case TokenType.ACCESS_TOKEN:
+      case AuthenticationContracts.TokenType.ACCESS:
         token = Token.createClientAccessToken(this.accountUuid);
         break;
-      case TokenType.REFRESH_TOKEN:
+      case AuthenticationContracts.TokenType.REFRESH:
         token = new Token({
           value: Token.generateClientValue(),
-          type: TokenType.REFRESH_TOKEN,
+          type: AuthenticationContracts.TokenType.REFRESH,
           accountUuid: this.accountUuid,
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7天
         });
         break;
-      case TokenType.REMEMBER_ME:
+      case AuthenticationContracts.TokenType.REMEMBER_ME:
         token = Token.createClientRememberMe(this.accountUuid);
         break;
       default:
@@ -190,7 +192,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   private revokeRememberTokenForDevice(deviceInfo: string): void {
     for (const token of this._tokens.values()) {
       if (
-        token.type === TokenType.REMEMBER_ME &&
+        token.type === AuthenticationContracts.TokenType.REMEMBER_ME &&
         token.isValid() &&
         token.deviceInfo === deviceInfo
       ) {
@@ -285,7 +287,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }> {
     const rememberTokens: Token[] = [];
     for (const token of this._tokens.values()) {
-      if (token.type === TokenType.REMEMBER_ME && token.isValid()) {
+      if (token.type === AuthenticationContracts.TokenType.REMEMBER_ME && token.isValid()) {
         rememberTokens.push(token as Token);
       }
     }
@@ -305,7 +307,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
 
     for (const token of this._tokens.values()) {
       if (
-        token.type === TokenType.REMEMBER_ME &&
+        token.type === AuthenticationContracts.TokenType.REMEMBER_ME &&
         token.isValid() &&
         token.deviceInfo === currentDeviceInfo
       ) {

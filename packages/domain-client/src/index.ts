@@ -26,5 +26,4 @@ export * from './reminder';
 // Schedule domain client exports
 export * from './schedule';
 
-// Theme domain client exports
-export * from './theme';
+

@@ -7,7 +7,7 @@ import type {
   TaskScheduleMode,
   KeyResultLink,
 } from './types';
-import type { ImportanceLevel, UrgencyLevel } from '../../core';
+import type { ImportanceLevel, UrgencyLevel } from '../../shared/index';
 
 /**
  * 创建任务模板请求 DTO

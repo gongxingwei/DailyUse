@@ -1,13 +1,13 @@
-import type {
-  IAccountCore,
-  IUserCore,
-  IPermissionCore,
-  IRoleCore,
-  IAddressCore,
-  IEmailCore,
-  IPhoneNumberCore,
-  ISexCore,
-} from '@dailyuse/domain-core';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type IAccountCore = AccountContracts.IAccountCore;
+type IUserCore = AccountContracts.IUserCore;
+type IPermissionCore = AccountContracts.IPermissionCore;
+type IRoleCore = AccountContracts.IRoleCore;
+type IAddressCore = AccountContracts.IAddressCore;
+type IEmailCore = AccountContracts.IEmailCore;
+type IPhoneNumberCore = AccountContracts.IPhoneNumberCore;
+type ISexCore = AccountContracts.ISexCore;
 
 // ======== Account Client Interface ========
 export interface IAccountClient extends IAccountCore {

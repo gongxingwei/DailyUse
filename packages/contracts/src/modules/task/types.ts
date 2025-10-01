@@ -1,4 +1,4 @@
-import { ImportanceLevel, UrgencyLevel } from '../../core';
+import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
 
 /**
  * 任务执行时间类型

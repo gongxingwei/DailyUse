@@ -1,5 +1,5 @@
 import { AggregateRoot } from '@dailyuse/utils';
-import type { IAccountCore, AccountDTO } from '@dailyuse/contracts';
+import type { AccountContracts } from '@dailyuse/contracts';
 import {
   AccountStatus,
   AccountType,
@@ -13,7 +13,7 @@ import { AddressCore } from '../valueObjects/AddressCore';
  * Account 核心基类 - 包含共享属性和基础计算
  * 前端和后端的具体实现继承此类
  */
-export abstract class AccountCore extends AggregateRoot implements IAccountCore {
+export abstract class AccountCore extends AggregateRoot implements AccountContracts.IAccountCore {
   protected _username: string;
   protected _email?: EmailCore;
   protected _phoneNumber?: PhoneNumberCore;
@@ -182,30 +182,8 @@ export abstract class AccountCore extends AggregateRoot implements IAccountCore 
     return roleIds.every((roleId) => this._roleUuids.has(roleId));
   }
 
-  // ===== 序列化方法 =====
-  toDTO(): AccountDTO {
-    return {
-      uuid: this.uuid,
-      username: this._username,
-      status: this._status,
-      accountType: this._accountType,
-      createdAt: this._createdAt.getTime(),
-      updatedAt: this._updatedAt.getTime(),
-      lastLoginAt: this._lastLoginAt?.getTime(),
-      email: this._email?.value,
-      phone: this._phoneNumber?.fullNumber,
-      emailVerificationToken: this._emailVerificationToken,
-      phoneVerificationCode: this._phoneVerificationCode,
-      roleIds: Array.from(this.roleIds),
-      isEmailVerified: this._isEmailVerified,
-      isPhoneVerified: this._isPhoneVerified,
-      user: this._user.toDTO(),
-    };
-  }
+  
 
   // ===== 抽象方法（由子类实现）=====
-  abstract updateEmail(emailAddress: string): void;
-  abstract updatePhone(phoneNumber: string, countryCode?: string): void;
-  abstract verifyEmail(): void;
-  abstract verifyPhone(): void;
+  abstract toDTO(): AccountContracts.AccountDTO;
 }

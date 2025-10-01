@@ -4,8 +4,8 @@
  * 定义认证授权相关的领域事件，用于模块间通信
  */
 
-import type { AuthContextDTO, SessionDataDTO, AuthAuditDTO } from './dtos';
-import { LoginResult, LogoutType } from './types';
+
+
 
 // ========== 认证事件 ==========
 
@@ -67,16 +67,7 @@ export interface AuthenticationFailureEvent {
   };
 }
 
-/**
- * 认证上下文创建事件
- */
-export interface AuthenticationContextCreatedEvent {
-  type: 'AuthenticationContextCreated';
-  accountUuid: string;
-  sessionUuid: string;
-  authContext: AuthContextDTO;
-  timestamp: string;
-}
+
 
 /**
  * 认证上下文更新事件
@@ -491,14 +482,6 @@ export interface PolicyViolationEvent {
 
 // ========== 审计事件 ==========
 
-/**
- * 认证审计记录创建事件
- */
-export interface AuthAuditRecordCreatedEvent {
-  type: 'AuthAuditRecordCreated';
-  auditRecord: AuthAuditDTO;
-  timestamp: string;
-}
 
 /**
  * 批量审计记录清理事件
@@ -527,7 +510,6 @@ export type AuthenticationEvent =
   | AuthenticationAttemptEvent
   | AuthenticationSuccessEvent
   | AuthenticationFailureEvent
-  | AuthenticationContextCreatedEvent
   | AuthenticationContextUpdatedEvent
   | TokenCreatedEvent
   | TokenRefreshedEvent
@@ -552,5 +534,4 @@ export type AuthenticationEvent =
   | BruteForceDetectedEvent
   | AuthPolicyUpdatedEvent
   | PolicyViolationEvent
-  | AuthAuditRecordCreatedEvent
   | AuthAuditCleanupEvent;

@@ -4,14 +4,7 @@
  * 定义账户管理相关的DTO类型，用于API数据传输
  */
 
-import {
-  AccountStatus,
-  AccountType,
-  AuthMethod,
-  MFADeviceType,
-  TokenType,
-  SessionStatus,
-} from './types';
+import { AccountStatus, AccountType, SessionStatus } from './enums';
 
 // ========== 账户相关 DTO ==========
 
@@ -23,37 +16,17 @@ export interface AccountDTO {
   username: string;
   status: AccountStatus;
   accountType: AccountType;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
-  lastLoginAt?: string; // ISO string
-  email?: string;
-  emailVerificationToken?: string;
-  isEmailVerified: boolean;
-  phone?: string;
-  phoneVerificationCode?: string;
-  isPhoneVerified: boolean;
-  user: UserDTO;
-  roles?: RoleDTO[];
-}
-
-/**
- * 账户持久化DTO（数据库）
- */
-export interface AccountPersistenceDTO {
-  uuid: string;
-  username: string;
-  status: string;
-  accountType: string;
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
   lastLoginAt?: number; // timestamp
   email?: string;
   emailVerificationToken?: string;
-  isEmailVerified: number; // 0 or 1
-  phone?: string;
+  isEmailVerified: boolean;
+  phoneNumber?: string;
   phoneVerificationCode?: string;
-  isPhoneVerified: number; // 0 or 1
-  userUuid: string;
+  isPhoneVerified: boolean;
+  user: UserDTO;
+  roles?: RoleDTO[];
 }
 
 /**
@@ -63,11 +36,13 @@ export interface UserDTO {
   uuid: string;
   firstName?: string;
   lastName?: string;
-  sex?: string;
+  sex?: number;
   avatar?: string;
   bio?: string;
   socialAccounts?: { [key: string]: string };
   addresses?: AddressDTO[];
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
 }
 
 /**
@@ -92,45 +67,12 @@ export interface UserInfoDTO {
 }
 
 /**
- * 用户会话持久化DTO
- */
-export interface UserSessionPersistenceDTO {
-  uuid: string;
-  accountUuid: string;
-  status: string;
-  createdAt: number; // timestamp
-  lastAccessAt: number; // timestamp
-  expiresAt?: number; // timestamp
-  ipAddress?: string;
-  userAgent?: string;
-  metadata?: string; // JSON string
-}
-
-/**
- * 用户资料持久化DTO
- */
-export interface UserProfilePersistenceDTO {
-  uuid: string;
-  firstName?: string;
-  lastName?: string;
-  sex?: string;
-  avatar?: string;
-  bio?: string;
-  socialAccounts?: string; // JSON string
-  createdAt: number; // timestamp
-  updatedAt: number; // timestamp
-}
-
-/**
  * 角色数据传输对象
  */
 export interface RoleDTO {
   uuid: string;
   name: string;
-  description?: string;
-  isSystem: boolean;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
+  isSystem?: boolean;
   permissions?: PermissionDTO[];
 }
 
@@ -141,40 +83,9 @@ export interface PermissionDTO {
   uuid: string;
   name: string;
   description?: string;
-  resource: string;
-  action: string;
+  resource?: string;
+  action?: string;
   conditions?: any;
-}
-
-/**
- * 认证凭据数据传输对象
- */
-export interface AuthCredentialDTO {
-  uuid: string;
-  accountUuid: string;
-  method: AuthMethod;
-  identifier: string;
-  isVerified: boolean;
-  createdAt: string; // ISO string
-  updatedAt: string; // ISO string
-  lastUsedAt?: string; // ISO string
-  expiresAt?: string; // ISO string
-}
-
-/**
- * 认证凭据持久化DTO
- */
-export interface AuthCredentialPersistenceDTO {
-  uuid: string;
-  accountUuid: string;
-  method: string;
-  identifier: string;
-  credentials: string; // 加密存储
-  isVerified: number; // 0 or 1
-  createdAt: number; // timestamp
-  updatedAt: number; // timestamp
-  lastUsedAt?: number; // timestamp
-  expiresAt?: number; // timestamp
 }
 
 /**
@@ -193,82 +104,15 @@ export interface SessionDTO {
 }
 
 /**
- * Token数据传输对象
- */
-export interface TokenDTO {
-  uuid: string;
-  accountUuid: string;
-  type: TokenType;
-  token: string;
-  expiresAt?: string; // ISO string
-  isRevoked: boolean;
-  createdAt: string; // ISO string
-  revokedAt?: string; // ISO string
-  metadata?: any;
-}
-
-/**
- * Token持久化DTO
- */
-export interface AuthTokenPersistenceDTO {
-  uuid: string;
-  accountUuid: string;
-  type: string;
-  token: string;
-  expiresAt?: number; // timestamp
-  isRevoked: number; // 0 or 1
-  createdAt: number; // timestamp
-  revokedAt?: number; // timestamp
-  metadata?: string; // JSON string
-}
-
-/**
- * MFA设备数据传输对象
- */
-export interface MFADeviceDTO {
-  uuid: string;
-  accountUuid: string;
-  name: string;
-  type: MFADeviceType;
-  identifier: string;
-  isVerified: boolean;
-  isActive: boolean;
-  createdAt: string; // ISO string
-  verifiedAt?: string; // ISO string
-  lastUsedAt?: string; // ISO string
-}
-
-/**
- * MFA设备持久化DTO
- */
-export interface MFADevicePersistenceDTO {
-  uuid: string;
-  accountUuid: string;
-  name: string;
-  type: string;
-  identifier: string;
-  secret?: string; // 加密存储
-  isVerified: number; // 0 or 1
-  isActive: number; // 0 or 1
-  createdAt: number; // timestamp
-  verifiedAt?: number; // timestamp
-  lastUsedAt?: number; // timestamp
-}
-
-/**
  * 地址数据传输对象
  */
 export interface AddressDTO {
-  uuid: string;
-  userUuid: string;
-  type: string;
   country?: string;
   province?: string;
   city?: string;
   district?: string;
   street?: string;
   postalCode?: string;
-  isDefault: boolean;
 }
 
 /**
@@ -348,21 +192,6 @@ export interface PasswordChangeRequest {
   confirmPassword: string;
 }
 
-/**
- * MFA设备注册请求
- */
-export interface MFADeviceRegistrationRequest {
-  name: string;
-  type: MFADeviceType;
-  identifier: string;
-  verificationCode?: string;
-}
-
-// ========== 响应 DTO ==========
-
-/**
- * 账户创建响应
- */
 export interface AccountCreationResponse {
   account: AccountDTO;
   initialSession?: SessionDTO;

@@ -1,7 +1,9 @@
-import { type AccountDTO, type UserDTO } from '@dailyuse/domain-core';
 import { UserCore } from '@dailyuse/domain-core';
 import { type IUserClient } from '../types';
 import { Sex } from '../valueObjects/Sex';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type UserDTO = AccountContracts.UserDTO;
 
 /**
  * 客户端用户实体 - 包含UI相关的用户操作

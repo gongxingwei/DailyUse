@@ -14,6 +14,12 @@ export * from './dtos';
 // Events
 export * from './events';
 
+// Enums
+export * from './enums';
+
+// Persistence DTOs
+export * from './persistence-dtos';
+
 // 类型简化别名
 export type {
   IScheduleTask as ScheduleTask,

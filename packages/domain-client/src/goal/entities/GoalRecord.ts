@@ -1,5 +1,5 @@
 import { GoalRecordCore } from '@dailyuse/domain-core';
-import { type GoalContracts, type IGoalRecord } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 
 /**
  * GoalRecord 核心基类 - 目标记录实体
@@ -7,7 +7,6 @@ import { type GoalContracts, type IGoalRecord } from '@dailyuse/contracts';
 export class GoalRecord extends GoalRecordCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     goalUuid: string;
     keyResultUuid: string;
     value: number;
@@ -29,7 +28,6 @@ export class GoalRecord extends GoalRecordCore {
   toDTO(): GoalContracts.GoalRecordDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this._accountUuid,
       goalUuid: this._goalUuid,
       keyResultUuid: this._keyResultUuid,
       value: this._value,
@@ -41,7 +39,6 @@ export class GoalRecord extends GoalRecordCore {
   static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       goalUuid: dto.goalUuid,
       keyResultUuid: dto.keyResultUuid,
       value: dto.value,
@@ -57,20 +54,17 @@ export class GoalRecord extends GoalRecordCore {
   }
 
   static forCreate({
-    accountUuid,
     goalUuid,
     keyResultUuid,
     value,
     note,
   }: {
-    accountUuid: string;
     goalUuid: string;
     keyResultUuid: string;
     value?: number;
     note?: string;
   }): GoalRecord {
     return new GoalRecord({
-      accountUuid: accountUuid,
       goalUuid: goalUuid,
       keyResultUuid: keyResultUuid,
       value: value || 1,

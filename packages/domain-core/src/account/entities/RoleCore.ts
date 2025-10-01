@@ -1,9 +1,12 @@
 import { Entity } from '@dailyuse/utils';
-import { type IRoleCore } from '../types';
-export class RoleCore extends Entity implements IRoleCore {
+import { type AccountContracts } from "@dailyuse/contracts";
+export class RoleCore extends Entity implements AccountContracts.IRoleCore {
   private _name: string;
+  private _isSystem: boolean;
   private _description: string;
   private _permissions: Set<string>;
+  private _createdAt: Date;
+  private _updatedAt: Date;
 
   /**
    * 构造函数
@@ -16,11 +19,17 @@ export class RoleCore extends Entity implements IRoleCore {
     name: string;
     description?: string;
     permissions?: string[];
+    isSystem?: boolean;
+    createdAt?: Date;
+    updatedAt?: Date;
   }) {
     super(params.uuid || Entity.generateUUID());
     this._name = params.name;
     this._description = params.description ?? '';
     this._permissions = new Set(params.permissions ?? []);
+    this._isSystem = params.isSystem ?? false;
+    this._createdAt = params.createdAt || new Date();
+    this._updatedAt = params.updatedAt || new Date();
   }
 
   get id(): string {
@@ -37,6 +46,18 @@ export class RoleCore extends Entity implements IRoleCore {
 
   get permissions(): Set<string> {
     return new Set(this._permissions);
+  }
+
+  get isSystem(): boolean {
+    return this._isSystem;
+  }
+
+  get createdAt(): Date {
+    return this._createdAt;
+  }
+
+  get updatedAt(): Date {
+    return this._updatedAt;
   }
 
   // ======================== 辅助方法 ========================

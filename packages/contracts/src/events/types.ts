@@ -1,4 +1,4 @@
-import { AccountType, AccountStatus } from '../core/account';
+import { AccountType, AccountStatus } from '../modules/account';
 
 /**
  * 基础领域事件接口

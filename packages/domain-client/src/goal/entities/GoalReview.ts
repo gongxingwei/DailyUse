@@ -1,6 +1,8 @@
 import { GoalReview as GoalReviewCore } from '@dailyuse/domain-core';
-import { type IGoalReview, type GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { Entity } from '@dailyuse/utils';
+
+type IGoalReview = GoalContracts.IGoalReview;
 
 export class GoalReview extends GoalReviewCore {
   constructor(params: IGoalReview) {

@@ -1,6 +1,10 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type ITokenCore, TokenType, type TokenDTO } from '../types';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { isValid, addDays, addMinutes, addHours } from 'date-fns';
+
+
+type ITokenCore = AuthenticationContracts.ITokenCore;
+type TokenType = AuthenticationContracts.TokenType;
 
 /**
  * 令牌值对象
@@ -144,42 +148,12 @@ export class TokenCore extends ValueObject implements ITokenCore {
   }
 
   /**
-   * 转换为DTO对象
-   */
-  toDTO(): TokenDTO {
-    return {
-      value: this._value,
-      type: this._type,
-      accountUuid: this._accountUuid,
-      issuedAt: this._issuedAt.getTime(),
-      expiresAt: this._expiresAt.getTime(),
-      deviceInfo: this._deviceInfo,
-      isRevoked: this._isRevoked,
-    };
-  }
-
-  /**
-   * 从DTO对象创建 Token
-   */
-  static fromDTO(dto: TokenDTO): TokenCore {
-    return new TokenCore({
-      value: dto.value,
-      type: dto.type,
-      accountUuid: dto.accountUuid,
-      issuedAt: isValid(dto.issuedAt) ? new Date(dto.issuedAt) : new Date(),
-      expiresAt: isValid(dto.expiresAt) ? new Date(dto.expiresAt) : new Date(),
-      deviceInfo: dto.deviceInfo,
-      isRevoked: dto.isRevoked,
-    });
-  }
-
-  /**
    * 创建记住我令牌
    */
   static createRememberToken(accountUuid: string, deviceInfo?: string): TokenCore {
     const expiresAt = addDays(new Date(), 30); // 30天有效期
     return new TokenCore({
-      type: TokenType.REMEMBER_ME,
+      type: AuthenticationContracts.TokenType.REMEMBER_ME,
       accountUuid,
       expiresAt,
       deviceInfo,

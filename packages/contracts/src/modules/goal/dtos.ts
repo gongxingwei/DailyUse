@@ -6,7 +6,19 @@ import type {
   IGoalDir,
   GoalQueryParams,
 } from './types';
-import { ImportanceLevel, UrgencyLevel } from '../../core';
+import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
+import {
+  GoalDirStatus,
+  GoalDirSystemType,
+  GoalProgressStatus,
+  GoalReviewType,
+  GoalSortField,
+  GoalStatus,
+  GoalTodayProgressLevel,
+  KeyResultCalculationMethod,
+  KeyResultStatus,
+  SortOrder,
+} from './enums';
 
 // ============ 关键结果 DTOs ============
 
@@ -15,7 +27,6 @@ import { ImportanceLevel, UrgencyLevel } from '../../core';
  */
 export interface KeyResultDTO {
   uuid: string;
-  accountUuid: string; // 用户账户UUID
   goalUuid: string; // 只保留聚合根关联
   name: string;
   description?: string;
@@ -24,11 +35,11 @@ export interface KeyResultDTO {
   currentValue: number;
   unit: string;
   weight: number;
-  calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
+  calculationMethod: KeyResultCalculationMethod;
   lifecycle: {
     createdAt: number; // 时间戳
     updatedAt: number; // 时间戳
-    status: 'active' | 'completed' | 'archived';
+    status: KeyResultStatus;
   };
 }
 
@@ -59,7 +70,7 @@ export interface CreateKeyResultRequest {
   currentValue?: number;
   unit: string;
   weight: number;
-  calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+  calculationMethod?: KeyResultCalculationMethod;
 }
 
 /**
@@ -83,7 +94,6 @@ export interface UpdateKeyResultProgressRequest {
  */
 export interface GoalRecordDTO {
   uuid: string;
-  accountUuid: string; // 用于权限验证和数据隔离
   goalUuid: string; // 聚合根UUID
   keyResultUuid: string; // 直接父实体关联
   value: number;
@@ -102,7 +112,7 @@ export interface GoalReviewDTO {
   uuid: string;
   goalUuid: string;
   title: string;
-  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  type: GoalReviewType;
   reviewDate: number; // timestamp
   content: {
     achievements: string;
@@ -170,7 +180,7 @@ export interface GoalReviewDTO {
   uuid: string;
   goalUuid: string;
   title: string;
-  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  type: GoalReviewType;
   reviewDate: number; // 时间戳
   content: {
     achievements: string;
@@ -207,7 +217,7 @@ export interface GoalReviewDTO {
  */
 export interface CreateGoalReviewRequest {
   title: string;
-  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  type: GoalReviewType;
   content: {
     achievements: string;
     challenges: string;
@@ -248,7 +258,7 @@ export interface GoalReviewListResponse {
  */
 export interface GoalDTO {
   uuid: string;
-  accountUuid: string; // 添加账户UUID字段
+  // accountUuid: string; // 添加账户UUID字段
   name: string;
   description?: string;
   color: string;
@@ -265,7 +275,7 @@ export interface GoalDTO {
   lifecycle: {
     createdAt: number; // 时间戳
     updatedAt: number; // 时间戳
-    status: 'active' | 'completed' | 'paused' | 'archived';
+    status: GoalStatus;
   };
   metadata: {
     tags: string[];
@@ -351,17 +361,17 @@ export interface UpdateGoalRequest {
  */
 export interface GoalDirDTO {
   uuid: string;
-  accountUuid: string;
+  // accountUuid: string;
   name: string;
   description?: string;
   icon: string;
   color: string;
   parentUuid?: string;
   sortConfig: {
-    sortKey: string;
+    sortKey: GoalSortField;
     sortOrder: number;
   };
-  systemType?: 'ALL' | 'UNCATEGORIZED' | 'ARCHIVED' | 'CUSTOM'; // 系统类型
+  systemType?: GoalDirSystemType; // 系统类型
   isDefault?: boolean; // 是否为默认目录
   metadata?: {
     isSystemCreated?: boolean;
@@ -372,7 +382,7 @@ export interface GoalDirDTO {
   lifecycle: {
     createdAt: number; // 时间戳
     updatedAt: number; // 时间戳
-    status: 'active' | 'archived';
+    status: GoalDirStatus;
   };
 }
 
@@ -386,7 +396,7 @@ export interface CreateGoalDirRequest {
   color: string;
   parentUuid?: string;
   sortConfig?: {
-    sortKey: string;
+    sortKey: GoalSortField;
     sortOrder: number;
   };
 }
@@ -414,12 +424,7 @@ export interface GoalResponse extends GoalDTO {
   keyResultCompletionRate: number; // 关键结果完成率
 
   // 计算属性 - 状态分析
-  progressStatus:
-    | 'not-started'
-    | 'in-progress'
-    | 'nearly-completed'
-    | 'completed'
-    | 'over-achieved';
+  progressStatus: GoalProgressStatus;
   healthScore: number; // 健康度评分 (0-100)
 
   // 计算属性 - 时间相关
@@ -428,7 +433,7 @@ export interface GoalResponse extends GoalDTO {
 
   // 今日进度相关的计算属性
   hasTodayProgress: boolean; // 是否有今日进展
-  todayProgressLevel: 'none' | 'low' | 'medium' | 'high' | 'excellent'; // 今日进度等级
+  todayProgressLevel: GoalTodayProgressLevel; // 今日进度等级
   todayRecordsStats: {
     totalRecords: number; // 今日记录总数
     keyResultsWithRecords: number; // 有记录的关键结果数

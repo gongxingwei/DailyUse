@@ -10,7 +10,7 @@ import type {
   EditorSessionDTO,
   FileOperationResponse,
 } from './dtos';
-import type { SupportedFileType, FileOperationType } from './types';
+import { SupportedFileType, FileOperationType } from './enums';
 
 // ============ Base Event Interface ============
 

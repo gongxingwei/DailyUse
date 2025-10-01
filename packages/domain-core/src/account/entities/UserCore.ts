@@ -1,6 +1,11 @@
 import { Entity } from '@dailyuse/utils';
-import { type IUserCore, type ISexCore, type UserDTO  } from '../types';
+import { type AccountContracts } from "@dailyuse/contracts";
 import { SexCore } from '../valueObjects/SexCore';
+
+type IUserCore = AccountContracts.IUserCore;
+type ISexCore = AccountContracts.ISexCore;
+type UserDTO = AccountContracts.UserDTO;
+
 /**
  * 用户核心实体
  */

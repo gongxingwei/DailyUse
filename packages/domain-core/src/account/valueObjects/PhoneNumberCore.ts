@@ -1,5 +1,6 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type IPhoneNumberCore } from '../types';
+import { type AccountContracts } from "@dailyuse/contracts";
+type IPhoneNumberCore = AccountContracts.IPhoneNumberCore;
 /**
  * 手机号值对象核心类
  */

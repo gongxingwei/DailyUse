@@ -5,13 +5,8 @@
  * @date 2025-01-09
  */
 
-import type {
-  ScheduleStatus,
-  SchedulePriority,
-  ScheduleTaskType,
-  IScheduleTask,
-  IScheduleExecutionResult,
-} from './types';
+import { SchedulePriority, ScheduleStatus, ScheduleTaskType } from './enums';
+import type { IScheduleExecutionResult, IScheduleTask } from './types';
 
 /**
  * 基础调度事件接口
