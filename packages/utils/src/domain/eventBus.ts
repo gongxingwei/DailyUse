@@ -239,7 +239,7 @@ class EventBus extends CrossPlatformEventBus {
       status = 'unhealthy';
     }
 
-    console.log(`🏥 [EventBus] 健康检查: ${status}`, details);
+    // console.log(`🏥 [EventBus] 健康检查: ${status}`, details);
 
     return { status, details };
   }

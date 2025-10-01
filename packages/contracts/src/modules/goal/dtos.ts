@@ -282,6 +282,7 @@ export interface GoalDTO {
  * 创建目标请求 DTO
  */
 export interface CreateGoalRequest {
+  goalUuid: string;
   name: string;
   description?: string;
   color: string;

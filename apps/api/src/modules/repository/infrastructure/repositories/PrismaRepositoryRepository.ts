@@ -33,11 +33,10 @@ export class PrismaRepositoryRepository implements IRepositoryRepository {
       }
       const repository = await this.prisma.repository.findUnique({
         where: { uuid },
-        include: {
-          resources: true,
-        },
+        // include: {
+        //   resources: true,
+        // },
       });
-
       return repository ? this.toDTOFromPrisma(repository) : null;
     } catch (error) {
       throw new Error(`Failed to find repository by UUID: ${(error as Error).message}`);
@@ -203,9 +202,10 @@ export class PrismaRepositoryRepository implements IRepositoryRepository {
       const [repositories, total] = await Promise.all([
         this.prisma.repository.findMany({
           where,
-          include: {
-            resources: true,
-          },
+          // 暂时移除 resources 关联，因为数据库模式中还没有这个关系
+          // include: {
+          //   resources: true,
+          // },
           skip: (params.page - 1) * params.limit,
           take: params.limit,
           orderBy: { createdAt: 'desc' },

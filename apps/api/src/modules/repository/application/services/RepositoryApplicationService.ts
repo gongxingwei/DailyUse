@@ -102,6 +102,7 @@ export class RepositoryApplicationService {
       type: queryParams.type as RepositoryContracts.RepositoryType,
       searchTerm: queryParams.keyword,
     });
+    console.log("🚀 ~ RepositoryApplicationService ~ getRepositories ~ result:", result)
 
     const repositories = result.repositories; // Repository层已经返回DTO
 

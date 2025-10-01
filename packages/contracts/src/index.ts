@@ -60,7 +60,8 @@ export type {
 } from './modules/notification/types';
 export type { IAppInfo, IAppConfig, IWindowConfig } from './modules/app/types';
 export type { ISettingDefinition, ISettingGroup, SettingScope } from './modules/setting/types';
-export type { IThemeDefinition, IThemeConfig, ThemeType } from './modules/theme/types';
+export type { IThemeDefinition, IThemeConfig } from './modules/theme/types';
+export { ThemeType } from './modules/theme/types';
 
 // 导出Schedule模块
 export * as ScheduleContracts from './modules/schedule';

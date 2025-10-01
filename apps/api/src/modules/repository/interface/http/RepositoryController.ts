@@ -63,6 +63,7 @@ export class RepositoryController {
   static async getRepositories(req: Request, res: Response) {
     try {
       const accountUuid = RepositoryController.extractAccountUuid(req);
+      console.log('Query Params:', req.query);
       const queryParams: RepositoryContracts.RepositoryQueryParamsDTO = {
         type: req.query.type as RepositoryContracts.RepositoryType,
         status: req.query.status as RepositoryContracts.RepositoryStatus,

@@ -260,6 +260,91 @@ const options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
+        // Repository 相关 Schema
+        Repository: {
+          type: 'object',
+          properties: {
+            uuid: { type: 'string', description: '仓储唯一标识' },
+            accountUuid: { type: 'string', description: '账户UUID' },
+            name: { type: 'string', description: '仓储名称' },
+            type: {
+              type: 'string',
+              enum: ['local', 'remote', 'synchronized'],
+              description: '仓储类型',
+            },
+            path: { type: 'string', description: '仓储路径' },
+            description: { type: 'string', description: '仓储描述' },
+            status: {
+              type: 'string',
+              enum: ['active', 'inactive', 'archived', 'syncing'],
+              description: '仓储状态',
+            },
+            config: {
+              type: 'object',
+              properties: {
+                enableGit: { type: 'boolean', description: '是否启用Git' },
+                autoSync: { type: 'boolean', description: '是否自动同步' },
+                syncInterval: { type: 'number', description: '同步间隔(分钟)' },
+                defaultLinkedDocName: { type: 'string', description: '默认关联文档名称' },
+                supportedFileTypes: {
+                  type: 'array',
+                  items: { type: 'string' },
+                  description: '支持的文件类型',
+                },
+                maxFileSize: { type: 'number', description: '最大文件大小(字节)' },
+                enableVersionControl: { type: 'boolean', description: '是否启用版本控制' },
+              },
+            },
+            relatedGoals: {
+              type: 'array',
+              items: { type: 'string' },
+              description: '关联目标列表',
+            },
+            git: {
+              type: 'object',
+              properties: {
+                isGitRepo: { type: 'boolean', description: '是否为Git仓库' },
+                currentBranch: { type: 'string', description: '当前分支' },
+                hasChanges: { type: 'boolean', description: '是否有未提交更改' },
+                remoteUrl: { type: 'string', description: '远程仓库URL' },
+              },
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        Resource: {
+          type: 'object',
+          properties: {
+            uuid: { type: 'string', description: '资源唯一标识' },
+            repositoryUuid: { type: 'string', description: '所属仓储UUID' },
+            name: { type: 'string', description: '资源名称' },
+            type: {
+              type: 'string',
+              enum: ['markdown', 'image', 'video', 'audio', 'pdf', 'link', 'code', 'other'],
+              description: '资源类型',
+            },
+            path: { type: 'string', description: '资源路径' },
+            size: { type: 'number', description: '资源大小(字节)' },
+            description: { type: 'string', description: '资源描述' },
+            author: { type: 'string', description: '作者' },
+            version: { type: 'string', description: '版本' },
+            tags: {
+              type: 'array',
+              items: { type: 'string' },
+              description: '标签列表',
+            },
+            category: { type: 'string', description: '分类' },
+            status: {
+              type: 'string',
+              enum: ['active', 'archived', 'deleted', 'draft'],
+              description: '资源状态',
+            },
+            metadata: { type: 'object', description: '资源元数据' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
       },
     },
     security: [
