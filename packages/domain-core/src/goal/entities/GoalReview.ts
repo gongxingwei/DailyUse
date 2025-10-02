@@ -1,7 +1,9 @@
-import { type GoalContracts } from "@dailyuse/contracts";
-import { Entity } from "@dailyuse/utils";
+import { GoalContracts } from '@dailyuse/contracts';
+import { Entity } from '@dailyuse/utils';
 
 type IGoalReview = GoalContracts.IGoalReview;
+type GoalReviewType = GoalContracts.GoalReviewType;
+const GoalReviewTypeEnum = GoalContracts.GoalReviewType;
 
 /**
  * GoalReview 核心基类 - 目标复盘实体
@@ -9,7 +11,7 @@ type IGoalReview = GoalContracts.IGoalReview;
 export class GoalReview extends Entity implements IGoalReview {
   goalUuid: string;
   title: string;
-  type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  type: GoalReviewType;
   reviewDate: Date;
   content: {
     achievements: string;
@@ -44,7 +46,7 @@ export class GoalReview extends Entity implements IGoalReview {
     super(params.uuid);
     this.goalUuid = params.goalUuid;
     this.title = params.title;
-    this.type = params.type;
+    this.type = params.type as GoalReviewType;
     this.reviewDate = params.reviewDate;
     this.content = params.content;
     this.snapshot = params.snapshot;

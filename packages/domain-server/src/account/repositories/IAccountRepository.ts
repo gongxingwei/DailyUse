@@ -1,6 +1,9 @@
 import type { Account } from '../aggregates/Account';
 import type { User } from '../entities/User';
-import type { AccountPersistenceDTO, UserProfilePersistenceDTO } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
+type UserProfilePersistenceDTO = AccountContracts.UserProfilePersistenceDTO;
 
 /**
  * 账户存储库接口

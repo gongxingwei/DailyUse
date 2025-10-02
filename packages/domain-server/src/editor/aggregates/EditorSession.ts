@@ -51,16 +51,15 @@ export class EditorSession extends EditorSessionCore {
   toDTO(): EditorSessionDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this.accountUuid,
       name: this.name,
-      groups: this.groups.map((group) => group.toDTO()),
+
       activeGroupId: this.activeGroupId,
-      layout: this.layout.toDTO(),
+      layoutUuid: this.layout.uuid,
       autoSave: this.autoSave,
       autoSaveInterval: this.autoSaveInterval,
-      lastSavedAt: this.lastSavedAt,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      lastSavedAt: this.lastSavedAt?.getTime(),
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 

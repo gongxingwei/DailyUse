@@ -1,7 +1,11 @@
 import { Entity } from '@dailyuse/utils';
-import { type GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 
 type IKeyResult = GoalContracts.IKeyResult;
+type KeyResultCalculationMethod = GoalContracts.KeyResultCalculationMethod;
+type KeyResultStatus = GoalContracts.KeyResultStatus;
+const KeyResultCalculationMethodEnum = GoalContracts.KeyResultCalculationMethod;
+const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
 
 /**
  * KeyResult 核心基类 - 关键结果实体
@@ -15,11 +19,11 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   protected _currentValue: number;
   protected _unit: string;
   protected _weight: number;
-  protected _calculationMethod: 'sum' | 'average' | 'max' | 'min' | 'custom';
+  protected _calculationMethod: KeyResultCalculationMethod;
   protected _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'archived';
+    status: KeyResultStatus;
   };
 
   constructor(params: {
@@ -32,8 +36,8 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     currentValue?: number;
     unit: string;
     weight?: number;
-    calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
-    status?: 'active' | 'completed' | 'archived';
+    calculationMethod?: KeyResultCalculationMethod;
+    status?: KeyResultStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -48,11 +52,11 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     this._currentValue = params.currentValue || params.startValue || 0;
     this._unit = params.unit;
     this._weight = params.weight || 10;
-    this._calculationMethod = params.calculationMethod || 'sum';
+    this._calculationMethod = params.calculationMethod || KeyResultCalculationMethodEnum.SUM;
     this._lifecycle = {
       createdAt: params.createdAt || now,
       updatedAt: params.updatedAt || now,
-      status: params.status || 'active',
+      status: params.status || KeyResultStatusEnum.ACTIVE,
     };
   }
 
@@ -89,19 +93,19 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     return this._weight;
   }
 
-  get calculationMethod(): 'sum' | 'average' | 'max' | 'min' | 'custom' {
+  get calculationMethod(): KeyResultCalculationMethod {
     return this._calculationMethod;
   }
 
   get lifecycle(): {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'archived';
+    status: KeyResultStatus;
   } {
     return this._lifecycle;
   }
 
-  get status(): 'active' | 'completed' | 'archived' {
+  get status(): KeyResultStatus {
     return this._lifecycle.status;
   }
 
@@ -136,10 +140,10 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
    */
   get calculatedProgress(): number {
     switch (this._calculationMethod) {
-      case 'sum':
+      case KeyResultCalculationMethodEnum.SUM:
         return this.progress;
 
-      case 'average':
+      case KeyResultCalculationMethodEnum.AVERAGE:
         // 平均值模式：考虑时间权重
         const totalDays = Math.max(
           1,
@@ -148,15 +152,15 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
         const expectedProgress = (totalDays / 30) * 100; // 假设30天为一个周期
         return Math.min(100, (this.progress + expectedProgress) / 2);
 
-      case 'max':
+      case KeyResultCalculationMethodEnum.MAX:
         // 最大值模式：取当前进度和历史最高进度的较大值
         return Math.max(this.progress, this.percentageToTarget);
 
-      case 'min':
+      case KeyResultCalculationMethodEnum.MIN:
         // 最小值模式：更保守的进度计算
         return Math.min(this.progress, this.percentageToTarget * 0.8);
 
-      case 'custom':
+      case KeyResultCalculationMethodEnum.CUSTOM:
         // 自定义模式：可以根据具体业务需求调整
         return this.customProgressCalculation();
 
@@ -201,7 +205,10 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
   }
 
   get isCompleted(): boolean {
-    return this._currentValue >= this._targetValue || this._lifecycle.status === 'completed';
+    return (
+      this._currentValue >= this._targetValue ||
+      this._lifecycle.status === KeyResultStatusEnum.COMPLETED
+    );
   }
 
   get remaining(): number {
@@ -278,7 +285,7 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     targetValue?: number;
     unit?: string;
     weight?: number;
-    calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    calculationMethod?: KeyResultCalculationMethod;
   }): void {
     if (params.name !== undefined) {
       this.validateName(params.name);
@@ -323,8 +330,11 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
     }
 
     // 如果达到目标值，自动标记为完成
-    if (this._currentValue >= this._targetValue && this._lifecycle.status === 'active') {
-      this._lifecycle.status = 'completed';
+    if (
+      this._currentValue >= this._targetValue &&
+      this._lifecycle.status === KeyResultStatusEnum.ACTIVE
+    ) {
+      this._lifecycle.status = KeyResultStatusEnum.COMPLETED;
     }
 
     this._lifecycle.updatedAt = new Date();
@@ -335,8 +345,8 @@ export abstract class KeyResultCore extends Entity implements IKeyResult {
    */
   resetProgress(): void {
     this._currentValue = this._startValue;
-    if (this._lifecycle.status === 'completed') {
-      this._lifecycle.status = 'active';
+    if (this._lifecycle.status === KeyResultStatusEnum.COMPLETED) {
+      this._lifecycle.status = KeyResultStatusEnum.ACTIVE;
     }
     this._lifecycle.updatedAt = new Date();
   }

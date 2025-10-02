@@ -6,7 +6,11 @@
  */
 
 import { AggregateRoot } from '@dailyuse/utils';
-import { type IThemeDefinition, type IThemeConfig, ThemeType } from '@dailyuse/contracts';
+import { ThemeContracts } from '@dailyuse/contracts';
+
+type IThemeDefinition = ThemeContracts.IThemeDefinition;
+type IThemeConfig = ThemeContracts.IThemeConfig;
+type ThemeType = ThemeContracts.ThemeType;
 
 // 临时类型定义，直到合约层完全导出
 type ColorPalette = any;

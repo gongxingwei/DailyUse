@@ -1,49 +1,9 @@
-import type {
-  IAccountCore,
-  IUserCore,
-  IPermissionCore,
-  IRoleCore,
-  IAddressCore,
-  IEmailCore,
-  IPhoneNumberCore,
-  ISexCore,
-} from '@dailyuse/domain-core';
-
 /**
- * 账号核心接口
+ * Account domain types
+ * 导出账户相关的类型定义
  */
-export interface IAccount extends IAccountCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-export interface IUser extends IUserCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-export interface IPermission extends IPermissionCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-export interface IRole extends IRoleCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
 
-export interface ISex extends ISexCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-
-export interface IAddress extends IAddressCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-
-export interface IEmail extends IEmailCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
-export interface IPhoneNumber extends IPhoneNumberCore {
-  isServer(): boolean;
-  isClient(): boolean;
-}
+// 可以在此处导出 Account 相关的类型接口
+// 例如: export type AccountServerConfig = ...
+// 目前暂时为空，避免构建错误
+export {};

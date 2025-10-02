@@ -7,6 +7,10 @@
   "types": "dist/index.d.ts",
   "exports": {
     ".": {
+      "development": {
+        "types": "./src/index.ts",
+        "import": "./src/index.ts"
+      },
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     }
@@ -23,5 +27,13 @@
     "tsup": "^8.3.5",
     "typescript": "^5.8.3",
     "rimraf": "^6.0.1"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js"
+      }
+    }
   }
 }

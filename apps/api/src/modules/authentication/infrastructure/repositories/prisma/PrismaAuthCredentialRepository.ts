@@ -1,10 +1,14 @@
-import { AuthCredential } from '@dailyuse/domain-server';
 import { prisma } from '../../../../../config/prisma';
-import type { IAuthCredentialRepository } from '@dailyuse/domain-server';
-import type { Session } from '@dailyuse/domain-server';
-import type { Token } from '@dailyuse/domain-server';
-import type { MFADevice } from '@dailyuse/domain-server';
-import type { AuthCredentialPersistenceDTO } from '@dailyuse/contracts';
+import type {
+  IAuthCredentialRepository,
+  Session,
+  Token,
+  MFADevice,
+  AuthCredential,
+} from '@dailyuse/domain-server';
+import { AuthenticationContracts } from '@dailyuse/contracts';
+
+type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
 
 export class PrismaAuthCredentialRepository implements IAuthCredentialRepository {
   async save(credential: AuthCredential): Promise<void> {
@@ -402,13 +406,12 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
           secretKey: deviceData.secretKey,
           phoneNumber: deviceData.phoneNumber,
           emailAddress: deviceData.emailAddress,
-          backupCodes: deviceData.backupCodes,
-          isVerified: deviceData.isVerified,
-          isEnabled: deviceData.isEnabled,
-          verificationAttempts: deviceData.verificationAttempts,
-          maxAttempts: deviceData.maxAttempts,
-          createdAt: deviceData.createdAt,
-          lastUsedAt: deviceData.lastUsedAt,
+          isVerified: deviceData.isVerified ? 1 : 0,
+          isEnabled: deviceData.isEnabled ? 1 : 0,
+          verificationAttempts: deviceData.verificationAttempts || 0,
+          maxAttempts: deviceData.maxAttempts || 5,
+          createdAt: deviceData.createdAt.getTime(),
+          lastUsedAt: deviceData.lastUsedAt ? deviceData.lastUsedAt.getTime() : undefined,
         })) || [],
     };
   }

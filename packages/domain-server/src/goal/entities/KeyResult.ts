@@ -1,5 +1,8 @@
 import { KeyResultCore } from '@dailyuse/domain-core';
-import { type GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
+
+// 枚举别名
+const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
 
 /**
  * 服务端 KeyResult 实体
@@ -16,8 +19,8 @@ export class KeyResult extends KeyResultCore {
     currentValue?: number;
     unit: string;
     weight?: number;
-    calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
-    status?: 'active' | 'completed' | 'archived';
+    calculationMethod?: GoalContracts.KeyResultCalculationMethod;
+    status?: GoalContracts.KeyResultStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -179,9 +182,9 @@ export class KeyResult extends KeyResultCore {
     targetValue?: number;
     unit?: string;
     weight?: number;
-    calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    calculationMethod?: GoalContracts.KeyResultCalculationMethod;
   }): void {
-    if (this.lifecycle.status === 'archived') {
+    if (this.lifecycle.status === KeyResultStatusEnum.ARCHIVED) {
       throw new Error('已归档的关键结果不能修改');
     }
 
@@ -207,7 +210,7 @@ export class KeyResult extends KeyResultCore {
    * 归档关键结果
    */
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = KeyResultStatusEnum.ARCHIVED;
     this._lifecycle.updatedAt = new Date();
   }
 
@@ -219,7 +222,7 @@ export class KeyResult extends KeyResultCore {
       throw new Error('只有已归档的关键结果才能重新激活');
     }
 
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = KeyResultStatusEnum.ACTIVE;
     this._lifecycle.updatedAt = new Date();
   }
 

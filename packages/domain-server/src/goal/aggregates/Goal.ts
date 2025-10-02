@@ -1,14 +1,21 @@
 import { GoalCore } from '@dailyuse/domain-core';
-import {
-  GoalContracts,
-  ImportanceLevel,
-  UrgencyLevel,
-} from '@dailyuse/contracts';
+import { GoalContracts, sharedContracts } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
-import { GoalReview } from '../entities/GoalReview';
+import { GoalReview as ServerGoalReview } from '../entities/GoalReview';
+
+// 枚举别名
+const GoalStatusEnum = GoalContracts.GoalStatus;
+const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
+const KeyResultCalculationMethodEnum = GoalContracts.KeyResultCalculationMethod;
 
 type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
+type IGoalReview = GoalContracts.IGoalReview;
+
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevel = sharedContracts.ImportanceLevel;
+const UrgencyLevel = sharedContracts.UrgencyLevel;
 
 /**
  * 服务端 Goal 实体
@@ -28,22 +35,24 @@ export class Goal extends GoalCore {
     feasibility?: string;
     importanceLevel?: ImportanceLevel;
     urgencyLevel?: UrgencyLevel;
-    status?: 'active' | 'completed' | 'paused' | 'archived';
+    status?: GoalContracts.GoalStatus;
     createdAt?: Date;
     updatedAt?: Date;
     keyResults?: KeyResult[];
     records?: GoalRecord[];
-    reviews?: GoalReview[];
+    reviews?: ServerGoalReview[];
     tags?: string[];
     category?: string;
     version?: number;
   }) {
-    super(params);
+    const { keyResults = [], records = [], reviews = [], ...baseParams } = params;
+
+    super(baseParams);
 
     // 服务端特有的实体创建逻辑
-    this.keyResults = params.keyResults || [];
-    this.records = params.records || [];
-    this.reviews = params.reviews || [];
+    this.keyResults = keyResults;
+    this.records = records;
+    this.reviews = reviews;
   }
 
   // ===== 抽象方法实现 =====
@@ -83,7 +92,7 @@ export class Goal extends GoalCore {
   /**
    * 添加关键结果（服务端实现）
    */
-  addKeyResult(keyResult: IKeyResult): void {
+  addKeyResult(keyResult: KeyResult): void {
     // 验证权重总和不超过100
     const totalWeight = this.keyResults.reduce((sum, kr) => sum + kr.weight, 0) + keyResult.weight;
     if (totalWeight > 100) {
@@ -91,26 +100,7 @@ export class Goal extends GoalCore {
     }
 
     // 转换为 DTO 格式再调用 fromDTO
-    const keyResultDTO: GoalContracts.KeyResultDTO = {
-      uuid: keyResult.uuid,
-      accountUuid: keyResult.accountUuid,
-      goalUuid: keyResult.goalUuid,
-      name: keyResult.name,
-      description: keyResult.description,
-      startValue: keyResult.startValue,
-      targetValue: keyResult.targetValue,
-      currentValue: keyResult.currentValue,
-      unit: keyResult.unit,
-      weight: keyResult.weight,
-      calculationMethod: keyResult.calculationMethod,
-      lifecycle: {
-        createdAt: keyResult.lifecycle.createdAt.getTime(),
-        updatedAt: keyResult.lifecycle.updatedAt.getTime(),
-        status: keyResult.lifecycle.status,
-      },
-    };
-
-    const keyResultEntity = KeyResult.fromDTO(keyResultDTO);
+    const keyResultEntity = KeyResult.fromDTO(keyResult.toDTO());
     this.keyResults.push(keyResultEntity);
     this.updateVersion();
 
@@ -122,7 +112,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid: keyResult.uuid,
-        keyResult: keyResultEntity.toDTO({ accountUuid: this.accountUuid }),
+        keyResult: keyResultEntity.toDTO(),
       },
     });
   }
@@ -143,8 +133,7 @@ export class Goal extends GoalCore {
     const now = new Date();
     const recordDTO: GoalContracts.GoalRecordDTO = {
       uuid: this.generateUUID(),
-      accountUuid: this.accountUuid, // 添加账户UUID
-      goalUuid: this.uuid, // 添加目标UUID
+      goalUuid: this.uuid,
       keyResultUuid,
       value: increment,
       note,
@@ -177,7 +166,6 @@ export class Goal extends GoalCore {
    * 创建并添加关键结果（服务端业务方法）
    */
   createKeyResult(keyResultData: {
-    accountUuid: string;
     name: string;
     description?: string;
     startValue?: number;
@@ -208,7 +196,6 @@ export class Goal extends GoalCore {
 
     const keyResult = new KeyResult({
       uuid: keyResultUuid,
-      accountUuid: keyResultData.accountUuid,
       goalUuid: this.uuid,
       name: keyResultData.name,
       description: keyResultData.description,
@@ -217,8 +204,10 @@ export class Goal extends GoalCore {
       currentValue: keyResultData.currentValue || 0,
       unit: keyResultData.unit,
       weight: keyResultData.weight,
-      calculationMethod: keyResultData.calculationMethod || 'sum',
-      status: 'active',
+      calculationMethod:
+        (keyResultData.calculationMethod as GoalContracts.KeyResultCalculationMethod) ||
+        KeyResultCalculationMethodEnum.SUM,
+      status: KeyResultStatusEnum.ACTIVE,
       createdAt: now,
       updatedAt: now,
     });
@@ -235,7 +224,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid: keyResultUuid,
-        keyResult: keyResult.toDTO({ accountUuid: this.accountUuid }),
+        keyResult: keyResult.toDTO(),
       },
     });
 
@@ -262,7 +251,7 @@ export class Goal extends GoalCore {
     }
 
     const keyResult = this.keyResults[keyResultIndex];
-    const originalData = keyResult.toDTO({ accountUuid: this.accountUuid });
+    const originalData = keyResult.toDTO();
 
     // 权重验证
     if (updates.weight !== undefined) {
@@ -278,7 +267,6 @@ export class Goal extends GoalCore {
     // 创建新的关键结果实体（简化的更新方式）
     const updatedKeyResult = new KeyResult({
       uuid: keyResult.uuid,
-      accountUuid: keyResult.accountUuid,
       goalUuid: keyResult.goalUuid,
       name: updates.name !== undefined ? updates.name : keyResult.name,
       description: updates.description !== undefined ? updates.description : keyResult.description,
@@ -289,7 +277,7 @@ export class Goal extends GoalCore {
       weight: updates.weight !== undefined ? updates.weight : keyResult.weight,
       calculationMethod:
         updates.calculationMethod !== undefined
-          ? updates.calculationMethod
+          ? (updates.calculationMethod as GoalContracts.KeyResultCalculationMethod)
           : keyResult.calculationMethod,
       status: keyResult.lifecycle.status,
       createdAt: keyResult.lifecycle.createdAt,
@@ -309,7 +297,7 @@ export class Goal extends GoalCore {
         goalUuid: this.uuid,
         keyResultUuid,
         originalData,
-        updatedData: updatedKeyResult.toDTO({ accountUuid: this.accountUuid }),
+        updatedData: updatedKeyResult.toDTO(),
         changes: updates,
       },
     });
@@ -342,7 +330,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid,
-        removedKeyResult: keyResult.toDTO({ accountUuid: this.accountUuid }),
+        removedKeyResult: keyResult.toDTO(),
         cascadeDeletedRecordsCount: relatedRecords.length,
       },
     });
@@ -351,12 +339,7 @@ export class Goal extends GoalCore {
   /**
    * 创建目标记录（服务端）
    */
-  createRecord(recordData: {
-    accountUuid: string;
-    keyResultUuid: string;
-    value: number;
-    note?: string;
-  }): string {
+  createRecord(recordData: { keyResultUuid: string; value: number; note?: string }): string {
     // 验证关键结果存在
     const keyResult = this.keyResults.find((kr) => kr.uuid === recordData.keyResultUuid);
     if (!keyResult) {
@@ -369,7 +352,6 @@ export class Goal extends GoalCore {
 
     const newRecord = new GoalRecord({
       uuid: recordUuid,
-      accountUuid: recordData.accountUuid,
       goalUuid: this.uuid,
       keyResultUuid: recordData.keyResultUuid,
       value: recordData.value,
@@ -392,7 +374,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         recordUuid,
-        record: newRecord.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
+        record: newRecord.toDTO(),
         keyResultUpdated: true,
       },
     });
@@ -409,7 +391,7 @@ export class Goal extends GoalCore {
       throw new Error(`目标记录不存在: ${recordUuid}`);
     }
 
-    const originalData = record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid });
+    const originalData = record.toDTO();
 
     // 使用实体的业务方法应用更新
     if (updates.value !== undefined) {
@@ -437,7 +419,7 @@ export class Goal extends GoalCore {
         goalUuid: this.uuid,
         recordUuid,
         originalData,
-        updatedData: record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
+        updatedData: record.toDTO(),
         changes: updates,
       },
     });
@@ -463,7 +445,7 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         recordUuid,
-        removedRecord: record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
+        removedRecord: record.toDTO(),
       },
     });
   }
@@ -473,7 +455,7 @@ export class Goal extends GoalCore {
    */
   createReview(reviewData: {
     title: string;
-    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+    type: GoalContracts.GoalReviewType;
     content: {
       achievements: string;
       challenges: string;
@@ -521,7 +503,7 @@ export class Goal extends GoalCore {
       })),
     };
 
-    const newReview = new GoalReview({
+    const newReview = new ServerGoalReview({
       uuid: reviewUuid,
       goalUuid: this.uuid,
       title: reviewData.title,
@@ -576,7 +558,7 @@ export class Goal extends GoalCore {
     const originalData = (review as any).toDTO(); // 临时解决类型问题
 
     // 创建新的复盘实体（简化的更新方式）
-    const updatedReview = new GoalReview({
+    const updatedReview = new ServerGoalReview({
       uuid: review.uuid,
       goalUuid: review.goalUuid,
       title: updates.title !== undefined ? updates.title : review.title,
@@ -664,7 +646,7 @@ export class Goal extends GoalCore {
     if (!keyResult) return undefined;
 
     // 通过 fromDTO + toDTO 实现克隆
-    return KeyResult.fromDTO(keyResult.toDTO({ accountUuid: this.accountUuid }));
+    return KeyResult.fromDTO(keyResult.toDTO());
   }
 
   /**
@@ -717,33 +699,35 @@ export class Goal extends GoalCore {
   /**
    * 获取指定目标复盘（返回实体对象）
    */
-  getReview(reviewUuid: string): GoalReview | undefined {
-    return this.reviews.find((r) => r.uuid === reviewUuid) as GoalReview | undefined;
+  getReview(reviewUuid: string): ServerGoalReview | undefined {
+    return this.reviews.find((r) => r.uuid === reviewUuid) as ServerGoalReview | undefined;
   }
 
   /**
    * 获取指定类型的复盘
    */
-  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): GoalReview[] {
-    return this.reviews.filter((r) => r.type === type) as GoalReview[];
+  getReviewsByType(
+    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom',
+  ): ServerGoalReview[] {
+    return this.reviews.filter((r) => r.type === type) as ServerGoalReview[];
   }
 
   /**
    * 获取最新的复盘
    */
-  getLatestReview(): GoalReview | undefined {
+  getLatestReview(): ServerGoalReview | undefined {
     const sorted = this.reviews.sort((a, b) => b.reviewDate.getTime() - a.reviewDate.getTime());
-    return sorted.length > 0 ? (sorted[0] as GoalReview) : undefined;
+    return sorted.length > 0 ? (sorted[0] as ServerGoalReview) : undefined;
   }
 
   /**
    * 获取指定日期范围的复盘
    */
-  getReviewsByDateRange(startDate: Date, endDate: Date): GoalReview[] {
+  getReviewsByDateRange(startDate: Date, endDate: Date): ServerGoalReview[] {
     return this.reviews.filter((r) => {
       const reviewDate = r.reviewDate;
       return reviewDate >= startDate && reviewDate <= endDate;
-    }) as GoalReview[];
+    }) as ServerGoalReview[];
   }
 
   // ===== 统计查询方法 =====
@@ -1181,7 +1165,7 @@ export class Goal extends GoalCore {
       throw new Error('已归档的目标不能暂停');
     }
 
-    this._lifecycle.status = 'paused';
+    this._lifecycle.status = GoalStatusEnum.PAUSED;
     this.updateVersion();
 
     // 触发领域事件
@@ -1206,7 +1190,7 @@ export class Goal extends GoalCore {
       throw new Error('已完成的目标不能重新激活');
     }
 
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = GoalStatusEnum.ACTIVE;
     this.updateVersion();
 
     // 触发领域事件
@@ -1234,7 +1218,7 @@ export class Goal extends GoalCore {
       throw new Error('已归档的目标不能完成');
     }
 
-    this._lifecycle.status = 'completed';
+    this._lifecycle.status = GoalStatusEnum.COMPLETED;
     this.updateVersion();
 
     // 触发领域事件
@@ -1257,7 +1241,7 @@ export class Goal extends GoalCore {
    * 归档目标
    */
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = GoalStatusEnum.ARCHIVED;
     this.updateVersion();
 
     // 触发领域事件
@@ -1327,10 +1311,10 @@ export class Goal extends GoalCore {
   /**
    * 转换为数据库 DTO（扁平化存储）
    */
-  toDatabase(): any {
+  toDatabase(context: { accountUuid: string }): GoalPersistenceDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this.accountUuid,
+      accountUuid: context.accountUuid,
       // 基本信息
       name: this._name,
       description: this._description,
@@ -1347,7 +1331,7 @@ export class Goal extends GoalCore {
       // 生命周期
       createdAt: this._lifecycle.createdAt,
       updatedAt: this._lifecycle.updatedAt,
-      status: this._lifecycle.status,
+      status: this._lifecycle.status as GoalContracts.GoalStatus,
       // 元数据 - JSON 存储
       tags: JSON.stringify(this._metadata.tags),
       category: this._metadata.category,
@@ -1359,10 +1343,9 @@ export class Goal extends GoalCore {
   /**
    * 从数据库 DTO 创建实体（不包含子实体）
    */
-  static fromDatabase(dbData: any): Goal {
+  static fromDatabase(dbData: GoalPersistenceDTO): Goal {
     return new Goal({
       uuid: dbData.uuid,
-      accountUuid: dbData.accountUuid,
       name: dbData.name,
       description: dbData.description,
       color: dbData.color,
@@ -1374,7 +1357,7 @@ export class Goal extends GoalCore {
       feasibility: dbData.feasibility,
       importanceLevel: dbData.importanceLevel,
       urgencyLevel: dbData.urgencyLevel,
-      status: dbData.status,
+      status: dbData.status as unknown as GoalContracts.GoalStatus,
       createdAt: dbData.createdAt,
       updatedAt: dbData.updatedAt,
       tags: JSON.parse(dbData.tags || '[]'),
@@ -1390,7 +1373,6 @@ export class Goal extends GoalCore {
   static fromDTO(dto: GoalContracts.GoalDTO): Goal {
     return new Goal({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid, // 添加账户UUID
       name: dto.name,
       description: dto.description,
       color: dto.color,
@@ -1402,31 +1384,61 @@ export class Goal extends GoalCore {
       feasibility: dto.analysis.feasibility,
       importanceLevel: dto.analysis.importanceLevel,
       urgencyLevel: dto.analysis.urgencyLevel,
-      status: dto.lifecycle.status,
+      status: dto.lifecycle.status as unknown as Goal['status'],
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
       tags: dto.metadata.tags,
       category: dto.metadata.category,
       version: dto.version,
-      keyResults: dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [],
-      records: dto.records?.map((record) => GoalRecord.fromDTO(record)) || [],
-      reviews: dto.reviews?.map((review) => GoalReview.fromDTO(review)) || [],
+      keyResults: dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) ?? [],
+      records: dto.records?.map((record) => GoalRecord.fromDTO(record)) ?? [],
+      reviews: dto.reviews?.map((review) => ServerGoalReview.fromDTO(review)) ?? [],
     });
   }
 
+  toDTO(): GoalContracts.GoalDTO {
+    return {
+      uuid: this.uuid,
+      name: this.name,
+      description: this.description,
+      color: this.color,
+      dirUuid: this.dirUuid,
+      startTime: this.startTime.getTime(),
+      endTime: this.endTime.getTime(),
+      note: this.note,
+      analysis: {
+        motive: this.analysis.motive,
+        feasibility: this.analysis.feasibility,
+        importanceLevel: this.analysis.importanceLevel,
+        urgencyLevel: this.analysis.urgencyLevel,
+      },
+      lifecycle: {
+        createdAt: this.lifecycle.createdAt.getTime(),
+        updatedAt: this.lifecycle.updatedAt.getTime(),
+        status: this.lifecycle.status as GoalContracts.GoalStatus,
+      },
+      metadata: {
+        tags: [...this.metadata.tags],
+        category: this.metadata.category,
+      },
+      version: this.version,
+      keyResults: this.keyResults.map((kr) => kr.toDTO()),
+      records: this.records.map((record) => record.toDTO()),
+      reviews: this.reviews.map((review) => (review as ServerGoalReview).toDTO()),
+    };
+  }
+
   toResponse(): GoalContracts.GoalResponse {
-    const baseDTO = this.toDTO({ accountUuid: this.accountUuid });
+    const baseDTO = this.toDTO();
 
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
     const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
-    // 计算今日记录统计
-    const todayRecords = this.records.filter(
-      (record) =>
-        record.createdAt.getTime() >= todayStart.getTime() &&
-        record.createdAt.getTime() < todayEnd.getTime(),
-    );
+    const todayRecords = this.records.filter((record) => {
+      const createdAt = record.createdAt.getTime();
+      return createdAt >= todayStart.getTime() && createdAt < todayEnd.getTime();
+    });
 
     const todayRecordsStats = {
       totalRecords: todayRecords.length,
@@ -1438,7 +1450,6 @@ export class Goal extends GoalCore {
       totalRecordValue: todayRecords.reduce((sum, r) => sum + r.value, 0),
     };
 
-    // 计算进度相关
     const completedKeyResults = this.keyResults.filter(
       (kr) => kr.currentValue >= kr.targetValue,
     ).length;
@@ -1446,49 +1457,38 @@ export class Goal extends GoalCore {
     const keyResultCompletionRate =
       totalKeyResults > 0 ? (completedKeyResults / totalKeyResults) * 100 : 0;
 
-    // 计算整体进度
     const overallProgress =
       totalKeyResults > 0
-        ? this.keyResults.reduce(
-            (sum, kr) => sum + Math.min((kr.currentValue / kr.targetValue) * 100, 100),
-            0,
-          ) / totalKeyResults
+        ? this.keyResults.reduce((sum, kr) => {
+            if (kr.targetValue === 0) {
+              return sum;
+            }
+            const ratio = Math.min((kr.currentValue / kr.targetValue) * 100, 100);
+            return sum + ratio;
+          }, 0) / totalKeyResults
         : 0;
 
-    // 计算加权进度（基于关键结果重要性）
-    const weightedProgress = overallProgress; // 简化版本，可以后续增加权重逻辑
+    const weightedProgress = overallProgress;
+    const todayProgress = todayRecordsStats.totalRecordValue;
 
-    // 计算今日进度
-    const yesterdayEnd = new Date(todayStart.getTime() - 1);
-    const yesterdayRecords = this.records.filter(
-      (record) => record.createdAt.getTime() < todayStart.getTime(),
-    );
-    const todayProgressValue = todayRecordsStats.totalRecordValue;
-    const todayProgress = todayProgressValue; // 简化版本
-
-    // 计算剩余天数
     const daysRemaining = this.endTime
       ? Math.max(0, Math.ceil((this.endTime.getTime() - today.getTime()) / (24 * 60 * 60 * 1000)))
       : 0;
 
-    // 判断进度状态
-    let progressStatus:
-      | 'not-started'
-      | 'in-progress'
-      | 'nearly-completed'
-      | 'completed'
-      | 'over-achieved';
+    let progressStatus: GoalContracts.GoalProgressStatus;
     if (overallProgress === 0) {
-      progressStatus = 'not-started';
+      progressStatus = GoalContracts.GoalProgressStatus.NOT_STARTED;
     } else if (overallProgress >= 100) {
-      progressStatus = completedKeyResults > totalKeyResults ? 'over-achieved' : 'completed';
+      progressStatus =
+        completedKeyResults > totalKeyResults
+          ? GoalContracts.GoalProgressStatus.OVER_ACHIEVED
+          : GoalContracts.GoalProgressStatus.COMPLETED;
     } else if (overallProgress >= 80) {
-      progressStatus = 'nearly-completed';
+      progressStatus = GoalContracts.GoalProgressStatus.NEARLY_COMPLETED;
     } else {
-      progressStatus = 'in-progress';
+      progressStatus = GoalContracts.GoalProgressStatus.IN_PROGRESS;
     }
 
-    // 计算健康度评分
     const timeProgress = this.endTime
       ? ((Date.now() - this.startTime.getTime()) /
           (this.endTime.getTime() - this.startTime.getTime())) *
@@ -1496,62 +1496,35 @@ export class Goal extends GoalCore {
       : 50;
     const healthScore = Math.max(0, Math.min(100, overallProgress - timeProgress + 50));
 
-    // 判断今日进度等级
-    let todayProgressLevel: 'none' | 'low' | 'medium' | 'high' | 'excellent';
+    let todayProgressLevel: GoalContracts.GoalTodayProgressLevel;
     if (todayRecordsStats.totalRecords === 0) {
-      todayProgressLevel = 'none';
+      todayProgressLevel = GoalContracts.GoalTodayProgressLevel.NONE;
     } else if (todayRecordsStats.totalRecords <= 1) {
-      todayProgressLevel = 'low';
+      todayProgressLevel = GoalContracts.GoalTodayProgressLevel.LOW;
     } else if (todayRecordsStats.totalRecords <= 3) {
-      todayProgressLevel = 'medium';
+      todayProgressLevel = GoalContracts.GoalTodayProgressLevel.MEDIUM;
     } else if (todayRecordsStats.totalRecords <= 5) {
-      todayProgressLevel = 'high';
+      todayProgressLevel = GoalContracts.GoalTodayProgressLevel.HIGH;
     } else {
-      todayProgressLevel = 'excellent';
+      todayProgressLevel = GoalContracts.GoalTodayProgressLevel.EXCELLENT;
     }
 
     return {
       ...baseDTO,
-      keyResults: this.keyResults.map((kr) => ({
-        ...kr.toDTO({ accountUuid: this.accountUuid }),
-        progress: Math.min((kr.currentValue / kr.targetValue) * 100, 100),
-        isCompleted: kr.currentValue >= kr.targetValue,
-        remaining: kr.targetValue - kr.currentValue,
-      })),
-      records: this.records.map((record) =>
-        record.toDTO({ accountUuid: this.accountUuid, goalUuid: this.uuid }),
-      ),
-      reviews: this.reviews.map((review) => ({
-        uuid: review.uuid,
-        goalUuid: review.goalUuid,
-        title: review.title,
-        type: review.type,
-        reviewDate: review.reviewDate.getTime(),
-        content: review.content,
-        snapshot: {
-          ...review.snapshot,
-          snapshotDate: review.snapshot.snapshotDate.getTime(),
-        },
-        rating: review.rating,
-        createdAt: review.createdAt.getTime(),
-        updatedAt: review.updatedAt.getTime(),
-      })),
-      // 计算属性 - 进度相关
+      keyResults: this.keyResults.map((kr) => kr.toDTO()),
+      records: this.records.map((record) => record.toDTO()),
+      reviews: this.reviews.map((review) => (review as ServerGoalReview).toDTO()),
       overallProgress,
       weightedProgress,
-      calculatedProgress: overallProgress, // 与 overallProgress 相同
+      calculatedProgress: overallProgress,
       todayProgress,
-      // 计算属性 - 关键结果统计
       completedKeyResults,
       totalKeyResults,
       keyResultCompletionRate,
-      // 计算属性 - 状态分析
       progressStatus,
       healthScore,
-      // 计算属性 - 时间相关
       daysRemaining,
       isOverdue: this.endTime ? this.endTime.getTime() < Date.now() : false,
-      // 今日进度相关的计算属性
       hasTodayProgress: todayRecordsStats.totalRecords > 0,
       todayProgressLevel,
       todayRecordsStats,
@@ -1567,7 +1540,7 @@ export class Goal extends GoalCore {
     const goal = Goal.fromDTO(dto);
     goal.keyResults = dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [];
     goal.records = dto.records?.map((record) => GoalRecord.fromDTO(record)) || [];
-    goal.reviews = dto.reviews?.map((review) => GoalReview.fromDTO(review)) || [];
+    goal.reviews = dto.reviews?.map((review) => ServerGoalReview.fromDTO(review)) || [];
     return goal;
   }
 }

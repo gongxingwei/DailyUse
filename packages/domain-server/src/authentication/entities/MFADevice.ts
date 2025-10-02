@@ -1,7 +1,11 @@
-import { MFADeviceCore, MFADeviceType } from '@dailyuse/domain-core';
+import { MFADeviceCore } from '@dailyuse/domain-core';
 import { type IMFADeviceServer } from '../types';
-import type { MFADevicePersistenceDTO } from '@dailyuse/contracts';
+import { AuthenticationContracts } from '@dailyuse/contracts';
+import { Authentication } from '@dailyuse/contracts';
 
+type MFADeviceType = Authentication.MFADeviceType;
+type MFADevicePersistenceDTO = AuthenticationContracts.MFADevicePersistenceDTO;
+type MFADeviceDTO = AuthenticationContracts.MFADeviceDTO;
 /**
  * 服务端MFA设备实体
  * 继承核心MFA设备实体，添加服务端特定的业务逻辑
@@ -14,16 +18,16 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
     console.log(`发送验证码到MFA设备: ${this.name} (${this.type})`);
 
     switch (this.type) {
-      case MFADeviceType.SMS:
+      case Authentication.MFADeviceType.SMS:
         return await this.sendSMSCode();
-      case MFADeviceType.EMAIL:
+      case AuthenticationContracts.MFADeviceType.EMAIL:
         return await this.sendEmailCode();
-      case MFADeviceType.TOTP:
+      case Authentication.MFADeviceType.TOTP:
         // TOTP不需要发送代码，返回true
         return true;
-      case MFADeviceType.HARDWARE_KEY:
+      case Authentication.MFADeviceType.HARDWARE_TOKEN:
         return await this.activateHardwareKey();
-      case MFADeviceType.BACKUP_CODES:
+      case Authentication.MFADeviceType.BACKUP_CODES:
         // 备用码不需要发送
         return true;
       default:
@@ -86,11 +90,11 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
     // 与SMS网关验证手机号状态等
 
     switch (this.type) {
-      case MFADeviceType.TOTP:
+      case Authentication.MFADeviceType.TOTP:
         return await this.validateTOTPWithService();
-      case MFADeviceType.SMS:
+      case Authentication.MFADeviceType.SMS:
         return await this.validateSMSWithGateway();
-      case MFADeviceType.EMAIL:
+      case Authentication.MFADeviceType.EMAIL:
         return await this.validateEmailWithService();
       default:
         return true;
@@ -214,15 +218,6 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
   static fromPersistenceDTO(dto: MFADevicePersistenceDTO): MFADevice {
     // 解析备用码
     let backupCodes: string[] | undefined;
-    if (dto.backupCodes) {
-      try {
-        backupCodes = JSON.parse(dto.backupCodes);
-      } catch (error) {
-        console.warn('Failed to parse backup codes:', error);
-        backupCodes = [];
-      }
-    }
-
     const device = new MFADevice({
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,
@@ -282,5 +277,36 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
 
     // return deletedCount.count;
     return 0;
+  }
+
+  toDatabase(): MFADevicePersistenceDTO {
+    const dto: MFADevicePersistenceDTO = {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      type: this.type,
+      name: this.name,
+      secretKey: this.secretKey,
+      phoneNumber: this.phoneNumber,
+      emailAddress: this.emailAddress,
+      isVerified: this.isVerified ? 1 : 0,
+      isEnabled: this.isEnabled ? 1 : 0,
+      createdAt: this.createdAt.getTime(),
+      lastUsedAt: this.lastUsedAt ? this.lastUsedAt.getTime() : undefined,
+      verificationAttempts: this.verificationAttempts,
+      maxAttempts: this.maxAttempts,
+    };
+    return dto;
+  }
+
+  toDTO(): MFADeviceDTO {
+    return {
+      uuid: this.uuid,
+      type: this.type,
+      name: this.name,
+      isVerified: this.isVerified,
+      isEnabled: this.isEnabled,
+      createdAt: this.createdAt.getTime(),
+      lastUsedAt: this.lastUsedAt ? this.lastUsedAt.getTime() : undefined,
+    };
   }
 }

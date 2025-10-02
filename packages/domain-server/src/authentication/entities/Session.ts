@@ -1,7 +1,9 @@
 import { SessionCore } from '@dailyuse/domain-core';
 import { type ISessionServer } from '../types';
-import type { ClientInfo } from '@dailyuse/domain-core';
-import type { UserSessionPersistenceDTO } from '@dailyuse/contracts';
+import type { sharedContracts, AuthenticationContracts } from '@dailyuse/contracts';
+
+type ClientInfo = sharedContracts.ClientInfo;
+type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceDTO;
 /**
  * 服务端会话实体
  * 继承核心会话实体，添加服务端特定的业务逻辑

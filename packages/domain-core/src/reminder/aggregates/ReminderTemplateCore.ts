@@ -1,6 +1,24 @@
 import { AggregateRoot } from '@dailyuse/utils';
-import { ImportanceLevel, ReminderContracts } from '@dailyuse/contracts';
+import { sharedContracts, ReminderContracts } from '@dailyuse/contracts';
 import type { ReminderInstanceCore } from '../entities/ReminderInstanceCore';
+
+// ===== 类型和枚举别名 =====
+// sharedContracts 类型别名
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
+
+// ReminderContracts 类型别名
+type ReminderTimeConfigType = ReminderContracts.ReminderTimeConfigType;
+const ReminderTimeConfigTypeEnum = ReminderContracts.ReminderTimeConfigType;
+type ReminderTimeConfig = ReminderContracts.ReminderTimeConfig;
+type ReminderPriority = ReminderContracts.ReminderPriority;
+const ReminderPriorityEnum = ReminderContracts.ReminderPriority;
+type NotificationSettings = ReminderContracts.NotificationSettings;
+type SnoozeConfig = ReminderContracts.SnoozeConfig;
+type RecurrenceRule = ReminderContracts.RecurrenceRule;
+type RecurrencePattern = ReminderContracts.RecurrencePattern;
+const RecurrencePatternEnum = ReminderContracts.RecurrencePattern;
+type IReminderTemplate = ReminderContracts.IReminderTemplate;
 
 /**
  * ReminderTemplate核心基类 - 包含共享属性和基础计算
@@ -15,16 +33,16 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   protected _enabled: boolean;
   protected _selfEnabled: boolean;
   protected _importanceLevel: ImportanceLevel;
-  protected _timeConfig: ReminderContracts.ReminderTimeConfig;
-  protected _priority: ReminderContracts.ReminderPriority;
+  protected _timeConfig: ReminderTimeConfig;
+  protected _priority: ReminderPriority;
   protected _category: string;
   protected _tags: string[];
   protected _icon?: string;
   protected _color?: string;
   protected _position?: { x: number; y: number };
   protected _displayOrder: number;
-  protected _notificationSettings?: ReminderContracts.NotificationSettings;
-  protected _snoozeConfig?: ReminderContracts.SnoozeConfig;
+  protected _notificationSettings?: NotificationSettings;
+  protected _snoozeConfig?: SnoozeConfig;
   protected _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
@@ -52,16 +70,16 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     enabled?: boolean;
     selfEnabled?: boolean;
     importanceLevel?: ImportanceLevel;
-    timeConfig?: ReminderContracts.ReminderTimeConfig;
-    priority?: ReminderContracts.ReminderPriority;
+    timeConfig?: ReminderTimeConfig;
+    priority?: ReminderPriority;
     category?: string;
     tags?: string[];
     icon?: string;
     color?: string;
     position?: { x: number; y: number };
     displayOrder?: number;
-    notificationSettings?: ReminderContracts.NotificationSettings;
-    snoozeConfig?: ReminderContracts.SnoozeConfig;
+    notificationSettings?: NotificationSettings;
+    snoozeConfig?: SnoozeConfig;
     lifecycle?: {
       createdAt?: Date;
       updatedAt?: Date;
@@ -87,12 +105,14 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     this._message = params.message || '';
     this._enabled = params.enabled ?? true;
     this._selfEnabled = params.selfEnabled ?? true;
-    this._importanceLevel = params.importanceLevel || ImportanceLevel.Moderate;
-    this._timeConfig = params.timeConfig || {
-      type: 'daily',
-      times: ['09:00'],
-    };
-    this._priority = params.priority || ReminderContracts.ReminderPriority.NORMAL;
+    this._importanceLevel = params.importanceLevel || ImportanceLevelEnum.Moderate;
+    this._timeConfig =
+      params.timeConfig ||
+      ({
+        type: ReminderTimeConfigTypeEnum.DAILY,
+        times: ['09:00'],
+      } satisfies ReminderTimeConfig);
+    this._priority = params.priority || ReminderPriorityEnum.NORMAL;
     this._category = params.category || '';
     this._tags = params.tags || [];
     this._icon = params.icon;
@@ -146,11 +166,11 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return this._importanceLevel;
   }
 
-  get timeConfig(): ReminderContracts.ReminderTimeConfig {
+  get timeConfig(): ReminderTimeConfig {
     return this._timeConfig;
   }
 
-  get priority(): ReminderContracts.ReminderPriority {
+  get priority(): ReminderPriority {
     return this._priority;
   }
 
@@ -178,11 +198,11 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return this._displayOrder;
   }
 
-  get notificationSettings(): ReminderContracts.NotificationSettings | undefined {
+  get notificationSettings(): NotificationSettings | undefined {
     return this._notificationSettings;
   }
 
-  get snoozeConfig(): ReminderContracts.SnoozeConfig | undefined {
+  get snoozeConfig(): SnoozeConfig | undefined {
     return this._snoozeConfig;
   }
 
@@ -238,7 +258,10 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
    * 检查是否为重复提醒
    */
   get isRecurring(): boolean {
-    return this._timeConfig.type !== 'absolute' && this._timeConfig.type !== 'relative';
+    return (
+      this._timeConfig.type !== ReminderTimeConfigTypeEnum.ABSOLUTE &&
+      this._timeConfig.type !== ReminderTimeConfigTypeEnum.RELATIVE
+    );
   }
 
   /**
@@ -337,16 +360,16 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     }
   }
 
-  protected validateTimeConfig(timeConfig: ReminderContracts.ReminderTimeConfig): void {
+  protected validateTimeConfig(timeConfig: ReminderTimeConfig): void {
     if (!timeConfig) {
       throw new Error('时间配置不能为空');
     }
 
-    if (timeConfig.type === 'absolute' && !timeConfig.schedule) {
+    if (timeConfig.type === ReminderTimeConfigTypeEnum.ABSOLUTE && !timeConfig.schedule) {
       throw new Error('绝对时间提醒必须指定时间规则');
     }
 
-    if (timeConfig.type === 'custom' && !timeConfig.customPattern) {
+    if (timeConfig.type === ReminderTimeConfigTypeEnum.CUSTOM && !timeConfig.customPattern) {
       throw new Error('自定义提醒必须指定自定义规则');
     }
   }
@@ -362,29 +385,25 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 计算下次触发时间
    */
-  protected calculateNextTriggerTime(rule: ReminderContracts.RecurrenceRule): Date {
+  protected calculateNextTriggerTime(rule: RecurrenceRule): Date {
     const now = new Date();
     const baseTime = this._lifecycle.lastTriggered || this._lifecycle.createdAt;
 
     switch (rule.pattern) {
-      case ReminderContracts.RecurrencePattern.DAILY:
+      case RecurrencePatternEnum.DAILY:
         return this.calculateDailyNext(baseTime, rule, now);
-      case ReminderContracts.RecurrencePattern.WEEKLY:
+      case RecurrencePatternEnum.WEEKLY:
         return this.calculateWeeklyNext(baseTime, rule, now);
-      case ReminderContracts.RecurrencePattern.MONTHLY:
+      case RecurrencePatternEnum.MONTHLY:
         return this.calculateMonthlyNext(baseTime, rule, now);
-      case ReminderContracts.RecurrencePattern.YEARLY:
+      case RecurrencePatternEnum.YEARLY:
         return this.calculateYearlyNext(baseTime, rule, now);
       default:
         throw new Error(`不支持的重复类型: ${rule.pattern}`);
     }
   }
 
-  private calculateDailyNext(
-    baseTime: Date,
-    rule: ReminderContracts.RecurrenceRule,
-    now: Date,
-  ): Date {
+  private calculateDailyNext(baseTime: Date, rule: RecurrenceRule, now: Date): Date {
     const next = new Date(baseTime);
     const interval = rule.interval || 1;
 
@@ -395,11 +414,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return next;
   }
 
-  private calculateWeeklyNext(
-    baseTime: Date,
-    rule: ReminderContracts.RecurrenceRule,
-    now: Date,
-  ): Date {
+  private calculateWeeklyNext(baseTime: Date, rule: RecurrenceRule, now: Date): Date {
     const next = new Date(baseTime);
     const interval = rule.interval || 1;
 
@@ -410,11 +425,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return next;
   }
 
-  private calculateMonthlyNext(
-    baseTime: Date,
-    rule: ReminderContracts.RecurrenceRule,
-    now: Date,
-  ): Date {
+  private calculateMonthlyNext(baseTime: Date, rule: RecurrenceRule, now: Date): Date {
     const next = new Date(baseTime);
     const interval = rule.interval || 1;
 
@@ -425,11 +436,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return next;
   }
 
-  private calculateYearlyNext(
-    baseTime: Date,
-    rule: ReminderContracts.RecurrenceRule,
-    now: Date,
-  ): Date {
+  private calculateYearlyNext(baseTime: Date, rule: RecurrenceRule, now: Date): Date {
     const next = new Date(baseTime);
     const interval = rule.interval || 1;
 
@@ -524,10 +531,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 更新时间配置
    */
-  updateTimeConfig(
-    timeConfig: ReminderContracts.ReminderTimeConfig,
-    context?: { accountUuid: string },
-  ): void {
+  updateTimeConfig(timeConfig: ReminderTimeConfig): void {
     const oldTimeConfig = { ...this._timeConfig };
     this.validateTimeConfig(timeConfig);
     this._timeConfig = timeConfig;
@@ -543,7 +547,6 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
         oldTimeConfig,
         newTimeConfig: timeConfig,
         template: this.toDTO(),
-        accountUuid: context?.accountUuid,
       },
     });
   }
@@ -551,7 +554,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 更新通知设置
    */
-  updateNotificationSettings(settings: ReminderContracts.NotificationSettings): void {
+  updateNotificationSettings(settings: NotificationSettings): void {
     this._notificationSettings = settings;
     this.updateVersion();
   }
@@ -559,7 +562,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   /**
    * 更新延迟配置
    */
-  updateSnoozeConfig(config: ReminderContracts.SnoozeConfig): void {
+  updateSnoozeConfig(config: SnoozeConfig): void {
     this._snoozeConfig = config;
     this.updateVersion();
   }
@@ -738,9 +741,9 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
    */
   batchUpdateStatus(params: {
     enabled?: boolean;
-    timeConfig?: ReminderContracts.ReminderTimeConfig;
-    priority?: ReminderContracts.ReminderPriority;
-    notificationSettings?: ReminderContracts.NotificationSettings;
+    timeConfig?: ReminderTimeConfig;
+    priority?: ReminderPriority;
+    notificationSettings?: NotificationSettings;
     context: { accountUuid: string; batchId: string };
   }): void {
     const changes: string[] = [];
@@ -814,15 +817,15 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     if (!this._timeConfig) return false;
 
     switch (this._timeConfig.type) {
-      case 'daily':
-      case 'weekly':
-      case 'monthly':
+      case ReminderTimeConfigTypeEnum.DAILY:
+      case ReminderTimeConfigTypeEnum.WEEKLY:
+      case ReminderTimeConfigTypeEnum.MONTHLY:
         return true;
-      case 'absolute':
+      case ReminderTimeConfigTypeEnum.ABSOLUTE:
         return !!this._timeConfig.schedule;
-      case 'custom':
+      case ReminderTimeConfigTypeEnum.CUSTOM:
         return !!this._timeConfig.customPattern;
-      case 'relative':
+      case ReminderTimeConfigTypeEnum.RELATIVE:
         return !!this._timeConfig.duration;
       default:
         return false;
@@ -882,7 +885,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
 
   // ===== 序列化方法 =====
 
-  toDTO(): ReminderContracts.IReminderTemplate {
+  toDTO(): IReminderTemplate {
     return {
       uuid: this.uuid,
       groupUuid: this._groupUuid,
@@ -908,7 +911,7 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     };
   }
 
-  static fromDTO(dto: ReminderContracts.IReminderTemplate): ReminderTemplateCore {
+  static fromDTO(dto: IReminderTemplate): ReminderTemplateCore {
     throw new Error('Method not implemented. Use subclass implementations.');
   }
 }

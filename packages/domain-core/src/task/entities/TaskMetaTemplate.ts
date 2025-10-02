@@ -1,11 +1,18 @@
 import { Entity } from '@dailyuse/utils';
-import type { TaskContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { TaskContracts, sharedContracts } from '@dailyuse/contracts';
+
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
+const UrgencyLevelEnum = sharedContracts.UrgencyLevel;
 
 /**
  * 任务元模板核心基类
  */
-export abstract class TaskMetaTemplateCore extends Entity implements TaskContracts.ITaskMetaTemplate {
+export abstract class TaskMetaTemplateCore
+  extends Entity
+  implements TaskContracts.ITaskMetaTemplate
+{
   protected _accountUuid: string;
   protected _name: string;
   protected _description?: string;
@@ -90,8 +97,8 @@ export abstract class TaskMetaTemplateCore extends Entity implements TaskContrac
       methods: ['notification'],
     };
     this._defaultProperties = params.defaultProperties || {
-      importance: ImportanceLevel.Moderate,
-      urgency: UrgencyLevel.Medium,
+      importance: ImportanceLevelEnum.Moderate,
+      urgency: UrgencyLevelEnum.Medium,
       tags: [],
     };
     this._usage = {

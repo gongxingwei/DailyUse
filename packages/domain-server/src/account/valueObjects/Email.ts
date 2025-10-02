@@ -1,5 +1,6 @@
 import { EmailCore } from '@dailyuse/domain-core';
-import { type IEmail } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
+type IEmail = AccountContracts.IEmailServer;
 /**
  * 服务端邮箱值对象
  * 继承核心邮箱对象，添加服务端特定的业务逻辑

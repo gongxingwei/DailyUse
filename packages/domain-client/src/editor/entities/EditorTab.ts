@@ -87,7 +87,6 @@ export class EditorTab extends EditorTabCore {
   toDTO(): EditorTabDTO {
     return {
       uuid: this.uuid,
-      accountUuid: (this as any)._accountUuid || '',
       title: this.title,
       path: this.path,
       active: this.active,

@@ -8,7 +8,6 @@ export interface GoalCreatedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalId: string;
     name: string;
     startTime: Date;
@@ -25,7 +24,6 @@ export interface GoalUpdatedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalId: string;
     changes: {
       name?: string;
@@ -47,7 +45,6 @@ export interface GoalStatusChangedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalId: string;
     oldStatus: 'active' | 'completed' | 'paused' | 'archived';
     newStatus: 'active' | 'completed' | 'paused' | 'archived';
@@ -62,7 +59,6 @@ export interface GoalCompletedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalId: string;
     completedAt: Date;
     finalProgress: number;
@@ -79,7 +75,6 @@ export interface GoalDeletedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalId: string;
     name: string;
   };
@@ -190,7 +185,6 @@ export interface GoalDirCreatedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalDirId: string;
     name: string;
     parentUuid?: string;
@@ -205,7 +199,6 @@ export interface GoalDirUpdatedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalDirId: string;
     changes: {
       name?: string;
@@ -225,7 +218,6 @@ export interface GoalDirDeletedEvent {
   aggregateId: string;
   occurredOn: Date;
   payload: {
-    accountUuid: string;
     goalDirId: string;
     name: string;
   };

@@ -79,14 +79,20 @@ export enum AuthMethod {
  * MFA设备类型枚举
  */
 export enum MFADeviceType {
-  /** 手机短信 */
-  SMS = 'sms',
-  /** 邮箱验证 */
-  EMAIL = 'email',
-  /** 身份验证应用 */
-  AUTHENTICATOR = 'authenticator',
-  /** 硬件令牌 */
-  HARDWARE_TOKEN = 'hardware_token',
+    /** 手机短信 */
+    SMS = "sms",
+    /** 邮箱验证 */
+    EMAIL = "email",
+    /** 身份验证应用 */
+    AUTHENTICATOR = "authenticator",
+    /** 硬件令牌 */
+    HARDWARE_TOKEN = "hardware_token",
+    /** 生物识别 */
+    BIOMETRIC = "biometric",
+    /** TOTP */
+    TOTP = "totp",
+    /** 备用码 */
+    BACKUP_CODES = "backup_codes"
 }
 
 /**

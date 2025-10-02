@@ -36,7 +36,6 @@ export class EditorLayout extends EditorLayoutCore {
 
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     name: string;
     activityBarWidth?: number;
     sidebarWidth?: number;
@@ -73,7 +72,10 @@ export class EditorLayout extends EditorLayoutCore {
       newValues: any;
     }>;
   }) {
-    super(params);
+    super({
+      ...params,
+      accountUuid: 'temp-account',
+    });
 
     this._uiState = {
       isDragging: params.uiState?.isDragging || false,
@@ -100,7 +102,6 @@ export class EditorLayout extends EditorLayoutCore {
   toDTO(): EditorLayoutDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this.accountUuid,
       name: this.name,
       activityBarWidth: this.activityBarWidth,
       sidebarWidth: this.sidebarWidth,
@@ -180,7 +181,6 @@ export class EditorLayout extends EditorLayoutCore {
     const dto = this.toDTO();
     return new EditorLayout({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       name: dto.name,
       activityBarWidth: dto.activityBarWidth,
       sidebarWidth: dto.sidebarWidth,

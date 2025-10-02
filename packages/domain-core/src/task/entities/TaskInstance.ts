@@ -1,8 +1,11 @@
 import { Entity } from '@dailyuse/utils';
-import { TaskContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { TaskContracts, sharedContracts } from '@dailyuse/contracts';
 
 type ITaskInstance = TaskContracts.ITaskInstance;
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
+const UrgencyLevelEnum = sharedContracts.UrgencyLevel;
 
 /**
  * 任务实例核心基类
@@ -100,8 +103,8 @@ export abstract class TaskInstanceCore extends Entity implements ITaskInstance {
       progressPercentage: 0,
     };
     this._properties = params.properties || {
-      importance: ImportanceLevel.Moderate,
-      urgency: UrgencyLevel.Medium,
+      importance: ImportanceLevelEnum.Moderate,
+      urgency: UrgencyLevelEnum.Medium,
       tags: [],
     };
     this._lifecycle = {

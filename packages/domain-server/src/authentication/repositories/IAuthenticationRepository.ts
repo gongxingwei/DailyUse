@@ -2,9 +2,7 @@ import type { AuthCredential } from '../aggregates/AuthCredential';
 import type { Session } from '../entities/Session';
 import type { MFADevice } from '../entities/MFADevice';
 import type { Token } from '../valueObjects/Token';
-import {
-  AuthenticationContracts
-} from '@dailyuse/contracts';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 
 type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
 type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceDTO;

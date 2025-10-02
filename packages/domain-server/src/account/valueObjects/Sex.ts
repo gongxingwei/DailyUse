@@ -1,6 +1,7 @@
 import { SexCore } from "@dailyuse/domain-core";
-
-export class Sex extends SexCore {
+import { AccountContracts } from '@dailyuse/contracts';
+type ISex = AccountContracts.ISexServer;
+export class Sex extends SexCore implements ISex {
   isClient(): boolean {
     return false;
   }

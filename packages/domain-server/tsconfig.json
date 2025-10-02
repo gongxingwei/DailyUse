@@ -2,21 +2,28 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "rootDir": "./src",
+    // 移除 rootDir 限制，让 TypeScript 自动推断
+    // "rootDir": "./src",
     "forceConsistentCasingInFileNames": true,
     "target": "ES2020",
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "skipLibCheck": true, // 跳过第三方库的类型检查，提高性能
+    "paths": {
+      "@/*": ["./src/*"],
+      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
+      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
+      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
+      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
+    }
   },
-  "include": [
-    "src/**/*"
-  ],
+  "include": ["src/**/*"],
   "exclude": [
     "node_modules",
-    "dist"
-  ],
-//   "references": [
-//     { "path": "../domain-core" },
-//     { "path": "../utils" }
-//   ]
+    "dist",
+    // 明确排除其他包的源码，只在类型检查时使用
+    "../../packages/contracts/src/**/*",
+    "../../packages/domain-core/src/**/*",
+    "../../packages/utils/src/**/*"
+  ]
 }

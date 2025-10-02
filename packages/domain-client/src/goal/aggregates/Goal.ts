@@ -1,10 +1,12 @@
 import { GoalCore } from '@dailyuse/domain-core';
-import {
-  type GoalContracts,
-} from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
 import { GoalReview } from '../entities/GoalReview';
+
+// 枚举别名
+const GoalStatusEnum = GoalContracts.GoalStatus;
+const GoalReviewTypeEnum = GoalContracts.GoalReviewType;
 
 /**
  * 客户端 Goal 实体
@@ -53,7 +55,7 @@ export class Goal extends GoalCore {
     note?: string;
     motive?: string;
     feasibility?: string;
-    status?: 'active' | 'completed' | 'paused' | 'archived';
+    status?: GoalContracts.GoalStatus;
     createdAt?: Date;
     updatedAt?: Date;
     keyResults?: any[];
@@ -249,7 +251,7 @@ export class Goal extends GoalCore {
       throw new Error('已归档的目标不能暂停');
     }
 
-    this._lifecycle.status = 'paused';
+    this._lifecycle.status = GoalStatusEnum.PAUSED;
     this.updateVersion();
   }
 
@@ -261,7 +263,7 @@ export class Goal extends GoalCore {
       throw new Error('已完成的目标不能重新激活');
     }
 
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = GoalStatusEnum.ACTIVE;
     this.updateVersion();
   }
 
@@ -276,7 +278,7 @@ export class Goal extends GoalCore {
       throw new Error('已归档的目标不能完成');
     }
 
-    this._lifecycle.status = 'completed';
+    this._lifecycle.status = GoalStatusEnum.COMPLETED;
     this.updateVersion();
   }
 
@@ -284,7 +286,7 @@ export class Goal extends GoalCore {
    * 归档目标
    */
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = GoalStatusEnum.ARCHIVED;
     this.updateVersion();
   }
 
@@ -796,7 +798,7 @@ export class Goal extends GoalCore {
    */
   createReview(reviewData: {
     title: string;
-    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+    type: GoalContracts.GoalReviewType;
     content: {
       achievements: string;
       challenges: string;
@@ -985,7 +987,9 @@ export class Goal extends GoalCore {
   /**
    * 获取指定类型的复盘
    */
-  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): GoalContracts.IGoalReview[] {
+  getReviewsByType(
+    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom',
+  ): GoalContracts.IGoalReview[] {
     return this.reviews.filter((r) => r.type === type);
   }
 
@@ -1308,7 +1312,7 @@ export class Goal extends GoalCore {
     (this as any)._uuid = this.generateUUID();
 
     // 重置状态为活跃
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = GoalStatusEnum.ACTIVE;
     this._lifecycle.createdAt = new Date();
     this._lifecycle.updatedAt = new Date();
 

@@ -1,7 +1,9 @@
 import { UserCore } from '@dailyuse/domain-core';
-import { type IUser } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
 import { Sex } from '../valueObjects/Sex';
-import type { UserProfilePersistenceDTO } from '@dailyuse/contracts';
+
+type IUser = AccountContracts.IUserServer;
+type UserProfilePersistenceDTO = AccountContracts.UserProfilePersistenceDTO;
 
 export class User extends UserCore implements IUser {
   isClient(): boolean {
@@ -37,10 +39,9 @@ export class User extends UserCore implements IUser {
     });
   }
 
-  toPersistence(accountUuid: string): UserProfilePersistenceDTO {
+  toPersistence(): UserProfilePersistenceDTO {
     return {
       uuid: this.uuid,
-      accountUuid,
       firstName: this.firstName || '',
       lastName: this.lastName || '',
       displayName: this.displayName || '',
@@ -48,8 +49,8 @@ export class User extends UserCore implements IUser {
       bio: this.bio || '',
       sex: this.sex.value,
       socialAccounts: JSON.stringify(this.socialAccounts) || '{}',
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 

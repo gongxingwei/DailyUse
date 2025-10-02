@@ -32,7 +32,6 @@ export class EditorGroup {
 
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     active?: boolean;
     width: number;
     height?: number;
@@ -60,8 +59,11 @@ export class EditorGroup {
       maxTabs?: number;
     };
   }) {
-    // 创建核心实例
-    this._core = new (EditorGroupCore as any)(params);
+    // 创建核心实例（临时提供默认 accountUuid）
+    this._core = new (EditorGroupCore as any)({
+      ...params,
+      accountUuid: 'temp-account',
+    });
     this._tabs = params.tabs || [];
 
     this._uiState = {
@@ -228,7 +230,6 @@ export class EditorGroup {
   toDTO(): EditorGroupDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this.accountUuid,
       sessionUuid: '', // 这里需要从会话中获取
       active: this.active,
       width: this.width,
@@ -328,7 +329,6 @@ export class EditorGroup {
     const dto = this.toDTO();
     return new EditorGroup({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       active: dto.active,
       width: dto.width,
       height: dto.height,

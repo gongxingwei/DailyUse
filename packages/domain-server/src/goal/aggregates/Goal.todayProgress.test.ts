@@ -1,7 +1,10 @@
 import { Goal } from '../aggregates/Goal';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { sharedContracts } from '@dailyuse/contracts';
+
+const ImportanceLevel = sharedContracts.ImportanceLevel;
+const UrgencyLevel = sharedContracts.UrgencyLevel;
 
 describe('Goal todayProgress 计算', () => {
   let goal: Goal;
@@ -17,8 +20,8 @@ describe('Goal todayProgress 计算', () => {
       color: '#FF5733',
       startTime: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), // 30天前开始
       endTime: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30天后结束
-      importanceLevel: ImportanceLevel.HIGH,
-      urgencyLevel: UrgencyLevel.MEDIUM,
+      importanceLevel: ImportanceLevel.Moderate,
+      urgencyLevel: UrgencyLevel.Medium,
     });
 
     // 创建测试关键结果

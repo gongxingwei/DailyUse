@@ -176,3 +176,45 @@ export interface IClientEntity {
 export interface IServerEntity {
   readonly isServerEntity: true;
 }
+
+// ========== 服务端接口 ==========
+
+/**
+ * 账号核心接口
+ */
+export interface IAccountServer extends IAccountCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+export interface IUserServer extends IUserCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+export interface IPermissionServer extends IPermissionCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+export interface IRoleServer extends IRoleCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+
+export interface ISexServer extends ISexCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+
+export interface IAddressServer extends IAddressCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+
+export interface IEmailServer extends IEmailCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}
+
+export interface IPhoneNumberServer extends IPhoneNumberCore {
+  isServer(): boolean;
+  isClient(): boolean;
+}

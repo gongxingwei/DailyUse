@@ -2,7 +2,10 @@
 export * from './response';
 
 // 导出共享的基础类型定义
-export * from './shared/index';
+export * as sharedContracts from './shared/index';
+// 直接导出重要的枚举类型，方便其他包使用
+export { ImportanceLevel } from './shared/importance';
+export { UrgencyLevel } from './shared/urgency';
 
 // 导出所有事件相关的定义
 export * from './events/index';
@@ -23,3 +26,9 @@ export * as SettingContracts from './modules/setting';
 export * as ThemeContracts from './modules/theme';
 export * as ScheduleContracts from './modules/schedule';
 export * from './modules/schedule';
+export * from './modules/index';
+
+// 导出模块的枚举类型
+
+export * from './modules/goal/enums';
+export * from './modules/schedule/enums';

@@ -10,14 +10,24 @@ import { AuthMethod, MFADeviceType, TokenType } from './enums';
 export interface AuthCredentialPersistenceDTO {
   uuid: string;
   accountUuid: string;
-  method: AuthMethod | string;
-  identifier: string;
-  credentials: string; // 加密存储
-  isVerified: number; // 0 or 1
-  createdAt: number; // timestamp
-  updatedAt: number; // timestamp
-  lastUsedAt?: number; // timestamp
-  expiresAt?: number; // timestamp
+  passwordHash: string; // 加密存储
+  passwordSalt: string; // 加密存储
+  passwordAlgorithm?: string; // 加密存储
+  passwordCreatedAt?: Date; // timestamp
+  passwordUpdatedAt?: Date; // timestamp
+  passwordExpiresAt?: Date | null; // timestamp
+  isLocked: boolean;
+  lockReason?: string | null;
+  lockUntil?: Date | null; // timestamp
+  failedAttempts: number;
+  lastFailedAt?: Date | null; // timestamp
+  createdAt: Date; // timestamp
+  updatedAt: Date; // timestamp
+  lastUsedAt?: Date | null; // timestamp
+  expiresAt?: Date | null; // timestamp
+  sessions?: UserSessionPersistenceDTO[];
+  mfaDevices?: MFADevicePersistenceDTO[];
+  tokens?: AuthTokenPersistenceDTO[];
 }
 
 /**
@@ -26,13 +36,16 @@ export interface AuthCredentialPersistenceDTO {
 export interface UserSessionPersistenceDTO {
   uuid: string;
   accountUuid: string;
-  status: string;
-  createdAt: number; // timestamp
-  lastAccessAt: number; // timestamp
-  expiresAt?: number; // timestamp
-  ipAddress?: string;
-  userAgent?: string;
-  metadata?: string; // JSON string
+  sessionId: string;
+  accessToken: string;
+  refreshToken?: string | null;
+  deviceInfo?: string | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  lastAccessedAt: Date;
+  expiresAt: Date | null;
 }
 
 /**
@@ -43,9 +56,9 @@ export interface MFADevicePersistenceDTO {
   accountUuid: string;
   type: MFADeviceType;
   name: string;
-  secretKey?: string;
-  phoneNumber?: string;
-  emailAddress?: string;
+  secretKey?: string | null;
+  phoneNumber?: string | null;
+  emailAddress?: string | null;
   isVerified: number; // 0 or 1
   isEnabled: number; // 0 or 1
   createdAt: number; // timestamp
@@ -55,15 +68,18 @@ export interface MFADevicePersistenceDTO {
 }
 
 /**
- * Token 持久化 DTO
+ * 认证令牌持久化 DTO
  */
-export interface TokenPersistenceDTO {
+export interface AuthTokenPersistenceDTO {
   uuid: string;
   accountUuid: string;
-  value: string;
-  type: TokenType;
-  deviceInfo?: string;
-  issuedAt: number; // timestamp
-  expiresAt: number; // timestamp
-  isRevoked: number; // 0 or 1
+  tokenValue: string;
+  tokenType: string;
+  issuedAt: Date;
+  expiresAt: Date;
+  isRevoked: boolean;
+  revokeReason?: string | null;
+  metadata?: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }

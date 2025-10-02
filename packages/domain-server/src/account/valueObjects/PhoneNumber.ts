@@ -1,5 +1,6 @@
 import { PhoneNumberCore } from '@dailyuse/domain-core';
-import { type IPhoneNumber } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
+type IPhoneNumber = AccountContracts.IPhoneNumberServer;
 /**
  * 服务端手机号值对象
  * 继承核心手机号对象，添加服务端特定的业务逻辑

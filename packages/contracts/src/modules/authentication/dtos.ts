@@ -113,3 +113,47 @@ export interface MFADeviceRegistrationRequest {
   email?: string;
   totpCode?: string; // 用于验证TOTP设备
 }
+
+// =================== 实体DTO ===================
+
+export interface AuthCredentialDTO {
+  uuid: string;
+  accountUuid: string;
+  method: string; // AuthMethod
+  identifier: string;
+  isVerified: boolean;
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
+  lastUsedAt?: number; // timestamp
+  expiresAt?: number; // timestamp
+}
+
+export interface UserSessionDTO {
+  uuid: string;
+  status: string; // SessionStatus
+  createdAt: number; 
+  lastAccessAt: number; 
+  expiresAt?: number; 
+  ipAddress?: string;
+  userAgent?: string;
+  metadata?: any;
+}
+
+export interface MFADeviceDTO {
+  uuid: string;
+  type: MFADeviceType;
+  name: string;
+  isVerified: boolean;
+  isEnabled: boolean;
+  createdAt: number; 
+  lastUsedAt?: number; 
+}
+
+export interface TokenDTO {
+  uuid: string;
+  type: string; // TokenType
+  deviceInfo?: string;
+  issuedAt: number; 
+  expiresAt: number; 
+  isRevoked: boolean;
+}

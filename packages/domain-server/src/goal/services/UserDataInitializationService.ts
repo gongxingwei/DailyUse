@@ -1,6 +1,10 @@
 import type { IGoalRepository } from '../repositories/iGoalRepository';
 import { GoalDir } from '../aggregates/GoalDir';
-import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
+
+// 枚举别名
+const GoalSortFieldEnum = GoalContracts.GoalSortField;
+const GoalDirSystemTypeEnum = GoalContracts.GoalDirSystemType;
 
 /**
  * 用户数据初始化服务
@@ -33,17 +37,16 @@ export class UserDataInitializationService {
   private async createDefaultDirectories(accountUuid: string): Promise<void> {
     const defaultDirectories: Omit<GoalContracts.GoalDirDTO, 'uuid' | 'lifecycle'>[] = [
       {
-        accountUuid,
         name: '全部目标',
         description: '所有目标的默认分类',
         icon: '📋',
         color: '#3B82F6',
         parentUuid: undefined,
         sortConfig: {
-          sortKey: 'createdAt',
+          sortKey: GoalSortFieldEnum.CREATED_AT,
           sortOrder: 0,
         },
-        systemType: 'ALL',
+        systemType: GoalDirSystemTypeEnum.ALL,
         isDefault: true,
         metadata: {
           systemCreated: true,
@@ -52,17 +55,16 @@ export class UserDataInitializationService {
         },
       },
       {
-        accountUuid,
         name: '未分类',
         description: '未指定目录的目标',
         icon: '📂',
         color: '#64748B',
         parentUuid: undefined,
         sortConfig: {
-          sortKey: 'createdAt',
+          sortKey: GoalSortFieldEnum.CREATED_AT,
           sortOrder: 1,
         },
-        systemType: 'UNCATEGORIZED',
+        systemType: GoalDirSystemTypeEnum.UNCATEGORIZED,
         isDefault: false,
         metadata: {
           systemCreated: true,
@@ -71,17 +73,16 @@ export class UserDataInitializationService {
         },
       },
       {
-        accountUuid,
         name: '已归档',
         description: '已完成或不再活跃的目标',
         icon: '📦',
         color: '#9CA3AF',
         parentUuid: undefined,
         sortConfig: {
-          sortKey: 'createdAt',
+          sortKey: GoalSortFieldEnum.CREATED_AT,
           sortOrder: 2,
         },
-        systemType: 'ARCHIVED',
+        systemType: GoalDirSystemTypeEnum.ARCHIVED,
         isDefault: false,
         metadata: {
           systemCreated: true,
@@ -107,10 +108,10 @@ export class UserDataInitializationService {
       .filter((dir: GoalContracts.GoalDirDTO) => dir.systemType)
       .map((dir: GoalContracts.GoalDirDTO) => dir.systemType);
 
-    const requiredSystemTypes: ('ALL' | 'UNCATEGORIZED' | 'ARCHIVED')[] = [
-      'ALL',
-      'UNCATEGORIZED',
-      'ARCHIVED',
+    const requiredSystemTypes: GoalContracts.GoalDirSystemType[] = [
+      GoalDirSystemTypeEnum.ALL,
+      GoalDirSystemTypeEnum.UNCATEGORIZED,
+      GoalDirSystemTypeEnum.ARCHIVED,
     ];
     const missingSystemTypes = requiredSystemTypes.filter((type) => !systemTypes.includes(type));
 
@@ -121,16 +122,15 @@ export class UserDataInitializationService {
     // 创建缺失的系统目录
     const directoriesToCreate = missingSystemTypes.map((systemType, index) => {
       switch (systemType) {
-        case 'ALL':
+        case GoalDirSystemTypeEnum.ALL:
           return {
-            accountUuid,
             name: '全部目标',
             description: '所有目标的默认分类',
             icon: '📋',
             color: '#3B82F6',
             parentUuid: undefined,
             sortConfig: {
-              sortKey: 'createdAt',
+              sortKey: GoalSortFieldEnum.CREATED_AT,
               sortOrder: 0,
             },
             systemType,
@@ -141,16 +141,15 @@ export class UserDataInitializationService {
               description: '系统自动创建的默认目录，用于显示所有目标',
             },
           };
-        case 'UNCATEGORIZED':
+        case GoalDirSystemTypeEnum.UNCATEGORIZED:
           return {
-            accountUuid,
             name: '未分类',
             description: '未指定目录的目标',
             icon: '📂',
             color: '#64748B',
             parentUuid: undefined,
             sortConfig: {
-              sortKey: 'createdAt',
+              sortKey: GoalSortFieldEnum.CREATED_AT,
               sortOrder: 1,
             },
             systemType,
@@ -161,16 +160,15 @@ export class UserDataInitializationService {
               description: '系统自动创建的未分类目录',
             },
           };
-        case 'ARCHIVED':
+        case GoalDirSystemTypeEnum.ARCHIVED:
           return {
-            accountUuid,
             name: '已归档',
             description: '已完成或不再活跃的目标',
             icon: '📦',
             color: '#9CA3AF',
             parentUuid: undefined,
             sortConfig: {
-              sortKey: 'createdAt',
+              sortKey: GoalSortFieldEnum.CREATED_AT,
               sortOrder: 2,
             },
             systemType,

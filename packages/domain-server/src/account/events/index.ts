@@ -1,6 +1,6 @@
 import { type DomainEvent } from "@dailyuse/utils";
-import { type AccountDTO } from "@dailyuse/domain-core";
 import { Account } from "../aggregates/Account";
+
 /**
  * 账号注册事件载荷
  */

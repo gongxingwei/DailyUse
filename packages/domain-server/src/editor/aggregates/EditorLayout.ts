@@ -45,7 +45,6 @@ export class EditorLayout extends EditorLayoutCore {
   toDTO(): EditorLayoutDTO {
     return {
       uuid: this.uuid,
-      accountUuid: this.accountUuid,
       name: this.name,
       activityBarWidth: this.activityBarWidth,
       sidebarWidth: this.sidebarWidth,
@@ -56,8 +55,8 @@ export class EditorLayout extends EditorLayoutCore {
       windowWidth: this.windowWidth,
       windowHeight: this.windowHeight,
       isDefault: this.isDefault,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 

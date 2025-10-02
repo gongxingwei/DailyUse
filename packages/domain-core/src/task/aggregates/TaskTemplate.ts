@@ -1,12 +1,11 @@
 import { AggregateRoot } from '@dailyuse/utils';
-
-import {
-  TaskContracts,
-  ImportanceLevel,
-  UrgencyLevel,
-} from '@dailyuse/contracts';
+import { TaskContracts, sharedContracts } from '@dailyuse/contracts';
 
 type ITaskTemplate = TaskContracts.ITaskTemplate;
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
+const UrgencyLevelEnum = sharedContracts.UrgencyLevel;
 
 /**
  * 任务模板核心基类 - 包含共享属性和基础计算
@@ -118,8 +117,8 @@ export abstract class TaskTemplateCore extends AggregateRoot implements ITaskTem
       methods: ['notification'],
     };
     this._properties = params.properties || {
-      importance: ImportanceLevel.Moderate,
-      urgency: UrgencyLevel.Medium,
+      importance: ImportanceLevelEnum.Moderate,
+      urgency: UrgencyLevelEnum.Medium,
       tags: [],
     };
     this._lifecycle = params.lifecycle || {

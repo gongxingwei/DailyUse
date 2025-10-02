@@ -1,5 +1,6 @@
 import { AddressCore } from '@dailyuse/domain-core';
-import { type IAddress } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
+type IAddress = AccountContracts.IAddressServer;
 /**
  * 服务端地址值对象
  * 继承核心地址对象，添加服务端特定的业务逻辑

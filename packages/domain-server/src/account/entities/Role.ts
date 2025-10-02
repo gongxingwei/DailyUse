@@ -1,5 +1,6 @@
 import { RoleCore } from '@dailyuse/domain-core';
-import { type IRole } from '../types';
+import { AccountContracts } from '@dailyuse/contracts';
+type IRole = AccountContracts.IRoleServer;
 /**
  * 服务端角色实体
  * 继承核心角色实体，添加服务端特定的业务逻辑

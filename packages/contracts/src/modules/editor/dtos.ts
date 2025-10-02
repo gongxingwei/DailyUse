@@ -13,8 +13,6 @@ import { SupportedFileType, FileOperationType } from './enums';
 export interface EditorTabDTO {
   /** 唯一标识符 */
   uuid: string;
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 所属编辑器组UUID */
   groupUuid: string;
   /** 标签页标题 */
@@ -45,8 +43,6 @@ export interface EditorTabDTO {
 export interface EditorGroupDTO {
   /** 唯一标识符 */
   uuid: string;
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 所属会话UUID */
   sessionUuid: string;
   /** 是否激活 */
@@ -75,8 +71,6 @@ export interface EditorGroupDTO {
 export interface EditorLayoutDTO {
   /** 唯一标识符 */
   uuid: string;
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 布局名称 */
   name: string;
   /** 活动栏宽度 */
@@ -109,7 +103,7 @@ export interface EditorLayoutDTO {
 export interface EditorSessionDTO {
   /** 唯一标识符 */
   uuid: string;
-  /** 所属账户UUID */
+  /** 账户UUID */
   accountUuid: string;
   /** 会话名称 */
   name: string;
@@ -658,8 +652,6 @@ export interface FileOperationResponse {
  * 编辑器组查询参数
  */
 export interface EditorGroupQuery {
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 是否激活 */
   active?: boolean;
   /** 标题模糊搜索 */
@@ -698,8 +690,6 @@ export interface EditorTabQuery {
  * 编辑器布局查询参数
  */
 export interface EditorLayoutQuery {
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 布局名称模糊搜索 */
   nameContains?: string;
   /** 是否默认布局 */
@@ -714,8 +704,6 @@ export interface EditorLayoutQuery {
  * 编辑器会话查询参数
  */
 export interface EditorSessionQuery {
-  /** 所属账户UUID */
-  accountUuid: string;
   /** 会话名称模糊搜索 */
   nameContains?: string;
   /** 是否自动保存 */

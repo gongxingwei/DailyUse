@@ -55,18 +55,20 @@ export class EditorSession {
     enableFileWatcher: boolean;
   };
 
-  constructor(data: EditorSessionDTO | EditorSessionCore) {
+  constructor(data: EditorSessionDTO | EditorSessionCore, accountUuid?: string) {
     if (data instanceof EditorSessionCore) {
       this._core = data;
     } else {
       // 从DTO创建核心实例
+      // accountUuid 通过参数传入或使用默认值
+      const resolvedAccountUuid = accountUuid || 'default-account'; // 在实际应用中应该从认证上下文获取
       this._core = new (EditorSessionCore as any)({
         uuid: data.uuid,
-        accountUuid: data.accountUuid,
+        accountUuid: resolvedAccountUuid,
         name: data.name,
         groups: [],
         activeGroupId: data.activeGroupId,
-        layout: this.createDefaultLayoutCore(data.accountUuid),
+        layout: this.createDefaultLayoutCore(resolvedAccountUuid),
         autoSave: data.autoSave,
         autoSaveInterval: data.autoSaveInterval,
         lastSavedAt: data.lastSavedAt ? new Date(data.lastSavedAt) : undefined,

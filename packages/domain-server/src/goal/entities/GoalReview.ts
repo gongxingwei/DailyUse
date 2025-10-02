@@ -1,6 +1,9 @@
 import { AggregateRoot } from '@dailyuse/utils';
-import { type GoalContracts, type IGoalReview } from '@dailyuse/contracts';
+import { Goal, GoalContracts } from '@dailyuse/contracts';
 
+type IGoalReview = GoalContracts.IGoalReview;
+type GoalReviewType = GoalContracts.GoalReviewType;
+const GoalReviewType = GoalContracts.GoalReviewType;
 /**
  * 服务端 GoalReview 实体
  * 实现目标复盘的服务端业务逻辑
@@ -8,7 +11,7 @@ import { type GoalContracts, type IGoalReview } from '@dailyuse/contracts';
 export class GoalReview extends AggregateRoot implements IGoalReview {
   private _goalUuid: string;
   private _title: string;
-  private _type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+  private _type: GoalReviewType;
   private _reviewDate: Date;
   private _content: {
     achievements: string;
@@ -43,7 +46,7 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
     uuid?: string;
     goalUuid: string;
     title: string;
-    type?: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+    type?: GoalContracts.GoalReviewType;
     reviewDate?: Date;
     content: {
       achievements: string;
@@ -79,7 +82,7 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
 
     this._goalUuid = params.goalUuid;
     this._title = params.title;
-    this._type = params.type || 'custom';
+    this._type = params.type || GoalContracts.GoalReviewType.CUSTOM;
     this._reviewDate = params.reviewDate || now;
     this._content = params.content;
     this._snapshot = params.snapshot;
@@ -101,7 +104,7 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
     return this._title;
   }
 
-  get type(): 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom' {
+  get type(): IGoalReview['type'] {
     return this._type;
   }
 

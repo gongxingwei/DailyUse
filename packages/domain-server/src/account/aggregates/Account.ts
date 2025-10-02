@@ -1,10 +1,18 @@
-import { AccountCore, AccountStatus, AccountType } from '@dailyuse/domain-core';
+import { AccountCore } from '@dailyuse/domain-core';
 import { User } from '../entities/User';
 import { Email } from '../valueObjects/Email';
 import { PhoneNumber } from '../valueObjects/PhoneNumber';
 import { Address } from '../valueObjects/Address';
-import { type IAccount } from '../types';
-import type { AccountPersistenceDTO } from '@dailyuse/contracts';
+import { AccountContracts, sharedContracts } from '@dailyuse/contracts';
+
+type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
+type AccountType = AccountContracts.AccountType;
+type AccountStatus = AccountContracts.AccountStatus;
+type IAccount = AccountContracts.IAccountServer;
+
+const AccountType = AccountContracts.AccountType;
+const AccountStatus = AccountContracts.AccountStatus;
+
 /**
  * 服务端账号聚合根 - 包含完整的业务逻辑
  * 数据持久化、业务规则验证、安全策略等
@@ -354,52 +362,25 @@ export class Account extends AccountCore implements IAccount {
    * 专门处理来自仓储层的持久化 DTO 数据
    */
   static fromPersistenceDTO(persistenceDTO: AccountPersistenceDTO): Account {
-    // Parse social accounts
-    let socialAccounts = {};
-    if (persistenceDTO.userProfile?.socialAccounts) {
-      try {
-        socialAccounts = JSON.parse(persistenceDTO.userProfile.socialAccounts);
-      } catch (error) {
-        console.warn('Failed to parse social accounts:', error);
-      }
-    }
-
-    // Parse role IDs
-    let roleIds: string[] = [];
-    if (persistenceDTO.roleIds) {
-      try {
-        roleIds = JSON.parse(persistenceDTO.roleIds);
-      } catch (error) {
-        console.warn('Failed to parse role IDs:', error);
-      }
-    }
-
-    // 创建 User 实体
-    const user = persistenceDTO.userProfile
-      ? new User({
-          firstName: persistenceDTO.userProfile.firstName || '',
-          lastName: persistenceDTO.userProfile.lastName || '',
-          avatar: persistenceDTO.userProfile.avatarUrl,
-          bio: persistenceDTO.userProfile.bio,
-        })
-      : new User({ firstName: '', lastName: '' });
+    // 创建 User 实体 (从 userUuid 加载，这里简化处理)
+    const user = new User({ firstName: '', lastName: '' });
 
     return new Account({
       uuid: persistenceDTO.uuid,
       username: persistenceDTO.username,
-      accountType: Account.mapStringToAccountType(persistenceDTO.accountType),
+      accountType: persistenceDTO.accountType,
       user,
       email: persistenceDTO.email ? Email.fromValue(persistenceDTO.email) : undefined,
       phoneNumber: persistenceDTO.phone ? PhoneNumber.fromValue(persistenceDTO.phone) : undefined,
-      status: Account.mapStringToAccountStatus(persistenceDTO.status),
-      isEmailVerified: persistenceDTO.emailVerified,
-      isPhoneVerified: persistenceDTO.phoneVerified,
-      createdAt: persistenceDTO.createdAt,
-      updatedAt: persistenceDTO.updatedAt,
-      lastLoginAt: persistenceDTO.lastLoginAt,
+      status: persistenceDTO.status,
+      isEmailVerified: persistenceDTO.isEmailVerified === 1,
+      isPhoneVerified: persistenceDTO.isPhoneVerified === 1,
+      createdAt: new Date(persistenceDTO.createdAt),
+      updatedAt: new Date(persistenceDTO.updatedAt),
+      lastLoginAt: persistenceDTO.lastLoginAt ? new Date(persistenceDTO.lastLoginAt) : undefined,
       emailVerificationToken: persistenceDTO.emailVerificationToken,
       phoneVerificationCode: persistenceDTO.phoneVerificationCode,
-      roleUuids: new Set(roleIds),
+      roleUuids: new Set([]),
     });
   }
 
@@ -494,7 +475,7 @@ export class Account extends AccountCore implements IAccount {
       roleUuids: Array.from(this._roleUuids),
       isEmailVerified: this._isEmailVerified,
       isPhoneVerified: this._isPhoneVerified,
-      user: (this._user as User).toPersistence(this.uuid),
+      user: (this._user as User).toPersistence(),
     };
   }
 
@@ -503,5 +484,26 @@ export class Account extends AccountCore implements IAccount {
    */
   clone(): Account {
     return Account.fromPersistence(this.toPersistence());
+  }
+
+  /**
+   * 转换为 DTO
+   */
+  toDTO(): AccountContracts.AccountDTO {
+    return {
+      uuid: this.uuid,
+      username: this._username,
+      accountType: this._accountType,
+      status: this._status,
+      email: this._email?.value,
+      phoneNumber: this._phoneNumber?.fullNumber,
+      isEmailVerified: this._isEmailVerified,
+      isPhoneVerified: this._isPhoneVerified,
+      createdAt: this._createdAt.getTime(),
+      updatedAt: this._updatedAt.getTime(),
+      lastLoginAt: this._lastLoginAt?.getTime(),
+      user: (this._user as User).toDTO(),
+      // roles 需要从角色仓储加载，这里暂时不包含
+    };
   }
 }

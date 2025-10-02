@@ -1,20 +1,23 @@
 import { GoalDirCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 
+// 枚举别名
+const GoalSortFieldEnum = GoalContracts.GoalSortField;
+const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
+
 export class GoalDir extends GoalDirCore {
   constructor(params: {
     uuid?: string;
-    accountUuid: string;
     name: string;
     description?: string;
     icon: string;
     color: string;
     parentUuid?: string;
     sortConfig?: {
-      sortKey: string;
+      sortKey: GoalContracts.GoalSortField;
       sortOrder: number;
     };
-    status?: 'active' | 'archived';
+    status?: GoalContracts.GoalDirStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -27,7 +30,7 @@ export class GoalDir extends GoalDirCore {
    * 归档目录
    */
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = GoalDirStatusEnum.ARCHIVED;
     this._lifecycle.updatedAt = new Date();
 
     // 触发领域事件
@@ -49,7 +52,7 @@ export class GoalDir extends GoalDirCore {
    * 激活目录
    */
   activate(): void {
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = GoalDirStatusEnum.ACTIVE;
     this._lifecycle.updatedAt = new Date();
 
     // 触发领域事件
@@ -102,10 +105,29 @@ export class GoalDir extends GoalDirCore {
 
   // ===== 序列化方法 =====
 
+  toDTO(): GoalContracts.GoalDirDTO {
+    return {
+      uuid: this.uuid,
+      parentUuid: this.parentUuid,
+
+      name: this.name,
+      description: this.description,
+      icon: this.icon,
+      color: this.color,
+
+      sortConfig: this.sortConfig,
+
+      lifecycle: {
+        status: this.lifecycle.status,
+        createdAt: this.lifecycle.createdAt.getTime(),
+        updatedAt: this.lifecycle.updatedAt.getTime(),
+      },
+    };
+  }
+
   static fromDTO(dto: GoalContracts.GoalDirDTO): GoalDir {
     return new GoalDir({
       uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       icon: dto.icon,

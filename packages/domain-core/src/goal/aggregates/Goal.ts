@@ -1,14 +1,22 @@
 import { AggregateRoot } from '@dailyuse/utils';
-import { type GoalContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { GoalContracts, sharedContracts } from '@dailyuse/contracts';
 import { KeyResultCore } from '../entities/KeyResult';
 import { GoalRecordCore } from '../entities/GoalRecord';
 import { GoalReview } from '../entities/GoalReview';
 
+// 类型导入
 type IGoal = GoalContracts.IGoal;
 type IKeyResult = GoalContracts.IKeyResult;
 type IGoalRecord = GoalContracts.IGoalRecord;
 type IGoalReview = GoalContracts.IGoalReview;
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+type GoalStatus = GoalContracts.GoalStatus;
+
+// 常量导入（使用别名避免命名冲突）
+const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
+const UrgencyLevelEnum = sharedContracts.UrgencyLevel;
+const GoalStatusEnum = GoalContracts.GoalStatus;
 
 /**
  * Goal核心基类 - 包含共享属性和基础计算
@@ -33,7 +41,7 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   protected _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'paused' | 'archived';
+    status: GoalStatus;
   };
   protected _metadata: {
     tags: string[];
@@ -54,7 +62,7 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
     feasibility?: string;
     importanceLevel?: ImportanceLevel;
     urgencyLevel?: UrgencyLevel;
-    status?: 'active' | 'completed' | 'paused' | 'archived';
+    status?: GoalStatus;
     createdAt?: Date;
     updatedAt?: Date;
     keyResults?: IKeyResult[];
@@ -77,13 +85,13 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
     this._lifecycle = {
       createdAt: params.createdAt || now,
       updatedAt: params.updatedAt || now,
-      status: params.status || 'active',
+      status: params.status || GoalStatusEnum.ACTIVE,
     };
     this._analysis = {
       motive: params.motive || '',
       feasibility: params.feasibility || '',
-      importanceLevel: params.importanceLevel || ImportanceLevel.Moderate,
-      urgencyLevel: params.urgencyLevel || UrgencyLevel.Medium,
+      importanceLevel: params.importanceLevel || ImportanceLevelEnum.Moderate,
+      urgencyLevel: params.urgencyLevel || UrgencyLevelEnum.Medium,
     };
     this._metadata = {
       tags: params.tags || [],
@@ -131,7 +139,7 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   get lifecycle(): {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'completed' | 'paused' | 'archived';
+    status: GoalStatus;
   } {
     return this._lifecycle;
   }
@@ -143,7 +151,7 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
     return this._metadata;
   }
 
-  get status(): 'active' | 'completed' | 'paused' | 'archived' {
+  get status(): GoalStatus {
     return this._lifecycle.status;
   }
   get createdAt(): Date {
@@ -166,23 +174,23 @@ export abstract class GoalCore extends AggregateRoot implements IGoal {
   }
 
   get isActive(): boolean {
-    return this._lifecycle.status === 'active';
+    return this._lifecycle.status === GoalStatusEnum.ACTIVE;
   }
 
   get isCompleted(): boolean {
-    return this._lifecycle.status === 'completed';
+    return this._lifecycle.status === GoalStatusEnum.COMPLETED;
   }
 
   get isPaused(): boolean {
-    return this._lifecycle.status === 'paused';
+    return this._lifecycle.status === GoalStatusEnum.PAUSED;
   }
 
   get isArchived(): boolean {
-    return this._lifecycle.status === 'archived';
+    return this._lifecycle.status === GoalStatusEnum.ARCHIVED;
   }
 
   get isOverdue(): boolean {
-    return new Date() > this._endTime && this._lifecycle.status === 'active';
+    return new Date() > this._endTime && this._lifecycle.status === GoalStatusEnum.ACTIVE;
   }
 
   get timeRemaining(): number {

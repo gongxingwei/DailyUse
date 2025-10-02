@@ -1,6 +1,11 @@
 import { TaskInstanceCore } from '@dailyuse/domain-core';
-import type { TaskContracts } from '@dailyuse/contracts';
-import type { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { TaskContracts, sharedContracts } from '@dailyuse/contracts';
+
+type ImportanceLevel = sharedContracts.ImportanceLevel;
+type UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevel = sharedContracts.ImportanceLevel;
+const UrgencyLevel = sharedContracts.UrgencyLevel;
+
 
 /**
  * 任务实例聚合根 - 服务端实现

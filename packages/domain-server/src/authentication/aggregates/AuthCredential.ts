@@ -1,24 +1,27 @@
-import {
-  AuthCredentialCore,
-  TokenType,
-  type ISessionCore,
-  type IMFADeviceCore,
-  type ITokenCore,
-  type ClientInfo,
-} from '@dailyuse/domain-core';
+import { AuthCredentialCore } from '@dailyuse/domain-core/';
 import { type IAuthCredentialServer } from '../types';
 import { Password } from '../valueObjects/Password';
 import { Session } from '../entities/Session';
 import { Token } from '../valueObjects/Token';
 import { MFADevice } from '../entities/MFADevice';
 import { addMinutes } from 'date-fns';
-import type { AuthCredentialPersistenceDTO } from '@dailyuse/contracts';
+import { Authentication } from '@dailyuse/contracts';
+import { sharedContracts } from '@dailyuse/contracts';
+
+type ClientInfo = sharedContracts.ClientInfo;
+type AuthCredentialPersistenceDTO = Authentication.AuthCredentialPersistenceDTO;
 
 /**
  * 服务端认证凭据 - 包含完整的业务逻辑
  * 密码验证、会话管理等敏感操作
  */
 export class AuthCredential extends AuthCredentialCore implements IAuthCredentialServer {
+  // 覆盖父类属性以使用具体类型
+  private _serverPassword: Password;
+  private _serverSessions: Map<string, Session>;
+  private _serverMfaDevices: Map<string, MFADevice>;
+  private _serverTokens: Map<string, Token>;
+
   constructor(params: {
     uuid?: string;
     accountUuid: string;
@@ -32,15 +35,37 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     updatedAt?: Date;
     lastAuthAt?: Date;
   }) {
-    // 将具体类型转换为接口类型传递给父构造函数
-    const coreParams = {
+    // 先调用父构造函数，使用 Password 作为 PasswordCore（它们是兼容的）
+    super({
       ...params,
-      password: params.password, // Password implements IPasswordCore and extends PasswordCore
-      sessions: params.sessions || new Map(),
-      mfaDevices: params.mfaDevices || new Map(),
-      tokens: params.tokens || new Map(),
-    };
-    super(coreParams);
+      password: params.password as any, // 临时绕过类型检查
+      sessions: new Map(),
+      mfaDevices: new Map(),
+      tokens: new Map(),
+    });
+
+    // 然后设置具体类型的属性
+    this._serverPassword = params.password;
+    this._serverSessions = params.sessions || new Map();
+    this._serverMfaDevices = params.mfaDevices || new Map();
+    this._serverTokens = params.tokens || new Map();
+  }
+
+  // 覆盖 getter 方法以返回具体类型
+  get password(): Password {
+    return this._serverPassword;
+  }
+
+  get sessions(): Map<string, Session> {
+    return this._serverSessions;
+  }
+
+  get mfaDevices(): Map<string, MFADevice> {
+    return this._serverMfaDevices;
+  }
+
+  get tokens(): Map<string, Token> {
+    return this._serverTokens;
   }
 
   isAccountLocked(): boolean {
@@ -48,18 +73,21 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   getAccessToken(): Token | undefined {
-    const token = this._tokens.get(TokenType.ACCESS_TOKEN);
-    if (token) {
-      if (token.isValid()) {
-        return token as Token;
-      } else {
-        token.revoke();
+    // 从服务端 tokens 中查找
+    for (const token of this._serverTokens.values()) {
+      if (token.type === Authentication.TokenType.ACCESS) {
+        if (token.isValid()) {
+          return token;
+        } else {
+          token.revoke();
+        }
       }
     }
+
     // 创建新 access_token（有效期可自定义）
     const secret = process.env.JWT_SECRET || 'default-secret';
     const newToken = Token.createAccessToken(this.accountUuid, secret); // 1小时有效
-    this._tokens.set(TokenType.ACCESS_TOKEN, newToken as any);
+    this._serverTokens.set(newToken.value, newToken);
     this._updatedAt = new Date();
     return newToken;
   }
@@ -70,7 +98,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
       return false;
     }
 
-    const isValid = (this.password as Password).verify(password);
+    const isValid = this._serverPassword.verify(password);
 
     if (isValid) {
       this.resetFailedAttempts();
@@ -95,7 +123,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
       throw new Error('Account is locked. Please try again later.');
     }
 
-    const isValid = this._password.verify(password);
+    const isValid = this._serverPassword.verify(password);
 
     if (isValid) {
       this._failedAttempts = 0;
@@ -140,7 +168,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     success: boolean;
     accessToken: Token | undefined;
   } {
-    const rememberToken = this._tokens.get(token);
+    const rememberToken = this._serverTokens.get(token);
     if (rememberToken) {
       return {
         success: rememberToken.isValid(),
@@ -154,14 +182,14 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    const isOldValid = (this.password as Password).verify(oldPassword);
+    const isOldValid = this._serverPassword.verify(oldPassword);
     if (!isOldValid) {
       throw new Error('Current password is incorrect');
     }
 
     // 使用 Password 的静态工厂（会校验密码强度并进行异步哈希）
-    const newPassword_obj = new Password(newPassword);
-    (this as any)._password = newPassword_obj;
+    const newPasswordObj = new Password(newPassword);
+    this._serverPassword = newPasswordObj;
     this._updatedAt = new Date();
 
     // 密码更改后终止所有会话
@@ -174,14 +202,14 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
       clientInfo: clientInfo,
     });
 
-    this.sessions.set(session.uuid, session as any);
+    this._serverSessions.set(session.uuid, session);
     this._updatedAt = new Date();
 
     return session;
   }
 
   terminateSession(sessionUuid: string): void {
-    const session = this.sessions.get(sessionUuid);
+    const session = this._serverSessions.get(sessionUuid);
     if (session) {
       session.terminate();
       this._updatedAt = new Date();
@@ -189,47 +217,44 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   terminateAllSessions(): void {
-    for (const session of this.sessions.values()) {
+    for (const session of this._serverSessions.values()) {
       session.terminate();
     }
     this._updatedAt = new Date();
   }
 
-  addMFADevice(device: IMFADeviceCore): void {
-    this.mfaDevices.set(device.uuid, device);
+  addMFADevice(device: MFADevice): void {
+    this._serverMfaDevices.set(device.uuid, device);
     this._updatedAt = new Date();
   }
 
   removeMFADevice(deviceUuid: string): void {
-    this.mfaDevices.delete(deviceUuid);
+    this._serverMfaDevices.delete(deviceUuid);
     this._updatedAt = new Date();
   }
 
-  createToken(type: TokenType): ITokenCore {
+  createToken(type: Authentication.TokenType): Token {
     let token: Token;
     const secret = process.env.JWT_SECRET || 'default-secret';
 
     switch (type) {
-      case TokenType.ACCESS_TOKEN:
+      case Authentication.TokenType.ACCESS:
         token = Token.createAccessToken(this.accountUuid, secret);
         break;
-      case TokenType.REFRESH_TOKEN:
+      case Authentication.TokenType.REFRESH:
         token = Token.createRefreshToken(this.accountUuid, secret);
         break;
-      case TokenType.PASSWORD_RESET:
+      case Authentication.TokenType.PASSWORD_RESET:
         token = Token.createPasswordResetToken(this.accountUuid, secret);
         break;
-      case TokenType.EMAIL_VERIFICATION:
-        token = Token.createEmailVerificationToken(this.accountUuid, secret);
-        break;
-      case TokenType.REMEMBER_ME:
+      case Authentication.TokenType.REMEMBER_ME:
         token = Token.createRememberToken(this.accountUuid, undefined, secret);
         break;
       default:
         throw new Error(`Unsupported token type: ${type}`);
     }
 
-    this.tokens.set(token.value, token as any);
+    this._serverTokens.set(token.value, token);
     this._updatedAt = new Date();
     return token;
   }
@@ -242,7 +267,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
 
     const secret = process.env.JWT_SECRET || 'default-secret';
     const token = Token.createRememberToken(this.accountUuid, deviceInfo, secret);
-    this.tokens.set(token.value, token as any);
+    this._serverTokens.set(token.value, token);
     this._updatedAt = new Date();
 
     this.addDomainEvent({
@@ -261,9 +286,9 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   private revokeRememberTokenForDevice(deviceInfo: string): void {
-    for (const token of this._tokens.values()) {
+    for (const token of this._serverTokens.values()) {
       if (
-        token.type === TokenType.REMEMBER_ME &&
+        token.type === Authentication.TokenType.REMEMBER_ME &&
         token.isValid() &&
         token.deviceInfo === deviceInfo
       ) {
@@ -284,7 +309,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   revokeToken(tokenValue: string): void {
-    const token = this.tokens.get(tokenValue);
+    const token = this._serverTokens.get(tokenValue);
     if (token) {
       token.revoke();
       this._updatedAt = new Date();
@@ -319,9 +344,11 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
 
   isClient(): boolean {
     return false;
-  } // ===== 业务方法 =====
-  get activeSessions(): ISessionCore[] {
-    return Array.from(this.sessions.values()).filter((s) => s.isActive);
+  }
+
+  // ===== 业务方法 =====
+  get activeSessions(): Session[] {
+    return Array.from(this._serverSessions.values()).filter((s) => s.isActive);
   }
 
   getPasswordInfo(): {
@@ -330,7 +357,7 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
     algorithm: string;
     createdAt: Date;
   } {
-    return (this.password as Password).getHashInfo();
+    return this._serverPassword.getHashInfo();
   }
 
   /**

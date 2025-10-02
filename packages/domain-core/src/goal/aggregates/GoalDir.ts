@@ -1,5 +1,13 @@
 import { AggregateRoot } from '@dailyuse/utils';
-import { type GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
+
+// 类型导入
+type GoalDirStatus = GoalContracts.GoalDirStatus;
+type GoalSortField = GoalContracts.GoalSortField;
+
+// 常量导入
+const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
+const GoalSortFieldEnum = GoalContracts.GoalSortField;
 
 /**
  * GoalDir核心基类 - 目标目录
@@ -11,13 +19,13 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
   protected _color: string;
   protected _parentUuid?: string;
   protected _sortConfig: {
-    sortKey: string;
+    sortKey: GoalSortField;
     sortOrder: number;
   };
   protected _lifecycle: {
     createdAt: Date;
     updatedAt: Date;
-    status: 'active' | 'archived';
+    status: GoalDirStatus;
   };
 
   constructor(params: {
@@ -28,10 +36,10 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
     color: string;
     parentUuid?: string;
     sortConfig?: {
-      sortKey: string;
+      sortKey: GoalSortField;
       sortOrder: number;
     };
-    status?: 'active' | 'archived';
+    status?: GoalDirStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -44,13 +52,13 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
     this._color = params.color;
     this._parentUuid = params.parentUuid;
     this._sortConfig = params.sortConfig || {
-      sortKey: 'createdAt',
+      sortKey: GoalSortFieldEnum.CREATED_AT,
       sortOrder: 0,
     };
     this._lifecycle = {
       createdAt: params.createdAt || now,
       updatedAt: params.updatedAt || now,
-      status: params.status || 'active',
+      status: params.status || GoalDirStatusEnum.ACTIVE,
     };
   }
 
@@ -70,13 +78,13 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
   get parentUuid(): string | undefined {
     return this._parentUuid;
   }
-  get sortConfig(): { sortKey: string; sortOrder: number } {
+  get sortConfig(): { sortKey: GoalSortField; sortOrder: number } {
     return this._sortConfig;
   }
-  get lifecycle(): { createdAt: Date; updatedAt: Date; status: 'active' | 'archived' } {
+  get lifecycle(): { createdAt: Date; updatedAt: Date; status: GoalDirStatus } {
     return this._lifecycle;
   }
-  get status(): 'active' | 'archived' {
+  get status(): GoalDirStatus {
     return this._lifecycle.status;
   }
   get createdAt(): Date {
@@ -98,7 +106,7 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
     color?: string;
     parentUuid?: string;
     sortConfig?: {
-      sortKey: string;
+      sortKey: GoalSortField;
       sortOrder: number;
     };
   }): void {
@@ -147,8 +155,6 @@ export abstract class GoalDirCore extends AggregateRoot implements GoalContracts
       throw new Error('颜色格式不正确');
     }
   }
-
-
 
   // ===== 抽象方法（由子类实现）=====
   abstract toDTO(): GoalContracts.GoalDirDTO;

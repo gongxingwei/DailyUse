@@ -1,5 +1,8 @@
 import { GoalDirCore } from '@dailyuse/domain-core';
-import { type GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
+
+// 枚举别名
+const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
 
 /**
  * 客户端 GoalDir 实体
@@ -14,10 +17,10 @@ export class GoalDir extends GoalDirCore {
     color: string;
     parentUuid?: string;
     sortConfig?: {
-      sortKey: string;
+      sortKey: GoalContracts.GoalSortField;
       sortOrder: number;
     };
-    status?: 'active' | 'archived';
+    status?: GoalContracts.GoalDirStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -30,7 +33,7 @@ export class GoalDir extends GoalDirCore {
    * 归档目录
    */
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = GoalDirStatusEnum.ARCHIVED;
     this._lifecycle.updatedAt = new Date();
   }
 
@@ -38,7 +41,7 @@ export class GoalDir extends GoalDirCore {
    * 激活目录
    */
   activate(): void {
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = GoalDirStatusEnum.ACTIVE;
     this._lifecycle.updatedAt = new Date();
   }
 

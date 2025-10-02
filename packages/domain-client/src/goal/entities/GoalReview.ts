@@ -2,6 +2,9 @@ import { GoalReview as GoalReviewCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 import { Entity } from '@dailyuse/utils';
 
+// 枚举别名
+const GoalReviewTypeEnum = GoalContracts.GoalReviewType;
+
 type IGoalReview = GoalContracts.IGoalReview;
 
 export class GoalReview extends GoalReviewCore {
@@ -108,7 +111,7 @@ export class GoalReview extends GoalReviewCore {
       uuid: Entity.generateUUID(),
       goalUuid,
       title: '',
-      type: 'weekly',
+      type: GoalReviewTypeEnum.WEEKLY,
       reviewDate: new Date(),
       content: {
         achievements: '',
@@ -133,6 +136,5 @@ export class GoalReview extends GoalReviewCore {
       createdAt: new Date(),
       updatedAt: new Date(),
     });
-  
   }
 }

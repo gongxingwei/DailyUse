@@ -50,15 +50,16 @@ export class EditorTab extends EditorTabCore {
     return {
       uuid: this.uuid,
       title: this.title,
+      groupUuid: '1',
       path: this.path,
       active: this.active,
       isPreview: this.isPreview,
       fileType: this.fileType,
       isDirty: this.isDirty,
       content: this.content,
-      lastModified: this.lastModified,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
+      lastModified: this.lastModified?.getTime(),
+      createdAt: this.createdAt.getTime(),
+      updatedAt: this.updatedAt.getTime(),
     };
   }
 

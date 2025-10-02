@@ -1,6 +1,9 @@
 import { KeyResultCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 
+// 枚举别名
+const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
+
 /**
  * KeyResult 核心基类 - 关键结果实体
  */
@@ -15,8 +18,8 @@ export class KeyResult extends KeyResultCore {
     currentValue?: number;
     unit: string;
     weight?: number;
-    calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
-    status?: 'active' | 'completed' | 'archived';
+    calculationMethod?: GoalContracts.KeyResultCalculationMethod;
+    status?: GoalContracts.KeyResultStatus;
     createdAt?: Date;
     updatedAt?: Date;
   }) {
@@ -148,14 +151,14 @@ export class KeyResult extends KeyResultCore {
 
   // ===== 抽象方法实现=====
   complete(): void {
-    this._lifecycle.status = 'completed';
+    this._lifecycle.status = KeyResultStatusEnum.COMPLETED;
   }
 
   archive(): void {
-    this._lifecycle.status = 'archived';
+    this._lifecycle.status = KeyResultStatusEnum.ARCHIVED;
   }
 
   reactivate(): void {
-    this._lifecycle.status = 'active';
+    this._lifecycle.status = KeyResultStatusEnum.ACTIVE;
   }
 }

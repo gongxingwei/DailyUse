@@ -31,7 +31,9 @@ export interface UserProfilePersistenceDTO {
   uuid: string;
   firstName?: string;
   lastName?: string;
-  sex?: string;
+  displayName?: string;
+  avatarUrl?: string;
+  sex?: number;
   avatar?: string;
   bio?: string;
   socialAccounts?: string; // JSON string

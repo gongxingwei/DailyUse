@@ -2,6 +2,9 @@ import { ReminderTemplateCore } from '@dailyuse/domain-core';
 import { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderInstance } from '../entities/ReminderInstance';
 
+// 枚举别名
+const ReminderTimeConfigTypeEnum = ReminderContracts.ReminderTimeConfigType;
+
 /**
  * 客户端 ReminderTemplate 实体
  * 继承核心 ReminderTemplate 类，添加客户端特有功能
@@ -254,7 +257,7 @@ export class ReminderTemplate extends ReminderTemplateCore {
       selfEnabled: true,
       priority: ReminderContracts.ReminderPriority.NORMAL,
       timeConfig: {
-        type: 'daily',
+        type: ReminderTimeConfigTypeEnum.DAILY,
         times: ['09:00'],
       },
     });

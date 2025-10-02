@@ -1,8 +1,12 @@
 import { ValueObject } from '@dailyuse/utils';
-import { TokenType, TokenCore } from '@dailyuse/domain-core';
+import { TokenCore } from '@dailyuse/domain-core';
 import { type ITokenServer } from '../types';
-import type { AuthTokenPersistenceDTO } from '@dailyuse/contracts';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import jwt from 'jsonwebtoken';
+
+const TokenType = AuthenticationContracts.TokenType;
+type TokenTypeValue = AuthenticationContracts.TokenType;
+type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
 
 /**
  * Token值对象 - JWT令牌管理
@@ -71,7 +75,7 @@ export class Token extends TokenCore implements ITokenServer {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24小时
     const payload = {
       accountUuid,
-      type: TokenType.ACCESS_TOKEN,
+      type: TokenType.ACCESS,
       exp: Math.floor(expiresAt.getTime() / 1000),
     };
 
@@ -79,7 +83,7 @@ export class Token extends TokenCore implements ITokenServer {
 
     return new Token({
       value,
-      type: TokenType.ACCESS_TOKEN,
+      type: TokenType.ACCESS,
       accountUuid,
       expiresAt,
     });
@@ -89,7 +93,7 @@ export class Token extends TokenCore implements ITokenServer {
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30天
     const payload = {
       accountUuid,
-      type: TokenType.REFRESH_TOKEN,
+      type: TokenType.REFRESH,
       exp: Math.floor(expiresAt.getTime() / 1000),
     };
 
@@ -97,7 +101,7 @@ export class Token extends TokenCore implements ITokenServer {
 
     return new Token({
       value,
-      type: TokenType.REFRESH_TOKEN,
+      type: TokenType.REFRESH,
       accountUuid,
       expiresAt,
     });
@@ -128,7 +132,7 @@ export class Token extends TokenCore implements ITokenServer {
     const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24小时
     const payload = {
       accountUuid,
-      type: TokenType.EMAIL_VERIFICATION,
+      type: TokenType.VERIFICATION,
       exp: Math.floor(expiresAt.getTime() / 1000),
     };
 
@@ -136,7 +140,7 @@ export class Token extends TokenCore implements ITokenServer {
 
     return new Token({
       value,
-      type: TokenType.EMAIL_VERIFICATION,
+      type: TokenType.VERIFICATION,
       accountUuid,
       expiresAt,
     });
@@ -183,7 +187,7 @@ export class Token extends TokenCore implements ITokenServer {
     }
 
     // 将字符串类型转换为 TokenType 枚举
-    const tokenType = dto.tokenType.toUpperCase() as TokenType;
+    const tokenType = dto.tokenType.toUpperCase() as TokenTypeValue;
 
     return new Token({
       value: dto.tokenValue,
@@ -198,7 +202,7 @@ export class Token extends TokenCore implements ITokenServer {
 
   static fromPersistence(params: {
     value: string;
-    type: TokenType;
+    type: TokenTypeValue;
     accountUuid: string;
     issuedAt: Date;
     expiresAt: Date;
