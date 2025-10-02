@@ -86,6 +86,66 @@ export class KeyResult extends KeyResultCore {
   }
 
   /**
+   * 更新关键结果（实体内部方法）
+   * 封装自身的更新逻辑和验证
+   */
+  update(updates: {
+    name?: string;
+    description?: string;
+    startValue?: number;
+    targetValue?: number;
+    currentValue?: number;
+    unit?: string;
+    weight?: number;
+    calculationMethod?: GoalContracts.KeyResultCalculationMethod;
+  }): void {
+    // 验证并更新字段
+    if (updates.name !== undefined) {
+      if (!updates.name.trim()) {
+        throw new Error('关键结果名称不能为空');
+      }
+      this._name = updates.name;
+    }
+
+    if (updates.description !== undefined) {
+      this._description = updates.description;
+    }
+
+    if (updates.startValue !== undefined) {
+      this._startValue = updates.startValue;
+    }
+
+    if (updates.targetValue !== undefined) {
+      if (updates.targetValue <= 0) {
+        throw new Error('目标值必须大于0');
+      }
+      this._targetValue = updates.targetValue;
+    }
+
+    if (updates.currentValue !== undefined) {
+      this._currentValue = updates.currentValue;
+    }
+
+    if (updates.unit !== undefined) {
+      this._unit = updates.unit;
+    }
+
+    if (updates.weight !== undefined) {
+      if (updates.weight <= 0 || updates.weight > 100) {
+        throw new Error('权重必须在1-100之间');
+      }
+      this._weight = updates.weight;
+    }
+
+    if (updates.calculationMethod !== undefined) {
+      this._calculationMethod = updates.calculationMethod;
+    }
+
+    // 更新时间戳
+    this._lifecycle.updatedAt = new Date();
+  }
+
+  /**
    * 获取详细的进度分析（服务端专用）
    */
   getProgressAnalysis(): {
@@ -270,7 +330,7 @@ export class KeyResult extends KeyResultCore {
     });
   }
 
-  toResponse(): GoalContracts.KeyResultResponse {
+  toClient(): GoalContracts.KeyResultClientDTO {
     const dto = this.toDTO();
 
     return {

@@ -1,4 +1,5 @@
 import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts as GoalContractsEnums } from '@dailyuse/contracts';
 import { Goal, type IGoalRepository } from '@dailyuse/domain-server';
 
 /**
@@ -44,7 +45,6 @@ export class GoalAggregateService {
 
     // 3. 通过聚合根创建关键结果（业务规则验证在这里）
     const keyResultUuid = goal.createKeyResult({
-      accountUuid,
       name: request.name,
       description: request.description,
       startValue: request.startValue,
@@ -64,7 +64,6 @@ export class GoalAggregateService {
     // 5. 将聚合根的更改持久化到仓储
     const keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'> = {
       goalUuid: newKeyResult.goalUuid,
-      accountUuid,
       name: newKeyResult.name,
       description: newKeyResult.description,
       startValue: newKeyResult.startValue,
@@ -90,7 +89,6 @@ export class GoalAggregateService {
     return {
       uuid: savedKeyResult.uuid,
       goalUuid: savedKeyResult.goalUuid,
-      accountUuid: savedKeyResult.accountUuid,
       name: savedKeyResult.name,
       description: savedKeyResult.description,
       startValue: savedKeyResult.startValue,
@@ -147,7 +145,7 @@ export class GoalAggregateService {
       updateData.lifecycle = {
         createdAt: Date.now(), // 这里应该从现有数据获取
         updatedAt: Date.now(),
-        status: request.status,
+        status: request.status as GoalContractsEnums.KeyResultStatus,
       };
     }
 
@@ -169,7 +167,6 @@ export class GoalAggregateService {
     return {
       uuid: updatedKeyResult.uuid,
       goalUuid: updatedKeyResult.goalUuid,
-      accountUuid: updatedKeyResult.accountUuid,
       name: updatedKeyResult.name,
       description: updatedKeyResult.description,
       startValue: updatedKeyResult.startValue,
@@ -244,7 +241,7 @@ export class GoalAggregateService {
       value: number;
       note?: string;
     },
-  ): Promise<GoalContracts.GoalRecordResponse> {
+  ): Promise<GoalContracts.GoalRecordClientDTO> {
     // 1. 获取聚合根
     const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalDTO) {
@@ -260,7 +257,6 @@ export class GoalAggregateService {
 
     // 4. 通过聚合根创建记录（自动更新关键结果进度）
     const recordUuid = goal.createRecord({
-      accountUuid,
       keyResultUuid: request.keyResultUuid,
       value: request.value,
       note: request.note,
@@ -268,7 +264,6 @@ export class GoalAggregateService {
 
     // 5. 持久化记录
     const recordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'> = {
-      accountUuid,
       goalUuid,
       keyResultUuid: request.keyResultUuid,
       value: request.value,
@@ -292,13 +287,11 @@ export class GoalAggregateService {
 
     return {
       uuid: savedRecord.uuid,
-      accountUuid: savedRecord.accountUuid,
       goalUuid: savedRecord.goalUuid,
       keyResultUuid: savedRecord.keyResultUuid,
       value: savedRecord.value,
       note: savedRecord.note,
       createdAt: savedRecord.createdAt,
-      xxxx: '', // 预留字段
     };
   }
 
@@ -327,7 +320,7 @@ export class GoalAggregateService {
       };
       reviewDate?: Date;
     },
-  ): Promise<GoalContracts.GoalReviewResponse> {
+  ): Promise<GoalContracts.GoalReviewClientDTO> {
     // 1. 获取聚合根（包含完整状态）
     const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalDTO) {
@@ -343,7 +336,7 @@ export class GoalAggregateService {
     // 3. 通过聚合根创建复盘（生成当前状态快照）
     const reviewUuid = goal.createReview({
       title: request.title,
-      type: request.type,
+      type: request.type as GoalContractsEnums.GoalReviewType,
       content: request.content,
       rating: request.rating,
       reviewDate: request.reviewDate,
@@ -423,11 +416,10 @@ export class GoalAggregateService {
 
     // 4. 直接返回视图数据
     return {
-      goal: goal.toResponse(),
+      goal: goal.toClient(),
       keyResults: keyResults.map((kr) => ({
         uuid: kr.uuid,
         goalUuid: kr.goalUuid,
-        accountUuid: kr.accountUuid,
         name: kr.name,
         description: kr.description,
         startValue: kr.startValue,
@@ -443,13 +435,11 @@ export class GoalAggregateService {
       })),
       recentRecords: records.records.slice(0, 5).map((record) => ({
         uuid: record.uuid,
-        accountUuid: record.accountUuid,
         goalUuid: record.goalUuid,
         keyResultUuid: record.keyResultUuid,
         value: record.value,
         note: record.note,
         createdAt: record.createdAt,
-        xxxx: '', // 预留字段
       })),
       reviews: reviews.map((review) => ({
         uuid: review.uuid,

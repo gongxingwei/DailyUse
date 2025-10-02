@@ -2,7 +2,7 @@ import { GoalCore } from '@dailyuse/domain-core';
 import { GoalContracts, sharedContracts } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
-import { GoalReview as ServerGoalReview } from '../entities/GoalReview';
+import { GoalReview } from '../entities/GoalReview';
 
 // 枚举别名
 const GoalStatusEnum = GoalContracts.GoalStatus;
@@ -10,18 +10,125 @@ const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
 const KeyResultCalculationMethodEnum = GoalContracts.KeyResultCalculationMethod;
 
 type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
-type IGoalReview = GoalContracts.IGoalReview;
-
 type ImportanceLevel = sharedContracts.ImportanceLevel;
 type UrgencyLevel = sharedContracts.UrgencyLevel;
 const ImportanceLevel = sharedContracts.ImportanceLevel;
 const UrgencyLevel = sharedContracts.UrgencyLevel;
 
 /**
+ * 安全 JSON 解析辅助方法
+ */
+function safeJsonParse<T>(jsonString: string | T | null | undefined, defaultValue: T): T {
+  // 如果已经是对象/数组类型，直接返回
+  if (typeof jsonString === 'object' && jsonString !== null) {
+    return jsonString as T;
+  }
+
+  // 如果是空字符串或 null/undefined，返回默认值
+  if (!jsonString || (typeof jsonString === 'string' && jsonString.trim() === '')) {
+    return defaultValue;
+  }
+
+  // 尝试解析 JSON 字符串
+  try {
+    const parsed = JSON.parse(jsonString as string);
+    return parsed !== null && parsed !== undefined ? parsed : defaultValue;
+  } catch (error) {
+    console.warn(`Failed to parse tags JSON: ${jsonString}`);
+    return defaultValue;
+  }
+}
+
+/**
  * 服务端 Goal 实体
  * 继承核心 Goal 类，添加服务端特有功能
  */
 export class Goal extends GoalCore {
+  // ===== DDD 聚合根业务方法（只接收实体对象）=====
+
+  /**
+   * 更新基础信息
+   * 统一的更新方法，只接收实体字段，不接收 DTO
+   */
+  updateBasic(updates: {
+    name?: string;
+    description?: string;
+    color?: string;
+    dirUuid?: string;
+    startTime?: Date;
+    endTime?: Date;
+    note?: string;
+  }): void {
+    if (updates.name !== undefined) {
+      this.validateName(updates.name);
+      this._name = updates.name;
+    }
+
+    if (updates.description !== undefined) {
+      this._description = updates.description;
+    }
+
+    if (updates.color !== undefined) {
+      this.validateColor(updates.color);
+      this._color = updates.color;
+    }
+
+    if (updates.dirUuid !== undefined) {
+      this._dirUuid = updates.dirUuid;
+    }
+
+    if (updates.startTime !== undefined || updates.endTime !== undefined) {
+      const newStart = updates.startTime || this._startTime;
+      const newEnd = updates.endTime || this._endTime;
+      this.validateTimeRange(newStart, newEnd);
+      this._startTime = newStart;
+      this._endTime = newEnd;
+    }
+
+    if (updates.note !== undefined) {
+      this._note = updates.note;
+    }
+
+    this.updateVersion();
+  }
+
+  /**
+   * 更新分析信息
+   */
+  updateAnalysis(updates: {
+    motive?: string;
+    feasibility?: string;
+    importanceLevel?: ImportanceLevel;
+    urgencyLevel?: UrgencyLevel;
+  }): void {
+    if (updates.motive !== undefined) {
+      this._analysis.motive = updates.motive;
+    }
+    if (updates.feasibility !== undefined) {
+      this._analysis.feasibility = updates.feasibility;
+    }
+    if (updates.importanceLevel !== undefined) {
+      this._analysis.importanceLevel = updates.importanceLevel;
+    }
+    if (updates.urgencyLevel !== undefined) {
+      this._analysis.urgencyLevel = updates.urgencyLevel;
+    }
+    this.updateVersion();
+  }
+
+  /**
+   * 更新元数据
+   */
+  updateMetadata(updates: { tags?: string[]; category?: string }): void {
+    if (updates.tags !== undefined) {
+      this._metadata.tags = [...updates.tags];
+    }
+    if (updates.category !== undefined) {
+      this._metadata.category = updates.category;
+    }
+    this.updateVersion();
+  }
+
   constructor(params: {
     uuid?: string;
     name: string;
@@ -40,7 +147,7 @@ export class Goal extends GoalCore {
     updatedAt?: Date;
     keyResults?: KeyResult[];
     records?: GoalRecord[];
-    reviews?: ServerGoalReview[];
+    reviews?: GoalReview[];
     tags?: string[];
     category?: string;
     version?: number;
@@ -90,7 +197,7 @@ export class Goal extends GoalCore {
   }
 
   /**
-   * 添加关键结果（服务端实现）
+   * 添加关键结果（只接收实体对象）
    */
   addKeyResult(keyResult: KeyResult): void {
     // 验证权重总和不超过100
@@ -99,12 +206,11 @@ export class Goal extends GoalCore {
       throw new Error('关键结果权重总和不能超过100%');
     }
 
-    // 转换为 DTO 格式再调用 fromDTO
-    const keyResultEntity = KeyResult.fromDTO(keyResult.toDTO());
-    this.keyResults.push(keyResultEntity);
+    // 直接添加实体对象
+    this.keyResults.push(keyResult);
     this.updateVersion();
 
-    // 发布服务端领域事件
+    // 发布领域事件
     this.addDomainEvent({
       eventType: 'KeyResultCreated',
       aggregateId: this.uuid,
@@ -112,7 +218,171 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         keyResultUuid: keyResult.uuid,
-        keyResult: keyResultEntity.toDTO(),
+      },
+    });
+  }
+
+  /**
+   * 更新关键结果（聚合根方法）
+   * 调用子实体的 update 方法，聚合根只处理聚合级别的业务规则
+   */
+  updateKeyResult(
+    keyResultUuid: string,
+    updates: {
+      name?: string;
+      description?: string;
+      startValue?: number;
+      targetValue?: number;
+      currentValue?: number;
+      unit?: string;
+      weight?: number;
+      calculationMethod?: GoalContracts.KeyResultCalculationMethod;
+    },
+  ): void {
+    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
+    if (!keyResult) {
+      throw new Error('关键结果不存在');
+    }
+
+    // 聚合根级别的业务规则：验证权重总和
+    if (updates.weight !== undefined) {
+      const otherWeight = this.keyResults
+        .filter((kr) => kr.uuid !== keyResultUuid)
+        .reduce((sum, kr) => sum + kr.weight, 0);
+
+      if (otherWeight + updates.weight > 100) {
+        throw new Error('关键结果权重总和不能超过100%');
+      }
+    }
+
+    // 调用子实体的 update 方法，处理实体级别的逻辑
+    (keyResult as KeyResult).update(updates);
+
+    // 聚合根级别的后续处理
+    this.updateVersion();
+
+    this.addDomainEvent({
+      eventType: 'KeyResultUpdated',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        goalUuid: this.uuid,
+        keyResultUuid,
+      },
+    });
+  }
+
+  /**
+   * 删除关键结果
+   */
+  removeKeyResult(keyResultUuid: string): void {
+    const index = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
+    if (index === -1) {
+      throw new Error('关键结果不存在');
+    }
+
+    // 级联删除相关记录
+    this.records = this.records.filter((r) => r.keyResultUuid !== keyResultUuid);
+
+    // 删除关键结果
+    this.keyResults.splice(index, 1);
+    this.updateVersion();
+
+    this.addDomainEvent({
+      eventType: 'KeyResultRemoved',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        goalUuid: this.uuid,
+        keyResultUuid,
+      },
+    });
+  }
+
+  /**
+   * 添加记录（聚合根方法）
+   */
+  addRecord(record: GoalRecord): void {
+    // 聚合根级别的业务规则：验证关键结果存在
+    const keyResult = this.keyResults.find((kr) => kr.uuid === record.keyResultUuid);
+    if (!keyResult) {
+      throw new Error('关键结果不存在');
+    }
+
+    // 添加记录
+    this.records.push(record);
+
+    // 聚合根级别的业务逻辑：级联更新关键结果进度
+    keyResult.updateProgress(record.value, 'increment');
+
+    this.updateVersion();
+
+    this.addDomainEvent({
+      eventType: 'RecordAdded',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        recordUuid: record.uuid,
+        keyResultUuid: record.keyResultUuid,
+      },
+    });
+  }
+
+  /**
+   * 更新记录（聚合根方法）
+   * 调用子实体的 update 方法
+   */
+  updateRecord(recordUuid: string, updates: { value?: number; note?: string }): void {
+    const record = this.records.find((r) => r.uuid === recordUuid);
+    if (!record) {
+      throw new Error('记录不存在');
+    }
+
+    // 调用子实体的 update 方法
+    (record as GoalRecord).update(updates);
+
+    // 聚合根级别的业务逻辑：如果更新了 value，需要同步更新关键结果
+    if (updates.value !== undefined && record.keyResultUuid) {
+      const keyResult = this.keyResults.find((kr) => kr.uuid === record.keyResultUuid);
+      if (keyResult) {
+        // 重新计算进度（这里简化处理，实际可能需要更复杂的逻辑）
+        keyResult.updateProgress(updates.value, 'set');
+      }
+    }
+
+    this.updateVersion();
+
+    this.addDomainEvent({
+      eventType: 'RecordUpdated',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        goalUuid: this.uuid,
+        recordUuid,
+      },
+    });
+  }
+
+  /**
+   * 删除记录（聚合根方法）
+   */
+  removeRecord(recordUuid: string): void {
+    const index = this.records.findIndex((r) => r.uuid === recordUuid);
+    if (index === -1) {
+      throw new Error('记录不存在');
+    }
+
+    // 删除记录
+    this.records.splice(index, 1);
+    this.updateVersion();
+
+    this.addDomainEvent({
+      eventType: 'RecordRemoved',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        goalUuid: this.uuid,
+        recordUuid,
       },
     });
   }
@@ -232,106 +502,69 @@ export class Goal extends GoalCore {
   }
 
   /**
-   * 更新关键结果（服务端）
+   * 更新复盘（聚合根方法）
+   * 调用子实体的 update 方法
    */
-  updateKeyResult(
-    keyResultUuid: string,
+  updateReview(
+    reviewUuid: string,
     updates: {
-      name?: string;
-      description?: string;
-      targetValue?: number;
-      unit?: string;
-      weight?: number;
-      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+      title?: string;
+      content?: {
+        achievements?: string;
+        challenges?: string;
+        learnings?: string;
+        nextSteps?: string;
+        adjustments?: string;
+      };
+      rating?: {
+        progressSatisfaction?: number;
+        executionEfficiency?: number;
+        goalReasonableness?: number;
+      };
     },
   ): void {
-    const keyResultIndex = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
-    if (keyResultIndex === -1) {
-      throw new Error(`关键结果不存在: ${keyResultUuid}`);
+    const review = this.reviews.find((r) => r.uuid === reviewUuid) as GoalReview | undefined;
+    if (!review) {
+      throw new Error('复盘不存在');
     }
 
-    const keyResult = this.keyResults[keyResultIndex];
-    const originalData = keyResult.toDTO();
+    // 调用子实体的 update 方法
+    review.update(updates);
 
-    // 权重验证
-    if (updates.weight !== undefined) {
-      const otherWeight = this.keyResults
-        .filter((kr) => kr.uuid !== keyResultUuid)
-        .reduce((sum, kr) => sum + kr.weight, 0);
-
-      if (otherWeight + updates.weight > 100) {
-        throw new Error(`关键结果权重总和不能超过100%，当前其他权重总和: ${otherWeight}%`);
-      }
-    }
-
-    // 创建新的关键结果实体（简化的更新方式）
-    const updatedKeyResult = new KeyResult({
-      uuid: keyResult.uuid,
-      goalUuid: keyResult.goalUuid,
-      name: updates.name !== undefined ? updates.name : keyResult.name,
-      description: updates.description !== undefined ? updates.description : keyResult.description,
-      startValue: keyResult.startValue,
-      targetValue: updates.targetValue !== undefined ? updates.targetValue : keyResult.targetValue,
-      currentValue: keyResult.currentValue,
-      unit: updates.unit !== undefined ? updates.unit : keyResult.unit,
-      weight: updates.weight !== undefined ? updates.weight : keyResult.weight,
-      calculationMethod:
-        updates.calculationMethod !== undefined
-          ? (updates.calculationMethod as GoalContracts.KeyResultCalculationMethod)
-          : keyResult.calculationMethod,
-      status: keyResult.lifecycle.status,
-      createdAt: keyResult.lifecycle.createdAt,
-      updatedAt: new Date(),
-    });
-
-    // 替换聚合中的实体
-    this.keyResults[keyResultIndex] = updatedKeyResult;
+    // 聚合根级别的后续处理
     this.updateVersion();
 
-    // 发布领域事件
     this.addDomainEvent({
-      eventType: 'KeyResultUpdated',
+      eventType: 'ReviewUpdated',
       aggregateId: this.uuid,
       occurredOn: new Date(),
       payload: {
         goalUuid: this.uuid,
-        keyResultUuid,
-        originalData,
-        updatedData: updatedKeyResult.toDTO(),
-        changes: updates,
+        reviewUuid,
       },
     });
   }
 
   /**
-   * 删除关键结果（服务端）
+   * 删除复盘（聚合根方法）
    */
-  removeKeyResult(keyResultUuid: string): void {
-    const keyResultIndex = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
-    if (keyResultIndex === -1) {
-      throw new Error(`关键结果不存在: ${keyResultUuid}`);
+  removeReview(reviewUuid: string): void {
+    const index = this.reviews.findIndex((r) => r.uuid === reviewUuid);
+    if (index === -1) {
+      throw new Error('复盘不存在');
     }
 
-    const keyResult = this.keyResults[keyResultIndex];
-
-    // 级联删除相关记录
-    const relatedRecords = this.records.filter((record) => record.keyResultUuid === keyResultUuid);
-    this.records = this.records.filter((record) => record.keyResultUuid !== keyResultUuid);
-
-    // 从聚合中移除
-    this.keyResults.splice(keyResultIndex, 1);
+    // 删除复盘
+    this.reviews.splice(index, 1);
     this.updateVersion();
 
-    // 发布领域事件
     this.addDomainEvent({
-      eventType: 'KeyResultRemoved',
+      eventType: 'ReviewRemoved',
       aggregateId: this.uuid,
       occurredOn: new Date(),
       payload: {
         goalUuid: this.uuid,
-        keyResultUuid,
-        removedKeyResult: keyResult.toDTO(),
-        cascadeDeletedRecordsCount: relatedRecords.length,
+        reviewUuid,
       },
     });
   }
@@ -380,74 +613,6 @@ export class Goal extends GoalCore {
     });
 
     return recordUuid;
-  }
-
-  /**
-   * 更新目标记录（服务端）
-   */
-  updateRecord(recordUuid: string, updates: { value?: number; note?: string }): void {
-    const record = this.records.find((r) => r.uuid === recordUuid);
-    if (!record) {
-      throw new Error(`目标记录不存在: ${recordUuid}`);
-    }
-
-    const originalData = record.toDTO();
-
-    // 使用实体的业务方法应用更新
-    if (updates.value !== undefined) {
-      record.updateValue(updates.value);
-    }
-    if (updates.note !== undefined) {
-      record.updateNote(updates.note);
-    }
-
-    // 同步更新关键结果
-    if (updates.value !== undefined && record.keyResultUuid) {
-      const keyResult = this.keyResults.find((kr) => kr.uuid === record.keyResultUuid);
-      if (keyResult) {
-        keyResult.updateProgress(updates.value, 'set');
-      }
-    }
-
-    this.updateVersion();
-
-    this.addDomainEvent({
-      eventType: 'GoalRecordUpdated',
-      aggregateId: this.uuid,
-      occurredOn: new Date(),
-      payload: {
-        goalUuid: this.uuid,
-        recordUuid,
-        originalData,
-        updatedData: record.toDTO(),
-        changes: updates,
-      },
-    });
-  }
-
-  /**
-   * 删除目标记录（服务端）
-   */
-  removeRecord(recordUuid: string): void {
-    const recordIndex = this.records.findIndex((r) => r.uuid === recordUuid);
-    if (recordIndex === -1) {
-      throw new Error(`目标记录不存在: ${recordUuid}`);
-    }
-
-    const record = this.records[recordIndex];
-    this.records.splice(recordIndex, 1);
-    this.updateVersion();
-
-    this.addDomainEvent({
-      eventType: 'GoalRecordRemoved',
-      aggregateId: this.uuid,
-      occurredOn: new Date(),
-      payload: {
-        goalUuid: this.uuid,
-        recordUuid,
-        removedRecord: record.toDTO(),
-      },
-    });
   }
 
   /**
@@ -503,7 +668,7 @@ export class Goal extends GoalCore {
       })),
     };
 
-    const newReview = new ServerGoalReview({
+    const newReview = new GoalReview({
       uuid: reviewUuid,
       goalUuid: this.uuid,
       title: reviewData.title,
@@ -532,88 +697,6 @@ export class Goal extends GoalCore {
     });
 
     return reviewUuid;
-  }
-
-  /**
-   * 更新目标复盘（服务端）
-   */
-  updateReview(
-    reviewUuid: string,
-    updates: {
-      title?: string;
-      content?: Partial<IGoalReview['content']>;
-      rating?: Partial<IGoalReview['rating']>;
-    },
-  ): void {
-    const reviewIndex = this.reviews.findIndex((r) => r.uuid === reviewUuid);
-    if (reviewIndex === -1) {
-      throw new Error(`目标复盘不存在: ${reviewUuid}`);
-    }
-
-    const review = this.reviews[reviewIndex];
-    if (updates.title !== undefined && !updates.title.trim()) {
-      throw new Error('复盘标题不能为空');
-    }
-
-    const originalData = (review as any).toDTO(); // 临时解决类型问题
-
-    // 创建新的复盘实体（简化的更新方式）
-    const updatedReview = new ServerGoalReview({
-      uuid: review.uuid,
-      goalUuid: review.goalUuid,
-      title: updates.title !== undefined ? updates.title : review.title,
-      type: review.type,
-      reviewDate: review.reviewDate,
-      content:
-        updates.content !== undefined ? { ...review.content, ...updates.content } : review.content,
-      snapshot: review.snapshot,
-      rating:
-        updates.rating !== undefined ? { ...review.rating, ...updates.rating } : review.rating,
-      createdAt: review.createdAt,
-      updatedAt: new Date(),
-    });
-
-    // 替换聚合中的实体
-    this.reviews[reviewIndex] = updatedReview;
-    this.updateVersion();
-
-    this.addDomainEvent({
-      eventType: 'GoalReviewUpdated',
-      aggregateId: this.uuid,
-      occurredOn: new Date(),
-      payload: {
-        goalUuid: this.uuid,
-        reviewUuid,
-        originalData,
-        updatedData: updatedReview.toDTO(),
-        changes: updates,
-      },
-    });
-  }
-
-  /**
-   * 删除目标复盘（服务端）
-   */
-  removeReview(reviewUuid: string): void {
-    const reviewIndex = this.reviews.findIndex((r) => r.uuid === reviewUuid);
-    if (reviewIndex === -1) {
-      throw new Error(`目标复盘不存在: ${reviewUuid}`);
-    }
-
-    const review = this.reviews[reviewIndex];
-    this.reviews.splice(reviewIndex, 1);
-    this.updateVersion();
-
-    this.addDomainEvent({
-      eventType: 'GoalReviewRemoved',
-      aggregateId: this.uuid,
-      occurredOn: new Date(),
-      payload: {
-        goalUuid: this.uuid,
-        reviewUuid,
-        removedReview: (review as any).toDTO(), // 临时解决类型问题
-      },
-    });
   }
 
   // ===== 辅助方法 =====
@@ -699,35 +782,33 @@ export class Goal extends GoalCore {
   /**
    * 获取指定目标复盘（返回实体对象）
    */
-  getReview(reviewUuid: string): ServerGoalReview | undefined {
-    return this.reviews.find((r) => r.uuid === reviewUuid) as ServerGoalReview | undefined;
+  getReview(reviewUuid: string): GoalReview | undefined {
+    return this.reviews.find((r) => r.uuid === reviewUuid) as GoalReview | undefined;
   }
 
   /**
    * 获取指定类型的复盘
    */
-  getReviewsByType(
-    type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom',
-  ): ServerGoalReview[] {
-    return this.reviews.filter((r) => r.type === type) as ServerGoalReview[];
+  getReviewsByType(type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom'): GoalReview[] {
+    return this.reviews.filter((r) => r.type === type) as GoalReview[];
   }
 
   /**
    * 获取最新的复盘
    */
-  getLatestReview(): ServerGoalReview | undefined {
+  getLatestReview(): GoalReview | undefined {
     const sorted = this.reviews.sort((a, b) => b.reviewDate.getTime() - a.reviewDate.getTime());
-    return sorted.length > 0 ? (sorted[0] as ServerGoalReview) : undefined;
+    return sorted.length > 0 ? (sorted[0] as GoalReview) : undefined;
   }
 
   /**
    * 获取指定日期范围的复盘
    */
-  getReviewsByDateRange(startDate: Date, endDate: Date): ServerGoalReview[] {
+  getReviewsByDateRange(startDate: Date, endDate: Date): GoalReview[] {
     return this.reviews.filter((r) => {
       const reviewDate = r.reviewDate;
       return reviewDate >= startDate && reviewDate <= endDate;
-    }) as ServerGoalReview[];
+    }) as GoalReview[];
   }
 
   // ===== 统计查询方法 =====
@@ -1360,7 +1441,7 @@ export class Goal extends GoalCore {
       status: dbData.status as unknown as GoalContracts.GoalStatus,
       createdAt: dbData.createdAt,
       updatedAt: dbData.updatedAt,
-      tags: JSON.parse(dbData.tags || '[]'),
+      tags: safeJsonParse(dbData.tags, []),
       category: dbData.category,
       version: dbData.version,
       // 子实体在加载时单独设置
@@ -1392,7 +1473,7 @@ export class Goal extends GoalCore {
       version: dto.version,
       keyResults: dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) ?? [],
       records: dto.records?.map((record) => GoalRecord.fromDTO(record)) ?? [],
-      reviews: dto.reviews?.map((review) => ServerGoalReview.fromDTO(review)) ?? [],
+      reviews: dto.reviews?.map((review) => GoalReview.fromDTO(review)) ?? [],
     });
   }
 
@@ -1424,11 +1505,11 @@ export class Goal extends GoalCore {
       version: this.version,
       keyResults: this.keyResults.map((kr) => kr.toDTO()),
       records: this.records.map((record) => record.toDTO()),
-      reviews: this.reviews.map((review) => (review as ServerGoalReview).toDTO()),
+      reviews: this.reviews.map((review) => (review as GoalReview).toDTO()),
     };
   }
 
-  toResponse(): GoalContracts.GoalResponse {
+  toClient(): GoalContracts.GoalClientDTO {
     const baseDTO = this.toDTO();
 
     const today = new Date();
@@ -1511,9 +1592,9 @@ export class Goal extends GoalCore {
 
     return {
       ...baseDTO,
-      keyResults: this.keyResults.map((kr) => kr.toDTO()),
-      records: this.records.map((record) => record.toDTO()),
-      reviews: this.reviews.map((review) => (review as ServerGoalReview).toDTO()),
+      keyResults: this.keyResults.map((kr) => (kr as KeyResult).toClient()),
+      records: this.records.map((record) => (record as GoalRecord).toClient()),
+      reviews: this.reviews.map((review) => (review as GoalReview).toClient()),
       overallProgress,
       weightedProgress,
       calculatedProgress: overallProgress,
@@ -1540,7 +1621,7 @@ export class Goal extends GoalCore {
     const goal = Goal.fromDTO(dto);
     goal.keyResults = dto.keyResults?.map((kr) => KeyResult.fromDTO(kr)) || [];
     goal.records = dto.records?.map((record) => GoalRecord.fromDTO(record)) || [];
-    goal.reviews = dto.reviews?.map((review) => ServerGoalReview.fromDTO(review)) || [];
+    goal.reviews = dto.reviews?.map((review) => GoalReview.fromDTO(review)) || [];
     return goal;
   }
 }

@@ -1,0 +1,519 @@
+import type {
+  IGoal,
+  IKeyResult,
+  IGoalRecord,
+  IGoalReview,
+  IGoalDir,
+  GoalQueryParams,
+} from './types';
+import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
+import {
+  GoalDirStatus,
+  GoalDirSystemType,
+  GoalProgressStatus,
+  GoalReviewType,
+  GoalSortField,
+  GoalStatus,
+  GoalTodayProgressLevel,
+  KeyResultCalculationMethod,
+  KeyResultStatus,
+  SortOrder,
+} from './enums';
+
+// ==================== 关键结果 (KeyResult) ====================
+
+/**
+ * 关键结果 DTO - 服务端数据传输对象
+ * 用于服务端内部传输（Repository <-> Application <-> Domain）
+ */
+export interface KeyResultDTO {
+  uuid: string;
+  goalUuid: string;
+  name: string;
+  description?: string;
+  startValue: number;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  weight: number;
+  calculationMethod: KeyResultCalculationMethod;
+  lifecycle: {
+    createdAt: number;
+    updatedAt: number;
+    status: KeyResultStatus;
+  };
+}
+
+/**
+ * 关键结果客户端 DTO - 前端渲染对象
+ * 包含所有服务端数据 + 计算属性
+ */
+export interface KeyResultClientDTO extends KeyResultDTO {
+  // 计算属性
+  progress: number; // 完成百分比 (0-100)
+  isCompleted: boolean; // 是否已完成
+  remaining: number; // 剩余数量
+}
+
+/**
+ * 创建关键结果请求 - RESTful POST /api/v1/goals/:goalId/key-results
+ */
+export interface CreateKeyResultRequest {
+  name: string;
+  description?: string;
+  startValue: number;
+  targetValue: number;
+  currentValue?: number; // 默认为 startValue
+  unit: string;
+  weight: number; // 权重 1-100
+  calculationMethod?: KeyResultCalculationMethod; // 默认为 INCREMENTAL
+}
+
+/**
+ * 更新关键结果请求 - RESTful PUT /api/v1/goals/:goalId/key-results/:keyResultId
+ */
+export interface UpdateKeyResultRequest {
+  name?: string;
+  description?: string;
+  startValue?: number;
+  targetValue?: number;
+  currentValue?: number;
+  unit?: string;
+  weight?: number;
+  calculationMethod?: KeyResultCalculationMethod;
+  status?: KeyResultStatus;
+}
+
+// ============ 目标记录 DTOs ============
+
+/**
+ * 目标记录 DTO - DDD聚合根控制模式
+ */
+export interface GoalRecordDTO {
+  uuid: string;
+  goalUuid: string; // 聚合根UUID
+  keyResultUuid: string; // 直接父实体关联
+  value: number;
+  note?: string;
+  createdAt: number; // 时间戳
+}
+
+/**
+ * 目标记录响应 DTO
+ */
+export interface GoalRecordResponse extends GoalRecordDTO {
+  xxxx: string; // 预留字段
+}
+
+export interface GoalReviewDTO {
+  uuid: string;
+  goalUuid: string;
+  title: string;
+  type: GoalReviewType;
+  reviewDate: number; // timestamp
+  content: {
+    achievements: string;
+    challenges: string;
+    learnings: string;
+    nextSteps: string;
+    adjustments?: string;
+  };
+  snapshot: {
+    snapshotDate: number; // timestamp
+    overallProgress: number;
+    weightedProgress: number;
+    completedKeyResults: number;
+    totalKeyResults: number;
+    keyResultsSnapshot: Array<{
+      uuid: string;
+      name: string;
+      progress: number;
+      currentValue: number;
+      targetValue: number;
+    }>;
+  };
+  rating: {
+    progressSatisfaction: number; // 1-10
+    executionEfficiency: number; // 1-10
+    goalReasonableness: number; // 1-10
+  };
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
+}
+
+export interface GoalReviewResponse extends GoalReviewDTO {
+  overallRating: number;
+  isPositiveReview: boolean;
+}
+
+/**
+ * 目标记录列表响应 DTO
+ */
+export interface GoalRecordListResponse {
+  data: GoalRecordResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
+
+/**
+ * 创建目标记录请求 DTO
+ * keyResultUuid 通过 URL 路径参数传递，不在请求体中
+ */
+export interface CreateGoalRecordRequest {
+  keyResultUuid?: string; // 可选，在聚合根创建时需要指定关联的 KeyResult
+  value: number;
+  note?: string;
+  recordDate?: number; // timestamp, defaults to now
+}
+
+// ============ 目标复盘 DTOs ============
+
+/**
+ * 目标复盘 DTO
+ */
+export interface GoalReviewDTO {
+  uuid: string;
+  goalUuid: string;
+  title: string;
+  type: GoalReviewType;
+  reviewDate: number; // 时间戳
+  content: {
+    achievements: string;
+    challenges: string;
+    learnings: string;
+    nextSteps: string;
+    adjustments?: string;
+  };
+  snapshot: {
+    snapshotDate: number; // 时间戳
+    overallProgress: number;
+    weightedProgress: number;
+    completedKeyResults: number;
+    totalKeyResults: number;
+    keyResultsSnapshot: Array<{
+      uuid: string;
+      name: string;
+      progress: number;
+      currentValue: number;
+      targetValue: number;
+    }>;
+  };
+  rating: {
+    progressSatisfaction: number;
+    executionEfficiency: number;
+    goalReasonableness: number;
+  };
+  createdAt: number; // 时间戳
+  updatedAt: number; // 时间戳
+}
+
+/**
+ * 创建目标复盘请求 DTO
+ */
+export interface CreateGoalReviewRequest {
+  title: string;
+  type: GoalReviewType;
+  content: {
+    achievements: string;
+    challenges: string;
+    learnings: string;
+    nextSteps: string;
+    adjustments?: string;
+  };
+  rating: {
+    progressSatisfaction: number;
+    executionEfficiency: number;
+    goalReasonableness: number;
+  };
+  reviewDate?: number; // timestamp, defaults to now
+}
+
+/**
+ * 更新目标复盘请求 DTO
+ */
+export type UpdateGoalReviewRequest = Partial<CreateGoalReviewRequest>;
+
+/**
+ * 目标复盘响应 DTO
+ */
+export interface GoalReviewResponse extends GoalReviewDTO {
+  overallRating: number;
+  isPositiveReview: boolean;
+}
+
+/**
+ * 目标复盘列表响应 DTO
+ */
+export interface GoalReviewListResponse {
+  reviews: GoalReviewResponse[];
+  total: number;
+  page?: number;
+  limit?: number;
+}
+
+// ============ 目标 DTOs ============
+
+/**
+ * 目标 DTO
+ */
+export interface GoalDTO {
+  uuid: string;
+  name: string;
+  description?: string;
+  color: string;
+  dirUuid?: string;
+  startTime: number; // 时间戳
+  endTime: number; // 时间戳
+  note?: string;
+  analysis: {
+    motive: string;
+    feasibility: string;
+    importanceLevel: ImportanceLevel;
+    urgencyLevel: UrgencyLevel;
+  };
+  lifecycle: {
+    createdAt: number; // 时间戳
+    updatedAt: number; // 时间戳
+    status: GoalStatus;
+  };
+  metadata: {
+    tags: string[];
+    category: string;
+  };
+  version: number;
+
+  keyResults?: KeyResultDTO[];
+  records?: GoalRecordDTO[];
+  reviews?: GoalReviewDTO[];
+}
+
+/**
+ * 创建目标请求 DTO
+ */
+export interface CreateGoalRequest {
+  goalUuid: string;
+  name: string;
+  description?: string;
+  color: string;
+  dirUuid?: string;
+  startTime: number; // timestamp
+  endTime: number; // timestamp
+  note?: string;
+  analysis: {
+    motive: string;
+    feasibility: string;
+    importanceLevel: ImportanceLevel;
+    urgencyLevel: UrgencyLevel;
+  };
+  metadata: {
+    tags: string[];
+    category: string;
+  };
+  keyResults?: CreateKeyResultRequest[];
+  records?: CreateGoalRecordRequest[];
+  reviews?: CreateGoalReviewRequest[];
+}
+
+/**
+ * 更新目标请求 DTO - 支持聚合根式增量更新
+ * 应用层使用此 DTO 进行增量更新，然后转换为实体操作
+ */
+export interface UpdateGoalRequest {
+  // 基础信息更新
+  basic?: {
+    name?: string;
+    description?: string;
+    color?: string;
+    dirUuid?: string;
+    startTime?: number; // timestamp
+    endTime?: number; // timestamp
+    note?: string;
+  };
+
+  // 分析信息更新
+  analysis?: {
+    motive?: string;
+    feasibility?: string;
+    importanceLevel?: ImportanceLevel;
+    urgencyLevel?: UrgencyLevel;
+  };
+
+  // 元数据更新
+  metadata?: {
+    tags?: string[];
+    category?: string;
+  };
+
+  // 子实体操作（增量操作）
+  addKeyResults?: CreateKeyResultRequest[];
+  updateKeyResults?: Record<string, UpdateKeyResultRequest>;
+  removeKeyResults?: string[];
+
+  addRecords?: CreateGoalRecordRequest[];
+  removeRecords?: string[];
+
+  addReviews?: CreateGoalReviewRequest[];
+  updateReviews?: Record<string, UpdateGoalReviewRequest>;
+  removeReviews?: string[];
+}
+
+// ============ 目标目录 DTOs ============
+
+/**
+ * 目标目录 DTO
+ */
+export interface GoalDirDTO {
+  uuid: string;
+  // accountUuid: string;
+  name: string;
+  description?: string;
+  icon: string;
+  color: string;
+  parentUuid?: string;
+  sortConfig: {
+    sortKey: GoalSortField;
+    sortOrder: number;
+  };
+  systemType?: GoalDirSystemType; // 系统类型
+  isDefault?: boolean; // 是否为默认目录
+  metadata?: {
+    isSystemCreated?: boolean;
+    createdBy?: string;
+    purpose?: string;
+    [key: string]: any;
+  };
+  lifecycle: {
+    createdAt: number; // 时间戳
+    updatedAt: number; // 时间戳
+    status: GoalDirStatus;
+  };
+}
+
+/**
+ * 创建目标目录请求 DTO
+ */
+export interface CreateGoalDirRequest {
+  name: string;
+  description?: string;
+  icon: string;
+  color: string;
+  parentUuid?: string;
+  sortConfig?: {
+    sortKey: GoalSortField;
+    sortOrder: number;
+  };
+}
+
+/**
+ * 更新目标目录请求 DTO
+ */
+export type UpdateGoalDirRequest = Partial<CreateGoalDirRequest>;
+
+// ============ 响应 DTOs ============
+
+/**
+ * 目标响应 DTO
+ */
+export interface GoalResponse extends GoalDTO {
+  // 计算属性 - 进度相关
+  overallProgress: number; // 整体进度百分比
+  weightedProgress: number; // 加权进度百分比
+  calculatedProgress: number; // 计算进度百分比
+  todayProgress: number; // 今日进度增量百分比
+
+  // 计算属性 - 关键结果统计
+  completedKeyResults: number; // 已完成的关键结果数量
+  totalKeyResults: number; // 关键结果总数
+  keyResultCompletionRate: number; // 关键结果完成率
+
+  // 计算属性 - 状态分析
+  progressStatus: GoalProgressStatus;
+  healthScore: number; // 健康度评分 (0-100)
+
+  // 计算属性 - 时间相关
+  daysRemaining: number; // 剩余天数
+  isOverdue: boolean; // 是否过期
+
+  // 今日进度相关的计算属性
+  hasTodayProgress: boolean; // 是否有今日进展
+  todayProgressLevel: GoalTodayProgressLevel; // 今日进度等级
+  todayRecordsStats: {
+    totalRecords: number; // 今日记录总数
+    keyResultsWithRecords: number; // 有记录的关键结果数
+    averageRecordValue: number; // 平均记录值
+    totalRecordValue: number; // 总记录值
+  };
+}
+
+/**
+ * 目标列表响应 DTO
+ */
+export interface GoalListResponse {
+  goals: GoalResponse[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+}
+
+/**
+ * 目标目录响应 DTO
+ */
+export interface GoalDirResponse extends GoalDirDTO {
+  goalsCount: number;
+  subDirs?: GoalDirResponse[];
+}
+
+/**
+ * 目标目录列表响应 DTO
+ */
+export interface GoalDirListResponse {
+  goalDirs: GoalDirResponse[];
+  total: number;
+}
+
+/**
+ * 目标查询参数 DTO
+ */
+export interface GoalQueryParamsDTO extends Omit<GoalQueryParams, 'dateRange'> {
+  dateRange?: {
+    start: number; // timestamp
+    end: number; // timestamp
+  };
+}
+
+/**
+ * 目标统计响应 DTO
+ */
+export interface GoalStatsResponse {
+  totalGoals: number;
+  activeGoals: number;
+  completedGoals: number;
+  pausedGoals: number;
+  archivedGoals: number;
+  overallProgress: number;
+  avgKeyResultsPerGoal: number;
+  completionRate: number;
+  progressTrend: Array<{
+    date: number; // timestamp
+    progress: number;
+  }>;
+  upcomingDeadlines: Array<{
+    goalUuid: string;
+    goalName: string;
+    endTime: number; // timestamp
+    daysRemaining: number;
+  }>;
+}
+
+/**
+ * DDD聚合根完整视图响应
+ * 包含目标及所有相关子实体的完整信息
+ */
+export interface GoalAggregateViewResponse {
+  goal: GoalResponse;
+  keyResults: KeyResultResponse[];
+  recentRecords: GoalRecordResponse[];
+  reviews: GoalReviewResponse[];
+}

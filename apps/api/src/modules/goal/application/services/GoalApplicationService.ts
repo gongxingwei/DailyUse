@@ -1,5 +1,9 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import {
+  ImportanceLevel,
+  UrgencyLevel,
+  GoalContracts as GoalContractsEnums,
+} from '@dailyuse/contracts';
 import { Goal, type IGoalRepository, UserDataInitializationService } from '@dailyuse/domain-server';
 import { GoalAggregateService } from './goalAggregateService';
 import { GoalContainer } from '../../infrastructure/di/GoalContainer';
@@ -15,20 +19,16 @@ export class GoalApplicationService {
     this.goalRepository = goalRepository;
   }
 
-  static async createInstance(
-    goalRepository?: IGoalRepository
-  ): Promise<GoalApplicationService> {
+  static async createInstance(goalRepository?: IGoalRepository): Promise<GoalApplicationService> {
     const goalContainer = GoalContainer.getInstance();
-    goalRepository =
-      goalRepository || (await goalContainer.getPrismaGoalRepository());
+    goalRepository = goalRepository || (await goalContainer.getPrismaGoalRepository());
     this.instance = new GoalApplicationService(goalRepository);
     return this.instance;
   }
 
   static async getInstance(): Promise<GoalApplicationService> {
     if (!this.instance) {
-      GoalApplicationService.instance =
-        await GoalApplicationService.createInstance();
+      GoalApplicationService.instance = await GoalApplicationService.createInstance();
     }
     return this.instance;
   }
@@ -66,7 +66,6 @@ export class GoalApplicationService {
   ): Promise<GoalContracts.GoalResponse> {
     // 构建目标数据
     const goalData: Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'> = {
-      accountUuid,
       name: request.name,
       description: request.description,
       color: request.color || '#2196F3',
@@ -113,7 +112,7 @@ export class GoalApplicationService {
       records: GoalContracts.CreateGoalRecordRequest[];
       reviews: GoalContracts.CreateGoalReviewRequest[];
     },
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     // 第一步：创建目标
     const createdGoal = await this.goalRepository.createGoal(accountUuid, goalData);
 
@@ -121,7 +120,6 @@ export class GoalApplicationService {
     const createdKeyResults: GoalContracts.KeyResultDTO[] = [];
     for (const krRequest of subEntities.keyResults) {
       const keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'> = {
-        accountUuid,
         goalUuid: createdGoal.uuid,
         name: krRequest.name,
         description: krRequest.description || '',
@@ -130,7 +128,8 @@ export class GoalApplicationService {
         currentValue: krRequest.currentValue || krRequest.startValue,
         unit: krRequest.unit,
         weight: krRequest.weight,
-        calculationMethod: krRequest.calculationMethod || 'sum',
+        calculationMethod:
+          krRequest.calculationMethod || GoalContractsEnums.KeyResultCalculationMethod.SUM,
       };
 
       const createdKR = await this.goalRepository.createKeyResult(accountUuid, keyResultData);
@@ -139,21 +138,12 @@ export class GoalApplicationService {
 
     // 第三步：创建目标记录
     for (const recordRequest of subEntities.records) {
-      let keyResultUuid: string;
-
-      if (recordRequest.keyResultUuid) {
-        keyResultUuid = recordRequest.keyResultUuid;
-      } else if (recordRequest.keyResultIndex !== undefined) {
-        if (recordRequest.keyResultIndex >= createdKeyResults.length) {
-          throw new Error(`KeyResult index ${recordRequest.keyResultIndex} is out of bounds`);
-        }
-        keyResultUuid = createdKeyResults[recordRequest.keyResultIndex].uuid;
-      } else {
-        throw new Error('Either keyResultUuid or keyResultIndex must be provided for GoalRecord');
+      const keyResultUuid = recordRequest.keyResultUuid;
+      if (!keyResultUuid) {
+        throw new Error('keyResultUuid is required for GoalRecord');
       }
 
       const recordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'> = {
-        accountUuid,
         goalUuid: createdGoal.uuid,
         keyResultUuid,
         value: recordRequest.value,
@@ -198,7 +188,7 @@ export class GoalApplicationService {
     }
 
     const goal = Goal.fromDTO(completeGoal);
-    return goal.toResponse();
+    return goal.toClient();
   }
 
   async getGoals(
@@ -231,14 +221,14 @@ export class GoalApplicationService {
 
     const goals = result.goals.map((goalDTO) => {
       const goal = Goal.createFromGoalDTO(goalDTO);
-      return goal.toResponse();
+      return goal.toClient();
     });
 
     const page = parsedParams.page || 1;
     const limit = parsedParams.limit || 10;
 
     return {
-      goals,
+      data: goals,
       total: result.total,
       page,
       limit,
@@ -246,19 +236,22 @@ export class GoalApplicationService {
     };
   }
 
-  async getGoalById(accountUuid: string, uuid: string): Promise<GoalContracts.GoalResponse | null> {
+  async getGoalById(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<GoalContracts.GoalClientDTO | null> {
     const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, uuid);
     if (!goalDTO) return null;
 
     const goal = Goal.fromDTO(goalDTO);
-    return goal.toResponse();
+    return goal.toClient();
   }
 
   async updateGoal(
     accountUuid: string,
     uuid: string,
     request: GoalContracts.UpdateGoalRequest,
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     try {
       console.log('[GoalApplicationService.updateGoal] Starting update for goal:', uuid);
       console.log(
@@ -298,18 +291,9 @@ export class GoalApplicationService {
         '[GoalApplicationService.updateGoal] Processed update data:',
         JSON.stringify(updateData, null, 2),
       );
-      console.log('[GoalApplicationService.updateGoal] Sub-entity operations:', {
-        keyResults: request.keyResults?.length || 0,
-        records: request.records?.length || 0,
-        reviews: request.reviews?.length || 0,
-      });
 
-      // 使用聚合根式更新
-      const result = await this.updateGoalAggregate(accountUuid, uuid, updateData, {
-        keyResults: request.keyResults || [],
-        records: request.records || [],
-        reviews: request.reviews || [],
-      });
+      // 使用简化的更新方法（子实体通过独立 API 操作）
+      const result = await this.updateGoalAggregate(accountUuid, uuid, updateData);
 
       console.log('[GoalApplicationService.updateGoal] Update completed successfully');
       return result;
@@ -328,35 +312,14 @@ export class GoalApplicationService {
   }
 
   /**
-   * 聚合根式更新目标
-   * 在一个事务中更新目标及其所有子实体
+   * 更新目标基本信息
+   * 子实体操作现在通过独立的 API 进行（RESTful 风格）
    */
   private async updateGoalAggregate(
     accountUuid: string,
     goalUuid: string,
     goalUpdateData: Partial<GoalContracts.GoalDTO>,
-    subEntityOperations: {
-      keyResults: Array<{
-        action: 'create' | 'update' | 'delete';
-        uuid?: string;
-        data?: GoalContracts.CreateKeyResultRequest | Partial<GoalContracts.CreateKeyResultRequest>;
-      }>;
-      records: Array<{
-        action: 'create' | 'update' | 'delete';
-        uuid?: string;
-        data?:
-          | GoalContracts.CreateGoalRecordRequest
-          | Partial<GoalContracts.CreateGoalRecordRequest>;
-      }>;
-      reviews: Array<{
-        action: 'create' | 'update' | 'delete';
-        uuid?: string;
-        data?:
-          | GoalContracts.CreateGoalReviewRequest
-          | Partial<GoalContracts.CreateGoalReviewRequest>;
-      }>;
-    },
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     // 第一步：更新基本目标信息（如果有更新数据）
     let updatedGoal: GoalContracts.GoalDTO;
     if (Object.keys(goalUpdateData).length > 0) {
@@ -370,180 +333,7 @@ export class GoalApplicationService {
       updatedGoal = currentGoal;
     }
 
-    // 第二步：处理关键结果操作
-    const createdKeyResults: GoalContracts.KeyResultDTO[] = [];
-    for (const krOperation of subEntityOperations.keyResults) {
-      switch (krOperation.action) {
-        case 'create':
-          if (!krOperation.data) {
-            throw new Error('KeyResult data is required for create operation');
-          }
-          const krData = krOperation.data as GoalContracts.CreateKeyResultRequest;
-          const keyResultData: Omit<GoalContracts.KeyResultDTO, 'uuid' | 'lifecycle'> = {
-            accountUuid,
-            goalUuid: updatedGoal.uuid,
-            name: krData.name!,
-            description: krData.description || '',
-            startValue: krData.startValue!,
-            targetValue: krData.targetValue!,
-            currentValue: krData.currentValue || krData.startValue!,
-            unit: krData.unit!,
-            weight: krData.weight!,
-            calculationMethod: krData.calculationMethod || 'sum',
-          };
-          const createdKR = await this.goalRepository.createKeyResult(accountUuid, keyResultData);
-          createdKeyResults.push(createdKR);
-          break;
-
-        case 'update':
-          if (!krOperation.uuid) {
-            throw new Error('KeyResult UUID is required for update operation');
-          }
-          if (!krOperation.data) {
-            throw new Error('KeyResult data is required for update operation');
-          }
-          await this.goalRepository.updateKeyResult(
-            accountUuid,
-            krOperation.uuid,
-            krOperation.data as Partial<GoalContracts.KeyResultDTO>,
-          );
-          break;
-
-        case 'delete':
-          if (!krOperation.uuid) {
-            throw new Error('KeyResult UUID is required for delete operation');
-          }
-          await this.goalRepository.deleteKeyResult(accountUuid, krOperation.uuid);
-          break;
-      }
-    }
-
-    // 第三步：处理目标记录操作
-    for (const recordOperation of subEntityOperations.records) {
-      switch (recordOperation.action) {
-        case 'create':
-          if (!recordOperation.data) {
-            throw new Error('GoalRecord data is required for create operation');
-          }
-          const recordData = recordOperation.data as GoalContracts.CreateGoalRecordRequest;
-
-          let keyResultUuid: string;
-          if (recordData.keyResultUuid) {
-            keyResultUuid = recordData.keyResultUuid;
-          } else if (recordData.keyResultIndex !== undefined) {
-            if (recordData.keyResultIndex >= createdKeyResults.length) {
-              throw new Error(`KeyResult index ${recordData.keyResultIndex} is out of bounds`);
-            }
-            keyResultUuid = createdKeyResults[recordData.keyResultIndex].uuid;
-          } else {
-            throw new Error(
-              'Either keyResultUuid or keyResultIndex must be provided for GoalRecord',
-            );
-          }
-
-          const goalRecordData: Omit<GoalContracts.GoalRecordDTO, 'uuid' | 'createdAt'> = {
-            accountUuid,
-            goalUuid: updatedGoal.uuid,
-            keyResultUuid,
-            value: recordData.value!,
-            note: recordData.note || '',
-          };
-          await this.goalRepository.createGoalRecord(accountUuid, goalRecordData);
-          break;
-
-        case 'update':
-          if (!recordOperation.uuid) {
-            throw new Error('GoalRecord UUID is required for update operation');
-          }
-          if (!recordOperation.data) {
-            throw new Error('GoalRecord data is required for update operation');
-          }
-          await this.goalRepository.updateGoalRecord(
-            accountUuid,
-            recordOperation.uuid,
-            recordOperation.data as Partial<GoalContracts.GoalRecordDTO>,
-          );
-          break;
-
-        case 'delete':
-          if (!recordOperation.uuid) {
-            throw new Error('GoalRecord UUID is required for delete operation');
-          }
-          await this.goalRepository.deleteGoalRecord(accountUuid, recordOperation.uuid);
-          break;
-      }
-    }
-
-    // 第四步：处理目标复盘操作
-    for (const reviewOperation of subEntityOperations.reviews) {
-      switch (reviewOperation.action) {
-        case 'create':
-          if (!reviewOperation.data) {
-            throw new Error('GoalReview data is required for create operation');
-          }
-          const reviewData = reviewOperation.data as GoalContracts.CreateGoalReviewRequest;
-
-          // 获取当前所有关键结果以生成快照
-          const currentKeyResults = await this.goalRepository.getKeyResultsByGoalUuid(
-            accountUuid,
-            goalUuid,
-          );
-
-          const goalReviewData: Omit<
-            GoalContracts.GoalReviewDTO,
-            'uuid' | 'createdAt' | 'updatedAt'
-          > = {
-            goalUuid: updatedGoal.uuid,
-            title: reviewData.title!,
-            type: reviewData.type!,
-            reviewDate: reviewData.reviewDate || Date.now(),
-            content: reviewData.content!,
-            snapshot: {
-              snapshotDate: Date.now(),
-              overallProgress: updatedGoal.version || 0, // 可以用其他进度计算逻辑
-              weightedProgress: 0, // 可以根据关键结果计算
-              completedKeyResults: currentKeyResults.filter(
-                (kr) => (kr.currentValue - kr.startValue) / (kr.targetValue - kr.startValue) >= 1,
-              ).length,
-              totalKeyResults: currentKeyResults.length,
-              keyResultsSnapshot: currentKeyResults.map((kr) => ({
-                uuid: kr.uuid,
-                name: kr.name,
-                progress:
-                  ((kr.currentValue - kr.startValue) / (kr.targetValue - kr.startValue)) * 100,
-                currentValue: kr.currentValue,
-                targetValue: kr.targetValue,
-              })),
-            },
-            rating: reviewData.rating!,
-          };
-          await this.goalRepository.createGoalReview(accountUuid, goalReviewData);
-          break;
-
-        case 'update':
-          if (!reviewOperation.uuid) {
-            throw new Error('GoalReview UUID is required for update operation');
-          }
-          if (!reviewOperation.data) {
-            throw new Error('GoalReview data is required for update operation');
-          }
-          await this.goalRepository.updateGoalReview(
-            accountUuid,
-            reviewOperation.uuid,
-            reviewOperation.data as Partial<GoalContracts.GoalReviewDTO>,
-          );
-          break;
-
-        case 'delete':
-          if (!reviewOperation.uuid) {
-            throw new Error('GoalReview UUID is required for delete operation');
-          }
-          await this.goalRepository.deleteGoalReview(accountUuid, reviewOperation.uuid);
-          break;
-      }
-    }
-
-    // 第五步：重新获取完整的聚合根数据并返回
+    // 第二步：重新获取完整的目标数据并返回
     console.log('[updateGoalAggregate] Retrieving complete goal data for uuid:', goalUuid);
     const completeGoal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!completeGoal) {
@@ -563,13 +353,13 @@ export class GoalApplicationService {
       const goal = Goal.fromDTO(completeGoal);
       console.log('[updateGoalAggregate] Successfully created domain entity');
 
-      console.log('[updateGoalAggregate] Converting to response...');
-      const response = goal.toResponse();
-      console.log('[updateGoalAggregate] Successfully converted to response');
+      console.log('[updateGoalAggregate] Converting to client DTO...');
+      const response = goal.toClient();
+      console.log('[updateGoalAggregate] Successfully converted to client DTO');
 
       return response;
     } catch (error) {
-      console.error('[updateGoalAggregate] Error in Goal.fromDTO() or toResponse():', error);
+      console.error('[updateGoalAggregate] Error in Goal.fromDTO() or toClient():', error);
       console.error(
         '[updateGoalAggregate] Complete goal DTO that failed:',
         JSON.stringify(completeGoal, null, 2),
@@ -584,19 +374,19 @@ export class GoalApplicationService {
 
   // ===== Goal 状态管理 =====
 
-  async activateGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalResponse> {
+  async activateGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalClientDTO> {
     return this.updateGoalStatus(accountUuid, uuid, 'active');
   }
 
-  async pauseGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalResponse> {
+  async pauseGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalClientDTO> {
     return this.updateGoalStatus(accountUuid, uuid, 'paused');
   }
 
-  async completeGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalResponse> {
+  async completeGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalClientDTO> {
     return this.updateGoalStatus(accountUuid, uuid, 'completed');
   }
 
-  async archiveGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalResponse> {
+  async archiveGoal(accountUuid: string, uuid: string): Promise<GoalContracts.GoalClientDTO> {
     return this.updateGoalStatus(accountUuid, uuid, 'archived');
   }
 
@@ -604,7 +394,7 @@ export class GoalApplicationService {
     accountUuid: string,
     uuid: string,
     status: 'active' | 'completed' | 'paused' | 'archived',
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     // 获取当前目标
     const currentGoal = await this.goalRepository.getGoalByUuid(accountUuid, uuid);
     if (!currentGoal) {
@@ -615,14 +405,14 @@ export class GoalApplicationService {
     const updateData: Partial<GoalContracts.GoalDTO> = {
       lifecycle: {
         ...currentGoal.lifecycle,
-        status,
+        status: status as GoalContracts.GoalStatus,
         updatedAt: Date.now(),
       },
     };
 
     const updated = await this.goalRepository.updateGoal(accountUuid, uuid, updateData);
     const goal = Goal.fromDTO(updated);
-    return goal.toResponse();
+    return goal.toClient();
   }
 
   // ===== 搜索和过滤 =====
@@ -653,7 +443,7 @@ export class GoalApplicationService {
       weight: number;
       calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
     },
-  ): Promise<GoalContracts.KeyResultResponse> {
+  ): Promise<GoalContracts.KeyResultClientDTO> {
     return this.aggregateService.createKeyResultForGoal(accountUuid, goalUuid, request);
   }
 
@@ -671,7 +461,7 @@ export class GoalApplicationService {
       weight?: number;
       status?: 'active' | 'completed' | 'archived';
     },
-  ): Promise<GoalContracts.KeyResultResponse> {
+  ): Promise<GoalContracts.KeyResultClientDTO> {
     return this.aggregateService.updateKeyResultForGoal(
       accountUuid,
       goalUuid,
@@ -704,7 +494,7 @@ export class GoalApplicationService {
       value: number;
       note?: string;
     },
-  ): Promise<GoalContracts.GoalRecordResponse> {
+  ): Promise<GoalContracts.GoalRecordClientDTO> {
     return this.aggregateService.createRecordForGoal(accountUuid, goalUuid, request);
   }
 
@@ -733,7 +523,7 @@ export class GoalApplicationService {
       };
       reviewDate?: Date;
     },
-  ): Promise<GoalContracts.GoalReviewResponse> {
+  ): Promise<GoalContracts.GoalReviewClientDTO> {
     return this.aggregateService.createReviewForGoal(accountUuid, goalUuid, request);
   }
 

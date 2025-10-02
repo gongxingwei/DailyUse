@@ -1,4 +1,4 @@
-import { AuthCredentialCore } from '@dailyuse/domain-core/';
+import { AuthCredentialCore } from '@dailyuse/domain-core';
 import { type IAuthCredentialServer } from '../types';
 import { Password } from '../valueObjects/Password';
 import { Session } from '../entities/Session';

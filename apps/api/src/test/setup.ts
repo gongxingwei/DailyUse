@@ -83,6 +83,154 @@ export const ApiTestHelpers = {
   },
 
   /**
+   * CRUD 测试助手
+   */
+  crud: {
+    /**
+     * 测试 POST 创建接口
+     */
+    testCreate: async (
+      request: any,
+      endpoint: string,
+      authToken: string,
+      data: any,
+      expectedStatus = 201,
+    ) => {
+      const response = await request
+        .post(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(data)
+        .expect(expectedStatus);
+
+      return response.body;
+    },
+
+    /**
+     * 测试 GET 查询接口
+     */
+    testRead: async (request: any, endpoint: string, authToken: string, expectedStatus = 200) => {
+      const response = await request
+        .get(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(expectedStatus);
+
+      return response.body;
+    },
+
+    /**
+     * 测试 PUT 更新接口
+     */
+    testUpdate: async (
+      request: any,
+      endpoint: string,
+      authToken: string,
+      data: any,
+      expectedStatus = 200,
+    ) => {
+      const response = await request
+        .put(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(data)
+        .expect(expectedStatus);
+
+      return response.body;
+    },
+
+    /**
+     * 测试 DELETE 删除接口
+     */
+    testDelete: async (request: any, endpoint: string, authToken: string, expectedStatus = 200) => {
+      const response = await request
+        .delete(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(expectedStatus);
+
+      return response.body;
+    },
+  },
+
+  /**
+   * 业务逻辑测试助手
+   */
+  business: {
+    /**
+     * 测试数据验证
+     */
+    testValidation: async (request: any, endpoint: string, authToken: string, invalidData: any) => {
+      const response = await request
+        .post(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(invalidData)
+        .expect(400);
+
+      return response.body;
+    },
+
+    /**
+     * 测试权限验证
+     */
+    testUnauthorized: async (request: any, endpoint: string, method = 'get') => {
+      const response = await request[method](endpoint).expect(401);
+      return response.body;
+    },
+
+    /**
+     * 测试资源不存在
+     */
+    testNotFound: async (request: any, endpoint: string, authToken: string, method = 'get') => {
+      const response = await request[method](endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .expect(404);
+      return response.body;
+    },
+
+    /**
+     * 测试业务逻辑规则
+     */
+    testBusinessRule: async (request: any, endpoint: string, authToken: string, data: any) => {
+      const response = await request
+        .post(endpoint)
+        .set('Authorization', `Bearer ${authToken}`)
+        .send(data)
+        .expect(400);
+
+      return response.body;
+    },
+  },
+
+  /**
+   * 性能测试助手
+   */
+  performance: {
+    /**
+     * 测试接口响应时间
+     */
+    testResponseTime: async (request: any, endpoint: string, authToken: string) => {
+      const start = Date.now();
+      await request.get(endpoint).set('Authorization', `Bearer ${authToken}`).expect(200);
+      const duration = Date.now() - start;
+      return duration;
+    },
+
+    /**
+     * 测试并发处理
+     */
+    testConcurrency: async (
+      request: any,
+      endpoint: string,
+      authToken: string,
+      concurrency = 10,
+    ) => {
+      const promises = Array(concurrency)
+        .fill(null)
+        .map(() => request.get(endpoint).set('Authorization', `Bearer ${authToken}`).expect(200));
+
+      const results = await Promise.all(promises);
+      return results;
+    },
+  },
+
+  /**
    * 创建测试数据
    */
   createTestData: {

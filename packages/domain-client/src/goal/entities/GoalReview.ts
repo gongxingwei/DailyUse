@@ -7,9 +7,30 @@ const GoalReviewTypeEnum = GoalContracts.GoalReviewType;
 
 type IGoalReview = GoalContracts.IGoalReview;
 
+/**
+ * 客户端 GoalReview 实体
+ * 符合 IGoalReviewClient 接口定义，包含计算属性
+ */
 export class GoalReview extends GoalReviewCore {
   constructor(params: IGoalReview) {
     super(params);
+  }
+
+  // ===== 计算属性 =====
+
+  /**
+   * 平均评分
+   */
+  get overallRating(): number {
+    const { progressSatisfaction, executionEfficiency, goalReasonableness } = this.rating;
+    return Math.round((progressSatisfaction + executionEfficiency + goalReasonableness) / 3);
+  }
+
+  /**
+   * 是否为正向评价 (评分 >= 7)
+   */
+  get isPositiveReview(): boolean {
+    return this.overallRating >= 7;
   }
 
   /**

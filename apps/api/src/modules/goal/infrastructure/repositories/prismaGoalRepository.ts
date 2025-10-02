@@ -12,10 +12,8 @@ export class PrismaGoalRepository implements IGoalRepository {
   private mapGoalToDTO(goal: any): GoalContracts.GoalDTO {
     try {
       // 使用领域实体的 fromDatabase 方法创建实体
-      const goalEntity = Goal.fromDatabase({
-        ...goal,
-        tags: JSON.parse(goal.tags || '[]'),
-      });
+      // fromDatabase 已经包含了安全的 JSON 解析
+      const goalEntity = Goal.fromDatabase(goal);
 
       // 转换子实体
       if (goal.keyResults) {
@@ -57,7 +55,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       }
 
       // 使用实体的 toDTO 方法
-      return goalEntity.toDTO({ accountUuid: goal.accountUuid });
+      return goalEntity.toDTO();
     } catch (error) {
       console.error('Error mapping goal to DTO:', error);
       // 回退到手动映射
@@ -67,6 +65,15 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   // 保留原有的手动映射作为回退方案
   private mapGoalToDTOFallback(goal: any): GoalContracts.GoalDTO {
+    // 安全解析 tags
+    let tags: string[] = [];
+    try {
+      tags = goal.tags ? JSON.parse(goal.tags) : [];
+    } catch (error) {
+      console.warn('Failed to parse tags JSON:', goal.tags);
+      tags = [];
+    }
+
     const allRecords: any[] = [];
     if (goal.keyResults) {
       goal.keyResults.forEach((kr: any) => {
@@ -84,7 +91,6 @@ export class PrismaGoalRepository implements IGoalRepository {
 
     return {
       uuid: goal.uuid,
-      accountUuid: goal.accountUuid,
       name: goal.name,
       description: goal.description,
       color: goal.color,
@@ -121,7 +127,6 @@ export class PrismaGoalRepository implements IGoalRepository {
   private mapGoalDirToDTO(dir: any): GoalContracts.GoalDirDTO {
     return {
       uuid: dir.uuid,
-      accountUuid: dir.accountUuid,
       name: dir.name,
       description: dir.description,
       color: dir.color,
@@ -146,7 +151,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         ...keyResult,
         accountUuid: accountUuid || '',
       });
-      return keyResultEntity.toDTO({ accountUuid: accountUuid || '' });
+      return keyResultEntity.toDTO();
     } catch (error) {
       console.error('Error mapping KeyResult to DTO:', error);
       // 回退到手动映射
@@ -161,7 +166,6 @@ export class PrismaGoalRepository implements IGoalRepository {
   ): GoalContracts.KeyResultDTO {
     return {
       uuid: keyResult.uuid,
-      accountUuid: accountUuid || '',
       goalUuid: keyResult.goalUuid,
       name: keyResult.name,
       description: keyResult.description,
@@ -198,7 +202,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       });
 
       // 使用实体的 toDatabase 方法转换为数据库格式
-      const databaseData = goalEntity.toDatabase();
+      const databaseData = goalEntity.toDatabase({ accountUuid });
 
       const created = await this.prisma.goal.create({
         data: {
@@ -1085,10 +1089,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         accountUuid: record.accountUuid || '',
         goalUuid: record.goalUuid || '',
       });
-      return recordEntity.toDTO({
-        accountUuid: record.accountUuid || '',
-        goalUuid: record.goalUuid || '',
-      });
+      return recordEntity.toDTO();
     } catch (error) {
       console.error('Error mapping GoalRecord to DTO:', error);
       // 回退到手动映射
@@ -1553,7 +1554,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async saveGoalEntityDemo(accountUuid: string, goal: Goal): Promise<Goal> {
     try {
       // 1. 使用实体的 toDatabase 方法转换为数据库 DTO
-      const goalDatabaseData = goal.toDatabase();
+      const goalDatabaseData = goal.toDatabase({ accountUuid });
 
       // 转换子实体为数据库格式（需要强制类型转换）
       const keyResultsDatabaseData = goal.keyResults.map((kr) => (kr as KeyResult).toDatabase());
@@ -1621,7 +1622,9 @@ export class PrismaGoalRepository implements IGoalRepository {
       // 但这里演示如何重建实体以保持完整的 DDD 数据流
       const reconstructedGoal = Goal.fromDatabase({
         ...result,
-        accountUuid: accountUuid,
+        description: result.description || undefined,
+        dirUuid: result.dirUuid || undefined,
+        note: result.note || undefined,
       });
 
       // 重建子实体

@@ -5,7 +5,8 @@ import { GoalContracts } from '@dailyuse/contracts';
 const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
 
 /**
- * KeyResult 核心基类 - 关键结果实体
+ * 客户端 KeyResult 实体 - 关键结果实体
+ * 符合 IKeyResultClient 接口定义，包含计算属性
  */
 export class KeyResult extends KeyResultCore {
   constructor(params: {
@@ -147,6 +148,33 @@ export class KeyResult extends KeyResultCore {
     if (progress >= 100) return 'mdi-check-circle';
     if (progress >= 80) return 'mdi-check-circle-outline';
     return 'mdi-progress-clock';
+  }
+
+  // ===== 计算属性 =====
+
+  /**
+   * 进度百分比 (0-100)
+   */
+  get progress(): number {
+    const range = this._targetValue - this._startValue;
+    if (range === 0) return 100;
+
+    const current = this._currentValue - this._startValue;
+    return Math.min(100, Math.max(0, Math.round((current / range) * 100)));
+  }
+
+  /**
+   * 是否已完成
+   */
+  get isCompleted(): boolean {
+    return this._currentValue >= this._targetValue;
+  }
+
+  /**
+   * 剩余数量
+   */
+  get remaining(): number {
+    return Math.max(0, this._targetValue - this._currentValue);
   }
 
   // ===== 抽象方法实现=====

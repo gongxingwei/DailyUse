@@ -171,6 +171,46 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
   // ===== 业务方法 =====
 
   /**
+   * 更新复盘（实体内部方法）
+   * 封装自身的更新逻辑和验证
+   */
+  update(updates: {
+    title?: string;
+    content?: {
+      achievements?: string;
+      challenges?: string;
+      learnings?: string;
+      nextSteps?: string;
+      adjustments?: string;
+    };
+    rating?: {
+      progressSatisfaction?: number;
+      executionEfficiency?: number;
+      goalReasonableness?: number;
+    };
+  }): void {
+    if (updates.title !== undefined) {
+      if (!updates.title.trim()) {
+        throw new Error('复盘标题不能为空');
+      }
+      if (updates.title.length > 200) {
+        throw new Error('复盘标题不能超过200个字符');
+      }
+      this._title = updates.title;
+    }
+
+    if (updates.content) {
+      this.updateContent(updates.content);
+    }
+
+    if (updates.rating) {
+      this.updateRating(updates.rating);
+    }
+
+    this._updatedAt = new Date();
+  }
+
+  /**
    * 更新复盘内容
    */
   updateContent(content: {
@@ -295,7 +335,7 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
     };
   }
 
-  toResponse(): GoalContracts.GoalReviewResponse {
+  toClient(): GoalContracts.GoalReviewClientDTO {
     const dto = this.toDTO();
     return {
       ...dto,

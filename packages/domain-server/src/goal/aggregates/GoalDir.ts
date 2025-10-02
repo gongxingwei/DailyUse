@@ -140,7 +140,7 @@ export class GoalDir extends GoalDirCore {
     });
   }
 
-  toResponse(goalsCount: number = 0): GoalContracts.GoalDirResponse {
+  toClient(goalsCount: number = 0): GoalContracts.GoalDirClientDTO {
     const baseDTO = this.toDTO();
 
     return {

@@ -20,6 +20,20 @@ export class GoalRecord extends GoalRecordCore {
   // ===== 业务方法 =====
 
   /**
+   * 更新记录（实体内部方法）
+   * 封装自身的更新逻辑和验证
+   */
+  update(updates: { value?: number; note?: string }): void {
+    if (updates.value !== undefined) {
+      this.updateValue(updates.value);
+    }
+
+    if (updates.note !== undefined) {
+      this.updateNote(updates.note);
+    }
+  }
+
+  /**
    * 更新记录备注
    */
   updateNote(note?: string): void {
@@ -71,12 +85,8 @@ export class GoalRecord extends GoalRecordCore {
     });
   }
 
-  toResponse(): GoalContracts.GoalRecordResponse {
-    const dto = this.toDTO();
-    return {
-      ...dto,
-      xxxx: '', // 预留字段默认值
-    };
+  toClient(): GoalContracts.GoalRecordClientDTO {
+    return this.toDTO();
   }
 
   // ===== 数据库转换方法 =====

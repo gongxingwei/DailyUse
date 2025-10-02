@@ -9,6 +9,7 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "skipLibCheck": true, // 跳过第三方库的类型检查，提高性能
+    "types": ["vitest/globals"], // 添加 Vitest 全局类型支持
     "paths": {
       "@/*": ["./src/*"],
       "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],

@@ -14,7 +14,7 @@ describe('Goal todayProgress 计算', () => {
   beforeEach(() => {
     // 创建测试目标
     goal = new Goal({
-      accountUuid: 'test-account-123',
+      
       name: '测试目标',
       description: '用于测试今日进度计算的目标',
       color: '#FF5733',
@@ -26,7 +26,7 @@ describe('Goal todayProgress 计算', () => {
 
     // 创建测试关键结果
     keyResult1 = new KeyResult({
-      accountUuid: 'test-account-123',
+      
       goalUuid: goal.uuid,
       name: '关键结果1',
       description: '测试关键结果1',
@@ -38,7 +38,7 @@ describe('Goal todayProgress 计算', () => {
     });
 
     keyResult2 = new KeyResult({
-      accountUuid: 'test-account-123',
+      
       goalUuid: goal.uuid,
       name: '关键结果2',
       description: '测试关键结果2',
@@ -64,7 +64,7 @@ describe('Goal todayProgress 计算', () => {
       yesterday.setDate(yesterday.getDate() - 1);
 
       const oldRecord = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 10,
@@ -80,7 +80,7 @@ describe('Goal todayProgress 计算', () => {
     test('应该正确计算单个关键结果的今日进度', () => {
       // 今天为关键结果1添加了10个单位的进度
       const todayRecord = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 10, // 相对于目标100，增加了10%的进度
@@ -98,7 +98,7 @@ describe('Goal todayProgress 计算', () => {
 
       // 关键结果1今天增加10个单位 (10%)
       const record1 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 10,
@@ -107,7 +107,7 @@ describe('Goal todayProgress 计算', () => {
 
       // 关键结果2今天增加20个单位 (10%)
       const record2 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult2.uuid,
         value: 20,
@@ -125,7 +125,7 @@ describe('Goal todayProgress 计算', () => {
 
       // 关键结果1今天有两次记录
       const record1 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 5, // 5%
@@ -133,7 +133,7 @@ describe('Goal todayProgress 计算', () => {
       });
 
       const record2 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 10, // 10%
@@ -155,7 +155,7 @@ describe('Goal todayProgress 计算', () => {
 
       // 今天开始时的记录
       const startRecord = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 5,
@@ -164,7 +164,7 @@ describe('Goal todayProgress 计算', () => {
 
       // 今天结束时的记录
       const endRecord = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 5,
@@ -183,7 +183,7 @@ describe('Goal todayProgress 计算', () => {
       const now = new Date();
 
       const record1 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 10,
@@ -191,7 +191,7 @@ describe('Goal todayProgress 计算', () => {
       });
 
       const record2 = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult2.uuid,
         value: 20,
@@ -221,7 +221,7 @@ describe('Goal todayProgress 计算', () => {
   describe('边界情况处理', () => {
     test('应该处理目标值为0的关键结果', () => {
       const invalidKeyResult = new KeyResult({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         name: '无效关键结果',
         startValue: 0,
@@ -234,7 +234,7 @@ describe('Goal todayProgress 计算', () => {
       goal.keyResults = [invalidKeyResult];
 
       const record = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: invalidKeyResult.uuid,
         value: 10,
@@ -251,7 +251,7 @@ describe('Goal todayProgress 计算', () => {
       goal.keyResults = [];
 
       const record = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: 'non-existent-kr',
         value: 10,
@@ -265,7 +265,7 @@ describe('Goal todayProgress 计算', () => {
 
     test('应该限制进度变化在合理范围内', () => {
       const record = new GoalRecord({
-        accountUuid: 'test-account-123',
+        
         goalUuid: goal.uuid,
         keyResultUuid: keyResult1.uuid,
         value: 1000, // 远超目标值的记录

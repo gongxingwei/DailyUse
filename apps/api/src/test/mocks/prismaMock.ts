@@ -15,6 +15,14 @@ const mockDataStore = {
   taskTemplate: new Map(),
   taskInstance: new Map(),
   taskMetaTemplate: new Map(),
+  // Goal相关表
+  goal: new Map(),
+  goalDir: new Map(),
+  keyResult: new Map(),
+  progressRecord: new Map(),
+  // Reminder相关表
+  reminderTemplate: new Map(),
+  reminderExecution: new Map(),
   // 添加其他需要的表...
 };
 
@@ -278,6 +286,16 @@ export const mockPrismaClient = {
   taskTemplate: createMockModel('taskTemplate'),
   taskInstance: createMockModel('taskInstance'),
   taskMetaTemplate: createMockModel('taskMetaTemplate'),
+
+  // Goal相关表
+  goal: createMockModel('goal'),
+  goalDir: createMockModel('goalDir'),
+  keyResult: createMockModel('keyResult'),
+  progressRecord: createMockModel('progressRecord'),
+
+  // Reminder相关表
+  reminderTemplate: createMockModel('reminderTemplate'),
+  reminderExecution: createMockModel('reminderExecution'),
 
   // 事务和连接操作
   $transaction: vi.fn(async (operations: any[]) => {

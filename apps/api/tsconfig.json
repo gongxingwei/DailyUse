@@ -9,7 +9,7 @@
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
     "resolveJsonModule": true,
-    "types": ["node"],
+    "types": ["node", "vitest/globals"],
     "typeRoots": ["./src/modules/users/types", "./node_modules/@types"],
     "paths": {
       "@/*": ["./src/*"],

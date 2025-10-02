@@ -2,7 +2,8 @@ import { GoalRecordCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 
 /**
- * GoalRecord 核心基类 - 目标记录实体
+ * GoalRecord 客户端实体 - 目标记录实体
+ * 符合 IGoalRecordClient 接口定义
  */
 export class GoalRecord extends GoalRecordCore {
   constructor(params: {
