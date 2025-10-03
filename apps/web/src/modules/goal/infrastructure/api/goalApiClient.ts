@@ -12,7 +12,7 @@ export class GoalApiClient {
   /**
    * 创建目标
    */
-  async createGoal(request: GoalContracts.CreateGoalRequest): Promise<GoalContracts.GoalResponse> {
+  async createGoal(request: GoalContracts.CreateGoalRequest): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(this.baseUrl, request);
     return data;
   }
@@ -36,7 +36,7 @@ export class GoalApiClient {
   /**
    * 获取目标详情
    */
-  async getGoalById(uuid: string): Promise<GoalContracts.GoalResponse> {
+  async getGoalById(uuid: string): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.get(`${this.baseUrl}/${uuid}`);
     return data;
   }
@@ -47,7 +47,7 @@ export class GoalApiClient {
   async updateGoal(
     uuid: string,
     request: GoalContracts.UpdateGoalRequest,
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.put(`${this.baseUrl}/${uuid}`, request);
     return data;
   }
@@ -64,7 +64,7 @@ export class GoalApiClient {
   /**
    * 激活目标
    */
-  async activateGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+  async activateGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${uuid}/activate`);
     return data;
   }
@@ -72,7 +72,7 @@ export class GoalApiClient {
   /**
    * 暂停目标
    */
-  async pauseGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+  async pauseGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${uuid}/pause`);
     return data;
   }
@@ -80,7 +80,7 @@ export class GoalApiClient {
   /**
    * 完成目标
    */
-  async completeGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+  async completeGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${uuid}/complete`);
     return data;
   }
@@ -88,7 +88,7 @@ export class GoalApiClient {
   /**
    * 归档目标
    */
-  async archiveGoal(uuid: string): Promise<GoalContracts.GoalResponse> {
+  async archiveGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${uuid}/archive`);
     return data;
   }
@@ -126,7 +126,7 @@ export class GoalApiClient {
       weight: number;
       calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
     },
-  ): Promise<GoalContracts.KeyResultResponse> {
+  ): Promise<GoalContracts.KeyResultClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${goalUuid}/key-results`, request);
     return data;
   }
@@ -146,7 +146,7 @@ export class GoalApiClient {
     goalUuid: string,
     keyResultUuid: string,
     request: GoalContracts.UpdateKeyResultRequest,
-  ): Promise<GoalContracts.KeyResultResponse> {
+  ): Promise<GoalContracts.KeyResultClientDTO> {
     const data = await apiClient.put(
       `${this.baseUrl}/${goalUuid}/key-results/${keyResultUuid}`,
       request,
@@ -161,21 +161,6 @@ export class GoalApiClient {
     await apiClient.delete(`${this.baseUrl}/${goalUuid}/key-results/${keyResultUuid}`);
   }
 
-  /**
-   * 更新关键结果进度
-   */
-  async updateKeyResultProgress(
-    goalUuid: string,
-    keyResultUuid: string,
-    request: GoalContracts.UpdateKeyResultProgressRequest,
-  ): Promise<GoalContracts.KeyResultResponse> {
-    const data = await apiClient.patch(
-      `${this.baseUrl}/${goalUuid}/key-results/${keyResultUuid}/progress`,
-      request,
-    );
-    return data;
-  }
-
   // ===== DDD聚合根控制：GoalRecord管理 =====
 
   /**
@@ -185,7 +170,7 @@ export class GoalApiClient {
     goalUuid: string,
     keyResultUuid: string,
     request: GoalContracts.CreateGoalRecordRequest,
-  ): Promise<GoalContracts.GoalRecordResponse> {
+  ): Promise<GoalContracts.GoalRecordClientDTO> {
     // 将keyResultUuid添加到请求体中，而不是URL路径
     const requestWithKeyResult = {
       ...request,
@@ -237,7 +222,7 @@ export class GoalApiClient {
   async createGoalReview(
     goalUuid: string,
     request: GoalContracts.CreateGoalReviewRequest,
-  ): Promise<GoalContracts.GoalReviewResponse> {
+  ): Promise<GoalContracts.GoalReviewClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${goalUuid}/reviews`, request);
     return data;
   }
@@ -257,7 +242,7 @@ export class GoalApiClient {
     goalUuid: string,
     reviewUuid: string,
     request: Partial<GoalContracts.GoalReviewDTO>,
-  ): Promise<GoalContracts.GoalReviewResponse> {
+  ): Promise<GoalContracts.GoalReviewClientDTO> {
     const data = await apiClient.put(`${this.baseUrl}/${goalUuid}/reviews/${reviewUuid}`, request);
     return data;
   }
@@ -310,7 +295,7 @@ export class GoalApiClient {
       includeKeyResults?: boolean;
       includeRecords?: boolean;
     },
-  ): Promise<GoalContracts.GoalResponse> {
+  ): Promise<GoalContracts.GoalClientDTO> {
     const data = await apiClient.post(`${this.baseUrl}/${goalUuid}/clone`, request);
     return data;
   }
@@ -329,7 +314,7 @@ export class GoalDirApiClient {
    */
   async createGoalDir(
     request: GoalContracts.CreateGoalDirRequest,
-  ): Promise<GoalContracts.GoalDirResponse> {
+  ): Promise<GoalContracts.GoalDirClientDTO> {
     const data = await apiClient.post(this.baseUrl, request);
     return data;
   }
@@ -350,7 +335,7 @@ export class GoalDirApiClient {
   /**
    * 获取目标目录详情
    */
-  async getGoalDirById(uuid: string): Promise<GoalContracts.GoalDirResponse> {
+  async getGoalDirById(uuid: string): Promise<GoalContracts.GoalDirClientDTO> {
     const data = await apiClient.get(`${this.baseUrl}/${uuid}`);
     return data;
   }
@@ -361,7 +346,7 @@ export class GoalDirApiClient {
   async updateGoalDir(
     uuid: string,
     request: GoalContracts.UpdateGoalDirRequest,
-  ): Promise<GoalContracts.GoalDirResponse> {
+  ): Promise<GoalContracts.GoalDirClientDTO> {
     const data = await apiClient.put(`${this.baseUrl}/${uuid}`, request);
     return data;
   }

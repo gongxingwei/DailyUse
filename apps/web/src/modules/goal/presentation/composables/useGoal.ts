@@ -488,24 +488,6 @@ export function useGoal() {
   };
 
   /**
-   * 更新关键结果进度
-   */
-  const updateKeyResultProgress = async (
-    goalUuid: string,
-    keyResultUuid: string,
-    request: GoalContracts.UpdateKeyResultProgressRequest,
-  ) => {
-    try {
-      const response = await goalService.updateKeyResultProgress(goalUuid, keyResultUuid, request);
-      snackbar.showSuccess('关键结果进度更新成功');
-      return response;
-    } catch (error) {
-      snackbar.showError('更新关键结果进度失败');
-      throw error;
-    }
-  };
-
-  /**
    * 批量更新关键结果权重
    */
   const batchUpdateKeyResultWeights = async (
@@ -741,7 +723,7 @@ export function useGoal() {
   const loadCurrentGoalReviews = async (goalUuid: string) => {
     try {
       const response = await getGoalReviewsByGoal(goalUuid);
-      currentGoalReviews.value = response.reviews; // reviews 属性是正确的
+      currentGoalReviews.value = response.data; // 使用 data 字段
       return response;
     } catch (error) {
       currentGoalReviews.value = [];
@@ -828,7 +810,7 @@ export function useGoal() {
       return (now.getTime() - start.getTime()) / (end.getTime() - start.getTime());
     }
     return 0;
-  }
+  };
 
   const getRemainingDays = (goal: Goal) => {
     if (goal.endTime) {
@@ -838,7 +820,7 @@ export function useGoal() {
       return Math.ceil(diff / (1000 * 3600 * 24));
     }
     return 0;
-  }
+  };
 
   return {
     // 响应式状态
@@ -905,7 +887,6 @@ export function useGoal() {
     getKeyResultsByGoal,
     updateKeyResultForGoal,
     deleteKeyResultForGoal,
-    updateKeyResultProgress,
     batchUpdateKeyResultWeights,
 
     // ===== DDD聚合根控制：GoalRecord管理 =====

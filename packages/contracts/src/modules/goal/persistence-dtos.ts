@@ -80,6 +80,7 @@ export interface KeyResultPersistenceDTO {
  */
 export interface GoalRecordPersistenceDTO {
   uuid: string;
+  goalUuid: string; // 添加 goalUuid 属性
   keyResultUuid: string;
 
   // 记录信息

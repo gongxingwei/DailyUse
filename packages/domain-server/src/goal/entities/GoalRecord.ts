@@ -1,6 +1,8 @@
 import { GoalRecordCore } from '@dailyuse/domain-core';
 import { type GoalContracts } from '@dailyuse/contracts';
 
+type GoalRecordPersistenceDTO = GoalContracts.GoalRecordPersistenceDTO;
+
 /**
  * 服务端 GoalRecord 实体
  * 实现目标记录的服务端业务逻辑
@@ -89,14 +91,15 @@ export class GoalRecord extends GoalRecordCore {
     return this.toDTO();
   }
 
-  // ===== 数据库转换方法 =====
+  // ===== 持久化转换方法 =====
 
   /**
-   * 转换为数据库 DTO（扁平化存储）
+   * 转换为持久化 DTO（扁平化存储）
    */
-  toDatabase(): any {
+  toPersistence(): GoalRecordPersistenceDTO {
     return {
       uuid: this.uuid,
+      goalUuid: this.goalUuid, // 添加 goalUuid
       keyResultUuid: this.keyResultUuid,
       // 记录信息
       value: this._value,
@@ -106,16 +109,16 @@ export class GoalRecord extends GoalRecordCore {
   }
 
   /**
-   * 从数据库 DTO 创建实例
+   * 从持久化 DTO 创建实例
    */
-  static fromDatabase(dbData: any): GoalRecord {
+  static fromPersistence(data: GoalRecordPersistenceDTO): GoalRecord {
     return new GoalRecord({
-      uuid: dbData.uuid,
-      goalUuid: dbData.goalUuid || '', // 这个需要从上层传递
-      keyResultUuid: dbData.keyResultUuid,
-      value: dbData.value,
-      note: dbData.note,
-      createdAt: dbData.createdAt,
+      uuid: data.uuid,
+      goalUuid: data.goalUuid, // 从 data 中获取
+      keyResultUuid: data.keyResultUuid,
+      value: data.value,
+      note: data.note,
+      createdAt: data.createdAt,
     });
   }
 }

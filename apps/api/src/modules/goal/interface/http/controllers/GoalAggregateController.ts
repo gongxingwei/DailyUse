@@ -1,7 +1,9 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
+import { randomUUID } from 'crypto';
 import { GoalApplicationService } from '../../../application/services/GoalApplicationService';
 import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalDomainException } from '@dailyuse/domain-server';
 
 /**
  * Goal聚合根控制器
@@ -76,6 +78,22 @@ export class GoalAggregateController {
         message: 'Key result created successfully through goal aggregate',
       });
     } catch (error) {
+      // ✅ 区分错误类型
+      if (error instanceof Error) {
+        if (error.message.includes('Goal not found')) {
+          return res.status(404).json({
+            success: false,
+            message: 'Goal not found',
+          });
+        }
+        if (error.message.includes('Invalid UUID')) {
+          return res.status(400).json({
+            success: false,
+            message: error.message,
+          });
+        }
+      }
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create key result',
@@ -94,7 +112,7 @@ export class GoalAggregateController {
       const request = req.body;
 
       const goalService = await GoalAggregateController.getGoalService();
-      const keyResult = await goalService.updateKeyResult(
+      const keyResult = await goalService.updateKeyResultForGoal(
         accountUuid,
         goalId,
         keyResultId,
@@ -107,6 +125,16 @@ export class GoalAggregateController {
         message: 'Key result updated successfully through goal aggregate',
       });
     } catch (error) {
+      // ✅ 区分错误类型
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          return res.status(404).json({
+            success: false,
+            message: error.message,
+          });
+        }
+      }
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to update key result',
@@ -129,13 +157,19 @@ export class GoalAggregateController {
       const { goalId, keyResultId } = req.params;
 
       const goalService = await GoalAggregateController.getGoalService();
-      await goalService.deleteKeyResult(accountUuid, goalId, keyResultId);
+      await goalService.removeKeyResultFromGoal(accountUuid, goalId, keyResultId);
 
-      res.json({
-        success: true,
-        message: 'Key result deleted successfully through goal aggregate',
-      });
+      res.status(204).send(); // ✅ No Content
     } catch (error) {
+      // ✅ 使用错误代码判断
+      if (error instanceof GoalDomainException && error.isNotFound()) {
+        return res.status(404).json({
+          success: false,
+          code: error.code,
+          message: error.message,
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to delete key result',
@@ -161,7 +195,7 @@ export class GoalAggregateController {
       const request = req.body;
 
       const goalService = await GoalAggregateController.getGoalService();
-      const record = await goalService.createGoalRecord(accountUuid, goalId, request);
+      const record = await goalService.createRecordForGoal(accountUuid, goalId, request);
 
       res.status(201).json({
         success: true,
@@ -169,6 +203,15 @@ export class GoalAggregateController {
         message: 'Goal record created successfully through goal aggregate',
       });
     } catch (error) {
+      // ✅ 使用错误代码判断
+      if (error instanceof GoalDomainException && error.isNotFound()) {
+        return res.status(404).json({
+          success: false,
+          code: error.code,
+          message: error.message,
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create goal record',
@@ -274,9 +317,14 @@ export class GoalAggregateController {
       const goalService = await GoalAggregateController.getGoalService();
       const updatedKeyResults = [];
       for (const krUpdate of keyResults) {
-        const updated = await goalService.updateKeyResult(accountUuid, goalId, krUpdate.uuid, {
-          weight: krUpdate.weight,
-        });
+        const updated = await goalService.updateKeyResultForGoal(
+          accountUuid,
+          goalId,
+          krUpdate.uuid,
+          {
+            weight: krUpdate.weight,
+          },
+        );
         updatedKeyResults.push(updated);
       }
 
@@ -315,6 +363,7 @@ export class GoalAggregateController {
 
       // 创建新目标
       const newGoal = await goalService.createGoal(accountUuid, {
+        uuid: randomUUID(), // ✅ 添加 uuid
         name: newName || `${originalAggregate.goal.name} (Copy)`,
         description: newDescription || originalAggregate.goal.description,
         color: originalAggregate.goal.color,

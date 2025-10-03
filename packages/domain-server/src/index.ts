@@ -30,11 +30,13 @@ export * from './account/events';
 
 // Goal domain exports
 export * from './goal/aggregates/Goal';
+export * from './goal/aggregates/GoalDir';
 export * from './goal/entities/KeyResult';
 export * from './goal/entities/GoalRecord';
 export * from './goal/entities/GoalReview';
 export * from './goal/repositories/iGoalRepository';
 export * from './goal/services/UserDataInitializationService';
+export * from './goal/exceptions/GoalDomainException';
 
 // Task domain exports
 export * from './task/aggregates/TaskTemplate';

@@ -9,6 +9,21 @@ const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
  * 继承核心 GoalDir 类，添加客户端特有功能
  */
 export class GoalDir extends GoalDirCore {
+  // 变更跟踪系统（为将来扩展预留）
+  private _originalState: {
+    name: string;
+    description?: string;
+    icon: string;
+    color: string;
+    parentUuid?: string;
+    sortConfig?: {
+      sortKey: GoalContracts.GoalSortField;
+      sortOrder: number;
+    };
+  } | null = null;
+
+  private _isDirty = false;
+
   constructor(params: {
     uuid?: string;
     name: string;
@@ -25,6 +40,63 @@ export class GoalDir extends GoalDirCore {
     updatedAt?: Date;
   }) {
     super(params);
+  }
+
+  // ===== 变更跟踪系统 =====
+
+  /**
+   * 开始编辑模式 - 保存当前状态作为原始状态
+   */
+  startEditing(): void {
+    this._originalState = {
+      name: this._name,
+      description: this._description,
+      icon: this._icon,
+      color: this._color,
+      parentUuid: this._parentUuid,
+      sortConfig: this._sortConfig ? { ...this._sortConfig } : undefined,
+    };
+    this._isDirty = false;
+  }
+
+  /**
+   * 取消编辑 - 恢复到原始状态
+   */
+  cancelEditing(): void {
+    if (this._originalState) {
+      this._name = this._originalState.name;
+      this._description = this._originalState.description;
+      this._icon = this._originalState.icon;
+      this._color = this._originalState.color;
+      this._parentUuid = this._originalState.parentUuid;
+      if (this._originalState.sortConfig) {
+        this._sortConfig = { ...this._originalState.sortConfig };
+      }
+      this._isDirty = false;
+    }
+    this._originalState = null;
+  }
+
+  /**
+   * 提交编辑 - 清除原始状态
+   */
+  commitEditing(): void {
+    this._originalState = null;
+    this._isDirty = false;
+  }
+
+  /**
+   * 检查是否有未保存的更改
+   */
+  get hasUnsavedChanges(): boolean {
+    return this._isDirty;
+  }
+
+  /**
+   * 标记为已修改
+   */
+  markDirty(): void {
+    this._isDirty = true;
   }
 
   // ===== 客户端特有方法 =====
@@ -144,6 +216,23 @@ export class GoalDir extends GoalDirCore {
 
   static fromResponse(response: GoalContracts.GoalDirResponse): GoalDir {
     return GoalDir.fromDTO(response);
+  }
+
+  /**
+   * 从客户端 DTO 创建实体
+   */
+  static fromClientDTO(dto: GoalContracts.GoalDirClientDTO): GoalDir {
+    // ClientDTO 包含计算属性，但我们只需要基础属性来创建实体
+    return GoalDir.fromDTO({
+      uuid: dto.uuid,
+      name: dto.name,
+      description: dto.description,
+      icon: dto.icon,
+      color: dto.color,
+      parentUuid: dto.parentUuid,
+      sortConfig: dto.sortConfig,
+      lifecycle: dto.lifecycle,
+    });
   }
 
   /**

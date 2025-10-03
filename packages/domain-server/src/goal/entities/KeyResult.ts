@@ -1,6 +1,8 @@
 import { KeyResultCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 
+type KeyResultPersistenceDTO = GoalContracts.KeyResultPersistenceDTO;
+
 // 枚举别名
 const KeyResultStatusEnum = GoalContracts.KeyResultStatus;
 
@@ -341,12 +343,12 @@ export class KeyResult extends KeyResultCore {
     };
   }
 
-  // ===== 数据库转换方法 =====
+  // ===== 持久化转换方法 =====
 
   /**
-   * 转换为数据库 DTO（扁平化存储）
+   * 转换为持久化 DTO（扁平化存储）
    */
-  toDatabase(): any {
+  toPersistence(): KeyResultPersistenceDTO {
     return {
       uuid: this.uuid,
       goalUuid: this.goalUuid,
@@ -369,23 +371,23 @@ export class KeyResult extends KeyResultCore {
   }
 
   /**
-   * 从数据库 DTO 创建实例
+   * 从持久化 DTO 创建实例
    */
-  static fromDatabase(dbData: any): KeyResult {
+  static fromPersistence(data: KeyResultPersistenceDTO): KeyResult {
     return new KeyResult({
-      uuid: dbData.uuid,
-      goalUuid: dbData.goalUuid,
-      name: dbData.name,
-      description: dbData.description,
-      startValue: dbData.startValue,
-      targetValue: dbData.targetValue,
-      currentValue: dbData.currentValue,
-      unit: dbData.unit,
-      weight: dbData.weight,
-      calculationMethod: dbData.calculationMethod,
-      status: dbData.status,
-      createdAt: dbData.createdAt,
-      updatedAt: dbData.updatedAt,
+      uuid: data.uuid,
+      goalUuid: data.goalUuid,
+      name: data.name,
+      description: data.description,
+      startValue: data.startValue,
+      targetValue: data.targetValue,
+      currentValue: data.currentValue,
+      unit: data.unit,
+      weight: data.weight,
+      calculationMethod: data.calculationMethod,
+      status: data.status,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     });
   }
 }

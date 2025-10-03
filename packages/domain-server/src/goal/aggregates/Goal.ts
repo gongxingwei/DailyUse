@@ -3,6 +3,7 @@ import { GoalContracts, sharedContracts } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalRecord } from '../entities/GoalRecord';
 import { GoalReview } from '../entities/GoalReview';
+import { GoalDomainException } from '../exceptions/GoalDomainException';
 
 // 枚举别名
 const GoalStatusEnum = GoalContracts.GoalStatus;
@@ -241,7 +242,7 @@ export class Goal extends GoalCore {
   ): void {
     const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
     if (!keyResult) {
-      throw new Error('关键结果不存在');
+      throw new GoalDomainException(GoalContracts.GoalErrorCode.KEY_RESULT_NOT_FOUND);
     }
 
     // 聚合根级别的业务规则：验证权重总和
@@ -278,7 +279,7 @@ export class Goal extends GoalCore {
   removeKeyResult(keyResultUuid: string): void {
     const index = this.keyResults.findIndex((kr) => kr.uuid === keyResultUuid);
     if (index === -1) {
-      throw new Error('关键结果不存在');
+      throw new GoalDomainException(GoalContracts.GoalErrorCode.KEY_RESULT_NOT_FOUND);
     }
 
     // 级联删除相关记录
@@ -383,49 +384,6 @@ export class Goal extends GoalCore {
       payload: {
         goalUuid: this.uuid,
         recordUuid,
-      },
-    });
-  }
-
-  /**
-   * 更新关键结果进度（服务端实现）
-   */
-  updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void {
-    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
-    if (!keyResult) {
-      throw new Error('关键结果不存在');
-    }
-
-    // 使用实体的业务方法更新进度
-    keyResult.updateProgress(increment, 'increment');
-
-    // 创建记录 DTO
-    const now = new Date();
-    const recordDTO: GoalContracts.GoalRecordDTO = {
-      uuid: this.generateUUID(),
-      goalUuid: this.uuid,
-      keyResultUuid,
-      value: increment,
-      note,
-      createdAt: now.getTime(),
-    };
-
-    // 使用 fromDTO 创建实体对象
-    const recordEntity = GoalRecord.fromDTO(recordDTO) as GoalRecord;
-    this.records.push(recordEntity);
-    this.updateVersion();
-
-    // 发布服务端领域事件
-    this.addDomainEvent({
-      eventType: 'KeyResultProgressUpdated',
-      aggregateId: this.uuid,
-      occurredOn: new Date(),
-      payload: {
-        goalUuid: this.uuid,
-        keyResultUuid,
-        increment,
-        newProgress: keyResult.currentValue,
-        recordUuid: recordEntity.uuid,
       },
     });
   }
@@ -572,15 +530,20 @@ export class Goal extends GoalCore {
   /**
    * 创建目标记录（服务端）
    */
-  createRecord(recordData: { keyResultUuid: string; value: number; note?: string }): string {
+  createRecord(recordData: {
+    uuid?: string;
+    keyResultUuid: string;
+    value: number;
+    note?: string;
+  }): string {
     // 验证关键结果存在
     const keyResult = this.keyResults.find((kr) => kr.uuid === recordData.keyResultUuid);
     if (!keyResult) {
-      throw new Error(`关键结果不存在: ${recordData.keyResultUuid}`);
+      throw new GoalDomainException(GoalContracts.GoalErrorCode.KEY_RESULT_NOT_FOUND);
     }
 
     // 创建记录实体
-    const recordUuid = this.generateUUID();
+    const recordUuid = recordData.uuid || this.generateUUID();
     const now = new Date();
 
     const newRecord = new GoalRecord({
@@ -1389,68 +1352,6 @@ export class Goal extends GoalCore {
 
   // ===== 序列化方法 =====
 
-  /**
-   * 转换为数据库 DTO（扁平化存储）
-   */
-  toDatabase(context: { accountUuid: string }): GoalPersistenceDTO {
-    return {
-      uuid: this.uuid,
-      accountUuid: context.accountUuid,
-      // 基本信息
-      name: this._name,
-      description: this._description,
-      color: this._color,
-      dirUuid: this._dirUuid,
-      startTime: this._startTime,
-      endTime: this._endTime,
-      note: this._note,
-      // 分析信息 - 扁平化
-      motive: this._analysis.motive,
-      feasibility: this._analysis.feasibility,
-      importanceLevel: this._analysis.importanceLevel,
-      urgencyLevel: this._analysis.urgencyLevel,
-      // 生命周期
-      createdAt: this._lifecycle.createdAt,
-      updatedAt: this._lifecycle.updatedAt,
-      status: this._lifecycle.status as GoalContracts.GoalStatus,
-      // 元数据 - JSON 存储
-      tags: JSON.stringify(this._metadata.tags),
-      category: this._metadata.category,
-      // 版本控制
-      version: this._version,
-    };
-  }
-
-  /**
-   * 从数据库 DTO 创建实体（不包含子实体）
-   */
-  static fromDatabase(dbData: GoalPersistenceDTO): Goal {
-    return new Goal({
-      uuid: dbData.uuid,
-      name: dbData.name,
-      description: dbData.description,
-      color: dbData.color,
-      dirUuid: dbData.dirUuid,
-      startTime: dbData.startTime,
-      endTime: dbData.endTime,
-      note: dbData.note,
-      motive: dbData.motive,
-      feasibility: dbData.feasibility,
-      importanceLevel: dbData.importanceLevel,
-      urgencyLevel: dbData.urgencyLevel,
-      status: dbData.status as unknown as GoalContracts.GoalStatus,
-      createdAt: dbData.createdAt,
-      updatedAt: dbData.updatedAt,
-      tags: safeJsonParse(dbData.tags, []),
-      category: dbData.category,
-      version: dbData.version,
-      // 子实体在加载时单独设置
-      keyResults: [],
-      records: [],
-      reviews: [],
-    });
-  }
-
   static fromDTO(dto: GoalContracts.GoalDTO): Goal {
     return new Goal({
       uuid: dto.uuid,
@@ -1507,6 +1408,73 @@ export class Goal extends GoalCore {
       records: this.records.map((record) => record.toDTO()),
       reviews: this.reviews.map((review) => (review as GoalReview).toDTO()),
     };
+  }
+
+  /**
+   * 转换为持久化 DTO（扁平化格式，用于数据库存储）
+   */
+  toPersistence(accountUuid: string): GoalPersistenceDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid,
+
+      // 基本信息
+      name: this.name,
+      description: this.description,
+      color: this.color,
+      dirUuid: this.dirUuid,
+      startTime: this.startTime,
+      endTime: this.endTime,
+      note: this.note,
+
+      // 分析信息 - 扁平化
+      motive: this.analysis.motive,
+      feasibility: this.analysis.feasibility,
+      importanceLevel: this.analysis.importanceLevel,
+      urgencyLevel: this.analysis.urgencyLevel,
+
+      // 生命周期
+      createdAt: this.lifecycle.createdAt,
+      updatedAt: this.lifecycle.updatedAt,
+      status: this.lifecycle.status as GoalContracts.GoalStatus,
+
+      // 元数据 - JSON 存储
+      tags: JSON.stringify(this.metadata.tags),
+      category: this.metadata.category,
+
+      // 版本控制
+      version: this.version,
+    };
+  }
+
+  /**
+   * 从持久化 DTO 创建实体（不包含子实体）
+   */
+  static fromPersistence(data: GoalPersistenceDTO): Goal {
+    return new Goal({
+      uuid: data.uuid,
+      name: data.name,
+      description: data.description,
+      color: data.color,
+      dirUuid: data.dirUuid,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      note: data.note,
+      motive: data.motive,
+      feasibility: data.feasibility,
+      importanceLevel: data.importanceLevel,
+      urgencyLevel: data.urgencyLevel,
+      status: data.status as unknown as GoalContracts.GoalStatus,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      tags: safeJsonParse(data.tags, []),
+      category: data.category,
+      version: data.version,
+      // 子实体在加载时单独设置
+      keyResults: [],
+      records: [],
+      reviews: [],
+    });
   }
 
   toClient(): GoalContracts.GoalClientDTO {
@@ -1609,6 +1577,14 @@ export class Goal extends GoalCore {
       hasTodayProgress: todayRecordsStats.totalRecords > 0,
       todayProgressLevel,
       todayRecordsStats,
+      durationDays: this.endTime
+        ? Math.ceil((this.endTime.getTime() - this.startTime.getTime()) / (24 * 60 * 60 * 1000))
+        : 0,
+      elapsedDays: Math.max(
+        0,
+        Math.ceil((today.getTime() - this.startTime.getTime()) / (24 * 60 * 60 * 1000)),
+      ),
+      timeProgress,
     };
   }
 

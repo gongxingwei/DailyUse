@@ -43,6 +43,14 @@ export class GoalController {
         message: 'Goal created successfully',
       });
     } catch (error) {
+      // ✅ 区分验证错误和服务器错误
+      if (error instanceof Error && error.message.includes('Invalid UUID')) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
       res.status(500).json({
         success: false,
         message: error instanceof Error ? error.message : 'Failed to create goal',
@@ -52,16 +60,20 @@ export class GoalController {
 
   /**
    * 获取目标列表
+   * ✅ 返回格式: { success, data: { data: [...], total, page, limit, hasMore } }
+   * 前端 axios 拦截器会返回 response.data，所以分页信息必须在 data 字段内
    */
   static async getGoals(req: Request, res: Response) {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const queryParams = req.query;
-      const goals = await GoalController.goalService.getGoals(accountUuid, queryParams);
+      const listResponse = await GoalController.goalService.getGoals(accountUuid, queryParams);
 
+      // ✅ GoalListResponse 本身就包含 { data, total, page, limit, hasMore }
+      // 直接放在 data 字段中，axios 拦截器会返回这个完整对象
       res.json({
         success: true,
-        data: goals,
+        data: listResponse, // ✅ { data: [...], total, page, limit, hasMore }
         message: 'Goals retrieved successfully',
       });
     } catch (error) {

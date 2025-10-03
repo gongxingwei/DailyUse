@@ -1,8 +1,15 @@
 import { Account, User } from '@dailyuse/domain-server';
 import type { IAccountRepository } from '@dailyuse/domain-server';
-import { AccountStatus, AccountType } from '@dailyuse/domain-core';
-import type { AccountPersistenceDTO } from '@dailyuse/contracts';
+import { AccountContracts, sharedContracts } from '@dailyuse/contracts';
 import { prisma } from '../../../../../config/prisma';
+
+type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
+type AccountDTO = AccountContracts.AccountDTO;
+type AccountType = AccountContracts.AccountType;
+type AccountStatus = AccountContracts.AccountStatus;
+
+const AccountStatusEnum = AccountContracts.AccountStatus;
+const AccountTypeEnum = AccountContracts.AccountType;
 
 export class PrismaAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
@@ -245,11 +252,11 @@ export class PrismaAccountRepository implements IAccountRepository {
 
   private mapAccountTypeToString(type: AccountType): string {
     switch (type) {
-      case AccountType.LOCAL:
+      case AccountTypeEnum.LOCAL:
         return 'local';
-      case AccountType.ONLINE:
+      case AccountTypeEnum.ONLINE:
         return 'online';
-      case AccountType.GUEST:
+      case AccountTypeEnum.GUEST:
         return 'guest';
       default:
         return 'local';

@@ -31,6 +31,51 @@ function generateTestUuid(prefix = 'test'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// ✅ 处理关联数据加载（include）
+function includeRelations(tableName: keyof typeof mockDataStore, record: any, include: any): any {
+  const result = { ...record };
+
+  // 处理 goal 表的关联
+  if (tableName === 'goal') {
+    if (include.keyResults) {
+      const keyResults = Array.from(mockDataStore.keyResult.values()).filter(
+        (kr: any) => kr.goalUuid === record.uuid,
+      );
+
+      // 如果 keyResults 也有 include，递归处理
+      if (include.keyResults.include?.records) {
+        result.keyResults = keyResults.map((kr: any) => {
+          const records = Array.from(mockDataStore.progressRecord.values()).filter(
+            (r: any) => r.keyResultUuid === kr.uuid,
+          );
+          return { ...kr, records };
+        });
+      } else {
+        result.keyResults = keyResults;
+      }
+    }
+
+    if (include.reviews) {
+      const reviews = Array.from(mockDataStore.goalDir.values()).filter(
+        (review: any) => review.goalUuid === record.uuid,
+      );
+      result.reviews = reviews;
+    }
+  }
+
+  // 处理 keyResult 表的关联
+  if (tableName === 'keyResult') {
+    if (include.records) {
+      const records = Array.from(mockDataStore.progressRecord.values()).filter(
+        (r: any) => r.keyResultUuid === record.uuid,
+      );
+      result.records = records;
+    }
+  }
+
+  return result;
+}
+
 // 创建Mock的Prisma模型操作
 function createMockModel(tableName: keyof typeof mockDataStore) {
   const store = mockDataStore[tableName];
@@ -85,6 +130,13 @@ function createMockModel(tableName: keyof typeof mockDataStore) {
         });
       }
 
+      // ✅ 处理 include 参数
+      if (args?.include) {
+        filteredRecords = filteredRecords.map((record) =>
+          includeRelations(tableName, record, args.include),
+        );
+      }
+
       return filteredRecords;
     }),
 
@@ -101,14 +153,45 @@ function createMockModel(tableName: keyof typeof mockDataStore) {
       const allRecords = Array.from(store.values());
 
       if (!args?.where) {
-        return allRecords[0] || null;
+        const firstRecord = allRecords[0] || null;
+        // ✅ 处理 include 参数
+        if (firstRecord && args?.include) {
+          return includeRelations(tableName, firstRecord, args.include);
+        }
+        return firstRecord;
       }
 
-      return (
+      const foundRecord =
         allRecords.find((record) => {
-          return Object.entries(args.where).every(([key, value]) => record[key] === value);
-        }) || null
-      );
+          return Object.entries(args.where).every(([key, value]) => {
+            // 处理嵌套关系（例如 goal: { accountUuid: 'xxx' }）
+            if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+              // 跳过嵌套关系，仅匹配直接字段
+              if (key === 'goal' || key === 'keyResult' || key === 'task' || key === 'reminder') {
+                return true; // 忽略嵌套关系条件（在实际实现中应该通过关联查询）
+              }
+              // 处理其他对象条件（如 { gte, lte, in }）
+              const valueObj = value as any;
+              if (valueObj.gte && record[key]) {
+                return new Date(record[key]) >= new Date(valueObj.gte);
+              }
+              if (valueObj.lte && record[key]) {
+                return new Date(record[key]) <= new Date(valueObj.lte);
+              }
+              if (valueObj.in && Array.isArray(valueObj.in)) {
+                return valueObj.in.includes(record[key]);
+              }
+            }
+            return record[key] === value;
+          });
+        }) || null;
+
+      // ✅ 处理 include 参数
+      if (foundRecord && args?.include) {
+        return includeRelations(tableName, foundRecord, args.include);
+      }
+
+      return foundRecord;
     }),
 
     create: vi.fn(async (args?: any) => {
@@ -292,6 +375,7 @@ export const mockPrismaClient = {
   goalDir: createMockModel('goalDir'),
   keyResult: createMockModel('keyResult'),
   progressRecord: createMockModel('progressRecord'),
+  goalRecord: createMockModel('progressRecord'), // 别名：goalRecord 指向 progressRecord
 
   // Reminder相关表
   reminderTemplate: createMockModel('reminderTemplate'),

@@ -1,0 +1,479 @@
+import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts as GoalContractsEnums } from '@dailyuse/contracts';
+import { Goal, type IGoalRepository, GoalDomainException } from '@dailyuse/domain-server';
+
+/**
+ * Goal 聚合根服务
+ * 体现DDD聚合根控制模式：通过聚合根管理所有子实体的CRUD操作
+ *
+ * 核心原则：
+ * 1. 所有子实体操作都通过聚合根进行
+ * 2. 聚合根负责维护业务规则和数据一致性
+ * 3. 发布领域事件通知其他模块
+ */
+export class GoalAggregateService {
+  constructor(private goalRepository: IGoalRepository) {}
+
+  // ===== 聚合根控制：关键结果管理 =====
+
+  /**
+   * 通过聚合根创建关键结果
+   * 体现DDD原则：只能通过Goal聚合根创建KeyResult
+   */
+  async createKeyResultForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      uuid?: string; // ✅ 添加 uuid 参数
+      name: string;
+      description?: string;
+      startValue: number;
+      targetValue: number;
+      currentValue?: number;
+      unit: string;
+      weight: number;
+      calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
+    },
+  ): Promise<GoalContracts.KeyResultResponse> {
+    // ✅ 验证 UUID 格式（如果提供）
+    if (request.uuid) {
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(request.uuid)) {
+        throw new Error('Invalid KeyResult UUID format');
+      }
+    }
+
+    // 1. 获取聚合根实体
+    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalEntity) {
+      throw new Error('Goal not found');
+    }
+
+    // 2. 通过聚合根创建关键结果（业务规则验证在这里）
+    const keyResultUuid = goalEntity.createKeyResult({
+      uuid: request.uuid, // 使用前端提供的 UUID（如果有）
+      name: request.name,
+      description: request.description,
+      startValue: request.startValue,
+      targetValue: request.targetValue,
+      currentValue: request.currentValue,
+      unit: request.unit,
+      weight: request.weight,
+      calculationMethod: request.calculationMethod,
+    });
+
+    // 3. 获取新创建的关键结果
+    const newKeyResult = goalEntity.getKeyResult(keyResultUuid);
+    if (!newKeyResult) {
+      throw new Error('Failed to create key result');
+    }
+
+    // 4. 保存整个聚合根（包括新的关键结果）
+    const savedGoal = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+
+    // 5. 从保存后的聚合中获取关键结果
+    const savedKeyResult = savedGoal.getKeyResult(keyResultUuid);
+    if (!savedKeyResult) {
+      throw new Error('Failed to retrieve saved key result');
+    }
+
+    // 6. 返回响应
+    return {
+      uuid: savedKeyResult.uuid,
+      goalUuid: savedKeyResult.goalUuid,
+      name: savedKeyResult.name,
+      description: savedKeyResult.description,
+      startValue: savedKeyResult.startValue,
+      targetValue: savedKeyResult.targetValue,
+      currentValue: savedKeyResult.currentValue,
+      unit: savedKeyResult.unit,
+      weight: savedKeyResult.weight,
+      calculationMethod: savedKeyResult.calculationMethod,
+      progress: savedKeyResult.progress,
+      isCompleted: savedKeyResult.isCompleted,
+      remaining: savedKeyResult.remaining,
+      lifecycle: {
+        createdAt: savedKeyResult.lifecycle.createdAt.getTime(),
+        updatedAt: savedKeyResult.lifecycle.updatedAt.getTime(),
+        status: savedKeyResult.lifecycle.status,
+      },
+    };
+  }
+
+  /**
+   * 通过聚合根更新关键结果
+   */
+  async updateKeyResultForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultUuid: string,
+    request: {
+      name?: string;
+      description?: string;
+      currentValue?: number;
+      weight?: number;
+      status?: 'active' | 'completed' | 'archived';
+    },
+  ): Promise<GoalContracts.KeyResultResponse> {
+    // 1. 获取聚合根 DTO（包含所有子实体）
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalDTO) {
+      throw new Error('Goal not found');
+    }
+
+    // 2. 重建聚合根实体
+    const goal = Goal.fromDTO(goalDTO);
+
+    // 3. 通过聚合根更新 KeyResult（聚合根会处理业务规则）
+    const updates: any = {};
+    if (request.name !== undefined) updates.name = request.name;
+    if (request.description !== undefined) updates.description = request.description;
+    if (request.currentValue !== undefined) updates.currentValue = request.currentValue;
+    if (request.weight !== undefined) updates.weight = request.weight;
+
+    goal.updateKeyResult(keyResultUuid, updates);
+
+    // 4. 持久化更改
+    const updatedKeyResult = goal.getKeyResult(keyResultUuid);
+    if (!updatedKeyResult) {
+      throw new Error('KeyResult not found after update');
+    }
+
+    await this.goalRepository.updateKeyResult(accountUuid, keyResultUuid, updatedKeyResult.toDTO());
+
+    // 5. 更新 Goal 版本
+    await this.goalRepository.updateGoal(accountUuid, goalUuid, {
+      version: goal.version,
+      lifecycle: {
+        createdAt: goal.lifecycle.createdAt.getTime(),
+        updatedAt: goal.lifecycle.updatedAt.getTime(),
+        status: goal.lifecycle.status as GoalContractsEnums.GoalStatus,
+      },
+    });
+
+    // 6. 转换为 Response
+    const dto = updatedKeyResult.toDTO();
+    return {
+      uuid: dto.uuid,
+      goalUuid: dto.goalUuid,
+      name: dto.name,
+      description: dto.description,
+      startValue: dto.startValue,
+      targetValue: dto.targetValue,
+      currentValue: dto.currentValue,
+      unit: dto.unit,
+      weight: dto.weight,
+      calculationMethod: dto.calculationMethod,
+      progress: updatedKeyResult.progress,
+      isCompleted: updatedKeyResult.isCompleted,
+      remaining: updatedKeyResult.remaining,
+      lifecycle: dto.lifecycle,
+    };
+  }
+
+  /**
+   * 通过聚合根删除关键结果
+   */
+  async removeKeyResultFromGoal(
+    accountUuid: string,
+    goalUuid: string,
+    keyResultUuid: string,
+  ): Promise<void> {
+    // 1. 获取聚合根 DTO（包含所有子实体）
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalDTO) {
+      throw new Error('Goal not found');
+    }
+
+    // 2. 重建聚合根实体
+    const goal = Goal.fromDTO(goalDTO);
+
+    // 3. 获取相关记录（用于级联删除）
+    const records = await this.goalRepository.getGoalRecordsByKeyResultUuid(
+      accountUuid,
+      keyResultUuid,
+    );
+
+    // 4. 通过聚合根删除 KeyResult（聚合根会处理业务规则和领域事件）
+    goal.removeKeyResult(keyResultUuid);
+
+    // 5. 持久化删除操作
+    await this.goalRepository.deleteKeyResult(accountUuid, keyResultUuid);
+
+    // 6. 级联删除相关记录
+    for (const record of records) {
+      await this.goalRepository.deleteGoalRecord(accountUuid, record.uuid);
+    }
+
+    // 7. 更新 Goal 版本
+    await this.goalRepository.updateGoal(accountUuid, goalUuid, {
+      version: goal.version,
+      lifecycle: {
+        createdAt: goal.lifecycle.createdAt.getTime(),
+        updatedAt: goal.lifecycle.updatedAt.getTime(),
+        status: goal.lifecycle.status as GoalContractsEnums.GoalStatus,
+      },
+    });
+  }
+
+  // ===== 聚合根控制：目标记录管理 =====
+
+  /**
+   * 通过聚合根创建目标记录
+   */
+  async createRecordForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      uuid?: string;
+      keyResultUuid: string;
+      value: number;
+      note?: string;
+    },
+  ): Promise<GoalContracts.GoalRecordClientDTO> {
+    // 1. 获取聚合根
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalDTO) {
+      throw new Error('Goal not found');
+    }
+
+    // 2. ✅ 验证 KeyResult 是否存在
+    const keyResult = await this.goalRepository.getKeyResultByUuid(
+      accountUuid,
+      request.keyResultUuid,
+    );
+    if (!keyResult) {
+      throw new GoalDomainException(GoalContractsEnums.GoalErrorCode.KEY_RESULT_NOT_FOUND);
+    }
+
+    // 验证 KeyResult 属于该 Goal
+    if (keyResult.goalUuid !== goalUuid) {
+      throw new GoalDomainException(
+        GoalContractsEnums.GoalErrorCode.KEY_RESULT_NOT_BELONGS_TO_GOAL,
+      );
+    }
+
+    // 3. 构建聚合根
+    const goal = Goal.fromDTO(goalDTO);
+    // 注意：不直接添加DTO到聚合根，在需要时单独处理业务逻辑
+
+    // 4. 通过聚合根创建记录（自动更新关键结果进度）
+    const recordUuid = goal.createRecord({
+      uuid: request.uuid, // ✅ 传递前端提供的 UUID
+      keyResultUuid: request.keyResultUuid,
+      value: request.value,
+      note: request.note,
+    });
+
+    // 5. 持久化记录
+    const recordData: Partial<GoalContracts.GoalRecordDTO> = {
+      uuid: recordUuid, // ✅ 使用聚合根生成的 UUID（可能是前端提供的）
+      goalUuid,
+      keyResultUuid: request.keyResultUuid,
+      value: request.value,
+      note: request.note,
+    };
+
+    const savedRecord = await this.goalRepository.createGoalRecord(accountUuid, recordData as any);
+
+    // 6. 更新关键结果的当前值
+    const updatedKeyResult = goal.getKeyResult(request.keyResultUuid);
+    if (updatedKeyResult) {
+      await this.goalRepository.updateKeyResult(accountUuid, request.keyResultUuid, {
+        currentValue: updatedKeyResult.currentValue,
+        lifecycle: {
+          createdAt: updatedKeyResult.lifecycle.createdAt.getTime(),
+          updatedAt: Date.now(),
+          status: updatedKeyResult.lifecycle.status,
+        },
+      });
+    }
+
+    return {
+      uuid: savedRecord.uuid,
+      goalUuid: savedRecord.goalUuid,
+      keyResultUuid: savedRecord.keyResultUuid,
+      value: savedRecord.value,
+      note: savedRecord.note,
+      createdAt: savedRecord.createdAt,
+    };
+  }
+
+  // ===== 聚合根控制：目标复盘管理 =====
+
+  /**
+   * 通过聚合根创建目标复盘
+   */
+  async createReviewForGoal(
+    accountUuid: string,
+    goalUuid: string,
+    request: {
+      title: string;
+      type: 'weekly' | 'monthly' | 'midterm' | 'final' | 'custom';
+      content: {
+        achievements: string;
+        challenges: string;
+        learnings: string;
+        nextSteps: string;
+        adjustments?: string;
+      };
+      rating: {
+        progressSatisfaction: number;
+        executionEfficiency: number;
+        goalReasonableness: number;
+      };
+      reviewDate?: Date;
+    },
+  ): Promise<GoalContracts.GoalReviewClientDTO> {
+    // 1. 获取聚合根（包含完整状态）
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalDTO) {
+      throw new Error('Goal not found');
+    }
+
+    const keyResults = await this.goalRepository.getKeyResultsByGoalUuid(accountUuid, goalUuid);
+
+    // 2. 构建聚合根
+    const goal = Goal.fromDTO(goalDTO);
+    // 注意：这里不加载关键结果到聚合根中，直接用于复盘快照生成
+
+    // 3. 通过聚合根创建复盘（生成当前状态快照）
+    const reviewUuid = goal.createReview({
+      title: request.title,
+      type: request.type as GoalContractsEnums.GoalReviewType,
+      content: request.content,
+      rating: request.rating,
+      reviewDate: request.reviewDate,
+    });
+
+    // 4. 获取生成的复盘
+    const newReview = goal.getLatestReview();
+    if (!newReview) {
+      throw new Error('Failed to create review');
+    }
+
+    // 5. 持久化复盘
+    const reviewData: Omit<GoalContracts.GoalReviewDTO, 'uuid' | 'createdAt' | 'updatedAt'> = {
+      goalUuid,
+      title: newReview.title,
+      type: newReview.type,
+      reviewDate: newReview.reviewDate.getTime(),
+      content: newReview.content,
+      snapshot: {
+        ...newReview.snapshot,
+        snapshotDate: newReview.snapshot.snapshotDate.getTime(),
+      },
+      rating: newReview.rating,
+    };
+
+    const savedReview = await this.goalRepository.createGoalReview(accountUuid, reviewData);
+
+    return {
+      uuid: savedReview.uuid,
+      goalUuid: savedReview.goalUuid,
+      title: savedReview.title,
+      type: savedReview.type,
+      reviewDate: savedReview.reviewDate,
+      content: savedReview.content,
+      snapshot: savedReview.snapshot,
+      rating: savedReview.rating,
+      overallRating:
+        (savedReview.rating.progressSatisfaction +
+          savedReview.rating.executionEfficiency +
+          savedReview.rating.goalReasonableness) /
+        3,
+      isPositiveReview:
+        (savedReview.rating.progressSatisfaction +
+          savedReview.rating.executionEfficiency +
+          savedReview.rating.goalReasonableness) /
+          3 >=
+        7,
+      createdAt: savedReview.createdAt,
+      updatedAt: savedReview.updatedAt,
+    };
+  }
+
+  // ===== 聚合根完整视图 =====
+
+  /**
+   * 获取聚合根的完整视图（用于复杂查询）
+   */
+  async getGoalAggregateView(
+    accountUuid: string,
+    goalUuid: string,
+  ): Promise<GoalContracts.GoalAggregateViewResponse> {
+    // 1. 获取根实体
+    const goalDTO = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    if (!goalDTO) {
+      throw new Error('Goal not found');
+    }
+
+    // 2. 获取所有子实体
+    const [keyResults, records, reviews] = await Promise.all([
+      this.goalRepository.getKeyResultsByGoalUuid(accountUuid, goalUuid),
+      this.goalRepository.getGoalRecordsByGoalUuid(accountUuid, goalUuid),
+      this.goalRepository.getGoalReviewsByGoalUuid(accountUuid, goalUuid),
+    ]);
+
+    // 3. 构建Goal实体以获取响应格式
+    const goal = Goal.fromDTO(goalDTO);
+
+    // 4. 直接返回视图数据
+    return {
+      goal: goal.toClient(),
+      keyResults: keyResults.map((kr) => ({
+        uuid: kr.uuid,
+        goalUuid: kr.goalUuid,
+        name: kr.name,
+        description: kr.description,
+        startValue: kr.startValue,
+        targetValue: kr.targetValue,
+        currentValue: kr.currentValue,
+        unit: kr.unit,
+        weight: kr.weight,
+        calculationMethod: kr.calculationMethod,
+        progress: Math.min((kr.currentValue / kr.targetValue) * 100, 100),
+        isCompleted: kr.currentValue >= kr.targetValue,
+        remaining: Math.max(kr.targetValue - kr.currentValue, 0),
+        lifecycle: kr.lifecycle,
+      })),
+      recentRecords: records.records.slice(0, 5).map((record) => ({
+        uuid: record.uuid,
+        goalUuid: record.goalUuid,
+        keyResultUuid: record.keyResultUuid,
+        value: record.value,
+        note: record.note,
+        createdAt: record.createdAt,
+      })),
+      reviews: reviews.map((review) => ({
+        uuid: review.uuid,
+        goalUuid: review.goalUuid,
+        title: review.title,
+        type: review.type,
+        reviewDate: review.reviewDate,
+        content: review.content,
+        snapshot: {
+          ...review.snapshot,
+          snapshotDate:
+            typeof review.snapshot.snapshotDate === 'number'
+              ? review.snapshot.snapshotDate
+              : review.snapshot.snapshotDate,
+        },
+        rating: review.rating,
+        overallRating:
+          (review.rating.progressSatisfaction +
+            review.rating.executionEfficiency +
+            review.rating.goalReasonableness) /
+          3,
+        isPositiveReview:
+          (review.rating.progressSatisfaction +
+            review.rating.executionEfficiency +
+            review.rating.goalReasonableness) /
+            3 >=
+          7,
+        createdAt: review.createdAt,
+        updatedAt: review.updatedAt,
+      })),
+    };
+  }
+}

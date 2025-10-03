@@ -1,6 +1,8 @@
 import { GoalDirCore } from '@dailyuse/domain-core';
 import { GoalContracts } from '@dailyuse/contracts';
 
+type GoalDirPersistenceDTO = GoalContracts.GoalDirPersistenceDTO;
+
 // 枚举别名
 const GoalSortFieldEnum = GoalContracts.GoalSortField;
 const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
@@ -147,5 +149,55 @@ export class GoalDir extends GoalDirCore {
       ...baseDTO,
       goalsCount,
     };
+  }
+
+  // ===== 持久化转换方法 =====
+
+  /**
+   * 转换为持久化 DTO（扁平化存储）
+   */
+  toPersistence(accountUuid: string): GoalDirPersistenceDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid,
+      parentUuid: this.parentUuid,
+      // 基本信息
+      name: this.name,
+      description: this.description,
+      icon: this.icon,
+      color: this.color,
+      // 排序配置
+      sortKey: this.sortConfig.sortKey as string,
+      sortOrder: this.sortConfig.sortOrder,
+      // 系统配置
+      status: this.lifecycle.status,
+      isDefault: false, // 默认非默认目录
+      metadata: undefined, // 元数据
+      systemType: undefined, // 系统类型
+      // 生命周期
+      createdAt: this.lifecycle.createdAt,
+      updatedAt: this.lifecycle.updatedAt,
+    };
+  }
+
+  /**
+   * 从持久化 DTO 创建实例
+   */
+  static fromPersistence(data: GoalDirPersistenceDTO): GoalDir {
+    return new GoalDir({
+      uuid: data.uuid,
+      name: data.name,
+      description: data.description,
+      icon: data.icon,
+      color: data.color,
+      parentUuid: data.parentUuid,
+      sortConfig: {
+        sortKey: data.sortKey as GoalContracts.GoalSortField,
+        sortOrder: data.sortOrder,
+      },
+      status: data.status,
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+    });
   }
 }

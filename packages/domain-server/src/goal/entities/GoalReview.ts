@@ -3,6 +3,7 @@ import { Goal, GoalContracts } from '@dailyuse/contracts';
 
 type IGoalReview = GoalContracts.IGoalReview;
 type GoalReviewType = GoalContracts.GoalReviewType;
+type GoalReviewPersistenceDTO = GoalContracts.GoalReviewPersistenceDTO;
 const GoalReviewType = GoalContracts.GoalReviewType;
 /**
  * 服务端 GoalReview 实体
@@ -344,12 +345,12 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
     };
   }
 
-  // ===== 数据库转换方法 =====
+  // ===== 持久化转换方法 =====
 
   /**
-   * 转换为数据库 DTO（扁平化存储）
+   * 转换为持久化 DTO（扁平化存储）
    */
-  toDatabase(): any {
+  toPersistence(): GoalReviewPersistenceDTO {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
@@ -367,20 +368,20 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
   }
 
   /**
-   * 从数据库 DTO 创建实例
+   * 从持久化 DTO 创建实例
    */
-  static fromDatabase(dbData: any): GoalReview {
+  static fromPersistence(data: GoalReviewPersistenceDTO): GoalReview {
     return new GoalReview({
-      uuid: dbData.uuid,
-      goalUuid: dbData.goalUuid,
-      title: dbData.title,
-      type: dbData.type,
-      reviewDate: dbData.reviewDate,
-      content: JSON.parse(dbData.content),
-      snapshot: JSON.parse(dbData.snapshot),
-      rating: JSON.parse(dbData.rating),
-      createdAt: dbData.createdAt,
-      updatedAt: dbData.updatedAt,
+      uuid: data.uuid,
+      goalUuid: data.goalUuid,
+      title: data.title,
+      type: data.type,
+      reviewDate: data.reviewDate,
+      content: JSON.parse(data.content),
+      snapshot: JSON.parse(data.snapshot),
+      rating: JSON.parse(data.rating),
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
     });
   }
 }

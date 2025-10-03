@@ -1,19 +1,14 @@
 import type { IGoalRepository } from '../repositories/iGoalRepository';
 import { GoalDir } from '../aggregates/GoalDir';
 import { GoalContracts } from '@dailyuse/contracts';
-import { generateUUID } from '@dailyuse/utils';
 
 // 枚举别名
 const GoalSortFieldEnum = GoalContracts.GoalSortField;
 const GoalDirSystemTypeEnum = GoalContracts.GoalDirSystemType;
-const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
 
 /**
  * 用户数据初始化服务
  * 负责为新用户创建默认的目标目录和其他初始数据
- *
- * NOTE: 由于 GoalDir 实体暂时不支持 systemType/isDefault 字段，
- * 此服务通过直接操作持久化层来创建系统目录
  */
 export class UserDataInitializationService {
   constructor(private readonly goalRepository: IGoalRepository) {}
@@ -40,9 +35,8 @@ export class UserDataInitializationService {
    * @param accountUuid 用户账户UUID
    */
   private async createDefaultDirectories(accountUuid: string): Promise<void> {
-    const defaultDirectories: GoalContracts.GoalDirDTO[] = [
+    const defaultDirectories: Omit<GoalContracts.GoalDirDTO, 'uuid' | 'lifecycle'>[] = [
       {
-        uuid: generateUUID(),
         name: '全部目标',
         description: '所有目标的默认分类',
         icon: '📋',
@@ -59,14 +53,8 @@ export class UserDataInitializationService {
           autoManaged: true,
           description: '系统自动创建的默认目录，用于显示所有目标',
         },
-        lifecycle: {
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          status: GoalDirStatusEnum.ACTIVE,
-        },
       },
       {
-        uuid: generateUUID(),
         name: '未分类',
         description: '未指定目录的目标',
         icon: '📂',
@@ -83,14 +71,8 @@ export class UserDataInitializationService {
           autoManaged: true,
           description: '系统自动创建的未分类目录',
         },
-        lifecycle: {
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          status: GoalDirStatusEnum.ACTIVE,
-        },
       },
       {
-        uuid: generateUUID(),
         name: '已归档',
         description: '已完成或不再活跃的目标',
         icon: '📦',
@@ -107,11 +89,6 @@ export class UserDataInitializationService {
           autoManaged: true,
           description: '系统自动创建的归档目录',
         },
-        lifecycle: {
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          status: GoalDirStatusEnum.ACTIVE,
-        },
       },
     ];
 
@@ -127,11 +104,9 @@ export class UserDataInitializationService {
    * @param accountUuid 用户账户UUID
    */
   async ensureDefaultDirectories(accountUuid: string): Promise<void> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
-
-    // 转换为 DTO 数组以访问 systemType
-    const existingDirDTOs = result.goalDirs.map((dir) => dir.toDTO());
-    const systemTypes = existingDirDTOs
+    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    // 现在 goalDirs 是 GoalDir[] 实体数组
+    const systemTypes = existingDirs.goalDirs
       .filter((dir) => dir.systemType)
       .map((dir) => dir.systemType);
 
@@ -147,65 +122,62 @@ export class UserDataInitializationService {
     }
 
     // 创建缺失的系统目录
-    const directoriesToCreate: GoalContracts.GoalDirDTO[] = missingSystemTypes.map((systemType) => {
-      const baseDir = {
-        uuid: generateUUID(),
-        parentUuid: undefined,
-        sortConfig: {
-          sortKey: GoalSortFieldEnum.CREATED_AT,
-          sortOrder: 0,
-        },
-        lifecycle: {
-          createdAt: Date.now(),
-          updatedAt: Date.now(),
-          status: GoalDirStatusEnum.ACTIVE,
-        },
-        metadata: {
-          systemCreated: true,
-          autoManaged: true,
-        },
-      };
-
+    const directoriesToCreate = missingSystemTypes.map((systemType, index) => {
       switch (systemType) {
         case GoalDirSystemTypeEnum.ALL:
           return {
-            ...baseDir,
             name: '全部目标',
             description: '所有目标的默认分类',
             icon: '📋',
             color: '#3B82F6',
+            parentUuid: undefined,
+            sortConfig: {
+              sortKey: GoalSortFieldEnum.CREATED_AT,
+              sortOrder: 0,
+            },
             systemType,
             isDefault: true,
             metadata: {
-              ...baseDir.metadata,
+              systemCreated: true,
+              autoManaged: true,
               description: '系统自动创建的默认目录，用于显示所有目标',
             },
           };
         case GoalDirSystemTypeEnum.UNCATEGORIZED:
           return {
-            ...baseDir,
             name: '未分类',
             description: '未指定目录的目标',
             icon: '📂',
             color: '#64748B',
+            parentUuid: undefined,
+            sortConfig: {
+              sortKey: GoalSortFieldEnum.CREATED_AT,
+              sortOrder: 1,
+            },
             systemType,
             isDefault: false,
             metadata: {
-              ...baseDir.metadata,
+              systemCreated: true,
+              autoManaged: true,
               description: '系统自动创建的未分类目录',
             },
           };
         case GoalDirSystemTypeEnum.ARCHIVED:
           return {
-            ...baseDir,
             name: '已归档',
             description: '已完成或不再活跃的目标',
             icon: '📦',
             color: '#9CA3AF',
+            parentUuid: undefined,
+            sortConfig: {
+              sortKey: GoalSortFieldEnum.CREATED_AT,
+              sortOrder: 2,
+            },
             systemType,
             isDefault: false,
             metadata: {
-              ...baseDir.metadata,
+              systemCreated: true,
+              autoManaged: true,
               description: '系统自动创建的归档目录',
             },
           };
@@ -226,20 +198,20 @@ export class UserDataInitializationService {
    * @returns 默认目录DTO，如果不存在则创建
    */
   async getDefaultDirectory(accountUuid: string): Promise<GoalContracts.GoalDirDTO> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
-    const dirDTOs = result.goalDirs.map((dir) => dir.toDTO());
-
-    let defaultDir = dirDTOs.find((dir) => dir.systemType === 'ALL' && dir.isDefault);
+    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    let defaultDir = existingDirs.goalDirs.find(
+      (dir: GoalContracts.GoalDirDTO) => dir.systemType === 'ALL' && dir.isDefault,
+    );
 
     if (!defaultDir) {
       // 确保默认目录存在
       await this.ensureDefaultDirectories(accountUuid);
 
       // 重新获取
-      const updatedResult = await this.goalRepository.getAllGoalDirectories(accountUuid);
-      const updatedDTOs = updatedResult.goalDirs.map((dir) => dir.toDTO());
-
-      defaultDir = updatedDTOs.find((dir) => dir.systemType === 'ALL' && dir.isDefault);
+      const updatedDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+      defaultDir = updatedDirs.goalDirs.find(
+        (dir: GoalContracts.GoalDirDTO) => dir.systemType === 'ALL' && dir.isDefault,
+      );
 
       if (!defaultDir) {
         throw new Error('Failed to create or find default directory');
@@ -255,18 +227,18 @@ export class UserDataInitializationService {
    * @returns 未分类目录DTO
    */
   async getUncategorizedDirectory(accountUuid: string): Promise<GoalContracts.GoalDirDTO> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
-    const dirDTOs = result.goalDirs.map((dir) => dir.toDTO());
-
-    let uncategorizedDir = dirDTOs.find((dir) => dir.systemType === 'UNCATEGORIZED');
+    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    let uncategorizedDir = existingDirs.goalDirs.find(
+      (dir: GoalContracts.GoalDirDTO) => dir.systemType === 'UNCATEGORIZED',
+    );
 
     if (!uncategorizedDir) {
       await this.ensureDefaultDirectories(accountUuid);
 
-      const updatedResult = await this.goalRepository.getAllGoalDirectories(accountUuid);
-      const updatedDTOs = updatedResult.goalDirs.map((dir) => dir.toDTO());
-
-      uncategorizedDir = updatedDTOs.find((dir) => dir.systemType === 'UNCATEGORIZED');
+      const updatedDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+      uncategorizedDir = updatedDirs.goalDirs.find(
+        (dir: GoalContracts.GoalDirDTO) => dir.systemType === 'UNCATEGORIZED',
+      );
 
       if (!uncategorizedDir) {
         throw new Error('Failed to create or find uncategorized directory');

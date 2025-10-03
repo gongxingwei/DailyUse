@@ -2,15 +2,28 @@ import type { Request, Response } from 'express';
 import { GoalDirApplicationService } from '../../../application/services/GoalDirApplicationService';
 import type { GoalContracts } from '@dailyuse/contracts';
 import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
+import { GoalContainer } from '../../../infrastructure/di/GoalContainer';
 
 export class GoalDirController {
-  private static goalDirService = new GoalDirApplicationService();
+  private static goalDirService: GoalDirApplicationService;
+
+  /**
+   * 初始化服务（使用依赖注入）
+   */
+  private static async initializeService(): Promise<void> {
+    if (!this.goalDirService) {
+      const container = GoalContainer.getInstance();
+      const goalRepository = await container.getPrismaGoalRepository();
+      this.goalDirService = new GoalDirApplicationService(goalRepository);
+    }
+  }
 
   /**
    * 创建目标目录
    */
   static async createGoalDir(req: AuthenticatedRequest, res: Response) {
     try {
+      await GoalDirController.initializeService();
       const request: GoalContracts.CreateGoalDirRequest = req.body;
 
       // 从认证中间件获取用户UUID
@@ -36,6 +49,7 @@ export class GoalDirController {
    */
   static async getGoalDirs(req: AuthenticatedRequest, res: Response) {
     try {
+      await GoalDirController.initializeService();
       const queryParams = req.query;
 
       // 从认证中间件获取用户UUID
@@ -61,6 +75,7 @@ export class GoalDirController {
    */
   static async getGoalDirById(req: AuthenticatedRequest, res: Response) {
     try {
+      await GoalDirController.initializeService();
       const { id } = req.params;
 
       // 从认证中间件获取用户UUID
@@ -93,6 +108,7 @@ export class GoalDirController {
    */
   static async updateGoalDir(req: AuthenticatedRequest, res: Response) {
     try {
+      await GoalDirController.initializeService();
       const { id } = req.params;
       const request: GoalContracts.UpdateGoalDirRequest = req.body;
 
@@ -123,6 +139,7 @@ export class GoalDirController {
    */
   static async deleteGoalDir(req: AuthenticatedRequest, res: Response) {
     try {
+      await GoalDirController.initializeService();
       const { id } = req.params;
 
       // 从认证中间件获取用户UUID

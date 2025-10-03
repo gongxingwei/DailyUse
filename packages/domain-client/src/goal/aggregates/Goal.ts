@@ -226,19 +226,6 @@ export class Goal extends GoalCore {
     this.updateVersion();
   }
 
-  /**
-   * 更新关键结果进度
-   */
-  updateKeyResultProgress(keyResultUuid: string, increment: number, note?: string): void {
-    const keyResult = this.keyResults.find((kr) => kr.uuid === keyResultUuid);
-    if (!keyResult) {
-      throw new Error('关键结果不存在');
-    }
-
-    keyResult.updateProgress(increment, 'increment');
-    this.updateVersion();
-  }
-
   // ===== 客户端特有方法 =====
 
   /**

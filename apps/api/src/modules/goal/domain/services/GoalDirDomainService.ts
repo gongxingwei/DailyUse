@@ -1,123 +1,112 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import { PrismaClient } from '@prisma/client';
-import type { IGoalRepository } from '@dailyuse/domain-server';
-import { PrismaGoalRepository } from '../../infrastructure/repositories/prismaGoalRepository.js';
+import type { IGoalRepository, GoalDir } from '@dailyuse/domain-server';
 
 type CreateGoalDirRequest = GoalContracts.CreateGoalDirRequest;
 type UpdateGoalDirRequest = GoalContracts.UpdateGoalDirRequest;
 type GoalDirResponse = GoalContracts.GoalDirResponse;
 type GoalDirListResponse = GoalContracts.GoalDirListResponse;
 
+/**
+ * GoalDir 领域服务
+ *
+ * 职责：
+ * - 纯领域逻辑，不依赖具体技术实现
+ * - 通过 IGoalRepository 接口操作数据
+ * - 处理 GoalDir 聚合根的业务规则
+ * - 可以安全地移动到 @dailyuse/domain-server 包
+ *
+ * 设计原则：
+ * - 依赖倒置：依赖接口而非实现
+ * - 单一职责：只处理 GoalDir 相关的领域逻辑
+ * - 与技术解耦：不包含任何基础设施细节（Prisma、Express等）
+ */
 export class GoalDirDomainService {
-  private goalRepository: IGoalRepository;
-
-  constructor() {
-    const prisma = new PrismaClient();
-    this.goalRepository = new PrismaGoalRepository(prisma);
-  }
+  constructor(private readonly goalRepository: IGoalRepository) {}
 
   /**
    * 创建目标目录
+   * 业务规则：
+   * 1. 名称、图标、颜色必填
+   * 2. 父目录必须存在
+   * 3. 同一层级下目录名称唯一
    */
   async createGoalDir(
     request: CreateGoalDirRequest,
-    accountUuid?: string,
+    accountUuid: string,
   ): Promise<GoalDirResponse> {
-    // 获取用户UUID（从请求上下文或参数）
-    const userAccountUuid = accountUuid || 'temp-account-uuid'; // 待实现认证中间件后从 req.user 获取
+    // 验证必填字段
+    this.validateRequiredFields(request);
 
-    // 验证请求数据
-    if (!request.name?.trim()) {
-      throw new Error('目录名称不能为空');
-    }
-
-    if (!request.icon?.trim()) {
-      throw new Error('图标不能为空');
-    }
-
-    if (!request.color?.trim()) {
-      throw new Error('颜色不能为空');
-    }
-
-    // 设置默认值
+    // 构建目录数据
     const dirData: Omit<GoalContracts.GoalDirDTO, 'uuid' | 'lifecycle'> = {
-      accountUuid: userAccountUuid,
       name: request.name.trim(),
       description: request.description?.trim() || '',
       icon: request.icon.trim(),
       color: request.color.trim(),
       parentUuid: request.parentUuid || undefined,
       sortConfig: request.sortConfig || {
-        sortKey: 'createdAt',
+        sortKey: 'createdAt' as GoalContracts.GoalSortField,
         sortOrder: 0,
       },
     };
 
-    // 验证父目录是否存在
-    if (dirData.parentUuid) {
-      const parentDir = await this.goalRepository.getGoalDirectoryByUuid(
-        userAccountUuid,
-        dirData.parentUuid,
-      );
-      if (!parentDir) {
-        throw new Error('父目录不存在');
-      }
-    }
+    // 验证父目录
+    await this.validateParentDirectory(accountUuid, dirData.parentUuid);
 
-    // 验证目录名称唯一性（在同一层级下）
-    const existingDirs = await this.goalRepository.getAllGoalDirectories(userAccountUuid, {
-      parentUuid: dirData.parentUuid,
-    });
+    // 验证名称唯一性
+    await this.validateUniqueNameInLevel(accountUuid, dirData.name, dirData.parentUuid);
 
-    const nameExists = existingDirs.goalDirs.some((dir) => dir.name === dirData.name);
-    if (nameExists) {
-      throw new Error('目录名称在当前层级下已存在');
-    }
-
-    // 创建目录
-    const createdDir = await this.goalRepository.createGoalDirectory(userAccountUuid, dirData);
-
-    // 构造响应对象
-    const response: GoalDirResponse = {
-      ...createdDir,
-      goalsCount: 0, // 新创建的目录没有目标
+    // 创建实体并保存
+    const dirDTO: GoalContracts.GoalDirDTO = {
+      ...dirData,
+      uuid: '',
+      lifecycle: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        status: 'active' as GoalContracts.GoalDirStatus,
+      },
     };
 
-    return response;
+    const dirEntity = await this.createEntityFromDTO(dirDTO);
+    const savedDirEntity = await this.goalRepository.saveGoalDirectory(accountUuid, dirEntity);
+    const createdDir = savedDirEntity.toDTO();
+
+    return {
+      ...createdDir,
+      goalsCount: 0,
+    };
   }
 
   /**
    * 获取目标目录列表
    */
-  async getGoalDirs(queryParams: any, accountUuid?: string): Promise<GoalDirListResponse> {
-    // 获取用户UUID
-    const userAccountUuid = accountUuid || 'temp-account-uuid';
-
-    // 处理查询参数
+  async getGoalDirs(
+    queryParams: { parentUuid?: string; limit?: number; offset?: number },
+    accountUuid: string,
+  ): Promise<GoalDirListResponse> {
     const params = {
       parentUuid: queryParams.parentUuid,
-      limit: parseInt(queryParams.limit) || 100,
-      offset: parseInt(queryParams.offset) || 0,
+      limit: queryParams.limit || 100,
+      offset: queryParams.offset || 0,
     };
 
-    // 获取目录列表
-    const result = await this.goalRepository.getAllGoalDirectories(userAccountUuid, {
+    const result = await this.goalRepository.getAllGoalDirectories(accountUuid, {
       parentUuid: params.parentUuid,
     });
 
-    // 为每个目录计算目标数量
     const goalDirsWithCount = await Promise.all(
-      result.goalDirs.map(async (dir) => {
-        const goals = await this.goalRepository.getGoalsByDirectoryUuid(userAccountUuid, dir.uuid);
+      result.goalDirs.map(async (dirEntity) => {
+        const dirDTO = dirEntity.toDTO();
+        const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, dirDTO.uuid);
         return {
-          ...dir,
+          ...dirDTO,
           goalsCount: goals.length,
         } as GoalDirResponse;
       }),
     );
 
     return {
-      goalDirs: goalDirsWithCount,
+      data: goalDirsWithCount,
       total: result.total,
     };
   }
@@ -125,17 +114,14 @@ export class GoalDirDomainService {
   /**
    * 根据ID获取目标目录
    */
-  async getGoalDirById(uuid: string, accountUuid?: string): Promise<GoalDirResponse | null> {
-    // 获取用户UUID
-    const userAccountUuid = accountUuid || 'temp-account-uuid';
-
-    const dir = await this.goalRepository.getGoalDirectoryByUuid(userAccountUuid, uuid);
-    if (!dir) {
+  async getGoalDirById(uuid: string, accountUuid: string): Promise<GoalDirResponse | null> {
+    const dirEntity = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
+    if (!dirEntity) {
       return null;
     }
 
-    // 计算目标数量
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(userAccountUuid, dir.uuid);
+    const dir = dirEntity.toDTO();
+    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, dir.uuid);
 
     return {
       ...dir,
@@ -145,45 +131,29 @@ export class GoalDirDomainService {
 
   /**
    * 更新目标目录
+   * 业务规则：
+   * 1. 目录必须存在
+   * 2. 更新后的名称在同层级唯一
+   * 3. 不能设置自己为父目录（防止循环引用）
    */
   async updateGoalDir(
     uuid: string,
     request: UpdateGoalDirRequest,
-    accountUuid?: string,
+    accountUuid: string,
   ): Promise<GoalDirResponse> {
-    // 获取用户UUID
-    const userAccountUuid = accountUuid || 'temp-account-uuid';
-
-    // 验证目录是否存在
-    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(userAccountUuid, uuid);
+    // 验证目录存在
+    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
     if (!existingDir) {
       throw new Error('目录不存在');
     }
 
-    // 验证请求数据
-    if (request.name !== undefined && !request.name.trim()) {
-      throw new Error('目录名称不能为空');
-    }
+    // 验证更新字段
+    this.validateUpdateFields(request);
 
-    if (request.icon !== undefined && !request.icon.trim()) {
-      throw new Error('图标不能为空');
-    }
-
-    if (request.color !== undefined && !request.color.trim()) {
-      throw new Error('颜色不能为空');
-    }
-
-    // 验证父目录是否存在（如果要更新父目录）
+    // 验证父目录（如果更新）
     if (request.parentUuid !== undefined && request.parentUuid) {
-      const parentDir = await this.goalRepository.getGoalDirectoryByUuid(
-        userAccountUuid,
-        request.parentUuid,
-      );
-      if (!parentDir) {
-        throw new Error('父目录不存在');
-      }
+      await this.validateParentDirectory(accountUuid, request.parentUuid);
 
-      // 防止循环引用
       if (request.parentUuid === uuid) {
         throw new Error('不能将目录设置为自己的父目录');
       }
@@ -191,77 +161,155 @@ export class GoalDirDomainService {
 
     // 验证名称唯一性（如果更新了名称）
     if (request.name && request.name !== existingDir.name) {
-      const existingDirs = await this.goalRepository.getAllGoalDirectories(userAccountUuid, {
-        parentUuid: request.parentUuid !== undefined ? request.parentUuid : existingDir.parentUuid,
-      });
+      const targetParentUuid =
+        request.parentUuid !== undefined ? request.parentUuid : existingDir.parentUuid;
 
-      const nameExists = existingDirs.goalDirs.some(
-        (dir) => dir.name === request.name!.trim() && dir.uuid !== uuid,
+      await this.validateUniqueNameInLevel(
+        accountUuid,
+        request.name.trim(),
+        targetParentUuid,
+        uuid,
       );
-      if (nameExists) {
-        throw new Error('目录名称在当前层级下已存在');
-      }
     }
 
-    // 构造更新数据
-    const updateData: Partial<GoalContracts.GoalDirDTO> = {};
-    if (request.name !== undefined) updateData.name = request.name.trim();
-    if (request.description !== undefined) updateData.description = request.description.trim();
-    if (request.icon !== undefined) updateData.icon = request.icon.trim();
-    if (request.color !== undefined) updateData.color = request.color.trim();
-    if (request.parentUuid !== undefined) updateData.parentUuid = request.parentUuid;
-    if (request.sortConfig !== undefined) updateData.sortConfig = request.sortConfig;
+    // 构建更新后的 DTO
+    const dirDTO = existingDir.toDTO();
+    const updatedDirDTO: GoalContracts.GoalDirDTO = {
+      ...dirDTO,
+      ...(request.name !== undefined && { name: request.name.trim() }),
+      ...(request.description !== undefined && { description: request.description.trim() }),
+      ...(request.icon !== undefined && { icon: request.icon.trim() }),
+      ...(request.color !== undefined && { color: request.color.trim() }),
+      ...(request.parentUuid !== undefined && { parentUuid: request.parentUuid }),
+      ...(request.sortConfig !== undefined && { sortConfig: request.sortConfig }),
+      lifecycle: {
+        ...dirDTO.lifecycle,
+        updatedAt: Date.now(),
+      },
+    };
 
-    // 更新目录
-    const updatedDir = await this.goalRepository.updateGoalDirectory(
-      userAccountUuid,
-      uuid,
-      updateData,
-    );
+    // 保存更新
+    const updatedDirEntity = await this.createEntityFromDTO(updatedDirDTO);
+    const savedDir = await this.goalRepository.saveGoalDirectory(accountUuid, updatedDirEntity);
 
     // 计算目标数量
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(
-      userAccountUuid,
-      updatedDir.uuid,
-    );
+    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, savedDir.uuid);
 
     return {
-      ...updatedDir,
+      ...savedDir.toDTO(),
       goalsCount: goals.length,
     };
   }
 
   /**
    * 删除目标目录
+   * 业务规则：
+   * 1. 目录必须存在
+   * 2. 不能有子目录
+   * 3. 不能有关联的目标
    */
-  async deleteGoalDir(uuid: string, accountUuid?: string): Promise<void> {
-    // 获取用户UUID
-    const userAccountUuid = accountUuid || 'temp-account-uuid';
-
-    // 验证目录是否存在
-    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(userAccountUuid, uuid);
+  async deleteGoalDir(uuid: string, accountUuid: string): Promise<void> {
+    // 验证目录存在
+    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
     if (!existingDir) {
       throw new Error('目录不存在');
     }
 
-    // 检查是否有子目录
-    const subDirs = await this.goalRepository.getAllGoalDirectories(userAccountUuid, {
+    // 检查子目录
+    const subDirs = await this.goalRepository.getAllGoalDirectories(accountUuid, {
       parentUuid: uuid,
     });
     if (subDirs.goalDirs.length > 0) {
       throw new Error('无法删除目录，请先删除或移动子目录');
     }
 
-    // 检查是否有目标在使用此目录
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(userAccountUuid, uuid);
+    // 检查关联目标
+    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, uuid);
     if (goals.length > 0) {
       throw new Error(`无法删除目录，还有 ${goals.length} 个目标在使用此目录`);
     }
 
-    // 删除目录
-    const deleted = await this.goalRepository.deleteGoalDirectory(userAccountUuid, uuid);
+    // 执行删除
+    const deleted = await this.goalRepository.deleteGoalDirectory(accountUuid, uuid);
     if (!deleted) {
       throw new Error('删除目录失败');
     }
+  }
+
+  // ==================== 私有辅助方法 ====================
+
+  /**
+   * 验证必填字段
+   */
+  private validateRequiredFields(request: CreateGoalDirRequest): void {
+    if (!request.name?.trim()) {
+      throw new Error('目录名称不能为空');
+    }
+    if (!request.icon?.trim()) {
+      throw new Error('图标不能为空');
+    }
+    if (!request.color?.trim()) {
+      throw new Error('颜色不能为空');
+    }
+  }
+
+  /**
+   * 验证更新字段
+   */
+  private validateUpdateFields(request: UpdateGoalDirRequest): void {
+    if (request.name !== undefined && !request.name.trim()) {
+      throw new Error('目录名称不能为空');
+    }
+    if (request.icon !== undefined && !request.icon.trim()) {
+      throw new Error('图标不能为空');
+    }
+    if (request.color !== undefined && !request.color.trim()) {
+      throw new Error('颜色不能为空');
+    }
+  }
+
+  /**
+   * 验证父目录存在
+   */
+  private async validateParentDirectory(accountUuid: string, parentUuid?: string): Promise<void> {
+    if (parentUuid) {
+      const parentDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, parentUuid);
+      if (!parentDir) {
+        throw new Error('父目录不存在');
+      }
+    }
+  }
+
+  /**
+   * 验证目录名称在同层级唯一
+   */
+  private async validateUniqueNameInLevel(
+    accountUuid: string,
+    name: string,
+    parentUuid?: string,
+    excludeUuid?: string,
+  ): Promise<void> {
+    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid, {
+      parentUuid,
+    });
+
+    const nameExists = existingDirs.goalDirs.some((dir) => {
+      const isSameName = dir.toDTO().name === name;
+      const isDifferentDir = excludeUuid ? dir.uuid !== excludeUuid : true;
+      return isSameName && isDifferentDir;
+    });
+
+    if (nameExists) {
+      throw new Error('目录名称在当前层级下已存在');
+    }
+  }
+
+  /**
+   * 从 DTO 创建实体
+   * 注意：这里需要动态导入以避免循环依赖
+   */
+  private async createEntityFromDTO(dto: GoalContracts.GoalDirDTO): Promise<GoalDir> {
+    const { GoalDir } = await import('@dailyuse/domain-server');
+    return GoalDir.fromDTO(dto);
   }
 }
