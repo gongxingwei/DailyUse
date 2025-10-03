@@ -4,9 +4,22 @@ import { GoalApplicationService } from '../../../application/services/GoalApplic
 import { PrismaGoalRepository } from '../../../infrastructure/repositories/prismaGoalRepository';
 import { prisma } from '../../../../../config/prisma';
 import type { GoalContracts } from '@dailyuse/contracts';
+import {
+  type ApiResponse,
+  type SuccessResponse,
+  type ErrorResponse,
+  ResponseCode,
+  createResponseBuilder,
+  getHttpStatusCode,
+} from '@dailyuse/contracts';
+import { createLogger } from '@dailyuse/utils';
+
+// 创建 logger 实例
+const logger = createLogger('GoalController');
 
 export class GoalController {
   private static goalService = new GoalApplicationService(new PrismaGoalRepository(prisma));
+  private static responseBuilder = createResponseBuilder();
 
   /**
    * 从请求中提取用户账户UUID
@@ -14,6 +27,7 @@ export class GoalController {
   private static extractAccountUuid(req: Request): string {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
+      logger.warn('Authentication attempt without Bearer token');
       throw new Error('Authentication required');
     }
 
@@ -21,6 +35,7 @@ export class GoalController {
     const decoded = jwt.decode(token) as any;
 
     if (!decoded?.accountUuid) {
+      logger.warn('Invalid token: missing accountUuid');
       throw new Error('Invalid token: missing accountUuid');
     }
 
@@ -28,249 +43,376 @@ export class GoalController {
   }
 
   /**
+   * 发送成功响应
+   */
+  private static sendSuccess<T>(
+    res: Response,
+    data: T,
+    message: string,
+    statusCode = 200,
+  ): Response {
+    const response: SuccessResponse<T> = {
+      code: ResponseCode.SUCCESS,
+      success: true,
+      message,
+      data,
+      timestamp: Date.now(),
+    };
+    return res.status(statusCode).json(response);
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private static sendError(
+    res: Response,
+    code: ResponseCode,
+    message: string,
+    error?: any,
+  ): Response {
+    const httpStatus = getHttpStatusCode(code);
+    const response: ErrorResponse = {
+      code,
+      success: false,
+      message,
+      timestamp: Date.now(),
+    };
+
+    // 记录错误日志
+    if (error) {
+      logger.error(message, error);
+    } else {
+      logger.warn(message);
+    }
+
+    return res.status(httpStatus).json(response);
+  }
+
+  /**
    * 创建目标
    */
-  static async createGoal(req: Request, res: Response) {
+  static async createGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const request: GoalContracts.CreateGoalRequest = req.body;
 
+      logger.info('Creating goal', { accountUuid, goalName: request.name });
+
       const goal = await GoalController.goalService.createGoal(accountUuid, request);
 
-      res.status(201).json({
-        success: true,
-        data: goal,
-        message: 'Goal created successfully',
-      });
+      logger.info('Goal created successfully', { goalUuid: goal.uuid, accountUuid });
+
+      return GoalController.sendSuccess(res, goal, 'Goal created successfully', 201);
     } catch (error) {
-      // ✅ 区分验证错误和服务器错误
-      if (error instanceof Error && error.message.includes('Invalid UUID')) {
-        return res.status(400).json({
-          success: false,
-          message: error.message,
-        });
+      // 区分不同类型的错误
+      if (error instanceof Error) {
+        if (error.message.includes('Invalid UUID')) {
+          return GoalController.sendError(res, ResponseCode.VALIDATION_ERROR, error.message, error);
+        }
+        if (error.message.includes('Authentication')) {
+          return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+        }
       }
 
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to create goal',
-      });
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to create goal',
+        error,
+      );
     }
   }
 
   /**
    * 获取目标列表
-   * ✅ 返回格式: { success, data: { data: [...], total, page, limit, hasMore } }
-   * 前端 axios 拦截器会返回 response.data，所以分页信息必须在 data 字段内
    */
-  static async getGoals(req: Request, res: Response) {
+  static async getGoals(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const queryParams = req.query;
+
+      logger.debug('Fetching goals list', { accountUuid, queryParams });
+
       const listResponse = await GoalController.goalService.getGoals(accountUuid, queryParams);
 
-      // ✅ GoalListResponse 本身就包含 { data, total, page, limit, hasMore }
-      // 直接放在 data 字段中，axios 拦截器会返回这个完整对象
-      res.json({
-        success: true,
-        data: listResponse, // ✅ { data: [...], total, page, limit, hasMore }
-        message: 'Goals retrieved successfully',
+      logger.info('Goals retrieved successfully', {
+        accountUuid,
+        total: listResponse.total,
+        page: listResponse.page,
       });
+
+      // GoalListResponse 包含 { data: [...], total, page, limit, hasMore }
+      return GoalController.sendSuccess(res, listResponse, 'Goals retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to retrieve goals',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to retrieve goals',
+        error,
+      );
     }
   }
 
   /**
    * 搜索目标
    */
-  static async searchGoals(req: Request, res: Response) {
+  static async searchGoals(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const queryParams = req.query;
+
+      logger.debug('Searching goals', { accountUuid, queryParams });
+
       const goals = await GoalController.goalService.searchGoals(accountUuid, queryParams);
 
-      res.json({
-        success: true,
-        data: goals,
-        message: 'Goals search completed successfully',
+      logger.info('Goals search completed', {
+        accountUuid,
+        resultCount: goals.data?.length || 0,
       });
+
+      return GoalController.sendSuccess(res, goals, 'Goals search completed successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to search goals',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to search goals',
+        error,
+      );
     }
   }
 
   /**
    * 根据ID获取目标
    */
-  static async getGoalById(req: Request, res: Response) {
+  static async getGoalById(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.debug('Fetching goal by ID', { accountUuid, goalId: id });
+
       const goal = await GoalController.goalService.getGoalById(accountUuid, id);
 
       if (!goal) {
-        return res.status(404).json({
-          success: false,
-          message: 'Goal not found',
-        });
+        logger.warn('Goal not found', { accountUuid, goalId: id });
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, 'Goal not found');
       }
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal retrieved successfully',
-      });
+      logger.info('Goal retrieved successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, goal, 'Goal retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to retrieve goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to retrieve goal',
+        error,
+      );
     }
   }
 
   /**
    * 更新目标
    */
-  static async updateGoal(req: Request, res: Response) {
+  static async updateGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
       const request: GoalContracts.UpdateGoalRequest = req.body;
 
-      console.log('🎯 Updating goal:', id);
-      console.log('📝 Request body:', JSON.stringify(request, null, 2));
+      logger.info('Updating goal', { accountUuid, goalId: id, updates: request });
 
       const goal = await GoalController.goalService.updateGoal(accountUuid, id, request);
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal updated successfully',
-      });
-    } catch (error) {
-      console.error('❌ Error updating goal:', error);
-      console.error('📍 Stack trace:', error instanceof Error ? error.stack : 'No stack trace');
+      logger.info('Goal updated successfully', { accountUuid, goalId: id });
 
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to update goal',
-      });
+      return GoalController.sendSuccess(res, goal, 'Goal updated successfully');
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to update goal',
+        error,
+      );
     }
   }
 
   /**
    * 删除目标
    */
-  static async deleteGoal(req: Request, res: Response) {
+  static async deleteGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.info('Deleting goal', { accountUuid, goalId: id });
+
       await GoalController.goalService.deleteGoal(accountUuid, id);
 
-      res.json({
-        success: true,
-        message: 'Goal deleted successfully',
-      });
+      logger.info('Goal deleted successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, null, 'Goal deleted successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to delete goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to delete goal',
+        error,
+      );
     }
   }
 
   /**
    * 激活目标
    */
-  static async activateGoal(req: Request, res: Response) {
+  static async activateGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.info('Activating goal', { accountUuid, goalId: id });
+
       const goal = await GoalController.goalService.activateGoal(accountUuid, id);
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal activated successfully',
-      });
+      logger.info('Goal activated successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, goal, 'Goal activated successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to activate goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to activate goal',
+        error,
+      );
     }
   }
 
   /**
    * 暂停目标
    */
-  static async pauseGoal(req: Request, res: Response) {
+  static async pauseGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.info('Pausing goal', { accountUuid, goalId: id });
+
       const goal = await GoalController.goalService.pauseGoal(accountUuid, id);
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal paused successfully',
-      });
+      logger.info('Goal paused successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, goal, 'Goal paused successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to pause goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to pause goal',
+        error,
+      );
     }
   }
 
   /**
    * 完成目标
    */
-  static async completeGoal(req: Request, res: Response) {
+  static async completeGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.info('Completing goal', { accountUuid, goalId: id });
+
       const goal = await GoalController.goalService.completeGoal(accountUuid, id);
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal completed successfully',
-      });
+      logger.info('Goal completed successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, goal, 'Goal completed successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to complete goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to complete goal',
+        error,
+      );
     }
   }
 
   /**
    * 归档目标
    */
-  static async archiveGoal(req: Request, res: Response) {
+  static async archiveGoal(req: Request, res: Response): Promise<Response> {
     try {
       const accountUuid = GoalController.extractAccountUuid(req);
       const { id } = req.params;
+
+      logger.info('Archiving goal', { accountUuid, goalId: id });
+
       const goal = await GoalController.goalService.archiveGoal(accountUuid, id);
 
-      res.json({
-        success: true,
-        data: goal,
-        message: 'Goal archived successfully',
-      });
+      logger.info('Goal archived successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(res, goal, 'Goal archived successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to archive goal',
-      });
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to archive goal',
+        error,
+      );
     }
   }
 }
