@@ -1,17 +1,15 @@
 import type { GoalContracts } from '@dailyuse/contracts';
 import { type IGoalRepository, UserDataInitializationService } from '@dailyuse/domain-server';
-import { GoalAggregateService } from './goalAggregateService';
 import { GoalDomainService } from '../../domain/services/GoalDomainService';
 import { GoalContainer } from '../../infrastructure/di/GoalContainer';
 
 export class GoalApplicationService {
   private static instance: GoalApplicationService;
-  private aggregateService: GoalAggregateService;
   private domainService: GoalDomainService;
   private userInitService: UserDataInitializationService;
   private goalRepository: IGoalRepository;
+
   constructor(goalRepository: IGoalRepository) {
-    this.aggregateService = new GoalAggregateService(goalRepository);
     this.domainService = new GoalDomainService(goalRepository);
     this.userInitService = new UserDataInitializationService(goalRepository);
     this.goalRepository = goalRepository;
@@ -176,7 +174,7 @@ export class GoalApplicationService {
       calculationMethod?: 'sum' | 'average' | 'max' | 'min' | 'custom';
     },
   ): Promise<GoalContracts.KeyResultClientDTO> {
-    return this.aggregateService.createKeyResultForGoal(accountUuid, goalUuid, request);
+    return this.domainService.createKeyResultForGoal(accountUuid, goalUuid, request);
   }
 
   /**
@@ -194,12 +192,7 @@ export class GoalApplicationService {
       status?: 'active' | 'completed' | 'archived';
     },
   ): Promise<GoalContracts.KeyResultClientDTO> {
-    return this.aggregateService.updateKeyResultForGoal(
-      accountUuid,
-      goalUuid,
-      keyResultUuid,
-      request,
-    );
+    return this.domainService.updateKeyResultForGoal(accountUuid, goalUuid, keyResultUuid, request);
   }
 
   /**
@@ -210,7 +203,7 @@ export class GoalApplicationService {
     goalUuid: string,
     keyResultUuid: string,
   ): Promise<void> {
-    return this.aggregateService.removeKeyResultFromGoal(accountUuid, goalUuid, keyResultUuid);
+    return this.domainService.removeKeyResultFromGoal(accountUuid, goalUuid, keyResultUuid);
   }
 
   // ===== DDD 聚合根控制方法 - 目标记录管理 =====
@@ -227,7 +220,7 @@ export class GoalApplicationService {
       note?: string;
     },
   ): Promise<GoalContracts.GoalRecordClientDTO> {
-    return this.aggregateService.createRecordForGoal(accountUuid, goalUuid, request);
+    return this.domainService.createRecordForGoal(accountUuid, goalUuid, request);
   }
 
   // ===== DDD 聚合根控制方法 - 目标复盘管理 =====
@@ -256,7 +249,7 @@ export class GoalApplicationService {
       reviewDate?: Date;
     },
   ): Promise<GoalContracts.GoalReviewClientDTO> {
-    return this.aggregateService.createReviewForGoal(accountUuid, goalUuid, request);
+    return this.domainService.createReviewForGoal(accountUuid, goalUuid, request);
   }
 
   // ===== 聚合根完整视图 =====
@@ -269,6 +262,6 @@ export class GoalApplicationService {
     accountUuid: string,
     goalUuid: string,
   ): Promise<GoalContracts.GoalAggregateViewResponse> {
-    return this.aggregateService.getGoalAggregateView(accountUuid, goalUuid);
+    return this.domainService.getGoalAggregateView(accountUuid, goalUuid);
   }
 }

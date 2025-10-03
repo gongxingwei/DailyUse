@@ -20,6 +20,20 @@
 
 ---
 
+## 📝 文档规范
+
+### 文档分类和位置
+
+| 分类 | 位置 | 说明 |
+|------|------|------|
+| 系统文档 | `docs/systems/` | 跨模块的基础设施（日志、API响应、事件总线等） |
+| 模块文档 | `docs/modules/` | 具体业务模块的完整实现 |
+| 测试文档 | `docs/testing/` | 测试框架、测试指南、测试报告 |
+| 开发指南 | `docs/guides/` | 开发流程、技术指南、最佳实践 |
+| 示例文档 | `docs/*.md` | API 示例、日志示例等快速参考 |
+
+---
+
 ## 🏗️ 项目架构
 
 ### 整体架构
@@ -59,7 +73,9 @@ DailyUse/
 
 ## 🎯 系统文档
 
-### 核心系统
+### 核心系统 (Systems)
+
+> 位于 `docs/systems/` - 跨模块的基础设施和工具
 
 ```mermaid
 graph TB
@@ -68,17 +84,21 @@ graph TB
     C[事件总线系统] --> E
     D[校验系统] --> E
     F[Initialize系统] --> E
+    G[日程系统] --> E
+    H[SSE系统] --> E
 ```
 
 #### 1. [[systems/日志系统|日志系统]]
 - **位置**: `packages/utils/src/logger`
 - **作用**: 提供跨平台（Node.js + Browser）的统一日志接口
 - **特性**: 多级别、彩色输出、文件日志、环境自适应
+- **文档**: [[systems/日志系统|完整文档]] | [[systems/LOGGER_INTEGRATION_GUIDE|集成指南]] | [[systems/LOGGER_QUICK_REFERENCE|快速参考]]
 
 #### 2. [[systems/API响应系统|API响应系统]]
 - **位置**: `packages/contracts/src/response` + `packages/utils/src/response`
 - **作用**: 统一的 RESTful API 响应格式
 - **特性**: 类型安全、HTTP 状态码映射、前端自动提取 data
+- **文档**: [[systems/API响应系统|完整文档]] | [[systems/API_RESPONSE_SYSTEM_GUIDE|使用指南]]
 
 #### 3. [[systems/事件总线系统|事件总线系统]]
 - **位置**: `packages/utils/src/domain`
@@ -94,6 +114,16 @@ graph TB
 - **位置**: `packages/utils/src/initializationManager.ts`
 - **作用**: 应用初始化流程管理
 - **特性**: 依赖管理、生命周期钩子、并行初始化
+
+#### 6. [[systems/SCHEDULE_INTEGRATION_GUIDE|日程系统]]
+- **位置**: Schedule 模块
+- **作用**: 日程管理和提醒功能
+- **文档**: [[systems/SCHEDULE_INTEGRATION_GUIDE|集成指南]] | [[systems/REMINDER_SCHEDULE_INTEGRATION_COMPLETE|提醒集成]]
+
+#### 7. [[systems/SSE_TECHNICAL_DOCUMENTATION|SSE 技术系统]]
+- **位置**: API 服务端
+- **作用**: Server-Sent Events 实时通信
+- **文档**: [[systems/SSE_TECHNICAL_DOCUMENTATION|技术文档]]
 
 ---
 
@@ -143,9 +173,11 @@ graph TB
 
 ## 🎯 模块文档
 
-### Goal 模块
+> 位于 `docs/modules/` - 具体业务模块的完整实现
 
-[[modules/Goal模块完整流程|Goal模块完整流程]] ⭐⭐⭐⭐⭐
+### Goal 模块 ⭐⭐⭐⭐⭐
+
+[[modules/Goal模块完整流程|Goal模块完整流程]]
 
 完整展示 Goal 模块的实现：
 - 📁 文件树结构（前端 + 后端）
@@ -154,11 +186,11 @@ graph TB
 - 🛠️ 使用的工具和系统
 - 📝 代码规范
 
-**相关文档**:
-- [[GOAL_CONTROLLER_REFACTOR_COMPLETE]] - GoalController 重构总结
-- [[GOAL_DOMAIN_SERVICE_REFACTORING_COMPLETE]] - GoalDomainService 重构
-- [[DOMAIN_CLIENT_GOAL_OPTIMIZATION_COMPLETE]] - 前端优化
-- `apps/api/src/modules/goal/docs/CORRECT_DDD_ARCHITECTURE.md` - DDD 架构
+**Goal 模块相关文档**:
+- [[modules/Goal模块完整流程|完整实现流程]] ⭐⭐⭐⭐⭐
+- [[modules/GOAL_USER_DATA_INITIALIZATION_GUIDE|用户数据初始化指南]]
+- [[modules/GOAL_INITIALIZATION_QUICK_REFERENCE|初始化快速参考]]
+- `apps/api/src/modules/goal/docs/CORRECT_DDD_ARCHITECTURE.md` - DDD 架构设计
 
 ### 其他模块
 
@@ -170,37 +202,30 @@ graph TB
 
 ---
 
-## 📖 已有文档索引
+## 🧪 测试文档
 
-### 完成总结类
+> 位于 `docs/testing/` - 测试框架和测试指南
 
-| 文档 | 描述 |
-|------|------|
-| [[LOGGER_INTEGRATION_COMPLETE]] | 日志系统集成完成总结 |
-| [[GOAL_CONTROLLER_REFACTOR_COMPLETE]] | GoalController 重构完成 |
-| [[GOAL_DOMAIN_SERVICE_REFACTORING_COMPLETE]] | GoalDomainService 重构完成 |
-| [[DOMAIN_CLIENT_GOAL_OPTIMIZATION_COMPLETE]] | 前端 Goal 模块优化完成 |
-| [[API_RESPONSE_SYSTEM_COMPLETION_SUMMARY]] | API 响应系统完成总结 |
-| [[DDD_DEPENDENCY_INJECTION_REFACTORING_COMPLETE]] | DDD 依赖注入重构完成 |
+| 文档 | 描述 | 重要性 |
+|------|------|--------|
+| [[testing/TESTING_GUIDE\|测试指南]] | 项目测试最佳实践和规范 | ⭐⭐⭐⭐ |
+| [[testing/AI_TESTING_GUIDE\|AI 测试指南]] | AI Agent 自动化测试指南 | ⭐⭐⭐ |
+| [[testing/VITEST_WORKSPACE_GUIDE\|Vitest 工作区指南]] | Vitest Monorepo 配置 | ⭐⭐⭐⭐ |
+| [[testing/VITEST_WORKSPACE_VERIFICATION_REPORT\|Vitest 验证报告]] | 工作区配置验证结果 | ⭐⭐ |
+| [[testing/VITEST_WORKSPACE_CONFIGURATION_SUMMARY\|Vitest 配置总结]] | 配置要点总结 | ⭐⭐⭐ |
+| [[testing/CHANGELOG_VITEST\|Vitest 变更日志]] | Vitest 相关变更记录 | ⭐⭐ |
 
-### 指南类
+---
 
-| 文档 | 描述 |
-|------|------|
-| [[LOGGER_INTEGRATION_GUIDE]] | 日志系统集成指南 |
-| [[API_RESPONSE_SYSTEM_GUIDE]] | API 响应系统使用指南 |
-| [[TESTING_GUIDE]] | 测试指南 |
-| [[VITEST_WORKSPACE_GUIDE]] | Vitest 工作区配置指南 |
-| `packages/utils/src/validation/README.md` | 校验系统详细文档 |
+## 📘 开发指南
 
-### 快速参考类
+> 位于 `docs/guides/` - 开发流程和技术指南
 
-| 文档 | 描述 |
-|------|------|
-| [[LOGGER_QUICK_REFERENCE]] | 日志系统快速参考 |
-| `docs/api-response-quick-reference.md` | API 响应系统快速参考 |
-| [[GOAL_INITIALIZATION_QUICK_REFERENCE]] | Goal 模块初始化快速参考 |
-| [[DOMAIN_CLIENT_GOAL_QUICK_REFERENCE]] | 前端 Goal 模块快速参考 |
+| 文档 | 描述 | 重要性 |
+|------|------|--------|
+| [[guides/DEV_SOURCE_MODE\|开发源码模式]] | 源码开发模式配置和使用 | ⭐⭐⭐⭐ |
+| [[guides/THEME_SYSTEM_README\|主题系统]] | 应用主题系统设计 | ⭐⭐⭐ |
+| [[guides/EDITOR_MODULE_COMPLETION\|编辑器模块]] | 富文本编辑器集成 | ⭐⭐⭐ |
 
 ---
 
@@ -213,15 +238,19 @@ graph TB
    - 查看项目根目录的 `README.md`
 
 2. **学习核心系统** ⭐
-   - [[日志系统]] - 学习如何记录日志
-   - [[API响应系统]] - 学习统一的响应格式
-   - [[事件总线系统]] - 学习模块间通信
+   - [[systems/日志系统|日志系统]] - 学习如何记录日志
+   - [[systems/API响应系统|API响应系统]] - 学习统一的响应格式
+   - [[systems/事件总线系统|事件总线系统]] - 学习模块间通信
 
 3. **深入模块实现** ⭐⭐⭐
-   - [[Goal模块完整流程]] - 完整的模块实现示例
+   - [[modules/Goal模块完整流程|Goal模块完整流程]] - 完整的模块实现示例
    - 参考其代码规范和最佳实践
 
-4. **实践开发**
+4. **了解测试规范**
+   - [[testing/TESTING_GUIDE|测试指南]] - 学习测试最佳实践
+   - [[testing/VITEST_WORKSPACE_GUIDE|Vitest 工作区指南]] - 学习如何配置和运行测试
+
+5. **实践开发**
    - 参考 Goal 模块的实现方式
    - 使用日志系统、响应系统等工具
    - 遵循代码规范
@@ -231,16 +260,20 @@ graph TB
 如果你是 AI Agent，需要重构或新增模块：
 
 1. **必读文档**:
-   - [[Goal模块完整流程]] - 了解标准的模块结构
-   - [[日志系统]] - 使用 `createLogger()`
-   - [[API响应系统]] - 使用 `Response.ok()` 等辅助函数
+   - [[modules/Goal模块完整流程|Goal模块完整流程]] - 了解标准的模块结构
+   - [[systems/日志系统|日志系统]] - 使用 `createLogger()`
+   - [[systems/API响应系统|API响应系统]] - 使用 `Response.ok()` 等辅助函数
 
 2. **代码规范**:
-   - 参考 [[Goal模块完整流程]] 的「代码规范」部分
+   - 参考 [[modules/Goal模块完整流程|Goal模块完整流程]] 的「代码规范」部分
    - 使用 TypeScript 类型注解
    - 遵循命名规范
 
-3. **重构流程**:
+3. **测试规范**:
+   - 参考 [[testing/TESTING_GUIDE|测试指南]]
+   - 参考 [[testing/AI_TESTING_GUIDE|AI 测试指南]]
+
+4. **重构流程**:
    - 参考 [[GOAL_CONTROLLER_REFACTOR_COMPLETE]]
    - 使用标准 Response 类型
    - 集成日志系统
@@ -289,12 +322,17 @@ graph TB
 
 ## 📊 文档统计
 
-| 类型 | 数量 |
-|------|------|
-| 核心系统文档 | 5 个 |
-| 模块完整流程文档 | 1 个 (Goal) |
-| 完成总结文档 | 20+ 个 |
-| 指南文档 | 10+ 个 |
-| 快速参考文档 | 5+ 个 |
+| 类型 | 数量 | 位置 |
+|------|------|------|
+| 核心系统文档 | 7 个 | `docs/systems/` |
+| 模块完整流程文档 | 1 个 (Goal) | `docs/modules/` |
+| 测试文档 | 6 个 | `docs/testing/` |
+| 开发指南 | 3 个 | `docs/guides/` |
+| 示例和快速参考 | 5+ 个 | `docs/` 根目录 |
 
-**总计**: 40+ 个文档
+**总计**: 20+ 个核心文档（已清理临时重构文档）
+
+---
+
+**最后更新**: 2025-10-03  
+**文档清理**: ✅ 已完成 - 移除了 20+ 个临时重构文档
