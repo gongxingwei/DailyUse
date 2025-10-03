@@ -7,11 +7,17 @@ import vuetify from './shared/vuetify';
 import { i18n } from './shared/i18n';
 import { AppInitializationManager } from './shared/initialization/AppInitializationManager';
 import { eventBus } from '@dailyuse/utils';
+import { initializeLogger, getStartupInfo } from './config/logger.config';
+import { createLogger } from '@dailyuse/utils';
+
+// 初始化日志系统
+initializeLogger();
+const logger = createLogger('WebApp');
 
 // 将 eventBus 挂载到全局 window 对象，供调试脚本使用
 if (typeof window !== 'undefined') {
   (window as any).eventBus = eventBus;
-  console.log('🌐 [Main] 已将 eventBus 挂载到全局 window 对象');
+  logger.debug('EventBus mounted to window object for debugging');
 }
 
 // 导入事件系统示例（开发环境）
@@ -21,7 +27,7 @@ if (import.meta.env.DEV) {
 }
 
 async function startApp() {
-  console.log('🚀 开始启动应用...');
+  logger.info('Starting Vue application...', getStartupInfo());
 
   const app = createApp(App);
   const pinia = createPinia();
@@ -34,42 +40,43 @@ async function startApp() {
 
   try {
     // 先完成应用模块初始化（包括认证状态恢复）
-    console.log('⚙️ 初始化应用模块...');
+    logger.info('Initializing application modules...');
     await AppInitializationManager.initializeApp();
-    console.log('✅ 应用模块初始化完成');
+    logger.info('Application modules initialized successfully');
 
     // 然后挂载应用
-    console.log('🎯 挂载应用到DOM...');
+    logger.debug('Mounting application to DOM...');
     vueAppInstance = app.mount('#app');
     isAppMounted = true;
-    console.log('✅ 应用已成功挂载到DOM');
+    logger.info('Application mounted to DOM successfully');
 
     // 等待下一个 tick 并确认挂载成功
     await nextTick(() => {
-      console.log('🎉 应用启动成功！');
-      console.log('🔍 [Debug] 当前路由:', window.location.pathname);
-      console.log('🔍 [Debug] Vue应用实例:', vueAppInstance);
-      console.log('🔍 [Debug] DOM根节点:', document.getElementById('app'));
+      logger.info('Vue application started successfully', {
+        route: window.location.pathname,
+        hasInstance: !!vueAppInstance,
+        hasDOMRoot: !!document.getElementById('app'),
+      });
     });
   } catch (error) {
-    console.error('❌ 应用启动失败:', error);
+    logger.error('Application startup failed', error);
 
     // 如果应用还没挂载，尝试降级启动
     if (!isAppMounted) {
-      console.log('🔄 尝试降级启动（应用未挂载）...');
+      logger.warn('Attempting fallback startup (app not mounted)...');
       try {
         vueAppInstance = app.mount('#app');
         isAppMounted = true;
-        console.log('⚠️ 应用以降级模式启动');
-        console.log('🔍 [Debug] 降级模式 - 当前路由:', window.location.pathname);
-        console.log('🔍 [Debug] 降级模式 - Vue应用实例:', vueAppInstance);
+        logger.warn('Application started in fallback mode', {
+          route: window.location.pathname,
+        });
       } catch (mountError) {
-        console.error('💥 应用挂载彻底失败:', mountError);
+        logger.error('Application mount completely failed', mountError);
       }
     } else {
-      console.log('⚠️ 应用已挂载，但初始化后处理失败');
-      console.log('🔍 [Debug] 当前状态 - 路由:', window.location.pathname);
-      console.log('🔍 [Debug] 当前状态 - Vue应用实例:', vueAppInstance);
+      logger.warn('Application mounted but post-initialization failed', {
+        route: window.location.pathname,
+      });
     }
   }
 }

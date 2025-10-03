@@ -5,14 +5,18 @@ import type {
   ISessionRepository,
   AccountRegisteredEvent,
 } from '@dailyuse/domain-server';
-import type { ClientInfo } from '@dailyuse/domain-core';
+import { sharedContracts, AuthenticationContracts } from '@dailyuse/contracts';
+
+// 类型别名
+type ClientInfo = sharedContracts.ClientInfo;
+type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
+type AuthResponseDTO = AuthenticationContracts.AuthResponse;
+
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
 // utils
 import { eventBus } from '@dailyuse/utils';
 import { AuthenticationLoginService } from './AuthenticationLoginService';
-// 请求和响应（form/api）类型
-import type { AuthByPasswordRequestDTO, AuthResponseDTO } from '@dailyuse/contracts';
 import type { TResponse } from '../../../../tempTypes';
 /**
  * AuthenticationApplicationService

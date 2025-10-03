@@ -3,7 +3,36 @@
  * 提供业务状态码到HTTP状态码的转换
  */
 
-import { ResponseCode } from './index';
+/**
+ * 响应状态码枚举（与 index.ts 保持一致）
+ */
+const ResponseCode = {
+  // 成功状态 (200)
+  SUCCESS: 200,
+
+  // 客户端错误 (400-499)
+  BAD_REQUEST: 400,
+  UNAUTHORIZED: 401,
+  FORBIDDEN: 403,
+  NOT_FOUND: 404,
+  CONFLICT: 409,
+  VALIDATION_ERROR: 422,
+  TOO_MANY_REQUESTS: 429,
+
+  // 服务器错误 (500-599)
+  INTERNAL_ERROR: 500,
+  BAD_GATEWAY: 502,
+  SERVICE_UNAVAILABLE: 503,
+  GATEWAY_TIMEOUT: 504,
+
+  // 业务逻辑错误 (1000-1999)
+  BUSINESS_ERROR: 1000,
+  DOMAIN_ERROR: 1001,
+  DATABASE_ERROR: 1002,
+  EXTERNAL_SERVICE_ERROR: 1003,
+} as const;
+
+type ResponseCode = (typeof ResponseCode)[keyof typeof ResponseCode];
 
 /**
  * 响应码到HTTP状态码的映射

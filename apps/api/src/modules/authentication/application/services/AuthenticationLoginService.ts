@@ -5,27 +5,29 @@ import type {
   ITokenRepository,
   ISessionRepository,
 } from '@dailyuse/domain-server';
-import type { ClientInfo } from '@dailyuse/domain-core';
+import { sharedContracts, AuthenticationContracts, AccountContracts } from '@dailyuse/contracts';
+
+// 类型别名
+type ClientInfo = sharedContracts.ClientInfo;
+type TokenType = AuthenticationContracts.TokenType;
+type IAccountCore = AccountContracts.IAccountCore;
+type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
+type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
+type AuthResponseDTO = AuthenticationContracts.AuthResponse;
+type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
+type AuthByRememberMeTokenRequestDTO = AuthenticationContracts.AuthByRememberMeTokenRequest;
+
 // domains
-import { AuthCredential } from '@dailyuse/domain-server';
+import { AuthCredential, Token } from '@dailyuse/domain-server';
 // utils
 import { eventBus } from '@dailyuse/utils';
 // 新的 EventEmitter 事件客户端
 import { authenticationEventRequester } from '../events/EventRequester';
-import type {
-  IAccountCore,
-  AuthTokenPersistenceDTO,
-  AuthCredentialPersistenceDTO,
-} from '@dailyuse/contracts';
-import { TokenType } from '@dailyuse/domain-core';
-import { Token } from '@dailyuse/domain-server';
-// 请求和响应类型（api/form）
-import type {
-  AuthResponseDTO,
-  AuthByPasswordRequestDTO,
-  AuthByRememberMeTokenRequestDTO,
-} from '@dailyuse/contracts';
 import type { TResponse } from '../../../../tempTypes';
+
+// 枚举常量 - 使用值而非类型
+const TokenTypeEnum = AuthenticationContracts.TokenType;
+
 /**
  * AuthenticationLoginService
  *
@@ -167,7 +169,7 @@ export class AuthenticationLoginService {
       console.log(`🔑 [AuthenticationLoginService] 密码验证成功`);
 
       // 5. 创建刷新令牌
-      const refreshToken = authCredentialEntity.createToken(TokenType.REFRESH_TOKEN) as Token;
+      const refreshToken = authCredentialEntity.createToken(TokenTypeEnum.REFRESH) as Token;
       await this.tokenRepository.save(refreshToken);
 
       // 6. 创建记住我令牌（如果勾选了记住我）
@@ -241,7 +243,7 @@ export class AuthenticationLoginService {
       console.log(`📋 [AuthenticationLoginService] 获取快速登录账号列表`);
 
       const tokenDtos: Array<AuthTokenPersistenceDTO> = await this.tokenRepository.findByType(
-        TokenType.REMEMBER_ME,
+        TokenTypeEnum.REMEMBER_ME,
       );
       const accounts = [];
 
@@ -334,8 +336,8 @@ export class AuthenticationLoginService {
       console.log(`🔑 [AuthenticationLoginService] 记住我令牌验证成功`);
 
       // 3. 创建新的访问令牌和刷新令牌
-      const newAccessToken = authCredential.createToken(TokenType.ACCESS_TOKEN) as Token;
-      const refreshToken = authCredential.createToken(TokenType.REFRESH_TOKEN) as Token;
+      const newAccessToken = authCredential.createToken(TokenTypeEnum.ACCESS) as Token;
+      const refreshToken = authCredential.createToken(TokenTypeEnum.REFRESH) as Token;
 
       // 4. 保存令牌
       await this.tokenRepository.save(newAccessToken);

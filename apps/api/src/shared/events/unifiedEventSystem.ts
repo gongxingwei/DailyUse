@@ -5,6 +5,7 @@ import {
 } from '@dailyuse/utils';
 import { registerAccountEventHandlers } from '../../modules/account';
 import { initializeAuthenticationEventHandlers } from '../../modules/authentication/application/events/EventHandler';
+import { initializeGoalEventHandlers } from '../../modules/goal';
 import { eventBus } from '@dailyuse/utils';
 
 /**
@@ -23,12 +24,15 @@ export async function initializeUnifiedEventHandlers(): Promise<void> {
     console.log('🔐 [EventSystem] 注册认证模块事件处理器...');
     initializeAuthenticationEventHandlers();
 
+    // ===================== 目标模块 =====================
+    console.log('🎯 [EventSystem] 注册目标模块事件处理器...');
+    initializeGoalEventHandlers();
+
     // ===================== 其他模块 =====================
     // 这里可以添加其他模块的事件处理器注册
     // 例如：
     // await registerNotificationEventHandlers();
     // await registerTaskEventHandlers();
-    // await registerGoalEventHandlers();
 
     // ===================== 系统级事件处理器 =====================
     registerSystemEventHandlers();

@@ -8,3 +8,10 @@ export { GoalDirDomainService } from './domain/services/GoalDirDomainService.js'
 
 // 导出接口层
 export { GoalController, GoalDirController, goalRouter, goalDirRouter } from './interface/index.js';
+
+// 导出初始化和事件处理
+export { registerGoalInitializationTasks } from './initialization/goalInitialization';
+export {
+  registerGoalEventHandlers,
+  initializeGoalEventHandlers,
+} from './application/events/goalEventHandlers';

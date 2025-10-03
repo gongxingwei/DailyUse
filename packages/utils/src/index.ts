@@ -12,3 +12,6 @@ export * from './frontend';
 export * from './schedule/SimpleScheduleService';
 export * from './schedule/AlertHandlerSystem';
 export * from './schedule/ScheduleSystemIntegration';
+
+// Logger system exports - 跨平台日志系统
+export * from './logger';

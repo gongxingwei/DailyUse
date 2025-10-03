@@ -29,7 +29,9 @@ import {
 import { prisma } from './config/prisma.js';
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 import { setupSwagger } from './config/swagger.js';
+import { createLogger } from '@dailyuse/utils';
 
+const logger = createLogger('Express');
 const app: Express = express();
 
 // Env / CORS origins (comma separated)
@@ -135,7 +137,11 @@ app.use((_req: Request, res: Response) => {
 
 // Error handler
 app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err);
+  logger.error('Express error handler caught error', err, {
+    status: err?.status,
+    code: err?.code,
+    message: err?.message,
+  });
   const status = Number(err?.status ?? 500);
   res.status(status).json({
     code: err?.code ?? 'INTERNAL_ERROR',

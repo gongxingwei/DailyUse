@@ -1,46 +1,43 @@
 import { Account, User } from '@dailyuse/domain-server';
-import type { AccountDTO } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
 
-// Temporary types - should be moved to contracts
-export interface UpdateAccountDto {
-  email?: string;
-  phoneNumber?: string;
-  userProfile?: {
-    firstName?: string;
-    lastName?: string;
-    bio?: string;
-    avatar?: string;
-  };
-}
+// 类型别名
+type AccountDTO = AccountContracts.AccountDTO;
+type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
+type AccountStatus = AccountContracts.AccountStatus;
+type AccountType = AccountContracts.AccountType;
+type AccountRegistrationRequest = AccountContracts.AccountRegistrationRequest;
+type AccountCreationResponse = AccountContracts.AccountCreationResponse;
+type AccountUpdateData = AccountContracts.AccountUpdateData;
+type AccountListResponse = AccountContracts.AccountListResponse;
+type AccountInfoGetterByUsernameRequested = AccountContracts.AccountInfoGetterByUsernameRequested;
+type AccountInfoGetterByUsernameResponse = AccountContracts.AccountInfoGetterByUsernameResponse;
+type AccountInfoGetterByUuidRequested = AccountContracts.AccountInfoGetterByUuidRequested;
+type AccountInfoGetterByUuidResponse = AccountContracts.AccountInfoGetterByUuidResponse;
+type AccountStatusVerificationRequested = AccountContracts.AccountStatusVerificationRequested;
+type AccountStatusVerificationResponse = AccountContracts.AccountStatusVerificationResponse;
 
-export interface AccountResponseDto {
-  accounts: AccountDTO[];
-  total: number;
-}
+// 向后兼容的类型别名（已废弃，建议使用 AccountUpdateData）
+/** @deprecated 使用 AccountUpdateData 代替 */
+export type UpdateAccountDto = AccountUpdateData;
+
+/** @deprecated 使用 AccountListResponse 代替 */
+export type AccountResponseDto = AccountListResponse;
+
 import type { IAccountRepository } from '@dailyuse/domain-server';
 import { PrismaAccountRepository } from '../../infrastructure/repositories/prisma';
 import { EmailService } from '../../domain/EmailService';
 import { AccountValidationService } from '../../infrastructure/AccountValidationService';
-import { AccountStatus, AccountType } from '@dailyuse/domain-core';
-import type { AccountPersistenceDTO } from '@dailyuse/contracts';
-// insfrastructure
+// infrastructure
 import { accountContainer } from '../../infrastructure/di/container';
-// events types
-import type {
-  AccountInfoGetterByUsernameRequested,
-  AccountInfoGetterByUsernameResponse,
-  AccountInfoGetterByUuidRequested,
-  AccountInfoGetterByUuidResponse,
-  AccountStatusVerificationRequested,
-  AccountStatusVerificationResponse,
-} from '@dailyuse/contracts';
-// 请求和响应（form/api）类型
-import type {
-  RegistrationByUsernameAndPasswordRequestDTO,
-  RegistrationResponseDTO,
-} from '@dailyuse/contracts';
 // utils
-import { eventBus } from '@dailyuse/utils';
+import { eventBus, createLogger } from '@dailyuse/utils';
+
+// 创建 logger 实例
+const logger = createLogger('AccountService');
+
+// 枚举常量
+const { AccountStatus, AccountType } = AccountContracts;
 
 export class AccountApplicationService {
   private static instance: AccountApplicationService | null = null;
@@ -68,12 +65,12 @@ export class AccountApplicationService {
    * 创建新账户
    */
   async createAccountByUsernameAndPwd(
-    createDto: RegistrationByUsernameAndPasswordRequestDTO,
-  ): Promise<RegistrationResponseDTO> {
+    createDto: AccountRegistrationRequest,
+  ): Promise<AccountCreationResponse> {
     // 创建账户聚合
     const account = Account.register({
       username: createDto.username,
-      accountType: createDto.accountType,
+      accountType: createDto.accountType || AccountType.LOCAL,
       password: createDto.password,
     });
 
@@ -139,7 +136,7 @@ export class AccountApplicationService {
 
     account.clearDomainEvents();
 
-    return { account: account.toDTO() as AccountDTO } as RegistrationResponseDTO;
+    return { account: account.toDTO() as AccountDTO } as AccountCreationResponse;
   }
 
   /**
@@ -384,7 +381,7 @@ export class AccountApplicationService {
   async handleAccountInfoGetterByUsernameEvent(
     event: AccountInfoGetterByUsernameRequested,
   ): Promise<void> {
-    const { username, requestId } = event.payload;
+    const { username, requestId } = event;
     console.log(
       '开始处理事件AccountInfoGetterByUsernameRequested，从载荷中获取username数据',
       username,
@@ -394,46 +391,40 @@ export class AccountApplicationService {
       console.log('获取account结果', account);
       if (!account) {
         const responseEvent: AccountInfoGetterByUsernameResponse = {
-          eventType: 'AccountInfoGetterByUsernameResponse',
-          aggregateId: username,
-          occurredOn: new Date(),
-          payload: {
-            requestId,
-            account: null,
-          },
+          type: 'AccountInfoGetterByUsernameResponse',
+          requestId,
+          success: false,
+          error: '账户不存在',
+          timestamp: new Date().toISOString(),
         };
-        eventBus.publish(responseEvent);
+        eventBus.publish(responseEvent as any);
         return;
       }
       const responseEvent: AccountInfoGetterByUsernameResponse = {
-        eventType: 'AccountInfoGetterByUsernameResponse',
-        aggregateId: account.uuid,
-        occurredOn: new Date(),
-        payload: {
-          requestId,
-          account: account,
-        },
+        type: 'AccountInfoGetterByUsernameResponse',
+        requestId,
+        success: true,
+        account: account,
+        timestamp: new Date().toISOString(),
       };
 
-      eventBus.publish(responseEvent);
+      eventBus.publish(responseEvent as any);
       console.log('发送AccountInfoGetterByUsernameResponse事件', responseEvent);
     } catch (error) {
       const responseEvent: AccountInfoGetterByUsernameResponse = {
-        eventType: 'AccountInfoGetterByUsernameResponse',
-        aggregateId: username,
-        occurredOn: new Date(),
-        payload: {
-          requestId,
-          account: null,
-        },
+        type: 'AccountInfoGetterByUsernameResponse',
+        requestId,
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误',
+        timestamp: new Date().toISOString(),
       };
 
-      eventBus.publish(responseEvent);
+      eventBus.publish(responseEvent as any);
     }
   }
 
   async handleAccountInfoGetterByUuidEvent(event: AccountInfoGetterByUuidRequested): Promise<void> {
-    const { accountUuid, requestId } = event.payload;
+    const { accountUuid, requestId } = event;
     console.log(
       '开始处理事件AccountInfoGetterByUuidRequested，从载荷中获取accountUuid数据',
       accountUuid,
@@ -443,15 +434,13 @@ export class AccountApplicationService {
       console.log('获取account结果', accountPersistenceDTO);
       if (!accountPersistenceDTO) {
         const responseEvent: AccountInfoGetterByUuidResponse = {
-          eventType: 'AccountInfoGetterByUuidResponse',
-          aggregateId: accountUuid,
-          occurredOn: new Date(),
-          payload: {
-            requestId,
-            account: null,
-          },
+          type: 'AccountInfoGetterByUuidResponse',
+          requestId,
+          success: false,
+          error: '账户不存在',
+          timestamp: new Date().toISOString(),
         };
-        eventBus.publish(responseEvent);
+        eventBus.publish(responseEvent as any);
         return;
       }
 
@@ -461,29 +450,25 @@ export class AccountApplicationService {
       const accountDTO = account.toDTO();
 
       const responseEvent: AccountInfoGetterByUuidResponse = {
-        eventType: 'AccountInfoGetterByUuidResponse',
-        aggregateId: account.uuid,
-        occurredOn: new Date(),
-        payload: {
-          requestId,
-          account: accountDTO,
-        },
+        type: 'AccountInfoGetterByUuidResponse',
+        requestId,
+        success: true,
+        account: accountDTO,
+        timestamp: new Date().toISOString(),
       };
 
-      eventBus.publish(responseEvent);
+      eventBus.publish(responseEvent as any);
       console.log('发送AccountInfoGetterByUuidResponse事件', responseEvent);
     } catch (error) {
       const responseEvent: AccountInfoGetterByUuidResponse = {
-        eventType: 'AccountInfoGetterByUuidResponse',
-        aggregateId: accountUuid,
-        occurredOn: new Date(),
-        payload: {
-          requestId,
-          account: null,
-        },
+        type: 'AccountInfoGetterByUuidResponse',
+        requestId,
+        success: false,
+        error: error instanceof Error ? error.message : '未知错误',
+        timestamp: new Date().toISOString(),
       };
 
-      eventBus.publish(responseEvent);
+      eventBus.publish(responseEvent as any);
     }
   }
 
@@ -499,7 +484,7 @@ export class AccountApplicationService {
       // 查找账号
       const account = await this.getAccountById(accountUuid);
 
-      let accountStatus: AccountStatusVerificationResponse['payload']['accountStatus'];
+      let accountStatus: AccountStatus | null = null;
       let isLoginAllowed = false;
       let statusMessage = '';
 
@@ -518,7 +503,7 @@ export class AccountApplicationService {
         isLoginAllowed = true;
         statusMessage = '账号状态正常';
       } else {
-        accountStatus = account.status;
+        accountStatus = account.status as AccountStatus;
         console.log('✓ [Account] 账号状态检查完成:', {
           accountUuid,
           status: accountStatus,

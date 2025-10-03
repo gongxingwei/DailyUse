@@ -1,25 +1,15 @@
 import { Account } from '@dailyuse/domain-server';
-import type { RegistrationByUsernameAndPasswordRequestDTO } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
 
-// Temporary type for account updates - should be properly defined in contracts
-interface UpdateAccountDto {
-  email?: string;
-  phoneNumber?: string;
-  userProfile?: {
-    firstName?: string;
-    lastName?: string;
-    bio?: string;
-    avatar?: string;
-  };
-}
+// 类型别名
+type AccountRegistrationRequest = AccountContracts.AccountRegistrationRequest;
+type AccountUpdateData = AccountContracts.AccountUpdateData;
 
 export class AccountValidationService {
   /**
    * 验证账户创建数据
    */
-  async validateAccountCreation(
-    createDto: RegistrationByUsernameAndPasswordRequestDTO,
-  ): Promise<void> {
+  async validateAccountCreation(createDto: AccountRegistrationRequest): Promise<void> {
     const errors: string[] = [];
 
     // 验证用户名
@@ -95,7 +85,7 @@ export class AccountValidationService {
    * 验证账户更新数据
    */
   async validateAccountUpdate(
-    updateDto: UpdateAccountDto,
+    updateDto: AccountUpdateData,
     existingAccount: Account,
   ): Promise<void> {
     const errors: string[] = [];
@@ -110,48 +100,43 @@ export class AccountValidationService {
     }
 
     // 验证手机号格式（如果提供）
-    if (updateDto.phoneNumber) {
+    if (updateDto.phone) {
       const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-      if (!phoneRegex.test(updateDto.phoneNumber)) {
+      if (!phoneRegex.test(updateDto.phone)) {
         errors.push('手机号格式不正确');
       }
     }
 
     // 验证用户资料更新
-    if (updateDto.userProfile) {
-      if (updateDto.userProfile.firstName !== undefined) {
-        if (
-          !updateDto.userProfile.firstName ||
-          updateDto.userProfile.firstName.trim().length === 0
-        ) {
-          errors.push('名字不能为空');
-        } else if (updateDto.userProfile.firstName.length > 100) {
-          errors.push('名字不能超过100个字符');
-        }
+    if (updateDto.firstName !== undefined) {
+      if (!updateDto.firstName || updateDto.firstName.trim().length === 0) {
+        errors.push('名字不能为空');
+      } else if (updateDto.firstName.length > 100) {
+        errors.push('名字不能超过100个字符');
       }
+    }
 
-      if (updateDto.userProfile.lastName !== undefined) {
-        if (!updateDto.userProfile.lastName || updateDto.userProfile.lastName.trim().length === 0) {
-          errors.push('姓氏不能为空');
-        } else if (updateDto.userProfile.lastName.length > 100) {
-          errors.push('姓氏不能超过100个字符');
-        }
+    if (updateDto.lastName !== undefined) {
+      if (!updateDto.lastName || updateDto.lastName.trim().length === 0) {
+        errors.push('姓氏不能为空');
+      } else if (updateDto.lastName.length > 100) {
+        errors.push('姓氏不能超过100个字符');
       }
+    }
 
-      if (updateDto.userProfile.bio !== undefined) {
-        if (updateDto.userProfile.bio && updateDto.userProfile.bio.length > 500) {
-          errors.push('个人简介不能超过500个字符');
-        }
+    if (updateDto.bio !== undefined) {
+      if (updateDto.bio && updateDto.bio.length > 500) {
+        errors.push('个人简介不能超过500个字符');
       }
+    }
 
-      if (updateDto.userProfile.avatar !== undefined) {
-        if (updateDto.userProfile.avatar) {
-          // 验证头像URL格式
-          try {
-            new URL(updateDto.userProfile.avatar);
-          } catch {
-            errors.push('头像URL格式不正确');
-          }
+    if (updateDto.avatar !== undefined) {
+      if (updateDto.avatar) {
+        // 验证头像URL格式
+        try {
+          new URL(updateDto.avatar);
+        } catch {
+          errors.push('头像URL格式不正确');
         }
       }
     }

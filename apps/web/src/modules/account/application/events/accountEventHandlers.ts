@@ -11,7 +11,11 @@ import {
 import { useAccountStore } from '../../presentation/stores/useAccountStore';
 import { AccountApiService } from '../../infrastructure/api/ApiClient';
 // domains
-import { Account, AccountType } from '@dailyuse/domain-client';
+import { Account } from '@dailyuse/domain-client';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type AccountType = AccountContracts.AccountType;
+const AccountTypeEnum = AccountContracts.AccountType;
 
 /**
  * 账户模块事件处理器类

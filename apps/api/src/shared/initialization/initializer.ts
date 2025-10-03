@@ -1,10 +1,15 @@
-import { InitializationManager, InitializationPhase, type InitializationTask } from '@dailyuse/utils';
+import {
+  InitializationManager,
+  InitializationPhase,
+  type InitializationTask,
+} from '@dailyuse/utils';
 
 // 每个模块的初始化任务
 
 import { registerAccountInitializationTasks } from '../../modules/account';
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
-import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem'
+import { registerGoalInitializationTasks } from '../../modules/goal';
+import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem';
 // import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 // import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
 // import { registerSessionLoggingInitializationTasks } from '../../modules/SessionLogging/initialization/sessionLoggingInitialization';
@@ -33,7 +38,7 @@ const eventSystemInitTask: InitializationTask = {
   initialize: async () => {
     await initializeUnifiedEventHandlers();
     console.log('✓ Event system initialized');
-  }
+  },
 };
 
 /**
@@ -42,10 +47,11 @@ const eventSystemInitTask: InitializationTask = {
 export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
   manager.registerTask(eventSystemInitTask);
-  
+
   // 注册各模块的任务
   registerAccountInitializationTasks();
   registerAuthenticationInitializationTasks();
+  registerGoalInitializationTasks();
 
   console.log('All initialization tasks registered');
 }
@@ -56,14 +62,14 @@ export function registerAllInitializationTasks(): void {
 export async function initializeApp(): Promise<void> {
   console.log('Starting application initialization...');
   console.log('💫 [Debug] initializeApp() 调用堆栈:', new Error().stack);
-  
+
   // 注册所有初始化任务
   registerAllInitializationTasks();
-  
+
   // 执行应用启动阶段的初始化
   const manager = InitializationManager.getInstance();
   await manager.executePhase(InitializationPhase.APP_STARTUP);
-  
+
   console.log('✓ Application initialization completed');
 }
 
@@ -86,12 +92,12 @@ export async function initializeUserSession(accountUuid: string): Promise<void> 
  */
 export async function cleanupUserSession(): Promise<void> {
   console.log('Cleaning up user session...');
-  
+
   const manager = InitializationManager.getInstance();
-  
+
   // 执行用户登出阶段的清理
   await manager.cleanupPhase(InitializationPhase.USER_LOGIN);
-  
+
   console.log('✓ User session cleaned up');
 }
 
@@ -100,13 +106,13 @@ export async function cleanupUserSession(): Promise<void> {
  */
 export async function cleanupApp(): Promise<void> {
   console.log('Cleaning up application...');
-  
+
   const manager = InitializationManager.getInstance();
-  
+
   // 清理所有阶段
   await manager.cleanupPhase(InitializationPhase.USER_LOGIN);
   await manager.cleanupPhase(InitializationPhase.APP_STARTUP);
-  
+
   console.log('✓ Application cleanup completed');
 }
 

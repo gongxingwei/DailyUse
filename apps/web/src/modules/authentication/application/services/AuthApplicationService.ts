@@ -1,17 +1,21 @@
 import {
-  type AuthByPasswordForm,
-  type AuthResponseDTO,
-  type AuthByPasswordRequestDTO,
   type SuccessResponse,
   type ApiResponse,
+  AuthenticationContracts,
+  AccountContracts,
 } from '@dailyuse/contracts';
 import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
-import { AccountType } from '@dailyuse/domain-client';
 import { AuthApiService } from '../../infrastructure/api/ApiClient';
 import { AuthManager } from '../../../../shared/api/core/interceptors';
 import { publishUserLoggedInEvent, publishUserLoggedOutEvent } from '../events/authEvents';
 import { AppInitializationManager } from '../../../../shared/initialization/AppInitializationManager';
 import { useAuthStore } from '../../presentation/stores/useAuthStore';
+
+// Type aliases for cleaner code
+type AuthByPasswordForm = AuthenticationContracts.AuthByPasswordForm;
+type AuthResponseDTO = AuthenticationContracts.AuthResponse;
+type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
+const AccountType = AccountContracts.AccountType;
 
 /**
  * Authentication Application Service
@@ -25,7 +29,7 @@ export class AuthApplicationService {
   private get authStore() {
     return useAuthStore();
   }
-  
+
   private constructor() {
     // 不再需要实例化ApiClient，直接使用静态方法
   }
@@ -74,7 +78,6 @@ export class AuthApplicationService {
         );
 
         // 同步到 authStore (重要：确保路由守卫能立即检测到认证状态)
-        
 
         this.authStore.setTokens({
           accessToken: response.data.accessToken,
@@ -113,13 +116,11 @@ export class AuthApplicationService {
       }
 
       return {
-        status: 'SUCCESS',
+        code: 200,
         success: true,
         message: 'Login successful',
         data: response.data,
-        metadata: {
-          timestamp: Date.now(),
-        },
+        timestamp: Date.now(),
       };
     } catch (error) {
       throw error;
