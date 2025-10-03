@@ -1,9 +1,25 @@
 /**
  * 前端API客户端类型定义
- * 基于packages/contracts的类型定义
+ * 使用 @dailyuse/contracts 中的统一响应类型
  */
 
 import type { AxiosRequestConfig, AxiosResponse } from 'axios';
+import type {
+  ApiResponse,
+  SuccessResponse,
+  ErrorResponse,
+  PaginationInfo,
+  ErrorDetail,
+} from '@dailyuse/contracts';
+
+// 重新导出 contracts 中的类型，供前端使用
+export type { ApiResponse, SuccessResponse, ErrorResponse, PaginationInfo, ErrorDetail };
+
+/**
+ * 基础API响应（向后兼容）
+ * @deprecated 使用 ApiResponse 代替
+ */
+export type BaseApiResponse<T = any> = ApiResponse<T>;
 
 /**
  * API客户端配置
@@ -43,7 +59,8 @@ export interface PaginationParams {
 }
 
 /**
- * 分页响应数据
+ * 分页响应数据（向后兼容）
+ * @deprecated 使用 SuccessResponse<T> with pagination 代替
  */
 export interface PaginatedData<T = any> {
   items: T[];
@@ -91,33 +108,6 @@ export interface FileUploadResponse {
  */
 export interface UploadProgressCallback {
   (progressEvent: UploadProgress): void;
-}
-
-/**
- * 基础API响应
- */
-export interface BaseApiResponse<T = any> {
-  success: boolean;
-  data?: T;
-  message?: string;
-  errors?: string[];
-  timestamp: string;
-}
-
-/**
- * 成功响应
- */
-export interface SuccessResponse<T = any> extends BaseApiResponse<T> {
-  success: true;
-  data: T;
-}
-
-/**
- * 错误响应
- */
-export interface ErrorResponse extends BaseApiResponse {
-  success: false;
-  errors: string[];
 }
 
 /**

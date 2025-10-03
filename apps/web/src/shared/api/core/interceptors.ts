@@ -10,7 +10,8 @@ import type {
   AxiosError,
   InternalAxiosRequestConfig,
 } from 'axios';
-import type { HttpClientConfig, BaseApiResponse, ErrorResponse } from './types';
+import type { HttpClientConfig, ApiResponse, SuccessResponse, ErrorResponse } from './types';
+import { ResponseCode } from '@dailyuse/contracts';
 import { environmentConfig } from './config';
 
 // 扩展 Axios 配置类型以支持自定义元数据
@@ -276,13 +277,46 @@ export class InterceptorManager {
           });
         }
 
-        // 响应变换
+        const apiResponse = response.data as ApiResponse;
+
+        // 检查响应格式
+        if (!apiResponse || typeof apiResponse !== 'object') {
+          LogManager.warn('响应格式不正确', apiResponse);
+          return response;
+        }
+
+        // 检查 success 字段
+        if (apiResponse.success === false) {
+          const errorResponse = apiResponse as ErrorResponse;
+          LogManager.warn('业务逻辑错误', {
+            code: errorResponse.code,
+            message: errorResponse.message,
+            errorCode: errorResponse.errorCode,
+            errors: errorResponse.errors,
+          });
+
+          // 抛出错误让错误拦截器处理
+          const error = new Error(errorResponse.message || '操作失败') as any;
+          error.response = {
+            ...response,
+            data: errorResponse,
+          };
+          error.isBusinessError = true;
+          throw error;
+        }
+
+        // 成功响应 - 应用响应变换
         if (this.config.responseTransformer) {
           const transformedRes = this.config.responseTransformer(response);
-          console.log('🔍 转换后响应数据:', transformedRes);
+          if (this.config.enableLogging) {
+            LogManager.debug('转换后响应数据:', transformedRes);
+          }
           return transformedRes;
         }
-        console.log('🔍 原始响应数据:', response.data);
+
+        if (this.config.enableLogging) {
+          LogManager.debug('原始响应数据:', response.data);
+        }
         return response;
       },
       async (error: AxiosError) => {
@@ -503,7 +537,11 @@ export class InterceptorManager {
    */
   private transformError(error: AxiosError): ErrorResponse {
     const response = error.response;
-    const config = error.config as ExtendedAxiosRequestConfig;
+
+    // 如果是业务逻辑错误（来自我们的 API）
+    if ((error as any).isBusinessError && response?.data) {
+      return response.data as ErrorResponse;
+    }
 
     // 如果是我们自己的API错误格式，直接返回
     if (response?.data && typeof response.data === 'object' && 'success' in response.data) {
@@ -511,12 +549,54 @@ export class InterceptorManager {
     }
 
     // 转换为标准错误格式
+    const errorMessage = this.getErrorMessage(error);
     return {
+      code: this.getErrorCode(error),
       success: false,
-      message: this.getErrorMessage(error),
-      errors: [this.getErrorMessage(error)],
-      timestamp: new Date().toISOString(),
+      message: errorMessage,
+      timestamp: Date.now(),
+      errors: [
+        {
+          code: 'NETWORK_ERROR',
+          field: '',
+          message: errorMessage,
+        },
+      ],
     };
+  }
+
+  /**
+   * 获取错误代码
+   */
+  private getErrorCode(error: AxiosError): ResponseCode {
+    const status = error.response?.status;
+
+    switch (status) {
+      case 400:
+        return ResponseCode.BAD_REQUEST;
+      case 401:
+        return ResponseCode.UNAUTHORIZED;
+      case 403:
+        return ResponseCode.FORBIDDEN;
+      case 404:
+        return ResponseCode.NOT_FOUND;
+      case 409:
+        return ResponseCode.CONFLICT;
+      case 422:
+        return ResponseCode.VALIDATION_ERROR;
+      case 429:
+        return ResponseCode.TOO_MANY_REQUESTS;
+      case 500:
+        return ResponseCode.INTERNAL_ERROR;
+      case 502:
+        return ResponseCode.BAD_GATEWAY;
+      case 503:
+        return ResponseCode.SERVICE_UNAVAILABLE;
+      case 504:
+        return ResponseCode.GATEWAY_TIMEOUT;
+      default:
+        return ResponseCode.INTERNAL_ERROR;
+    }
   }
 
   /**

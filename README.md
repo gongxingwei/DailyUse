@@ -134,9 +134,15 @@ pnpm build:desktop    # 构建桌面应用
 
 ## 📖 开发文档
 
+### 核心文档
 - [MCP 配置指南](docs/MCP-Configuration-Guide.md) - AI 辅助开发设置
 - [pnpm 最佳实践](docs/pnpm-MCP-Best-Practices.md) - 包管理优化
 - [MCP 快速开始](docs/MCP-Quick-Start.md) - 5分钟设置指南
+
+### 测试文档
+- [Vitest Workspace 指南](VITEST_WORKSPACE_GUIDE.md) - 详细测试使用指南
+- [Vitest 配置总结](VITEST_WORKSPACE_CONFIGURATION_SUMMARY.md) - 配置说明
+- [Vitest 验证报告](VITEST_WORKSPACE_VERIFICATION_REPORT.md) - 配置验证
 
 ## 🔧 开发工具
 
@@ -169,11 +175,20 @@ pnpm package              # 打包桌面应用
 # 代码质量
 pnpm lint                  # 代码检查
 pnpm format               # 代码格式化
-pnpm test                 # 运行测试
+
+# 测试 (Vitest Workspace)
+pnpm test                  # 运行所有测试
+pnpm test:ui              # UI 模式测试
+pnpm test:coverage        # 覆盖率报告
+pnpm test:api             # 运行 API 测试
+pnpm test:web             # 运行 Web 测试
+pnpm test:desktop         # 运行 Desktop 测试
+# 更多测试命令见 VITEST_WORKSPACE_GUIDE.md
 
 # Nx 工具
 pnpm graph                # 查看项目依赖图
 pnpm affected:build       # 构建受影响的项目
+pnpm affected:test        # 测试受影响的项目
 ```
 
 ## 🏗️ 架构设计

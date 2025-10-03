@@ -1,73 +1,120 @@
 /**
  * 响应状态码与HTTP状态码的映射关系
+ * 提供业务状态码到HTTP状态码的转换
  */
 
-// 引入响应状态常量
-const ResponseStatusValues = {
-  SUCCESS: 'SUCCESS',
-  BAD_REQUEST: 'BAD_REQUEST',
-  UNAUTHORIZED: 'UNAUTHORIZED',
-  FORBIDDEN: 'FORBIDDEN',
-  NOT_FOUND: 'NOT_FOUND',
-  VALIDATION_ERROR: 'VALIDATION_ERROR',
-  CONFLICT: 'CONFLICT',
-  INTERNAL_ERROR: 'INTERNAL_ERROR',
-  SERVICE_UNAVAILABLE: 'SERVICE_UNAVAILABLE',
-  DATABASE_ERROR: 'DATABASE_ERROR',
-  EXTERNAL_SERVICE_ERROR: 'EXTERNAL_SERVICE_ERROR',
-  BUSINESS_ERROR: 'BUSINESS_ERROR',
-  DOMAIN_ERROR: 'DOMAIN_ERROR',
-} as const;
+import { ResponseCode } from './index';
 
-export const HTTP_STATUS_MAP: Record<string, number> = {
+/**
+ * 响应码到HTTP状态码的映射
+ */
+export const RESPONSE_CODE_TO_HTTP_STATUS: Record<number, number> = {
   // 成功状态
-  [ResponseStatusValues.SUCCESS]: 200,
+  [ResponseCode.SUCCESS]: 200,
 
   // 客户端错误 4xx
-  [ResponseStatusValues.BAD_REQUEST]: 400,
-  [ResponseStatusValues.UNAUTHORIZED]: 401,
-  [ResponseStatusValues.FORBIDDEN]: 403,
-  [ResponseStatusValues.NOT_FOUND]: 404,
-  [ResponseStatusValues.VALIDATION_ERROR]: 422,
-  [ResponseStatusValues.CONFLICT]: 409,
+  [ResponseCode.BAD_REQUEST]: 400,
+  [ResponseCode.UNAUTHORIZED]: 401,
+  [ResponseCode.FORBIDDEN]: 403,
+  [ResponseCode.NOT_FOUND]: 404,
+  [ResponseCode.CONFLICT]: 409,
+  [ResponseCode.VALIDATION_ERROR]: 422,
+  [ResponseCode.TOO_MANY_REQUESTS]: 429,
 
   // 服务器错误 5xx
-  [ResponseStatusValues.INTERNAL_ERROR]: 500,
-  [ResponseStatusValues.SERVICE_UNAVAILABLE]: 503,
-  [ResponseStatusValues.DATABASE_ERROR]: 500,
-  [ResponseStatusValues.EXTERNAL_SERVICE_ERROR]: 502,
+  [ResponseCode.INTERNAL_ERROR]: 500,
+  [ResponseCode.BAD_GATEWAY]: 502,
+  [ResponseCode.SERVICE_UNAVAILABLE]: 503,
+  [ResponseCode.GATEWAY_TIMEOUT]: 504,
 
-  // 业务逻辑错误
-  [ResponseStatusValues.BUSINESS_ERROR]: 400,
-  [ResponseStatusValues.DOMAIN_ERROR]: 400,
+  // 业务逻辑错误（映射到400）
+  [ResponseCode.BUSINESS_ERROR]: 400,
+  [ResponseCode.DOMAIN_ERROR]: 400,
+  [ResponseCode.DATABASE_ERROR]: 500,
+  [ResponseCode.EXTERNAL_SERVICE_ERROR]: 502,
 };
 
 /**
- * 根据响应状态获取HTTP状态码
+ * 根据响应码获取HTTP状态码
+ * @param code 业务响应码
+ * @returns HTTP状态码，默认500
  */
-export function getHttpStatusCode(status: string): number {
-  return HTTP_STATUS_MAP[status] || 500;
+export function getHttpStatusCode(code: ResponseCode): number {
+  return RESPONSE_CODE_TO_HTTP_STATUS[code] || 500;
 }
 
 /**
- * 判断响应状态是否为成功状态
+ * 判断响应码是否为成功状态
+ * @param code 业务响应码
+ * @returns 是否成功
  */
-export function isSuccessStatus(status: string): boolean {
-  return status === ResponseStatusValues.SUCCESS;
+export function isSuccessCode(code: ResponseCode): boolean {
+  return code === ResponseCode.SUCCESS;
 }
 
 /**
- * 判断响应状态是否为客户端错误
+ * 判断响应码是否为客户端错误
+ * @param code 业务响应码
+ * @returns 是否为客户端错误（4xx）
  */
-export function isClientError(status: string): boolean {
-  const code = getHttpStatusCode(status);
-  return code >= 400 && code < 500;
+export function isClientError(code: ResponseCode): boolean {
+  const httpStatus = getHttpStatusCode(code);
+  return httpStatus >= 400 && httpStatus < 500;
 }
 
 /**
- * 判断响应状态是否为服务器错误
+ * 判断响应码是否为服务器错误
+ * @param code 业务响应码
+ * @returns 是否为服务器错误（5xx）
  */
-export function isServerError(status: string): boolean {
-  const code = getHttpStatusCode(status);
-  return code >= 500;
+export function isServerError(code: ResponseCode): boolean {
+  const httpStatus = getHttpStatusCode(code);
+  return httpStatus >= 500;
+}
+
+/**
+ * 判断响应码是否为业务逻辑错误
+ * @param code 业务响应码
+ * @returns 是否为业务逻辑错误（1000-1999）
+ */
+export function isBusinessError(code: ResponseCode): boolean {
+  return code >= 1000 && code < 2000;
+}
+
+/**
+ * 响应码描述映射
+ */
+export const RESPONSE_CODE_MESSAGES: Record<number, string> = {
+  // 成功状态
+  [ResponseCode.SUCCESS]: '操作成功',
+
+  // 客户端错误
+  [ResponseCode.BAD_REQUEST]: '请求参数错误',
+  [ResponseCode.UNAUTHORIZED]: '未授权访问',
+  [ResponseCode.FORBIDDEN]: '禁止访问',
+  [ResponseCode.NOT_FOUND]: '资源不存在',
+  [ResponseCode.CONFLICT]: '资源冲突',
+  [ResponseCode.VALIDATION_ERROR]: '参数验证失败',
+  [ResponseCode.TOO_MANY_REQUESTS]: '请求过于频繁',
+
+  // 服务器错误
+  [ResponseCode.INTERNAL_ERROR]: '服务器内部错误',
+  [ResponseCode.BAD_GATEWAY]: '网关错误',
+  [ResponseCode.SERVICE_UNAVAILABLE]: '服务暂时不可用',
+  [ResponseCode.GATEWAY_TIMEOUT]: '网关超时',
+
+  // 业务逻辑错误
+  [ResponseCode.BUSINESS_ERROR]: '业务逻辑错误',
+  [ResponseCode.DOMAIN_ERROR]: '领域逻辑错误',
+  [ResponseCode.DATABASE_ERROR]: '数据库错误',
+  [ResponseCode.EXTERNAL_SERVICE_ERROR]: '外部服务错误',
+};
+
+/**
+ * 获取响应码的默认消息
+ * @param code 业务响应码
+ * @returns 默认消息
+ */
+export function getResponseCodeMessage(code: ResponseCode): string {
+  return RESPONSE_CODE_MESSAGES[code] || '未知错误';
 }

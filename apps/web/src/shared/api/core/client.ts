@@ -9,6 +9,7 @@ import type {
   HttpClientConfig,
   RequestOptions,
   UploadOptions,
+  ApiResponse,
   SuccessResponse,
   ErrorResponse,
 } from './types';
@@ -240,21 +241,25 @@ export class ApiClient implements IApiClient {
 
   /**
    * 从响应中提取数据
+   * 自动处理统一的 API 响应格式
    */
   private extractData<T>(responseData: any): T {
-    // 如果是标准的API响应格式
+    // 如果是标准的API响应格式 { code, success, data, message, ... }
     if (responseData && typeof responseData === 'object' && 'success' in responseData) {
-      const apiResponse = responseData as SuccessResponse<T> | ErrorResponse;
+      const apiResponse = responseData as ApiResponse<T>;
 
       if (apiResponse.success === true) {
+        // 成功响应，返回 data 字段
         return (apiResponse as SuccessResponse<T>).data;
       } else {
-        // 错误响应，抛出异常
-        throw new Error(apiResponse.message || '请求失败');
+        // 错误响应（这种情况不应该发生，因为拦截器已经抛出了错误）
+        // 但为了安全起见还是处理一下
+        const errorResponse = apiResponse as ErrorResponse;
+        throw new Error(errorResponse.message || '请求失败');
       }
     }
 
-    // 直接返回数据
+    // 非标准格式，直接返回数据（向后兼容）
     return responseData as T;
   }
 
