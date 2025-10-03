@@ -13,21 +13,22 @@ import type {
 import { TaskDomainException } from '@dailyuse/domain-server';
 
 /**
- * Task 领域服务
+ * TaskTemplate 领域服务
  *
  * 职责：
- * - 处理 Task 聚合根的核心业务逻辑
+ * - 处理 TaskTemplate 聚合根的核心业务逻辑
+ * - 通过聚合根控制 TaskInstance 子实体
  * - 通过 ITaskTemplateRepository 和 ITaskInstanceRepository 接口操作数据
  * - 验证业务规则
- * - 管理 TaskTemplate 及 TaskInstance
  *
- * 设计原则：
+ * 设计原则（参考 GoalDomainService）：
  * - 依赖倒置：只依赖仓储接口
- * - 单一职责：只处理 Task 相关的领域逻辑
+ * - 单一职责：只处理 TaskTemplate 聚合根相关的领域逻辑
+ * - 聚合根控制：所有 TaskInstance 操作必须通过 TaskTemplate
  * - 与技术解耦：无任何基础设施细节
  * - 可移植：可安全移动到 @dailyuse/domain-server 包
  */
-export class TaskDomainService {
+export class TaskTemplateDomainService {
   constructor(
     private readonly templateRepository: ITaskTemplateRepository,
     private readonly instanceRepository: ITaskInstanceRepository,

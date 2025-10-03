@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "systems/校验系统.md",
+                "file": "modules/contracts-in-goal.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "校验系统"
+              "title": "contracts-in-goal"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "systems/校验系统.md",
+                "file": "modules/contracts-in-goal.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for 校验系统"
+              "title": "Backlinks for contracts-in-goal"
             }
           },
           {
@@ -134,12 +134,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "systems/校验系统.md",
+                "file": "modules/contracts-in-goal.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from 校验系统"
+              "title": "Outgoing links from contracts-in-goal"
             }
           }
         ]
@@ -182,10 +182,22 @@
   },
   "active": "leaf",
   "lastOpenFiles": [
+    "modules/TASK_APPLICATION_SERVICE_REFACTORING.md",
+    "modules/TASK_META_TEMPLATE_AGGREGATE_REFACTORING.md",
+    "modules/TASK_REFACTORING_CHANGELOG.md",
+    "modules/TASK_REFACTORING_AI_COMPLETION_REPORT.md",
+    "modules/TASK_MODULE_REFACTORING_FINAL_REPORT.md",
+    "modules/TASK_MODULE_REFACTORING_EXECUTION_SUMMARY.md",
+    "modules/TASK_MODULE_REFACTORING_GUIDE.md",
+    "modules/TASK_MODULE_REFACTORING_PLAN.md",
+    "modules/GOAL_INITIALIZATION_QUICK_REFERENCE.md",
+    "modules/contracts-in-goal.md",
+    "modules/GOAL_USER_DATA_INITIALIZATION_GUIDE.md",
+    "systems/日志系统.md",
+    "systems/事件总线系统.md",
+    "systems/校验系统.md",
     "GOAL_AGGREGATE_SERVICE_REFACTORING.md",
     "DOCUMENTATION_CLEANUP_SUMMARY.md",
-    "modules/GOAL_INITIALIZATION_QUICK_REFERENCE.md",
-    "modules/GOAL_USER_DATA_INITIALIZATION_GUIDE.md",
     "guides/EDITOR_MODULE_COMPLETION.md",
     "guides/THEME_SYSTEM_README.md",
     "guides/DEV_SOURCE_MODE.md",
@@ -197,17 +209,6 @@
     "systems/LOGGER_QUICK_REFERENCE.md",
     "systems/LOGGER_INTEGRATION_GUIDE.md",
     "testing/CHANGELOG_VITEST.md",
-    "testing/VITEST_WORKSPACE_CONFIGURATION_SUMMARY.md",
-    "testing/VITEST_WORKSPACE_VERIFICATION_REPORT.md",
-    "testing/VITEST_WORKSPACE_GUIDE.md",
-    "testing/AI_TESTING_GUIDE.md",
-    "testing/TESTING_GUIDE.md",
-    "testing",
-    "systems/事件总线系统.md",
-    "systems/日志系统.md",
-    "文档目录结构.md",
-    "modules/Goal模块完整流程.md",
-    "README.md",
-    "systems/API响应系统.md"
+    "testing"
   ]
 }

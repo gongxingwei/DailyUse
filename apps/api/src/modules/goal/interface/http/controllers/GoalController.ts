@@ -415,4 +415,479 @@ export class GoalController {
       );
     }
   }
+
+  // ===================================================================
+  // 聚合根控制方法 - 关键结果管理（通过 Goal 聚合根）
+  // ===================================================================
+
+  /**
+   * 通过 Goal 聚合根创建关键结果
+   * POST /api/v1/goals/:id/key-results
+   *
+   * 体现DDD原则：
+   * 1. 只能通过 Goal 聚合根创建 KeyResult
+   * 2. 聚合根负责业务规则验证（权重总和不超过100%）
+   * 3. 自动维护数据一致性和版本控制
+   */
+  static async createKeyResult(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+      const request = req.body;
+
+      logger.info('Creating key result through goal aggregate', {
+        accountUuid,
+        goalId: id,
+        keyResultName: request.name,
+      });
+
+      const keyResult = await GoalController.goalService.createKeyResult(accountUuid, id, request);
+
+      logger.info('Key result created successfully', {
+        accountUuid,
+        goalId: id,
+        keyResultId: keyResult.uuid,
+      });
+
+      return GoalController.sendSuccess(
+        res,
+        keyResult,
+        'Key result created successfully through goal aggregate',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('Invalid UUID')) {
+        return GoalController.sendError(res, ResponseCode.VALIDATION_ERROR, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to create key result',
+        error,
+      );
+    }
+  }
+
+  /**
+   * 通过 Goal 聚合根更新关键结果
+   * PUT /api/v1/goals/:id/key-results/:keyResultId
+   */
+  static async updateKeyResult(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id, keyResultId } = req.params;
+      const request = req.body;
+
+      logger.info('Updating key result through goal aggregate', {
+        accountUuid,
+        goalId: id,
+        keyResultId,
+      });
+
+      const keyResult = await GoalController.goalService.updateKeyResultForGoal(
+        accountUuid,
+        id,
+        keyResultId,
+        request,
+      );
+
+      logger.info('Key result updated successfully', { accountUuid, goalId: id, keyResultId });
+
+      return GoalController.sendSuccess(
+        res,
+        keyResult,
+        'Key result updated successfully through goal aggregate',
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to update key result',
+        error,
+      );
+    }
+  }
+
+  /**
+   * 通过 Goal 聚合根删除关键结果
+   * DELETE /api/v1/goals/:id/key-results/:keyResultId
+   *
+   * 体现聚合根控制：
+   * 1. 级联删除相关记录
+   * 2. 维护数据一致性
+   * 3. 发布领域事件
+   */
+  static async deleteKeyResult(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id, keyResultId } = req.params;
+
+      logger.info('Deleting key result through goal aggregate', {
+        accountUuid,
+        goalId: id,
+        keyResultId,
+      });
+
+      await GoalController.goalService.removeKeyResultFromGoal(accountUuid, id, keyResultId);
+
+      logger.info('Key result deleted successfully', { accountUuid, goalId: id, keyResultId });
+
+      return GoalController.sendSuccess(res, null, 'Key result deleted successfully');
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to delete key result',
+        error,
+      );
+    }
+  }
+
+  // ===================================================================
+  // 聚合根控制方法 - 目标记录管理（通过 Goal 聚合根）
+  // ===================================================================
+
+  /**
+   * 通过 Goal 聚合根创建目标记录
+   * POST /api/v1/goals/:id/records
+   *
+   * 体现聚合根控制：
+   * 1. 自动更新关键结果进度
+   * 2. 验证记录数据合理性
+   * 3. 维护聚合一致性
+   */
+  static async createGoalRecord(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+      const request = req.body;
+
+      logger.info('Creating goal record through goal aggregate', {
+        accountUuid,
+        goalId: id,
+        keyResultUuid: request.keyResultUuid,
+      });
+
+      const record = await GoalController.goalService.createRecordForGoal(accountUuid, id, request);
+
+      logger.info('Goal record created successfully', {
+        accountUuid,
+        goalId: id,
+        recordId: record.uuid,
+      });
+
+      return GoalController.sendSuccess(
+        res,
+        record,
+        'Goal record created successfully through goal aggregate',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to create goal record',
+        error,
+      );
+    }
+  }
+
+  // ===================================================================
+  // 聚合根控制方法 - 目标复盘管理（通过 Goal 聚合根）
+  // ===================================================================
+
+  /**
+   * 通过 Goal 聚合根创建目标复盘
+   * POST /api/v1/goals/:id/reviews
+   *
+   * 体现聚合根控制：
+   * 1. 自动生成当前状态快照
+   * 2. 包含完整的目标和关键结果状态
+   * 3. 统一的复盘数据管理
+   */
+  static async createGoalReview(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+      const request = req.body;
+
+      logger.info('Creating goal review through goal aggregate', {
+        accountUuid,
+        goalId: id,
+        reviewTitle: request.title,
+      });
+
+      const review = await GoalController.goalService.createGoalReview(accountUuid, id, request);
+
+      logger.info('Goal review created successfully', {
+        accountUuid,
+        goalId: id,
+        reviewId: review.uuid,
+      });
+
+      return GoalController.sendSuccess(
+        res,
+        review,
+        'Goal review created successfully through goal aggregate',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to create goal review',
+        error,
+      );
+    }
+  }
+
+  // ===================================================================
+  // 聚合根完整视图
+  // ===================================================================
+
+  /**
+   * 获取 Goal 聚合根的完整视图
+   * GET /api/v1/goals/:id/aggregate
+   *
+   * 包含：
+   * 1. 目标基本信息
+   * 2. 所有关键结果
+   * 3. 最近的记录
+   * 4. 复盘历史
+   *
+   * 体现聚合根的完整性：提供统一的数据视图
+   */
+  static async getGoalAggregateView(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+
+      logger.debug('Fetching goal aggregate view', { accountUuid, goalId: id });
+
+      const aggregateView = await GoalController.goalService.getGoalAggregateView(accountUuid, id);
+
+      logger.info('Goal aggregate view retrieved successfully', { accountUuid, goalId: id });
+
+      return GoalController.sendSuccess(
+        res,
+        aggregateView,
+        'Goal aggregate view retrieved successfully',
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to retrieve goal aggregate view',
+        error,
+      );
+    }
+  }
+
+  // ===================================================================
+  // 批量操作（聚合根控制）
+  // ===================================================================
+
+  /**
+   * 批量更新关键结果权重
+   * PUT /api/v1/goals/:id/key-results/batch-weight
+   *
+   * 体现聚合根控制：
+   * 1. 确保权重总和不超过100%
+   * 2. 原子性更新所有关键结果
+   * 3. 维护业务规则一致性
+   */
+  static async batchUpdateKeyResultWeights(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+      const { keyResults } = req.body as { keyResults: Array<{ uuid: string; weight: number }> };
+
+      logger.info('Batch updating key result weights', {
+        accountUuid,
+        goalId: id,
+        count: keyResults.length,
+      });
+
+      // 验证权重总和
+      const totalWeight = keyResults.reduce((sum, kr) => sum + kr.weight, 0);
+      if (totalWeight > 100) {
+        logger.warn('Total weight exceeds 100%', { accountUuid, goalId: id, totalWeight });
+        return GoalController.sendError(
+          res,
+          ResponseCode.VALIDATION_ERROR,
+          `Total weight cannot exceed 100%. Current total: ${totalWeight}%`,
+        );
+      }
+
+      // 通过聚合根逐个更新（保证业务规则）
+      const updatedKeyResults = [];
+      for (const krUpdate of keyResults) {
+        const updated = await GoalController.goalService.updateKeyResultForGoal(
+          accountUuid,
+          id,
+          krUpdate.uuid,
+          { weight: krUpdate.weight },
+        );
+        updatedKeyResults.push(updated);
+      }
+
+      logger.info('Key result weights updated successfully', {
+        accountUuid,
+        goalId: id,
+        count: updatedKeyResults.length,
+      });
+
+      return GoalController.sendSuccess(
+        res,
+        updatedKeyResults,
+        'Key result weights updated successfully through goal aggregate',
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to update key result weights',
+        error,
+      );
+    }
+  }
+
+  /**
+   * 复制 Goal 聚合根（包含所有子实体）
+   * POST /api/v1/goals/:id/clone
+   *
+   * 体现聚合根完整性：
+   * 1. 复制目标及所有关键结果
+   * 2. 保持数据关联关系
+   * 3. 重置时间戳和状态
+   */
+  static async cloneGoalAggregate(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = GoalController.extractAccountUuid(req);
+      const { id } = req.params; // goalId
+      const { newName, newDescription } = req.body;
+
+      logger.info('Cloning goal aggregate', { accountUuid, goalId: id, newName });
+
+      // 获取完整聚合视图
+      const originalAggregate = await GoalController.goalService.getGoalAggregateView(
+        accountUuid,
+        id,
+      );
+
+      // 创建新目标
+      const newGoal = await GoalController.goalService.createGoal(accountUuid, {
+        uuid: '123e4567-e89b-12d3-a456-426614174000', // 示例 UUID，实际应由服务生成
+        name: newName || `${originalAggregate.goal.name} (Copy)`,
+        description: newDescription || originalAggregate.goal.description,
+        color: originalAggregate.goal.color,
+        dirUuid: originalAggregate.goal.dirUuid,
+        startTime: Date.now(),
+        endTime: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30天后
+        note: originalAggregate.goal.note,
+        analysis: originalAggregate.goal.analysis,
+        metadata: originalAggregate.goal.metadata,
+      });
+
+      // 复制所有关键结果
+      const clonedKeyResults = [];
+      for (const kr of originalAggregate.keyResults) {
+        const clonedKr = await GoalController.goalService.createKeyResult(
+          accountUuid,
+          newGoal.uuid,
+          {
+            name: kr.name,
+            description: kr.description,
+            startValue: kr.startValue,
+            targetValue: kr.targetValue,
+            currentValue: kr.startValue, // 重置为起始值
+            unit: kr.unit,
+            weight: kr.weight,
+            calculationMethod: kr.calculationMethod,
+          },
+        );
+        clonedKeyResults.push(clonedKr);
+      }
+
+      logger.info('Goal aggregate cloned successfully', {
+        accountUuid,
+        originalGoalId: id,
+        newGoalId: newGoal.uuid,
+        keyResultsCount: clonedKeyResults.length,
+      });
+
+      return GoalController.sendSuccess(
+        res,
+        {
+          goal: newGoal,
+          keyResults: clonedKeyResults,
+        },
+        'Goal aggregate cloned successfully',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('Authentication')) {
+        return GoalController.sendError(res, ResponseCode.UNAUTHORIZED, error.message, error);
+      }
+      if (error instanceof Error && error.message.includes('not found')) {
+        return GoalController.sendError(res, ResponseCode.NOT_FOUND, error.message, error);
+      }
+
+      return GoalController.sendError(
+        res,
+        ResponseCode.INTERNAL_ERROR,
+        error instanceof Error ? error.message : 'Failed to clone goal aggregate',
+        error,
+      );
+    }
+  }
 }

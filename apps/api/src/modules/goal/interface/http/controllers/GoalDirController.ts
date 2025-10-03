@@ -3,9 +3,22 @@ import { GoalDirApplicationService } from '../../../application/services/GoalDir
 import type { GoalContracts } from '@dailyuse/contracts';
 import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
 import { GoalContainer } from '../../../infrastructure/di/GoalContainer';
+import {
+  type ApiResponse,
+  type SuccessResponse,
+  type ErrorResponse,
+  ResponseCode,
+  createResponseBuilder,
+  getHttpStatusCode,
+} from '@dailyuse/contracts';
+import { createLogger } from '@dailyuse/utils';
+
+// 创建 logger 实例
+const logger = createLogger('GoalDirController');
 
 export class GoalDirController {
   private static goalDirService: GoalDirApplicationService;
+  private static responseBuilder = createResponseBuilder();
 
   /**
    * 初始化服务（使用依赖注入）
@@ -19,28 +32,58 @@ export class GoalDirController {
   }
 
   /**
+   * 发送成功响应
+   */
+  private static sendSuccess<T>(
+    res: Response,
+    data: T,
+    message: string,
+    code: ResponseCode = ResponseCode.SUCCESS,
+  ): void {
+    const response = this.responseBuilder.success(data, message);
+    const httpStatus = getHttpStatusCode(code);
+    res.status(httpStatus).json(response);
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private static sendError(
+    res: Response,
+    error: Error,
+    code: ResponseCode = ResponseCode.INTERNAL_ERROR,
+    defaultMessage: string = 'Operation failed',
+  ): void {
+    logger.error(`${defaultMessage}:`, error);
+    const response = this.responseBuilder.error(code, error.message || defaultMessage);
+    const httpStatus = getHttpStatusCode(code);
+    res.status(httpStatus).json(response);
+  }
+
+  /**
    * 创建目标目录
    */
   static async createGoalDir(req: AuthenticatedRequest, res: Response) {
     try {
       await GoalDirController.initializeService();
       const request: GoalContracts.CreateGoalDirRequest = req.body;
-
-      // 从认证中间件获取用户UUID
-      const accountUuid = req.accountUuid!; // 认证中间件保证存在
+      const accountUuid = req.accountUuid!;
 
       const goalDir = await GoalDirController.goalDirService.createGoalDir(request, accountUuid);
 
-      res.status(201).json({
-        success: true,
-        data: goalDir,
-        message: 'Goal directory created successfully',
-      });
+      GoalDirController.sendSuccess(
+        res,
+        goalDir,
+        'Goal directory created successfully',
+        ResponseCode.SUCCESS,
+      );
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to create goal directory',
-      });
+      GoalDirController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to create goal directory',
+      );
     }
   }
 
@@ -51,22 +94,18 @@ export class GoalDirController {
     try {
       await GoalDirController.initializeService();
       const queryParams = req.query;
-
-      // 从认证中间件获取用户UUID
-      const accountUuid = req.accountUuid!; // 认证中间件保证存在
+      const accountUuid = req.accountUuid!;
 
       const goalDirs = await GoalDirController.goalDirService.getGoalDirs(queryParams, accountUuid);
 
-      res.json({
-        success: true,
-        data: goalDirs,
-        message: 'Goal directories retrieved successfully',
-      });
+      GoalDirController.sendSuccess(res, goalDirs, 'Goal directories retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to retrieve goal directories',
-      });
+      GoalDirController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve goal directories',
+      );
     }
   }
 
@@ -77,29 +116,27 @@ export class GoalDirController {
     try {
       await GoalDirController.initializeService();
       const { id } = req.params;
-
-      // 从认证中间件获取用户UUID
-      const accountUuid = req.accountUuid!; // 认证中间件保证存在
+      const accountUuid = req.accountUuid!;
 
       const goalDir = await GoalDirController.goalDirService.getGoalDirById(id, accountUuid);
 
       if (!goalDir) {
-        return res.status(404).json({
-          success: false,
-          message: 'Goal directory not found',
-        });
+        return GoalDirController.sendError(
+          res,
+          new Error('Goal directory not found'),
+          ResponseCode.NOT_FOUND,
+          'Goal directory not found',
+        );
       }
 
-      res.json({
-        success: true,
-        data: goalDir,
-        message: 'Goal directory retrieved successfully',
-      });
+      GoalDirController.sendSuccess(res, goalDir, 'Goal directory retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to retrieve goal directory',
-      });
+      GoalDirController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve goal directory',
+      );
     }
   }
 
@@ -111,9 +148,7 @@ export class GoalDirController {
       await GoalDirController.initializeService();
       const { id } = req.params;
       const request: GoalContracts.UpdateGoalDirRequest = req.body;
-
-      // 从认证中间件获取用户UUID
-      const accountUuid = req.accountUuid!; // 认证中间件保证存在
+      const accountUuid = req.accountUuid!;
 
       const goalDir = await GoalDirController.goalDirService.updateGoalDir(
         id,
@@ -121,16 +156,14 @@ export class GoalDirController {
         accountUuid,
       );
 
-      res.json({
-        success: true,
-        data: goalDir,
-        message: 'Goal directory updated successfully',
-      });
+      GoalDirController.sendSuccess(res, goalDir, 'Goal directory updated successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to update goal directory',
-      });
+      GoalDirController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to update goal directory',
+      );
     }
   }
 
@@ -141,21 +174,18 @@ export class GoalDirController {
     try {
       await GoalDirController.initializeService();
       const { id } = req.params;
-
-      // 从认证中间件获取用户UUID
-      const accountUuid = req.accountUuid!; // 认证中间件保证存在
+      const accountUuid = req.accountUuid!;
 
       await GoalDirController.goalDirService.deleteGoalDir(id, accountUuid);
 
-      res.json({
-        success: true,
-        message: 'Goal directory deleted successfully',
-      });
+      GoalDirController.sendSuccess(res, null, 'Goal directory deleted successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        message: error instanceof Error ? error.message : 'Failed to delete goal directory',
-      });
+      GoalDirController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to delete goal directory',
+      );
     }
   }
 }

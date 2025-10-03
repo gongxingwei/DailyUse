@@ -1,4 +1,4 @@
-import { Entity } from '@dailyuse/utils';
+import { AggregateRoot } from '@dailyuse/utils';
 import { TaskContracts, sharedContracts } from '@dailyuse/contracts';
 
 type ImportanceLevel = sharedContracts.ImportanceLevel;
@@ -7,10 +7,10 @@ const ImportanceLevelEnum = sharedContracts.ImportanceLevel;
 const UrgencyLevelEnum = sharedContracts.UrgencyLevel;
 
 /**
- * 任务元模板核心基类
+ * 任务元模板核心基类 - 聚合根
  */
 export abstract class TaskMetaTemplateCore
-  extends Entity
+  extends AggregateRoot
   implements TaskContracts.ITaskMetaTemplate
 {
   protected _accountUuid: string;
@@ -84,7 +84,7 @@ export abstract class TaskMetaTemplateCore
     };
     createdAt?: Date;
   }) {
-    super(params.uuid || Entity.generateUUID());
+    super(params.uuid || AggregateRoot.generateUUID());
 
     this._accountUuid = params.accountUuid;
     this._name = params.name;

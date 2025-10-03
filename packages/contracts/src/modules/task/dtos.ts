@@ -3,10 +3,9 @@ import type {
   ITaskInstance,
   ITaskMetaTemplate,
   TaskQueryParams,
-  TaskTimeType,
-  TaskScheduleMode,
   KeyResultLink,
 } from './types';
+import type { TaskTimeType, TaskScheduleMode } from './enums';
 import type { ImportanceLevel, UrgencyLevel } from '../../shared/index';
 
 /**
@@ -444,4 +443,197 @@ export interface TaskStatsDTO {
       total: number;
     }>;
   };
+}
+
+// =================================================================
+// Client DTOs - 客户端DTOs（包含计算属性和UI渲染数据）
+// =================================================================
+
+/**
+ * 任务模板客户端DTO
+ * 基于TaskTemplateDTO，添加计算属性用于UI渲染和交互逻辑
+ */
+export interface TaskTemplateClientDTO extends TaskTemplateDTO {
+  // =================================================================
+  // UI Display - UI显示属性
+  // =================================================================
+
+  /** 显示标题（包含状态标识） */
+  displayTitle: string;
+
+  /** 状态文本（中文描述） */
+  statusText: string;
+
+  /** 状态颜色（用于UI主题） */
+  statusColor: string;
+
+  /** 调度规则文本描述 */
+  scheduleText: string;
+
+  /** 完成率文本（百分比） */
+  completionRateText: string;
+
+  // =================================================================
+  // Status Flags - 状态标志
+  // =================================================================
+
+  /** 是否可以激活 */
+  canActivate: boolean;
+
+  /** 是否可以暂停 */
+  canPause: boolean;
+
+  /** 是否可以编辑 */
+  canEdit: boolean;
+
+  /** 是否可以删除 */
+  canDelete: boolean;
+
+  /** 是否可以创建实例 */
+  canCreateInstance: boolean;
+
+  // =================================================================
+  // Metrics - 统计指标
+  // =================================================================
+
+  /** 活动实例数量 */
+  activeInstancesCount: number;
+
+  /** 总实例数量 */
+  totalInstancesCount: number;
+
+  /** 完成的实例数量 */
+  completedInstancesCount: number;
+
+  /** 实例完成率（0-100） */
+  instanceCompletionRate: number;
+
+  /** 下次调度时间（格式化） */
+  nextScheduledTime: string | null;
+
+  /** 是否有待办实例 */
+  hasPendingInstances: boolean;
+
+  /** 是否有逾期实例 */
+  hasOverdueInstances: boolean;
+
+  // =================================================================
+  // Time Analysis - 时间分析
+  // =================================================================
+
+  /** 创建天数 */
+  daysSinceCreation: number;
+
+  /** 最后执行时间（格式化） */
+  lastExecutedTime: string | null;
+
+  /** 平均完成时长（分钟） */
+  averageCompletionMinutes: number | null;
+}
+
+/**
+ * 任务实例客户端DTO
+ * 基于TaskInstanceDTO，添加计算属性用于UI渲染和交互逻辑
+ */
+export interface TaskInstanceClientDTO extends TaskInstanceDTO {
+  // =================================================================
+  // UI Display - UI显示属性
+  // =================================================================
+
+  /** 显示标题（包含状态标识） */
+  displayTitle: string;
+
+  /** 状态文本（中文描述） */
+  statusText: string;
+
+  /** 状态颜色（用于UI主题） */
+  statusColor: string;
+
+  /** 优先级文本 */
+  priorityText: string;
+
+  /** 优先级颜色 */
+  priorityColor: string;
+
+  // =================================================================
+  // Status Flags - 状态标志
+  // =================================================================
+
+  /** 是否可以开始 */
+  canStart: boolean;
+
+  /** 是否可以完成 */
+  canComplete: boolean;
+
+  /** 是否可以取消 */
+  canCancel: boolean;
+
+  /** 是否可以重新调度 */
+  canReschedule: boolean;
+
+  /** 是否可以编辑 */
+  canEdit: boolean;
+
+  /** 是否可以删除 */
+  canDelete: boolean;
+
+  // =================================================================
+  // Time Analysis - 时间分析
+  // =================================================================
+
+  /** 是否逾期 */
+  isOverdue: boolean;
+
+  /** 剩余时间文本（如：还剩2小时） */
+  remainingTime: string;
+
+  /** 格式化的调度时间 */
+  formattedScheduledTime: string;
+
+  /** 格式化的开始时间 */
+  formattedStartTime: string | null;
+
+  /** 格式化的完成时间 */
+  formattedCompletedTime: string | null;
+
+  /** 格式化的取消时间 */
+  formattedCancelledTime: string | null;
+
+  /** 执行时长（分钟） */
+  executionDurationMinutes: number | null;
+
+  /** 执行时长文本（如：用时30分钟） */
+  executionDurationText: string | null;
+
+  // =================================================================
+  // Progress - 进度信息
+  // =================================================================
+
+  /** 进度百分比文本（如：80%） */
+  progressPercentageText: string;
+
+  /** 执行摘要文本 */
+  executionSummary: string;
+
+  /** 是否在今天 */
+  isToday: boolean;
+
+  /** 是否在本周 */
+  isThisWeek: boolean;
+
+  /** 是否在本月 */
+  isThisMonth: boolean;
+
+  // =================================================================
+  // Reminders - 提醒信息
+  // =================================================================
+
+  /** 是否有提醒 */
+  hasReminder: boolean;
+
+  /** 下次提醒时间（格式化） */
+  nextReminderTime: string | null;
+
+  /** 是否需要立即提醒 */
+  needsImmediateReminder: boolean;
 }

@@ -40,9 +40,10 @@ export * from './goal/exceptions/GoalDomainException';
 
 // Task domain exports
 export * from './task/aggregates/TaskTemplate';
+export * from './task/aggregates/TaskMetaTemplate';
 export * from './task/entities/TaskInstance';
-export * from './task/entities/TaskMetaTemplate';
 export * from './task/repositories/iTaskRepository';
+export * from './task/exceptions/TaskDomainException';
 
 // Reminder domain exports
 export * from './reminder/aggregates/Reminder';

@@ -1,32 +1,5 @@
 import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
-
-/**
- * 任务执行时间类型
- */
-export enum TaskTimeType {
-  /** 全天任务 */
-  ALL_DAY = 'allDay',
-  /** 指定时间点 */
-  SPECIFIC_TIME = 'specificTime',
-  /** 时间范围 */
-  TIME_RANGE = 'timeRange',
-}
-
-/**
- * 任务调度模式
- */
-export enum TaskScheduleMode {
-  /** 单次任务 */
-  ONCE = 'once',
-  /** 每日 */
-  DAILY = 'daily',
-  /** 每周 */
-  WEEKLY = 'weekly',
-  /** 每月 */
-  MONTHLY = 'monthly',
-  /** 间隔天数 */
-  INTERVAL_DAYS = 'intervalDays',
-}
+import { TaskTimeType, TaskScheduleMode } from './enums';
 
 /**
  * 任务时间配置 - 简化版
