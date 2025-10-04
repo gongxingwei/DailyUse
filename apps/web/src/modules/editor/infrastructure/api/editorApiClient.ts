@@ -27,7 +27,7 @@ export class EditorSessionApiClient {
     limit?: number;
     accountUuid?: string;
     status?: string;
-  }): Promise<EditorContracts.EditorSessionListResponse> {
+  }): Promise<EditorContracts.EditorSessionListResponse['data']> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }
@@ -74,7 +74,9 @@ export class EditorSessionApiClient {
   /**
    * 获取会话的编辑器组列表
    */
-  async getGroupsBySession(sessionUuid: string): Promise<EditorContracts.EditorGroupListResponse> {
+  async getGroupsBySession(
+    sessionUuid: string,
+  ): Promise<EditorContracts.EditorGroupListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/${sessionUuid}/groups`);
     return data;
   }
@@ -144,7 +146,7 @@ export class EditorSessionApiClient {
   async getTabsByGroup(
     sessionUuid: string,
     groupUuid: string,
-  ): Promise<EditorContracts.EditorTabListResponse> {
+  ): Promise<EditorContracts.EditorTabListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/${sessionUuid}/groups/${groupUuid}/tabs`);
     return data;
   }
@@ -310,7 +312,7 @@ export class EditorSessionApiClient {
       start?: string;
       end?: string;
     };
-  }): Promise<EditorContracts.EditorSessionListResponse> {
+  }): Promise<EditorContracts.EditorSessionListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/search`, { params });
     return data;
   }
@@ -380,7 +382,7 @@ export class EditorLayoutApiClient {
     page?: number;
     limit?: number;
     category?: string;
-  }): Promise<EditorContracts.EditorLayoutListResponse> {
+  }): Promise<EditorContracts.EditorLayoutListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/templates`, { params });
     return data;
   }

@@ -11,5 +11,8 @@ export { useThemeStore } from './themeStore';
 // 导出初始化函数
 export { useThemeInit } from './useThemeInit';
 
+// 导出初始化任务
+export { registerThemeInitializationTasks } from './initialization/themeInitialization';
+
 // 导出组件
 export { default as ThemeSwitcher } from './components/ThemeSwitcher.vue';

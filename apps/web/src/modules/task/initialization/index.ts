@@ -64,8 +64,29 @@ export function registerTaskInitializationTasks(): void {
       try {
         const taskService = getTaskWebService;
 
-        // 完整初始化，包括数据同步
+        // 1. 初始化模块
         await taskService.initialize();
+
+        // 2. 获取 TaskMetaTemplates（元模板）
+        console.log('📥 [Task] 获取 TaskMetaTemplate 列表...');
+        try {
+          const metaTemplates = await taskService.getTaskMetaTemplates();
+          console.log(
+            `✅ [Task] 成功获取 ${metaTemplates.metaTemplates.length} 个 TaskMetaTemplate`,
+          );
+        } catch (error) {
+          console.warn('⚠️ [Task] 获取 TaskMetaTemplate 失败，继续初始化', error);
+        }
+
+        // 3. 获取 TaskTemplates（包含 instances）
+        console.log('📥 [Task] 获取 TaskTemplate 列表（包含 instances）...');
+        try {
+          const templates = await taskService.getTaskTemplates({ limit: 100 });
+          console.log(`✅ [Task] 成功获取 ${templates.templates.length} 个 TaskTemplate`);
+        } catch (error) {
+          console.warn('⚠️ [Task] 获取 TaskTemplate 失败，继续初始化', error);
+        }
+
         console.log('✅ [Task] 用户 Task 数据同步完成');
       } catch (error) {
         console.error('❌ [Task] 用户 Task 数据同步失败:', error);

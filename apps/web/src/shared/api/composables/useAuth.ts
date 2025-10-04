@@ -5,7 +5,7 @@
  */
 
 import { useAuthentication } from '../../../modules/authentication/presentation/composables/useAuthentication';
-import { useAuthStore } from '../../../modules/authentication/presentation/stores/useAuthStore';
+import { useAuthStore } from '../../../modules/authentication/presentation/stores/authenticationStore';
 
 /**
  * 认证组合式API

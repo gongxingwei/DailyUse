@@ -29,7 +29,7 @@ export class TaskTemplateApiClient {
     importance?: string;
     urgency?: string;
     tags?: string[];
-  }): Promise<TaskContracts.TaskTemplateListResponse> {
+  }): Promise<TaskContracts.TaskTemplateListResponse['data']> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }
@@ -106,7 +106,7 @@ export class TaskTemplateApiClient {
     importance?: string;
     urgency?: string;
     tags?: string[];
-  }): Promise<TaskContracts.TaskTemplateListResponse> {
+  }): Promise<TaskContracts.TaskTemplateListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/search`, {
       params,
     });
@@ -145,7 +145,7 @@ export class TaskInstanceApiClient {
     importance?: string;
     urgency?: string;
     tags?: string[];
-  }): Promise<TaskContracts.TaskInstanceListResponse> {
+  }): Promise<TaskContracts.TaskInstanceListResponse['data']> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }
@@ -243,7 +243,7 @@ export class TaskInstanceApiClient {
     importance?: string;
     urgency?: string;
     tags?: string[];
-  }): Promise<TaskContracts.TaskInstanceListResponse> {
+  }): Promise<TaskContracts.TaskInstanceListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/search`, {
       params,
     });
@@ -301,7 +301,7 @@ export class TaskMetaTemplateApiClient {
     page?: number;
     limit?: number;
     category?: string;
-  }): Promise<TaskContracts.TaskMetaTemplateListResponse> {
+  }): Promise<TaskContracts.TaskMetaTemplateListResponse['data']> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }

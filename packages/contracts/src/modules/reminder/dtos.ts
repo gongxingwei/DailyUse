@@ -403,25 +403,66 @@ export interface ToggleTemplateSelfEnabledRequest {
  * 启用状态变更响应
  */
 export interface EnableStatusChangeResponse {
-  data: {
-    success: boolean;
-    message: string;
-    affectedTemplates: number;
-    addedInstances: number;
-    removedInstances: number;
-    updatedInstances: number;
-    details: {
-      templates: Array<{
-        uuid: string;
-        name: string;
-        oldEnabled: boolean;
-        newEnabled: boolean;
-      }>;
-      instances: {
-        added: string[];
-        removed: string[];
-        updated: string[];
-      };
+  success: boolean;
+  message: string;
+  affectedTemplates: number;
+  addedInstances: number;
+  removedInstances: number;
+  updatedInstances: number;
+  details: {
+    templates: Array<{
+      uuid: string;
+      name: string;
+      oldEnabled: boolean;
+      newEnabled: boolean;
+    }>;
+    instances: {
+      added: string[];
+      removed: string[];
+      updated: string[];
     };
   };
 }
+
+// ==================== 单个资源响应 DTOs ====================
+
+/**
+ * 单个提醒模板响应 - GET/POST/PUT /api/v1/reminders/templates/*
+ */
+export interface ReminderTemplateResponse {
+  data: ReminderTemplateClientDTO;
+}
+
+/**
+ * 单个提醒实例响应 - GET/POST/PUT /api/v1/reminders/instances/*
+ */
+export interface ReminderInstanceResponse {
+  data: ReminderInstanceClientDTO;
+}
+
+/**
+ * 单个提醒分组响应 - GET/POST/PUT /api/v1/reminders/groups/*
+ */
+export interface ReminderTemplateGroupResponse {
+  data: ReminderTemplateGroupClientDTO;
+}
+
+/**
+ * 即将到来的提醒响应 - GET /api/v1/reminders/upcoming
+ */
+export interface UpcomingRemindersResponse {
+  data: {
+    reminders: ReminderInstanceClientDTO[];
+    total: number;
+    timeRange: {
+      start: number;
+      end: number;
+    };
+  };
+}
+
+/**
+ * 提醒列表响应 (别名)
+ * @deprecated 使用 ReminderInstanceListResponse 代替
+ */
+export type ReminderListResponse = ReminderInstanceListResponse;

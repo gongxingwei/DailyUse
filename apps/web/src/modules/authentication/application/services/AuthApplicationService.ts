@@ -57,18 +57,24 @@ export class AuthApplicationService {
       this.authStore.setLoading(true);
       this.authStore.setError(null);
 
-      // 调用 API 登录
-      const response = await AuthApiService.login(request);
+      // 调用 API 登录 - 返回 LoginResponse['data'] 格式
+      const loginData = await AuthApiService.login(request);
 
-      // 提取 response.data
+      // 提取数据 - 新格式: { user, accessToken, refreshToken, sessionId, ... }
       const { user, accessToken, refreshToken, expiresIn, tokenType, sessionId, rememberToken } =
-        response.data;
+        loginData;
 
       // 使用 AuthManager 保存令牌（用于请求拦截器）
       AuthManager.setTokens(accessToken, refreshToken, rememberToken, expiresIn);
 
-      // 同步到 store（使用 LoginResponse 格式）
-      this.authStore.setAuthData(response.data);
+      // 同步到 store - 直接使用 UserInfoDTO
+      this.authStore.setUser(user);
+      this.authStore.setTokens({
+        accessToken,
+        refreshToken,
+        rememberToken,
+        expiresIn,
+      });
 
       console.log('登录成功，你好', user.username);
 
@@ -91,7 +97,8 @@ export class AuthApplicationService {
         console.warn('⚠️ [AuthService] 用户会话初始化失败，但不影响登录', error);
       }
 
-      return response;
+      // 返回完整的 LoginResponse 格式
+      return { data: loginData } as LoginResponse;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '登录失败';
       this.authStore.setError(errorMessage);
@@ -159,11 +166,11 @@ export class AuthApplicationService {
     try {
       this.authStore.setLoading(true);
 
-      // 调用 API 刷新令牌
-      const response = await AuthApiService.refreshToken({ refreshToken });
+      // 调用 API 刷新令牌 - extractData 已解包返回 RefreshTokenResponse['data']
+      const tokenData = await AuthApiService.refreshToken({ refreshToken });
 
-      // 提取 response.data
-      const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+      // 提取数据
+      const { accessToken, refreshToken: newRefreshToken, expiresIn } = tokenData;
 
       // 使用 AuthManager 更新令牌
       AuthManager.setTokens(accessToken, newRefreshToken, undefined, expiresIn);
@@ -261,12 +268,12 @@ export class AuthApplicationService {
     try {
       this.authStore.setLoading(true);
 
-      const response = await AuthApiService.getMFADevices();
+      const devicesData = await AuthApiService.getMFADevices();
 
       // 同步到 store
-      this.authStore.setMFADevices(response.data.devices);
+      this.authStore.setMFADevices(devicesData.devices);
 
-      return response.data.devices;
+      return devicesData.devices;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取 MFA 设备失败';
       this.authStore.setError(errorMessage);
@@ -309,15 +316,15 @@ export class AuthApplicationService {
     try {
       this.authStore.setLoading(true);
 
-      const response = await AuthApiService.getSessions();
+      const sessionsData = await AuthApiService.getSessions();
 
       // 找到当前会话
-      const currentSession = response.data.sessions.find((s) => s.isCurrent);
+      const currentSession = sessionsData.sessions.find((s: UserSessionClientDTO) => s.isCurrent);
       if (currentSession) {
         this.authStore.setCurrentSession(currentSession);
       }
 
-      return response.data.sessions;
+      return sessionsData.sessions;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取会话列表失败';
       this.authStore.setError(errorMessage);

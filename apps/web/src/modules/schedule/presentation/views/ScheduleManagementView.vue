@@ -303,9 +303,11 @@ const filteredTasks = computed(() => {
 const loadTasks = async () => {
     loading.value = true
     try {
-        tasks.value = await scheduleWebApplicationService.getScheduleTasks()
+        const response = await scheduleWebApplicationService.getScheduleTasks()
+        tasks.value = response.tasks || []
     } catch (error) {
         console.error('加载任务失败:', error)
+        tasks.value = [] // 确保出错时也有默认值
     } finally {
         loading.value = false
     }

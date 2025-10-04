@@ -16,6 +16,7 @@ export interface AuthenticationState {
   // 令牌信息
   accessToken: string | null;
   refreshToken: string | null;
+  rememberToken: string | null; // 添加 rememberToken 到状态
   tokenType: string;
   expiresAt: number | null; // 毫秒时间戳
 
@@ -36,6 +37,7 @@ export const useAuthenticationStore = defineStore('authentication', {
     currentSession: null,
     accessToken: null,
     refreshToken: null,
+    rememberToken: null,
     tokenType: 'Bearer',
     expiresAt: null,
     mfaDevices: [],
@@ -106,6 +108,27 @@ export const useAuthenticationStore = defineStore('authentication', {
     },
 
     /**
+     * Token 是否已过期
+     */
+    isTokenExpired: (state) => {
+      if (!state.expiresAt) return false;
+      return Date.now() >= state.expiresAt;
+    },
+
+    /**
+     * Token 是否需要刷新（提前5分钟）
+     */
+    needsRefresh: (state) => {
+      if (!state.expiresAt) return false;
+      return Date.now() >= state.expiresAt - 5 * 60 * 1000;
+    },
+
+    /**
+     * 获取 Token 过期时间
+     */
+    tokenExpiry: (state) => state.expiresAt,
+
+    /**
      * 获取用户角色
      */
     getUserRoles: (state) => state.user?.roles ?? [],
@@ -143,6 +166,11 @@ export const useAuthenticationStore = defineStore('authentication', {
      * 是否正在加载
      */
     getLoading: (state) => state.isLoading,
+
+    /**
+     * 是否正在加载 (兼容 useAuthStore API)
+     */
+    loading: (state) => state.isLoading,
 
     /**
      * 获取错误信息
@@ -264,6 +292,52 @@ export const useAuthenticationStore = defineStore('authentication', {
     },
 
     /**
+     * 清除错误信息
+     */
+    clearError() {
+      this.error = null;
+    },
+
+    /**
+     * 设置 Tokens (兼容 useAuthStore API)
+     */
+    setTokens(tokens: {
+      accessToken: string;
+      refreshToken: string;
+      rememberToken?: string;
+      expiresIn?: number;
+    }) {
+      this.accessToken = tokens.accessToken;
+      this.refreshToken = tokens.refreshToken;
+      if (tokens.rememberToken) {
+        this.rememberToken = tokens.rememberToken;
+      }
+      if (tokens.expiresIn) {
+        this.expiresAt = Date.now() + tokens.expiresIn * 1000;
+      }
+    },
+
+    /**
+     * 清除认证数据 (兼容 useAuthStore API)
+     */
+    clearAuth() {
+      this.logout();
+    },
+
+    /**
+     * 同步到 AuthManager (兼容 useAuthStore API)
+     */
+    syncToAuthManager() {
+      if (this.accessToken && this.refreshToken) {
+        const expiresIn = this.expiresAt
+          ? Math.max(0, Math.floor((this.expiresAt - Date.now()) / 1000))
+          : undefined;
+        // AuthManager 已经在拦截器中处理，这里只是兼容接口
+        console.log('Syncing to AuthManager:', { expiresIn });
+      }
+    },
+
+    /**
      * 持久化认证数据
      */
     persistAuthData() {
@@ -367,4 +441,13 @@ export const useAuthenticationStore = defineStore('authentication', {
       localStorage.removeItem('auth_remember_me');
     },
   },
+
+  // 配置 Pinia 持久化
+  persist: true,
 });
+
+// ===== 别名导出，向后兼容 =====
+export const useAuthStore = useAuthenticationStore;
+
+// ===== 类型导出 =====
+export type AuthStore = ReturnType<typeof useAuthenticationStore>;

@@ -11,6 +11,10 @@ import { sharedContracts, AuthenticationContracts } from '@dailyuse/contracts';
 type ClientInfo = sharedContracts.ClientInfo;
 type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
 type AuthResponseDTO = AuthenticationContracts.AuthResponse;
+type LoginResponseData = AuthenticationContracts.LoginResponse['data'];
+type RefreshTokenResponseData = AuthenticationContracts.RefreshTokenResponse['data'];
+type LogoutResponseData = AuthenticationContracts.LogoutResponse['data'];
+type UserInfoDTO = AuthenticationContracts.UserInfoDTO;
 
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
@@ -106,7 +110,7 @@ export class AuthenticationApplicationService {
    */
   async loginByPassword(
     request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo },
-  ): Promise<TResponse<AuthResponseDTO>> {
+  ): Promise<TResponse<LoginResponseData>> {
     logger.info('Processing password authentication', { username: request.username });
 
     try {
@@ -115,7 +119,7 @@ export class AuthenticationApplicationService {
       if (result.success) {
         logger.info('Password authentication successful', {
           username: request.username,
-          accountUuid: result.data?.accountUuid,
+          accountUuid: result.data?.user.uuid,
         });
       } else {
         logger.warn('Password authentication failed', {

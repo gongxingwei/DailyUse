@@ -214,6 +214,8 @@ export interface TaskTemplateDTO {
     lastInstanceDate?: string; // ISO date string
   };
   goalLinks?: KeyResultLink[];
+  // 聚合根包含实体：TaskTemplate 包含 TaskInstance 列表
+  instances?: TaskInstanceDTO[];
 }
 
 /**
@@ -349,7 +351,7 @@ export type TaskTemplateResponse = TaskTemplateDTO;
  * 任务模板列表响应 DTO
  */
 export interface TaskTemplateListResponse {
-  templates: TaskTemplateDTO[];
+  data: TaskTemplateDTO[];
   total: number;
   page: number;
   limit: number;
@@ -365,7 +367,7 @@ export type TaskInstanceResponse = TaskInstanceDTO;
  * 任务实例列表响应 DTO
  */
 export interface TaskInstanceListResponse {
-  instances: TaskInstanceDTO[];
+  data: TaskInstanceDTO[];
   total: number;
   page: number;
   limit: number;
@@ -386,7 +388,7 @@ export type TaskMetaTemplateResponse = TaskMetaTemplateDTO;
  * 任务元模板列表响应 DTO
  */
 export interface TaskMetaTemplateListResponse {
-  metaTemplates: TaskMetaTemplateDTO[];
+  data: TaskMetaTemplateDTO[];
   total: number;
   page: number;
   limit: number;

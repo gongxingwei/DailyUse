@@ -31,7 +31,18 @@ export class ScheduleApiClient {
     tags?: string[];
   }): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
     const data = await apiClient.get(this.baseUrl, { params });
-    return data;
+
+    // 转换后端响应格式 {schedules, total, page, limit, hasMore}
+    // 为契约格式 {tasks, total, pagination}
+    return {
+      tasks: data.schedules || [],
+      total: data.total || 0,
+      pagination: {
+        offset: ((data.page || 1) - 1) * (data.limit || 50),
+        limit: data.limit || 50,
+        hasMore: data.hasMore || false,
+      },
+    };
   }
 
   /**

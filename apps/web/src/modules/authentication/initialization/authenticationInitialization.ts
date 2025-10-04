@@ -8,7 +8,7 @@ import {
   InitializationPhase,
   type InitializationTask,
 } from '@dailyuse/utils';
-import { useAuthStore } from '../presentation/stores/useAuthStore';
+import { useAuthStore } from '../presentation/stores/authenticationStore';
 import { useAccountStore } from '@/modules/account';
 import { AuthManager } from '../../../shared/api/core/interceptors';
 import { Account } from '@dailyuse/domain-client';
@@ -120,14 +120,14 @@ export function registerAuthenticationInitializationTasks(): void {
         }
 
         // 触发自动登录流程
-        if (authStore.user?.accountUuid) {
-          console.log(`🚀 [AuthModule] 触发自动登录: ${authStore.user.accountUuid}`);
+        if (authStore.user?.uuid) {
+          console.log(`🚀 [AuthModule] 触发自动登录: ${authStore.user.uuid}`);
 
           // 导入 AppInitializationManager（避免循环依赖）
           const { AppInitializationManager } = await import(
             '../../../shared/initialization/AppInitializationManager'
           );
-          await AppInitializationManager.initializeUserSession(authStore.user.accountUuid);
+          await AppInitializationManager.initializeUserSession(authStore.user.uuid);
 
           console.log('✅ [AuthModule] 自动登录完成');
         }

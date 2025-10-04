@@ -34,7 +34,7 @@ export class ReminderWebApplicationService {
    */
   async createReminderTemplate(
     request: ReminderContracts.CreateReminderTemplateRequest,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -206,7 +206,7 @@ export class ReminderWebApplicationService {
   async createReminderInstance(
     templateUuid: string,
     request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -270,7 +270,9 @@ export class ReminderWebApplicationService {
       const instancesData = await reminderApiClient.getReminderInstances(templateUuid, params);
 
       // 转换为客户端实体并更新 store
-      const instances = instancesData.reminders.map((data) => ReminderInstance.fromResponse(data));
+      const instances = instancesData.reminders.map((data: any) =>
+        ReminderInstance.fromResponse(data),
+      );
       this.reminderStore.addOrUpdateReminderInstances(instances);
 
       return {
@@ -297,7 +299,7 @@ export class ReminderWebApplicationService {
     templateUuid: string,
     instanceUuid: string,
     response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -361,7 +363,7 @@ export class ReminderWebApplicationService {
   async getActiveReminders(params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderListResponse> {
+  }): Promise<ReminderContracts.ReminderListResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -386,7 +388,7 @@ export class ReminderWebApplicationService {
   /**
    * 获取全局统计信息
    */
-  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse> {
+  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -408,7 +410,9 @@ export class ReminderWebApplicationService {
   /**
    * 获取聚合根统计信息
    */
-  async getAggregateStats(templateUuid: string): Promise<ReminderContracts.ReminderStatsResponse> {
+  async getAggregateStats(
+    templateUuid: string,
+  ): Promise<ReminderContracts.ReminderStatsResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -590,10 +594,10 @@ export class ReminderWebApplicationService {
   async getUpcomingReminders(params?: {
     limit?: number;
     days?: number;
-    priorities?: string[];
+    priorities?: ReminderContracts.ReminderPriority[];
     categories?: string[];
     tags?: string[];
-  }): Promise<ReminderContracts.UpcomingRemindersResponse> {
+  }): Promise<ReminderContracts.UpcomingRemindersResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -676,10 +680,13 @@ export class ReminderWebApplicationService {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
 
-      const groupsData = await reminderApiClient.getReminderTemplateGroups();
+      const response = await reminderApiClient.getReminderTemplateGroups();
+
+      // 从分页响应中提取分组数组
+      const groupsArray = response.groups || [];
 
       // 转换为客户端实体并更新 store
-      const groups = groupsData.map((data: any) => ReminderTemplateGroup.fromResponse(data));
+      const groups = groupsArray.map((data: any) => ReminderTemplateGroup.fromResponse(data));
       this.reminderStore.setReminderTemplateGroups(groups);
 
       return groups;

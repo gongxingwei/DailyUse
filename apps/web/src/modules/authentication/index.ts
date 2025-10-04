@@ -56,7 +56,7 @@ export type {
 // ============================================================================
 
 // API Clients - API客户端
-export { ApiClient } from './infrastructure/api/ApiClient';
+export { AuthApiService } from './infrastructure/api/ApiClient';
 
 // Repository Implementations - 仓储实现
 // 暂不考虑
@@ -66,7 +66,7 @@ export { ApiClient } from './infrastructure/api/ApiClient';
 // ============================================================================
 
 // Pinia Stores - 状态管理
-export { useAuthStore } from './presentation/stores/useAuthStore';
+export { useAuthStore, useAuthenticationStore } from './presentation/stores/authenticationStore';
 
 // Vue Components - Vue组件
 

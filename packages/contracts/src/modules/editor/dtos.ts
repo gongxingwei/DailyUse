@@ -274,7 +274,7 @@ export type EditorLayoutResponse = EditorLayoutDTO;
  */
 export interface EditorTabListResponse {
   /** 标签页列表 */
-  tabs: EditorTabResponse[];
+  data: EditorTabResponse[];
   /** 总数量 */
   total: number;
   /** 当前页码 */
@@ -290,7 +290,7 @@ export interface EditorTabListResponse {
  */
 export interface EditorLayoutListResponse {
   /** 布局列表 */
-  layouts: EditorLayoutResponse[];
+  data: EditorLayoutResponse[];
   /** 总数量 */
   total: number;
   /** 当前页码 */
@@ -477,7 +477,7 @@ export interface CreateLayoutTemplateRequest {
  */
 export interface EditorSessionListResponse {
   /** 会话列表 */
-  sessions: EditorSessionResponse[];
+  data: EditorSessionResponse[];
   /** 总数量 */
   total: number;
   /** 当前页码 */
@@ -493,7 +493,7 @@ export interface EditorSessionListResponse {
  */
 export interface EditorGroupListResponse {
   /** 编辑器组列表 */
-  groups: EditorGroupResponse[];
+  data: EditorGroupResponse[];
   /** 总数量 */
   total: number;
   /** 当前页码 */

@@ -15,7 +15,7 @@ class ReminderApiClient {
    */
   async createReminderTemplate(
     request: ReminderContracts.CreateReminderTemplateRequest,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> {
     const data = await apiClient.post(this.baseUrl, request);
     return data;
   }
@@ -26,7 +26,7 @@ class ReminderApiClient {
   async updateReminderTemplate(
     templateUuid: string,
     request: Partial<ReminderContracts.CreateReminderTemplateRequest>,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> {
     const data = await apiClient.put(`${this.baseUrl}/${templateUuid}`, request);
     return data;
   }
@@ -36,7 +36,7 @@ class ReminderApiClient {
    */
   async getReminderTemplate(
     templateUuid: string,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/${templateUuid}`);
     return data;
   }
@@ -84,7 +84,7 @@ class ReminderApiClient {
   async createReminderInstance(
     templateUuid: string,
     request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
     const data = await apiClient.post(`${this.baseUrl}/${templateUuid}/instances`, request);
     return data;
   }
@@ -101,7 +101,7 @@ class ReminderApiClient {
       startDate?: string;
       endDate?: string;
     },
-  ): Promise<ReminderContracts.ReminderListResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/${templateUuid}/instances`, { params });
     return data;
   }
@@ -113,7 +113,7 @@ class ReminderApiClient {
     templateUuid: string,
     instanceUuid: string,
     response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
     const data = await apiClient.put(
       `${this.baseUrl}/${templateUuid}/instances/${instanceUuid}/respond`,
       response,
@@ -128,7 +128,7 @@ class ReminderApiClient {
     templateUuid: string,
     instanceUuid: string,
     request: Partial<ReminderContracts.CreateReminderInstanceRequest>,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
     const data = await apiClient.put(
       `${this.baseUrl}/${templateUuid}/instances/${instanceUuid}`,
       request,
@@ -162,7 +162,9 @@ class ReminderApiClient {
   /**
    * 聚合根统计信息
    */
-  async getAggregateStats(templateUuid: string): Promise<ReminderContracts.ReminderStatsResponse> {
+  async getAggregateStats(
+    templateUuid: string,
+  ): Promise<ReminderContracts.ReminderStatsResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/${templateUuid}/stats`);
     return data;
   }
@@ -185,7 +187,7 @@ class ReminderApiClient {
   async getActiveReminders(params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderListResponse> {
+  }): Promise<ReminderContracts.ReminderInstanceListResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/active`, { params });
     return data;
   }
@@ -193,7 +195,7 @@ class ReminderApiClient {
   /**
    * 获取全局提醒统计
    */
-  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse> {
+  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse['data']> {
     const data = await apiClient.get(`${this.baseUrl}/stats`);
     return data;
   }
@@ -205,7 +207,7 @@ class ReminderApiClient {
    */
   async createReminderTemplateGroup(
     request: ReminderContracts.CreateReminderTemplateGroupRequest,
-  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse['data']> {
     const data = await apiClient.post('/reminders/groups', request);
     return data;
   }
@@ -216,7 +218,7 @@ class ReminderApiClient {
   async updateReminderTemplateGroup(
     groupUuid: string,
     request: ReminderContracts.UpdateReminderTemplateGroupRequest,
-  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse['data']> {
     const data = await apiClient.put(`/reminders/groups/${groupUuid}`, request);
     return data;
   }
@@ -226,7 +228,7 @@ class ReminderApiClient {
    */
   async getReminderTemplateGroup(
     groupUuid: string,
-  ): Promise<ReminderContracts.ReminderTemplateGroupResponse> {
+  ): Promise<ReminderContracts.ReminderTemplateGroupResponse['data']> {
     const data = await apiClient.get(`/reminders/groups/${groupUuid}`);
     return data;
   }
@@ -241,7 +243,9 @@ class ReminderApiClient {
   /**
    * 获取提醒模板分组列表
    */
-  async getReminderTemplateGroups(): Promise<ReminderContracts.ReminderTemplateGroupResponse[]> {
+  async getReminderTemplateGroups(): Promise<
+    ReminderContracts.ReminderTemplateGroupListResponse['data']
+  > {
     const data = await apiClient.get('/reminders/groups');
     return data;
   }
@@ -303,7 +307,7 @@ class ReminderApiClient {
    */
   async getUpcomingReminders(
     request: ReminderContracts.GetUpcomingRemindersRequest,
-  ): Promise<ReminderContracts.UpcomingRemindersResponse> {
+  ): Promise<ReminderContracts.UpcomingRemindersResponse['data']> {
     const data = await apiClient.get('/reminders/upcoming', { params: request });
     return data;
   }

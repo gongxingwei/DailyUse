@@ -4,7 +4,7 @@
  */
 
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import { useAuthStore } from '@/modules/authentication/presentation/stores/useAuthStore';
+import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
 
 /**
  * 需要认证的路由标记

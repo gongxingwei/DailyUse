@@ -17,7 +17,13 @@ import { getScheduleStore } from '../../presentation/stores/scheduleStore';
  * - 错误处理：统一处理错误并传播
  */
 export class ScheduleWebApplicationService {
-  private readonly scheduleStore = getScheduleStore();
+  /**
+   * 懒加载获取 Schedule Store
+   * 避免在 Pinia 初始化之前调用
+   */
+  private get scheduleStore() {
+    return getScheduleStore();
+  }
 
   // ==================== Schedule Task CRUD 操作 ====================
 

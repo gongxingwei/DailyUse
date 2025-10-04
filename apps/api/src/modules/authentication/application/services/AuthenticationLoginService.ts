@@ -14,6 +14,8 @@ type IAccountCore = AccountContracts.IAccountCore;
 type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
 type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
 type AuthResponseDTO = AuthenticationContracts.AuthResponse;
+type LoginResponseData = AuthenticationContracts.LoginResponse['data'];
+type UserInfoDTO = AuthenticationContracts.UserInfoDTO;
 type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
 
 // Local type for remember me authentication (not in contracts yet)
@@ -119,7 +121,7 @@ export class AuthenticationLoginService {
    */
   async PasswordAuthentication(
     request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo },
-  ): Promise<TResponse<AuthResponseDTO>> {
+  ): Promise<TResponse<LoginResponseData>> {
     const { username, password, remember, clientInfo } = request;
     try {
       console.log(`🔐 [AuthenticationLoginService] 开始登录流程 - 用户名: ${username}`);
@@ -203,15 +205,28 @@ export class AuthenticationLoginService {
 
       console.log(`📱 [AuthenticationLoginService] 创建会话成功: ${newAuthSession.uuid}`);
 
-      // 10. 返回登录结果，包含所有必要的令牌
-      const responseData: AuthResponseDTO = {
-        username,
-        accountUuid,
-        sessionUuid: newAuthSession.uuid,
+      // 9. 构造 UserInfoDTO - 基于 IAccountCore 可用字段
+      const userInfo: UserInfoDTO = {
+        uuid: account.uuid,
+        username: account.username,
+        email: (account as any).email || undefined,
+        avatar: (account as any).user?.avatar || undefined,
+        firstName: (account as any).user?.firstName || undefined,
+        lastName: (account as any).user?.lastName || undefined,
+        roles: (account as any).roles?.map((r: any) => r.name) || [],
+        permissions: (account as any).user?.permissions?.map((p: any) => p.name) || [],
+        status: account.status,
+        lastLoginAt: Date.now(),
+      };
+
+      // 10. 返回登录结果，包含所有必要的令牌 - 使用新的 LoginResponse 格式
+      const responseData: LoginResponseData = {
+        user: userInfo,
         accessToken: accessToken.value,
         refreshToken: refreshToken.value,
-        tokenType: 'Bearer',
         expiresIn: Math.floor(accessToken.getRemainingTime() / 1000), // 转换为秒
+        tokenType: 'Bearer',
+        sessionId: newAuthSession.uuid,
       };
 
       // 如果有记住我令牌，添加到响应中

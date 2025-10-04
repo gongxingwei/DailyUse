@@ -24,7 +24,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import { useAuthStore } from '@/modules/authentication/presentation/stores/useAuthStore';
+import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
 
 const authStatus = ref<any>(null);
 

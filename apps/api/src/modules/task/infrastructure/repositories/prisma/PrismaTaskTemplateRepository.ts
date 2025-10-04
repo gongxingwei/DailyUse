@@ -18,6 +18,70 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
 
   // ===== 数据库实体到DTO的转换 =====
 
+  /**
+   * 将 TaskInstance 实体转换为 DTO
+   */
+  private mapTaskInstanceToDTO(instance: any): TaskContracts.TaskInstanceDTO {
+    const safeToISOString = (date: any): string | undefined => {
+      if (!date) return undefined;
+      if (date instanceof Date) return date.toISOString();
+      if (typeof date === 'string') return new Date(date).toISOString();
+      return undefined;
+    };
+
+    return {
+      uuid: instance.uuid,
+      templateUuid: instance.templateUuid,
+      accountUuid: instance.accountUuid,
+      title: instance.title,
+      description: instance.description,
+      timeConfig: {
+        timeType: instance.timeType as TaskContracts.TaskTimeType,
+        scheduledDate: safeToISOString(instance.scheduledDate) || new Date().toISOString(),
+        startTime: instance.startTime,
+        endTime: instance.endTime,
+        estimatedDuration: instance.estimatedDuration,
+        timezone: instance.timezone,
+      },
+      reminderStatus: {
+        enabled: instance.reminderEnabled,
+        status: instance.reminderStatus as 'pending' | 'triggered' | 'dismissed' | 'snoozed',
+        scheduledTime: safeToISOString(instance.reminderScheduledTime),
+        triggeredAt: safeToISOString(instance.reminderTriggeredAt),
+        snoozeCount: instance.reminderSnoozeCount,
+        snoozeUntil: safeToISOString(instance.reminderSnoozeUntil),
+      },
+      execution: {
+        status: instance.executionStatus as
+          | 'pending'
+          | 'inProgress'
+          | 'completed'
+          | 'cancelled'
+          | 'overdue',
+        actualStartTime: safeToISOString(instance.actualStartTime),
+        actualEndTime: safeToISOString(instance.actualEndTime),
+        actualDuration: instance.actualDuration,
+        progressPercentage: instance.progressPercentage,
+        notes: instance.executionNotes,
+      },
+      properties: {
+        importance: instance.importance as ImportanceLevel,
+        urgency: instance.urgency as UrgencyLevel,
+        location: instance.location,
+        tags: instance.tags ? JSON.parse(instance.tags) : [],
+      },
+      lifecycle: {
+        createdAt: safeToISOString(instance.createdAt) || new Date().toISOString(),
+        updatedAt: safeToISOString(instance.updatedAt) || new Date().toISOString(),
+        events: instance.lifecycleEvents ? JSON.parse(instance.lifecycleEvents) : [],
+      },
+      goalLinks: instance.goalLinks ? JSON.parse(instance.goalLinks) : [],
+    };
+  }
+
+  /**
+   * 将 TaskTemplate 实体转换为 DTO
+   */
   private mapTaskTemplateToDTO(template: any): TaskTemplateDTO {
     return {
       uuid: template.uuid,
@@ -65,6 +129,8 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
         lastInstanceDate: template.lastInstanceDate?.toISOString(),
       },
       goalLinks: template.goalLinks ? JSON.parse(template.goalLinks) : [],
+      // 映射关联的 instances（如果存在）
+      instances: template.instances?.map((instance: any) => this.mapTaskInstanceToDTO(instance)),
     };
   }
 
@@ -95,6 +161,12 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
     const [templates, total] = await Promise.all([
       this.prisma.taskTemplate.findMany({
         where: { accountUuid },
+        include: {
+          instances: {
+            orderBy: { scheduledDate: 'desc' },
+            take: 100, // 最多返回100个实例
+          },
+        },
         orderBy: { [sortBy]: sortOrder },
         skip: offset,
         take: limit,
