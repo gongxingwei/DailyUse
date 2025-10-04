@@ -4,49 +4,7 @@
  * 定义主题相关的接口、枚举和类型
  */
 
-// ========== 枚举类型 ==========
-
-/**
- * 主题类型枚举
- */
-export enum ThemeType {
-  /** 浅色主题 */
-  LIGHT = 'light',
-  /** 深色主题 */
-  DARK = 'dark',
-  /** 自动主题 */
-  AUTO = 'auto',
-  /** 高对比度主题 */
-  HIGH_CONTRAST = 'high_contrast',
-}
-
-/**
- * 颜色模式枚举
- */
-export enum ColorMode {
-  /** RGB模式 */
-  RGB = 'rgb',
-  /** HSL模式 */
-  HSL = 'hsl',
-  /** 十六进制模式 */
-  HEX = 'hex',
-}
-
-/**
- * 字体家族枚举
- */
-export enum FontFamily {
-  /** 系统默认 */
-  SYSTEM = 'system',
-  /** Sans Serif */
-  SANS_SERIF = 'sans-serif',
-  /** Serif */
-  SERIF = 'serif',
-  /** 等宽字体 */
-  MONOSPACE = 'monospace',
-  /** 自定义字体 */
-  CUSTOM = 'custom',
-}
+import { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily } from './enums';
 
 // ========== 接口定义 ==========
 
@@ -323,4 +281,19 @@ export interface ThemeQueryParams {
   sortBy?: string;
   /** 排序方向 */
   sortOrder?: 'asc' | 'desc';
+}
+
+/**
+ * 用户主题偏好接口
+ */
+export interface IUserThemePreference {
+  uuid: string;
+  accountUuid: string;
+  currentThemeUuid: string; // 当前使用的主题
+  preferredMode: ThemeMode; // 偏好模式（light/dark/system）
+  autoSwitch: boolean; // 是否自动切换
+  scheduleStart?: number; // 自动切换开始时间（小时，如 18 表示 18:00）
+  scheduleEnd?: number; // 自动切换结束时间（小时，如 6 表示 6:00）
+  createdAt: number;
+  updatedAt: number;
 }

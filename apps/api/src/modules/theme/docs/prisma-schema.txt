@@ -1,0 +1,20 @@
+/**
+ * Theme Module Prisma Schema
+ * 
+ * 将此内容添加到 apps/api/prisma/schema.prisma 中
+ */
+
+// ========== 用户主题偏好表 ==========
+model UserThemePreference {
+  uuid              String   @id @default(uuid())
+  accountUuid       String   @unique @map("account_uuid")
+  currentThemeUuid  String   @map("current_theme_uuid")
+  preferredMode     String   @map("preferred_mode") // 'light' | 'dark' | 'system'
+  autoSwitch        Boolean  @default(false) @map("auto_switch")
+  scheduleStart     Int?     @map("schedule_start") // 0-23
+  scheduleEnd       Int?     @map("schedule_end")   // 0-23
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  @@map("user_theme_preferences")
+}

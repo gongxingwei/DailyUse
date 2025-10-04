@@ -15,6 +15,8 @@ import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
 import { scheduleRoutes } from './modules/schedule';
+import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
+import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
 import { createEditorRoutes, EditorAggregateController } from './modules/editor';
 import { EditorDomainService } from '@dailyuse/domain-server';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
@@ -27,6 +29,12 @@ import {
   PrismaResourceRepository,
 } from './modules/repository/infrastructure/index.js';
 import { prisma } from './config/prisma.js';
+import { EventPublisher } from './modules/setting/infrastructure/events/EventPublisher';
+import { UserPreferencesApplicationService } from './modules/setting/application/services/UserPreferencesApplicationService';
+import { PrismaUserPreferencesRepository } from './modules/setting/infrastructure/repositories/PrismaUserPreferencesRepository';
+import { ThemeEventListeners } from './modules/theme/application/events/ThemeEventListeners';
+import { ThemeApplicationService } from './modules/theme/application/services/ThemeApplicationService';
+import { PrismaUserThemePreferenceRepository } from './modules/theme/infrastructure/repositories/PrismaUserThemePreferenceRepository';
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 import { setupSwagger } from './config/swagger.js';
 import { createLogger } from '@dailyuse/utils';
@@ -124,6 +132,31 @@ const repositoryApplicationService = new RepositoryApplicationService(
 RepositoryController.initialize(repositoryApplicationService);
 const repositoryRoutes = createRepositoryRoutes();
 api.use('/repositories', authMiddleware, repositoryRoutes);
+
+// 挂载用户偏好设置路由 - 需要认证
+api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
+
+// 挂载主题管理路由 - 需要认证
+api.use('/theme', authMiddleware, themeRoutes);
+
+// Setup event system - 设置事件系统
+// 初始化事件发布器
+const eventPublisher = new EventPublisher();
+
+// 初始化 UserPreferencesApplicationService 并设置事件发布器
+const userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
+const userPreferencesService = new UserPreferencesApplicationService(userPreferencesRepository);
+userPreferencesService.setEventPublisher(eventPublisher);
+
+// 初始化 ThemeApplicationService
+const themeRepository = new PrismaUserThemePreferenceRepository(prisma);
+const themeService = new ThemeApplicationService(themeRepository);
+
+// 注册 Theme 事件监听器
+const themeEventListeners = new ThemeEventListeners(themeService);
+themeEventListeners.registerListeners();
+
+logger.info('Event system initialized successfully');
 
 // Setup Swagger documentation
 setupSwagger(app);

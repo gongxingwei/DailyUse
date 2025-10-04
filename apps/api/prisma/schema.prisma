@@ -862,3 +862,42 @@ model ScheduleExecution {
   @@index([createdAt])
   @@map("schedule_executions")
 }
+
+model UserPreferences {
+  uuid                 String   @id @default(cuid())
+  accountUuid          String   @unique @map("account_uuid")
+  language             String   @default("zh-CN")
+  timezone             String   @default("Asia/Shanghai")
+  locale               String   @default("zh-CN")
+  themeMode            String   @default("system") @map("theme_mode")
+  notificationsEnabled Boolean  @default(true) @map("notifications_enabled")
+  emailNotifications   Boolean  @default(true) @map("email_notifications")
+  pushNotifications    Boolean  @default(true) @map("push_notifications")
+  autoLaunch           Boolean  @default(false) @map("auto_launch")
+  defaultModule        String   @default("goal") @map("default_module")
+  analyticsEnabled     Boolean  @default(true) @map("analytics_enabled")
+  crashReportsEnabled  Boolean  @default(true) @map("crash_reports_enabled")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@index([accountUuid])
+  @@index([language])
+  @@index([themeMode])
+  @@map("user_preferences")
+}
+
+model UserThemePreference {
+  uuid             String    @id @default(cuid())
+  accountUuid      String    @unique @map("account_uuid")
+  currentThemeUuid String?   @map("current_theme_uuid")
+  preferredMode    String    @default("system") @map("preferred_mode")
+  autoSwitch       Boolean   @default(false) @map("auto_switch")
+  scheduleStart    String?   @map("schedule_start")
+  scheduleEnd      String?   @map("schedule_end")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([accountUuid])
+  @@index([preferredMode])
+  @@map("user_theme_preferences")
+}

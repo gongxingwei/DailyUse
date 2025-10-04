@@ -1,13 +1,13 @@
 /**
- * Theme Initialization Composable
- * @description 主题初始化组合函数，整合新的主题系统和Vuetify
+ * Theme Initialization Composable (Integrated with UserPreferences)
+ * @description 主题初始化组合函数，整合新的主题系统、UserPreferences 和 Vuetify
  * @author DailyUse Team
- * @date 2025-09-29
+ * @date 2025-01-04
  */
 
 import { onMounted, provide, watch, onUnmounted } from 'vue';
 import { useTheme } from 'vuetify';
-import { useThemeStore } from './themeStroe';
+import { useThemeStore } from './themeStore';
 import { THEME_KEY } from 'vue-echarts';
 
 export function useThemeInit() {
@@ -17,16 +17,17 @@ export function useThemeInit() {
   // 初始化主题系统
   onMounted(async () => {
     try {
-      // 1. 初始化主题Store
+      // 1. 初始化主题Store（会自动加载 UserPreferences）
       await themeStore.initialize();
 
       // 2. 同步到Vuetify主题
-      syncToVuetify(themeStore.isDarkMode ? 'dark' : 'light');
+      const effectiveTheme = themeStore.effectiveTheme;
+      syncToVuetify(effectiveTheme);
 
       // 3. 提供ECharts主题
-      provide(THEME_KEY, themeStore.isDarkMode ? 'dark' : 'light');
+      provide(THEME_KEY, effectiveTheme);
 
-      console.log('主题系统初始化完成');
+      console.log('主题系统初始化完成, 当前主题:', effectiveTheme);
     } catch (error) {
       console.error('主题系统初始化失败:', error);
 
@@ -38,17 +39,15 @@ export function useThemeInit() {
 
   // 监听主题变化
   const stopWatching = watch(
-    () => themeStore.isDarkMode,
-    (isDark) => {
-      const themeName = isDark ? 'dark' : 'light';
-
+    () => themeStore.effectiveTheme,
+    (effectiveTheme) => {
       // 同步到Vuetify
-      syncToVuetify(themeName);
+      syncToVuetify(effectiveTheme);
 
       // 更新ECharts主题
-      provide(THEME_KEY, themeName);
+      provide(THEME_KEY, effectiveTheme);
 
-      console.log(`主题切换到: ${themeName}`);
+      console.log(`主题切换到: ${effectiveTheme}`);
     },
     { immediate: false },
   );
@@ -68,13 +67,14 @@ export function useThemeInit() {
   }
 
   /**
-   * 手动应用主题
+   * 切换主题模式（通过 UserPreferences API）
    */
-  async function applyTheme(themeId: string) {
+  async function setThemeMode(themeMode: 'light' | 'dark' | 'system') {
     try {
-      await themeStore.applyTheme(themeId);
+      await themeStore.setThemeMode(themeMode);
     } catch (error) {
-      console.error('应用主题失败:', error);
+      console.error('切换主题模式失败:', error);
+      throw error;
     }
   }
 
@@ -83,9 +83,10 @@ export function useThemeInit() {
    */
   async function switchToSystemTheme() {
     try {
-      await themeStore.switchToSystemTheme();
+      await themeStore.setThemeMode('system');
     } catch (error) {
       console.error('切换到系统主题失败:', error);
+      throw error;
     }
   }
 
@@ -94,10 +95,19 @@ export function useThemeInit() {
     themeStore,
 
     // 操作方法
-    applyTheme,
+    setThemeMode,
     switchToSystemTheme,
 
     // Vuetify主题实例（用于兼容现有代码）
     vuetifyTheme,
+
+    // 当前有效主题（用于兼容现有代码）
+    get currentTheme() {
+      return themeStore.effectiveTheme;
+    },
+
+    get isDarkMode() {
+      return themeStore.effectiveTheme === 'dark';
+    },
   };
 }

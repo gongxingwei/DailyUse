@@ -353,6 +353,7 @@ export const appRoutes: RouteRecordRaw[] = [
       {
         path: '/settings',
         name: 'settings',
+        component: () => import('@/modules/setting/presentation/components/SettingsLayout.vue'),
         meta: {
           title: '应用设置',
           showInNav: true,
@@ -363,10 +364,44 @@ export const appRoutes: RouteRecordRaw[] = [
         children: [
           {
             path: '',
-            name: 'settings-main',
-            component: () => import('@/modules/setting/presentation/views/SettingView.vue'),
+            redirect: '/settings/general',
+          },
+          {
+            path: 'general',
+            name: 'settings-general',
+            component: () =>
+              import('@/modules/setting/presentation/components/GeneralSettings.vue'),
             meta: {
-              title: '应用设置',
+              title: '常规设置',
+              requiresAuth: true,
+            },
+          },
+          {
+            path: 'theme',
+            name: 'settings-theme',
+            component: () => import('@/modules/setting/presentation/components/ThemeSettings.vue'),
+            meta: {
+              title: '主题设置',
+              requiresAuth: true,
+            },
+          },
+          {
+            path: 'notifications',
+            name: 'settings-notifications',
+            component: () =>
+              import('@/modules/setting/presentation/components/NotificationSettings.vue'),
+            meta: {
+              title: '通知设置',
+              requiresAuth: true,
+            },
+          },
+          {
+            path: 'advanced',
+            name: 'settings-advanced',
+            component: () =>
+              import('@/modules/setting/presentation/components/AdvancedSettings.vue'),
+            meta: {
+              title: '高级设置',
               requiresAuth: true,
             },
           },

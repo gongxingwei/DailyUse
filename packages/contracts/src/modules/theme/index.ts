@@ -4,6 +4,9 @@
  * 统一导出主题相关的类型定义
  */
 
+// 枚举类型
+export * from './enums';
+
 // 核心类型和接口
 export * from './types';
 
