@@ -8,6 +8,7 @@ import {
   type BatchResponse,
   ResponseStatus,
   ResponseSeverity,
+  ResponseCode,
 } from '@dailyuse/contracts';
 import { newId } from '../id';
 
@@ -41,13 +42,17 @@ export class ResponseBuilder {
    * 构建成功响应
    */
   success<T>(data: T, message = '操作成功', pagination?: PaginationInfo): SuccessResponse<T> {
+    const metadata = this.generateMetadata();
     return {
+      code: 200,
       status: ResponseStatus.SUCCESS,
       success: true,
       message,
       data,
       pagination,
-      metadata: this.generateMetadata(),
+      timestamp: metadata.timestamp,
+      traceId: metadata.requestId,
+      metadata,
     };
   }
 
@@ -64,7 +69,26 @@ export class ResponseBuilder {
       debug?: any;
     } = {},
   ): ApiErrorResponse {
+    const metadata = this.generateMetadata();
+    // Map ResponseStatus to ResponseCode
+    const codeMap: Record<ResponseStatus, ResponseCode> = {
+      SUCCESS: ResponseCode.SUCCESS,
+      BAD_REQUEST: ResponseCode.BAD_REQUEST,
+      UNAUTHORIZED: ResponseCode.UNAUTHORIZED,
+      FORBIDDEN: ResponseCode.FORBIDDEN,
+      NOT_FOUND: ResponseCode.NOT_FOUND,
+      VALIDATION_ERROR: ResponseCode.VALIDATION_ERROR,
+      CONFLICT: ResponseCode.CONFLICT,
+      INTERNAL_ERROR: ResponseCode.INTERNAL_ERROR,
+      SERVICE_UNAVAILABLE: ResponseCode.SERVICE_UNAVAILABLE,
+      DATABASE_ERROR: ResponseCode.DATABASE_ERROR,
+      EXTERNAL_SERVICE_ERROR: ResponseCode.EXTERNAL_SERVICE_ERROR,
+      BUSINESS_ERROR: ResponseCode.BUSINESS_ERROR,
+      DOMAIN_ERROR: ResponseCode.DOMAIN_ERROR,
+    };
+
     return {
+      code: codeMap[status] || ResponseCode.INTERNAL_ERROR,
       status,
       success: false,
       message,
@@ -72,7 +96,9 @@ export class ResponseBuilder {
       errorCode: options.errorCode,
       errors: options.errors,
       debug: this.options.includeDebug ? options.debug : undefined,
-      metadata: this.generateMetadata(),
+      timestamp: metadata.timestamp,
+      traceId: metadata.requestId,
+      metadata,
     };
   }
 

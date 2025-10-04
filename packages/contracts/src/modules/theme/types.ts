@@ -6,6 +6,9 @@
 
 import { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily } from './enums';
 
+// 重新导出枚举类型以便其他文件使用
+export { ThemeMode, ThemeStatus, ThemeType, ColorMode, FontFamily };
+
 // ========== 接口定义 ==========
 
 /**

@@ -103,25 +103,35 @@ export class UniversalScheduleService extends EventEmitter {
 
     const task: IScheduleTask = {
       uuid,
-      name: request.name,
-      description: request.description,
-      taskType: request.taskType,
-      payload: request.payload,
-      scheduledTime: request.scheduledTime,
-      recurrence: request.recurrence,
-      priority: request.priority,
-      status: ScheduleStatus.PENDING,
+      basic: {
+        name: request.name,
+        description: request.description,
+        taskType: request.taskType,
+        payload: request.payload,
+        createdBy,
+      },
+      scheduling: {
+        scheduledTime: request.scheduledTime,
+        recurrence: request.recurrence,
+        priority: request.priority,
+        status: ScheduleStatus.PENDING,
+        nextExecutionTime: request.scheduledTime,
+      },
+      execution: {
+        executionCount: 0,
+        maxRetries: request.maxRetries ?? this.config.defaultRetryCount,
+        currentRetries: 0,
+        timeoutSeconds: request.timeoutSeconds,
+      },
       alertConfig: request.alertConfig,
-      createdBy,
-      createdAt: now,
-      updatedAt: now,
-      nextExecutionTime: request.scheduledTime,
-      executionCount: 0,
-      maxRetries: request.maxRetries ?? this.config.defaultRetryCount,
-      currentRetries: 0,
-      timeoutSeconds: request.timeoutSeconds,
-      tags: request.tags,
-      enabled: request.enabled ?? true,
+      lifecycle: {
+        createdAt: now,
+        updatedAt: now,
+      },
+      metadata: {
+        tags: request.tags,
+        enabled: request.enabled ?? true,
+      },
     };
 
     // 验证任务配置
@@ -159,24 +169,40 @@ export class UniversalScheduleService extends EventEmitter {
     }
 
     // 更新任务属性
-    const updatedTask = { ...existingTask };
-    if (request.name !== undefined) updatedTask.name = request.name;
-    if (request.description !== undefined) updatedTask.description = request.description;
-    if (request.scheduledTime !== undefined) updatedTask.scheduledTime = request.scheduledTime;
-    if (request.recurrence !== undefined) updatedTask.recurrence = request.recurrence;
-    if (request.priority !== undefined) updatedTask.priority = request.priority;
-    if (request.status !== undefined) updatedTask.status = request.status;
-    if (request.alertConfig !== undefined) updatedTask.alertConfig = request.alertConfig;
-    if (request.maxRetries !== undefined) updatedTask.maxRetries = request.maxRetries;
-    if (request.timeoutSeconds !== undefined) updatedTask.timeoutSeconds = request.timeoutSeconds;
-    if (request.tags !== undefined) updatedTask.tags = request.tags;
-    if (request.enabled !== undefined) updatedTask.enabled = request.enabled;
-
-    updatedTask.updatedAt = new Date();
+    const updatedTask: IScheduleTask = {
+      ...existingTask,
+      basic: {
+        ...existingTask.basic,
+        ...(request.name !== undefined && { name: request.name }),
+        ...(request.description !== undefined && { description: request.description }),
+      },
+      scheduling: {
+        ...existingTask.scheduling,
+        ...(request.scheduledTime !== undefined && { scheduledTime: request.scheduledTime }),
+        ...(request.recurrence !== undefined && { recurrence: request.recurrence }),
+        ...(request.priority !== undefined && { priority: request.priority }),
+        ...(request.status !== undefined && { status: request.status }),
+      },
+      execution: {
+        ...existingTask.execution,
+        ...(request.maxRetries !== undefined && { maxRetries: request.maxRetries }),
+        ...(request.timeoutSeconds !== undefined && { timeoutSeconds: request.timeoutSeconds }),
+      },
+      ...(request.alertConfig !== undefined && { alertConfig: request.alertConfig }),
+      lifecycle: {
+        ...existingTask.lifecycle,
+        updatedAt: new Date(),
+      },
+      metadata: {
+        ...existingTask.metadata,
+        ...(request.tags !== undefined && { tags: request.tags }),
+        ...(request.enabled !== undefined && { enabled: request.enabled }),
+      },
+    };
 
     // 重新调度
     this.cancelTask(uuid);
-    if (updatedTask.enabled && updatedTask.status === ScheduleStatus.PENDING) {
+    if (updatedTask.metadata.enabled && updatedTask.scheduling.status === ScheduleStatus.PENDING) {
       await this.scheduleTask(updatedTask);
     }
 
@@ -186,7 +212,7 @@ export class UniversalScheduleService extends EventEmitter {
       eventId: generateUUID(),
       timestamp: new Date(),
       source: 'UniversalScheduleService',
-      userId: updatedTask.createdBy,
+      userId: updatedTask.basic.createdBy,
       data: {
         taskUuid: uuid,
         previousTask: existingTask,
@@ -238,17 +264,19 @@ export class UniversalScheduleService extends EventEmitter {
    * 调度任务
    */
   private async scheduleTask(task: IScheduleTask): Promise<void> {
-    if (!task.enabled || !task.nextExecutionTime) {
+    if (!task.metadata.enabled || !task.scheduling.nextExecutionTime) {
       return;
     }
 
-    const job = nodeSchedule.scheduleJob(task.uuid, task.nextExecutionTime, async () => {
+    const job = nodeSchedule.scheduleJob(task.uuid, task.scheduling.nextExecutionTime, async () => {
       await this.executeTask(task);
     });
 
     if (job) {
       this.scheduledJobs.set(task.uuid, job);
-      console.log(`任务已调度: ${task.name} (${task.uuid}) - 执行时间: ${task.nextExecutionTime}`);
+      console.log(
+        `任务已调度: ${task.basic.name} (${task.uuid}) - 执行时间: ${task.scheduling.nextExecutionTime}`,
+      );
     }
   }
 
@@ -294,7 +322,7 @@ export class UniversalScheduleService extends EventEmitter {
     });
 
     // 标记为运行中
-    task.status = ScheduleStatus.RUNNING;
+    task.scheduling.status = ScheduleStatus.RUNNING;
     this.runningTasks.set(task.uuid, { startTime, task });
 
     try {
@@ -330,7 +358,7 @@ export class UniversalScheduleService extends EventEmitter {
     task: IScheduleTask,
   ): Promise<{ success: boolean; result?: any; error?: string }> {
     // 根据任务类型选择执行器
-    const executor = this.taskExecutors.get(task.taskType);
+    const executor = this.taskExecutors.get(task.basic.taskType);
     if (executor) {
       return await executor.execute(task);
     }
@@ -340,7 +368,7 @@ export class UniversalScheduleService extends EventEmitter {
       return await this.handleReminderTask(task);
     }
 
-    return { success: false, error: `未找到任务类型 ${task.taskType} 的执行器` };
+    return { success: false, error: `未找到任务类型 ${task.basic.taskType} 的执行器` };
   }
 
   /**
@@ -356,14 +384,14 @@ export class UniversalScheduleService extends EventEmitter {
         eventId: generateUUID(),
         timestamp: new Date(),
         source: 'UniversalScheduleService',
-        userId: task.createdBy,
+        userId: task.basic.createdBy,
         data: {
           taskUuid: task.uuid,
-          reminderType: task.taskType,
-          title: task.payload.data.title || task.name,
-          message: task.payload.data.message || task.description || '',
+          reminderType: task.basic.taskType,
+          title: task.basic.payload.data.title || task.basic.name,
+          message: task.basic.payload.data.message || task.basic.description || '',
           alertMethods: task.alertConfig.methods,
-          scheduledTime: task.scheduledTime,
+          scheduledTime: task.scheduling.scheduledTime,
           actualTime: new Date(),
         },
       });
@@ -422,8 +450,8 @@ export class UniversalScheduleService extends EventEmitter {
         // 发送弹窗通知事件
         this.emit('show-popup', {
           taskUuid: task.uuid,
-          title: task.payload.data.title || task.name,
-          message: task.payload.data.message || task.description,
+          title: task.basic.payload.data.title || task.basic.name,
+          message: task.basic.payload.data.message || task.basic.description,
           duration: task.alertConfig.popupDuration,
           actions: task.alertConfig.customActions,
         });
@@ -442,8 +470,8 @@ export class UniversalScheduleService extends EventEmitter {
         // 发送系统通知事件
         this.emit('show-system-notification', {
           taskUuid: task.uuid,
-          title: task.payload.data.title || task.name,
-          message: task.payload.data.message || task.description,
+          title: task.basic.payload.data.title || task.basic.name,
+          message: task.basic.payload.data.message || task.basic.description,
         });
         break;
 
@@ -465,19 +493,19 @@ export class UniversalScheduleService extends EventEmitter {
     const endTime = new Date();
     const duration = endTime.getTime() - startTime.getTime();
 
-    task.status = ScheduleStatus.COMPLETED;
-    task.executionCount++;
-    task.currentRetries = 0;
+    task.scheduling.status = ScheduleStatus.COMPLETED;
+    task.execution.executionCount++;
+    task.execution.currentRetries = 0;
 
     // 计算下次执行时间
-    if (task.recurrence) {
-      task.nextExecutionTime = this.calculateNextExecutionTime(task);
-      if (task.nextExecutionTime) {
-        task.status = ScheduleStatus.PENDING;
+    if (task.scheduling.recurrence) {
+      task.scheduling.nextExecutionTime = this.calculateNextExecutionTime(task);
+      if (task.scheduling.nextExecutionTime) {
+        task.scheduling.status = ScheduleStatus.PENDING;
         await this.scheduleTask(task);
       }
     } else {
-      task.nextExecutionTime = undefined;
+      task.scheduling.nextExecutionTime = undefined;
     }
 
     // 发布执行完成事件
@@ -486,7 +514,7 @@ export class UniversalScheduleService extends EventEmitter {
       eventId: generateUUID(),
       timestamp: endTime,
       source: 'UniversalScheduleService',
-      userId: task.createdBy,
+      userId: task.basic.createdBy,
       data: {
         taskUuid: task.uuid,
         executionResult: {
@@ -495,7 +523,7 @@ export class UniversalScheduleService extends EventEmitter {
           status: ScheduleStatus.COMPLETED,
           result: result.result,
           duration,
-          nextExecutionTime: task.nextExecutionTime,
+          nextExecutionTime: task.scheduling.nextExecutionTime,
         },
       },
     });

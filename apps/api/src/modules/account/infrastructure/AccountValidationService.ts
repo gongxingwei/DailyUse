@@ -100,12 +100,14 @@ export class AccountValidationService {
     }
 
     // 验证手机号格式（如果提供）
-    if (updateDto.phone) {
-      const phoneRegex = /^\+?[1-9]\d{1,14}$/;
-      if (!phoneRegex.test(updateDto.phone)) {
-        errors.push('手机号格式不正确');
-      }
-    }
+    // Note: phone is not in UpdateAccountRequest type, commenting out for now
+    // TODO: Add phone field to UpdateAccountRequest in contracts if needed
+    // if (updateDto.phone) {
+    //   const phoneRegex = /^\+?[1-9]\d{1,14}$/;
+    //   if (!phoneRegex.test(updateDto.phone)) {
+    //     errors.push('手机号格式不正确');
+    //   }
+    // }
 
     // 验证用户资料更新
     if (updateDto.firstName !== undefined) {

@@ -224,29 +224,16 @@ export class PrismaAccountRepository implements IAccountRepository {
       phone: accountData.phone,
       accountType: accountData.accountType,
       status: accountData.status,
-      roleIds: accountData.roleIds,
+      // roleIds: accountData.roleIds, // Not in AccountPersistenceDTO
       lastLoginAt: accountData.lastLoginAt,
       emailVerificationToken: accountData.emailVerificationToken,
       phoneVerificationCode: accountData.phoneVerificationCode,
-      emailVerified: accountData.emailVerified,
-      phoneVerified: accountData.phoneVerified,
+      isEmailVerified: accountData.emailVerified ? 1 : 0,
+      isPhoneVerified: accountData.phoneVerified ? 1 : 0,
       createdAt: accountData.createdAt,
       updatedAt: accountData.updatedAt,
-      userProfile: accountData.userProfile
-        ? {
-            uuid: accountData.userProfile.uuid,
-            accountUuid: accountData.userProfile.accountUuid,
-            firstName: accountData.userProfile.firstName,
-            lastName: accountData.userProfile.lastName,
-            displayName: accountData.userProfile.displayName,
-            sex: accountData.userProfile.sex,
-            avatarUrl: accountData.userProfile.avatarUrl,
-            bio: accountData.userProfile.bio,
-            socialAccounts: accountData.userProfile.socialAccounts,
-            createdAt: accountData.userProfile.createdAt,
-            updatedAt: accountData.userProfile.updatedAt,
-          }
-        : undefined,
+      userUuid: accountData.userProfile?.uuid || accountData.uuid, // Use accountData.uuid as fallback
+      // userProfile: // Not in AccountPersistenceDTO, handled separately if needed
     };
   }
 

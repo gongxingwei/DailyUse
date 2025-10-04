@@ -3,16 +3,16 @@
  * 这个文件展示了如何使用新的响应系统
  */
 
+import { createResponseBuilder, createExpressResponseHelper } from '@dailyuse/utils';
+
 import {
-  createResponseBuilder,
-  createExpressResponseHelper,
   type ResponseBuilderOptions,
   type ApiResponse,
   type SuccessResponse,
   type ApiErrorResponse,
   ResponseStatus,
   ResponseSeverity,
-} from '@dailyuse/utils';
+} from '@dailyuse/contracts';
 
 // === 基础使用示例 ===
 

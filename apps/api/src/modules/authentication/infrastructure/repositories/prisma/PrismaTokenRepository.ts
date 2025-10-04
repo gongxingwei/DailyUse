@@ -1,8 +1,10 @@
 import { Token } from '@dailyuse/domain-server';
 import { prisma } from '../../../../../config/prisma';
 import type { ITokenRepository } from '@dailyuse/domain-server';
-import type { AuthTokenPersistenceDTO } from '@dailyuse/contracts';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { generateUUID } from '@dailyuse/utils';
+
+type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
 
 /**
  * Prisma Token Repository - 处理独立的 Token 操作

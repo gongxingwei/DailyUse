@@ -15,7 +15,13 @@ type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
 type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
 type AuthResponseDTO = AuthenticationContracts.AuthResponse;
 type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
-type AuthByRememberMeTokenRequestDTO = AuthenticationContracts.AuthByRememberMeTokenRequest;
+
+// Local type for remember me authentication (not in contracts yet)
+type AuthByRememberMeTokenRequestDTO = {
+  username: string;
+  accountUuid: string;
+  rememberMeToken: string;
+};
 
 // domains
 import { AuthCredential, Token } from '@dailyuse/domain-server';

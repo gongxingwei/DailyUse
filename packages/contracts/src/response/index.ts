@@ -142,10 +142,20 @@ export interface BaseResponse {
 export interface SuccessResponse<T = any> extends BaseResponse {
   code: typeof ResponseCode.SUCCESS;
   success: true;
+  /** 响应状态字符串（向后兼容） */
+  status?: ResponseStatus;
   /** 响应数据 */
   data: T;
   /** 分页信息（列表接口使用） */
   pagination?: PaginationInfo;
+  /** 响应元数据（可选） */
+  metadata?: {
+    requestId?: string;
+    timestamp?: number;
+    version?: string;
+    duration?: number;
+    nodeId?: string;
+  };
 }
 
 /**
@@ -154,6 +164,10 @@ export interface SuccessResponse<T = any> extends BaseResponse {
  */
 export interface ErrorResponse extends BaseResponse {
   success: false;
+  /** 响应状态字符串（向后兼容） */
+  status?: ResponseStatus;
+  /** 错误严重级别（可选） */
+  severity?: ResponseSeverity;
   /** 错误代码（业务错误码） */
   errorCode?: string;
   /** 错误详情列表 */
@@ -165,6 +179,14 @@ export interface ErrorResponse extends BaseResponse {
     params?: any;
     body?: any;
     environment?: string;
+  };
+  /** 响应元数据（可选） */
+  metadata?: {
+    requestId?: string;
+    timestamp?: number;
+    version?: string;
+    duration?: number;
+    nodeId?: string;
   };
 }
 
@@ -189,12 +211,20 @@ export type TResponse<T = any> = ApiResponse<T>;
  * 响应构建器选项
  */
 export interface ResponseBuilderOptions {
-  /** 请求追踪ID */
+  /** 请求追踪ID（兼容requestId） */
   traceId?: string;
+  /** 请求ID */
+  requestId?: string;
   /** 是否包含调试信息 */
   includeDebug?: boolean;
   /** 环境标识 */
   environment?: string;
+  /** 开始时间（用于计算响应时长） */
+  startTime?: number;
+  /** API版本 */
+  version?: string;
+  /** 节点ID */
+  nodeId?: string;
 }
 
 /**

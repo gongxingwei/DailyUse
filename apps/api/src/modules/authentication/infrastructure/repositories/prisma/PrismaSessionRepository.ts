@@ -1,8 +1,10 @@
 import { Session } from '@dailyuse/domain-server';
 import { prisma } from '../../../../../config/prisma';
 import type { ISessionRepository } from '@dailyuse/domain-server';
-import type { ClientInfo } from '@dailyuse/domain-core';
-import type { UserSessionPersistenceDTO } from '@dailyuse/contracts';
+import { sharedContracts, AuthenticationContracts } from '@dailyuse/contracts';
+
+type ClientInfo = sharedContracts.ClientInfo;
+type UserSessionPersistenceDTO = AuthenticationContracts.UserSessionPersistenceDTO;
 
 /**
  * Prisma Session Repository - 处理独立的 Session 操作

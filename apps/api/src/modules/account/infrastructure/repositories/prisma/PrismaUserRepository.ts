@@ -1,18 +1,40 @@
 import { User } from '@dailyuse/domain-server';
 import type { IUserRepository } from '@dailyuse/domain-server';
-import type { UserProfilePersistenceDTO } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
 import { prisma } from '../../../../../config/prisma';
 
+type UserProfilePersistenceDTO = AccountContracts.UserProfilePersistenceDTO;
+
 export class PrismaUserRepository implements IUserRepository {
-  async save(user: User, accountUuid: string): Promise<void> {
-    const userData = user.toPersistence(accountUuid);
+  async save(user: User): Promise<void> {
+    const userData = user.toPersistence();
 
     await prisma.userProfile.upsert({
       where: { uuid: user.uuid },
-      update: userData,
+      update: {
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+        displayName: userData.displayName,
+        sex: userData.sex,
+        avatarUrl: userData.avatarUrl,
+        bio: userData.bio,
+        socialAccounts: userData.socialAccounts,
+        updatedAt: new Date(userData.updatedAt),
+      },
       create: {
-        ...userData,
-        accountUuid,
+        uuid: userData.uuid,
+        account: {
+          connect: { uuid: (user as any).accountUuid || '' }, // Connect to existing account
+        },
+        firstName: userData.firstName || '',
+        lastName: userData.lastName || '',
+        displayName: userData.displayName,
+        sex: userData.sex || 0,
+        avatarUrl: userData.avatarUrl,
+        bio: userData.bio,
+        socialAccounts: userData.socialAccounts,
+        createdAt: new Date(userData.createdAt),
+        updatedAt: new Date(userData.updatedAt),
       },
     });
   }
@@ -62,7 +84,6 @@ export class PrismaUserRepository implements IUserRepository {
   private mapToPersistenceDTO(data: any): UserProfilePersistenceDTO {
     return {
       uuid: data.uuid,
-      accountUuid: data.accountUuid,
       firstName: data.firstName,
       lastName: data.lastName,
       displayName: data.displayName,
@@ -70,8 +91,8 @@ export class PrismaUserRepository implements IUserRepository {
       avatarUrl: data.avatarUrl,
       bio: data.bio,
       socialAccounts: data.socialAccounts,
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      createdAt: typeof data.createdAt === 'number' ? data.createdAt : data.createdAt.getTime(),
+      updatedAt: typeof data.updatedAt === 'number' ? data.updatedAt : data.updatedAt.getTime(),
     };
   }
 }

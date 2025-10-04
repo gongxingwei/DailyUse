@@ -1,5 +1,7 @@
 import { authenticationEventRequester } from '../events/EventRequester';
-import type { IAccountCore } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type IAccountCore = AccountContracts.IAccountCore;
 
 /**
  * 演示如何使用新的 EventEmitter 请求-响应模式的认证服务
