@@ -1,189 +1,785 @@
-import type { Request, Response } from 'express';
-import { TaskTemplateApplicationService } from '../../../application/services/TaskTemplateApplicationService';
-import { prisma } from '../../../../../config/prisma';
+import type { Response } from 'express';
 import type { TaskContracts } from '@dailyuse/contracts';
 import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
+import { TaskTemplateApplicationService } from '../../../application/services/TaskTemplateApplicationService';
+import {
+  type ApiResponse,
+  type SuccessResponse,
+  type ErrorResponse,
+  ResponseCode,
+  createResponseBuilder,
+  getHttpStatusCode,
+} from '@dailyuse/contracts';
+import { createLogger } from '@dailyuse/utils';
 
-type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
-type UpdateTaskTemplateRequest = TaskContracts.UpdateTaskTemplateRequest;
+const logger = createLogger('TaskTemplateController');
 
+/**
+ * TaskTemplate 统一控制器
+ *
+ * 职责：
+ * 1. 管理 TaskTemplate 聚合根的所有 HTTP 接口
+ * 2. 通过聚合根控制所有 TaskInstance 子实体操作
+ * 3. 使用统一的响应格式
+ *
+ * 整合说明：
+ * - 合并了 TaskController 的基础CRUD
+ * - 合并了 TaskAggregateController 的聚合根控制逻辑
+ * - 合并了 TaskInstanceController 的实例管理（通过聚合根）
+ * - 所有子实体操作都通过 TaskTemplate 聚合根控制（DDD原则）
+ */
 export class TaskTemplateController {
-  private static taskService = new TaskTemplateApplicationService(prisma);
+  private static taskTemplateService: TaskTemplateApplicationService | null = null;
+  private static responseBuilder = createResponseBuilder();
+
+  /**
+   * 初始化服务（使用依赖注入）
+   */
+  private static async initializeService(): Promise<void> {
+    if (!this.taskTemplateService) {
+      this.taskTemplateService = await TaskTemplateApplicationService.getInstance();
+    }
+  }
+
+  /**
+   * 发送成功响应
+   */
+  private static sendSuccess<T>(
+    res: Response,
+    data: T,
+    message: string,
+    code: ResponseCode = ResponseCode.SUCCESS,
+  ): void {
+    const response = this.responseBuilder.success(data, message);
+    const httpStatus = getHttpStatusCode(code);
+    res.status(httpStatus).json(response);
+  }
+
+  /**
+   * 发送错误响应
+   */
+  private static sendError(
+    res: Response,
+    error: Error,
+    code: ResponseCode = ResponseCode.INTERNAL_ERROR,
+    defaultMessage: string = 'Operation failed',
+  ): void {
+    logger.error(`${defaultMessage}:`, error);
+    const response = this.responseBuilder.error(code, error.message || defaultMessage);
+    const httpStatus = getHttpStatusCode(code);
+    res.status(httpStatus).json(response);
+  }
+
+  // ===== TaskTemplate 聚合根管理 =====
 
   /**
    * 创建任务模板
+   * POST /api/v1/tasks/templates
    */
   static async createTemplate(req: AuthenticatedRequest, res: Response) {
     try {
-      const request: CreateTaskTemplateRequest = req.body;
+      await TaskTemplateController.initializeService();
+      const request: TaskContracts.CreateTaskTemplateRequest = req.body;
       const accountUuid = req.accountUuid!;
-      const templateUuid = await TaskTemplateController.taskService.create(accountUuid, request);
 
-      // 获取创建后的完整模板数据
-      const template = await TaskTemplateController.taskService.getById(templateUuid);
+      const template = await TaskTemplateController.taskTemplateService!.createTemplate(
+        accountUuid,
+        request,
+      );
 
-      res.status(201).json({
-        success: true,
-        data: { template },
-        message: '任务模板创建成功',
-      });
+      TaskTemplateController.sendSuccess(res, template, 'Task template created successfully');
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '创建任务模板失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to create task template',
+      );
     }
   }
 
   /**
    * 获取任务模板列表
+   * GET /api/v1/tasks/templates
    */
   static async getTemplates(req: AuthenticatedRequest, res: Response) {
     try {
+      await TaskTemplateController.initializeService();
+      const queryParams = req.query;
       const accountUuid = req.accountUuid!;
-      const { limit, offset, sortBy, sortOrder } = req.query;
 
-      const options = {
-        limit: limit ? parseInt(limit as string) : undefined,
-        offset: offset ? parseInt(offset as string) : undefined,
-        sortBy: sortBy as 'createdAt' | 'updatedAt' | 'title' | undefined,
-        sortOrder: sortOrder as 'asc' | 'desc' | undefined,
-      };
-
-      const templates = await TaskTemplateController.taskService.getAllByAccount(
+      const templates = await TaskTemplateController.taskTemplateService!.getTemplates(
         accountUuid,
-        options,
+        queryParams,
       );
 
-      res.json({
-        success: true,
-        data: templates,
-      });
+      TaskTemplateController.sendSuccess(res, templates, 'Task templates retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : '获取任务模板列表失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve task templates',
+      );
     }
   }
 
   /**
-   * 根据ID获取任务模板
+   * 获取任务模板详情
+   * GET /api/v1/tasks/templates/:templateId
    */
   static async getTemplateById(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
-      const template = await TaskTemplateController.taskService.getById(id);
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const template = await TaskTemplateController.taskTemplateService!.getTemplateById(
+        accountUuid,
+        templateId,
+      );
 
       if (!template) {
-        return res.status(404).json({
-          success: false,
-          error: '任务模板不存在',
-        });
+        return TaskTemplateController.sendError(
+          res,
+          new Error('Task template not found'),
+          ResponseCode.NOT_FOUND,
+          'Task template not found',
+        );
       }
 
-      res.json({
-        success: true,
-        data: { template },
-      });
+      TaskTemplateController.sendSuccess(res, template, 'Task template retrieved successfully');
     } catch (error) {
-      res.status(500).json({
-        success: false,
-        error: error instanceof Error ? error.message : '获取任务模板失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve task template',
+      );
     }
   }
 
   /**
    * 更新任务模板
+   * PUT /api/v1/tasks/templates/:templateId
    */
   static async updateTemplate(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
-      const request: UpdateTaskTemplateRequest = req.body;
-      await TaskTemplateController.taskService.update(id, request);
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const request: TaskContracts.UpdateTaskTemplateRequest = req.body;
+      const accountUuid = req.accountUuid!;
 
-      // 获取更新后的模板
-      const template = await TaskTemplateController.taskService.getById(id);
+      const template = await TaskTemplateController.taskTemplateService!.updateTemplate(
+        accountUuid,
+        templateId,
+        request,
+      );
 
-      res.json({
-        success: true,
-        data: { template },
-        message: '任务模板更新成功',
-      });
+      TaskTemplateController.sendSuccess(res, template, 'Task template updated successfully');
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '更新任务模板失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to update task template',
+      );
     }
   }
 
   /**
    * 删除任务模板
+   * DELETE /api/v1/tasks/templates/:templateId
    */
   static async deleteTemplate(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
-      await TaskTemplateController.taskService.delete(id);
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const accountUuid = req.accountUuid!;
 
-      res.json({
-        success: true,
-        message: '任务模板删除成功',
-      });
+      await TaskTemplateController.taskTemplateService!.deleteTemplate(accountUuid, templateId);
+
+      TaskTemplateController.sendSuccess(res, null, 'Task template deleted successfully');
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '删除任务模板失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to delete task template',
+      );
     }
   }
 
+  // ===== TaskTemplate 状态管理 =====
+
   /**
    * 激活任务模板
+   * POST /api/v1/tasks/templates/:templateId/activate
    */
   static async activateTemplate(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
-      await TaskTemplateController.taskService.activate(id);
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const accountUuid = req.accountUuid!;
 
-      // 获取更新后的模板
-      const template = await TaskTemplateController.taskService.getById(id);
+      const template = await TaskTemplateController.taskTemplateService!.activateTemplate(
+        accountUuid,
+        templateId,
+      );
 
-      res.json({
-        success: true,
-        data: { template },
-        message: '任务模板已激活',
-      });
+      TaskTemplateController.sendSuccess(res, template, 'Task template activated successfully');
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '激活任务模板失败',
-      });
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to activate task template',
+      );
     }
   }
 
   /**
    * 暂停任务模板
+   * POST /api/v1/tasks/templates/:templateId/pause
    */
   static async pauseTemplate(req: AuthenticatedRequest, res: Response) {
     try {
-      const { id } = req.params;
-      await TaskTemplateController.taskService.pause(id);
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const accountUuid = req.accountUuid!;
 
-      // 获取更新后的模板
-      const template = await TaskTemplateController.taskService.getById(id);
+      const template = await TaskTemplateController.taskTemplateService!.pauseTemplate(
+        accountUuid,
+        templateId,
+      );
 
-      res.json({
-        success: true,
-        data: { template },
-        message: '任务模板已暂停',
-      });
+      TaskTemplateController.sendSuccess(res, template, 'Task template paused successfully');
     } catch (error) {
-      res.status(400).json({
-        success: false,
-        error: error instanceof Error ? error.message : '暂停任务模板失败',
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to pause task template',
+      );
+    }
+  }
+
+  /**
+   * 归档任务模板
+   * POST /api/v1/tasks/templates/:templateId/archive
+   */
+  static async archiveTemplate(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { templateId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const template = await TaskTemplateController.taskTemplateService!.archiveTemplate(
+        accountUuid,
+        templateId,
+      );
+
+      TaskTemplateController.sendSuccess(res, template, 'Task template archived successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to archive task template',
+      );
+    }
+  }
+
+  // ===== TaskInstance 管理（通过聚合根）=====
+
+  /**
+   * 创建任务实例（通过聚合根）
+   * POST /api/v1/tasks/instances
+   */
+  static async createInstance(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const request: TaskContracts.CreateTaskInstanceRequest = req.body;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.createInstance(
+        accountUuid,
+        request,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task instance created successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to create task instance',
+      );
+    }
+  }
+
+  /**
+   * 获取任务实例列表
+   * GET /api/v1/tasks/instances
+   */
+  static async getInstances(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const queryParams = req.query as TaskContracts.TaskQueryParamsDTO;
+      const accountUuid = req.accountUuid!;
+
+      const instances = await TaskTemplateController.taskTemplateService!.getInstances(
+        accountUuid,
+        queryParams,
+      );
+
+      TaskTemplateController.sendSuccess(res, instances, 'Task instances retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve task instances',
+      );
+    }
+  }
+
+  /**
+   * 获取任务实例详情
+   * GET /api/v1/tasks/instances/:instanceId
+   */
+  static async getInstanceById(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.getInstanceById(
+        accountUuid,
+        instanceId,
+      );
+
+      if (!instance) {
+        return TaskTemplateController.sendError(
+          res,
+          new Error('Task instance not found'),
+          ResponseCode.NOT_FOUND,
+          'Task instance not found',
+        );
+      }
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task instance retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve task instance',
+      );
+    }
+  }
+
+  /**
+   * 更新任务实例（通过聚合根）
+   * PUT /api/v1/tasks/instances/:instanceId
+   */
+  static async updateInstance(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const request: TaskContracts.UpdateTaskInstanceRequest = req.body;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.updateInstance(
+        accountUuid,
+        instanceId,
+        request,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task instance updated successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to update task instance',
+      );
+    }
+  }
+
+  /**
+   * 删除任务实例（通过聚合根）
+   * DELETE /api/v1/tasks/instances/:instanceId
+   */
+  static async deleteInstance(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      await TaskTemplateController.taskTemplateService!.deleteInstance(accountUuid, instanceId);
+
+      TaskTemplateController.sendSuccess(res, null, 'Task instance deleted successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to delete task instance',
+      );
+    }
+  }
+
+  // ===== TaskInstance 状态管理 =====
+
+  /**
+   * 完成任务
+   * POST /api/v1/tasks/instances/:instanceId/complete
+   */
+  static async completeTask(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const request: TaskContracts.CompleteTaskRequest = req.body;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.completeTask(
+        accountUuid,
+        instanceId,
+        request,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task completed successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to complete task',
+      );
+    }
+  }
+
+  /**
+   * 撤销完成任务
+   * POST /api/v1/tasks/instances/:instanceId/undo-complete
+   */
+  static async undoCompleteTask(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.undoCompleteTask(
+        accountUuid,
+        instanceId,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task completion undone successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to undo task completion',
+      );
+    }
+  }
+
+  /**
+   * 开始任务
+   * POST /api/v1/tasks/instances/:instanceId/start
+   */
+  static async startTask(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.startTask(
+        accountUuid,
+        instanceId,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task started successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to start task',
+      );
+    }
+  }
+
+  /**
+   * 取消任务
+   * POST /api/v1/tasks/instances/:instanceId/cancel
+   */
+  static async cancelTask(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.cancelTask(
+        accountUuid,
+        instanceId,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task cancelled successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to cancel task',
+      );
+    }
+  }
+
+  /**
+   * 重新调度任务
+   * POST /api/v1/tasks/instances/:instanceId/reschedule
+   */
+  static async rescheduleTask(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId } = req.params;
+      const request: TaskContracts.RescheduleTaskRequest = req.body;
+      const accountUuid = req.accountUuid!;
+
+      const instance = await TaskTemplateController.taskTemplateService!.rescheduleTask(
+        accountUuid,
+        instanceId,
+        request,
+      );
+
+      TaskTemplateController.sendSuccess(res, instance, 'Task rescheduled successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to reschedule task',
+      );
+    }
+  }
+
+  // ===== 提醒管理 =====
+
+  /**
+   * 触发提醒
+   * POST /api/v1/tasks/instances/:instanceId/reminders/:reminderId/trigger
+   */
+  static async triggerReminder(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId, reminderId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      await TaskTemplateController.taskTemplateService!.triggerReminder(
+        accountUuid,
+        instanceId,
+        reminderId,
+      );
+
+      TaskTemplateController.sendSuccess(res, null, 'Reminder triggered successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to trigger reminder',
+      );
+    }
+  }
+
+  /**
+   * 延后提醒
+   * POST /api/v1/tasks/instances/:instanceId/reminders/:reminderId/snooze
+   */
+  static async snoozeReminder(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId, reminderId } = req.params;
+      const { snoozeUntil, reason } = req.body;
+      const accountUuid = req.accountUuid!;
+
+      await TaskTemplateController.taskTemplateService!.snoozeReminder(
+        accountUuid,
+        instanceId,
+        reminderId,
+        new Date(snoozeUntil),
+        reason,
+      );
+
+      TaskTemplateController.sendSuccess(res, null, 'Reminder snoozed successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to snooze reminder',
+      );
+    }
+  }
+
+  /**
+   * 忽略提醒
+   * POST /api/v1/tasks/instances/:instanceId/reminders/:reminderId/dismiss
+   */
+  static async dismissReminder(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { instanceId, reminderId } = req.params;
+      const accountUuid = req.accountUuid!;
+
+      await TaskTemplateController.taskTemplateService!.dismissReminder(
+        accountUuid,
+        instanceId,
+        reminderId,
+      );
+
+      TaskTemplateController.sendSuccess(res, null, 'Reminder dismissed successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to dismiss reminder',
+      );
+    }
+  }
+
+  // ===== 统计和查询 =====
+
+  /**
+   * 获取任务统计
+   * GET /api/v1/tasks/stats
+   */
+  static async getTaskStats(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const accountUuid = req.accountUuid!;
+
+      const stats = await TaskTemplateController.taskTemplateService!.getTaskStats(accountUuid);
+
+      TaskTemplateController.sendSuccess(res, stats, 'Task stats retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve task stats',
+      );
+    }
+  }
+
+  /**
+   * 搜索任务
+   * GET /api/v1/tasks/search
+   */
+  static async searchTasks(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const queryParams = req.query as TaskContracts.TaskQueryParamsDTO;
+      const accountUuid = req.accountUuid!;
+
+      const tasks = await TaskTemplateController.taskTemplateService!.searchTasks(
+        accountUuid,
+        queryParams,
+      );
+
+      TaskTemplateController.sendSuccess(res, tasks, 'Tasks searched successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to search tasks',
+      );
+    }
+  }
+
+  /**
+   * 获取即将到来的任务
+   * GET /api/v1/tasks/upcoming
+   */
+  static async getUpcomingTasks(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { limit, offset } = req.query;
+      const accountUuid = req.accountUuid!;
+
+      const tasks = await TaskTemplateController.taskTemplateService!.getUpcomingTasks(
+        accountUuid,
+        {
+          limit: limit ? parseInt(limit as string) : undefined,
+          offset: offset ? parseInt(offset as string) : undefined,
+        },
+      );
+
+      TaskTemplateController.sendSuccess(res, tasks, 'Upcoming tasks retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve upcoming tasks',
+      );
+    }
+  }
+
+  /**
+   * 获取过期任务
+   * GET /api/v1/tasks/overdue
+   */
+  static async getOverdueTasks(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { limit, offset } = req.query;
+      const accountUuid = req.accountUuid!;
+
+      const tasks = await TaskTemplateController.taskTemplateService!.getOverdueTasks(accountUuid, {
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
       });
+
+      TaskTemplateController.sendSuccess(res, tasks, 'Overdue tasks retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve overdue tasks',
+      );
+    }
+  }
+
+  /**
+   * 获取今日任务
+   * GET /api/v1/tasks/today
+   */
+  static async getTodayTasks(req: AuthenticatedRequest, res: Response) {
+    try {
+      await TaskTemplateController.initializeService();
+      const { limit, offset } = req.query;
+      const accountUuid = req.accountUuid!;
+
+      const tasks = await TaskTemplateController.taskTemplateService!.getTodayTasks(accountUuid, {
+        limit: limit ? parseInt(limit as string) : undefined,
+        offset: offset ? parseInt(offset as string) : undefined,
+      });
+
+      TaskTemplateController.sendSuccess(res, tasks, 'Today tasks retrieved successfully');
+    } catch (error) {
+      TaskTemplateController.sendError(
+        res,
+        error as Error,
+        ResponseCode.INTERNAL_ERROR,
+        'Failed to retrieve today tasks',
+      );
     }
   }
 }

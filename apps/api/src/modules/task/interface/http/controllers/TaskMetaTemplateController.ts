@@ -1,47 +1,35 @@
-import type { Request, Response } from 'express';
+import type { Response } from 'express';
 import type { TaskContracts } from '@dailyuse/contracts';
 import type { AuthenticatedRequest } from '../../../../../shared/middlewares/authMiddleware';
-import { TaskContainer } from '../../../infrastructure/di/TaskContainer';
-import {
-  type ApiResponse,
-  type SuccessResponse,
-  type ErrorResponse,
-  ResponseCode,
-  createResponseBuilder,
-  getHttpStatusCode,
-} from '@dailyuse/contracts';
+import { TaskMetaTemplateApplicationService } from '../../../application/services/TaskMetaTemplateApplicationService';
+import { ResponseCode, createResponseBuilder, getHttpStatusCode } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
-import { TaskMetaTemplateApplicationService } from '../../../application/services/TaskMetaTemplateApplicationService.new';
 
-// 创建 logger 实例
 const logger = createLogger('TaskMetaTemplateController');
 
 /**
  * TaskMetaTemplate 控制器
- * 职责：
- * 1. 管理 TaskMetaTemplate 聚合根的 HTTP 接口
- * 2. 使用统一的响应格式
  *
- * 设计原则（参考 GoalDirController）：
- * - 聚合根管理：独立聚合根无子实体
+ * 职责：
+ * 1. 管理 TaskMetaTemplate 独立聚合根的 HTTP 接口
+ * 2. 使用统一的响应格式
+ * 3. TaskMetaTemplate 是独立聚合根（无子实体）
+ *
+ * 设计原则：
+ * - 独立聚合根：TaskMetaTemplate 不包含子实体
  * - 统一响应：使用 ResponseBuilder
  * - 错误处理：统一的错误响应格式
  */
 export class TaskMetaTemplateController {
-  private static taskMetaTemplateApplicationService: TaskMetaTemplateApplicationService | null =
-    null;
+  private static metaTemplateService: TaskMetaTemplateApplicationService | null = null;
   private static responseBuilder = createResponseBuilder();
 
   /**
    * 初始化服务（使用依赖注入）
    */
   private static async initializeService(): Promise<void> {
-    if (!this.taskMetaTemplateApplicationService) {
-      const container = TaskContainer.getInstance();
-      const metaTemplateRepository = await container.getPrismaTaskMetaTemplateRepository();
-      this.taskMetaTemplateApplicationService = new TaskMetaTemplateApplicationService(
-        metaTemplateRepository,
-      );
+    if (!this.metaTemplateService) {
+      this.metaTemplateService = await TaskMetaTemplateApplicationService.getInstance();
     }
   }
 
@@ -74,10 +62,10 @@ export class TaskMetaTemplateController {
     res.status(httpStatus).json(response);
   }
 
-  // ===== TaskMetaTemplate CRUD 操作 =====
+  // ===== TaskMetaTemplate CRUD =====
 
   /**
-   * 创建元模板
+   * 创建任务元模板
    * POST /api/v1/tasks/meta-templates
    */
   static async createMetaTemplate(req: AuthenticatedRequest, res: Response) {
@@ -86,11 +74,10 @@ export class TaskMetaTemplateController {
       const request: TaskContracts.CreateTaskMetaTemplateRequest = req.body;
       const accountUuid = req.accountUuid!;
 
-      const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.createMetaTemplate(
-          accountUuid,
-          request,
-        );
+      const metaTemplate = await TaskMetaTemplateController.metaTemplateService!.createMetaTemplate(
+        accountUuid,
+        request,
+      );
 
       TaskMetaTemplateController.sendSuccess(
         res,
@@ -108,7 +95,7 @@ export class TaskMetaTemplateController {
   }
 
   /**
-   * 获取元模板列表
+   * 获取任务元模板列表
    * GET /api/v1/tasks/meta-templates
    */
   static async getMetaTemplates(req: AuthenticatedRequest, res: Response) {
@@ -117,11 +104,10 @@ export class TaskMetaTemplateController {
       const queryParams = req.query;
       const accountUuid = req.accountUuid!;
 
-      const metaTemplates =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getMetaTemplates(
-          accountUuid,
-          queryParams,
-        );
+      const metaTemplates = await TaskMetaTemplateController.metaTemplateService!.getMetaTemplates(
+        accountUuid,
+        queryParams,
+      );
 
       TaskMetaTemplateController.sendSuccess(
         res,
@@ -139,7 +125,7 @@ export class TaskMetaTemplateController {
   }
 
   /**
-   * 获取元模板详情
+   * 获取任务元模板详情
    * GET /api/v1/tasks/meta-templates/:metaTemplateId
    */
   static async getMetaTemplateById(req: AuthenticatedRequest, res: Response) {
@@ -149,7 +135,7 @@ export class TaskMetaTemplateController {
       const accountUuid = req.accountUuid!;
 
       const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getMetaTemplateById(
+        await TaskMetaTemplateController.metaTemplateService!.getMetaTemplateById(
           accountUuid,
           metaTemplateId,
         );
@@ -179,7 +165,7 @@ export class TaskMetaTemplateController {
   }
 
   /**
-   * 更新元模板
+   * 更新任务元模板
    * PUT /api/v1/tasks/meta-templates/:metaTemplateId
    */
   static async updateMetaTemplate(req: AuthenticatedRequest, res: Response) {
@@ -189,12 +175,11 @@ export class TaskMetaTemplateController {
       const request: TaskContracts.UpdateTaskMetaTemplateRequest = req.body;
       const accountUuid = req.accountUuid!;
 
-      const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.updateMetaTemplate(
-          accountUuid,
-          metaTemplateId,
-          request,
-        );
+      const metaTemplate = await TaskMetaTemplateController.metaTemplateService!.updateMetaTemplate(
+        accountUuid,
+        metaTemplateId,
+        request,
+      );
 
       TaskMetaTemplateController.sendSuccess(
         res,
@@ -212,7 +197,7 @@ export class TaskMetaTemplateController {
   }
 
   /**
-   * 删除元模板
+   * 删除任务元模板
    * DELETE /api/v1/tasks/meta-templates/:metaTemplateId
    */
   static async deleteMetaTemplate(req: AuthenticatedRequest, res: Response) {
@@ -221,7 +206,7 @@ export class TaskMetaTemplateController {
       const { metaTemplateId } = req.params;
       const accountUuid = req.accountUuid!;
 
-      await TaskMetaTemplateController.taskMetaTemplateApplicationService!.deleteMetaTemplate(
+      await TaskMetaTemplateController.metaTemplateService!.deleteMetaTemplate(
         accountUuid,
         metaTemplateId,
       );
@@ -237,10 +222,10 @@ export class TaskMetaTemplateController {
     }
   }
 
-  // ===== 状态管理 =====
+  // ===== TaskMetaTemplate 状态管理 =====
 
   /**
-   * 激活元模板
+   * 激活任务元模板
    * POST /api/v1/tasks/meta-templates/:metaTemplateId/activate
    */
   static async activateMetaTemplate(req: AuthenticatedRequest, res: Response) {
@@ -250,7 +235,7 @@ export class TaskMetaTemplateController {
       const accountUuid = req.accountUuid!;
 
       const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.activateMetaTemplate(
+        await TaskMetaTemplateController.metaTemplateService!.activateMetaTemplate(
           accountUuid,
           metaTemplateId,
         );
@@ -271,7 +256,7 @@ export class TaskMetaTemplateController {
   }
 
   /**
-   * 停用元模板
+   * 停用任务元模板
    * POST /api/v1/tasks/meta-templates/:metaTemplateId/deactivate
    */
   static async deactivateMetaTemplate(req: AuthenticatedRequest, res: Response) {
@@ -281,7 +266,7 @@ export class TaskMetaTemplateController {
       const accountUuid = req.accountUuid!;
 
       const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.deactivateMetaTemplate(
+        await TaskMetaTemplateController.metaTemplateService!.deactivateMetaTemplate(
           accountUuid,
           metaTemplateId,
         );
@@ -311,16 +296,15 @@ export class TaskMetaTemplateController {
       const { metaTemplateId } = req.params;
       const accountUuid = req.accountUuid!;
 
-      const metaTemplate =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.toggleFavorite(
-          accountUuid,
-          metaTemplateId,
-        );
+      const metaTemplate = await TaskMetaTemplateController.metaTemplateService!.toggleFavorite(
+        accountUuid,
+        metaTemplateId,
+      );
 
       TaskMetaTemplateController.sendSuccess(
         res,
         metaTemplate,
-        'Task meta-template favorite status toggled successfully',
+        'Favorite status toggled successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
@@ -332,7 +316,7 @@ export class TaskMetaTemplateController {
     }
   }
 
-  // ===== 使用元模板创建任务模板 =====
+  // ===== 模板生成 =====
 
   /**
    * 从元模板创建任务模板
@@ -342,35 +326,35 @@ export class TaskMetaTemplateController {
     try {
       await TaskMetaTemplateController.initializeService();
       const { metaTemplateId } = req.params;
-      const overrides = req.body;
+      const request: TaskContracts.CreateTaskTemplateRequest = req.body;
       const accountUuid = req.accountUuid!;
 
-      const templateRequest =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.createTemplateFromMetaTemplate(
+      const template =
+        await TaskMetaTemplateController.metaTemplateService!.createTemplateFromMetaTemplate(
           accountUuid,
           metaTemplateId,
-          overrides,
+          request,
         );
 
       TaskMetaTemplateController.sendSuccess(
         res,
-        templateRequest,
-        'Task template request generated from meta-template successfully',
+        template,
+        'Task template created from meta-template successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
         res,
         error as Error,
         ResponseCode.INTERNAL_ERROR,
-        'Failed to generate task template request from meta-template',
+        'Failed to create task template from meta-template',
       );
     }
   }
 
-  // ===== 查询和筛选 =====
+  // ===== 查询方法 =====
 
   /**
-   * 按分类获取元模板
+   * 按类别获取元模板
    * GET /api/v1/tasks/meta-templates/by-category/:category
    */
   static async getMetaTemplatesByCategory(req: AuthenticatedRequest, res: Response) {
@@ -380,7 +364,7 @@ export class TaskMetaTemplateController {
       const accountUuid = req.accountUuid!;
 
       const metaTemplates =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getMetaTemplatesByCategory(
+        await TaskMetaTemplateController.metaTemplateService!.getMetaTemplatesByCategory(
           accountUuid,
           category,
         );
@@ -388,14 +372,14 @@ export class TaskMetaTemplateController {
       TaskMetaTemplateController.sendSuccess(
         res,
         metaTemplates,
-        `Task meta-templates in category '${category}' retrieved successfully`,
+        'Meta-templates by category retrieved successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
         res,
         error as Error,
         ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task meta-templates by category',
+        'Failed to retrieve meta-templates by category',
       );
     }
   }
@@ -410,21 +394,19 @@ export class TaskMetaTemplateController {
       const accountUuid = req.accountUuid!;
 
       const metaTemplates =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getFavoriteMetaTemplates(
-          accountUuid,
-        );
+        await TaskMetaTemplateController.metaTemplateService!.getFavoriteMetaTemplates(accountUuid);
 
       TaskMetaTemplateController.sendSuccess(
         res,
         metaTemplates,
-        'Favorite task meta-templates retrieved successfully',
+        'Favorite meta-templates retrieved successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
         res,
         error as Error,
         ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve favorite task meta-templates',
+        'Failed to retrieve favorite meta-templates',
       );
     }
   }
@@ -436,26 +418,26 @@ export class TaskMetaTemplateController {
   static async getPopularMetaTemplates(req: AuthenticatedRequest, res: Response) {
     try {
       await TaskMetaTemplateController.initializeService();
+      const { limit } = req.query;
       const accountUuid = req.accountUuid!;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
 
       const metaTemplates =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getPopularMetaTemplates(
+        await TaskMetaTemplateController.metaTemplateService!.getPopularMetaTemplates(
           accountUuid,
-          limit,
+          limit ? parseInt(limit as string) : undefined,
         );
 
       TaskMetaTemplateController.sendSuccess(
         res,
         metaTemplates,
-        'Popular task meta-templates retrieved successfully',
+        'Popular meta-templates retrieved successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
         res,
         error as Error,
         ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve popular task meta-templates',
+        'Failed to retrieve popular meta-templates',
       );
     }
   }
@@ -467,26 +449,26 @@ export class TaskMetaTemplateController {
   static async getRecentlyUsedMetaTemplates(req: AuthenticatedRequest, res: Response) {
     try {
       await TaskMetaTemplateController.initializeService();
+      const { limit } = req.query;
       const accountUuid = req.accountUuid!;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 10;
 
       const metaTemplates =
-        await TaskMetaTemplateController.taskMetaTemplateApplicationService!.getRecentlyUsedMetaTemplates(
+        await TaskMetaTemplateController.metaTemplateService!.getRecentlyUsedMetaTemplates(
           accountUuid,
-          limit,
+          limit ? parseInt(limit as string) : undefined,
         );
 
       TaskMetaTemplateController.sendSuccess(
         res,
         metaTemplates,
-        'Recently used task meta-templates retrieved successfully',
+        'Recently used meta-templates retrieved successfully',
       );
     } catch (error) {
       TaskMetaTemplateController.sendError(
         res,
         error as Error,
         ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve recently used task meta-templates',
+        'Failed to retrieve recently used meta-templates',
       );
     }
   }
