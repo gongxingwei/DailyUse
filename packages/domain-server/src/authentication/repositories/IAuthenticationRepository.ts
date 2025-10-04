@@ -39,6 +39,9 @@ export interface ISessionRepository {
   findById(sessionId: string): Promise<UserSessionPersistenceDTO | null>;
   findByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]>;
   findActiveByAccountUuid(accountUuid: string): Promise<UserSessionPersistenceDTO[]>;
+  terminateSession(sessionId: string): Promise<void>; // 终止单个会话
+  terminateAllByAccount(accountUuid: string): Promise<void>; // 终止账户的所有会话
+  updateLastAccessed(sessionId: string): Promise<void>; // 更新最后访问时间
   delete(sessionId: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredSessions(): Promise<number>;
@@ -54,6 +57,8 @@ export interface ITokenRepository {
   findByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]>;
   findByType(type: string): Promise<AuthTokenPersistenceDTO[]>;
   findActiveByAccountUuid(accountUuid: string): Promise<AuthTokenPersistenceDTO[]>;
+  revokeToken(tokenValue: string, reason?: string): Promise<void>; // 撤销单个令牌
+  revokeAllTokensByAccount(accountUuid: string, reason?: string): Promise<void>; // 撤销账户的所有令牌
   delete(tokenValue: string): Promise<void>;
   deleteByAccountUuid(accountUuid: string): Promise<void>;
   deleteExpiredTokens(): Promise<number>;

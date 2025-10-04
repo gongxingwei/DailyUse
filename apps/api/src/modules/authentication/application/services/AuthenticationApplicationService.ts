@@ -137,6 +137,133 @@ export class AuthenticationApplicationService {
     void this.sessionRepository;
   }
 
+  /**
+   * 登出单个会话
+   * @param sessionId 要终止的会话ID
+   * @param accountUuid 账户UUID（用于验证）
+   * @returns 是否成功登出
+   */
+  async logout(
+    sessionId: string,
+    accountUuid?: string,
+  ): Promise<TResponse<{ sessionsClosed: number }>> {
+    logger.info('Processing logout', { sessionId });
+
+    try {
+      // 1. 查找会话
+      const session = await this.sessionRepository.findById(sessionId);
+      if (!session) {
+        logger.warn('Session not found', { sessionId });
+        return {
+          success: false,
+          message: '会话不存在或已失效',
+          data: { sessionsClosed: 0 },
+        };
+      }
+
+      // 2. 验证账户所有权（如果提供了accountUuid）
+      if (accountUuid && session.accountUuid !== accountUuid) {
+        logger.warn('Session does not belong to account', { sessionId, accountUuid });
+        return {
+          success: false,
+          message: '无权操作此会话',
+          data: { sessionsClosed: 0 },
+        };
+      }
+
+      // 3. 终止会话
+      await this.sessionRepository.terminateSession(sessionId);
+
+      // 4. 撤销该会话的所有令牌
+      await this.tokenRepository.revokeAllTokensByAccount(
+        session.accountUuid,
+        `Session ${sessionId} terminated`,
+      );
+
+      // 5. 发布会话终止事件
+      await eventBus.publish({
+        eventType: 'SessionTerminated',
+        aggregateId: sessionId,
+        occurredAt: new Date(),
+        payload: {
+          sessionUuid: session.uuid,
+          accountUuid: session.accountUuid,
+          terminationType: 'logout',
+          terminatedAt: new Date(),
+          remainingActiveSessions: (
+            await this.sessionRepository.findActiveByAccountUuid(session.accountUuid)
+          ).length,
+        },
+      });
+
+      logger.info('Logout successful', { sessionId, accountUuid: session.accountUuid });
+
+      return {
+        success: true,
+        message: '登出成功',
+        data: { sessionsClosed: 1 },
+      };
+    } catch (error) {
+      logger.error('Logout error', error, { sessionId });
+      throw error;
+    }
+  }
+
+  /**
+   * 登出所有会话
+   * @param accountUuid 账户UUID
+   * @returns 关闭的会话数
+   */
+  async logoutAll(accountUuid: string): Promise<TResponse<{ sessionsClosed: number }>> {
+    logger.info('Processing logout all sessions', { accountUuid });
+
+    try {
+      // 1. 获取所有活跃会话
+      const activeSessions = await this.sessionRepository.findActiveByAccountUuid(accountUuid);
+      const sessionCount = activeSessions.length;
+
+      if (sessionCount === 0) {
+        logger.info('No active sessions to terminate', { accountUuid });
+        return {
+          success: true,
+          message: '没有需要关闭的会话',
+          data: { sessionsClosed: 0 },
+        };
+      }
+
+      // 2. 终止所有会话
+      await this.sessionRepository.terminateAllByAccount(accountUuid);
+
+      // 3. 撤销所有令牌
+      await this.tokenRepository.revokeAllTokensByAccount(accountUuid, 'All sessions terminated');
+
+      // 4. 发布全部会话终止事件
+      await eventBus.publish({
+        eventType: 'AllSessionsTerminated',
+        aggregateId: accountUuid,
+        occurredAt: new Date(),
+        payload: {
+          accountUuid,
+          username: activeSessions[0]?.accountUuid || 'unknown', // TODO: 从账户服务获取用户名
+          terminationType: 'admin_action',
+          terminatedSessionCount: sessionCount,
+          terminatedAt: new Date(),
+        },
+      });
+
+      logger.info('All sessions terminated successfully', { accountUuid, sessionCount });
+
+      return {
+        success: true,
+        message: `成功登出 ${sessionCount} 个会话`,
+        data: { sessionsClosed: sessionCount },
+      };
+    } catch (error) {
+      logger.error('Logout all sessions error', error, { accountUuid });
+      throw error;
+    }
+  }
+
   async createCredentialForAccount(
     accountUuid: string,
     plainPassword: string,

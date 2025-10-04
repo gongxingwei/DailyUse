@@ -46,6 +46,38 @@ export class AuthenticationEventHandlers {
       }
     });
 
+    // 监听账户停用事件 - 清理所有认证数据
+    eventBus.on('AccountDeactivated', async (event: any) => {
+      try {
+        console.log(`📝 [Authentication] 处理账户停用事件: ${event.aggregateId}`);
+        const authService = await this.getAuthService();
+
+        // 登出所有会话并清理认证数据
+        const result = await authService.logoutAll(event.aggregateId);
+        console.log(
+          `✅ [Authentication] 账户停用事件处理完成: ${event.aggregateId}, 清理了 ${result.data?.sessionsClosed} 个会话`,
+        );
+      } catch (error) {
+        console.error(`❌ [Authentication] 处理账户停用事件失败:`, error);
+      }
+    });
+
+    // 监听账户删除事件 - 清理所有认证数据
+    eventBus.on('AccountDeleted', async (event: any) => {
+      try {
+        console.log(`📝 [Authentication] 处理账户删除事件: ${event.aggregateId}`);
+        const authService = await this.getAuthService();
+
+        // 登出所有会话并清理认证数据
+        const result = await authService.logoutAll(event.aggregateId);
+        console.log(
+          `✅ [Authentication] 账户删除事件处理完成: ${event.aggregateId}, 清理了 ${result.data?.sessionsClosed} 个会话`,
+        );
+      } catch (error) {
+        console.error(`❌ [Authentication] 处理账户删除事件失败:`, error);
+      }
+    });
+
     // 监听密码重置请求事件
     eventBus.on('PasswordResetRequestedEvent', async (event: any) => {
       try {

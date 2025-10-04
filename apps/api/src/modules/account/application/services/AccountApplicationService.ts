@@ -269,18 +269,38 @@ export class AccountApplicationService {
 
   /**
    * 停用账户
+   * 同时清理所有认证相关数据（sessions, tokens, MFA devices）
    */
   async deactivateAccount(id: string): Promise<boolean> {
+    logger.info('Deactivating account', { accountId: id });
+
     const accountDTO = await this.accountRepository.findById(id);
     if (!accountDTO) {
+      logger.warn('Account not found for deactivation', { accountId: id });
       return false;
     }
 
     // 转换为领域对象以便进行业务操作
     const account = Account.fromPersistenceDTO(accountDTO);
 
+    // 1. 停用账户
     account.disable();
     await this.accountRepository.save(account);
+
+    // 2. 发布账户停用事件，触发其他模块清理（sessions, tokens, MFA devices）
+    await eventBus.publish({
+      eventType: 'AccountDeactivated',
+      aggregateId: id,
+      occurredAt: new Date(),
+      payload: {
+        accountUuid: id,
+        username: accountDTO.username,
+        deactivatedAt: new Date(),
+        reason: 'Account deactivation requested',
+      },
+    });
+
+    logger.info('Account deactivated successfully', { accountId: id });
     return true;
   }
 
@@ -417,6 +437,7 @@ export class AccountApplicationService {
 
   /**
    * 删除账户（软删除）
+   * 同时清理所有认证相关数据（sessions, tokens, MFA devices）
    */
   async deleteAccount(id: string): Promise<boolean> {
     logger.info('Deleting account (soft delete)', { accountId: id });
@@ -430,9 +451,22 @@ export class AccountApplicationService {
     // 转换为领域对象以便进行业务操作
     const account = Account.fromPersistenceDTO(accountDTO);
 
-    // 执行软删除
+    // 1. 执行软删除
     account.disable();
     await this.accountRepository.save(account);
+
+    // 2. 发布账户删除事件，触发其他模块清理（sessions, tokens, MFA devices）
+    await eventBus.publish({
+      eventType: 'AccountDeleted',
+      aggregateId: id,
+      occurredAt: new Date(),
+      payload: {
+        accountUuid: id,
+        username: accountDTO.username,
+        deletedAt: new Date(),
+        reason: 'Account deletion requested',
+      },
+    });
 
     logger.info('Account deleted successfully (soft delete)', { accountId: id });
     return true;

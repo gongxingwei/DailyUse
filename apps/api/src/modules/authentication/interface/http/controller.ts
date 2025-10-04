@@ -121,29 +121,59 @@ export class AuthenticationController {
    */
   async logout(req: Request, res: Response): Promise<Response> {
     try {
-      const { sessionId } = req.body;
+      const { sessionId, allSessions } = req.body;
 
-      if (!sessionId) {
-        logger.warn('Logout validation failed - missing sessionId');
+      if (!sessionId && !allSessions) {
+        logger.warn('Logout validation failed - missing sessionId and allSessions flag');
         return AuthenticationController.responseBuilder.sendError(res, {
           code: ResponseCode.VALIDATION_ERROR,
-          message: 'Session ID 不能为空',
+          message: '请提供 sessionId 或设置 allSessions 标志',
         });
       }
 
-      logger.info('Logout attempt', { sessionId });
+      logger.info('Logout attempt', { sessionId, allSessions });
 
-      // TODO: 实现登出逻辑
-      logger.warn('Logout not implemented');
-      return AuthenticationController.responseBuilder.sendError(res, {
-        code: ResponseCode.BUSINESS_ERROR,
-        message: '登出功能暂未实现',
-      });
+      let result;
+      if (allSessions) {
+        // 登出所有会话 - 需要从请求中获取 accountUuid
+        const { accountUuid } = req.body;
+        if (!accountUuid) {
+          logger.warn('Logout all sessions validation failed - missing accountUuid');
+          return AuthenticationController.responseBuilder.sendError(res, {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: '登出所有会话需要提供 accountUuid',
+          });
+        }
+        result = await this.authenticationService.logoutAll(accountUuid);
+      } else {
+        // 登出单个会话
+        const { accountUuid } = req.body; // 可选，用于验证
+        result = await this.authenticationService.logout(sessionId, accountUuid);
+      }
+
+      if (result.success) {
+        logger.info('Logout successful', {
+          sessionId,
+          allSessions,
+          sessionsClosed: result.data?.sessionsClosed,
+        });
+        return AuthenticationController.responseBuilder.sendSuccess(
+          res,
+          result.data,
+          result.message,
+        );
+      } else {
+        logger.warn('Logout failed', { sessionId, reason: result.message });
+        return AuthenticationController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: result.message || '登出失败',
+        });
+      }
     } catch (error) {
       logger.error('Logout error', error);
       return AuthenticationController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
-        message: '登出过程中发生内部错误',
+        message: error instanceof Error ? error.message : '登出过程中发生内部错误',
       });
     }
   }
