@@ -5,8 +5,10 @@
  * @description 用户的主题偏好配置，包括当前使用的主题、偏好模式等
  */
 
-import type { IUserThemePreference } from '@dailyuse/contracts';
-import { ThemeMode } from '@dailyuse/contracts';
+import type { ThemeContracts } from '@dailyuse/contracts';
+
+type IUserThemePreference = ThemeContracts.IUserThemePreference;
+type ThemeMode = ThemeContracts.ThemeMode;
 
 export class UserThemePreference implements IUserThemePreference {
   uuid: string;

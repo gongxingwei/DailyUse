@@ -1,5 +1,7 @@
 import { eventBus } from '@dailyuse/utils';
-import type { IAccountCore } from '@dailyuse/contracts';
+import type { AccountContracts } from '@dailyuse/contracts';
+
+type IAccountCore = AccountContracts.IAccountCore;
 
 /**
  * 认证模块的事件请求客户端

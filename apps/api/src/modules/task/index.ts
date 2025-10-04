@@ -1,9 +1,10 @@
 // 导出应用层
-export { TaskApplicationService } from './application/index';
+export { TaskTemplateApplicationService, TaskMetaTemplateApplicationService } from './application/index';
 
 // 导出领域层
 export {
-  TaskDomainService,
+  TaskTemplateDomainService,
+  TaskMetaTemplateDomainService,
   type ITaskTemplateRepository,
   type ITaskInstanceRepository,
 } from './domain/index';

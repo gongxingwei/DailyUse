@@ -1,10 +1,13 @@
 import type {
-  AccountDTO,
   AccountInfoGetterByUsernameRequested,
   AccountInfoGetterByUuidRequested,
   AccountStatusVerificationRequested,
+  AccountContracts,
 } from '@dailyuse/contracts';
-import type { IAccountCore, AccountStatus } from '@dailyuse/contracts';
+
+type AccountDTO = AccountContracts.AccountDTO;
+type IAccountCore = AccountContracts.IAccountCore;
+type AccountStatus = AccountContracts.AccountStatus;
 // services
 import { AccountApplicationService } from '../services/AccountApplicationService';
 import { Account } from '@dailyuse/domain-server';
@@ -121,33 +124,11 @@ export class AccountEventHandlers {
     return {
       uuid: account.uuid,
       username: account.username,
-      email: account.email
-        ? {
-            value: account.email.toString(),
-            isVerified: account.isEmailVerified || false,
-          }
-        : undefined,
       accountType: account.accountType,
       status: account.status,
-      user: {
-        uuid: account.user?.uuid || account.uuid,
-        firstName: account.user?.firstName,
-        lastName: account.user?.lastName,
-        sex: account.user?.sex || { value: 0 },
-        avatar: account.user?.avatar,
-        bio: account.user?.bio,
-        socialAccounts: account.user?.socialAccounts || {},
-        createdAt: account.user?.createdAt || account.createdAt,
-        updatedAt: account.user?.updatedAt || account.updatedAt,
-      },
-      roleIds: new Set(account.roleIds || []),
-      createdAt: account.createdAt,
-      updatedAt: account.updatedAt,
-      lastLoginAt: account.lastLoginAt,
-      emailVerificationToken: account.emailVerificationToken,
-      phoneVerificationCode: account.phoneVerificationCode,
-      isEmailVerified: account.isEmailVerified,
-      isPhoneVerified: account.isPhoneVerified,
+      createdAt: new Date(account.createdAt),
+      updatedAt: new Date(account.updatedAt),
+      lastLoginAt: account.lastLoginAt ? new Date(account.lastLoginAt) : undefined,
     };
   }
 }

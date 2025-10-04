@@ -399,7 +399,7 @@ export class AccountController {
       const accountService = await AccountController.getAccountService();
       const result = await accountService.getAllAccounts(page, limit);
 
-      logger.info('Account list retrieved', { page, limit, total: result.total });
+      logger.info('Account list retrieved', { page, limit, total: result.data.total });
       return AccountController.responseBuilder.sendSuccess(
         res,
         result,

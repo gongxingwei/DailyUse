@@ -6,7 +6,9 @@
 import type { PrismaClient } from '@prisma/client';
 import type { IUserThemePreferenceRepository } from '../../domain/repositories/IUserThemePreferenceRepository';
 import { UserThemePreference } from '../../domain/entities/UserThemePreference';
-import { ThemeContracts } from '@dailyuse/contracts';
+import type { ThemeContracts } from '@dailyuse/contracts';
+
+type ThemeMode = ThemeContracts.ThemeMode;
 
 export class PrismaUserThemePreferenceRepository implements IUserThemePreferenceRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -28,8 +30,8 @@ export class PrismaUserThemePreferenceRepository implements IUserThemePreference
         currentThemeUuid: preference.currentThemeUuid,
         preferredMode: preference.preferredMode,
         autoSwitch: preference.autoSwitch,
-        scheduleStart: preference.scheduleStart,
-        scheduleEnd: preference.scheduleEnd,
+        scheduleStart: preference.scheduleStart?.toString(),
+        scheduleEnd: preference.scheduleEnd?.toString(),
         createdAt: new Date(preference.createdAt),
         updatedAt: new Date(preference.updatedAt),
       },
@@ -37,8 +39,8 @@ export class PrismaUserThemePreferenceRepository implements IUserThemePreference
         currentThemeUuid: preference.currentThemeUuid,
         preferredMode: preference.preferredMode,
         autoSwitch: preference.autoSwitch,
-        scheduleStart: preference.scheduleStart,
-        scheduleEnd: preference.scheduleEnd,
+        scheduleStart: preference.scheduleStart?.toString(),
+        scheduleEnd: preference.scheduleEnd?.toString(),
         updatedAt: new Date(preference.updatedAt),
       },
     });
@@ -60,10 +62,10 @@ export class PrismaUserThemePreferenceRepository implements IUserThemePreference
       uuid: data.uuid,
       accountUuid: data.accountUuid,
       currentThemeUuid: data.currentThemeUuid,
-      preferredMode: data.preferredMode as ThemeContracts.ThemeMode,
+      preferredMode: data.preferredMode as ThemeMode,
       autoSwitch: data.autoSwitch,
-      scheduleStart: data.scheduleStart,
-      scheduleEnd: data.scheduleEnd,
+      scheduleStart: data.scheduleStart ? parseInt(data.scheduleStart, 10) : undefined,
+      scheduleEnd: data.scheduleEnd ? parseInt(data.scheduleEnd, 10) : undefined,
       createdAt: data.createdAt.getTime(),
       updatedAt: data.updatedAt.getTime(),
     });
