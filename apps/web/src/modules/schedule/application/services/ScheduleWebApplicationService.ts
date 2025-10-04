@@ -1,35 +1,38 @@
-/**
- * Schedule Web Application Service
- * @description 调度模块的Web应用服务，负责协调API调用和本地状态管理
- * @author DailyUse Team
- * @date 2025-01-09
- */
-
-import type {
-  CreateScheduleTaskRequestApi,
-  UpdateScheduleTaskRequestApi,
-  ScheduleTaskApi,
-  ScheduleExecutionApi,
-  ScheduleStatisticsResponse,
-  ScheduleTaskActionResponse,
-  SSEConnectionInfo,
-} from '@dailyuse/contracts/modules/schedule';
+import { type ScheduleContracts } from '@dailyuse/contracts';
 import { scheduleApiClient } from '../../infrastructure/api/scheduleApiClient';
+import { getScheduleStore } from '../../presentation/stores/scheduleStore';
 
 /**
  * Schedule Web 应用服务
- * 负责协调 Web 端的调度相关操作，整合 API 调用和本地状态管理
- * 遵循DDD架构原则：ApplicationService 不直接使用 composables
+ *
+ * 职责：
+ * - 协调 Web 端的调度相关操作
+ * - 整合 API 调用和本地缓存（Store）
+ * - 管理数据同步和缓存策略
+ * - 提供统一的数据访问接口
+ *
+ * 设计原则：
+ * - 缓存优先：优先使用 Store 中的缓存数据
+ * - 自动同步：操作后自动更新 Store
+ * - 错误处理：统一处理错误并传播
  */
 export class ScheduleWebApplicationService {
-  // ===== Schedule Task CRUD 操作 =====
+  private readonly scheduleStore = getScheduleStore();
+
+  // ==================== Schedule Task CRUD 操作 ====================
 
   /**
    * 创建调度任务
    */
-  async createScheduleTask(request: CreateScheduleTaskRequestApi): Promise<ScheduleTaskApi> {
+  async createScheduleTask(
+    request: ScheduleContracts.CreateScheduleTaskRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
       const task = await scheduleApiClient.createScheduleTask(request);
+
+      // 更新 Store
+      this.scheduleStore.addTask(task);
+
       return task;
     } catch (error) {
       console.error('创建调度任务失败:', error);
@@ -45,23 +48,50 @@ export class ScheduleWebApplicationService {
     limit?: number;
     status?: string;
     taskType?: string;
-    priority?: string;
-    search?: string;
-  }): Promise<ScheduleTaskApi[]> {
+    enabled?: boolean;
+    tags?: string[];
+  }): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
     try {
-      return await scheduleApiClient.getScheduleTasks(params);
+      this.scheduleStore.setLoading(true);
+
+      const result = await scheduleApiClient.getScheduleTasks(params);
+
+      // 更新 Store
+      this.scheduleStore.setTasks(result.tasks);
+      this.scheduleStore.setPagination({
+        total: result.total,
+        hasMore: result.pagination.hasMore,
+      });
+      this.scheduleStore.setInitialized(true);
+
+      return result;
     } catch (error) {
       console.error('获取调度任务列表失败:', error);
+      this.scheduleStore.setError('获取调度任务列表失败');
       throw error;
+    } finally {
+      this.scheduleStore.setLoading(false);
     }
   }
 
   /**
    * 获取单个调度任务
    */
-  async getScheduleTask(taskId: string): Promise<ScheduleTaskApi> {
+  async getScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
-      return await scheduleApiClient.getScheduleTask(taskId);
+      // 先检查缓存
+      const cached = this.scheduleStore.getTaskByUuid(uuid);
+      if (cached && !this.scheduleStore.shouldRefreshCache) {
+        return cached;
+      }
+
+      // 从API获取
+      const task = await scheduleApiClient.getScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
     } catch (error) {
       console.error('获取调度任务详情失败:', error);
       throw error;
@@ -72,11 +102,15 @@ export class ScheduleWebApplicationService {
    * 更新调度任务
    */
   async updateScheduleTask(
-    taskId: string,
-    request: UpdateScheduleTaskRequestApi,
-  ): Promise<ScheduleTaskApi> {
+    uuid: string,
+    request: ScheduleContracts.UpdateScheduleTaskRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
-      const task = await scheduleApiClient.updateScheduleTask(taskId, request);
+      const task = await scheduleApiClient.updateScheduleTask(uuid, request);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
       return task;
     } catch (error) {
       console.error('更新调度任务失败:', error);
@@ -87,37 +121,31 @@ export class ScheduleWebApplicationService {
   /**
    * 删除调度任务
    */
-  async deleteScheduleTask(taskId: string): Promise<void> {
+  async deleteScheduleTask(uuid: string): Promise<void> {
     try {
-      await scheduleApiClient.deleteScheduleTask(taskId);
+      await scheduleApiClient.deleteScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.removeTask(uuid);
     } catch (error) {
       console.error('删除调度任务失败:', error);
       throw error;
     }
   }
 
-  // ===== Schedule Task 操作 =====
-
-  /**
-   * 暂停调度任务
-   */
-  async pauseScheduleTask(taskId: string): Promise<ScheduleTaskActionResponse> {
-    try {
-      const result = await scheduleApiClient.pauseScheduleTask(taskId);
-      return result;
-    } catch (error) {
-      console.error('暂停调度任务失败:', error);
-      throw error;
-    }
-  }
+  // ==================== Schedule Task Operations ====================
 
   /**
    * 启用调度任务
    */
-  async enableScheduleTask(taskId: string): Promise<ScheduleTaskActionResponse> {
+  async enableScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
-      const result = await scheduleApiClient.enableScheduleTask(taskId);
-      return result;
+      const task = await scheduleApiClient.enableScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
     } catch (error) {
       console.error('启用调度任务失败:', error);
       throw error;
@@ -125,121 +153,144 @@ export class ScheduleWebApplicationService {
   }
 
   /**
-   * 手动执行调度任务
+   * 禁用调度任务
    */
-  async executeScheduleTask(taskId: string): Promise<ScheduleTaskActionResponse> {
+  async disableScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
-      const result = await scheduleApiClient.executeScheduleTask(taskId);
-      return result;
+      const task = await scheduleApiClient.disableScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
+    } catch (error) {
+      console.error('禁用调度任务失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 暂停调度任务
+   */
+  async pauseScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+    try {
+      const task = await scheduleApiClient.pauseScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
+    } catch (error) {
+      console.error('暂停调度任务失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 恢复调度任务
+   */
+  async resumeScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+    try {
+      const task = await scheduleApiClient.resumeScheduleTask(uuid);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
+    } catch (error) {
+      console.error('恢复调度任务失败:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 执行调度任务
+   */
+  async executeScheduleTask(uuid: string, force?: boolean): Promise<any> {
+    try {
+      return await scheduleApiClient.executeScheduleTask(uuid, force);
     } catch (error) {
       console.error('执行调度任务失败:', error);
       throw error;
     }
   }
 
-  // ===== Schedule Execution History =====
+  /**
+   * 延后提醒
+   */
+  async snoozeReminder(
+    uuid: string,
+    request: ScheduleContracts.SnoozeReminderRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+    try {
+      const task = await scheduleApiClient.snoozeReminder(uuid, request);
+
+      // 更新 Store
+      this.scheduleStore.updateTask(uuid, task);
+
+      return task;
+    } catch (error) {
+      console.error('延后提醒失败:', error);
+      throw error;
+    }
+  }
+
+  // ==================== Additional Features ====================
 
   /**
-   * 获取调度执行历史
+   * 获取即将到来的任务
    */
-  async getScheduleExecutions(params?: {
-    taskId?: string;
-    status?: string;
-    page?: number;
+  async getUpcomingTasks(params?: {
+    withinMinutes?: number;
     limit?: number;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<ScheduleExecutionApi[]> {
+  }): Promise<ScheduleContracts.UpcomingTasksResponseDto> {
     try {
-      return await scheduleApiClient.getScheduleExecutions(params);
+      return await scheduleApiClient.getUpcomingTasks(params);
     } catch (error) {
-      console.error('获取执行历史失败:', error);
+      console.error('获取即将到来的任务失败:', error);
       throw error;
     }
   }
 
   /**
-   * 获取单个执行记录
+   * 快速创建提醒
    */
-  async getScheduleExecution(executionId: string): Promise<ScheduleExecutionApi> {
+  async createQuickReminder(
+    request: ScheduleContracts.QuickReminderRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     try {
-      return await scheduleApiClient.getScheduleExecution(executionId);
+      const task = await scheduleApiClient.createQuickReminder(request);
+
+      // 更新 Store
+      this.scheduleStore.addTask(task);
+
+      return task;
     } catch (error) {
-      console.error('获取执行记录详情失败:', error);
+      console.error('快速创建提醒失败:', error);
       throw error;
     }
   }
-
-  // ===== Schedule Statistics =====
-
-  /**
-   * 获取调度统计信息
-   */
-  async getScheduleStatistics(): Promise<ScheduleStatisticsResponse> {
-    try {
-      return await scheduleApiClient.getScheduleStatistics();
-    } catch (error) {
-      console.error('获取调度统计信息失败:', error);
-      throw error;
-    }
-  }
-
-  // ===== SSE Connection =====
-
-  /**
-   * 获取SSE连接信息
-   */
-  async getSSEConnection(): Promise<SSEConnectionInfo> {
-    try {
-      return await scheduleApiClient.getSSEConnection();
-    } catch (error) {
-      console.error('获取SSE连接信息失败:', error);
-      throw error;
-    }
-  }
-
-  // ===== Validation & Preview =====
-
-  /**
-   * 验证Cron表达式
-   */
-  async validateCronExpression(
-    expression: string,
-  ): Promise<{ valid: boolean; nextRuns?: string[]; error?: string }> {
-    try {
-      return await scheduleApiClient.validateCronExpression(expression);
-    } catch (error) {
-      console.error('验证Cron表达式失败:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 预览调度任务执行时间
-   */
-  async previewScheduleTask(request: Partial<CreateScheduleTaskRequestApi>): Promise<{
-    nextExecutions: string[];
-    scheduleDescription: string;
-  }> {
-    try {
-      return await scheduleApiClient.previewScheduleTask(request);
-    } catch (error) {
-      console.error('预览调度任务失败:', error);
-      throw error;
-    }
-  }
-
-  // ===== Batch Operations =====
 
   /**
    * 批量操作调度任务
    */
   async batchOperateScheduleTasks(
-    taskIds: string[],
-    operation: 'pause' | 'enable' | 'delete',
-  ): Promise<{ success: string[]; failed: string[] }> {
+    request: ScheduleContracts.BatchScheduleTaskOperationRequestDto,
+  ): Promise<ScheduleContracts.BatchScheduleTaskOperationResponseDto> {
     try {
-      const result = await scheduleApiClient.batchOperateScheduleTasks(taskIds, operation);
+      const result = await scheduleApiClient.batchOperateScheduleTasks(request);
+
+      // 根据操作类型更新 Store
+      if (request.operation === 'delete') {
+        result.success.forEach((uuid) => {
+          this.scheduleStore.removeTask(uuid);
+        });
+      } else if (request.operation === 'enable') {
+        this.scheduleStore.batchUpdateTasks(result.success, { enabled: true });
+      } else if (request.operation === 'disable') {
+        this.scheduleStore.batchUpdateTasks(result.success, { enabled: false });
+      }
+
       return result;
     } catch (error) {
       console.error('批量操作调度任务失败:', error);
@@ -247,106 +298,46 @@ export class ScheduleWebApplicationService {
     }
   }
 
-  // ===== Health & Monitoring =====
-
   /**
-   * 获取调度器健康状态
+   * 获取统计信息
    */
-  async getSchedulerHealth(): Promise<{
-    status: 'healthy' | 'degraded' | 'unhealthy';
-    runningTasks: number;
-    queuedTasks: number;
-    lastHeartbeat: string;
-  }> {
+  async getStatistics(): Promise<ScheduleContracts.IScheduleTaskStatistics> {
     try {
-      return await scheduleApiClient.getSchedulerHealth();
+      const statistics = await scheduleApiClient.getStatistics();
+
+      // 更新 Store
+      this.scheduleStore.setStatistics(statistics);
+
+      return statistics;
     } catch (error) {
-      console.error('获取调度器健康状态失败:', error);
+      console.error('获取统计信息失败:', error);
       throw error;
     }
   }
 
-  // ===== 高级功能 =====
+  // ==================== 高级功能 ====================
 
   /**
-   * 快速创建简单的调度任务
+   * 初始化模块数据
    */
-  async createQuickScheduleTask(options: {
-    name: string;
-    description?: string;
-    cronExpression: string;
-    taskType: string;
-    payload?: any;
-  }): Promise<ScheduleTaskApi> {
-    const request: CreateScheduleTaskRequestApi = {
-      name: options.name,
-      description: options.description,
-      taskType: options.taskType,
-      cronExpression: options.cronExpression,
-      payload: options.payload,
-      priority: 'MEDIUM',
-      status: 'ACTIVE',
-    };
-
-    return this.createScheduleTask(request);
-  }
-
-  /**
-   * 切换调度任务状态 (启用/暂停)
-   */
-  async toggleScheduleTaskStatus(
-    taskId: string,
-    currentStatus: string,
-  ): Promise<ScheduleTaskActionResponse> {
-    if (currentStatus === 'ACTIVE') {
-      return this.pauseScheduleTask(taskId);
-    } else {
-      return this.enableScheduleTask(taskId);
-    }
-  }
-
-  /**
-   * 获取调度任务概览数据
-   */
-  async getScheduleOverview(): Promise<{
-    tasks: ScheduleTaskApi[];
-    statistics: ScheduleStatisticsResponse;
-    recentExecutions: ScheduleExecutionApi[];
-    health: any;
-  }> {
+  async initializeModule(): Promise<void> {
     try {
-      const [tasks, statistics, executions, health] = await Promise.all([
-        this.getScheduleTasks({ limit: 10 }),
-        this.getScheduleStatistics(),
-        this.getScheduleExecutions({ limit: 10 }),
-        this.getSchedulerHealth().catch(() => null), // 健康检查可能失败，不影响其他数据
-      ]);
-
-      return {
-        tasks,
-        statistics,
-        recentExecutions: executions,
-        health,
-      };
+      // 并行获取任务列表和统计信息
+      await Promise.all([this.getScheduleTasks(), this.getStatistics()]);
     } catch (error) {
-      console.error('获取调度概览数据失败:', error);
+      console.error('初始化 Schedule 模块失败:', error);
       throw error;
     }
   }
 
   /**
-   * 清理已完成的调度任务
+   * 刷新所有数据
    */
-  async cleanupCompletedTasks(): Promise<void> {
+  async refreshAll(): Promise<void> {
     try {
-      const completedTasks = await this.getScheduleTasks({ status: 'COMPLETED' });
-      const taskIds = completedTasks.map((task) => task.id);
-
-      if (taskIds.length > 0) {
-        await this.batchOperateScheduleTasks(taskIds, 'delete');
-      }
+      await Promise.all([this.getScheduleTasks({ page: 1 }), this.getStatistics()]);
     } catch (error) {
-      console.error('清理已完成任务失败:', error);
+      console.error('刷新数据失败:', error);
       throw error;
     }
   }

@@ -2,26 +2,38 @@ import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
 import { ScheduleStatus } from '@dailyuse/contracts';
 
-type CreateScheduleTaskRequestDto = ScheduleContracts.CreateScheduleTaskRequestDto;
-type UpdateScheduleTaskRequestDto = ScheduleContracts.UpdateScheduleTaskRequestDto;
-type ScheduleTaskResponseDto = ScheduleContracts.ScheduleTaskResponseDto;
-type ScheduleTaskListResponseDto = ScheduleContracts.ScheduleTaskListResponseDto;
-type IScheduleTaskQuery = ScheduleContracts.IScheduleTaskQuery;
-
 /**
- * Schedule Domain Service
- * 调度模块领域服务 - 处理核心业务逻辑
+ * Schedule 领域服务
+ *
+ * 职责：
+ * - 处理 ScheduleTask 的核心业务逻辑
+ * - 通过 IScheduleTaskRepository 接口操作数据
+ * - 验证业务规则（时间范围、重复规则、提醒配置等）
+ * - 管理调度任务的状态转换
+ *
+ * 设计原则：
+ * - 依赖倒置：只依赖 IScheduleTaskRepository 接口
+ * - 单一职责：只处理 Schedule 相关的领域逻辑
+ * - 与技术解耦：无任何基础设施细节
+ * - 可移植：可安全移动到 @dailyuse/domain-server 包
  */
 export class ScheduleDomainService {
-  constructor(private scheduleRepository: IScheduleTaskRepository) {}
+  constructor(private readonly scheduleRepository: IScheduleTaskRepository) {}
+
+  // ==================== ScheduleTask CRUD 操作 ====================
 
   /**
-   * 创建调度任务 - 包含业务规则验证
+   * 创建调度任务
+   * 业务规则：
+   * 1. 调度时间不能是过去时间
+   * 2. 重复规则合理性验证
+   * 3. 提醒配置验证
+   * 4. 任务数量限制检查（最多1000个活跃任务）
    */
   async createScheduleTask(
     accountUuid: string,
-    request: CreateScheduleTaskRequestDto,
-  ): Promise<ScheduleTaskResponseDto> {
+    request: ScheduleContracts.CreateScheduleTaskRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     // 业务规则验证
     await this.validateScheduleTaskCreation(accountUuid, request);
 
@@ -35,12 +47,12 @@ export class ScheduleDomainService {
   async getScheduleTaskByUuid(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleTaskResponseDto | null> {
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto | null> {
     const task = await this.scheduleRepository.findByUuid(uuid);
 
     // 验证权限
     if (task && task.createdBy !== accountUuid) {
-      return null; // 或抛出权限错误
+      return null;
     }
 
     return task;
@@ -51,12 +63,12 @@ export class ScheduleDomainService {
    */
   async getScheduleTasks(
     accountUuid: string,
-    query: IScheduleTaskQuery,
-  ): Promise<ScheduleTaskListResponseDto> {
+    query: ScheduleContracts.IScheduleTaskQuery,
+  ): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
     // 添加账户过滤
-    const accountQuery: IScheduleTaskQuery = {
+    const accountQuery: ScheduleContracts.IScheduleTaskQuery = {
       ...query,
-      createdBy: accountUuid, // 确保只获取该账户的任务
+      createdBy: accountUuid,
     };
 
     return await this.scheduleRepository.findMany(accountQuery);
@@ -64,12 +76,16 @@ export class ScheduleDomainService {
 
   /**
    * 更新调度任务
+   * 业务规则：
+   * 1. 任务必须存在
+   * 2. 更新后的时间范围合理
+   * 3. 重复规则和提醒配置验证
    */
   async updateScheduleTask(
     accountUuid: string,
     uuid: string,
-    request: UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleTaskResponseDto> {
+    request: ScheduleContracts.UpdateScheduleTaskRequestDto,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     // 验证权限
     const existing = await this.getScheduleTaskByUuid(accountUuid, uuid);
     if (!existing) {
@@ -86,7 +102,6 @@ export class ScheduleDomainService {
    * 删除调度任务
    */
   async deleteScheduleTask(accountUuid: string, uuid: string): Promise<void> {
-    // 验证权限
     const existing = await this.getScheduleTaskByUuid(accountUuid, uuid);
     if (!existing) {
       throw new Error('Schedule task not found or access denied');
@@ -95,31 +110,45 @@ export class ScheduleDomainService {
     await this.scheduleRepository.delete(uuid);
   }
 
+  // ==================== ScheduleTask 状态管理 ====================
+
   /**
    * 启用调度任务
    */
-  async enableScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTaskResponseDto> {
+  async enableScheduleTask(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     return await this.scheduleRepository.enable(uuid);
   }
 
   /**
    * 禁用调度任务
    */
-  async disableScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTaskResponseDto> {
+  async disableScheduleTask(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     return await this.scheduleRepository.disable(uuid);
   }
 
   /**
    * 暂停调度任务
    */
-  async pauseScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTaskResponseDto> {
+  async pauseScheduleTask(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     return await this.scheduleRepository.pause(uuid);
   }
 
   /**
    * 恢复调度任务
    */
-  async resumeScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTaskResponseDto> {
+  async resumeScheduleTask(
+    accountUuid: string,
+    uuid: string,
+  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
     return await this.scheduleRepository.resume(uuid);
   }
 
@@ -127,7 +156,6 @@ export class ScheduleDomainService {
    * 执行调度任务
    */
   async executeScheduleTask(accountUuid: string, uuid: string, force?: boolean): Promise<any> {
-    // 验证权限
     const task = await this.getScheduleTaskByUuid(accountUuid, uuid);
     if (!task) {
       throw new Error('Schedule task not found or access denied');
@@ -137,14 +165,14 @@ export class ScheduleDomainService {
     return { success: true, message: 'Task execution initiated', taskUuid: uuid };
   }
 
-  // ========== 私有方法 - 业务规则验证 ==========
+  // ==================== 私有方法 - 业务规则验证 ====================
 
   /**
    * 验证调度任务创建的业务规则
    */
   private async validateScheduleTaskCreation(
     accountUuid: string,
-    request: CreateScheduleTaskRequestDto,
+    request: ScheduleContracts.CreateScheduleTaskRequestDto,
   ): Promise<void> {
     // 1. 验证调度时间不能是过去时间
     if (request.scheduledTime < new Date()) {
@@ -161,7 +189,7 @@ export class ScheduleDomainService {
       this.validateAlertConfig(request.alertConfig);
     }
 
-    // 4. 验证任务数量限制（可选）
+    // 4. 验证任务数量限制
     const existingTasks = await this.scheduleRepository.findMany({
       createdBy: accountUuid,
       status: [ScheduleStatus.PENDING, ScheduleStatus.RUNNING],
@@ -179,19 +207,19 @@ export class ScheduleDomainService {
   private async validateScheduleTaskUpdate(
     accountUuid: string,
     uuid: string,
-    request: UpdateScheduleTaskRequestDto,
+    request: ScheduleContracts.UpdateScheduleTaskRequestDto,
   ): Promise<void> {
-    // 1. 验证调度时间不能是过去时间（如果要更新的话）
+    // 1. 验证调度时间不能是过去时间
     if (request.scheduledTime && request.scheduledTime < new Date()) {
       throw new Error('Scheduled time cannot be in the past');
     }
 
-    // 2. 验证重复规则的合理性（如果要更新的话）
+    // 2. 验证重复规则的合理性
     if (request.recurrence) {
       this.validateRecurrenceRule(request.recurrence);
     }
 
-    // 3. 验证提醒配置（如果要更新的话）
+    // 3. 验证提醒配置
     if (request.alertConfig) {
       this.validateAlertConfig(request.alertConfig);
     }
