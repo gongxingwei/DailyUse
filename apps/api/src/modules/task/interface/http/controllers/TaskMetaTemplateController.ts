@@ -33,35 +33,6 @@ export class TaskMetaTemplateController {
     }
   }
 
-  /**
-   * 发送成功响应
-   */
-  private static sendSuccess<T>(
-    res: Response,
-    data: T,
-    message: string,
-    code: ResponseCode = ResponseCode.SUCCESS,
-  ): void {
-    const response = this.responseBuilder.success(data, message);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
-  /**
-   * 发送错误响应
-   */
-  private static sendError(
-    res: Response,
-    error: Error,
-    code: ResponseCode = ResponseCode.INTERNAL_ERROR,
-    defaultMessage: string = 'Operation failed',
-  ): void {
-    logger.error(`${defaultMessage}:`, error);
-    const response = this.responseBuilder.error(code, error.message || defaultMessage);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
   // ===== TaskMetaTemplate CRUD =====
 
   /**
@@ -79,18 +50,15 @@ export class TaskMetaTemplateController {
         request,
       );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Task meta-template created successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to create task meta-template',
-      );
+      logger.error('Failed to create task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to create task meta-template',
+       });
     }
   }
 
@@ -109,18 +77,15 @@ export class TaskMetaTemplateController {
         queryParams,
       );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplates,
         'Task meta-templates retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task meta-templates',
-      );
+      logger.error('Failed to retrieve task meta-templates', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve task meta-templates',
+       });
     }
   }
 
@@ -141,26 +106,20 @@ export class TaskMetaTemplateController {
         );
 
       if (!metaTemplate) {
-        return TaskMetaTemplateController.sendError(
-          res,
-          new Error('Task meta-template not found'),
-          ResponseCode.NOT_FOUND,
-          'Task meta-template not found',
-        );
+        logger.warn('Task meta-template not found', { metaTemplateId });
+        return TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: 'Task meta-template not found',
+         });
       }
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Task meta-template retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task meta-template',
-      );
+      logger.error('Failed to retrieve task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve task meta-template',
+       });
     }
   }
 
@@ -181,18 +140,15 @@ export class TaskMetaTemplateController {
         request,
       );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Task meta-template updated successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to update task meta-template',
-      );
+      logger.error('Failed to update task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to update task meta-template',
+       });
     }
   }
 
@@ -211,14 +167,15 @@ export class TaskMetaTemplateController {
         metaTemplateId,
       );
 
-      TaskMetaTemplateController.sendSuccess(res, null, 'Task meta-template deleted successfully');
-    } catch (error) {
-      TaskMetaTemplateController.sendError(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to delete task meta-template',
+        null,
+        'Task meta-template deleted successfully',
       );
+    } catch (error) {
+      logger.error('Failed to delete task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to delete task meta-template',
+       });
     }
   }
 
@@ -240,18 +197,15 @@ export class TaskMetaTemplateController {
           metaTemplateId,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Task meta-template activated successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to activate task meta-template',
-      );
+      logger.error('Failed to activate task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to activate task meta-template',
+       });
     }
   }
 
@@ -271,18 +225,15 @@ export class TaskMetaTemplateController {
           metaTemplateId,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Task meta-template deactivated successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to deactivate task meta-template',
-      );
+      logger.error('Failed to deactivate task meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to deactivate task meta-template',
+       });
     }
   }
 
@@ -301,18 +252,15 @@ export class TaskMetaTemplateController {
         metaTemplateId,
       );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplate,
         'Favorite status toggled successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to toggle favorite status',
-      );
+      logger.error('Failed to toggle favorite status', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to toggle favorite status',
+       });
     }
   }
 
@@ -336,18 +284,17 @@ export class TaskMetaTemplateController {
           request,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         template,
         'Task template created from meta-template successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to create task template from meta-template',
-      );
+      logger.error('Failed to create task template from meta-template', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error
+          ? error.message
+          : 'Failed to create task template from meta-template',
+       });
     }
   }
 
@@ -369,18 +316,15 @@ export class TaskMetaTemplateController {
           category,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplates,
         'Meta-templates by category retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve meta-templates by category',
-      );
+      logger.error('Failed to retrieve meta-templates by category', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve meta-templates by category',
+       });
     }
   }
 
@@ -396,18 +340,15 @@ export class TaskMetaTemplateController {
       const metaTemplates =
         await TaskMetaTemplateController.metaTemplateService!.getFavoriteMetaTemplates(accountUuid);
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplates,
         'Favorite meta-templates retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve favorite meta-templates',
-      );
+      logger.error('Failed to retrieve favorite meta-templates', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve favorite meta-templates',
+       });
     }
   }
 
@@ -427,18 +368,15 @@ export class TaskMetaTemplateController {
           limit ? parseInt(limit as string) : undefined,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplates,
         'Popular meta-templates retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve popular meta-templates',
-      );
+      logger.error('Failed to retrieve popular meta-templates', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve popular meta-templates',
+       });
     }
   }
 
@@ -458,18 +396,16 @@ export class TaskMetaTemplateController {
           limit ? parseInt(limit as string) : undefined,
         );
 
-      TaskMetaTemplateController.sendSuccess(
+      TaskMetaTemplateController.responseBuilder.sendSuccess(
         res,
         metaTemplates,
         'Recently used meta-templates retrieved successfully',
       );
     } catch (error) {
-      TaskMetaTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve recently used meta-templates',
-      );
+      logger.error('Failed to retrieve recently used meta-templates', error);
+      TaskMetaTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve recently used meta-templates',
+       });
     }
   }
 }
+

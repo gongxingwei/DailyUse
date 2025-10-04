@@ -41,35 +41,6 @@ export class TaskTemplateController {
     }
   }
 
-  /**
-   * 发送成功响应
-   */
-  private static sendSuccess<T>(
-    res: Response,
-    data: T,
-    message: string,
-    code: ResponseCode = ResponseCode.SUCCESS,
-  ): void {
-    const response = this.responseBuilder.success(data, message);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
-  /**
-   * 发送错误响应
-   */
-  private static sendError(
-    res: Response,
-    error: Error,
-    code: ResponseCode = ResponseCode.INTERNAL_ERROR,
-    defaultMessage: string = 'Operation failed',
-  ): void {
-    logger.error(`${defaultMessage}:`, error);
-    const response = this.responseBuilder.error(code, error.message || defaultMessage);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
   // ===== TaskTemplate 聚合根管理 =====
 
   /**
@@ -87,14 +58,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template created successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to create task template',
+        template,
+        'Task template created successfully',
       );
+    } catch (error) {
+      logger.error('Failed to create task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to create task template' });
     }
   }
 
@@ -113,14 +83,13 @@ export class TaskTemplateController {
         queryParams,
       );
 
-      TaskTemplateController.sendSuccess(res, templates, 'Task templates retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task templates',
+        templates,
+        'Task templates retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve task templates', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve task templates' });
     }
   }
 
@@ -140,22 +109,16 @@ export class TaskTemplateController {
       );
 
       if (!template) {
-        return TaskTemplateController.sendError(
-          res,
-          new Error('Task template not found'),
-          ResponseCode.NOT_FOUND,
-          'Task template not found',
-        );
+        return logger.warn('Task template not found'); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: 'Task template not found' });
       }
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task template',
+        template,
+        'Task template retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve task template' });
     }
   }
 
@@ -176,14 +139,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template updated successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to update task template',
+        template,
+        'Task template updated successfully',
       );
+    } catch (error) {
+      logger.error('Failed to update task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to update task template' });
     }
   }
 
@@ -199,14 +161,13 @@ export class TaskTemplateController {
 
       await TaskTemplateController.taskTemplateService!.deleteTemplate(accountUuid, templateId);
 
-      TaskTemplateController.sendSuccess(res, null, 'Task template deleted successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to delete task template',
+        null,
+        'Task template deleted successfully',
       );
+    } catch (error) {
+      logger.error('Failed to delete task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to delete task template' });
     }
   }
 
@@ -227,14 +188,13 @@ export class TaskTemplateController {
         templateId,
       );
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template activated successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to activate task template',
+        template,
+        'Task template activated successfully',
       );
+    } catch (error) {
+      logger.error('Failed to activate task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to activate task template' });
     }
   }
 
@@ -253,14 +213,13 @@ export class TaskTemplateController {
         templateId,
       );
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template paused successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to pause task template',
+        template,
+        'Task template paused successfully',
       );
+    } catch (error) {
+      logger.error('Failed to pause task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to pause task template' });
     }
   }
 
@@ -279,14 +238,13 @@ export class TaskTemplateController {
         templateId,
       );
 
-      TaskTemplateController.sendSuccess(res, template, 'Task template archived successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to archive task template',
+        template,
+        'Task template archived successfully',
       );
+    } catch (error) {
+      logger.error('Failed to archive task template', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to archive task template' });
     }
   }
 
@@ -307,14 +265,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task instance created successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to create task instance',
+        instance,
+        'Task instance created successfully',
       );
+    } catch (error) {
+      logger.error('Failed to create task instance', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to create task instance' });
     }
   }
 
@@ -333,14 +290,13 @@ export class TaskTemplateController {
         queryParams,
       );
 
-      TaskTemplateController.sendSuccess(res, instances, 'Task instances retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task instances',
+        instances,
+        'Task instances retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve task instances', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve task instances' });
     }
   }
 
@@ -360,22 +316,16 @@ export class TaskTemplateController {
       );
 
       if (!instance) {
-        return TaskTemplateController.sendError(
-          res,
-          new Error('Task instance not found'),
-          ResponseCode.NOT_FOUND,
-          'Task instance not found',
-        );
+        return logger.warn('Task instance not found'); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: 'Task instance not found' });
       }
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task instance retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task instance',
+        instance,
+        'Task instance retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve task instance', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve task instance' });
     }
   }
 
@@ -396,14 +346,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task instance updated successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to update task instance',
+        instance,
+        'Task instance updated successfully',
       );
+    } catch (error) {
+      logger.error('Failed to update task instance', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to update task instance' });
     }
   }
 
@@ -419,14 +368,13 @@ export class TaskTemplateController {
 
       await TaskTemplateController.taskTemplateService!.deleteInstance(accountUuid, instanceId);
 
-      TaskTemplateController.sendSuccess(res, null, 'Task instance deleted successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to delete task instance',
+        null,
+        'Task instance deleted successfully',
       );
+    } catch (error) {
+      logger.error('Failed to delete task instance', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to delete task instance' });
     }
   }
 
@@ -449,14 +397,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task completed successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to complete task',
+        instance,
+        'Task completed successfully',
       );
+    } catch (error) {
+      logger.error('Failed to complete task', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to complete task' });
     }
   }
 
@@ -475,14 +422,13 @@ export class TaskTemplateController {
         instanceId,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task completion undone successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to undo task completion',
+        instance,
+        'Task completion undone successfully',
       );
+    } catch (error) {
+      logger.error('Failed to undo task completion', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to undo task completion' });
     }
   }
 
@@ -501,14 +447,13 @@ export class TaskTemplateController {
         instanceId,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task started successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to start task',
+        instance,
+        'Task started successfully',
       );
+    } catch (error) {
+      logger.error('Failed to start task', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to start task' });
     }
   }
 
@@ -527,14 +472,13 @@ export class TaskTemplateController {
         instanceId,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task cancelled successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to cancel task',
+        instance,
+        'Task cancelled successfully',
       );
+    } catch (error) {
+      logger.error('Failed to cancel task', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to cancel task' });
     }
   }
 
@@ -555,14 +499,13 @@ export class TaskTemplateController {
         request,
       );
 
-      TaskTemplateController.sendSuccess(res, instance, 'Task rescheduled successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to reschedule task',
+        instance,
+        'Task rescheduled successfully',
       );
+    } catch (error) {
+      logger.error('Failed to reschedule task', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to reschedule task' });
     }
   }
 
@@ -584,14 +527,13 @@ export class TaskTemplateController {
         reminderId,
       );
 
-      TaskTemplateController.sendSuccess(res, null, 'Reminder triggered successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to trigger reminder',
+        null,
+        'Reminder triggered successfully',
       );
+    } catch (error) {
+      logger.error('Failed to trigger reminder', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to trigger reminder' });
     }
   }
 
@@ -614,14 +556,13 @@ export class TaskTemplateController {
         reason,
       );
 
-      TaskTemplateController.sendSuccess(res, null, 'Reminder snoozed successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to snooze reminder',
+        null,
+        'Reminder snoozed successfully',
       );
+    } catch (error) {
+      logger.error('Failed to snooze reminder', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to snooze reminder' });
     }
   }
 
@@ -641,14 +582,13 @@ export class TaskTemplateController {
         reminderId,
       );
 
-      TaskTemplateController.sendSuccess(res, null, 'Reminder dismissed successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to dismiss reminder',
+        null,
+        'Reminder dismissed successfully',
       );
+    } catch (error) {
+      logger.error('Failed to dismiss reminder', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to dismiss reminder' });
     }
   }
 
@@ -665,14 +605,13 @@ export class TaskTemplateController {
 
       const stats = await TaskTemplateController.taskTemplateService!.getTaskStats(accountUuid);
 
-      TaskTemplateController.sendSuccess(res, stats, 'Task stats retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve task stats',
+        stats,
+        'Task stats retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve task stats', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve task stats' });
     }
   }
 
@@ -691,14 +630,9 @@ export class TaskTemplateController {
         queryParams,
       );
 
-      TaskTemplateController.sendSuccess(res, tasks, 'Tasks searched successfully');
+      TaskTemplateController.responseBuilder.sendSuccess(res, tasks, 'Tasks searched successfully');
     } catch (error) {
-      TaskTemplateController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to search tasks',
-      );
+      logger.error('Failed to search tasks', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to search tasks' });
     }
   }
 
@@ -720,14 +654,13 @@ export class TaskTemplateController {
         },
       );
 
-      TaskTemplateController.sendSuccess(res, tasks, 'Upcoming tasks retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve upcoming tasks',
+        tasks,
+        'Upcoming tasks retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve upcoming tasks', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve upcoming tasks' });
     }
   }
 
@@ -746,14 +679,13 @@ export class TaskTemplateController {
         offset: offset ? parseInt(offset as string) : undefined,
       });
 
-      TaskTemplateController.sendSuccess(res, tasks, 'Overdue tasks retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve overdue tasks',
+        tasks,
+        'Overdue tasks retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve overdue tasks', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve overdue tasks' });
     }
   }
 
@@ -772,14 +704,14 @@ export class TaskTemplateController {
         offset: offset ? parseInt(offset as string) : undefined,
       });
 
-      TaskTemplateController.sendSuccess(res, tasks, 'Today tasks retrieved successfully');
-    } catch (error) {
-      TaskTemplateController.sendError(
+      TaskTemplateController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve today tasks',
+        tasks,
+        'Today tasks retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve today tasks', error); TaskTemplateController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: (error as Error).message || 'Failed to retrieve today tasks' });
     }
   }
 }
+

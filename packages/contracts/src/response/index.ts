@@ -8,6 +8,8 @@
  * 3. 类型安全：所有响应都符合 ApiResponse<T> 类型
  */
 
+import { getHttpStatusCode } from './statusCodes';
+
 /**
  * 响应状态码枚举
  * 用于标识响应的业务状态
@@ -197,7 +199,7 @@ export interface ResponseBuilderOptions {
 
 /**
  * 响应构建器工具类
- * 提供统一的响应构建方法
+ * 提供统一的响应构建方法和便捷的发送方法
  */
 export class ResponseBuilder {
   private options: ResponseBuilderOptions;
@@ -273,6 +275,63 @@ export class ResponseBuilder {
     }
 
     return response;
+  }
+
+  /**
+   * 发送成功响应
+   * @param res Express Response 对象
+   * @param data 响应数据
+   * @param message 成功消息
+   * @param statusCode HTTP 状态码（默认200）
+   */
+  sendSuccess<T>(res: any, data: T, message: string, statusCode = 200): any {
+    const response = this.success(data, message);
+    return res.status(statusCode).json(response);
+  }
+
+  /**
+   * 发送成功响应（带分页）
+   * @param res Express Response 对象
+   * @param data 响应数据
+   * @param pagination 分页信息
+   * @param message 成功消息
+   * @param statusCode HTTP 状态码（默认200）
+   */
+  sendSuccessWithPagination<T>(
+    res: any,
+    data: T,
+    pagination: PaginationInfo,
+    message = '查询成功',
+    statusCode = 200,
+  ): any {
+    const response = this.successWithPagination(data, pagination, message);
+    return res.status(statusCode).json(response);
+  }
+
+  /**
+   * 发送错误响应
+   * @param res Express Response 对象
+   * @param options 错误响应选项
+   */
+  sendError(
+    res: any,
+    options: {
+      code: ResponseCode;
+      message: string;
+      errorCode?: string;
+      errors?: ErrorDetail[];
+      debug?: any;
+    },
+  ): any {
+    const response = this.error(
+      options.code,
+      options.message,
+      options.errorCode,
+      options.errors,
+      options.debug,
+    );
+    const httpStatus = getHttpStatusCode(options.code);
+    return res.status(httpStatus).json(response);
   }
 
   /**
