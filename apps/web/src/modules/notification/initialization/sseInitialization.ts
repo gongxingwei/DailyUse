@@ -16,11 +16,11 @@ import { sseClient } from '../infrastructure/sse/SSEClient';
 export function registerSSEInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
 
-  // SSE 连接初始化任务
+  // SSE 连接初始化任务 - 在用户登录后建立连接
   const sseConnectionTask: InitializationTask = {
     name: 'sse-connection',
-    phase: InitializationPhase.APP_STARTUP,
-    priority: 20, // 在通知系统初始化之后
+    phase: InitializationPhase.USER_LOGIN,
+    priority: 15, // 在用户登录后、业务模块初始化之前建立 SSE 连接
     initialize: async () => {
       console.log('🔗 [SSE] 开始初始化 SSE 连接...');
 

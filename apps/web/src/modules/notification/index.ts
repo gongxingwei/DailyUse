@@ -45,6 +45,12 @@ export { NotificationEventHandlers } from './application/events/NotificationEven
 export { DesktopNotificationService } from './infrastructure/services/DesktopNotificationService';
 export { AudioNotificationService } from './infrastructure/services/AudioNotificationService';
 export { NotificationConfigStorage } from './infrastructure/storage/NotificationConfigStorage';
+export { NotificationPermissionService } from './infrastructure/browser/NotificationPermissionService';
+export { InAppNotificationService } from './application/services/InAppNotificationService';
+
+// UI 组件
+export { default as InAppNotification } from './presentation/components/InAppNotification.vue';
+export { default as NotificationPermissionWarning } from './presentation/components/NotificationPermissionWarning.vue';
 
 // 初始化相关
 export { registerNotificationInitializationTasks } from './initialization/notificationInitialization';

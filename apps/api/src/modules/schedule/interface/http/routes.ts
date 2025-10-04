@@ -114,7 +114,14 @@ const scheduleController = new ScheduleController();
  *   get:
  *     tags: [Schedule Events]
  *     summary: SSE 事件流连接
- *     description: 建立 Server-Sent Events 连接以接收实时调度事件
+ *     description: 建立 Server-Sent Events 连接以接收实时调度事件。需要在 URL 参数中提供有效的 JWT token，后端将自动从 token 中提取用户信息。
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: JWT 认证令牌
  *     responses:
  *       200:
  *         description: SSE 连接建立成功
@@ -122,6 +129,8 @@ const scheduleController = new ScheduleController();
  *           text/event-stream:
  *             schema:
  *               type: string
+ *       401:
+ *         description: 未认证或 token 无效
  */
 router.get('/events', sseController.connect);
 

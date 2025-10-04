@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "modules/contracts-in-goal.md",
+                "file": "systems/SSE_IMPLEMENTATION_GUIDE.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "contracts-in-goal"
+              "title": "SSE_IMPLEMENTATION_GUIDE"
             }
           }
         ]
@@ -94,7 +94,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "modules/contracts-in-goal.md",
+                "file": "systems/SSE_IMPLEMENTATION_GUIDE.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -104,7 +104,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for contracts-in-goal"
+              "title": "Backlinks for SSE_IMPLEMENTATION_GUIDE"
             }
           },
           {
@@ -134,12 +134,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "modules/contracts-in-goal.md",
+                "file": "systems/SSE_IMPLEMENTATION_GUIDE.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from contracts-in-goal"
+              "title": "Outgoing links from SSE_IMPLEMENTATION_GUIDE"
             }
           }
         ]
@@ -182,6 +182,14 @@
   },
   "active": "leaf",
   "lastOpenFiles": [
+    "testing/SSE_REMINDER_NOTIFICATION_TEST_GUIDE.md",
+    "modules/SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md",
+    "testing/SSE_DEBUGGING_GUIDE.md",
+    "modules/SSE_CONNECTION_FIX_SUMMARY.md",
+    "systems/INITIALIZATION_ERROR_HANDLING_BEST_PRACTICES.md",
+    "systems/SSE_TOKEN_AUTH_IMPLEMENTATION.md",
+    "systems/SSE_USER_LEVEL_CONNECTION_UPGRADE.md",
+    "modules/contracts-in-goal.md",
     "modules/TASK_APPLICATION_SERVICE_REFACTORING.md",
     "modules/TASK_META_TEMPLATE_AGGREGATE_REFACTORING.md",
     "modules/TASK_REFACTORING_CHANGELOG.md",
@@ -191,7 +199,6 @@
     "modules/TASK_MODULE_REFACTORING_GUIDE.md",
     "modules/TASK_MODULE_REFACTORING_PLAN.md",
     "modules/GOAL_INITIALIZATION_QUICK_REFERENCE.md",
-    "modules/contracts-in-goal.md",
     "modules/GOAL_USER_DATA_INITIALIZATION_GUIDE.md",
     "systems/日志系统.md",
     "systems/事件总线系统.md",
@@ -202,13 +209,6 @@
     "guides/THEME_SYSTEM_README.md",
     "guides/DEV_SOURCE_MODE.md",
     "guides",
-    "systems/API_RESPONSE_SYSTEM_GUIDE.md",
-    "systems/SSE_TECHNICAL_DOCUMENTATION.md",
-    "systems/REMINDER_SCHEDULE_INTEGRATION_COMPLETE.md",
-    "systems/SCHEDULE_INTEGRATION_GUIDE.md",
-    "systems/LOGGER_QUICK_REFERENCE.md",
-    "systems/LOGGER_INTEGRATION_GUIDE.md",
-    "testing/CHANGELOG_VITEST.md",
     "testing"
   ]
 }

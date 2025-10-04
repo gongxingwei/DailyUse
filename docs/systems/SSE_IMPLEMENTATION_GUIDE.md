@@ -1,5 +1,8 @@
 # SSE (Server-Sent Events) 实现完整指南
 
+> **🔄 重要更新 (2025-10-04):**  
+> SSE 连接已改为**用户级别连接**，在用户登录后才建立。每个连接使用用户的 `accountUuid` 作为客户端标识，支持针对特定用户的事件推送。
+
 ## 📚 目录
 1. [什么是 SSE](#什么是-sse)
 2. [SSE vs WebSocket vs 轮询](#sse-vs-websocket-vs-轮询)
@@ -98,6 +101,15 @@ data: some text data
 │  - ScheduleManagementView.vue                               │
 │  - ReminderDesktopView.vue                                  │
 │  - NotificationPanel.vue                                    │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ↓ 用户登录后建立连接
+┌─────────────────────────────────────────────────────────────┐
+│                SSE 客户端 (SSEClient.ts)                     │
+│  - 用户登录时连接: connect(accountUuid)                      │
+│  - URL: /api/v1/schedules/events?accountUuid={uuid}         │
+│  - 自动重连机制                                              │
+│  - 事件分发到前端事件总线                                     │
 └────────────────┬────────────────────────────────────────────┘
                  │ 监听 eventBus.on('schedule:task-executed')
                  ↓
@@ -1088,6 +1100,170 @@ private flushEvents(): void {
 
 ---
 
+## 🆕 用户级别 SSE 连接实现 (2025-10-04 更新)
+
+### 实现概述
+
+SSE 连接已升级为**用户级别连接**，每个连接与用户的 `accountUuid` 绑定，支持更精确的事件推送和更好的安全性。
+
+### 关键变更
+
+#### 1. 前端 SSEClient 变更
+
+**连接方法签名变更：**
+```typescript
+// ❌ 旧版本 - 无参数连接
+connect(): Promise<void>
+
+// ✅ 新版本 - 需要 accountUuid
+connect(accountUuid: string): Promise<void>
+```
+
+**连接 URL 变更：**
+```typescript
+// ❌ 旧版本
+const url = `${baseUrl}/api/v1/schedules/events`;
+
+// ✅ 新版本
+const url = `${baseUrl}/api/v1/schedules/events?accountUuid=${accountUuid}`;
+```
+
+**使用示例：**
+```typescript
+import { sseClient } from '@/modules/notification/infrastructure/sse/SSEClient';
+
+// 用户登录后建立连接
+const accountUuid = 'user-uuid-here';
+await sseClient.connect(accountUuid);
+
+// 检查连接状态
+const status = sseClient.getStatus();
+console.log('Connected:', status.connected);
+
+// 用户登出时断开
+sseClient.disconnect();
+```
+
+#### 2. 初始化时机变更
+
+**旧实现（不推荐）：**
+```typescript
+// 在 APP_STARTUP 阶段连接 - 此时用户还未登录
+phase: InitializationPhase.APP_STARTUP
+```
+
+**新实现（推荐）：**
+```typescript
+// 在 USER_LOGIN 阶段连接 - 用户登录后才建立
+const sseConnectionTask: InitializationTask = {
+  name: 'sse-connection',
+  phase: InitializationPhase.USER_LOGIN,
+  priority: 15,
+  initialize: async (context) => {
+    if (!context?.accountUuid) {
+      throw new Error('SSE initialization requires accountUuid');
+    }
+    await sseClient.connect(context.accountUuid);
+  },
+  cleanup: async () => {
+    sseClient.destroy();
+  },
+};
+```
+
+#### 3. 后端 SSEController 变更
+
+**客户端标识变更：**
+```typescript
+// ❌ 旧版本 - 随机生成 ID
+const clientId = `client_${Date.now()}_${Math.random().toString(36)}`;
+
+// ✅ 新版本 - 使用 accountUuid
+const accountUuid = req.query.accountUuid as string;
+if (!accountUuid) {
+  res.status(400).json({ message: 'accountUuid is required' });
+  return;
+}
+const clientId = accountUuid; // 直接使用 accountUuid
+```
+
+**客户端数据结构：**
+```typescript
+interface SSEClient {
+  id: string;
+  accountUuid: string;  // 新增字段
+  response: Response;
+  lastPing: number;
+}
+```
+
+**新增功能 - 向特定用户发送事件：**
+```typescript
+// 向所有客户端广播
+broadcastToAll(eventType: string, data: any): void
+
+// 向特定用户发送（新增）
+sendToUser(accountUuid: string, eventType: string, data: any): void
+```
+
+### 优势
+
+✅ **更好的安全性**
+- 每个连接绑定到特定用户
+- 可以验证用户权限
+- 防止接收不属于自己的事件
+
+✅ **支持多设备**
+- 同一用户可以在多个设备登录
+- 每个设备都有独立的 SSE 连接
+- 所有设备都能接收该用户的事件
+
+✅ **精确的事件推送**
+- 可以针对特定用户发送事件
+- 减少不必要的广播
+- 提高系统效率
+
+✅ **更好的生命周期管理**
+- 用户登录时建立连接
+- 用户登出时自动清理
+- 避免无效连接占用资源
+
+### 迁移指南
+
+如果你的代码使用了旧版 SSE 实现，请按以下步骤迁移：
+
+1. **更新连接调用：**
+   ```typescript
+   // 旧代码
+   await sseClient.connect();
+   
+   // 新代码
+   const accountUuid = useAuthStore().user?.uuid;
+   await sseClient.connect(accountUuid);
+   ```
+
+2. **移除自动连接代码：**
+   ```typescript
+   // 删除这类代码
+   if (typeof window !== 'undefined') {
+     window.addEventListener('load', () => {
+       sseClient.connect(); // ❌ 不再自动连接
+     });
+   }
+   ```
+
+3. **更新初始化任务：**
+   - 将 SSE 初始化从 `APP_STARTUP` 移到 `USER_LOGIN`
+   - 确保传递 `context.accountUuid`
+
+4. **后端 API 调用：**
+   ```typescript
+   // 确保 URL 包含 accountUuid
+   const url = `/api/v1/schedules/events?accountUuid=${accountUuid}`;
+   ```
+
+---
+
 ## 总结
 
 ### SSE 实现的关键点
@@ -1096,22 +1272,27 @@ private flushEvents(): void {
 1. 正确设置响应头（Content-Type: text/event-stream）
 2. 保持连接（Connection: keep-alive）
 3. 定期发送心跳
-4. 管理客户端连接池
+4. 管理客户端连接池（按 accountUuid 索引）
 5. 优雅清理断开的连接
+6. 验证 accountUuid 参数
 
 ✅ **前端：**
 1. 使用 EventSource API
-2. 监听自定义事件
-3. 实现自动重连机制
-4. 路由事件到事件总线
-5. 提供连接状态监控
+2. 在用户登录后建立连接（传递 accountUuid）
+3. 监听自定义事件
+4. 实现自动重连机制（保存 accountUuid）
+5. 路由事件到事件总线
+6. 提供连接状态监控
+7. 用户登出时断开连接
 
 ✅ **注意事项：**
-1. SSE 端点不需要认证（避免 token 过期）
-2. 使用指数退避算法重连
-3. CORS 配置必须正确
-4. 监控连接数和内存占用
-5. 提供优雅降级方案
+1. SSE 连接必须在用户登录后建立
+2. accountUuid 是必需参数
+3. 使用指数退避算法重连
+4. CORS 配置必须正确
+5. 监控连接数和内存占用
+6. 提供优雅降级方案
+7. 考虑添加 token 验证增强安全性
 
 ---
 
@@ -1125,4 +1306,4 @@ private flushEvents(): void {
 
 **更新日期：** 2025-10-04  
 **作者：** DailyUse Team  
-**版本：** 1.0.0
+**版本：** 2.0.0 (用户级别连接)

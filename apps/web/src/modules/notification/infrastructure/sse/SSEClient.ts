@@ -1,9 +1,11 @@
 /**
  * Server-Sent Events (SSE) 客户端
  * @description 连接后端 SSE 端点，接收实时调度事件
+ * @note 由于原生 EventSource 不支持自定义请求头，我们将 token 作为 URL 参数传递
  */
 
 import { eventBus } from '@dailyuse/utils';
+import { AuthManager } from '@/shared/api/core/interceptors';
 
 export interface SSEEvent {
   type: string;
@@ -26,111 +28,123 @@ export class SSEClient {
 
   /**
    * 连接到 SSE 端点
+   * @description 后端将从 URL 参数中的 token 提取用户信息
+   * @description 此方法会立即返回，连接在后台异步建立，不会阻塞应用初始化
    */
   connect(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      if (this.isConnecting || this.eventSource) {
-        console.log('[SSE Client] 连接已存在或正在连接中');
-        resolve();
-        return;
-      }
+    // 不阻塞初始化，立即返回，连接在后台进行
+    if (this.eventSource || this.isConnecting) {
+      console.log('[SSE Client] 连接已存在或正在连接中');
+      return Promise.resolve();
+    }
 
-      this.isConnecting = true;
-      const url = `${this.baseUrl}/api/v1/schedules/events`;
+    // 在后台异步建立连接
+    this.connectInBackground();
+    return Promise.resolve();
+  }
 
-      console.log('[SSE Client] 连接到:', url);
+  /**
+   * 在后台建立 SSE 连接
+   */
+  private connectInBackground(): void {
+    if (this.eventSource || this.isConnecting) {
+      return;
+    }
 
-      // 设置连接超时定时器
-      const connectionTimeout = setTimeout(() => {
-        console.log('[SSE Client] 连接超时，但继续尝试...');
+    // 获取认证 token
+    const token = AuthManager.getAccessToken();
+    if (!token) {
+      console.error('[SSE Client] 缺少认证 token，无法建立 SSE 连接');
+      // 1秒后重试
+      setTimeout(() => this.connectInBackground(), 1000);
+      return;
+    }
+
+    this.isConnecting = true;
+    // 将 token 作为 URL 参数传递（因为 EventSource 不支持自定义请求头）
+    const url = `${this.baseUrl}/api/v1/schedules/events?token=${encodeURIComponent(token)}`;
+
+    console.log('[SSE Client] 连接到:', this.baseUrl + '/api/v1/schedules/events');
+
+    try {
+      this.eventSource = new EventSource(url);
+      console.log('[SSE Client] EventSource 已创建, readyState:', this.eventSource.readyState);
+
+      // 连接成功
+      this.eventSource.onopen = () => {
+        console.log(
+          '[SSE Client] ✅ onopen 触发 - 连接成功, readyState:',
+          this.eventSource?.readyState,
+        );
+        this.reconnectAttempts = 0;
         this.isConnecting = false;
-        // 不 reject，让连接继续尝试
-        resolve();
-      }, 5000); // 5秒超时
+      };
 
-      try {
-        this.eventSource = new EventSource(url);
+      // 接收消息
+      this.eventSource.onmessage = (event) => {
+        console.log('[SSE Client] 收到默认消息:', event.data);
+        this.handleMessage('message', event.data);
+      };
 
-        // 连接成功
-        this.eventSource.onopen = () => {
-          console.log('[SSE Client] ✅ 连接成功');
-          clearTimeout(connectionTimeout);
-          this.reconnectAttempts = 0;
-          this.isConnecting = false;
-          resolve();
-        };
+      // 连接建立事件
+      this.eventSource.addEventListener('connected', (event) => {
+        console.log('[SSE Client] 🔗 连接建立事件触发:', event.data);
+        this.handleMessage('connected', event.data);
+      });
 
-        // 接收消息
-        this.eventSource.onmessage = (event) => {
-          console.log('[SSE Client] 收到默认消息:', event.data);
-          this.handleMessage('message', event.data);
-        };
+      // 心跳事件
+      this.eventSource.addEventListener('heartbeat', (event) => {
+        console.log('[SSE Client] 💓 心跳:', event.data);
+      });
 
-        // 连接建立事件
-        this.eventSource.addEventListener('connected', (event) => {
-          console.log('[SSE Client] 🔗 连接建立:', event.data);
-          this.handleMessage('connected', event.data);
-        });
+      // 调度器事件
+      this.eventSource.addEventListener('schedule:popup-reminder', (event) => {
+        console.log('[SSE Client] 🔔 弹窗提醒事件:', event.data);
+        this.handleScheduleEvent('popup-reminder', event.data);
+      });
 
-        // 心跳事件
-        this.eventSource.addEventListener('heartbeat', (event) => {
-          console.log('[SSE Client] 💓 心跳:', event.data);
-        });
+      this.eventSource.addEventListener('schedule:sound-reminder', (event) => {
+        console.log('[SSE Client] 🔊 声音提醒事件:', event.data);
+        this.handleScheduleEvent('sound-reminder', event.data);
+      });
 
-        // 调度器事件
-        this.eventSource.addEventListener('schedule:popup-reminder', (event) => {
-          console.log('[SSE Client] 🔔 弹窗提醒事件:', event.data);
-          this.handleScheduleEvent('popup-reminder', event.data);
-        });
+      this.eventSource.addEventListener('schedule:system-notification', (event) => {
+        console.log('[SSE Client] 📢 系统通知事件:', event.data);
+        this.handleScheduleEvent('system-notification', event.data);
+      });
 
-        this.eventSource.addEventListener('schedule:sound-reminder', (event) => {
-          console.log('[SSE Client] 🔊 声音提醒事件:', event.data);
-          this.handleScheduleEvent('sound-reminder', event.data);
-        });
+      this.eventSource.addEventListener('schedule:reminder-triggered', (event) => {
+        console.log('[SSE Client] 📨 通用提醒事件:', event.data);
+        this.handleScheduleEvent('reminder-triggered', event.data);
+      });
 
-        this.eventSource.addEventListener('schedule:system-notification', (event) => {
-          console.log('[SSE Client] 📢 系统通知事件:', event.data);
-          this.handleScheduleEvent('system-notification', event.data);
-        });
+      this.eventSource.addEventListener('schedule:task-executed', (event) => {
+        console.log('[SSE Client] ⚡ 任务执行事件:', event.data);
+        this.handleScheduleEvent('task-executed', event.data);
+      });
 
-        this.eventSource.addEventListener('schedule:reminder-triggered', (event) => {
-          console.log('[SSE Client] 📨 通用提醒事件:', event.data);
-          this.handleScheduleEvent('reminder-triggered', event.data);
-        });
-
-        this.eventSource.addEventListener('schedule:task-executed', (event) => {
-          console.log('[SSE Client] ⚡ 任务执行事件:', event.data);
-          this.handleScheduleEvent('task-executed', event.data);
-        });
-
-        // 连接错误
-        this.eventSource.onerror = (error) => {
-          console.error('[SSE Client] ❌ 连接错误:', error);
-          clearTimeout(connectionTimeout);
-          this.isConnecting = false;
-
-          // 检查连接状态
-          if (this.eventSource?.readyState === EventSource.CONNECTING) {
-            console.log('[SSE Client] 正在连接中...');
-            // 不 reject，继续尝试
-            resolve();
-          } else if (this.eventSource?.readyState === EventSource.CLOSED) {
-            console.log('[SSE Client] 连接已关闭，准备重连');
-            this.attemptReconnect();
-            resolve(); // 不 reject，让初始化继续
-          } else {
-            console.log('[SSE Client] 连接遇到问题，但继续尝试');
-            resolve(); // 不 reject
-          }
-        };
-      } catch (error) {
-        console.error('[SSE Client] 创建连接失败:', error);
-        clearTimeout(connectionTimeout);
+      // 连接错误
+      this.eventSource.onerror = (error) => {
+        console.error('[SSE Client] ❌ onerror 触发, readyState:', this.eventSource?.readyState);
+        console.error('[SSE Client] Error event:', error);
         this.isConnecting = false;
-        // 不 reject，让初始化继续
-        resolve();
-      }
-    });
+
+        // EventSource 会在连接过程中触发 error，但会自动重试
+        // 只有在 CLOSED 状态时才是真正失败了
+        if (this.eventSource?.readyState === EventSource.CLOSED) {
+          console.log('[SSE Client] 连接已彻底关闭，尝试重连');
+          this.eventSource = null;
+          // 延迟后自动重连，不阻塞应用
+          this.attemptReconnect();
+        }
+        // 如果是 CONNECTING 状态，说明正在重试，不做处理
+      };
+    } catch (error) {
+      console.error('[SSE Client] 创建连接失败:', error);
+      this.isConnecting = false;
+      // 尝试重连，不抛出错误阻塞应用
+      setTimeout(() => this.connectInBackground(), 2000);
+    }
   }
 
   /**
@@ -257,18 +271,3 @@ export class SSEClient {
 
 // 创建全局实例
 export const sseClient = new SSEClient();
-
-// 自动连接（在浏览器环境中）
-if (typeof window !== 'undefined') {
-  // 页面加载后自动连接
-  window.addEventListener('load', () => {
-    sseClient.connect().catch((error) => {
-      console.error('[SSE Client] 自动连接失败:', error);
-    });
-  });
-
-  // 页面卸载时断开连接
-  window.addEventListener('beforeunload', () => {
-    sseClient.destroy();
-  });
-}

@@ -24,6 +24,8 @@ import type {
 
 import { DesktopNotificationService } from '../../infrastructure/services/DesktopNotificationService';
 import { AudioNotificationService } from '../../infrastructure/services/AudioNotificationService';
+import { NotificationPermissionService } from '../../infrastructure/browser/NotificationPermissionService';
+import { InAppNotificationService } from './InAppNotificationService';
 
 import {
   publishNotificationCreated,
@@ -53,6 +55,8 @@ export class NotificationService implements INotificationService {
 
   private desktopService: DesktopNotificationService;
   private audioService: AudioNotificationService;
+  private permissionService: NotificationPermissionService;
+  private inAppService: InAppNotificationService;
 
   private config: NotificationServiceConfig;
   private notificationQueue: NotificationQueueItem[] = [];
@@ -65,6 +69,8 @@ export class NotificationService implements INotificationService {
   constructor() {
     this.desktopService = new DesktopNotificationService();
     this.audioService = new AudioNotificationService();
+    this.permissionService = NotificationPermissionService.getInstance();
+    this.inAppService = InAppNotificationService.getInstance();
 
     this.config = this.getDefaultConfig();
     this.initialize();
@@ -295,11 +301,36 @@ export class NotificationService implements INotificationService {
    */
   private async showDesktopNotification(config: NotificationConfig): Promise<void> {
     try {
+      // 检查权限状态
+      const permissionStatus = await this.permissionService.getDetailedStatus();
+
+      if (!permissionStatus.systemAvailable) {
+        console.warn('[NotificationService] 系统通知不可用，使用应用内通知代替', permissionStatus);
+        // 降级到应用内通知
+        this.inAppService.showFromConfig({
+          id: config.id,
+          title: config.title,
+          message: config.message,
+          type: config.type,
+          priority: config.priority,
+          duration: config.autoClose,
+        });
+        return;
+      }
+
       await this.desktopService.show(config);
       publishNotificationShown(config, 'desktop', config.autoClose);
     } catch (error) {
-      console.error('[NotificationService] 桌面通知失败:', error);
-      // 不抛出错误，允许其他通知方式继续
+      console.error('[NotificationService] 桌面通知失败，降级到应用内通知:', error);
+      // 降级到应用内通知
+      this.inAppService.showFromConfig({
+        id: config.id,
+        title: config.title,
+        message: config.message,
+        type: config.type,
+        priority: config.priority,
+        duration: config.autoClose,
+      });
     }
   }
 
@@ -456,12 +487,36 @@ export class NotificationService implements INotificationService {
 
   // =============== 权限管理 ===============
 
+  /**
+   * 请求通知权限
+   * 通过权限服务统一管理
+   */
   async requestPermission(): Promise<NotificationPermission> {
-    return this.desktopService.requestPermission();
+    const result = await this.permissionService.requestPermission();
+
+    // 转换为枚举类型
+    const mappedResult =
+      result === 'granted'
+        ? NotificationPermission.GRANTED
+        : result === 'denied'
+          ? NotificationPermission.DENIED
+          : NotificationPermission.DEFAULT;
+
+    return mappedResult;
   }
 
+  /**
+   * 获取当前权限状态
+   */
   getPermission(): NotificationPermission {
-    return this.desktopService.getPermission();
+    const result = this.permissionService.getPermissionStatus();
+
+    // 转换为枚举类型
+    return result === 'granted'
+      ? NotificationPermission.GRANTED
+      : result === 'denied'
+        ? NotificationPermission.DENIED
+        : NotificationPermission.DEFAULT;
   }
 
   // =============== 配置管理 ===============
@@ -660,6 +715,20 @@ export class NotificationService implements INotificationService {
    */
   private wait(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /**
+   * 检查通知权限状态
+   */
+  async checkPermissionStatus() {
+    return await this.permissionService.getDetailedStatus();
+  }
+
+  /**
+   * 获取通知权限的用户友好描述
+   */
+  async getPermissionDescription() {
+    return await this.permissionService.getStatusDescription();
   }
 
   /**

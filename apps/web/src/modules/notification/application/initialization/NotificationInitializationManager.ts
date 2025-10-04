@@ -7,6 +7,7 @@ import { NotificationService } from '../services/NotificationService';
 import { NotificationEventHandlers } from '../events/NotificationEventHandlers';
 import { NotificationConfigStorage } from '../../infrastructure/storage/NotificationConfigStorage';
 import { sseClient } from '../../infrastructure/sse/SSEClient';
+import { reminderNotificationHandler } from '../handlers/ReminderNotificationHandler';
 
 import type { NotificationServiceConfig } from '../../domain/types';
 
@@ -50,6 +51,7 @@ export class NotificationInitializationManager {
     const initializationSteps = [
       { name: '通知服务', fn: () => this.initializeNotificationService() },
       { name: '事件处理器', fn: () => this.initializeEventHandlers() },
+      { name: '提醒通知处理器', fn: () => this.initializeReminderHandler() },
       { name: '全局错误处理', fn: () => this.setupGlobalErrorHandling() },
     ];
 
@@ -118,6 +120,17 @@ export class NotificationInitializationManager {
     this.eventHandlers.initializeEventHandlers();
 
     console.log('[NotificationInit] ✅ 事件处理器初始化完成');
+  }
+
+  /**
+   * 初始化提醒通知处理器
+   */
+  private async initializeReminderHandler(): Promise<void> {
+    console.log('[NotificationInit] 初始化提醒通知处理器...');
+
+    reminderNotificationHandler.initialize();
+
+    console.log('[NotificationInit] ✅ 提醒通知处理器初始化完成');
   }
 
   /**
@@ -416,6 +429,9 @@ export class NotificationInitializationManager {
     console.log('[NotificationInit] 销毁Notification模块...');
 
     try {
+      // 销毁提醒通知处理器
+      reminderNotificationHandler.destroy();
+
       // 销毁事件处理器
       if (this.eventHandlers) {
         this.eventHandlers.destroy();

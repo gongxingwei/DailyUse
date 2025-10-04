@@ -59,57 +59,29 @@ export class NotificationEventHandlers {
 
   /**
    * 设置Schedule模块事件监听器
+   * 统一监听 reminder-triggered 事件，通过 sourceType 区分类型
    */
   private setupScheduleEventListeners(): void {
     console.log('[NotificationEventHandlers] 设置Schedule事件监听器');
 
-    // 监听调度器发送的弹窗提醒事件（主要事件）
-    eventBus.on('ui:show-popup-reminder', async (payload: any) => {
-      console.log('[NotificationEventHandlers] 🔔 收到调度器弹窗提醒事件:', {
-        id: payload.id,
+    // ⚠️ 注意：此处理器已被 ReminderNotificationHandler 替代
+    // ReminderNotificationHandler 专门处理 SSE 提醒事件
+    // NotificationEventHandlers 保留用于监控和调试
+
+    // 统一监听 reminder-triggered 事件（推荐方式）
+    eventBus.on('reminder-triggered', async (payload: any) => {
+      console.log('[NotificationEventHandlers] 📨 收到统一提醒事件:', {
+        reminderId: payload.reminderId || payload.id,
+        sourceType: payload.sourceType || payload.type,
         title: payload.title,
-        type: payload.type,
-        priority: payload.priority,
       });
 
-      // 转换调度器载荷为标准格式
-      const standardPayload = this.convertSchedulerPayloadToStandard(payload);
-      await this.handleReminderTriggered(standardPayload);
-    });
+      // 标准化数据格式
+      const standardPayload = this.normalizeReminderPayload(payload);
 
-    // 监听通用的提醒触发事件
-    onScheduleReminderTriggered(async (payload: ReminderTriggeredPayload) => {
-      await this.handleReminderTriggered(payload);
-    });
-
-    // 监听Notification模块内部的提醒触发事件（用于测试）
-    onReminderTriggered(async (payload: ReminderTriggeredPayload) => {
-      await this.handleReminderTriggered(payload);
-    });
-
-    // 监听具体的Schedule事件类型
-    eventBus.on('schedule:task-reminder-triggered', async (payload: ReminderTriggeredPayload) => {
-      console.log('[NotificationEventHandlers] 收到任务提醒触发事件:', payload.reminderId);
-      await this.handleTaskReminderTriggered(payload);
-    });
-
-    eventBus.on('schedule:goal-reminder-triggered', async (payload: ReminderTriggeredPayload) => {
-      console.log('[NotificationEventHandlers] 收到目标提醒触发事件:', payload.reminderId);
-      await this.handleGoalReminderTriggered(payload);
-    });
-
-    eventBus.on('schedule:custom-reminder-triggered', async (payload: ReminderTriggeredPayload) => {
-      console.log('[NotificationEventHandlers] 收到自定义提醒触发事件:', payload.reminderId);
-      await this.handleCustomReminderTriggered(payload);
-    });
-
-    // 监听通用的Schedule提醒事件（兼容不同版本）
-    eventBus.on('reminder-triggered', async (payload: any) => {
-      console.log('[NotificationEventHandlers] 收到通用提醒触发事件（兼容）:', payload);
-
-      // 转换为标准格式
-      const standardPayload = this.convertToStandardPayload(payload);
-      await this.handleReminderTriggered(standardPayload);
+      // 根据来源类型处理（已被 ReminderNotificationHandler 处理，此处仅记录）
+      console.log('[NotificationEventHandlers] 提醒类型:', standardPayload.sourceType);
+      console.log('[NotificationEventHandlers] ⚠️ 实际处理由 ReminderNotificationHandler 完成');
     });
   }
 
@@ -224,43 +196,43 @@ export class NotificationEventHandlers {
   }
 
   /**
-   * 处理任务提醒触发
+   * 根据来源类型增强提醒配置
+   * 不同类型的提醒有不同的默认配置
    */
-  private async handleTaskReminderTriggered(payload: ReminderTriggeredPayload): Promise<void> {
-    console.log('[NotificationEventHandlers] 处理任务提醒:', payload.reminderId);
+  private enhanceBySourceType(payload: ReminderTriggeredPayload): ReminderTriggeredPayload {
+    switch (payload.sourceType) {
+      case 'task':
+        // 任务提醒：高优先级，桌面+声音
+        return {
+          ...payload,
+          priority: payload.priority || NotificationPriority.HIGH,
+          methods: payload.methods || [NotificationMethod.DESKTOP, NotificationMethod.SOUND],
+        };
 
-    // 任务提醒通常优先级较高
-    const enhancedPayload = {
-      ...payload,
-      priority: NotificationPriority.HIGH,
-      methods: [NotificationMethod.DESKTOP, NotificationMethod.SOUND],
-    };
+      case 'goal':
+        // 目标提醒：普通优先级，桌面+声音
+        return {
+          ...payload,
+          priority: payload.priority || NotificationPriority.NORMAL,
+          methods: payload.methods || [NotificationMethod.DESKTOP, NotificationMethod.SOUND],
+        };
 
-    await this.handleReminderTriggered(enhancedPayload);
-  }
+      case 'reminder':
+        // 普通提醒：根据配置决定
+        return {
+          ...payload,
+          priority: payload.priority || NotificationPriority.NORMAL,
+          methods: payload.methods || [NotificationMethod.DESKTOP],
+        };
 
-  /**
-   * 处理目标提醒触发
-   */
-  private async handleGoalReminderTriggered(payload: ReminderTriggeredPayload): Promise<void> {
-    console.log('[NotificationEventHandlers] 处理目标提醒:', payload.reminderId);
+      case 'custom':
+        // 自定义提醒：保持原有配置
+        return payload;
 
-    // 目标提醒使用特殊音效
-    const enhancedPayload = {
-      ...payload,
-      priority: NotificationPriority.NORMAL,
-      methods: [NotificationMethod.DESKTOP, NotificationMethod.SOUND],
-    };
-
-    await this.handleReminderTriggered(enhancedPayload);
-  }
-
-  /**
-   * 处理自定义提醒触发
-   */
-  private async handleCustomReminderTriggered(payload: ReminderTriggeredPayload): Promise<void> {
-    console.log('[NotificationEventHandlers] 处理自定义提醒:', payload.reminderId);
-    await this.handleReminderTriggered(payload);
+      default:
+        console.warn('[NotificationEventHandlers] 未知的提醒类型:', payload.sourceType);
+        return payload;
+    }
   }
 
   /**
@@ -409,7 +381,21 @@ export class NotificationEventHandlers {
   }
 
   /**
-   * 转换调度器载荷为标准格式
+   * 标准化提醒载荷
+   * 兼容不同来源的数据格式
+   */
+  private normalizeReminderPayload(payload: any): ReminderTriggeredPayload {
+    // 如果已经是标准格式
+    if (payload.reminderId && payload.sourceType) {
+      return payload as ReminderTriggeredPayload;
+    }
+
+    // 兼容旧格式：调度器载荷
+    return this.convertSchedulerPayloadToStandard(payload);
+  }
+
+  /**
+   * 转换调度器载荷为标准格式（向后兼容）
    */
   private convertSchedulerPayloadToStandard(payload: any): ReminderTriggeredPayload {
     console.log('[NotificationEventHandlers] 转换调度器载荷:', payload);
@@ -480,24 +466,6 @@ export class NotificationEventHandlers {
   }
 
   /**
-   * 转换为标准载荷格式（兼容处理）
-   */
-  private convertToStandardPayload(payload: any): ReminderTriggeredPayload {
-    return {
-      reminderId: payload.id || payload.reminderId || `unknown-${Date.now()}`,
-      sourceType: payload.type || payload.sourceType || 'custom',
-      sourceId: payload.sourceId || payload.targetId || 'unknown',
-      title: payload.title || '提醒',
-      message: payload.message || payload.content || '您有一个提醒',
-      priority: payload.priority || NotificationPriority.NORMAL,
-      methods: payload.methods || [NotificationMethod.DESKTOP, NotificationMethod.SOUND],
-      scheduledTime: payload.scheduledTime ? new Date(payload.scheduledTime) : new Date(),
-      actualTime: payload.actualTime ? new Date(payload.actualTime) : new Date(),
-      metadata: payload.metadata || payload.data || {},
-    };
-  }
-
-  /**
    * 销毁事件监听器
    */
   destroy(): void {
@@ -505,22 +473,16 @@ export class NotificationEventHandlers {
 
     console.log('[NotificationEventHandlers] 销毁事件监听器');
 
-    // 移除Schedule事件监听
-    Object.values(SCHEDULE_EVENTS).forEach((event) => {
-      eventBus.off(event);
-    });
+    // 移除统一提醒事件监听
+    eventBus.off('reminder-triggered');
 
-    // 移除调度器的弹窗提醒事件监听
-    eventBus.off('ui:show-popup-reminder');
-
-    // 移除Notification事件监听
+    // 移除Notification内部事件监听
     Object.values(NOTIFICATION_EVENTS).forEach((event) => {
       eventBus.off(event);
     });
 
     // 移除系统事件监听
     eventBus.off('auth:user-logged-out');
-    eventBus.off('reminder-triggered');
 
     this.isInitialized = false;
     console.log('[NotificationEventHandlers] 事件监听器已销毁');
