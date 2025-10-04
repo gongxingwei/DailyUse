@@ -32,35 +32,6 @@ export class GoalDirController {
   }
 
   /**
-   * 发送成功响应
-   */
-  private static sendSuccess<T>(
-    res: Response,
-    data: T,
-    message: string,
-    code: ResponseCode = ResponseCode.SUCCESS,
-  ): void {
-    const response = this.responseBuilder.success(data, message);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
-  /**
-   * 发送错误响应
-   */
-  private static sendError(
-    res: Response,
-    error: Error,
-    code: ResponseCode = ResponseCode.INTERNAL_ERROR,
-    defaultMessage: string = 'Operation failed',
-  ): void {
-    logger.error(`${defaultMessage}:`, error);
-    const response = this.responseBuilder.error(code, error.message || defaultMessage);
-    const httpStatus = getHttpStatusCode(code);
-    res.status(httpStatus).json(response);
-  }
-
-  /**
    * 创建目标目录
    */
   static async createGoalDir(req: AuthenticatedRequest, res: Response) {
@@ -71,19 +42,17 @@ export class GoalDirController {
 
       const goalDir = await GoalDirController.goalDirService.createGoalDir(request, accountUuid);
 
-      GoalDirController.sendSuccess(
+      GoalDirController.responseBuilder.sendSuccess(
         res,
         goalDir,
         'Goal directory created successfully',
-        ResponseCode.SUCCESS,
       );
     } catch (error) {
-      GoalDirController.sendError(
-        res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to create goal directory',
-      );
+      logger.error('Failed to create goal directory', error);
+      GoalDirController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: (error as Error).message || 'Failed to create goal directory',
+      });
     }
   }
 
@@ -98,14 +67,17 @@ export class GoalDirController {
 
       const goalDirs = await GoalDirController.goalDirService.getGoalDirs(queryParams, accountUuid);
 
-      GoalDirController.sendSuccess(res, goalDirs, 'Goal directories retrieved successfully');
-    } catch (error) {
-      GoalDirController.sendError(
+      GoalDirController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve goal directories',
+        goalDirs,
+        'Goal directories retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve goal directories', error);
+      GoalDirController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: (error as Error).message || 'Failed to retrieve goal directories',
+      });
     }
   }
 
@@ -121,22 +93,24 @@ export class GoalDirController {
       const goalDir = await GoalDirController.goalDirService.getGoalDirById(id, accountUuid);
 
       if (!goalDir) {
-        return GoalDirController.sendError(
-          res,
-          new Error('Goal directory not found'),
-          ResponseCode.NOT_FOUND,
-          'Goal directory not found',
-        );
+        logger.warn('Goal directory not found');
+        return GoalDirController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: 'Goal directory not found',
+        });
       }
 
-      GoalDirController.sendSuccess(res, goalDir, 'Goal directory retrieved successfully');
-    } catch (error) {
-      GoalDirController.sendError(
+      GoalDirController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to retrieve goal directory',
+        goalDir,
+        'Goal directory retrieved successfully',
       );
+    } catch (error) {
+      logger.error('Failed to retrieve goal directory', error);
+      GoalDirController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: (error as Error).message || 'Failed to retrieve goal directory',
+      });
     }
   }
 
@@ -156,14 +130,17 @@ export class GoalDirController {
         accountUuid,
       );
 
-      GoalDirController.sendSuccess(res, goalDir, 'Goal directory updated successfully');
-    } catch (error) {
-      GoalDirController.sendError(
+      GoalDirController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to update goal directory',
+        goalDir,
+        'Goal directory updated successfully',
       );
+    } catch (error) {
+      logger.error('Failed to update goal directory', error);
+      GoalDirController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: (error as Error).message || 'Failed to update goal directory',
+      });
     }
   }
 
@@ -178,14 +155,17 @@ export class GoalDirController {
 
       await GoalDirController.goalDirService.deleteGoalDir(id, accountUuid);
 
-      GoalDirController.sendSuccess(res, null, 'Goal directory deleted successfully');
-    } catch (error) {
-      GoalDirController.sendError(
+      GoalDirController.responseBuilder.sendSuccess(
         res,
-        error as Error,
-        ResponseCode.INTERNAL_ERROR,
-        'Failed to delete goal directory',
+        null,
+        'Goal directory deleted successfully',
       );
+    } catch (error) {
+      logger.error('Failed to delete goal directory', error);
+      GoalDirController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: (error as Error).message || 'Failed to delete goal directory',
+      });
     }
   }
 }

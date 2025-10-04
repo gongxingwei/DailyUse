@@ -46,52 +46,6 @@ export class ReminderTemplateGroupController {
   }
 
   /**
-   * 发送成功响应
-   */
-  private static sendSuccess<T>(
-    res: Response,
-    data: T,
-    message: string,
-    statusCode = 200,
-  ): Response {
-    const response: SuccessResponse<T> = {
-      code: ResponseCode.SUCCESS,
-      success: true,
-      message,
-      data,
-      timestamp: Date.now(),
-    };
-    return res.status(statusCode).json(response);
-  }
-
-  /**
-   * 发送错误响应
-   */
-  private static sendError(
-    res: Response,
-    code: ResponseCode,
-    message: string,
-    error?: any,
-  ): Response {
-    const httpStatus = getHttpStatusCode(code);
-    const response: ErrorResponse = {
-      code,
-      success: false,
-      message,
-      timestamp: Date.now(),
-    };
-
-    // 记录错误日志
-    if (error) {
-      logger.error(message, error);
-    } else {
-      logger.warn(message);
-    }
-
-    return res.status(httpStatus).json(response);
-  }
-
-  /**
    * 创建提醒模板分组
    * POST /reminders/groups
    */
@@ -117,46 +71,46 @@ export class ReminderTemplateGroupController {
         accountUuid,
       });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         group,
         'Reminder template group created successfully',
         201,
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         if (error.message.includes('Invalid UUID')) {
-          return ReminderTemplateGroupController.sendError(
-            res,
-            ResponseCode.VALIDATION_ERROR,
-            error.message,
-            error,
-          );
+          logger.error(error.message, error);
+          return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: error.message,
+          });
         }
         if (error.message.includes('Authentication')) {
-          return ReminderTemplateGroupController.sendError(
-            res,
-            ResponseCode.UNAUTHORIZED,
-            error.message,
-            error,
-          );
+          logger.error(error.message, error);
+          return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+            code: ResponseCode.UNAUTHORIZED,
+            message: error.message,
+          });
         }
         if (error.message.includes('already exists') || error.message.includes('duplicate')) {
-          return ReminderTemplateGroupController.sendError(
-            res,
-            ResponseCode.CONFLICT,
-            error.message,
-            error,
-          );
+          logger.error(error.message, error);
+          return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+            code: ResponseCode.CONFLICT,
+            message: error.message,
+          });
         }
       }
 
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
+      logger.error(
         error instanceof Error ? error.message : 'Failed to create reminder template group',
         error,
       );
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message:
+          error instanceof Error ? error.message : 'Failed to create reminder template group',
+      });
     }
   }
 
@@ -190,27 +144,29 @@ export class ReminderTemplateGroupController {
         total: groups.length,
       });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         listResponse,
         'Reminder template groups retrieved successfully',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return ReminderTemplateGroupController.sendError(
-          res,
-          ResponseCode.UNAUTHORIZED,
-          error.message,
-          error,
-        );
+        logger.error(error.message, error);
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
 
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
+      logger.error(
         error instanceof Error ? error.message : 'Failed to retrieve reminder template groups',
         error,
       );
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message:
+          error instanceof Error ? error.message : 'Failed to retrieve reminder template groups',
+      });
     }
   }
 
@@ -230,27 +186,30 @@ export class ReminderTemplateGroupController {
         );
 
       if (!group) {
-        return ReminderTemplateGroupController.sendError(
-          res,
-          ResponseCode.NOT_FOUND,
-          `Reminder template group not found: ${groupUuid}`,
-        );
+        logger.warn(`Reminder template group not found: ${groupUuid}`);
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: `Reminder template group not found: ${groupUuid}`,
+        });
       }
 
       logger.info('Reminder template group retrieved successfully', { groupUuid });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         group,
         'Reminder template group retrieved successfully',
       );
-    } catch (error) {
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
+    } catch (error: unknown) {
+      logger.error(
         error instanceof Error ? error.message : 'Failed to retrieve reminder template group',
         error,
       );
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message:
+          error instanceof Error ? error.message : 'Failed to retrieve reminder template group',
+      });
     }
   }
 
@@ -276,37 +235,38 @@ export class ReminderTemplateGroupController {
 
       logger.info('Reminder template group updated successfully', { groupUuid });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         group,
         'Reminder template group updated successfully',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         if (error.message.includes('not found') || error.message.includes('不存在')) {
-          return ReminderTemplateGroupController.sendError(
-            res,
-            ResponseCode.NOT_FOUND,
-            error.message,
-            error,
-          );
+          logger.error(error.message, error);
+          return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+            code: ResponseCode.NOT_FOUND,
+            message: error.message,
+          });
         }
         if (error.message.includes('Invalid') || error.message.includes('验证')) {
-          return ReminderTemplateGroupController.sendError(
-            res,
-            ResponseCode.VALIDATION_ERROR,
-            error.message,
-            error,
-          );
+          logger.error(error.message, error);
+          return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: error.message,
+          });
         }
       }
 
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
+      logger.error(
         error instanceof Error ? error.message : 'Failed to update reminder template group',
         error,
       );
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message:
+          error instanceof Error ? error.message : 'Failed to update reminder template group',
+      });
     }
   }
 
@@ -326,30 +286,32 @@ export class ReminderTemplateGroupController {
 
       logger.info('Reminder template group deleted successfully', { groupUuid });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         { deleted: true, groupUuid },
         'Reminder template group deleted successfully',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof Error &&
         (error.message.includes('not found') || error.message.includes('不存在'))
       ) {
-        return ReminderTemplateGroupController.sendError(
-          res,
-          ResponseCode.NOT_FOUND,
-          error.message,
-          error,
-        );
+        logger.error(error.message, error);
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
+      logger.error(
         error instanceof Error ? error.message : 'Failed to delete reminder template group',
         error,
       );
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message:
+          error instanceof Error ? error.message : 'Failed to delete reminder template group',
+      });
     }
   }
 
@@ -371,30 +333,28 @@ export class ReminderTemplateGroupController {
 
       logger.info('Reminder template group status toggled successfully', { groupUuid, enabled });
 
-      return ReminderTemplateGroupController.sendSuccess(
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
         { groupUuid, enabled },
         enabled ? 'Group enabled successfully' : 'Group disabled successfully',
       );
-    } catch (error) {
+    } catch (error: unknown) {
       if (
         error instanceof Error &&
         (error.message.includes('not found') || error.message.includes('不存在'))
       ) {
-        return ReminderTemplateGroupController.sendError(
-          res,
-          ResponseCode.NOT_FOUND,
-          error.message,
-          error,
-        );
+        logger.error(error.message, error);
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return ReminderTemplateGroupController.sendError(
-        res,
-        ResponseCode.INTERNAL_ERROR,
-        error instanceof Error ? error.message : 'Failed to toggle group status',
-        error,
-      );
+      logger.error(error instanceof Error ? error.message : 'Failed to toggle group status', error);
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to toggle group status',
+      });
     }
   }
 }
