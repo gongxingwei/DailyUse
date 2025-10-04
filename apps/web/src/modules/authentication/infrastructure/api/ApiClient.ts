@@ -1,149 +1,133 @@
 /**
- * 认证API服务
- * 基于新的API客户端系统，提供类型安全的认证相关API调用
+ * 认证 API 客户端
+ * 基于新的 API 客户端系统，提供类型安全的认证相关 API 调用
+ * 使用标准的 Response DTO 格式（嵌套 data 结构）
  */
 
-import { api, publicApiClient } from '../../../../shared/api/instances';
+import { api } from '../../../../shared/api/instances';
 import type { RequestOptions } from '../../../../shared/api/core/types';
-import type {
-  FrontendLoginRequest,
-  FrontendLoginResponse,
-  FrontendUserInfo,
-  RefreshTokenRequest,
-  SessionInfo,
-  MFAVerifyRequest,
-  AuthByPasswordRequestDTO,
-  AuthResponseDTO,
-  AuthByPasswordForm,
-  SuccessResponse,
-  ApiResponse,
-} from '@dailyuse/contracts';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 
-// 重新导出常用类型
-export type LoginRequest = FrontendLoginRequest;
-export type LoginResponse = FrontendLoginResponse;
-export type UserInfo = FrontendUserInfo;
-export type { RefreshTokenRequest, SessionInfo, MFAVerifyRequest };
+// 类型别名以简化使用
+type LoginRequest = AuthenticationContracts.LoginRequest;
+type LoginResponse = AuthenticationContracts.LoginResponse;
+type RefreshTokenRequest = AuthenticationContracts.RefreshTokenRequest;
+type RefreshTokenResponse = AuthenticationContracts.RefreshTokenResponse;
+type LogoutResponse = AuthenticationContracts.LogoutResponse;
+type VerifyMFARequest = AuthenticationContracts.VerifyMFARequest;
+type VerifyMFAResponse = AuthenticationContracts.VerifyMFAResponse;
+type MFADeviceListResponse = AuthenticationContracts.MFADeviceListResponse;
+type SessionListResponse = AuthenticationContracts.SessionListResponse;
+type TerminateSessionRequest = AuthenticationContracts.TerminateSessionRequest;
+type PasswordChangeRequest = AuthenticationContracts.PasswordChangeRequest;
+type PasswordChangeResponse = AuthenticationContracts.PasswordChangeResponse;
+type CreateMFADeviceRequest = AuthenticationContracts.CreateMFADeviceRequest;
+type MFADeviceCreationResponse = AuthenticationContracts.MFADeviceCreationResponse;
+type DeleteMFADeviceRequest = AuthenticationContracts.DeleteMFADeviceRequest;
+type UserInfoDTO = AuthenticationContracts.UserInfoDTO;
+type UserSessionClientDTO = AuthenticationContracts.UserSessionClientDTO;
+type MFADeviceClientDTO = AuthenticationContracts.MFADeviceClientDTO;
 
 /**
- * 认证API服务
- * 负责与后端认证API的通信，提供完整的认证功能
+ * 认证 API 服务类
+ * 提供完整的认证功能，使用新的 Response DTO 格式
  */
 export class AuthApiService {
   /**
    * 用户登录
+   * POST /api/v1/auth/login
    */
   static async login(data: LoginRequest, options?: RequestOptions): Promise<LoginResponse> {
     return api.post('/auth/login', data, options);
   }
 
   /**
-   * 用户登录（兼容旧格式）
+   * MFA 验证
+   * POST /api/v1/auth/mfa/verify
    */
-  static async loginCompat(
-    credentials: AuthByPasswordRequestDTO,
-  ): Promise<SuccessResponse<AuthResponseDTO>> {
-    const loginData: LoginRequest = {
-      username: credentials.username,
-      password: credentials.password,
-      rememberMe: credentials.remember,
-      deviceInfo: {
-        deviceId: 'web-client',
-        deviceName: 'Web Browser',
-        userAgent: navigator.userAgent,
-      },
-    };
-
-    try {
-      // 由于API实际返回的是AuthResponseDTO格式而不是LoginResponseDTO格式
-      // 我们需要直接调用底层的API客户端，绕过类型检查
-      const result = await api.post('/auth/login', loginData);
-
-      // 检查result的结构，API返回的是AuthResponseDTO格式
-      if (result && typeof result === 'object' && 'accountUuid' in result) {
-        const authResponse = result as AuthResponseDTO;
-
-        // 转换为标准响应格式以保持兼容性
-        return {
-          status: 'SUCCESS',
-          success: true,
-          message: 'Login successful',
-          data: {
-            accountUuid: authResponse.accountUuid,
-            username: authResponse.username,
-            sessionUuid: authResponse.sessionUuid || '',
-            rememberToken: authResponse.rememberToken,
-            accessToken: authResponse.accessToken,
-            refreshToken: authResponse.refreshToken,
-            expiresIn: authResponse.expiresIn,
-            tokenType: authResponse.tokenType || 'Bearer',
-          },
-          metadata: {
-            timestamp: Date.now(),
-          },
-        } as SuccessResponse<AuthResponseDTO>;
-      } else {
-        throw new Error('Invalid response format from login API');
-      }
-    } catch (error) {
-      console.error('Login API error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * MFA验证
-   */
-  static async verifyMFA(data: MFAVerifyRequest, options?: RequestOptions): Promise<LoginResponse> {
+  static async verifyMFA(
+    data: VerifyMFARequest,
+    options?: RequestOptions,
+  ): Promise<VerifyMFAResponse> {
     return api.post('/auth/mfa/verify', data, options);
   }
 
   /**
    * 用户登出
+   * POST /api/v1/auth/logout
    */
-  static async logout(options?: RequestOptions): Promise<void> {
+  static async logout(options?: RequestOptions): Promise<LogoutResponse> {
     return api.post('/auth/logout', {}, options);
   }
 
   /**
    * 刷新访问令牌
+   * POST /api/v1/auth/refresh
    */
   static async refreshToken(
     data: RefreshTokenRequest,
     options?: RequestOptions,
-  ): Promise<LoginResponse> {
+  ): Promise<RefreshTokenResponse> {
     return api.post('/auth/refresh', data, options);
   }
 
   /**
    * 获取当前用户信息
+   * GET /api/v1/auth/user
    */
-  static async getCurrentUser(options?: RequestOptions): Promise<UserInfo> {
+  static async getCurrentUser(options?: RequestOptions): Promise<UserInfoDTO> {
     return api.get('/auth/user', options);
   }
 
   /**
    * 修改密码
+   * POST /api/v1/auth/password/change
    */
   static async changePassword(
-    data: {
-      currentPassword: string;
-      newPassword: string;
-    },
+    data: PasswordChangeRequest,
     options?: RequestOptions,
-  ): Promise<void> {
+  ): Promise<PasswordChangeResponse> {
     return api.post('/auth/change-password', data, options);
   }
 
   /**
-   * 获取用户会话列表
+   * 获取 MFA 设备列表
+   * GET /api/v1/auth/mfa/devices
    */
-  static async getSessions(options?: RequestOptions): Promise<SessionInfo[]> {
+  static async getMFADevices(options?: RequestOptions): Promise<MFADeviceListResponse> {
+    return api.get('/auth/mfa/devices', options);
+  }
+
+  /**
+   * 创建 MFA 设备
+   * POST /api/v1/auth/mfa/devices
+   */
+  static async createMFADevice(
+    data: CreateMFADeviceRequest,
+    options?: RequestOptions,
+  ): Promise<MFADeviceCreationResponse> {
+    return api.post('/auth/mfa/devices', data, options);
+  }
+
+  /**
+   * 删除 MFA 设备
+   * DELETE /api/v1/auth/mfa/devices/:deviceId
+   */
+  static async deleteMFADevice(deviceId: string, options?: RequestOptions): Promise<void> {
+    return api.delete(`/auth/mfa/devices/${deviceId}`, options);
+  }
+
+  /**
+   * 获取用户会话列表
+   * GET /api/v1/auth/sessions
+   */
+  static async getSessions(options?: RequestOptions): Promise<SessionListResponse> {
     return api.get('/auth/sessions', options);
   }
 
   /**
    * 终止指定会话
+   * DELETE /api/v1/auth/sessions/:sessionId
    */
   static async terminateSession(sessionId: string, options?: RequestOptions): Promise<void> {
     return api.delete(`/auth/sessions/${sessionId}`, options);
@@ -151,193 +135,9 @@ export class AuthApiService {
 
   /**
    * 终止其他所有会话
+   * POST /api/v1/auth/sessions/terminate-others
    */
   static async terminateOtherSessions(options?: RequestOptions): Promise<void> {
     return api.post('/auth/sessions/terminate-others', {}, options);
-  }
-
-  /**
-   * 验证访问令牌
-   */
-  static async validateToken(
-    options?: RequestOptions,
-  ): Promise<{ valid: boolean; user?: UserInfo }> {
-    return api.get('/auth/validate', options);
-  }
-
-  /**
-   * 发送密码重置邮件
-   */
-  static async requestPasswordReset(
-    email: string,
-    options?: RequestOptions,
-  ): Promise<{ message: string }> {
-    return api.post('/auth/password-reset/request', { email }, options);
-  }
-
-  /**
-   * 重置密码
-   */
-  static async resetPassword(
-    data: {
-      token: string;
-      newPassword: string;
-    },
-    options?: RequestOptions,
-  ): Promise<{ message: string }> {
-    return api.post('/auth/password-reset/confirm', data, options);
-  }
-}
-
-/**
- * @deprecated 旧的ApiClient类已废弃，请使用AuthApiService
- * 保留此类仅为了向后兼容
- */
-export class ApiClient {
-  private static instance: ApiClient;
-
-  constructor() {}
-
-  public static getInstance(): ApiClient {
-    if (!ApiClient.instance) {
-      ApiClient.instance = new ApiClient();
-    }
-    return ApiClient.instance;
-  }
-
-  /**
-   * 用户登录API调用（兼容旧接口）
-   */
-  async login(credentials: AuthByPasswordRequestDTO): Promise<SuccessResponse<AuthResponseDTO>> {
-    return AuthApiService.loginCompat(credentials);
-  }
-
-  /**
-   * 刷新访问令牌API调用
-   */
-  async refreshToken(refreshToken: string): Promise<{
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
-  }> {
-    const result = await AuthApiService.refreshToken({ refreshToken });
-    return {
-      accessToken: result.accessToken,
-      refreshToken: result.refreshToken,
-      expiresIn: result.expiresIn,
-    };
-  }
-
-  /**
-   * 用户登出API调用
-   */
-  async logout(refreshToken?: string): Promise<void> {
-    return AuthApiService.logout();
-  }
-
-  /**
-   * 验证访问令牌API调用
-   */
-  async validateToken(accessToken?: string): Promise<{
-    valid: boolean;
-    userId?: string;
-    expiresAt?: string;
-  }> {
-    const result = await AuthApiService.validateToken();
-    return {
-      valid: result.valid,
-      userId: result.user?.id,
-      expiresAt: undefined, // 不在新API中提供
-    };
-  }
-
-  /**
-   * 发送密码重置请求API调用
-   */
-  async requestPasswordReset(email: string): Promise<{
-    success: boolean;
-    message: string;
-    resetToken?: string;
-  }> {
-    const result = await AuthApiService.requestPasswordReset(email);
-    return {
-      success: true,
-      message: result.message,
-    };
-  }
-
-  /**
-   * 修改密码API调用
-   */
-  async changePassword(
-    currentPassword: string,
-    newPassword: string,
-    accessToken?: string,
-  ): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    await AuthApiService.changePassword({ currentPassword, newPassword });
-    return {
-      success: true,
-      message: 'Password changed successfully',
-    };
-  }
-
-  /**
-   * 获取活跃会话API调用
-   */
-  async getActiveSessions(accessToken?: string): Promise<{
-    sessions: Array<{
-      sessionId: string;
-      deviceInfo: string;
-      ipAddress: string;
-      loginTime: string;
-      lastActivity: string;
-      isActive: boolean;
-    }>;
-  }> {
-    const sessions = await AuthApiService.getSessions();
-    return {
-      sessions: sessions.map((session) => ({
-        sessionId: session.id,
-        deviceInfo: session.deviceInfo,
-        ipAddress: session.ipAddress,
-        loginTime: session.lastActivity, // 映射到可用字段
-        lastActivity: session.lastActivity,
-        isActive: session.isCurrent,
-      })),
-    };
-  }
-
-  /**
-   * 注销指定设备API调用
-   */
-  async logoutDevice(
-    sessionId: string,
-    accessToken?: string,
-  ): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    await AuthApiService.terminateSession(sessionId);
-    return {
-      success: true,
-      message: 'Session terminated successfully',
-    };
-  }
-
-  /**
-   * 注销其他所有设备API调用
-   */
-  async logoutOtherDevices(accessToken?: string): Promise<{
-    success: boolean;
-    message: string;
-  }> {
-    await AuthApiService.terminateOtherSessions();
-    return {
-      success: true,
-      message: 'Other sessions terminated successfully',
-    };
   }
 }

@@ -2,6 +2,24 @@ import { Router } from 'express';
 import { AccountController } from './controllers/AccountController';
 
 /**
+ * ==========================================
+ * Account 模块路由 - RESTful API 设计
+ * ==========================================
+ *
+ * API 设计原则：
+ * 1. 所有请求使用 JSON body，不使用 query parameters 传递业务数据
+ * 2. ID 参数在 URL path 中（如 /accounts/:id）
+ * 3. 统一响应格式：
+ *    - 成功: { success: true, data: {...}, message: string }
+ *    - 失败: { success: false, error: { code: string, message: string } }
+ * 4. 列表响应嵌套分页信息：
+ *    - { data: { items: [...], total, page, limit, hasMore } }
+ *
+ * DTO 类型说明：
+ * - Request DTOs: CreateAccountRequest, UpdateAccountRequest (使用 Pick/Partial 模式)
+ * - Response DTOs: AccountClientDTO (包含计算属性如 isActive, roleNames 等)
+ * - 所有时间字段使用 number 类型（毫秒时间戳）
+ *
  * @swagger
  * tags:
  *   - name: Accounts
@@ -19,7 +37,17 @@ const router = Router();
  *   post:
  *     tags: [Accounts]
  *     summary: 创建账户
- *     description: 注册新用户账户（无需认证）
+ *     description: |
+ *       注册新用户账户（无需认证）
+ *
+ *       请求 DTO: CreateAccountRequest
+ *       响应 DTO: AccountCreationResponse { data: { account: AccountClientDTO } }
+ *
+ *       AccountClientDTO 包含计算属性:
+ *       - isActive: 账户是否激活
+ *       - roleNames: 角色名称数组
+ *       - hasVerifiedEmail: 邮箱是否已验证
+ *       - hasVerifiedPhone: 手机号是否已验证
  *     requestBody:
  *       required: true
  *       content:
@@ -46,7 +74,20 @@ const router = Router();
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     account:
+ *                       type: object
+ *                       description: AccountClientDTO with computed properties
+ *                 message:
+ *                   type: string
+ *                   example: Account created successfully
  *       400:
  *         description: 请求参数错误
  *         content:
@@ -444,7 +485,11 @@ router.post('/accounts/:id/verify-phone', AccountController.verifyPhone);
  *   get:
  *     tags: [Accounts]
  *     summary: 获取账户列表
- *     description: 获取所有账户列表（管理员功能）
+ *     description: |
+ *       获取所有账户列表（管理员功能）
+ *
+ *       响应 DTO: AccountListResponse
+ *       格式: { data: { accounts: AccountClientDTO[], total, page, limit, hasMore } }
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -475,7 +520,38 @@ router.post('/accounts/:id/verify-phone', AccountController.verifyPhone);
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/PaginatedResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accounts:
+ *                       type: array
+ *                       description: AccountClientDTO array with computed properties
+ *                       items:
+ *                         type: object
+ *                     total:
+ *                       type: integer
+ *                       description: 总记录数
+ *                       example: 100
+ *                     page:
+ *                       type: integer
+ *                       description: 当前页码
+ *                       example: 1
+ *                     limit:
+ *                       type: integer
+ *                       description: 每页记录数
+ *                       example: 10
+ *                     hasMore:
+ *                       type: boolean
+ *                       description: 是否有更多数据
+ *                       example: true
+ *                 message:
+ *                   type: string
+ *                   example: Account list retrieved successfully
  *       403:
  *         description: 无权限访问
  *         content:

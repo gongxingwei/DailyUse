@@ -1,43 +1,38 @@
-import {
-  type SuccessResponse,
-  type ApiResponse,
-  AuthenticationContracts,
-  AccountContracts,
-} from '@dailyuse/contracts';
-import type { IAuthRepository, IRegistrationRepository } from '@dailyuse/domain-client';
+import { AuthenticationContracts } from '@dailyuse/contracts';
 import { AuthApiService } from '../../infrastructure/api/ApiClient';
 import { AuthManager } from '../../../../shared/api/core/interceptors';
 import { publishUserLoggedInEvent, publishUserLoggedOutEvent } from '../events/authEvents';
 import { AppInitializationManager } from '../../../../shared/initialization/AppInitializationManager';
-import { useAuthStore } from '../../presentation/stores/useAuthStore';
+import { useAuthenticationStore } from '../../presentation/stores/authenticationStore';
 
 // Type aliases for cleaner code
-type AuthByPasswordForm = AuthenticationContracts.AuthByPasswordForm;
-type AuthResponseDTO = AuthenticationContracts.AuthResponse;
-type AuthByPasswordRequestDTO = AuthenticationContracts.AuthByPasswordRequestDTO;
-const AccountType = AccountContracts.AccountType;
+type LoginRequest = AuthenticationContracts.LoginRequest;
+type LoginResponse = AuthenticationContracts.LoginResponse;
+type RefreshTokenRequest = AuthenticationContracts.RefreshTokenRequest;
+type RefreshTokenResponse = AuthenticationContracts.RefreshTokenResponse;
+type PasswordChangeRequest = AuthenticationContracts.PasswordChangeRequest;
+type UserInfoDTO = AuthenticationContracts.UserInfoDTO;
+type UserSessionClientDTO = AuthenticationContracts.UserSessionClientDTO;
+type MFADeviceClientDTO = AuthenticationContracts.MFADeviceClientDTO;
 
 /**
  * Authentication Application Service
- * 认证应用服务 - 协调领域对象和基础设施，实现认证相关用例
+ * 认证应用服务 - 协调 API 调用和状态管理，实现认证相关用例
  */
 export class AuthApplicationService {
   private static instance: AuthApplicationService | null = null;
-  // private readonly authRepository: IAuthRepository | null = null;
-  // private readonly registrationRepository: IRegistrationRepository | null = null;
 
+  /**
+   * 懒加载获取 authenticationStore
+   * 避免在 Pinia 初始化之前调用
+   */
   private get authStore() {
-    return useAuthStore();
+    return useAuthenticationStore();
   }
 
-  private constructor() {
-    // 不再需要实例化ApiClient，直接使用静态方法
-  }
+  private constructor() {}
 
-  static async createInstance(
-    authRepository?: IAuthRepository,
-    registrationRepository?: IRegistrationRepository,
-  ): Promise<AuthApplicationService> {
+  static async createInstance(): Promise<AuthApplicationService> {
     if (!AuthApplicationService.instance) {
       AuthApplicationService.instance = new AuthApplicationService();
     }
@@ -54,112 +49,78 @@ export class AuthApplicationService {
   // ===== Login Use Cases =====
 
   /**
+   * 用户登录
    * User Login
-   * 用户登录用例
    */
-  async login(request: AuthByPasswordForm): Promise<SuccessResponse<AuthResponseDTO | null>> {
+  async login(request: LoginRequest): Promise<LoginResponse> {
     try {
-      const authRequest: AuthByPasswordRequestDTO = {
-        ...request,
-        accountType: AccountType.GUEST,
-      };
-      const response = await AuthApiService.loginCompat(authRequest);
-      if (!response.success) {
-        throw new Error(response.message);
+      this.authStore.setLoading(true);
+      this.authStore.setError(null);
+
+      // 调用 API 登录
+      const response = await AuthApiService.login(request);
+
+      // 提取 response.data
+      const { user, accessToken, refreshToken, expiresIn, tokenType, sessionId, rememberToken } =
+        response.data;
+
+      // 使用 AuthManager 保存令牌（用于请求拦截器）
+      AuthManager.setTokens(accessToken, refreshToken, rememberToken, expiresIn);
+
+      // 同步到 store（使用 LoginResponse 格式）
+      this.authStore.setAuthData(response.data);
+
+      console.log('登录成功，你好', user.username);
+
+      // 发布用户登录成功事件，让其他模块监听
+      publishUserLoggedInEvent({
+        accountUuid: user.uuid,
+        username: user.username,
+        sessionUuid: sessionId,
+        accessToken,
+        refreshToken,
+        expiresIn,
+        loginTime: new Date(),
+      });
+
+      // 初始化用户会话
+      try {
+        await AppInitializationManager.initializeUserSession(user.uuid);
+        console.log('🎯 [AuthService] 用户会话初始化完成');
+      } catch (error) {
+        console.warn('⚠️ [AuthService] 用户会话初始化失败，但不影响登录', error);
       }
 
-      // 使用 AuthManager 保存令牌
-      if (response.data?.accessToken && response.data?.refreshToken) {
-        AuthManager.setTokens(
-          response.data.accessToken,
-          response.data.refreshToken,
-          response.data.rememberToken,
-          response.data.expiresIn || 3600, // 默认1小时
-        );
-
-        // 同步到 authStore (重要：确保路由守卫能立即检测到认证状态)
-
-        this.authStore.setTokens({
-          accessToken: response.data.accessToken,
-          refreshToken: response.data.refreshToken,
-          rememberToken: response.data.rememberToken,
-          expiresIn: response.data.expiresIn || 3600,
-        });
-
-        // 临时设置基本用户信息，等待事件处理器获取完整信息
-        if (response.data) {
-          this.authStore.setUser(response.data);
-        }
-      }
-
-      console.log('登录成功，你好', response.data);
-
-      // 发布用户登录成功事件，让 account 模块监听并获取完整账户信息
-      if (response.data?.accountUuid) {
-        publishUserLoggedInEvent({
-          accountUuid: response.data.accountUuid,
-          username: response.data.username,
-          sessionUuid: response.data.sessionUuid,
-          accessToken: response.data.accessToken || '',
-          refreshToken: response.data.refreshToken,
-          expiresIn: response.data.expiresIn,
-          loginTime: new Date(),
-        });
-
-        // 初始化用户会话
-        try {
-          await AppInitializationManager.initializeUserSession(response.data.accountUuid);
-          console.log('🎯 [AuthService] 用户会话初始化完成');
-        } catch (error) {
-          console.warn('⚠️ [AuthService] 用户会话初始化失败，但不影响登录', error);
-        }
-      }
-
-      return {
-        code: 200,
-        success: true,
-        message: 'Login successful',
-        data: response.data,
-        timestamp: Date.now(),
-      };
+      return response;
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '登录失败';
+      this.authStore.setError(errorMessage);
       throw error;
+    } finally {
+      this.authStore.setLoading(false);
     }
   }
 
   /**
+   * 用户登出
    * User Logout
-   * 用户登出用例
    */
   async logout(): Promise<void> {
     // 获取当前用户信息用于事件发布
-    const currentToken = AuthManager.getAccessToken();
-    let accountUuid: string | undefined;
-    let username: string | undefined;
-
-    // 如果有 token，尝试从中解析用户信息（可选）
-    if (currentToken) {
-      try {
-        // 这里可以解析 JWT token 获取用户信息，暂时跳过
-        // const tokenPayload = parseJWT(currentToken);
-        // accountUuid = tokenPayload.accountUuid;
-        // username = tokenPayload.username;
-      } catch (error) {
-        console.warn('解析 token 失败:', error);
-      }
-    }
+    const currentUser = this.authStore.getCurrentUser;
+    const accountUuid = currentUser?.uuid;
+    const username = currentUser?.username;
 
     try {
-      // 调用后端登出API
-      // TODO: 实现登出API调用
-      // await AuthApiService.logout();
-    } catch (err: any) {
-      console.warn('登出API调用失败:', err.message);
-    } finally {
+      this.authStore.setLoading(true);
+
+      // 调用后端登出 API
+      await AuthApiService.logout();
+
       // 发布登出事件
       publishUserLoggedOutEvent({
-        accountUuid: accountUuid,
-        username: username,
+        accountUuid,
+        username,
         reason: 'manual',
         logoutTime: new Date(),
       });
@@ -171,39 +132,85 @@ export class AuthApplicationService {
       } catch (error) {
         console.warn('⚠️ [AuthService] 用户会话清理失败', error);
       }
-
+    } catch (err: any) {
+      console.warn('登出 API 调用失败:', err.message);
+      // 即使 API 失败也继续清理本地状态
+    } finally {
       // 清除所有令牌
       AuthManager.clearTokens();
 
       // 同步清除 authStore
-      this.authStore.clearAuth();
+      this.authStore.logout();
+      this.authStore.setLoading(false);
     }
   }
 
   /**
-   * Refresh User Info
-   * 刷新用户信息用例
+   * 刷新访问令牌
+   * Refresh Access Token
    */
-  async refreshUser(): Promise<AuthResponseDTO> {
-    if (!AuthManager.isAuthenticated()) {
-      throw new Error('用户未认证');
+  async refreshToken(): Promise<void> {
+    const refreshToken = this.authStore.getRefreshToken;
+
+    if (!refreshToken) {
+      throw new Error('No refresh token available');
     }
 
     try {
-      // TODO: 实现获取用户信息API
-      // const userInfo = await AuthApiService.getCurrentUser();
-      // return userInfo;
-      throw new Error('获取用户信息API未实现');
-    } catch (err: any) {
-      throw new Error(err.message || '获取用户信息失败');
+      this.authStore.setLoading(true);
+
+      // 调用 API 刷新令牌
+      const response = await AuthApiService.refreshToken({ refreshToken });
+
+      // 提取 response.data
+      const { accessToken, refreshToken: newRefreshToken, expiresIn } = response.data;
+
+      // 使用 AuthManager 更新令牌
+      AuthManager.setTokens(accessToken, newRefreshToken, undefined, expiresIn);
+
+      // 同步到 store
+      this.authStore.setAccessToken(accessToken);
+      this.authStore.setRefreshToken(newRefreshToken);
+
+      console.log('令牌刷新成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '刷新令牌失败';
+      this.authStore.setError(errorMessage);
+      console.error('Token refresh failed:', error);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
     }
   }
 
   /**
-   * Initialize Authentication
-   * 初始化认证状态用例
+   * 获取当前用户信息
+   * Get Current User
    */
-  async initAuth(): Promise<AuthResponseDTO | null> {
+  async getCurrentUser(): Promise<UserInfoDTO> {
+    try {
+      this.authStore.setLoading(true);
+
+      const userInfo = await AuthApiService.getCurrentUser();
+
+      // 同步到 store
+      this.authStore.setUser(userInfo);
+
+      return userInfo;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取用户信息失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 初始化认证状态
+   * Initialize Authentication
+   */
+  async initAuth(): Promise<UserInfoDTO | null> {
     if (!AuthManager.isAuthenticated()) return null;
 
     // 检查 Token 是否过期
@@ -218,66 +225,143 @@ export class AuthApplicationService {
     }
 
     try {
-      return await this.refreshUser();
+      return await this.getCurrentUser();
     } catch (err) {
       // 如果获取用户信息失败，清除认证状态
       await this.logout();
       throw err;
     }
-  }
-
-  /**
-   * Refresh Token
-   * 刷新令牌用例
-   */
-  async refreshToken(): Promise<void> {
-    const refreshToken = AuthManager.getRefreshToken();
-
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
-
-    try {
-      // TODO: 实现刷新 Token API
-      // const response = await AuthApiService.refreshToken(refreshToken);
-      // AuthManager.updateAccessToken(response.accessToken, response.expiresIn);
-      throw new Error('刷新令牌API未实现');
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      throw error;
-    }
   } /**
+   * 修改密码
    * Change Password
-   * 修改密码用例
    */
-  async changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(data: PasswordChangeRequest): Promise<void> {
     try {
-      // TODO: 实现修改密码API
-      // await AuthApiService.changePassword({
-      //   currentPassword,
-      //   newPassword,
-      // });
-      throw new Error('修改密码API未实现');
-    } catch (err: any) {
-      throw new Error(err.message || '修改密码失败');
+      this.authStore.setLoading(true);
+
+      await AuthApiService.changePassword(data);
+
+      console.log('密码修改成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '修改密码失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
+    }
+  }
+
+  // ===== MFA Management =====
+
+  /**
+   * 获取 MFA 设备列表
+   * Get MFA Devices
+   */
+  async getMFADevices(): Promise<MFADeviceClientDTO[]> {
+    try {
+      this.authStore.setLoading(true);
+
+      const response = await AuthApiService.getMFADevices();
+
+      // 同步到 store
+      this.authStore.setMFADevices(response.data.devices);
+
+      return response.data.devices;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取 MFA 设备失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
     }
   }
 
   /**
-   * Check Permission
+   * 删除 MFA 设备
+   * Delete MFA Device
+   */
+  async deleteMFADevice(deviceId: string): Promise<void> {
+    try {
+      this.authStore.setLoading(true);
+
+      await AuthApiService.deleteMFADevice(deviceId);
+
+      // 从 store 移除
+      this.authStore.removeMFADevice(deviceId);
+
+      console.log('MFA 设备删除成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '删除 MFA 设备失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
+    }
+  }
+
+  // ===== Session Management =====
+
+  /**
+   * 获取用户会话列表
+   * Get User Sessions
+   */
+  async getSessions(): Promise<UserSessionClientDTO[]> {
+    try {
+      this.authStore.setLoading(true);
+
+      const response = await AuthApiService.getSessions();
+
+      // 找到当前会话
+      const currentSession = response.data.sessions.find((s) => s.isCurrent);
+      if (currentSession) {
+        this.authStore.setCurrentSession(currentSession);
+      }
+
+      return response.data.sessions;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取会话列表失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 终止指定会话
+   * Terminate Session
+   */
+  async terminateSession(sessionId: string): Promise<void> {
+    try {
+      this.authStore.setLoading(true);
+
+      await AuthApiService.terminateSession(sessionId);
+
+      console.log('会话终止成功');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '终止会话失败';
+      this.authStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.authStore.setLoading(false);
+    }
+  }
+
+  // ===== Permission & Role Checks =====
+
+  /**
    * 检查权限
+   * Check Permission
    */
   hasPermission(permission: string): boolean {
-    // TODO: 实现权限检查逻辑
-    return false;
+    return this.authStore.hasPermission(permission);
   }
 
   /**
-   * Check Role
    * 检查角色
+   * Check Role
    */
   hasRole(role: string): boolean {
-    // TODO: 实现角色检查逻辑
-    return false;
+    return this.authStore.hasRole(role);
   }
 }

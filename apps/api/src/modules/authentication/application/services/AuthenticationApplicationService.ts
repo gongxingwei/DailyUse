@@ -15,9 +15,13 @@ type AuthResponseDTO = AuthenticationContracts.AuthResponse;
 // domains
 import { AuthCredential } from '@dailyuse/domain-server';
 // utils
-import { eventBus } from '@dailyuse/utils';
+import { eventBus, createLogger } from '@dailyuse/utils';
 import { AuthenticationLoginService } from './AuthenticationLoginService';
 import type { TResponse } from '../../../../tempTypes';
+
+// 创建 logger 实例
+const logger = createLogger('AuthenticationApplicationService');
+
 /**
  * AuthenticationApplicationService
  *
@@ -103,7 +107,28 @@ export class AuthenticationApplicationService {
   async loginByPassword(
     request: AuthByPasswordRequestDTO & { clientInfo: ClientInfo },
   ): Promise<TResponse<AuthResponseDTO>> {
-    return await this.loginService.PasswordAuthentication(request);
+    logger.info('Processing password authentication', { username: request.username });
+
+    try {
+      const result = await this.loginService.PasswordAuthentication(request);
+
+      if (result.success) {
+        logger.info('Password authentication successful', {
+          username: request.username,
+          accountUuid: result.data?.accountUuid,
+        });
+      } else {
+        logger.warn('Password authentication failed', {
+          username: request.username,
+          reason: result.message,
+        });
+      }
+
+      return result;
+    } catch (error) {
+      logger.error('Password authentication error', error, { username: request.username });
+      throw error;
+    }
   }
 
   async function() {
@@ -116,6 +141,8 @@ export class AuthenticationApplicationService {
     accountUuid: string,
     plainPassword: string,
   ): Promise<AuthCredential> {
+    logger.info('Creating credential for account', { accountUuid });
+
     try {
       // 1. 使用聚合工厂（内部会校验密码并哈希）
       const authCredential = await AuthCredential.create({
@@ -125,6 +152,7 @@ export class AuthenticationApplicationService {
 
       // 2. 保存
       await this.authCredentialRepository.save(authCredential);
+      logger.info('Credential saved successfully', { accountUuid });
 
       // 3. 发布事件
       const domainEvents = authCredential.getDomainEvents?.() ?? [];
@@ -135,9 +163,7 @@ export class AuthenticationApplicationService {
 
       return authCredential;
     } catch (err) {
-      // 处理密码不合法或哈希失败等错误，向上层抛出或转换为业务错误
-      // 例如：抛出自定义的 BadRequestError 以在 Controller 层返回 400
-      console.error('[Authentication] createCredentialForAccount failed:', err);
+      logger.error('Failed to create credential for account', err, { accountUuid });
       throw err;
     }
   }
@@ -149,26 +175,34 @@ export class AuthenticationApplicationService {
     plainPassword: string,
     requiresAuthentication: boolean = true,
   ): Promise<boolean> {
+    logger.info('Handling account registered event', { accountUuid, requiresAuthentication });
+
     if (!requiresAuthentication) {
-      console.log('⏭️ [Authentication] 账号不需要认证凭证，跳过处理');
+      logger.info('Account does not require authentication, skipping', { accountUuid });
       return false;
     }
+
     if (!plainPassword) {
+      logger.error('Password is required for authentication');
       throw new Error('密码不能为空');
     }
+
     // 检查是否已存在认证凭证
     const existingCredential = await this.authCredentialRepository.findByAccountUuid(accountUuid);
     if (existingCredential) {
-      console.log('⚠️ [Authentication] 认证凭证已存在，跳过创建');
+      logger.warn('Authentication credential already exists, skipping', { accountUuid });
       return false;
     }
+
     // 1. 创建认证凭证
     const authCredential = await this.createCredentialForAccount(accountUuid, plainPassword);
 
     if (!authCredential) {
+      logger.warn('Failed to create credential', { accountUuid });
       return false;
     }
 
+    logger.info('Account registered event handled successfully', { accountUuid });
     return true;
     // // 2. 发送欢迎邮件
     // await this.sendWelcomeEmail(email);

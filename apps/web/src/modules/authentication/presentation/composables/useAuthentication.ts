@@ -1,10 +1,14 @@
 import { ref, computed, readonly } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthApplicationService } from '../../application/services/AuthApplicationService';
-import { useAuthStore } from '../stores/useAuthStore';
+import { useAuthenticationStore } from '../stores/authenticationStore';
+import type { AuthenticationContracts } from '@dailyuse/contracts';
+
+type LoginRequest = AuthenticationContracts.LoginRequest;
+type PasswordChangeRequest = AuthenticationContracts.PasswordChangeRequest;
 
 /**
- * 认证模块 Composable（只读模式）
+ * 认证模块 Composable
  *
  * 职责：
  * - 从 store 获取响应式数据
@@ -14,7 +18,7 @@ import { useAuthStore } from '../stores/useAuthStore';
  */
 export function useAuthentication() {
   const router = useRouter();
-  const authStore = useAuthStore();
+  const authStore = useAuthenticationStore();
 
   // ===== 本地 UI 状态 =====
   const loginFormVisible = ref(false);
@@ -22,19 +26,16 @@ export function useAuthentication() {
 
   // ===== 只读响应式数据（从 store 获取）=====
   const isAuthenticated = computed(() => authStore.isAuthenticated);
-  const user = computed(() => authStore.user);
-  const isLoading = computed(() => authStore.loading);
-  const error = computed(() => authStore.error);
+  const user = computed(() => authStore.getCurrentUser);
+  const isLoading = computed(() => authStore.getLoading);
+  const error = computed(() => authStore.getError);
   const tokens = computed(() => ({
-    accessToken: authStore.accessToken,
-    refreshToken: authStore.refreshToken,
-    rememberToken: authStore.rememberToken,
+    accessToken: authStore.getAccessToken,
+    refreshToken: authStore.getRefreshToken,
   }));
 
   // ===== Token 状态查询（只读）=====
-  const isTokenExpired = computed(() => authStore.isTokenExpired);
-  const needsRefresh = computed(() => authStore.needsRefresh);
-  const tokenExpiry = computed(() => authStore.tokenExpiry);
+  const isTokenExpiringSoon = computed(() => authStore.isTokenExpiringSoon);
 
   // ===== 只读查询方法 =====
 
@@ -42,38 +43,35 @@ export function useAuthentication() {
    * 获取用户资料
    */
   const getUserProfile = () => {
-    return authStore.user;
+    return authStore.getCurrentUser;
   };
 
   /**
-   * 检查用户权限（简化实现，实际权限逻辑在 ApplicationService 中）
+   * 检查用户权限
    */
   const hasPermission = (permission: string): boolean => {
-    // 简化实现，实际权限检查应该在 ApplicationService 中
-    return !!authStore.user && !!permission;
+    return authStore.hasPermission(permission);
   };
 
   /**
-   * 检查用户角色（简化实现）
+   * 检查用户角色
    */
   const hasRole = (role: string): boolean => {
-    // 简化实现，user 数据结构中可能没有 roles 字段
-    return !!authStore.user && !!role;
+    return authStore.hasRole(role);
   };
 
   /**
    * 获取用户账户UUID
    */
-  const getAccountUuid = (): string | null => {
-    return authStore.user?.accountUuid || null;
+  const getAccountUuid = (): string | undefined => {
+    return authStore.getUserUuid;
   };
 
   /**
    * 获取用户显示名称
    */
   const getDisplayName = (): string => {
-    const user = authStore.user;
-    return user?.username || '未知用户';
+    return authStore.getUsername || '未知用户';
   };
 
   // ===== 业务操作（委托给 ApplicationService）=====
@@ -81,13 +79,13 @@ export function useAuthentication() {
   /**
    * 登录操作
    */
-  const login = async (credentials: any): Promise<void> => {
+  const login = async (credentials: LoginRequest): Promise<void> => {
     currentOperation.value = 'login';
     try {
       console.log('Attempting login with credentials:', credentials);
       const authService = await AuthApplicationService.getInstance();
       await authService.login(credentials);
-      console.log('Login successful=========================================================');
+      console.log('Login successful');
       // 登录成功后跳转
       await router.push({ name: 'dashboard' });
     } finally {
@@ -118,7 +116,7 @@ export function useAuthentication() {
     currentOperation.value = 'refresh';
     try {
       const authService = await AuthApplicationService.getInstance();
-      await authService.refreshUser();
+      await authService.getCurrentUser();
     } finally {
       currentOperation.value = null;
     }
@@ -140,11 +138,11 @@ export function useAuthentication() {
   /**
    * 修改密码
    */
-  const changePassword = async (currentPassword: string, newPassword: string): Promise<void> => {
+  const changePassword = async (data: PasswordChangeRequest): Promise<void> => {
     currentOperation.value = 'changePassword';
     try {
       const authService = await AuthApplicationService.getInstance();
-      await authService.changePassword(currentPassword, newPassword);
+      await authService.changePassword(data);
     } finally {
       currentOperation.value = null;
     }
@@ -157,8 +155,7 @@ export function useAuthentication() {
     currentOperation.value = 'refreshTokens';
     try {
       const authService = await AuthApplicationService.getInstance();
-      // 使用 refreshUser 方法来刷新令牌
-      await authService.refreshUser();
+      await authService.refreshToken();
     } finally {
       currentOperation.value = null;
     }
@@ -204,9 +201,7 @@ export function useAuthentication() {
     tokens,
 
     // Token 状态（只读）
-    isTokenExpired,
-    needsRefresh,
-    tokenExpiry,
+    isTokenExpiringSoon,
 
     // 本地 UI 状态
     loginFormVisible: readonly(loginFormVisible),

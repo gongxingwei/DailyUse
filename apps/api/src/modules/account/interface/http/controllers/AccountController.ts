@@ -1,15 +1,21 @@
 import type { Request, Response } from 'express';
 import { AccountApplicationService } from '../../../application/services/AccountApplicationService';
-import { Account } from '@dailyuse/domain-server';
 import {
-  ok,
-  badRequest,
-  notFound,
-  error as apiError,
-  businessError,
-} from '../../../../../shared/utils/apiResponse';
+  type ApiResponse,
+  type SuccessResponse,
+  type ErrorResponse,
+  ResponseCode,
+  createResponseBuilder,
+  getHttpStatusCode,
+} from '@dailyuse/contracts';
+import { createLogger } from '@dailyuse/utils';
+
+// 创建 logger 实例
+const logger = createLogger('AccountController');
 
 export class AccountController {
+  private static responseBuilder = createResponseBuilder();
+
   /**
    * 获取账户应用服务实例
    * @returns Promise<AccountApplicationService>
@@ -21,252 +27,371 @@ export class AccountController {
   /**
    * 创建账户
    */
-  static async createAccount(req: Request, res: Response): Promise<void> {
+  static async createAccount(req: Request, res: Response): Promise<Response> {
     try {
       const accountService = await AccountApplicationService.getInstance();
       const result = await accountService.createAccountByUsernameAndPwd(req.body);
 
-      ok(res, result, '账户创建成功');
+      logger.info('Account created successfully', { username: req.body.username });
+
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        result,
+        'Account created successfully',
+        201,
+      );
     } catch (error) {
-      console.error('Create account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户创建失败');
+      logger.error('Create account error', error);
+
+      // 分类错误
+      if (error instanceof Error) {
+        if (error.message.includes('already exists') || error.message.includes('duplicate')) {
+          return AccountController.responseBuilder.sendError(res, {
+            code: ResponseCode.CONFLICT,
+            message: error.message,
+          });
+        }
+        if (error.message.includes('invalid') || error.message.includes('required')) {
+          return AccountController.responseBuilder.sendError(res, {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: error.message,
+          });
+        }
+      }
+
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户创建失败',
+      });
     }
   }
 
   /**
    * 根据ID获取账户
    */
-  static async getAccountById(req: Request, res: Response): Promise<void> {
+  static async getAccountById(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.getAccountById(id);
 
       if (!result) {
-        notFound(res, '账户不存在');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: '账户不存在',
+        });
       }
 
-      ok(res, result, '获取账户成功');
+      logger.info('Account retrieved successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        result,
+        'Account retrieved successfully',
+      );
     } catch (error) {
-      console.error('Get account by ID error:', error);
-      apiError(res, error instanceof Error ? error.message : '获取账户失败');
+      logger.error('Get account by ID error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '获取账户失败',
+      });
     }
   }
 
   /**
    * 根据用户名获取账户
    */
-  static async getAccountByUsername(req: Request, res: Response): Promise<void> {
+  static async getAccountByUsername(req: Request, res: Response): Promise<Response> {
     try {
       const { username } = req.params;
 
       if (!username) {
-        badRequest(res, '用户名不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '用户名不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.getAccountByUsername(username);
 
       if (!result) {
-        notFound(res, '账户不存在');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: '账户不存在',
+        });
       }
 
-      ok(res, result, '获取账户成功');
+      logger.info('Account retrieved by username', { username });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        result,
+        'Account retrieved successfully',
+      );
     } catch (error) {
-      console.error('Get account by username error:', error);
-      apiError(res, error instanceof Error ? error.message : '获取账户失败');
+      logger.error('Get account by username error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '获取账户失败',
+      });
     }
   }
 
   /**
    * 更新账户
    */
-  static async updateAccount(req: Request, res: Response): Promise<void> {
+  static async updateAccount(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.updateAccount(id, req.body);
 
       if (!result) {
-        notFound(res, '账户不存在');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: '账户不存在',
+        });
       }
 
-      ok(res, result, '账户更新成功');
+      logger.info('Account updated successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        result,
+        'Account updated successfully',
+      );
     } catch (error) {
-      console.error('Update account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户更新失败');
+      logger.error('Update account error', error);
+
+      if (error instanceof Error && error.message.includes('not found')) {
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
+      }
+
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户更新失败',
+      });
     }
   }
 
   /**
    * 激活账户
    */
-  static async activateAccount(req: Request, res: Response): Promise<void> {
+  static async activateAccount(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.activateAccount(id);
 
       if (!result) {
-        businessError(res, '账户不存在或激活失败', 'ACCOUNT_ACTIVATION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '账户不存在或激活失败',
+        });
       }
 
-      ok(res, null, '账户激活成功');
+      logger.info('Account activated successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Account activated successfully',
+      );
     } catch (error) {
-      console.error('Activate account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户激活失败');
+      logger.error('Activate account error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户激活失败',
+      });
     }
   }
 
   /**
    * 停用账户
    */
-  static async deactivateAccount(req: Request, res: Response): Promise<void> {
+  static async deactivateAccount(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.deactivateAccount(id);
 
       if (!result) {
-        businessError(res, '账户不存在或停用失败', 'ACCOUNT_DEACTIVATION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '账户不存在或停用失败',
+        });
       }
 
-      ok(res, null, '账户停用成功');
+      logger.info('Account deactivated successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Account deactivated successfully',
+      );
     } catch (error) {
-      console.error('Deactivate account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户停用失败');
+      logger.error('Deactivate account error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户停用失败',
+      });
     }
   }
 
   /**
    * 暂停账户
    */
-  static async suspendAccount(req: Request, res: Response): Promise<void> {
+  static async suspendAccount(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.suspendAccount(id);
 
       if (!result) {
-        businessError(res, '账户不存在或暂停失败', 'ACCOUNT_SUSPENSION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '账户不存在或暂停失败',
+        });
       }
 
-      ok(res, null, '账户暂停成功');
+      logger.info('Account suspended successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Account suspended successfully',
+      );
     } catch (error) {
-      console.error('Suspend account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户暂停失败');
+      logger.error('Suspend account error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户暂停失败',
+      });
     }
   }
 
   /**
    * 验证邮箱
    */
-  static async verifyEmail(req: Request, res: Response): Promise<void> {
+  static async verifyEmail(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
       const { token } = req.body;
 
       if (!id || !token) {
-        badRequest(res, '账户ID和验证令牌不能为空', [
-          {
-            field: !id ? 'id' : 'token',
-            code: 'REQUIRED_FIELD',
-            message: !id ? '账户ID不能为空' : '验证令牌不能为空',
-          },
-        ]);
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID和验证令牌不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.verifyEmail(id, token);
 
       if (!result) {
-        businessError(res, '邮箱验证失败，令牌无效或已过期', 'EMAIL_VERIFICATION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '邮箱验证失败，令牌无效或已过期',
+        });
       }
 
-      ok(res, null, '邮箱验证成功');
+      logger.info('Email verified successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Email verified successfully',
+      );
     } catch (error) {
-      console.error('Verify email error:', error);
-      apiError(res, error instanceof Error ? error.message : '邮箱验证失败');
+      logger.error('Verify email error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '邮箱验证失败',
+      });
     }
   }
 
   /**
    * 验证手机号
    */
-  static async verifyPhone(req: Request, res: Response): Promise<void> {
+  static async verifyPhone(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
       const { code } = req.body;
 
       if (!id || !code) {
-        badRequest(res, '账户ID和验证码不能为空', [
-          {
-            field: !id ? 'id' : 'code',
-            code: 'REQUIRED_FIELD',
-            message: !id ? '账户ID不能为空' : '验证码不能为空',
-          },
-        ]);
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID和验证码不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.verifyPhone(id, code);
 
       if (!result) {
-        businessError(res, '手机号验证失败，验证码无效或已过期', 'PHONE_VERIFICATION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '手机号验证失败，验证码无效或已过期',
+        });
       }
 
-      ok(res, null, '手机号验证成功');
+      logger.info('Phone verified successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Phone verified successfully',
+      );
     } catch (error) {
-      console.error('Verify phone error:', error);
-      apiError(res, error instanceof Error ? error.message : '手机号验证失败');
+      logger.error('Verify phone error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '手机号验证失败',
+      });
     }
   }
 
   /**
    * 获取账户列表（分页）
    */
-  static async getAllAccounts(req: Request, res: Response): Promise<void> {
+  static async getAllAccounts(req: Request, res: Response): Promise<Response> {
     try {
       const page = parseInt(req.query.page as string) || 1;
       const limit = parseInt(req.query.limit as string) || 10;
@@ -274,50 +399,76 @@ export class AccountController {
       const accountService = await AccountController.getAccountService();
       const result = await accountService.getAllAccounts(page, limit);
 
-      ok(res, result, '获取账户列表成功');
+      logger.info('Account list retrieved', { page, limit, total: result.total });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        result,
+        'Account list retrieved successfully',
+      );
     } catch (error) {
-      console.error('Get all accounts error:', error);
-      apiError(res, error instanceof Error ? error.message : '获取账户列表失败');
+      logger.error('Get all accounts error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '获取账户列表失败',
+      });
     }
   }
 
   /**
    * 搜索账户
    */
-  static async searchAccounts(req: Request, res: Response): Promise<void> {
+  static async searchAccounts(req: Request, res: Response): Promise<Response> {
     try {
       // TODO: 实现搜索功能
-      businessError(res, '搜索功能暂未实现', 'SEARCH_NOT_IMPLEMENTED');
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.BUSINESS_ERROR,
+        message: '搜索功能暂未实现',
+      });
     } catch (error) {
-      console.error('Search accounts error:', error);
-      apiError(res, error instanceof Error ? error.message : '搜索账户失败');
+      logger.error('Search accounts error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '搜索账户失败',
+      });
     }
   }
 
   /**
    * 删除账户（软删除）
    */
-  static async deleteAccount(req: Request, res: Response): Promise<void> {
+  static async deleteAccount(req: Request, res: Response): Promise<Response> {
     try {
       const { id } = req.params;
 
       if (!id) {
-        badRequest(res, '账户ID不能为空');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: '账户ID不能为空',
+        });
       }
 
       const accountService = await AccountController.getAccountService();
       const result = await accountService.deleteAccount(id);
 
       if (!result) {
-        businessError(res, '账户不存在或删除失败', 'ACCOUNT_DELETION_FAILED');
-        return;
+        return AccountController.responseBuilder.sendError(res, {
+          code: ResponseCode.BUSINESS_ERROR,
+          message: '账户不存在或删除失败',
+        });
       }
 
-      ok(res, null, '账户删除成功');
+      logger.info('Account deleted successfully', { accountId: id });
+      return AccountController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Account deleted successfully',
+      );
     } catch (error) {
-      console.error('Delete account error:', error);
-      apiError(res, error instanceof Error ? error.message : '账户删除失败');
+      logger.error('Delete account error', error);
+      return AccountController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : '账户删除失败',
+      });
     }
   }
 }

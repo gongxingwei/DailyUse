@@ -62,6 +62,26 @@ export class AccountApplicationService {
   }
 
   /**
+   * 将 AccountDTO 转换为 AccountClientDTO
+   * 添加客户端需要的计算属性
+   */
+  private toClientDTO(dto: AccountDTO): AccountContracts.AccountClientDTO {
+    const now = Date.now();
+    const daysSinceLastLogin = dto.lastLoginAt
+      ? Math.floor((now - dto.lastLoginAt) / (1000 * 60 * 60 * 24))
+      : undefined;
+
+    return {
+      ...dto,
+      isActive: dto.status === AccountStatus.ACTIVE,
+      daysSinceLastLogin,
+      roleNames: dto.roles?.map((role) => role.name) || [],
+      hasVerifiedEmail: dto.isEmailVerified,
+      hasVerifiedPhone: dto.isPhoneVerified,
+    };
+  }
+
+  /**
    * 创建新账户
    */
   async createAccountByUsernameAndPwd(
@@ -136,19 +156,36 @@ export class AccountApplicationService {
 
     account.clearDomainEvents();
 
-    return { account: account.toDTO() as AccountDTO } as AccountCreationResponse;
+    const accountDTO = account.toDTO() as AccountDTO;
+    const accountClientDTO = this.toClientDTO(accountDTO);
+
+    logger.info('Account registration completed', {
+      accountUuid: account.uuid,
+      username: account.username,
+    });
+
+    return {
+      data: {
+        account: accountClientDTO,
+      },
+    };
   }
 
   /**
    * 根据ID获取账户
    */
   async getAccountById(id: string): Promise<AccountDTO | null> {
+    logger.info('Fetching account by ID', { accountId: id });
+
     const accountPersistenceDTO = await this.accountRepository.findById(id);
     if (!accountPersistenceDTO) {
+      logger.warn('Account not found', { accountId: id });
       return null;
     }
     const account = Account.fromPersistenceDTO(accountPersistenceDTO);
     const accountDTO = account.toDTO();
+
+    logger.info('Account retrieved successfully', { accountId: id, username: accountDTO.username });
     return accountDTO;
   }
 
@@ -164,12 +201,17 @@ export class AccountApplicationService {
    * 根据用户名获取账户
    */
   async getAccountByUsername(username: string): Promise<AccountDTO | null> {
+    logger.info('Fetching account by username', { username });
+
     const accountPersistenceDTO = await this.accountRepository.findByUsername(username);
     if (!accountPersistenceDTO) {
+      logger.warn('Account not found', { username });
       return null;
     }
     const account = Account.fromPersistenceDTO(accountPersistenceDTO);
     const accountDTO = account.toDTO();
+
+    logger.info('Account retrieved successfully', { username, accountId: accountDTO.uuid });
     return accountDTO;
   }
 
@@ -177,8 +219,11 @@ export class AccountApplicationService {
    * 更新账户信息
    */
   async updateAccount(id: string, updateDto: AccountDTO): Promise<AccountDTO | null> {
+    logger.info('Updating account', { accountId: id });
+
     const accountDTO = await this.accountRepository.findById(id);
     if (!accountDTO) {
+      logger.warn('Account not found for update', { accountId: id });
       return null;
     }
 
@@ -187,6 +232,7 @@ export class AccountApplicationService {
 
     // 更新账户信息
     if (updateDto.email && updateDto.email !== account.email?.value) {
+      logger.info('Updating email', { accountId: id, newEmail: updateDto.email });
       account.updateEmail(updateDto.email);
       // 邮箱变更需要重新验证
       console.log('发送验证邮件');
@@ -194,6 +240,8 @@ export class AccountApplicationService {
 
     // 保存更新后的账户
     await this.accountRepository.save(account);
+
+    logger.info('Account updated successfully', { accountId: id });
     return account.toDTO();
   }
 
@@ -201,8 +249,11 @@ export class AccountApplicationService {
    * 激活账户
    */
   async activateAccount(id: string): Promise<boolean> {
+    logger.info('Activating account', { accountId: id });
+
     const accountDTO = await this.accountRepository.findById(id);
     if (!accountDTO) {
+      logger.warn('Account not found for activation', { accountId: id });
       return false;
     }
 
@@ -211,6 +262,8 @@ export class AccountApplicationService {
 
     account.enable();
     await this.accountRepository.save(account);
+
+    logger.info('Account activated successfully', { accountId: id });
     return true;
   }
 
@@ -318,24 +371,31 @@ export class AccountApplicationService {
 
   /**
    * 获取所有账户（分页）
+   * 返回符合新 AccountListResponse 格式的数据
    */
-  async getAllAccounts(
-    page: number = 1,
-    limit: number = 10,
-  ): Promise<{
-    accounts: AccountDTO[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  async getAllAccounts(page: number = 1, limit: number = 10): Promise<AccountListResponse> {
+    logger.info('Fetching account list', { page, limit });
+
     const { accounts: accountDTOs, total } = await this.accountRepository.findAll(page, limit);
     const totalPages = Math.ceil(total / limit);
+    const hasMore = page < totalPages;
 
+    // 转换为 DTO 然后再转换为 ClientDTO
+    const accounts = accountDTOs
+      .map((accountDTO) => Account.fromPersistenceDTO(accountDTO).toDTO())
+      .map((dto) => this.toClientDTO(dto));
+
+    logger.info('Account list retrieved', { total, page, limit, count: accounts.length });
+
+    // 返回符合新 Response 格式的数据
     return {
-      accounts: accountDTOs.map((accountDTO) => Account.fromPersistenceDTO(accountDTO).toDTO()),
-      total,
-      page,
-      totalPages,
+      data: {
+        accounts,
+        total,
+        page,
+        limit,
+        hasMore,
+      },
     };
   }
 
@@ -359,8 +419,11 @@ export class AccountApplicationService {
    * 删除账户（软删除）
    */
   async deleteAccount(id: string): Promise<boolean> {
+    logger.info('Deleting account (soft delete)', { accountId: id });
+
     const accountDTO = await this.accountRepository.findById(id);
     if (!accountDTO) {
+      logger.warn('Account not found for deletion', { accountId: id });
       return false;
     }
 
@@ -370,6 +433,8 @@ export class AccountApplicationService {
     // 执行软删除
     account.disable();
     await this.accountRepository.save(account);
+
+    logger.info('Account deleted successfully (soft delete)', { accountId: id });
     return true;
   }
 
