@@ -140,14 +140,12 @@ export class ReminderTemplateController {
       const templates =
         await ReminderTemplateController.domainService.getReminderTemplatesByAccount(accountUuid);
 
-      const listResponse = {
-        data: {
-          reminders: templates,
-          total: templates.length,
-          page,
-          limit,
-          hasMore: templates.length >= limit,
-        },
+      const listResponse: ReminderContracts.ReminderTemplateListResponse = {
+        reminders: templates,
+        total: templates.length,
+        page,
+        limit,
+        hasMore: templates.length >= limit,
       };
 
       logger.info('Reminder templates retrieved successfully', {
@@ -533,19 +531,23 @@ export class ReminderTemplateController {
         .filter((template: any) => template.enabled === true)
         .slice(0, limit);
 
-      const listResponse = {
-        data: {
-          reminders: activeTemplates,
-          total: activeTemplates.length,
-          page,
-          limit,
-          hasMore: activeTemplates.length >= limit,
-        },
+      // 移除 schedules 字段，这应该由 Schedule 模块管理
+      const cleanedTemplates = activeTemplates.map((template: any) => {
+        const { schedules, ...templateWithoutSchedules } = template;
+        return templateWithoutSchedules;
+      });
+
+      const listResponse: ReminderContracts.ReminderTemplateListResponse = {
+        reminders: cleanedTemplates,
+        total: cleanedTemplates.length,
+        page,
+        limit,
+        hasMore: cleanedTemplates.length >= limit,
       };
 
       logger.info('Active reminder templates retrieved successfully', {
         accountUuid,
-        total: activeTemplates.length,
+        total: cleanedTemplates.length,
       });
 
       return ReminderTemplateController.responseBuilder.sendSuccess(

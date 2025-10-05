@@ -139,6 +139,12 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
   async findById(uuid: string): Promise<TaskTemplateDTO | null> {
     const template = await this.prisma.taskTemplate.findUnique({
       where: { uuid },
+      include: {
+        instances: {
+          orderBy: { scheduledDate: 'desc' },
+          take: 100, // 最多返回100个实例
+        },
+      },
     });
 
     return template ? this.mapTaskTemplateToDTO(template) : null;
@@ -178,7 +184,7 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
     const hasMore = offset + limit < total;
 
     return {
-      templates: templates.map((template) => this.mapTaskTemplateToDTO(template)),
+      data: templates.map((template) => this.mapTaskTemplateToDTO(template)),
       total,
       page,
       limit,
@@ -203,6 +209,12 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
           accountUuid,
           status,
         },
+        include: {
+          instances: {
+            orderBy: { scheduledDate: 'desc' },
+            take: 100,
+          },
+        },
         orderBy: { createdAt: 'desc' },
         skip: offset,
         take: limit,
@@ -219,7 +231,7 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
     const hasMore = offset + limit < total;
 
     return {
-      templates: templates.map((template) => this.mapTaskTemplateToDTO(template)),
+      data: templates.map((template) => this.mapTaskTemplateToDTO(template)),
       total,
       page,
       limit,
@@ -266,7 +278,7 @@ export class PrismaTaskTemplateRepository implements ITaskTemplateRepository {
     const hasMore = offset + limit < total;
 
     return {
-      templates: templates.map((template) => this.mapTaskTemplateToDTO(template)),
+      data: templates.map((template) => this.mapTaskTemplateToDTO(template)),
       total,
       page,
       limit,

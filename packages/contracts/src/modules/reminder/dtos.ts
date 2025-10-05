@@ -257,40 +257,34 @@ export interface SnoozeReminderRequest {
  * 提醒模板列表响应
  */
 export interface ReminderTemplateListResponse {
-  data: {
-    reminders: ReminderTemplateClientDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-    query?: string; // 搜索响应专用
-  };
+  reminders: ReminderTemplateClientDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
+  query?: string; // 搜索响应专用
 }
 
 /**
  * 提醒分组列表响应
  */
 export interface ReminderTemplateGroupListResponse {
-  data: {
-    groups: ReminderTemplateGroupClientDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-  };
+  groups: ReminderTemplateGroupClientDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
 /**
  * 提醒实例列表响应
  */
 export interface ReminderInstanceListResponse {
-  data: {
-    reminders: ReminderInstanceClientDTO[];
-    total: number;
-    page: number;
-    limit: number;
-    hasMore: boolean;
-  };
+  reminders: ReminderInstanceClientDTO[];
+  total: number;
+  page: number;
+  limit: number;
+  hasMore: boolean;
 }
 
 // ==================== 查询参数 DTOs ====================
@@ -333,23 +327,21 @@ export interface GetUpcomingRemindersRequest {
  * 提醒统计响应 - GET /api/v1/reminders/stats
  */
 export interface ReminderStatsResponse {
-  data: {
+  total: number;
+  pending: number;
+  triggered: number;
+  acknowledged: number;
+  dismissed: number;
+  snoozed: number;
+  expired: number;
+  avgResponseTime: number; // 毫秒
+  acknowledgmentRate: number; // 0-1
+  dailyStats: Array<{
+    date: number; // timestamp
     total: number;
-    pending: number;
-    triggered: number;
     acknowledged: number;
     dismissed: number;
-    snoozed: number;
-    expired: number;
-    avgResponseTime: number; // 毫秒
-    acknowledgmentRate: number; // 0-1
-    dailyStats: Array<{
-      date: number; // timestamp
-      total: number;
-      acknowledged: number;
-      dismissed: number;
-    }>;
-  };
+  }>;
 }
 
 // ==================== 批量操作 DTOs ====================
@@ -429,35 +421,27 @@ export interface EnableStatusChangeResponse {
 /**
  * 单个提醒模板响应 - GET/POST/PUT /api/v1/reminders/templates/*
  */
-export interface ReminderTemplateResponse {
-  data: ReminderTemplateClientDTO;
-}
+export type ReminderTemplateResponse = ReminderTemplateClientDTO;
 
 /**
  * 单个提醒实例响应 - GET/POST/PUT /api/v1/reminders/instances/*
  */
-export interface ReminderInstanceResponse {
-  data: ReminderInstanceClientDTO;
-}
+export type ReminderInstanceResponse = ReminderInstanceClientDTO;
 
 /**
  * 单个提醒分组响应 - GET/POST/PUT /api/v1/reminders/groups/*
  */
-export interface ReminderTemplateGroupResponse {
-  data: ReminderTemplateGroupClientDTO;
-}
+export type ReminderTemplateGroupResponse = ReminderTemplateGroupClientDTO;
 
 /**
  * 即将到来的提醒响应 - GET /api/v1/reminders/upcoming
  */
 export interface UpcomingRemindersResponse {
-  data: {
-    reminders: ReminderInstanceClientDTO[];
-    total: number;
-    timeRange: {
-      start: number;
-      end: number;
-    };
+  reminders: ReminderInstanceClientDTO[];
+  total: number;
+  timeRange: {
+    start: number;
+    end: number;
   };
 }
 

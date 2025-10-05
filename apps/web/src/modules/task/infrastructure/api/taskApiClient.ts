@@ -29,7 +29,7 @@ export class TaskTemplateApiClient {
     importance?: string;
     urgency?: string;
     tags?: string[];
-  }): Promise<TaskContracts.TaskTemplateListResponse['data']> {
+  }): Promise<TaskContracts.TaskTemplateListResponse> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }

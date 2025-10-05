@@ -100,11 +100,49 @@
 import { Router } from 'express';
 import { ScheduleController } from './scheduleController';
 import { sseController } from './SSEController';
+import { ScheduleDebugController } from './debugController';
 
 const router = Router();
 const scheduleController = new ScheduleController();
+const debugController = new ScheduleDebugController();
 
 // 注意路由顺序：具体路径要在参数路径之前
+
+// ===== Debug Routes (Development Only) =====
+
+/**
+ * @swagger
+ * /schedules/debug/trigger-reminder:
+ *   post:
+ *     tags: [Schedule Debug]
+ *     summary: 手动触发测试提醒
+ *     description: 开发调试用 - 立即触发一个测试提醒事件
+ *     responses:
+ *       200:
+ *         description: 测试提醒已触发
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.post('/debug/trigger-reminder', debugController.triggerTestReminder);
+
+/**
+ * @swagger
+ * /schedules/debug/info:
+ *   get:
+ *     tags: [Schedule Debug]
+ *     summary: 获取调试信息
+ *     description: 开发调试用 - 获取当前调度模块的调试信息
+ *     responses:
+ *       200:
+ *         description: 调试信息
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ */
+router.get('/debug/info', debugController.getDebugInfo);
 
 // ===== Special Routes (before parameter routes) =====
 

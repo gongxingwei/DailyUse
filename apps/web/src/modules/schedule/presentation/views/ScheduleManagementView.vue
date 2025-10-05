@@ -146,7 +146,7 @@
                     <v-divider></v-divider>
 
                     <v-list v-if="filteredTasks.length > 0" class="pa-0">
-                        <template v-for="(task, index) in filteredTasks" :key="task.id">
+                        <template v-for="(task, index) in filteredTasks" :key="task.uuid">
                             <v-list-item class="px-4 py-3">
                                 <v-list-item-title class="d-flex align-center">
                                     <v-icon :color="getTaskStatusColor(task)" class="mr-3">
@@ -162,15 +162,15 @@
                                             {{ getTaskStatusText(task) }}
                                         </v-chip>
                                         <span class="text-caption text-medium-emphasis ml-2">
-                                            下次执行: {{ formatNextExecution(task.nextExecutionTime) }}
+                                            下次执行: {{ formatNextExecution(task.nextExecutionTime?.toString()) }}
                                         </span>
                                     </div>
                                 </v-list-item-subtitle>
 
                                 <template #append>
                                     <div class="d-flex align-center">
-                                        <v-btn :color="task.status === 'ACTIVE' ? 'warning' : 'success'"
-                                            :icon="task.status === 'ACTIVE' ? 'mdi-pause' : 'mdi-play'" variant="text"
+                                        <v-btn :color="task.enabled ? 'warning' : 'success'"
+                                            :icon="task.enabled ? 'mdi-pause' : 'mdi-play'" variant="text"
                                             size="small" @click="toggleTask(task)"></v-btn>
                                         <v-btn color="primary" icon="mdi-pencil" variant="text" size="small"
                                             @click="editTask(task)"></v-btn>
@@ -228,7 +228,7 @@ import ScheduleTaskDialog from '../components/ScheduleTaskDialog.vue'
 import ScheduleIntegrationPanel from '../components/ScheduleIntegrationPanel.vue'
 import RealtimeNotificationPanel from '../components/RealtimeNotificationPanel.vue'
 import { scheduleWebApplicationService } from '../../application/services/ScheduleWebApplicationService'
-import type { ScheduleTaskApi } from '@dailyuse/contracts/modules/schedule'
+import type { ScheduleTaskResponseDto } from '@dailyuse/contracts/modules/schedule'
 import { sseClient } from '@/modules/notification/infrastructure/sse/SSEClient'
 import { eventBus } from '@dailyuse/utils'
 
@@ -237,7 +237,7 @@ const activeTab = ref('overview')
 const loading = ref(false)
 const reconnecting = ref(false)
 const deleting = ref(false)
-const tasks = ref<ScheduleTaskApi[]>([])
+const tasks = ref<ScheduleTaskResponseDto[]>([])
 const searchQuery = ref('')
 const statusFilter = ref(null)
 const priorityFilter = ref(null)
@@ -245,8 +245,8 @@ const priorityFilter = ref(null)
 // 对话框状态
 const dialogVisible = ref(false)
 const deleteDialogVisible = ref(false)
-const selectedTask = ref<ScheduleTaskApi | null>(null)
-const taskToDelete = ref<ScheduleTaskApi | null>(null)
+const selectedTask = ref<ScheduleTaskResponseDto | null>(null)
+const taskToDelete = ref<ScheduleTaskResponseDto | null>(null)
 
 // 连接状态
 const connectionStatus = ref({
@@ -269,9 +269,9 @@ const priorityOptions = [
 // 计算属性
 const statistics = computed(() => ({
     total: tasks.value.length,
-    enabled: tasks.value.filter(t => t.status === 'ACTIVE').length,
-    disabled: tasks.value.filter(t => t.status === 'PAUSED').length,
-    upcoming: tasks.value.filter(t => t.status === 'ACTIVE' && t.nextExecutionTime && new Date(t.nextExecutionTime) > new Date()).length,
+    enabled: tasks.value.filter((t: ScheduleTaskResponseDto) => t.enabled).length,
+    disabled: tasks.value.filter((t: ScheduleTaskResponseDto) => !t.enabled).length,
+    upcoming: tasks.value.filter((t: ScheduleTaskResponseDto) => t.enabled && t.nextExecutionTime && new Date(t.nextExecutionTime) > new Date()).length,
 }))
 
 const filteredTasks = computed(() => {
@@ -340,17 +340,17 @@ const openCreateDialog = () => {
     dialogVisible.value = true
 }
 
-const editTask = (task: ScheduleTaskApi) => {
+const editTask = (task: ScheduleTaskResponseDto) => {
     selectedTask.value = task
     dialogVisible.value = true
 }
 
-const toggleTask = async (task: ScheduleTaskApi) => {
+const toggleTask = async (task: ScheduleTaskResponseDto) => {
     try {
-        if (task.status === 'ACTIVE') {
-            await scheduleWebApplicationService.pauseScheduleTask(task.id)
+        if (task.enabled) {
+            await scheduleWebApplicationService.pauseScheduleTask(task.uuid)
         } else {
-            await scheduleWebApplicationService.enableScheduleTask(task.id)
+            await scheduleWebApplicationService.enableScheduleTask(task.uuid)
         }
         await loadTasks()
     } catch (error) {
@@ -358,7 +358,7 @@ const toggleTask = async (task: ScheduleTaskApi) => {
     }
 }
 
-const deleteTask = (task: ScheduleTaskApi) => {
+const deleteTask = (task: ScheduleTaskResponseDto) => {
     taskToDelete.value = task
     deleteDialogVisible.value = true
 }
@@ -368,7 +368,7 @@ const confirmDelete = async () => {
 
     deleting.value = true
     try {
-        await scheduleWebApplicationService.deleteScheduleTask(taskToDelete.value.id)
+        await scheduleWebApplicationService.deleteScheduleTask(taskToDelete.value.uuid)
         await loadTasks()
         deleteDialogVisible.value = false
         taskToDelete.value = null
@@ -386,27 +386,40 @@ const onTaskSaved = async () => {
 }
 
 // 工具函数
-const getTaskStatusColor = (task: ScheduleTaskApi) => {
+const getTaskStatusColor = (task: ScheduleTaskResponseDto) => {
+    if (!task.enabled) return 'grey'
     switch (task.status) {
-        case 'ACTIVE': return 'success'
+        case 'PENDING': return 'info'
+        case 'RUNNING': return 'success'
+        case 'COMPLETED': return 'success'
         case 'PAUSED': return 'warning'
+        case 'FAILED': return 'error'
+        case 'CANCELLED': return 'grey'
         default: return 'grey'
     }
 }
 
-const getTaskStatusText = (task: ScheduleTaskApi) => {
+const getTaskStatusText = (task: ScheduleTaskResponseDto) => {
+    if (!task.enabled) return '已禁用'
     switch (task.status) {
-        case 'ACTIVE': return '运行中'
+        case 'PENDING': return '待执行'
+        case 'RUNNING': return '运行中'
+        case 'COMPLETED': return '已完成'
         case 'PAUSED': return '已暂停'
+        case 'FAILED': return '失败'
+        case 'CANCELLED': return '已取消'
         default: return '未知'
     }
 }
 
-const getTaskIcon = (task: ScheduleTaskApi) => {
+const getTaskIcon = (task: ScheduleTaskResponseDto) => {
     switch (task.taskType) {
         case 'GENERAL_REMINDER': return 'mdi-bell'
-        case 'DAILY_TASK_GENERATION': return 'mdi-format-list-checks'
-        case 'TASK_STATUS_CHECK': return 'mdi-clipboard-check'
+        case 'TASK_REMINDER': return 'mdi-format-list-checks'
+        case 'GOAL_REMINDER': return 'mdi-target'
+        case 'SYSTEM_MAINTENANCE': return 'mdi-cog'
+        case 'DATA_BACKUP': return 'mdi-backup-restore'
+        case 'CLEANUP_TASK': return 'mdi-broom'
         default: return 'mdi-cog'
     }
 }
@@ -438,16 +451,16 @@ onMounted(async () => {
         updateConnectionStatus()
     })
 
-    eventBus.on('schedule:task-executed', (data) => {
-        console.log('任务执行事件:', data)
-        loadTasks() // 重新加载任务状态
-    })
-
-    // 清理函数
+    // 清理函数 - 必须在 async 代码之前注册
     onUnmounted(() => {
         clearInterval(statusInterval)
         eventBus.off('sse:connected')
         eventBus.off('schedule:task-executed')
+    })
+
+    eventBus.on('schedule:task-executed', (data) => {
+        console.log('任务执行事件:', data)
+        loadTasks() // 重新加载任务状态
     })
 })
 </script>

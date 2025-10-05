@@ -1,6 +1,8 @@
 import type { ReminderContracts } from '@dailyuse/contracts';
+import { getEventBus } from '@dailyuse/domain-core';
 import { ReminderDomainService } from '../../domain/services/ReminderDomainService';
 import { ReminderContainer } from '../../infrastructure/di/ReminderContainer';
+import { ReminderInstanceCreatedEvent } from '../../domain/events/ReminderEvents';
 
 type CreateReminderTemplateRequest = ReminderContracts.CreateReminderTemplateRequest;
 type UpdateReminderTemplateRequest = ReminderContracts.UpdateReminderTemplateRequest;
@@ -150,7 +152,31 @@ export class ReminderApplicationService {
 
   // 提醒实例相关方法
   async createInstance(request: CreateReminderInstanceRequest): Promise<ReminderInstanceResponse> {
-    return this.reminderDomainService.createInstance(request);
+    // 创建实例
+    const instance = await this.reminderDomainService.createInstance(request);
+
+    // 发布领域事件
+    const eventBus = getEventBus();
+    const instanceData = instance.data as any;
+    const event = new ReminderInstanceCreatedEvent(
+      instanceData.uuid,
+      instanceData.templateUuid,
+      instanceData.accountUuid,
+      new Date(instanceData.scheduledTime),
+      instanceData.title || instanceData.message,
+      instanceData.message,
+      instanceData.priority,
+      instanceData.category || 'general',
+      {
+        tags: instanceData.tags || [],
+        sourceType: instanceData.sourceType,
+        sourceId: instanceData.sourceId,
+      },
+    );
+
+    await eventBus.publish([event]);
+
+    return instance;
   }
 
   async getInstances(queryParams: any): Promise<ReminderListResponse> {

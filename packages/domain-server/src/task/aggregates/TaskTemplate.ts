@@ -1,11 +1,15 @@
 import { TaskTemplateCore } from '@dailyuse/domain-core';
 import type { TaskContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { TaskInstance } from '../entities/TaskInstance';
 
 /**
  * 任务模板聚合根 - 服务端实现
  */
 export class TaskTemplate extends TaskTemplateCore {
+  // 聚合根包含子实体：TaskInstance 列表
+  private _instances: TaskInstance[] = [];
+
   constructor(params: {
     uuid?: string;
     accountUuid: string;
@@ -17,19 +21,54 @@ export class TaskTemplate extends TaskTemplateCore {
     goalLinks?: any;
     createdAt?: Date;
     updatedAt?: Date;
-    instances?: any[]; // 支持实体形式或DTO形式
+    instances?: TaskInstance[]; // 直接接收实体形式
   }) {
     super(params);
 
-    // 服务端特有的逻辑可以在这里添加
-    // 如果有instances参数，这里可以处理它们
-    // 目前保持简单，因为TaskTemplate的instances通常通过仓储加载
+    // 初始化子实体列表
+    if (params.instances) {
+      this._instances = params.instances;
+    }
+  }
+
+  /**
+   * 获取所有实例（只读）
+   */
+  get instances(): TaskInstance[] {
+    return [...this._instances];
+  }
+
+  /**
+   * 添加实例到聚合根
+   */
+  addInstance(instance: TaskInstance): void {
+    this._instances.push(instance);
+    this.updateStats(this._instances.length, this._instances.filter((i) => i.isCompleted).length);
+  }
+
+  /**
+   * 移除实例
+   */
+  removeInstance(instanceUuid: string): void {
+    this._instances = this._instances.filter((i) => i.uuid !== instanceUuid);
+    this.updateStats(this._instances.length, this._instances.filter((i) => i.isCompleted).length);
+  }
+
+  /**
+   * 获取特定实例
+   */
+  getInstance(instanceUuid: string): TaskInstance | undefined {
+    return this._instances.find((i) => i.uuid === instanceUuid);
   }
 
   /**
    * 从 DTO 创建任务模板实例
+   * 同时恢复所有子实体（TaskInstance）
    */
   static fromDTO(dto: TaskContracts.TaskTemplateDTO): TaskTemplate {
+    // 首先转换子实体
+    const instances = dto.instances?.map((instanceDTO) => TaskInstance.fromDTO(instanceDTO)) || [];
+
     return new TaskTemplate({
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,
@@ -49,6 +88,7 @@ export class TaskTemplate extends TaskTemplateCore {
       goalLinks: dto.goalLinks,
       createdAt: new Date(dto.lifecycle.createdAt),
       updatedAt: new Date(dto.lifecycle.updatedAt),
+      instances: instances, // 传入转换后的子实体
     });
   }
 
@@ -362,6 +402,7 @@ export class TaskTemplate extends TaskTemplateCore {
 
   /**
    * 转换为 DTO
+   * 同时转换所有子实体（TaskInstance）为 DTO
    */
   toDTO(): TaskContracts.TaskTemplateDTO {
     return {
@@ -392,6 +433,8 @@ export class TaskTemplate extends TaskTemplateCore {
         lastInstanceDate: this._stats.lastInstanceDate?.toISOString(),
       },
       goalLinks: this._goalLinks,
+      // 转换子实体为 DTO
+      instances: this._instances.map((instance) => instance.toDTO()),
     };
   }
 }

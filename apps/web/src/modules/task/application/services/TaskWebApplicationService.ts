@@ -41,16 +41,23 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const response = await taskMetaTemplateApiClient.getMetaTemplates(params);
+      const metaTemplates = await taskMetaTemplateApiClient.getMetaTemplates(params);
 
       // 将DTO转换为实体对象
-      const entityMetaTemplates =
-        response.metaTemplates?.map((dto) => TaskMetaTemplate.fromDTO(dto)) || [];
+      const entityMetaTemplates = metaTemplates.map((dto: TaskContracts.TaskMetaTemplateDTO) =>
+        TaskMetaTemplate.fromDTO(dto),
+      );
 
       // 批量同步到 store（如果 store 支持）
       console.log('✅ [TaskService] 成功获取元模板:', entityMetaTemplates.length);
 
-      return response;
+      return {
+        data: metaTemplates,
+        total: metaTemplates.length,
+        page: params?.page || 1,
+        limit: params?.limit || 50,
+        hasMore: false,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取任务元模板列表失败';
       this.taskStore.setError(errorMessage);
@@ -140,17 +147,23 @@ export class TaskWebApplicationService {
       this.taskStore.setError(null);
 
       const response = await taskTemplateApiClient.getTemplates(params);
-
+      const { data: templates, total, page, limit, hasMore } = response;
+    
       // 将DTO转换为实体对象
-      const entityTemplates = response.templates?.map((dto) => TaskTemplate.fromDTO(dto)) || [];
-      console.log(
-        'Fetched templates:==================================================',
-        entityTemplates,
+      const entityTemplates = templates.map((dto: TaskContracts.TaskTemplateDTO) =>
+        TaskTemplate.fromDTO(dto),
       );
+      
       // 批量同步到 store
       this.taskStore.setTaskTemplates(entityTemplates);
 
-      return response;
+      return {
+        data: templates,
+        total,
+        page,
+        limit,
+        hasMore,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取任务模板列表失败';
       this.taskStore.setError(errorMessage);
@@ -258,12 +271,21 @@ export class TaskWebApplicationService {
       // 更新缓存
       this.taskStore.updateTaskTemplate(uuid, entityTemplate);
 
-      // 激活后可能生成了新的任务实例，刷新全部实例列表
+      // ✅ 激活后重新获取完整的模板数据（包含 instances）
       try {
-        const instancesResponse = await this.getTaskInstances({ templateUuid: uuid });
-        // getTaskInstances 已经会将实例同步到 store
+        const fullTemplateDTO = await taskTemplateApiClient.getTemplateById(uuid);
+        if (fullTemplateDTO) {
+          const fullTemplate = TaskTemplate.fromDTO(fullTemplateDTO);
+          this.taskStore.updateTaskTemplate(uuid, fullTemplate);
+
+          // 同步 instances 到 store（从聚合根中提取）
+          if (fullTemplateDTO.instances) {
+            const instances = fullTemplateDTO.instances.map((dto) => TaskInstance.fromDTO(dto));
+            this.taskStore.setTaskInstances(instances);
+          }
+        }
       } catch (instanceError) {
-        console.warn('激活模板后刷新实例列表失败:', instanceError);
+        console.warn('激活模板后刷新模板数据失败:', instanceError);
         // 不阻断主流程，只记录警告
       }
 
@@ -329,40 +351,6 @@ export class TaskWebApplicationService {
       return instanceDTO; // 返回DTO保持API兼容性
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '创建任务实例失败';
-      this.taskStore.setError(errorMessage);
-      throw error;
-    } finally {
-      this.taskStore.setLoading(false);
-    }
-  }
-
-  /**
-   * 获取任务实例列表
-   */
-  async getTaskInstances(params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    templateUuid?: string;
-    goalUuid?: string;
-    startDate?: string;
-    endDate?: string;
-  }): Promise<TaskContracts.TaskInstanceListResponse> {
-    try {
-      this.taskStore.setLoading(true);
-      this.taskStore.setError(null);
-
-      const response = await taskInstanceApiClient.getInstances(params);
-
-      // 将DTO转换为实体对象
-      const entityInstances = response.instances?.map((dto) => TaskInstance.fromDTO(dto)) || [];
-
-      // 批量同步到 store
-      this.taskStore.setTaskInstances(entityInstances);
-
-      return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : '获取任务实例列表失败';
       this.taskStore.setError(errorMessage);
       throw error;
     } finally {
@@ -576,8 +564,14 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const response = await taskTemplateApiClient.searchTemplates(params);
-      return response;
+      const templates = await taskTemplateApiClient.searchTemplates(params);
+      return {
+        data: templates,
+        total: templates.length,
+        page: params?.page || 1,
+        limit: params?.limit || 50,
+        hasMore: false,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索任务模板失败';
       this.taskStore.setError(errorMessage);
@@ -605,8 +599,14 @@ export class TaskWebApplicationService {
       this.taskStore.setLoading(true);
       this.taskStore.setError(null);
 
-      const response = await taskInstanceApiClient.searchInstances(params);
-      return response;
+      const instances = await taskInstanceApiClient.searchInstances(params);
+      return {
+        data: instances,
+        total: instances.length,
+        page: params?.page || 1,
+        limit: params?.limit || 50,
+        hasMore: false,
+      };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '搜索任务实例失败';
       this.taskStore.setError(errorMessage);
@@ -737,25 +737,26 @@ export class TaskWebApplicationService {
       this.taskStore.setError(null);
 
       // 获取任务模板（包含实例数据）
-      const templatesResponse = await this.getTaskTemplates({ limit: 1000 });
+      const { data: templates } = await this.getTaskTemplates({ limit: 1000 });
 
-      // 转换模板为领域实体
-      const templates =
-        templatesResponse.templates.map((templateDTO) => TaskTemplate.fromDTO(templateDTO)) || [];
-
+      // 转换模板为领域实体对象
+      console.log('=======================Converting templates to entities:', templates);
+      const EntityTemplates = templates.map((templateDTO: TaskContracts.TaskTemplateDTO) =>
+        TaskTemplate.fromDTO(templateDTO),
+      );
+      console.log('=======================Processing template:', EntityTemplates);
       // 从模板的实例数组中提取所有实例
       const instances: TaskInstance[] = [];
-      templatesResponse.templates.forEach((templateDTO) => {
-        if (templateDTO.instances && templateDTO.instances.length > 0) {
-          const templateInstances = templateDTO.instances.map((instanceDTO) =>
-            TaskInstance.fromDTO(instanceDTO),
-          );
-          instances.push(...templateInstances);
+      EntityTemplates.forEach((template: TaskTemplate) => {
+        
+        if (template.instances && template.instances.length > 0) {
+          console.log('=======================Extracted instances from template:', template.uuid, template.instances);
+          instances.push(...template.instances);
         }
       });
 
       // 批量设置到 store
-      this.taskStore.setTaskTemplates(templates);
+      this.taskStore.setTaskTemplates(EntityTemplates);
       this.taskStore.setTaskInstances(instances);
 
       console.log(`✅ 成功同步数据: ${templates.length} 个模板, ${instances.length} 个实例`);

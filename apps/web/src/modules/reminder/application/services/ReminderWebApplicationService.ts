@@ -78,6 +78,14 @@ export class ReminderWebApplicationService {
       this.reminderStore.setError(null);
 
       const templatesResponse = await reminderApiClient.getReminderTemplates(params);
+      console.log(
+        '📦 应用服务收到的模板响应:',
+        templatesResponse,
+        'type:',
+        typeof templatesResponse,
+        'isArray:',
+        Array.isArray(templatesResponse),
+      );
 
       // templatesResponse 已经是模板数组，直接转换为客户端实体
       const templates = (Array.isArray(templatesResponse) ? templatesResponse : []).map(
@@ -86,6 +94,40 @@ export class ReminderWebApplicationService {
       this.reminderStore.setReminderTemplates(templates);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取提醒模板失败';
+      this.reminderStore.setError(errorMessage);
+      this.snackbar.showError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
+   * 获取活跃的提醒模板
+   */
+  async getActiveTemplates(params?: {
+    page?: number;
+    limit?: number;
+    forceRefresh?: boolean;
+  }): Promise<void> {
+    try {
+      // 缓存优先策略：如果已有数据且不强制刷新，直接返回
+      if (!params?.forceRefresh && this.reminderStore.reminderTemplates.length > 0) {
+        return;
+      }
+
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const templatesResponse = await reminderApiClient.getActiveTemplates(params);
+
+      // templatesResponse 已经是模板数组，直接转换为客户端实体
+      const templates = (Array.isArray(templatesResponse) ? templatesResponse : []).map(
+        (data: any) => ReminderTemplate.fromApiResponse(data),
+      );
+      this.reminderStore.setReminderTemplates(templates);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '获取活跃提醒模板失败';
       this.reminderStore.setError(errorMessage);
       this.snackbar.showError(errorMessage);
       throw error;
@@ -270,9 +312,9 @@ export class ReminderWebApplicationService {
       const instancesData = await reminderApiClient.getReminderInstances(templateUuid, params);
 
       // 转换为客户端实体并更新 store
-      const instances = instancesData.reminders.map((data: any) =>
-        ReminderInstance.fromResponse(data),
-      );
+      const instances = (
+        Array.isArray(instancesData?.reminders) ? instancesData.reminders : []
+      ).map((data: any) => ReminderInstance.fromResponse(data));
       this.reminderStore.addOrUpdateReminderInstances(instances);
 
       return {
@@ -363,15 +405,17 @@ export class ReminderWebApplicationService {
   async getActiveReminders(params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderListResponse['data']> {
+  }): Promise<ReminderContracts.ReminderInstanceListResponse['data']> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
 
       const remindersData = await reminderApiClient.getActiveReminders(params);
-
+      console.log('📦 应用服务收到的活跃提醒响应:', remindersData);
       // 转换为客户端实体并更新 store
-      const instances = remindersData.reminders.map((data) => ReminderInstance.fromResponse(data));
+      const instances = (
+        Array.isArray(remindersData?.reminders) ? remindersData.reminders : []
+      ).map((data) => ReminderInstance.fromResponse(data));
       this.reminderStore.addOrUpdateReminderInstances(instances);
 
       return remindersData;
@@ -603,7 +647,6 @@ export class ReminderWebApplicationService {
       this.reminderStore.setError(null);
 
       const response = await reminderApiClient.getUpcomingReminders(params || {});
-
       return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取即将到来的提醒失败';
@@ -683,10 +726,12 @@ export class ReminderWebApplicationService {
       const response = await reminderApiClient.getReminderTemplateGroups();
 
       // 从分页响应中提取分组数组
-      const groupsArray = response.groups || [];
+      const groupsArray = response?.groups || [];
 
       // 转换为客户端实体并更新 store
-      const groups = groupsArray.map((data: any) => ReminderTemplateGroup.fromResponse(data));
+      const groups = (Array.isArray(groupsArray) ? groupsArray : []).map((data: any) =>
+        ReminderTemplateGroup.fromResponse(data),
+      );
       this.reminderStore.setReminderTemplateGroups(groups);
 
       return groups;
@@ -842,7 +887,9 @@ export class ReminderWebApplicationService {
       const templates = (Array.isArray(templatesData) ? templatesData : []).map((templateData) =>
         ReminderTemplate.fromApiResponse(templateData),
       );
-      const groups = (Array.isArray(groupsData) ? groupsData : []).map((groupData) =>
+      // 处理分组数据：可能是数组，也可能是 { groups: [...] } 对象
+      const groupsArray = Array.isArray(groupsData) ? groupsData : groupsData?.groups || [];
+      const groups = (Array.isArray(groupsArray) ? groupsArray : []).map((groupData) =>
         ReminderTemplateGroup.fromResponse(groupData),
       );
 

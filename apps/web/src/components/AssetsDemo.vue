@@ -118,6 +118,25 @@
             </template>
           </v-list-item>
         </v-list>
+
+        <!-- 调试功能 -->
+        <h3 class="mb-4 mt-6">🐛 调试功能</h3>
+        <v-row>
+          <v-col cols="12">
+            <v-btn
+              block
+              color="warning"
+              prepend-icon="mdi-bug"
+              @click="triggerTestReminder"
+              :loading="testReminderLoading"
+            >
+              触发测试提醒 (SSE)
+            </v-btn>
+            <p class="text-caption mt-2 text-center">
+              点击此按钮将从后端发送一个测试提醒事件
+            </p>
+          </v-col>
+        </v-row>
       </v-card-text>
     </v-card>
   </div>
@@ -127,12 +146,17 @@
 import { ref, onMounted } from 'vue';
 import { logo, logo128, defaultAvatar } from '@dailyuse/assets/images';
 import { audioService, type SoundType } from '@/services/AudioService';
+import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
 
 // 音频控制状态
 const volume = ref(50);
 const enabled = ref(true);
 const muted = ref(false);
 const availableSounds = ref<Record<string, string>>({});
+const testReminderLoading = ref(false);
+
+// Auth store
+const authStore = useAuthStore();
 
 // 初始化
 onMounted(() => {
@@ -167,6 +191,42 @@ const updateEnabled = (value: boolean | null) => {
 // 更新静音状态
 const updateMuted = (value: boolean | null) => {
   audioService.setMuted(value ?? false);
+};
+
+// 触发测试提醒
+const triggerTestReminder = async () => {
+  testReminderLoading.value = true;
+  try {
+    const token = authStore.getAccessToken;
+    if (!token) {
+      console.error('未找到访问令牌');
+      return;
+    }
+
+    const response = await fetch('http://localhost:3888/api/v1/schedules/debug/trigger-reminder', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    const data = await response.json();
+    console.log('🧪 测试提醒响应:', data);
+
+    if (data.success) {
+      console.log('✅ 测试提醒已触发');
+      audioService.playSuccess();
+    } else {
+      console.error('❌ 测试提醒触发失败:', data);
+      audioService.playError();
+    }
+  } catch (error) {
+    console.error('❌ 触发测试提醒失败:', error);
+    audioService.playError();
+  } finally {
+    testReminderLoading.value = false;
+  }
 };
 </script>
 

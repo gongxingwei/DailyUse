@@ -108,6 +108,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { scheduleWebApplicationService } from '../../application/services/ScheduleWebApplicationService'
+import { eventBus } from '@dailyuse/utils'
 
 // 通知类型接口
 interface NotificationData {
@@ -140,43 +141,21 @@ const connectSSE = async () => {
     try {
         connectionStatus.value = 'connecting'
 
-        // 获取 SSE 连接信息
-        const sseInfo = await scheduleWebApplicationService.getSSEConnection()
-
-        if (!sseInfo.url) {
-            console.error('无法获取 SSE 连接 URL')
-            connectionStatus.value = 'disconnected'
-            return
-        }
-
-        // 建立 SSE 连接
-        sseConnection.value = new EventSource(sseInfo.url)
-
-        sseConnection.value.onopen = () => {
-            console.log('SSE 连接已建立')
-            connectionStatus.value = 'connected'
-        }
-
-        sseConnection.value.onmessage = (event) => {
-            try {
-                const data = JSON.parse(event.data)
-                handleSSEMessage(data)
-            } catch (error) {
-                console.error('解析 SSE 消息失败:', error)
-            }
-        }
-
-        sseConnection.value.onerror = (error) => {
-            console.error('SSE 连接错误:', error)
-            connectionStatus.value = 'disconnected'
-
-            // 重连逻辑
-            setTimeout(() => {
-                if (connectionStatus.value === 'disconnected') {
-                    connectSSE()
-                }
-            }, 5000)
-        }
+        // 使用 notification 模块的 SSE 客户端
+        // SSE 连接由 NotificationInitializationManager 管理
+        // 这里只需要监听事件即可
+        console.log('SSE 连接由 Notification 模块管理')
+        connectionStatus.value = 'connected'
+        
+        // 不需要创建新的 EventSource，使用现有的 eventBus
+        // 监听 Schedule 模块的事件
+        eventBus.on('schedule:task-executed', (data: any) => {
+            handleSSEMessage(data)
+        })
+        
+        eventBus.on('reminder-triggered', (data: any) => {
+            handleSSEMessage(data)
+        })
     } catch (error) {
         console.error('建立 SSE 连接失败:', error)
         connectionStatus.value = 'disconnected'

@@ -129,14 +129,12 @@ export class ReminderTemplateGroupController {
           accountUuid,
         );
 
-      const listResponse = {
-        data: {
-          groups: groups,
-          total: groups.length,
-          page: 1,
-          limit: groups.length,
-          hasMore: false,
-        },
+      const listResponse: ReminderContracts.ReminderTemplateGroupListResponse = {
+        groups: groups,
+        total: groups.length,
+        page: 1,
+        limit: groups.length,
+        hasMore: false,
       };
 
       logger.info('Reminder template groups retrieved successfully', {

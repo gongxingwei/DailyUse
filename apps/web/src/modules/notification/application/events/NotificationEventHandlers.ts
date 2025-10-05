@@ -3,7 +3,7 @@
  * @description 监听Schedule模块的提醒触发事件，处理系统级通知
  */
 
-import { eventBus } from '@dailyuse/utils';
+import { eventBus, createLogger } from '@dailyuse/utils';
 import { NotificationService } from '../services/NotificationService';
 
 import {
@@ -22,6 +22,8 @@ import {
   onScheduleReminderTriggered,
 } from '../events/notificationEvents';
 
+const logger = createLogger('NotificationEventHandlers');
+
 /**
  * Notification模块事件处理器
  */
@@ -38,11 +40,11 @@ export class NotificationEventHandlers {
    */
   initializeEventHandlers(): void {
     if (this.isInitialized) {
-      console.warn('[NotificationEventHandlers] 事件处理器已初始化');
+      logger.warn('事件处理器已初始化，忽略重复调用');
       return;
     }
 
-    console.log('[NotificationEventHandlers] 初始化事件处理器...');
+    logger.info('开始初始化事件处理器');
 
     // 监听Schedule模块的提醒触发事件
     this.setupScheduleEventListeners();
@@ -54,7 +56,11 @@ export class NotificationEventHandlers {
     this.setupSystemEventListeners();
 
     this.isInitialized = true;
-    console.log('[NotificationEventHandlers] 事件处理器初始化完成');
+    logger.info('事件处理器初始化完成', {
+      scheduledListeners: true,
+      internalListeners: true,
+      systemListeners: true,
+    });
   }
 
   /**
@@ -62,7 +68,7 @@ export class NotificationEventHandlers {
    * 统一监听 reminder-triggered 事件，通过 sourceType 区分类型
    */
   private setupScheduleEventListeners(): void {
-    console.log('[NotificationEventHandlers] 设置Schedule事件监听器');
+    logger.debug('设置Schedule事件监听器');
 
     // ⚠️ 注意：此处理器已被 ReminderNotificationHandler 替代
     // ReminderNotificationHandler 专门处理 SSE 提醒事件
@@ -70,18 +76,24 @@ export class NotificationEventHandlers {
 
     // 统一监听 reminder-triggered 事件（推荐方式）
     eventBus.on('reminder-triggered', async (payload: any) => {
-      console.log('[NotificationEventHandlers] 📨 收到统一提醒事件:', {
+      logger.info('收到统一提醒事件', {
         reminderId: payload.reminderId || payload.id,
         sourceType: payload.sourceType || payload.type,
         title: payload.title,
+        hasMessage: !!payload.message,
+        hasAlertMethods: !!payload.alertMethods,
       });
 
       // 标准化数据格式
       const standardPayload = this.normalizeReminderPayload(payload);
 
       // 根据来源类型处理（已被 ReminderNotificationHandler 处理，此处仅记录）
-      console.log('[NotificationEventHandlers] 提醒类型:', standardPayload.sourceType);
-      console.log('[NotificationEventHandlers] ⚠️ 实际处理由 ReminderNotificationHandler 完成');
+      logger.debug('提醒类型已标准化', {
+        sourceType: standardPayload.sourceType,
+        priority: standardPayload.priority,
+        methods: standardPayload.methods,
+        note: '实际处理由 ReminderNotificationHandler 完成',
+      });
     });
   }
 
@@ -89,53 +101,63 @@ export class NotificationEventHandlers {
    * 设置内部事件监听器
    */
   private setupInternalEventListeners(): void {
-    console.log('[NotificationEventHandlers] 设置内部事件监听器');
+    logger.debug('设置内部事件监听器');
 
     // 监听通知创建事件（用于统计和日志）
     eventBus.on(NOTIFICATION_EVENTS.NOTIFICATION_CREATED, (payload) => {
-      console.log('[NotificationEventHandlers] 通知已创建:', payload.notification.id);
+      logger.info('通知已创建', {
+        notificationId: payload.notification.id,
+        type: payload.notification.type,
+        priority: payload.notification.priority,
+        queuePosition: payload.queuePosition,
+      });
     });
 
     // 监听通知显示事件
     eventBus.on(NOTIFICATION_EVENTS.NOTIFICATION_SHOWN, (payload) => {
-      console.log(
-        '[NotificationEventHandlers] 通知已显示:',
-        payload.notification.id,
-        payload.displayMethod,
-      );
+      logger.info('通知已显示', {
+        notificationId: payload.notification.id,
+        displayMethod: payload.displayMethod,
+        duration: payload.duration,
+        title: payload.notification.title,
+      });
     });
 
     // 监听通知点击事件
     eventBus.on(NOTIFICATION_EVENTS.NOTIFICATION_CLICKED, (payload) => {
-      console.log(
-        '[NotificationEventHandlers] 通知被点击:',
-        payload.notification.id,
-        payload.actionId,
-      );
+      logger.info('通知被点击', {
+        notificationId: payload.notification.id,
+        actionId: payload.actionId,
+        hasAction: !!payload.actionId,
+        timestamp: payload.timestamp,
+      });
     });
 
     // 监听权限变更事件
     eventBus.on(NOTIFICATION_EVENTS.PERMISSION_CHANGED, (payload) => {
-      console.log(
-        '[NotificationEventHandlers] 通知权限变更:',
-        payload.oldPermission,
-        '->',
-        payload.newPermission,
-      );
+      logger.info('通知权限变更', {
+        from: payload.oldPermission,
+        to: payload.newPermission,
+        grantedAt: payload.grantedAt,
+      });
     });
 
     // 监听配置更新事件
     eventBus.on(NOTIFICATION_EVENTS.CONFIG_UPDATED, (payload) => {
-      console.log('[NotificationEventHandlers] 通知配置已更新:', payload.changedFields);
+      logger.info('通知配置已更新', {
+        changedFields: payload.changedFields,
+        updatedConfig: payload.config,
+      });
     });
 
     // 监听错误事件
     eventBus.on(NOTIFICATION_EVENTS.ERROR, (payload) => {
-      console.error(
-        '[NotificationEventHandlers] 通知错误:',
-        payload.error.message,
-        payload.context,
-      );
+      logger.error('通知错误', {
+        errorMessage: payload.error.message,
+        errorCode: payload.error.code,
+        context: payload.context,
+        stack: payload.error.stack,
+      });
     });
   }
 
@@ -143,30 +165,30 @@ export class NotificationEventHandlers {
    * 设置系统事件监听器
    */
   private setupSystemEventListeners(): void {
-    console.log('[NotificationEventHandlers] 设置系统事件监听器');
+    logger.debug('设置系统事件监听器');
 
     // 监听用户登出事件
     eventBus.on('auth:user-logged-out', () => {
-      console.log('[NotificationEventHandlers] 用户登出，清理通知');
+      logger.info('用户登出，清理所有通知');
       this.notificationService.dismissAll();
     });
 
     // 监听应用失去焦点事件
     window.addEventListener('blur', () => {
-      console.log('[NotificationEventHandlers] 应用失去焦点');
+      logger.debug('应用失去焦点');
     });
 
     // 监听应用获得焦点事件
     window.addEventListener('focus', () => {
-      console.log('[NotificationEventHandlers] 应用获得焦点');
+      logger.debug('应用获得焦点');
     });
 
     // 监听页面可见性变化
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
-        console.log('[NotificationEventHandlers] 页面隐藏');
+        logger.debug('页面已隐藏');
       } else {
-        console.log('[NotificationEventHandlers] 页面显示');
+        logger.debug('页面已显示');
       }
     });
   }
@@ -176,22 +198,38 @@ export class NotificationEventHandlers {
    */
   private async handleReminderTriggered(payload: ReminderTriggeredPayload): Promise<void> {
     try {
-      console.log('[NotificationEventHandlers] 处理提醒触发:', {
+      logger.info('处理提醒触发事件', {
         reminderId: payload.reminderId,
         sourceType: payload.sourceType,
         sourceId: payload.sourceId,
         title: payload.title,
+        priority: payload.priority,
+        methods: payload.methods,
       });
 
       // 创建通知配置
       const notificationConfig = this.createNotificationFromReminder(payload);
 
+      logger.debug('通知配置已创建', {
+        notificationId: notificationConfig.id,
+        type: notificationConfig.type,
+        methods: notificationConfig.methods,
+        soundEnabled: notificationConfig.sound?.enabled,
+      });
+
       // 显示通知
       await this.notificationService.show(notificationConfig);
 
-      console.log('[NotificationEventHandlers] 提醒通知已显示:', notificationConfig.id);
+      logger.info('提醒通知已显示', {
+        notificationId: notificationConfig.id,
+        title: notificationConfig.title,
+      });
     } catch (error) {
-      console.error('[NotificationEventHandlers] 处理提醒触发失败:', error);
+      logger.error('处理提醒触发失败', {
+        reminderId: payload.reminderId,
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   }
 
@@ -230,7 +268,10 @@ export class NotificationEventHandlers {
         return payload;
 
       default:
-        console.warn('[NotificationEventHandlers] 未知的提醒类型:', payload.sourceType);
+        logger.warn('未知的提醒类型', {
+          sourceType: payload.sourceType,
+          willUseDefaultConfig: true,
+        });
         return payload;
     }
   }
@@ -398,7 +439,12 @@ export class NotificationEventHandlers {
    * 转换调度器载荷为标准格式（向后兼容）
    */
   private convertSchedulerPayloadToStandard(payload: any): ReminderTriggeredPayload {
-    console.log('[NotificationEventHandlers] 转换调度器载荷:', payload);
+    logger.debug('转换调度器载荷为标准格式', {
+      hasId: !!payload.id,
+      hasType: !!payload.type,
+      hasTitle: !!payload.title,
+      hasAlertMethods: !!payload.alertMethods,
+    });
 
     // 调度器发送的载荷格式
     return {
@@ -471,7 +517,7 @@ export class NotificationEventHandlers {
   destroy(): void {
     if (!this.isInitialized) return;
 
-    console.log('[NotificationEventHandlers] 销毁事件监听器');
+    logger.info('销毁事件监听器');
 
     // 移除统一提醒事件监听
     eventBus.off('reminder-triggered');
@@ -485,6 +531,6 @@ export class NotificationEventHandlers {
     eventBus.off('auth:user-logged-out');
 
     this.isInitialized = false;
-    console.log('[NotificationEventHandlers] 事件监听器已销毁');
+    logger.info('事件监听器已销毁');
   }
 }

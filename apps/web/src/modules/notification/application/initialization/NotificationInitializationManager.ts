@@ -126,11 +126,7 @@ export class NotificationInitializationManager {
    * 初始化提醒通知处理器
    */
   private async initializeReminderHandler(): Promise<void> {
-    console.log('[NotificationInit] 初始化提醒通知处理器...');
-
     reminderNotificationHandler.initialize();
-
-    console.log('[NotificationInit] ✅ 提醒通知处理器初始化完成');
   }
 
   /**

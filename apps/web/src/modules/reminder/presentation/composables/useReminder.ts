@@ -220,7 +220,7 @@ export function useReminder() {
    */
   const createTemplate = async (
     request: ReminderContracts.CreateReminderTemplateRequest,
-  ): Promise<ReminderContracts.ReminderTemplateResponse> => {
+  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> => {
     return await reminderService.createReminderTemplate(request);
   };
 
@@ -292,7 +292,7 @@ export function useReminder() {
   const createInstance = async (
     templateUuid: string,
     request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> => {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> => {
     const instance = await reminderService.createReminderInstance(templateUuid, request);
     if (currentTemplate.value?.uuid === templateUuid) {
       await loadTemplateInstances(templateUuid);
@@ -341,7 +341,7 @@ export function useReminder() {
     templateUuid: string,
     instanceUuid: string,
     response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> => {
+  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> => {
     const instance = await reminderService.respondToReminder(templateUuid, instanceUuid, response);
     // 刷新当前实例列表
     if (currentTemplate.value?.uuid === templateUuid) {
@@ -409,14 +409,14 @@ export function useReminder() {
   const getActiveReminders = async (params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderListResponse> => {
+  }): Promise<ReminderContracts.ReminderInstanceListResponse['data']> => {
     return await reminderService.getActiveReminders(params);
   };
 
   /**
    * 获取全局统计
    */
-  const getGlobalStats = async (): Promise<ReminderContracts.ReminderStatsResponse> => {
+  const getGlobalStats = async (): Promise<ReminderContracts.ReminderStatsResponse['data']> => {
     return await reminderService.getGlobalStats();
   };
 
@@ -425,7 +425,7 @@ export function useReminder() {
    */
   const getAggregateStats = async (
     templateUuid: string,
-  ): Promise<ReminderContracts.ReminderStatsResponse> => {
+  ): Promise<ReminderContracts.ReminderStatsResponse['data']> => {
     return await reminderService.getAggregateStats(templateUuid);
   };
 

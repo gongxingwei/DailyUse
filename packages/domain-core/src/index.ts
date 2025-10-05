@@ -54,3 +54,6 @@ export * from './theme';
 
 // Notification domain exports
 // export * from './notification/NotificationCore';
+
+// Domain Events
+export * from './events';

@@ -110,13 +110,13 @@ export class SSEController {
       };
       this.clients.set(clientId, client);
 
-      // 发送心跳
+      // 发送心跳（静默）
       const heartbeat = setInterval(() => {
         if (this.clients.has(clientId)) {
           const heartbeatData = { timestamp: new Date().toISOString() };
           this.sendEvent(res, 'heartbeat', heartbeatData);
           this.clients.get(clientId)!.lastPing = Date.now();
-          console.log(`[SSE] 💓 发送心跳到客户端: ${clientId}`);
+          // 心跳日志已移除，避免控制台刷屏
         } else {
           clearInterval(heartbeat);
         }

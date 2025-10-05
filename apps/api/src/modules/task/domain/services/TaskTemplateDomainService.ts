@@ -202,8 +202,30 @@ export class TaskTemplateDomainService {
       },
     };
 
+    // 保存模板
     await this.templateRepository.save(updatedTemplate);
-    return updatedTemplate;
+
+    // 🔥 激活后自动生成初始任务实例
+    try {
+      const instances = await this.generateInitialInstances(updatedTemplate);
+
+      // 批量保存实例
+      for (const instanceDTO of instances) {
+        await this.instanceRepository.save(instanceDTO);
+      }
+
+      console.log(`✅ 为模板 ${templateUuid} 生成了 ${instances.length} 个任务实例`);
+
+      // 返回包含实例的模板
+      return {
+        ...updatedTemplate,
+        instances,
+      };
+    } catch (error) {
+      console.error('生成任务实例失败:', error);
+      // 即使生成失败，也返回激活后的模板
+      return updatedTemplate;
+    }
   }
 
   /**
@@ -679,12 +701,22 @@ export class TaskTemplateDomainService {
     return {
       overall: {
         total: instances.total,
-        completed: instances.instances.filter((i) => i.execution.status === 'completed').length,
-        incomplete: instances.instances.filter((i) => i.execution.status !== 'completed').length,
+        completed: instances.data.filter(
+          (i: TaskContracts.TaskInstanceDTO) => i.execution.status === 'completed',
+        ).length,
+        incomplete: instances.data.filter(
+          (i: TaskContracts.TaskInstanceDTO) => i.execution.status !== 'completed',
+        ).length,
         completionRate: 0,
-        overdue: instances.instances.filter((i) => i.execution.status === 'overdue').length,
-        inProgress: instances.instances.filter((i) => i.execution.status === 'inProgress').length,
-        pending: instances.instances.filter((i) => i.execution.status === 'pending').length,
+        overdue: instances.data.filter(
+          (i: TaskContracts.TaskInstanceDTO) => i.execution.status === 'overdue',
+        ).length,
+        inProgress: instances.data.filter(
+          (i: TaskContracts.TaskInstanceDTO) => i.execution.status === 'inProgress',
+        ).length,
+        pending: instances.data.filter(
+          (i: TaskContracts.TaskInstanceDTO) => i.execution.status === 'pending',
+        ).length,
       },
       byTemplate: [],
       byTimePeriod: {
@@ -793,5 +825,114 @@ export class TaskTemplateDomainService {
         );
       }
     }
+  }
+
+  /**
+   * 为激活的模板生成初始任务实例
+   * 根据调度模式生成接下来7天的实例
+   */
+  private async generateInitialInstances(
+    template: TaskContracts.TaskTemplateDTO,
+  ): Promise<TaskContracts.TaskInstanceDTO[]> {
+    const instances: TaskContracts.TaskInstanceDTO[] = [];
+    const now = new Date();
+    const startDate = new Date(template.timeConfig.date.startDate);
+    const endDate = template.timeConfig.date.endDate
+      ? new Date(template.timeConfig.date.endDate)
+      : null;
+
+    // 生成接下来7天的实例
+    const daysToGenerate = 7;
+    const generationEndDate = new Date(now);
+    generationEndDate.setDate(generationEndDate.getDate() + daysToGenerate);
+
+    // 根据调度模式生成实例
+    const { mode, intervalDays, weekdays, monthDays } = template.timeConfig.schedule;
+
+    const baseDate = new Date(Math.max(startDate.getTime(), now.getTime()));
+    baseDate.setHours(0, 0, 0, 0);
+    // eslint-disable-next-line prefer-const
+    let currentDate = new Date(baseDate);
+
+    while (currentDate <= generationEndDate) {
+      // 检查是否超过模板结束日期
+      if (endDate && currentDate > endDate) {
+        break;
+      }
+
+      let shouldCreateInstance = false;
+
+      switch (mode) {
+        case 'once':
+          // 单次任务，只在开始日期创建
+          shouldCreateInstance = currentDate.getTime() === startDate.getTime();
+          break;
+
+        case 'daily':
+          // 每日任务
+          shouldCreateInstance = true;
+          break;
+
+        case 'weekly':
+          // 每周任务，检查星期
+          if (weekdays && weekdays.length > 0) {
+            const dayOfWeek = currentDate.getDay();
+            shouldCreateInstance = weekdays.includes(dayOfWeek);
+          }
+          break;
+
+        case 'monthly':
+          // 每月任务，检查日期
+          if (monthDays && monthDays.length > 0) {
+            const dayOfMonth = currentDate.getDate();
+            shouldCreateInstance = monthDays.includes(dayOfMonth);
+          }
+          break;
+
+        case 'intervalDays':
+          // 间隔天数
+          if (intervalDays) {
+            const daysDiff = Math.floor(
+              (currentDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24),
+            );
+            shouldCreateInstance = daysDiff % intervalDays === 0;
+          }
+          break;
+      }
+
+      if (shouldCreateInstance) {
+        // 动态导入 TaskInstance 实体
+        const { TaskInstance } = await import('@dailyuse/domain-server');
+
+        const instance = TaskInstance.create({
+          templateUuid: template.uuid,
+          accountUuid: template.accountUuid,
+          title: template.title,
+          description: template.description,
+          timeConfig: {
+            timeType: template.timeConfig.time.timeType,
+            scheduledDate: new Date(currentDate),
+            startTime: template.timeConfig.time.startTime,
+            endTime: template.timeConfig.time.endTime,
+            timezone: template.timeConfig.timezone,
+          },
+          properties: template.properties,
+          goalLinks: template.goalLinks,
+        });
+
+        const instanceDTO = instance.toDTO();
+        instances.push(instanceDTO);
+      }
+
+      // 移到下一天
+      currentDate.setDate(currentDate.getDate() + 1);
+
+      // 单次任务只生成一个实例
+      if (mode === 'once' && instances.length > 0) {
+        break;
+      }
+    }
+
+    return instances;
   }
 }

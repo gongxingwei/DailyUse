@@ -535,7 +535,7 @@ export class TaskTemplate extends TaskTemplateCore {
           ? new Date(dto.stats.lastInstanceDate)
           : undefined,
       },
-      instances: [], // 实例通常单独加载
+      instances: dto.instances ? dto.instances.map((inst) => TaskInstance.fromDTO(inst)) : [],
     });
   }
 
@@ -608,6 +608,8 @@ export class TaskTemplate extends TaskTemplateCore {
         lastInstanceDate: this.stats.lastInstanceDate?.toISOString(),
       },
       goalLinks: this.goalLinks ? [...this.goalLinks] : undefined,
+      // 转换子实体为 DTO
+      instances: this.instances.map((instance) => instance.toDTO()),
     };
   }
 

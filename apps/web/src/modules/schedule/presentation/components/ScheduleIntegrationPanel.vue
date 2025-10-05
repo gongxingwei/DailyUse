@@ -15,12 +15,12 @@
                             </v-card-title>
                             <v-card-text>
                                 <v-list density="compact">
-                                    <v-list-item v-for="task in scheduledTasks" :key="task.id" :title="task.name"
-                                        :subtitle="`调度时间: ${task.cronExpression}`">
+                                    <v-list-item v-for="task in scheduledTasks" :key="task.uuid" :title="task.name"
+                                        :subtitle="`类型: ${task.taskType}`">
                                         <template #append>
-                                            <v-chip :color="task.status === 'ACTIVE' ? 'success' : 'warning'"
+                                            <v-chip :color="task.status === 'PENDING' ? 'warning' : task.status === 'COMPLETED' ? 'success' : 'error'"
                                                 size="small">
-                                                {{ task.status === 'ACTIVE' ? '活跃' : '暂停' }}
+                                                {{ task.enabled ? '启用' : '禁用' }}
                                             </v-chip>
                                         </template>
                                     </v-list-item>
@@ -42,12 +42,12 @@
                             </v-card-title>
                             <v-card-text>
                                 <v-list density="compact">
-                                    <v-list-item v-for="reminder in scheduledReminders" :key="reminder.id"
-                                        :title="reminder.name" :subtitle="`提醒时间: ${reminder.cronExpression}`">
+                                    <v-list-item v-for="reminder in scheduledReminders" :key="reminder.uuid"
+                                        :title="reminder.name" :subtitle="`类型: ${reminder.taskType}`">
                                         <template #append>
-                                            <v-chip :color="reminder.status === 'ACTIVE' ? 'success' : 'warning'"
+                                            <v-chip :color="reminder.status === 'PENDING' ? 'warning' : reminder.status === 'COMPLETED' ? 'success' : 'error'"
                                                 size="small">
-                                                {{ reminder.status === 'ACTIVE' ? '活跃' : '暂停' }}
+                                                {{ reminder.enabled ? '启用' : '禁用' }}
                                             </v-chip>
                                         </template>
                                     </v-list-item>
@@ -98,38 +98,18 @@
             </v-card-text>
         </v-card>
 
-        <!-- 最近执行记录 -->
+        <!-- 最近执行记录 - 暂时禁用，等待后端 API 实现 -->
+        <!--
         <v-card>
             <v-card-title>
                 <v-icon start>mdi-history</v-icon>
                 最近执行记录
             </v-card-title>
             <v-card-text>
-                <v-data-table :items="recentExecutions" :headers="executionHeaders" :loading="loading" item-key="id"
-                    no-data-text="暂无执行记录">
-                    <template #[`item.taskType`]="{ item }">
-                        <v-chip :color="getTaskTypeColor(item.taskType)" size="small">
-                            <v-icon start :icon="getTaskTypeIcon(item.taskType)"></v-icon>
-                            {{ getTaskTypeName(item.taskType) }}
-                        </v-chip>
-                    </template>
-
-                    <template #[`item.status`]="{ item }">
-                        <v-chip :color="item.status === 'SUCCESS' ? 'success' : 'error'" size="small">
-                            {{ item.status === 'SUCCESS' ? '成功' : '失败' }}
-                        </v-chip>
-                    </template>
-
-                    <template #[`item.executedAt`]="{ item }">
-                        {{ formatDateTime(item.executedAt) }}
-                    </template>
-
-                    <template #[`item.actions`]="{ item }">
-                        <v-btn size="small" variant="text" icon="mdi-eye" @click="viewExecutionDetails(item)" />
-                    </template>
-                </v-data-table>
+                <v-alert type="info" text="执行记录功能开发中，敬请期待" />
             </v-card-text>
         </v-card>
+        -->
 
         <!-- 任务集成对话框 -->
         <v-dialog v-model="showTaskIntegrationDialog" max-width="600">
@@ -184,15 +164,15 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
 import { scheduleWebApplicationService } from '../../application/services/ScheduleWebApplicationService'
-import type { ScheduleTaskApi, ScheduleExecutionApi } from '@dailyuse/contracts/modules/schedule'
+import type { ScheduleTaskResponseDto, ScheduleExecutionResultResponseDto } from '@dailyuse/contracts/modules/schedule'
 import { taskScheduleIntegrationService, type TaskInfo, type TaskScheduleConfig } from '@/modules/task/services/taskScheduleIntegrationService'
 import { reminderScheduleIntegrationService, type ReminderInfo } from '@/modules/reminder/services/reminderScheduleIntegrationService'
 
 // 数据状态
 const loading = ref(false)
-const scheduledTasks = ref<ScheduleTaskApi[]>([])
-const scheduledReminders = ref<ScheduleTaskApi[]>([])
-const recentExecutions = ref<ScheduleExecutionApi[]>([])
+const scheduledTasks = ref<ScheduleTaskResponseDto[]>([])
+const scheduledReminders = ref<ScheduleTaskResponseDto[]>([])
+const recentExecutions = ref<ScheduleExecutionResultResponseDto[]>([])
 const totalExecutions = ref(0)
 const todayExecutions = ref(0)
 const successExecutions = ref(0)
@@ -303,24 +283,22 @@ const loadIntegrationData = async () => {
     loading.value = true
     try {
         // 加载调度任务
-        const tasks = await scheduleWebApplicationService.getScheduleTasks()
-        scheduledTasks.value = tasks.filter((task: ScheduleTaskApi) =>
+        const result = await scheduleWebApplicationService.getScheduleTasks()
+        const tasks = result.tasks || []
+        scheduledTasks.value = tasks.filter((task: ScheduleTaskResponseDto) =>
             task.taskType.includes('TASK') || task.taskType.includes('DAILY')
         )
-        scheduledReminders.value = tasks.filter((task: ScheduleTaskApi) =>
+        scheduledReminders.value = tasks.filter((task: ScheduleTaskResponseDto) =>
             task.taskType.includes('REMINDER') || task.taskType.includes('NOTIFICATION')
         )
 
-        // 加载执行统计
-        const executions = await scheduleWebApplicationService.getScheduleExecutions()
-        recentExecutions.value = executions.slice(0, 10)
-
-        totalExecutions.value = executions.length
-        todayExecutions.value = executions.filter((exec: ScheduleExecutionApi) =>
-            new Date(exec.executedAt).toDateString() === new Date().toDateString()
-        ).length
-        successExecutions.value = executions.filter((exec: ScheduleExecutionApi) => exec.status === 'SUCCESS').length
-        failedExecutions.value = executions.filter((exec: ScheduleExecutionApi) => exec.status === 'FAILED').length
+        // TODO: 后端实现 getScheduleExecutions API 后再加载执行统计
+        // 目前使用任务数据作为替代
+        recentExecutions.value = []
+        totalExecutions.value = tasks.reduce((sum, task) => sum + (task.executionCount || 0), 0)
+        todayExecutions.value = 0
+        successExecutions.value = tasks.filter(task => task.status === 'COMPLETED').length
+        failedExecutions.value = tasks.filter(task => task.status === 'FAILED').length
 
         // 检查任务调度集成状态
         console.log('任务调度集成服务状态:', {
@@ -404,7 +382,7 @@ const createReminderSchedule = async () => {
     }
 }
 
-const viewExecutionDetails = (execution: ScheduleExecutionApi) => {
+const viewExecutionDetails = (execution: ScheduleExecutionResultResponseDto) => {
     console.log('查看执行详情:', execution)
     // TODO: 实现执行详情查看
 }

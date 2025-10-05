@@ -49,12 +49,10 @@ export class InitializationManager {
       ...task,
     };
     this.tasks.set(task.name, normalized);
-    console.log(`[init] registered task: ${task.name} (${task.phase}, priority=${normalized.priority})`);
     return () => {
       this.tasks.delete(task.name);
       this.completedTasks.delete(task.name);
       this.runningTasks.delete(task.name);
-      console.log(`[init] unregistered task: ${task.name}`);
     };
   }
 

@@ -428,8 +428,8 @@ async function fetchUpcomingReminders(): Promise<void> {
       limit: settings.value.maxItems,
       // TODO: 根据实际 API 调整参数
     });
-
-    upcomingData.value = response;
+    const { reminders, total, page, limit, hasMore } = response;
+    upcomingData.value = reminders;
   } catch (err) {
     console.error('获取即将到来的提醒失败:', err);
   }

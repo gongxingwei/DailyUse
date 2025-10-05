@@ -58,7 +58,6 @@ export class AudioNotificationService {
 
         // 加载完成
         audio.oncanplaythrough = () => {
-          console.log(`[AudioNotification] 音频加载完成: ${type}`);
         };
 
         this.preloadedSounds.set(type, audio);
