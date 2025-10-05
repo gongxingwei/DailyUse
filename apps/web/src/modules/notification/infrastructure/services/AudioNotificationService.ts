@@ -7,6 +7,16 @@ import { SoundType } from '../../domain/types';
 import type { SoundConfig } from '../../domain/types';
 import { publishNotificationError } from '../../application/events/notificationEvents';
 
+// 从 @dailyuse/assets 导入音频资源
+import {
+  alertSound,
+  defaultSound,
+  errorSound,
+  notificationSound,
+  reminderSound,
+  successSound,
+} from '@dailyuse/assets/audio';
+
 /**
  * 音频通知管理器
  */
@@ -22,15 +32,16 @@ export class AudioNotificationService {
 
   /**
    * 初始化默认音效
+   * 使用 @dailyuse/assets 中的音频资源
    */
   private initializeDefaultSounds(): void {
     const defaultSounds: Array<{ type: SoundType; url: string }> = [
-      { type: SoundType.DEFAULT, url: '/sounds/default.mp3' },
-      { type: SoundType.REMINDER, url: '/sounds/reminder.wav' },
-      { type: SoundType.ALERT, url: '/sounds/alert.wav' },
-      { type: SoundType.SUCCESS, url: '/sounds/success.mp3' },
-      { type: SoundType.ERROR, url: '/sounds/error.wav' },
-      { type: SoundType.NOTIFICATION, url: '/sounds/notification.mp3' },
+      { type: SoundType.DEFAULT, url: defaultSound },
+      { type: SoundType.REMINDER, url: reminderSound },
+      { type: SoundType.ALERT, url: alertSound },
+      { type: SoundType.SUCCESS, url: successSound },
+      { type: SoundType.ERROR, url: errorSound },
+      { type: SoundType.NOTIFICATION, url: notificationSound },
     ];
 
     defaultSounds.forEach(({ type, url }) => {

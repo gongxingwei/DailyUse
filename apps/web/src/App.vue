@@ -1,6 +1,8 @@
 <template>
   <v-app>
     <div v-if="isLoading" class="loading-container">
+      <!-- 使用 @dailyuse/assets 中的 logo -->
+      <img :src="logo" alt="DailyUse Logo" class="loading-logo mb-4" />
       <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
       <p class="mt-4">正在初始化应用...</p>
     </div>
@@ -16,6 +18,7 @@ import { onMounted, ref } from 'vue';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
 import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
+import { logo128 as logo } from '@dailyuse/assets/images';
 
 const isLoading = ref(true);
 const settingStore = useSettingStore();
@@ -52,6 +55,25 @@ onMounted(async () => {
   height: 100vh;
   text-align: center;
   background-color: rgb(var(--v-theme-background));
+}
+
+.loading-logo {
+  width: 128px;
+  height: 128px;
+  object-fit: contain;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
 }
 </style>
 

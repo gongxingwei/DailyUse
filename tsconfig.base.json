@@ -13,6 +13,11 @@
     "allowJs": false,
     "noEmit": true,
     "lib": ["ES2020", "DOM"],
-    "types": []
+    "types": [],
+    "paths": {
+      "@dailyuse/assets": ["packages/assets/src/index.ts"],
+      "@dailyuse/assets/images": ["packages/assets/src/images/index.ts"],
+      "@dailyuse/assets/audio": ["packages/assets/src/audio/index.ts"]
+    }
   }
 }

@@ -430,6 +430,20 @@ export const appRoutes: RouteRecordRaw[] = [
           requiresAuth: true,
         },
       },
+
+      // Assets 资源演示 (开发环境)
+      {
+        path: '/assets-demo',
+        name: 'assets-demo',
+        component: () => import('@/components/AssetsDemo.vue'),
+        meta: {
+          title: '资源库演示',
+          showInNav: import.meta.env.DEV,
+          icon: 'mdi-folder-multiple-image',
+          order: 1000,
+          requiresAuth: true,
+        },
+      },
     ],
   },
 ];
