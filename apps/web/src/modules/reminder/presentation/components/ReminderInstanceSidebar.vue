@@ -1,29 +1,14 @@
 <template>
-  <v-navigation-drawer
-    permanent
-    location="right"
-    width="380"
-    class="reminder-instance-sidebar"
-    elevation="1"
-  >
+  <v-navigation-drawer permanent location="right" width="380" class="reminder-instance-sidebar" elevation="1">
     <!-- 标题栏 -->
     <v-toolbar flat color="primary" dark>
       <v-icon>mdi-bell-clock</v-icon>
       <v-toolbar-title class="ml-2">即将到来的提醒</v-toolbar-title>
       <v-spacer />
-      <v-btn
-        icon
-        @click="refreshUpcoming"
-        :loading="isLoading"
-        size="small"
-      >
+      <v-btn icon @click="refreshUpcoming" :loading="isLoading" size="small">
         <v-icon>mdi-refresh</v-icon>
       </v-btn>
-      <v-btn
-        icon
-        @click="openSettings"
-        size="small"
-      >
+      <v-btn icon @click="openSettings" size="small">
         <v-icon>mdi-cog</v-icon>
       </v-btn>
     </v-toolbar>
@@ -33,35 +18,20 @@
       <v-card v-show="showFilters" flat class="pa-4 border-b">
         <v-row>
           <v-col cols="12">
-            <v-select
-              v-model="filters.days"
-              label="时间范围"
-              :items="[
-                { value: 1, title: '今天' },
-                { value: 3, title: '3天内' },
-                { value: 7, title: '一周内' },
-                { value: 30, title: '一个月内' }
-              ]"
-              variant="outlined"
-              density="compact"
-              @update:model-value="applyFilters"
-            />
+            <v-select v-model="filters.days" label="时间范围" :items="[
+              { value: 1, title: '今天' },
+              { value: 3, title: '3天内' },
+              { value: 7, title: '一周内' },
+              { value: 30, title: '一个月内' }
+            ]" variant="outlined" density="compact" @update:model-value="applyFilters" />
           </v-col>
           <v-col cols="12">
-            <v-select
-              v-model="filters.priorities"
-              label="优先级"
-              :items="[
-                { value: 'urgent', title: '紧急' },
-                { value: 'high', title: '高' },
-                { value: 'normal', title: '普通' },
-                { value: 'low', title: '低' }
-              ]"
-              multiple
-              variant="outlined"
-              density="compact"
-              @update:model-value="applyFilters"
-            />
+            <v-select v-model="filters.priorities" label="优先级" :items="[
+              { value: 'urgent', title: '紧急' },
+              { value: 'high', title: '高' },
+              { value: 'normal', title: '普通' },
+              { value: 'low', title: '低' }
+            ]" multiple variant="outlined" density="compact" @update:model-value="applyFilters" />
           </v-col>
         </v-row>
       </v-card>
@@ -89,12 +59,7 @@
     <div class="flex-grow-1 overflow-y-auto">
       <!-- 加载状态 -->
       <div v-if="isLoading" class="pa-4">
-        <v-skeleton-loader
-          v-for="i in 3"
-          :key="i"
-          type="list-item-avatar-two-line"
-          class="mb-2"
-        />
+        <v-skeleton-loader v-for="i in 3" :key="i" type="list-item-avatar-two-line" class="mb-2" />
       </div>
 
       <!-- 错误状态 -->
@@ -121,19 +86,11 @@
 
           <!-- 该日期的提醒列表 -->
           <v-list density="compact">
-            <v-list-item
-              v-for="reminder in group.reminders"
-              :key="reminder.uuid"
-              :class="getReminderClass(reminder)"
-              @click="handleReminderClick(reminder)"
-              class="reminder-item"
-            >
+            <v-list-item v-for="reminder in group.reminders" :key="reminder.uuid" :class="getReminderClass(reminder)"
+              @click="handleReminderClick(reminder)" class="reminder-item">
               <!-- 优先级指示器 -->
               <template #prepend>
-                <v-icon 
-                  :color="getPriorityColor(reminder.priority)"
-                  size="small"
-                >
+                <v-icon :color="getPriorityColor(reminder.priority)" size="small">
                   mdi-circle
                 </v-icon>
               </template>
@@ -142,35 +99,22 @@
               <v-list-item-title class="text-wrap">
                 {{ reminder.title }}
               </v-list-item-title>
-              
+
               <v-list-item-subtitle v-if="reminder.content" class="text-wrap mt-1">
                 {{ reminder.content }}
               </v-list-item-subtitle>
 
               <!-- 时间和标签 -->
               <div class="d-flex align-center justify-space-between mt-2">
-                <v-chip 
-                  size="x-small" 
-                  :color="isOverdue(reminder.scheduledTime) ? 'error' : 'primary'"
-                  variant="text"
-                >
+                <v-chip size="x-small" :color="isOverdue(reminder.scheduledTime) ? 'error' : 'primary'" variant="text">
                   {{ formatTime(reminder.scheduledTime) }}
                 </v-chip>
-                
+
                 <div v-if="reminder.tags?.length" class="d-flex gap-1">
-                  <v-chip
-                    v-for="tag in reminder.tags.slice(0, 2)"
-                    :key="tag"
-                    size="x-small"
-                    variant="outlined"
-                  >
+                  <v-chip v-for="tag in reminder.tags.slice(0, 2)" :key="tag" size="x-small" variant="outlined">
                     {{ tag }}
                   </v-chip>
-                  <v-chip
-                    v-if="reminder.tags.length > 2"
-                    size="x-small"
-                    variant="text"
-                  >
+                  <v-chip v-if="reminder.tags.length > 2" size="x-small" variant="text">
                     +{{ reminder.tags.length - 2 }}
                   </v-chip>
                 </div>
@@ -210,7 +154,7 @@
               </template> -->
             </v-list-item>
           </v-list>
-          
+
           <v-divider />
         </div>
       </div>
@@ -219,19 +163,10 @@
     <!-- 底部操作 -->
     <v-card flat class="border-t pa-2">
       <div class="d-flex justify-space-between">
-        <v-btn
-          variant="text"
-          size="small"
-          @click="toggleFilters"
-          prepend-icon="mdi-filter"
-        >
+        <v-btn variant="text" size="small" @click="toggleFilters" prepend-icon="mdi-filter">
           过滤器
         </v-btn>
-        <v-btn
-          variant="text"
-          size="small"
-          @click="openAllReminders"
-        >
+        <v-btn variant="text" size="small" @click="openAllReminders">
           查看全部
         </v-btn>
       </div>
@@ -243,50 +178,31 @@
         <v-card-title>
           <span class="text-h6">侧边栏设置</span>
         </v-card-title>
-        
+
         <v-card-text>
           <v-row>
             <v-col cols="12">
-              <v-select
-                v-model="settings.defaultDays"
-                label="默认显示天数"
-                :items="[
-                  { value: 1, title: '1天' },
-                  { value: 3, title: '3天' },
-                  { value: 7, title: '7天' },
-                  { value: 30, title: '30天' }
-                ]"
-                variant="outlined"
-              />
+              <v-select v-model="settings.defaultDays" label="默认显示天数" :items="[
+                { value: 1, title: '1天' },
+                { value: 3, title: '3天' },
+                { value: 7, title: '7天' },
+                { value: 30, title: '30天' }
+              ]" variant="outlined" />
             </v-col>
             <v-col cols="12">
-              <v-text-field
-                v-model.number="settings.maxItems"
-                label="最大显示数量"
-                type="number"
-                min="10"
-                max="100"
-                variant="outlined"
-              />
+              <v-text-field v-model.number="settings.maxItems" label="最大显示数量" type="number" min="10" max="100"
+                variant="outlined" />
             </v-col>
             <v-col cols="12">
-              <v-select
-                v-model="settings.refreshInterval"
-                label="自动刷新间隔（秒）"
-                :items="[
-                  { value: 0, title: '关闭' },
-                  { value: 30, title: '30秒' },
-                  { value: 60, title: '1分钟' },
-                  { value: 300, title: '5分钟' }
-                ]"
-                variant="outlined"
-              />
+              <v-select v-model="settings.refreshInterval" label="自动刷新间隔（秒）" :items="[
+                { value: 0, title: '关闭' },
+                { value: 30, title: '30秒' },
+                { value: 60, title: '1分钟' },
+                { value: 300, title: '5分钟' }
+              ]" variant="outlined" />
             </v-col>
             <v-col cols="12">
-              <v-checkbox
-                v-model="settings.showCompleted"
-                label="显示已完成的提醒"
-              />
+              <v-checkbox v-model="settings.showCompleted" label="显示已完成的提醒" />
             </v-col>
           </v-row>
         </v-card-text>
@@ -430,7 +346,7 @@ async function fetchUpcomingReminders(): Promise<void> {
     });
     const { reminders, total, page, limit, hasMore } = response;
     upcomingData.value = reminders;
-  } catch (err) {
+  } catch (err: any) {
     console.error('获取即将到来的提醒失败:', err);
   }
 }
@@ -482,11 +398,11 @@ function isOverdue(dateStr: string): boolean {
  */
 function getReminderClass(reminder: any): string[] {
   const classes = [];
-  
+
   if (isOverdue(reminder.scheduledTime)) {
     classes.push('overdue');
   }
-  
+
   return classes;
 }
 
@@ -570,13 +486,13 @@ function openSettings(): void {
 function saveSettings(): void {
   // 更新过滤器默认值
   filters.value.days = settings.value.defaultDays;
-  
+
   // 重新设置自动刷新
   setupAutoRefresh();
-  
+
   // 重新获取数据
   fetchUpcomingReminders();
-  
+
   emit('settings-change', settings.value);
   settingsOpen.value = false;
 }
@@ -596,7 +512,7 @@ function setupAutoRefresh(): void {
     clearInterval(refreshTimer);
     refreshTimer = null;
   }
-  
+
   if (settings.value.refreshInterval > 0) {
     refreshTimer = setInterval(() => {
       fetchUpcomingReminders();

@@ -25,6 +25,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
+import { AuthManager } from '@/shared/api';
 
 const authStatus = ref<any>(null);
 
@@ -32,10 +33,10 @@ const testAuth = () => {
     try {
         const authStore = useAuthStore();
         authStatus.value = {
-            isAuthenticated: authStore.isAuthenticated,
-            hasAccessToken: !!authStore.accessToken,
-            isTokenExpired: authStore.isTokenExpired,
-            needsRefresh: authStore.needsRefresh,
+            isAuthenticated: AuthManager.isAuthenticated(),
+            hasAccessToken: !!AuthManager.getAccessToken(),
+            isTokenExpired: AuthManager.isTokenExpired(),
+            needsRefresh: AuthManager.needsRefresh(),
             user: authStore.user,
             error: authStore.error,
             loading: authStore.loading,

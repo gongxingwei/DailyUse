@@ -106,13 +106,22 @@
                 <!-- 调试功能 -->
                 <h3 class="mb-4 mt-6">🐛 调试功能</h3>
                 <v-row>
-                    <v-col cols="12">
+                    <v-col cols="12" md="6">
                         <v-btn block color="warning" prepend-icon="mdi-bug" @click="triggerTestReminder"
                             :loading="testReminderLoading">
                             触发测试提醒 (SSE)
                         </v-btn>
                         <p class="text-caption mt-2 text-center">
                             点击此按钮将从后端发送一个测试提醒事件
+                        </p>
+                    </v-col>
+                    <v-col cols="12" md="6">
+                        <v-btn block color="primary" prepend-icon="mdi-clock-outline" @click="createRecurringReminder"
+                            :loading="reminderCreating">
+                            创建每1分钟提醒
+                        </v-btn>
+                        <p class="text-caption mt-2 text-center">
+                            创建一个每分钟触发的循环提醒模板
                         </p>
                     </v-col>
                 </v-row>
@@ -125,7 +134,10 @@
 import { ref, onMounted } from 'vue';
 import { logo, logo128, defaultAvatar } from '@dailyuse/assets/images';
 import { audioService, type SoundType } from '@/services/AudioService';
-import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
+import { AuthManager } from '@/shared/api';
+import { reminderApiClient } from '@/modules/reminder/infrastructure/api/reminderApiClient';
+import { ReminderContracts } from '@dailyuse/contracts';
+import { generateUUID } from '@dailyuse/utils';
 
 // 音频控制状态
 const volume = ref(50);
@@ -133,9 +145,7 @@ const enabled = ref(true);
 const muted = ref(false);
 const availableSounds = ref<Record<string, string>>({});
 const testReminderLoading = ref(false);
-
-// Auth store
-const authStore = useAuthStore();
+const reminderCreating = ref(false);
 
 // 初始化
 onMounted(() => {
@@ -176,7 +186,7 @@ const updateMuted = (value: boolean | null) => {
 const triggerTestReminder = async () => {
     testReminderLoading.value = true;
     try {
-        const token = authStore.getAccessToken;
+        const token = AuthManager.getAccessToken();
         if (!token) {
             console.error('未找到访问令牌');
             return;
@@ -209,6 +219,72 @@ const triggerTestReminder = async () => {
         audioService.playError();
     } finally {
         testReminderLoading.value = false;
+    }
+};
+
+// 创建每1分钟循环提醒
+const createRecurringReminder = async () => {
+    reminderCreating.value = true;
+    try {
+        // 从 localStorage 获取用户 UUID
+        const persistedData = localStorage.getItem('authentication');
+        let userUuid: string | undefined;
+        if (persistedData) {
+            try {
+                const authData = JSON.parse(persistedData);
+                userUuid = authData.user?.uuid;
+            } catch (error) {
+                console.error('解析认证数据失败:', error);
+            }
+        }
+
+        if (!userUuid) {
+            console.error('未找到用户UUID');
+            audioService.playError();
+            return;
+        }
+
+        console.log('🔔 创建每1分钟循环提醒...');
+
+        // 创建提醒模板
+        const templateUuid = generateUUID();
+        const now = Date.now();
+
+        const request: ReminderContracts.CreateReminderTemplateRequest = {
+            uuid: templateUuid,
+            name: '测试提醒 - 每1分钟',
+            message: '这是一个测试提醒，每分钟触发一次',
+            timeConfig: {
+                type: ReminderContracts.ReminderTimeConfigType.CUSTOM,
+                customPattern: {
+                    interval: 1,
+                    unit: ReminderContracts.ReminderDurationUnit.MINUTES,
+                },
+            },
+            priority: ReminderContracts.ReminderPriority.NORMAL,
+            category: '测试',
+            tags: ['测试', '循环'],
+            enabled: true,
+            selfEnabled: true,
+            notificationSettings: {
+                sound: true,
+                vibration: false,
+                popup: true,
+            },
+        };
+
+        console.log('📤 发送创建请求:', request);
+        const response = await reminderApiClient.createReminderTemplate(request);
+        console.log('✅ 提醒模板创建成功:', response);
+
+        audioService.playSuccess();
+        alert(`提醒模板创建成功！\nUUID: ${templateUuid}\n名称: ${request.name}\n\n请检查控制台查看详细信息。`);
+    } catch (error) {
+        console.error('❌ 创建提醒模板失败:', error);
+        audioService.playError();
+        alert(`创建失败: ${error instanceof Error ? error.message : '未知错误'}`);
+    } finally {
+        reminderCreating.value = false;
     }
 };
 </script>

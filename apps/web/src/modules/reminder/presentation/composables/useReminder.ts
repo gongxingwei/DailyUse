@@ -209,7 +209,7 @@ export function useReminder() {
       await reminderService.getReminderTemplates({ forceRefresh: true });
       await reminderService.getReminderTemplateGroups({ forceRefresh: true });
       isInitialized.value = true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to initialize reminder module:', error);
       throw error;
     }

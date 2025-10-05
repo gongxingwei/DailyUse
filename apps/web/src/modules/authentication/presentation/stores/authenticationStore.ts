@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import type { AuthenticationContracts } from '@dailyuse/contracts';
+import { AuthManager } from '@/shared/api';
 
 // 类型别名
 type UserInfoDTO = AuthenticationContracts.UserInfoDTO;
@@ -13,61 +14,38 @@ export interface AuthenticationState {
   // 会话信息
   currentSession: UserSessionClientDTO | null;
 
-  // 令牌信息
-  accessToken: string | null;
-  refreshToken: string | null;
-  rememberToken: string | null; // 添加 rememberToken 到状态
-  tokenType: string;
-  expiresAt: number | null; // 毫秒时间戳
-
   // MFA 设备
   mfaDevices: MFADeviceClientDTO[];
 
   // UI 状态
   isLoading: boolean;
   error: string | null;
-
-  // 持久化设置
-  rememberMe: boolean;
 }
 
 export const useAuthenticationStore = defineStore('authentication', {
   state: (): AuthenticationState => ({
     user: null,
     currentSession: null,
-    accessToken: null,
-    refreshToken: null,
-    rememberToken: null,
-    tokenType: 'Bearer',
-    expiresAt: null,
     mfaDevices: [],
     isLoading: false,
     error: null,
-    rememberMe: false,
   }),
 
   getters: {
     /**
-     * 是否已认证
-     * 基于 accessToken 和 expiresAt 判断
+     * 是否已认证 - 委托给 AuthManager
      */
-    isAuthenticated: (state) => {
-      if (!state.accessToken || !state.expiresAt) {
-        return false;
-      }
-      // 检查 token 是否过期
-      return Date.now() < state.expiresAt;
-    },
+    isAuthenticated: () => AuthManager.isAuthenticated(),
 
     /**
-     * 获取访问令牌
+     * 获取访问令牌 - 委托给 AuthManager
      */
-    getAccessToken: (state) => state.accessToken,
+    getAccessToken: () => AuthManager.getAccessToken(),
 
     /**
-     * 获取刷新令牌
+     * 获取刷新令牌 - 委托给 AuthManager
      */
-    getRefreshToken: (state) => state.refreshToken,
+    getRefreshToken: () => AuthManager.getRefreshToken(),
 
     /**
      * 获取当前用户
@@ -102,31 +80,26 @@ export const useAuthenticationStore = defineStore('authentication', {
     /**
      * Token 是否即将过期（10分钟内）
      */
-    isTokenExpiringSoon: (state) => {
-      if (!state.expiresAt) return false;
-      return Date.now() > state.expiresAt - 10 * 60 * 1000;
+    isTokenExpiringSoon: () => {
+      const expiry = AuthManager.getTokenExpiry();
+      if (!expiry) return false;
+      return Date.now() > expiry - 10 * 60 * 1000;
     },
 
     /**
-     * Token 是否已过期
+     * Token 是否已过期 - 委托给 AuthManager
      */
-    isTokenExpired: (state) => {
-      if (!state.expiresAt) return false;
-      return Date.now() >= state.expiresAt;
-    },
+    isTokenExpired: () => AuthManager.isTokenExpired(),
 
     /**
-     * Token 是否需要刷新（提前5分钟）
+     * Token 是否需要刷新 - 委托给 AuthManager
      */
-    needsRefresh: (state) => {
-      if (!state.expiresAt) return false;
-      return Date.now() >= state.expiresAt - 5 * 60 * 1000;
-    },
+    needsRefresh: () => AuthManager.needsRefresh(),
 
     /**
      * 获取 Token 过期时间
      */
-    tokenExpiry: (state) => state.expiresAt,
+    tokenExpiry: () => AuthManager.getTokenExpiry(),
 
     /**
      * 获取用户角色
@@ -176,6 +149,16 @@ export const useAuthenticationStore = defineStore('authentication', {
      * 获取错误信息
      */
     getError: (state) => state.error,
+
+    /**
+     * 访问 token - 兼容旧代码
+     */
+    accessToken: () => AuthManager.getAccessToken(),
+
+    /**
+     * 刷新 token - 兼容旧代码
+     */
+    refreshToken: () => AuthManager.getRefreshToken(),
   },
 
   actions: {
@@ -191,17 +174,14 @@ export const useAuthenticationStore = defineStore('authentication', {
       sessionId?: string;
     }) {
       this.user = loginResponse.user;
-      this.accessToken = loginResponse.accessToken;
-      this.refreshToken = loginResponse.refreshToken;
-      this.tokenType = loginResponse.tokenType || 'Bearer';
 
-      // 计算过期时间（毫秒）
-      this.expiresAt = Date.now() + loginResponse.expiresIn * 1000;
-
-      // 如果记住登录状态，保存到 localStorage
-      if (this.rememberMe) {
-        this.persistAuthData();
-      }
+      // 将 token 存储到 AuthManager
+      AuthManager.setTokens(
+        loginResponse.accessToken,
+        loginResponse.refreshToken,
+        undefined,
+        loginResponse.expiresIn,
+      );
     },
 
     /**
@@ -209,32 +189,22 @@ export const useAuthenticationStore = defineStore('authentication', {
      */
     setUser(user: UserInfoDTO) {
       this.user = user;
-      if (this.rememberMe) {
-        this.persistAuthData();
-      }
     },
 
     /**
-     * 设置访问令牌
+     * 设置访问令牌 - 委托给 AuthManager
      */
     setAccessToken(token: string, expiresIn?: number) {
-      this.accessToken = token;
-      if (expiresIn) {
-        this.expiresAt = Date.now() + expiresIn * 1000;
-      }
-      if (this.rememberMe) {
-        localStorage.setItem('auth_access_token', token);
-      }
+      AuthManager.updateAccessToken(token, expiresIn);
     },
 
     /**
-     * 设置刷新令牌
+     * 设置刷新令牌 - 委托给 AuthManager
+     * @deprecated 直接使用 AuthManager.setTokens()
      */
     setRefreshToken(token: string) {
-      this.refreshToken = token;
-      if (this.rememberMe) {
-        localStorage.setItem('auth_refresh_token', token);
-      }
+      // 保留为空方法以兼容旧代码
+      console.warn('setRefreshToken is deprecated, use AuthManager.setTokens() instead');
     },
 
     /**
@@ -266,18 +236,6 @@ export const useAuthenticationStore = defineStore('authentication', {
     },
 
     /**
-     * 设置记住我
-     */
-    setRememberMe(remember: boolean) {
-      this.rememberMe = remember;
-      localStorage.setItem('auth_remember_me', remember.toString());
-
-      if (!remember) {
-        this.clearPersistedData();
-      }
-    },
-
-    /**
      * 设置加载状态
      */
     setLoading(loading: boolean) {
@@ -299,7 +257,7 @@ export const useAuthenticationStore = defineStore('authentication', {
     },
 
     /**
-     * 设置 Tokens (兼容 useAuthStore API)
+     * 设置 Tokens (兼容 useAuthStore API) - 委托给 AuthManager
      */
     setTokens(tokens: {
       accessToken: string;
@@ -307,14 +265,12 @@ export const useAuthenticationStore = defineStore('authentication', {
       rememberToken?: string;
       expiresIn?: number;
     }) {
-      this.accessToken = tokens.accessToken;
-      this.refreshToken = tokens.refreshToken;
-      if (tokens.rememberToken) {
-        this.rememberToken = tokens.rememberToken;
-      }
-      if (tokens.expiresIn) {
-        this.expiresAt = Date.now() + tokens.expiresIn * 1000;
-      }
+      AuthManager.setTokens(
+        tokens.accessToken,
+        tokens.refreshToken,
+        tokens.rememberToken,
+        tokens.expiresIn,
+      );
     },
 
     /**
@@ -325,124 +281,21 @@ export const useAuthenticationStore = defineStore('authentication', {
     },
 
     /**
-     * 同步到 AuthManager (兼容 useAuthStore API)
-     */
-    syncToAuthManager() {
-      if (this.accessToken && this.refreshToken) {
-        const expiresIn = this.expiresAt
-          ? Math.max(0, Math.floor((this.expiresAt - Date.now()) / 1000))
-          : undefined;
-        // AuthManager 已经在拦截器中处理，这里只是兼容接口
-        console.log('Syncing to AuthManager:', { expiresIn });
-      }
-    },
-
-    /**
-     * 持久化认证数据
-     */
-    persistAuthData() {
-      if (this.rememberMe) {
-        const authData = {
-          user: this.user,
-          accessToken: this.accessToken,
-          refreshToken: this.refreshToken,
-          tokenType: this.tokenType,
-          expiresAt: this.expiresAt,
-        };
-        localStorage.setItem('auth_data', JSON.stringify(authData));
-      }
-    },
-
-    /**
-     * 从本地存储恢复认证数据
-     */
-    async restoreAuthData(): Promise<boolean> {
-      const rememberMe = localStorage.getItem('auth_remember_me') === 'true';
-      this.rememberMe = rememberMe;
-
-      if (!rememberMe) {
-        return false;
-      }
-
-      const authDataStr = localStorage.getItem('auth_data');
-      if (!authDataStr) {
-        return false;
-      }
-
-      try {
-        const authData = JSON.parse(authDataStr);
-
-        // 检查数据是否过期
-        if (authData.expiresAt && Date.now() > authData.expiresAt) {
-          // 尝试刷新 token
-          if (authData.refreshToken) {
-            return await this.refreshAuthToken(authData.refreshToken);
-          }
-          return false;
-        }
-
-        // 恢复认证状态
-        this.user = authData.user;
-        this.accessToken = authData.accessToken;
-        this.refreshToken = authData.refreshToken;
-        this.tokenType = authData.tokenType || 'Bearer';
-        this.expiresAt = authData.expiresAt;
-
-        return true;
-      } catch (error) {
-        console.error('恢复认证数据失败:', error);
-        this.clearPersistedData();
-        return false;
-      }
-    },
-
-    /**
-     * 刷新访问令牌
-     */
-    async refreshAuthToken(refreshToken?: string): Promise<boolean> {
-      try {
-        // TODO: 实现 token 刷新 API 调用
-        console.log('刷新 token:', refreshToken || this.refreshToken);
-        // const response = await authApiClient.refreshToken({ refreshToken: refreshToken || this.refreshToken });
-        // this.setAccessToken(response.data.accessToken, response.data.expiresIn);
-        // this.setRefreshToken(response.data.refreshToken);
-        return true;
-      } catch (error) {
-        console.error('刷新 token 失败:', error);
-        this.logout();
-        return false;
-      }
-    },
-
-    /**
      * 清除认证数据（登出）
      */
     logout() {
       this.user = null;
-      this.accessToken = null;
-      this.refreshToken = null;
-      this.tokenType = 'Bearer';
-      this.expiresAt = null;
       this.currentSession = null;
       this.mfaDevices = [];
       this.isLoading = false;
       this.error = null;
 
-      this.clearPersistedData();
-    },
-
-    /**
-     * 清除持久化数据
-     */
-    clearPersistedData() {
-      localStorage.removeItem('auth_data');
-      localStorage.removeItem('auth_access_token');
-      localStorage.removeItem('auth_refresh_token');
-      localStorage.removeItem('auth_remember_me');
+      // 清除 AuthManager 中的 tokens
+      AuthManager.clearTokens();
     },
   },
 
-  // 配置 Pinia 持久化
+  // 配置 Pinia 持久化（只持久化用户信息和会话，不持久化 tokens）
   persist: true,
 });
 

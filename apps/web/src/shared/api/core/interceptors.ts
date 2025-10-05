@@ -360,8 +360,13 @@ export class InterceptorManager {
             return this.instance(config);
           } catch (refreshError) {
             this.processQueue(refreshError, null);
+
+            // 立即处理未授权错误，跳转到登录页
             await this.handleUnauthorized();
-            return Promise.reject(refreshError);
+
+            // 返回一个被拒绝的 Promise，但不抛出错误到控制台
+            // 因为我们已经处理了（跳转到登录页）
+            return Promise.reject(new Error('Authentication failed, redirecting to login'));
           } finally {
             this.isRefreshing = false;
           }
@@ -477,15 +482,32 @@ export class InterceptorManager {
    * 处理未授权错误
    */
   private async handleUnauthorized(): Promise<void> {
-    LogManager.warn('认证失败，清除令牌');
+    LogManager.warn('认证失败，清除令牌', AuthManager.getRefreshToken());
 
+    // 清除令牌
     AuthManager.clearTokens();
 
     if (this.config.authFailHandler) {
       this.config.authFailHandler();
     } else {
-      // 默认跳转到登录页
-      window.location.href = '/auth/login';
+      // 使用 Vue Router 进行跳转，确保立即跳转
+      const { default: router } = await import('@/shared/router');
+
+      console.log('🔐 认证失败，跳转到登录页');
+
+      // 立即跳转到登录页，不等待任何异步操作
+      router
+        .push({
+          name: 'auth',
+          query: {
+            redirect: router.currentRoute.value.fullPath,
+            reason: 'token_expired',
+          },
+        })
+        .catch(() => {
+          // 如果 router 跳转失败（比如还没初始化），使用硬跳转
+          window.location.href = '/auth/login';
+        });
     }
   }
 

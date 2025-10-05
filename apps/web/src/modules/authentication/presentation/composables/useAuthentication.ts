@@ -2,6 +2,7 @@ import { ref, computed, readonly } from 'vue';
 import { useRouter } from 'vue-router';
 import { AuthApplicationService } from '../../application/services/AuthApplicationService';
 import { useAuthenticationStore } from '../stores/authenticationStore';
+import { AuthManager } from '@/shared/api';
 import type { AuthenticationContracts } from '@dailyuse/contracts';
 
 type LoginRequest = AuthenticationContracts.LoginRequest;
@@ -24,18 +25,22 @@ export function useAuthentication() {
   const loginFormVisible = ref(false);
   const currentOperation = ref<string | null>(null);
 
-  // ===== 只读响应式数据（从 store 获取）=====
-  const isAuthenticated = computed(() => authStore.isAuthenticated);
+  // ===== 只读响应式数据（从 store 和 AuthManager 获取）=====
+  const isAuthenticated = computed(() => AuthManager.isAuthenticated());
   const user = computed(() => authStore.getCurrentUser);
   const isLoading = computed(() => authStore.getLoading);
   const error = computed(() => authStore.getError);
   const tokens = computed(() => ({
-    accessToken: authStore.getAccessToken,
-    refreshToken: authStore.getRefreshToken,
+    accessToken: AuthManager.getAccessToken(),
+    refreshToken: AuthManager.getRefreshToken(),
   }));
 
   // ===== Token 状态查询（只读）=====
-  const isTokenExpiringSoon = computed(() => authStore.isTokenExpiringSoon);
+  const isTokenExpiringSoon = computed(() => {
+    const expiry = AuthManager.getTokenExpiry();
+    if (!expiry) return false;
+    return Date.now() > expiry - 10 * 60 * 1000;
+  });
 
   // ===== 只读查询方法 =====
 

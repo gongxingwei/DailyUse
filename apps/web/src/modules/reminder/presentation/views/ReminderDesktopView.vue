@@ -158,7 +158,7 @@ const loadGroups = async () => {
     try {
         const groupsData = await reminderService.getReminderTemplateGroups()
         reminderTemplateGroups.value = groupsData
-    } catch (error) {
+    } catch (error: any) {
         console.error('加载分组失败:', error)
     }
 }
@@ -168,7 +168,7 @@ const deleteGroup = async (uuid: string) => {
         await reminderService.deleteReminderTemplateGroup(uuid)
         await loadGroups() // 重新加载分组数据
         console.log('删除分组成功:', uuid)
-    } catch (error) {
+    } catch (error: any) {
         console.error('删除分组失败:', error)
     }
 }

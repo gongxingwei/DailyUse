@@ -6,6 +6,7 @@
 import { createApiClient } from '../core/client';
 import { environmentConfig } from '../core/config';
 import type { HttpClientConfig } from '../core/types';
+import router from '@/shared/router';
 
 /**
  * 主API客户端 - 用于业务API调用
@@ -17,10 +18,8 @@ export const apiClient = createApiClient({
   enableRetry: true,
   retryCount: 3,
   authFailHandler: () => {
-    // 认证失败时的处理
-    console.warn('认证失败，跳转到登录页');
-    // 可以在这里添加路由跳转逻辑
-    // router.push('/auth/login');
+    // 认证失败时直接跳转到登录页
+    router.push('/auth');
   },
 });
 
@@ -55,10 +54,6 @@ export const adminApiClient = createApiClient({
   enableLogging: true, // 管理员操作总是记录日志
   enableRetry: true,
   retryCount: 2,
-  authFailHandler: () => {
-    console.warn('管理员认证失败');
-    // 管理员认证失败的特殊处理
-  },
 });
 
 /**

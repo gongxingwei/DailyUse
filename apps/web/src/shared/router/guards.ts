@@ -4,7 +4,7 @@
  */
 
 import type { NavigationGuardNext, RouteLocationNormalized } from 'vue-router';
-import { useAuthStore } from '@/modules/authentication/presentation/stores/authenticationStore';
+import { AuthManager } from '@/shared/api';
 
 /**
  * 需要认证的路由标记
@@ -75,18 +75,16 @@ export const authGuard = async (
     }
   }
 
-  // 在应用初始化完成后，才安全地调用 store
-  const authStore = useAuthStore();
-
+  // 在应用初始化完成后，检查认证状态
   console.log('🔍 [AuthGuard] 检查认证状态:', {
-    isAuthenticated: authStore.isAuthenticated,
-    hasAccessToken: !!authStore.accessToken,
-    isTokenExpired: authStore.isTokenExpired,
+    isAuthenticated: AuthManager.isAuthenticated(),
+    hasAccessToken: !!AuthManager.getAccessToken(),
+    isTokenExpired: AuthManager.isTokenExpired(),
     route: to.path,
   });
 
   // 检查用户是否已认证
-  if (!authStore.isAuthenticated) {
+  if (!AuthManager.isAuthenticated()) {
     console.log('🔒 [AuthGuard] 路由需要认证，但用户未登录，重定向到登录页');
     next({
       name: 'auth',
@@ -99,9 +97,9 @@ export const authGuard = async (
   }
 
   // 检查token是否过期
-  if (authStore.isTokenExpired) {
+  if (AuthManager.isTokenExpired()) {
     console.log('⏰ [AuthGuard] Token已过期，重定向到登录页');
-    authStore.clearAuth();
+    AuthManager.clearTokens();
     next({
       name: 'auth',
       query: {
@@ -125,8 +123,6 @@ export const permissionGuard = async (
   from: RouteLocationNormalized,
   next: NavigationGuardNext,
 ) => {
-  const authStore = useAuthStore();
-
   // 获取路由所需的权限
   const requiredPermissions = to.matched
     .flatMap((record) => record.meta.permissions || [])
@@ -209,10 +205,8 @@ export const loginRedirectGuard = async (
     }
   }
 
-  const authStore = useAuthStore();
-
   // 如果访问登录页面但已经认证，重定向到首页
-  if (to.name === 'auth' && authStore.isAuthenticated) {
+  if (to.name === 'auth' && AuthManager.isAuthenticated()) {
     console.log('🔄 [LoginRedirectGuard] 用户已认证，重定向到首页');
     const redirect = (to.query.redirect as string) || '/';
     next(redirect);

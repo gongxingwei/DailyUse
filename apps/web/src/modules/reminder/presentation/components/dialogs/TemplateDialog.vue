@@ -54,8 +54,8 @@
                                 variant="outlined" density="compact" item-title="title" item-value="value"
                                 class="mb-3" />
 
-                            <!-- 时间选择 -->
-                            <div class="mb-3">
+                            <!-- 时间选择 (仅非自定义类型显示) -->
+                            <div v-if="timeConfigType !== 'custom'" class="mb-3">
                                 <v-text-field v-for="(time, index) in timeConfigTimes" :key="index"
                                     v-model="timeConfigTimes[index]" :label="`时间 ${index + 1}`" type="time"
                                     variant="outlined" density="compact" class="mb-2">
@@ -96,10 +96,19 @@
 
                             <!-- 自定义间隔选项 -->
                             <div v-if="timeConfigType === 'custom'" class="mb-3">
+                                <v-alert type="info" variant="tonal" density="compact" class="mb-3">
+                                    <template v-slot:prepend>
+                                        <v-icon>mdi-information</v-icon>
+                                    </template>
+                                    <div class="text-caption">
+                                        自定义间隔提醒将从应用启动或提醒启用时开始计算，每隔设定的时间自动触发提醒。
+                                    </div>
+                                </v-alert>
                                 <v-row>
                                     <v-col cols="6">
                                         <v-text-field v-model.number="customInterval" label="间隔时间" type="number"
-                                            variant="outlined" density="compact" min="1" />
+                                            variant="outlined" density="compact" min="1" hint="设置提醒间隔"
+                                            persistent-hint />
                                     </v-col>
                                     <v-col cols="6">
                                         <v-select v-model="customUnit" :items="customUnitOptions" label="时间单位"
@@ -107,6 +116,11 @@
                                             item-value="value" />
                                     </v-col>
                                 </v-row>
+                                <v-chip color="primary" size="small" class="mt-2">
+                                    <v-icon start>mdi-timer-outline</v-icon>
+                                    将每隔 {{ customInterval }} {{customUnitOptions.find(u => u.value ===
+                                        customUnit)?.title}} 提醒一次
+                                </v-chip>
                             </div>
                         </v-card-text>
                     </v-card>
@@ -191,17 +205,89 @@ const selfEnabled = computed({
     }
 });
 
-// Priority 需要特殊处理，因为 updateBasicInfo 不支持 priority
-// 我们使用临时的响应式变量来处理
-const priority = ref<ReminderContracts.ReminderPriority>(ReminderContracts.ReminderPriority.NORMAL);
+// 使用 computed 来同步 localReminderTemplate 的数据，避免临时变量导致的不一致
+const priority = computed({
+    get: () => localReminderTemplate.value.priority,
+    set: (val: ReminderContracts.ReminderPriority) => {
+        // Priority 通过 updateBasicInfo 不能更新，需要特殊处理
+        (localReminderTemplate.value as any)._priority = val;
+        (localReminderTemplate.value as any).updateVersion();
+    }
+});
 
-// 时间配置相关状态
-const timeConfigType = ref<'daily' | 'weekly' | 'monthly' | 'custom'>('daily');
-const timeConfigTimes = ref<string[]>(['09:00']);
-const weekdays = ref<number[]>([]);
-const monthDays = ref<number[]>([]);
-const customInterval = ref<number>(1);
-const customUnit = ref<'minutes' | 'hours' | 'days'>('hours');
+// 时间配置相关计算属性 - 直接从 localReminderTemplate.timeConfig 读取和更新
+const timeConfigType = computed({
+    get: () => (localReminderTemplate.value.timeConfig?.type as any) || 'daily',
+    set: (val: 'daily' | 'weekly' | 'monthly' | 'custom') => {
+        const newConfig = { ...localReminderTemplate.value.timeConfig, type: val };
+        // 切换类型时重置相关字段
+        if (val === 'custom') {
+            delete newConfig.times;
+            newConfig.customPattern = newConfig.customPattern || {
+                interval: 1,
+                unit: ReminderContracts.ReminderDurationUnit.HOURS
+            };
+        } else {
+            delete newConfig.customPattern;
+            if (!newConfig.times || newConfig.times.length === 0) {
+                newConfig.times = ['09:00'];
+            }
+        }
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
+
+const timeConfigTimes = computed({
+    get: () => localReminderTemplate.value.timeConfig?.times || ['09:00'],
+    set: (val: string[]) => {
+        const newConfig = { ...localReminderTemplate.value.timeConfig, times: val };
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
+
+const weekdays = computed({
+    get: () => localReminderTemplate.value.timeConfig?.weekdays || [],
+    set: (val: number[]) => {
+        const newConfig = { ...localReminderTemplate.value.timeConfig, weekdays: val };
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
+
+const monthDays = computed({
+    get: () => localReminderTemplate.value.timeConfig?.monthDays || [],
+    set: (val: number[]) => {
+        const newConfig = { ...localReminderTemplate.value.timeConfig, monthDays: val };
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
+
+const customInterval = computed({
+    get: () => localReminderTemplate.value.timeConfig?.customPattern?.interval || 1,
+    set: (val: number) => {
+        const newConfig = {
+            ...localReminderTemplate.value.timeConfig,
+            customPattern: {
+                ...(localReminderTemplate.value.timeConfig?.customPattern || {}),
+                interval: val
+            }
+        };
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
+
+const customUnit = computed({
+    get: () => (localReminderTemplate.value.timeConfig?.customPattern?.unit as any) || 'hours',
+    set: (val: 'minutes' | 'hours' | 'days') => {
+        const newConfig = {
+            ...localReminderTemplate.value.timeConfig,
+            customPattern: {
+                ...(localReminderTemplate.value.timeConfig?.customPattern || {}),
+                unit: val
+            }
+        };
+        localReminderTemplate.value.updateTimeConfig(newConfig as any);
+    }
+});
 
 const iconOptions = [
     { text: '提醒', value: 'mdi-bell' },
@@ -223,7 +309,7 @@ const timeConfigOptions = [
     { title: '每天', value: 'daily' },
     { title: '每周', value: 'weekly' },
     { title: '每月', value: 'monthly' },
-    { title: '自定义', value: 'custom' }
+    { title: '自定义间隔', value: 'custom' }
 ];
 
 const weekdayOptions = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
@@ -247,73 +333,47 @@ const messageRules = [
 
 // 时间配置管理方法
 const addTime = () => {
-    if (timeConfigTimes.value.length < 5) {
-        timeConfigTimes.value.push('09:00');
+    const currentTimes = [...timeConfigTimes.value];
+    if (currentTimes.length < 5) {
+        currentTimes.push('09:00');
+        timeConfigTimes.value = currentTimes;
     }
 };
 
 const removeTime = (index: number) => {
-    if (timeConfigTimes.value.length > 1) {
-        timeConfigTimes.value.splice(index, 1);
+    const currentTimes = [...timeConfigTimes.value];
+    if (currentTimes.length > 1) {
+        currentTimes.splice(index, 1);
+        timeConfigTimes.value = currentTimes;
     }
-};
-
-// 构建时间配置对象
-const buildTimeConfig = () => {
-    const baseConfig = {
-        type: timeConfigType.value,
-        times: timeConfigTimes.value,
-    } as any;
-
-    if (timeConfigType.value === 'weekly' && weekdays.value.length > 0) {
-        baseConfig.weekdays = weekdays.value;
-    }
-
-    if (timeConfigType.value === 'monthly' && monthDays.value.length > 0) {
-        baseConfig.monthDays = monthDays.value;
-    }
-
-    if (timeConfigType.value === 'custom') {
-        baseConfig.customPattern = {
-            interval: customInterval.value,
-            unit: customUnit.value,
-        };
-    }
-
-    return baseConfig;
 };
 
 const handleSave = async () => {
     if (!isFormValid.value) return;
 
     try {
-        const timeConfig = buildTimeConfig();
+        console.log('💾 保存提醒模板:', {
+            mode: isEditing.value ? '编辑' : '创建',
+            data: localReminderTemplate.value.toDTO()
+        });
 
-        if (propReminderTemplate.value) {
-            // 编辑模式
+        if (isEditing.value) {
+            // 编辑模式 - 使用 updateTemplate
             await updateTemplate(localReminderTemplate.value.uuid, {
                 name: localReminderTemplate.value.name,
                 description: localReminderTemplate.value.description,
                 message: localReminderTemplate.value.message,
                 category: localReminderTemplate.value.category,
-                priority: priority.value as any,
+                priority: localReminderTemplate.value.priority,
                 enabled: localReminderTemplate.value.enabled,
                 selfEnabled: localReminderTemplate.value.selfEnabled,
-                timeConfig,
+                timeConfig: localReminderTemplate.value.timeConfig,
+                icon: localReminderTemplate.value.icon,
+                tags: localReminderTemplate.value.tags,
             });
         } else {
-            // 创建模式
-            await createTemplate({
-                name: localReminderTemplate.value.name,
-                description: localReminderTemplate.value.description || '',
-                message: localReminderTemplate.value.message,
-                category: localReminderTemplate.value.category || '',
-                priority: priority.value as any,
-                tags: [],
-                enabled: localReminderTemplate.value.enabled,
-                selfEnabled: localReminderTemplate.value.selfEnabled,
-                timeConfig,
-            });
+            // 创建模式 - 直接使用 toDTO()，包含前端生成的 uuid
+            await createTemplate(localReminderTemplate.value.toDTO());
         }
         closeDialog();
     } catch (error) {
@@ -342,44 +402,22 @@ const closeDialog = () => {
     visible.value = false;
 };
 
-// 初始化时间配置数据
-const initTimeConfig = (template?: ReminderTemplate) => {
-    if (template && template.timeConfig) {
-        const config = template.timeConfig;
-        timeConfigType.value = config.type as any;
-        timeConfigTimes.value = config.times && config.times.length > 0 ? [...config.times] : ['09:00'];
-        weekdays.value = config.weekdays ? [...config.weekdays] : [];
-        monthDays.value = config.monthDays ? [...config.monthDays] : [];
-
-        if (config.customPattern) {
-            customInterval.value = config.customPattern.interval || 1;
-            customUnit.value = config.customPattern.unit || 'hours';
-        } else {
-            customInterval.value = 1;
-            customUnit.value = 'hours';
-        }
-    } else {
-        // 重置为默认值
-        timeConfigType.value = 'daily';
-        timeConfigTimes.value = ['09:00'];
-        weekdays.value = [];
-        monthDays.value = [];
-        customInterval.value = 1;
-        customUnit.value = 'hours';
-    }
-};
-
 watch(
     [() => visible.value, () => propReminderTemplate.value],
     ([show]) => {
         if (show) {
-            localReminderTemplate.value = propReminderTemplate.value ? propReminderTemplate.value.clone() : ReminderTemplate.forCreate();
-            priority.value = localReminderTemplate.value.priority;
-            initTimeConfig(propReminderTemplate.value || undefined);
+            // 使用 clone() 或 forCreate() 创建本地副本
+            localReminderTemplate.value = propReminderTemplate.value
+                ? propReminderTemplate.value.clone()
+                : ReminderTemplate.forCreate();
+
+            console.log('📝 初始化提醒模板编辑器:', {
+                mode: propReminderTemplate.value ? '编辑' : '创建',
+                timeConfig: localReminderTemplate.value.timeConfig
+            });
         } else {
+            // 关闭时重置
             localReminderTemplate.value = ReminderTemplate.forCreate();
-            priority.value = ReminderContracts.ReminderPriority.NORMAL;
-            initTimeConfig();
         }
     },
     { immediate: true }

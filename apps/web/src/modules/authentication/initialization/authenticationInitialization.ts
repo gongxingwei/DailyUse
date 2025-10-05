@@ -26,120 +26,56 @@ export function registerAuthenticationInitializationTasks(): void {
     initialize: async () => {
       console.log('🔐 [AuthModule] 恢复认证状态');
       const accountStore = useAccountStore();
-      const authStore = useAuthStore();
-      // 方案2：直接从 localStorage 读取持久化数据
-      const persistedData = localStorage.getItem('auth');
-      let authData = null;
-      const tokenInfo = {
-        accessToken: AuthManager.getAccessToken(),
-        refreshToken: AuthManager.getRefreshToken(),
-        rememberToken: AuthManager.getRememberToken(),
-        expiresIn: AuthManager.getTokenExpiry(),
-      };
 
-      if (persistedData && tokenInfo.accessToken && tokenInfo.refreshToken) {
-        try {
-          authData = JSON.parse(persistedData);
-          console.log('🔍 [AuthModule] localStorage 中的认证状态:', authData.account);
-          const accountEntity = Account.fromDTO(authData.account);
-          accountStore.setAccount(accountEntity);
-          // 安全调用 setTokens，提供默认值
-          authStore.setTokens({
-            accessToken: tokenInfo.accessToken,
-            refreshToken: tokenInfo.refreshToken,
-            rememberToken: tokenInfo.rememberToken || undefined, // 可选参数
-            expiresIn: tokenInfo.expiresIn || undefined, // 可选参数
-          });
-          console.log('✅ [AuthModule] 账户信息已恢复:', accountEntity);
-        } catch (error) {
-          console.error('❌ [AuthModule] 解析持久化数据失败:', error);
-          localStorage.removeItem('auth'); // 清除损坏的数据
-        }
+      // 直接从 AuthManager 读取 token 信息
+      const accessToken = AuthManager.getAccessToken();
+      const refreshToken = AuthManager.getRefreshToken();
+      const isTokenExpired = AuthManager.isTokenExpired();
+
+      if (!accessToken || !refreshToken) {
+        console.log('ℹ️ [AuthModule] 未发现有效的 token');
+        return;
       }
 
-      // 获取 Pinia store 实例（此时数据可能还没有恢复）
+      if (isTokenExpired) {
+        console.log('⚠️ [AuthModule] Token已过期，清除认证状态');
+        AuthManager.clearTokens();
+        return;
+      }
 
-      console.log('🔍 [AuthModule] Pinia store 认证状态:', authStore.accessToken);
+      console.log('✅ [AuthModule] 发现有效的 token，恢复账户信息');
 
-      // 使用 localStorage 中的数据进行状态恢复
-      const effectiveAuthData = authData || {
-        accessToken: authStore.accessToken,
-        refreshToken: authStore.refreshToken,
-        rememberToken: authStore.rememberToken,
-        expiresIn: authStore.tokenExpiry,
-        user: authStore.user,
-      };
-
-      // 如果有有效的认证状态，同步到 AuthManager 并恢复用户会话
-      if (effectiveAuthData.accessToken && effectiveAuthData.user) {
-        console.log('✅ [AuthModule] 发现有效的认证状态，准备自动登录');
-
-        // 手动同步数据到 Pinia store（如果还没有恢复）
-        if (!authStore.accessToken && authData) {
-          authStore.setTokens({
-            accessToken: authData.accessToken,
-            refreshToken: authData.refreshToken || '',
-            rememberToken: authData.rememberToken || '',
-            expiresIn: authData.expiresIn || 3600,
-          });
+      // 从 localStorage 读取持久化的账户数据
+      const persistedData = localStorage.getItem('authentication');
+      if (persistedData) {
+        try {
+          const authData = JSON.parse(persistedData);
           if (authData.user) {
-            authStore.setUser(authData.user);
-          }
-        }
+            // 恢复账户信息到 accountStore
+            const accountEntity = Account.fromDTO(authData.user);
+            accountStore.setAccount(accountEntity);
+            console.log('✅ [AuthModule] 账户信息已恢复:', accountEntity.username);
 
-        // 同步到 AuthManager
-        authStore.syncToAuthManager();
-
-        // 检查 token 是否过期
-        const isTokenExpired = authStore.isTokenExpired;
-        const needsRefresh = authStore.needsRefresh;
-
-        if (isTokenExpired) {
-          console.log('⚠️ [AuthModule] Token已过期，清除认证状态');
-          authStore.clearAuth();
-          return;
-        }
-
-        // 如果需要刷新token，先刷新
-        if (needsRefresh && authStore.refreshToken) {
-          console.log('🔄 [AuthModule] Token即将过期，尝试刷新');
-          try {
-            // 使用认证应用服务来刷新token
-            const { AuthApplicationService } = await import(
-              '../application/services/AuthApplicationService'
+            // 触发自动登录流程
+            console.log(`🚀 [AuthModule] 触发自动登录: ${accountEntity.uuid}`);
+            const { AppInitializationManager } = await import(
+              '../../../shared/initialization/AppInitializationManager'
             );
-            const authService = await AuthApplicationService.getInstance();
-
-            await authService.refreshToken();
-            console.log('✅ [AuthModule] Token刷新成功');
-          } catch (error) {
-            console.error('❌ [AuthModule] Token刷新失败，清除认证状态', error);
-            authStore.clearAuth();
-            return;
+            await AppInitializationManager.initializeUserSession(accountEntity.uuid);
+            console.log('✅ [AuthModule] 自动登录完成');
           }
-        }
-
-        // 触发自动登录流程
-        if (authStore.user?.uuid) {
-          console.log(`🚀 [AuthModule] 触发自动登录: ${authStore.user.uuid}`);
-
-          // 导入 AppInitializationManager（避免循环依赖）
-          const { AppInitializationManager } = await import(
-            '../../../shared/initialization/AppInitializationManager'
-          );
-          await AppInitializationManager.initializeUserSession(authStore.user.uuid);
-
-          console.log('✅ [AuthModule] 自动登录完成');
+        } catch (error) {
+          console.error('❌ [AuthModule] 解析持久化数据失败:', error);
+          localStorage.removeItem('authentication');
         }
       } else {
-        console.log('ℹ️ [AuthModule] 未发现有效的认证状态');
+        console.log('ℹ️ [AuthModule] 未发现持久化的账户信息');
       }
     },
     cleanup: async () => {
       console.log('🧹 [AuthModule] 清理认证状态');
       // 清理认证相关的状态
-      const authStore = useAuthStore();
-      authStore.clearAuth();
+      AuthManager.clearTokens();
     },
   };
 
