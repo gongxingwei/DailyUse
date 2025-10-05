@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SSE 通知测试 - DailyUse</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      .container {
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        max-width: 800px;
+        width: 100%;
+        padding: 40px;
+      }
+
+      h1 {
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+      }
+
+      .subtitle {
+        color: #666;
+        margin-bottom: 30px;
+        font-size: 14px;
+      }
+
+      .status-card {
+        background: #f7fafc;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        border-left: 4px solid #667eea;
+      }
+
+      .status-ok {
+        border-left-color: #48bb78;
+      }
+
+      .status-error {
+        border-left-color: #f56565;
+      }
+
+      .status-title {
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #2d3748;
+      }
+
+      .status-content {
+        font-size: 14px;
+        color: #4a5568;
+        font-family: 'Courier New', monospace;
+      }
+
+      .button-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+      }
+
+      button {
+        background: #667eea;
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s;
+        flex: 1;
+        min-width: 150px;
+      }
+
+      button:hover {
+        background: #5a67d8;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+      }
+
+      button:disabled {
+        background: #cbd5e0;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .log-container {
+        background: #1a202c;
+        color: #e2e8f0;
+        border-radius: 12px;
+        padding: 20px;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .log-entry {
+        margin-bottom: 8px;
+        padding: 4px 8px;
+        border-radius: 4px;
+      }
+
+      .log-success {
+        background: rgba(72, 187, 120, 0.2);
+        color: #68d391;
+      }
+
+      .log-error {
+        background: rgba(245, 101, 101, 0.2);
+        color: #fc8181;
+      }
+
+      .log-info {
+        background: rgba(66, 153, 225, 0.2);
+        color: #63b3ed;
+      }
+
+      .log-warning {
+        background: rgba(237, 137, 54, 0.2);
+        color: #f6ad55;
+      }
+
+      .clear-log {
+        background: #718096;
+        margin-top: 10px;
+      }
+
+      .clear-log:hover {
+        background: #4a5568;
+      }
+
+      .token-input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        font-size: 14px;
+        margin-bottom: 20px;
+        font-family: 'Courier New', monospace;
+      }
+
+      .token-input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🧪 SSE 通知流程测试</h1>
+      <p class="subtitle">测试: 后端推送 → SSE → 事件总线 → Notification 模块 → 播放声音</p>
+
+      <div class="status-card" id="sseStatus">
+        <div class="status-title">SSE 连接状态</div>
+        <div class="status-content" id="sseStatusText">未连接</div>
+      </div>
+
+      <div class="status-card" id="testStatus">
+        <div class="status-title">测试结果</div>
+        <div class="status-content" id="testStatusText">等待测试...</div>
+      </div>
+
+      <input
+        type="text"
+        class="token-input"
+        id="tokenInput"
+        placeholder="粘贴你的 Bearer Token（从 localStorage 或登录接口获取）"
+      />
+
+      <div class="button-group">
+        <button id="connectBtn" onclick="connectSSE()">🔌 建立 SSE 连接</button>
+        <button id="testBtn" onclick="triggerTest()" disabled>🧪 触发测试提醒</button>
+        <button onclick="playTestSound()">🔊 测试声音播放</button>
+      </div>
+
+      <div class="log-container" id="logOutput"></div>
+      <button class="clear-log" onclick="clearLog()">清空日志</button>
+    </div>
+
+    <script>
+      let eventSource = null;
+      let token = '';
+      const logOutput = document.getElementById('logOutput');
+      const sseStatus = document.getElementById('sseStatus');
+      const sseStatusText = document.getElementById('sseStatusText');
+      const testStatus = document.getElementById('testStatus');
+      const testStatusText = document.getElementById('testStatusText');
+      const connectBtn = document.getElementById('connectBtn');
+      const testBtn = document.getElementById('testBtn');
+      const tokenInput = document.getElementById('tokenInput');
+
+      // 尝试从 localStorage 获取 token
+      const storedToken = localStorage.getItem('access_token');
+      if (storedToken) {
+        tokenInput.value = storedToken;
+        log('✅ 从 localStorage 加载了 token', 'success');
+      }
+
+      function log(message, type = 'info') {
+        const entry = document.createElement('div');
+        entry.className = `log-entry log-${type}`;
+        const timestamp = new Date().toLocaleTimeString('zh-CN');
+        entry.textContent = `[${timestamp}] ${message}`;
+        logOutput.appendChild(entry);
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+
+      function clearLog() {
+        logOutput.innerHTML = '';
+      }
+
+      function updateSSEStatus(text, isConnected) {
+        sseStatusText.textContent = text;
+        sseStatus.className = `status-card ${isConnected ? 'status-ok' : 'status-error'}`;
+        testBtn.disabled = !isConnected;
+      }
+
+      function updateTestStatus(text, isSuccess) {
+        testStatusText.textContent = text;
+        testStatus.className = `status-card ${isSuccess ? 'status-ok' : 'status-error'}`;
+      }
+
+      async function connectSSE() {
+        token = tokenInput.value.trim();
+
+        if (!token) {
+          log('❌ 请先输入 token', 'error');
+          alert('请在输入框中粘贴你的 Bearer Token');
+          return;
+        }
+
+        if (eventSource) {
+          log('断开现有连接...', 'warning');
+          eventSource.close();
+          eventSource = null;
+        }
+
+        try {
+          log('🔌 正在建立 SSE 连接...', 'info');
+          connectBtn.disabled = true;
+          updateSSEStatus('连接中...', false);
+
+          const url = `http://localhost:3888/api/v1/schedules/events?token=${encodeURIComponent(token)}`;
+          eventSource = new EventSource(url);
+
+          eventSource.onopen = () => {
+            log('✅ SSE 连接已建立', 'success');
+            updateSSEStatus('已连接', true);
+            connectBtn.disabled = false;
+            connectBtn.textContent = '🔄 重新连接';
+          };
+
+          eventSource.onerror = (error) => {
+            log('❌ SSE 连接错误', 'error');
+            console.error('SSE Error:', error);
+            updateSSEStatus('连接错误', false);
+            connectBtn.disabled = false;
+          };
+
+          // 监听连接确认事件
+          eventSource.addEventListener('connected', (event) => {
+            const data = JSON.parse(event.data);
+            log(`🔗 连接确认: 客户端ID = ${data.clientId}`, 'success');
+          });
+
+          // 监听心跳
+          eventSource.addEventListener('heartbeat', (event) => {
+            log('💓 心跳', 'info');
+          });
+
+          // 🔥 监听提醒触发事件
+          eventSource.addEventListener('schedule:reminder-triggered', (event) => {
+            log('📨 收到提醒事件!', 'success');
+            const eventData = JSON.parse(event.data);
+            log(`   数据: ${JSON.stringify(eventData.data, null, 2)}`, 'info');
+
+            // 模拟前端的事件总线处理
+            log('📡 转发到前端事件总线: reminder-triggered', 'info');
+            log('🔔 Notification 模块应该会处理此事件并播放声音', 'success');
+
+            updateTestStatus(`✅ 测试成功! 收到提醒: ${eventData.data?.title || ''}`, true);
+
+            // 播放测试音效
+            playTestSound();
+          });
+
+          // 监听其他调度事件
+          const eventTypes = [
+            'schedule:popup-reminder',
+            'schedule:sound-reminder',
+            'schedule:system-notification',
+            'schedule:task-executed',
+          ];
+
+          eventTypes.forEach((eventType) => {
+            eventSource.addEventListener(eventType, (event) => {
+              log(`🔔 收到事件: ${eventType}`, 'success');
+              const data = JSON.parse(event.data);
+              log(`   数据: ${JSON.stringify(data, null, 2)}`, 'info');
+            });
+          });
+        } catch (error) {
+          log(`❌ 连接失败: ${error.message}`, 'error');
+          updateSSEStatus('连接失败', false);
+          connectBtn.disabled = false;
+        }
+      }
+
+      async function triggerTest() {
+        if (!token) {
+          log('❌ 请先建立 SSE 连接', 'error');
+          return;
+        }
+
+        try {
+          log('🧪 触发测试提醒...', 'info');
+          testBtn.disabled = true;
+          updateTestStatus('测试中...', false);
+
+          const response = await fetch(
+            'http://localhost:3888/api/v1/schedules/debug/trigger-reminder',
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json',
+              },
+            },
+          );
+
+          const data = await response.json();
+
+          if (data.success) {
+            log('✅ 测试请求已发送', 'success');
+            log('📡 等待 SSE 推送事件...', 'info');
+            log('🔊 如果一切正常，应该会听到声音', 'info');
+            updateTestStatus('等待 SSE 事件...', false);
+          } else {
+            log(`❌ 测试失败: ${data.message}`, 'error');
+            updateTestStatus(`测试失败: ${data.message}`, false);
+          }
+        } catch (error) {
+          log(`❌ 触发测试失败: ${error.message}`, 'error');
+          updateTestStatus(`错误: ${error.message}`, false);
+        } finally {
+          testBtn.disabled = false;
+        }
+      }
+
+      function playTestSound() {
+        log('🔊 播放测试音效...', 'info');
+
+        // 创建音频上下文
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        // 生成简单的提示音（440Hz，持续200ms）
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
+
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
+
+        oscillator.frequency.value = 440; // A4 音符
+        oscillator.type = 'sine';
+
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+
+        log('✅ 测试音效已播放', 'success');
+      }
+
+      // 页面加载时的提示
+      log('🚀 页面已加载', 'info');
+      log('📝 步骤 1: 在输入框中粘贴你的 Bearer Token', 'info');
+      log('📝 步骤 2: 点击 "建立 SSE 连接" 按钮', 'info');
+      log('📝 步骤 3: 连接成功后，点击 "触发测试提醒" 按钮', 'info');
+      log('📝 步骤 4: 观察日志和声音效果', 'info');
+    </script>
+  </body>
+</html>

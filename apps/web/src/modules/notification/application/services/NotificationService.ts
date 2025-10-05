@@ -144,6 +144,12 @@ export class NotificationService implements INotificationService {
     // 发布创建事件
     publishNotificationCreated(config, this.notificationQueue.length);
 
+    // 🔥 启动队列处理器（如果尚未启动）
+    if (!this.isProcessingQueue) {
+      console.log('[NotificationService] 启动队列处理器');
+      this.startQueueProcessor();
+    }
+
     return config.id;
   }
 
@@ -277,12 +283,22 @@ export class NotificationService implements INotificationService {
       }
 
       // 音效播放
+      console.log('[NotificationService] 检查音效播放条件:', {
+        hasSoundMethod: config.methods.includes(NotificationMethod.SOUND),
+        soundEnabled: this.config.soundEnabled,
+        hasSound: !!config.sound,
+        soundConfig: config.sound,
+      });
+
       if (
         config.methods.includes(NotificationMethod.SOUND) &&
         this.config.soundEnabled &&
         config.sound
       ) {
+        console.log('[NotificationService] ✅ 满足音效播放条件，准备播放');
         tasks.push(this.playNotificationSound(config));
+      } else {
+        console.warn('[NotificationService] ❌ 不满足音效播放条件，跳过');
       }
 
       // 等待所有通知方式完成
@@ -338,12 +354,23 @@ export class NotificationService implements INotificationService {
    * 播放通知音效
    */
   private async playNotificationSound(config: NotificationConfig): Promise<void> {
-    if (!config.sound) return;
+    if (!config.sound) {
+      console.warn('[NotificationService] 没有音效配置');
+      return;
+    }
+
+    console.log('[NotificationService] 🔊 开始播放音效:', {
+      soundType: config.sound.type,
+      enabled: config.sound.enabled,
+      volume: config.sound.volume,
+      notificationId: config.id,
+    });
 
     try {
       await this.audioService.play(config.sound, config.id);
+      console.log('[NotificationService] ✅ 音效播放完成');
     } catch (error) {
-      console.error('[NotificationService] 音效播放失败:', error);
+      console.error('[NotificationService] ❌ 音效播放失败:', error);
       // 不抛出错误，允许其他通知方式继续
     }
   }

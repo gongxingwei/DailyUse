@@ -35,6 +35,13 @@ export class ScheduleDebugController {
   /**
    * 手动触发测试提醒
    * POST /api/v1/schedules/debug/trigger-reminder
+   *
+   * 🔥 正确的测试流程：
+   * 1. 前端调用此接口
+   * 2. 后端通过 SSE 推送事件到前端（而不是后端的 eventBus）
+   * 3. 前端 SSE 客户端接收事件
+   * 4. SSE 客户端转发到前端事件总线
+   * 5. Notification 模块监听事件并播放声音
    */
   triggerTestReminder = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -61,42 +68,24 @@ export class ScheduleDebugController {
         source: 'manual-debug',
       };
 
-      logger.debug('🔔 [Debug] 发送测试提醒事件', { reminderData });
+      logger.debug('🔔 [Debug] 准备通过 SSE 推送测试提醒', { reminderData });
 
-      // 发送不同类型的提醒事件
-      eventBus.emit('ui:show-popup-reminder', reminderData);
-      logger.info('✅ [Debug] 发送弹窗提醒事件');
-
-      eventBus.emit('ui:play-reminder-sound', {
-        volume: reminderData.soundVolume,
-        soundFile: 'notification.wav',
-      });
-      logger.info('✅ [Debug] 发送声音提醒事件');
-
-      eventBus.emit('system:show-notification', {
-        title: reminderData.title,
-        body: reminderData.message,
-        icon: 'schedule',
-      });
-      logger.info('✅ [Debug] 发送系统通知事件');
-
-      // 发送通用的提醒触发事件
+      // 🔥 通过 SSE 推送事件到前端（使用后端的 eventBus）
+      // SSEController 监听此事件并转发到前端 SSE 连接
       eventBus.emit('reminder-triggered', reminderData);
-      logger.info('✅ [Debug] 发送通用提醒事件 (reminder-triggered)');
+
+      logger.info('✅ [Debug] 测试提醒已发送到 SSE 广播队列', { accountUuid });
 
       return res.status(200).json({
         success: true,
         code: 'DEBUG_REMINDER_TRIGGERED',
-        message: '测试提醒已触发',
+        message: '测试提醒已通过 SSE 推送',
         data: {
           reminderData,
           triggeredAt: now.toISOString(),
-          eventsSent: [
-            'ui:show-popup-reminder',
-            'ui:play-reminder-sound',
-            'system:show-notification',
-            'reminder-triggered',
-          ],
+          sseEventSent: 'schedule:reminder-triggered',
+          accountUuid,
+          note: '请检查浏览器控制台和 SSE 连接状态',
         },
       });
     } catch (error) {

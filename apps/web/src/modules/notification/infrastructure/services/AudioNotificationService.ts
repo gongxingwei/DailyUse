@@ -57,8 +57,7 @@ export class AudioNotificationService {
         };
 
         // 加载完成
-        audio.oncanplaythrough = () => {
-        };
+        audio.oncanplaythrough = () => {};
 
         this.preloadedSounds.set(type, audio);
       } catch (error) {
@@ -71,7 +70,16 @@ export class AudioNotificationService {
    * 播放通知音效
    */
   async play(config: SoundConfig, notificationId: string): Promise<void> {
+    console.log('[AudioNotificationService] 播放音效请求:', {
+      notificationId,
+      enabled: this.enabled,
+      configEnabled: config.enabled,
+      soundType: config.type,
+      volume: config.volume,
+    });
+
     if (!this.enabled || !config.enabled) {
+      console.warn('[AudioNotificationService] 音效被禁用，跳过播放');
       return;
     }
 
@@ -80,13 +88,19 @@ export class AudioNotificationService {
 
       // 获取音频元素
       if (config.type === SoundType.CUSTOM && config.customUrl) {
+        console.log('[AudioNotificationService] 加载自定义音频:', config.customUrl);
         audio = await this.loadCustomSound(config.customUrl, notificationId);
       } else {
         const preloaded = this.preloadedSounds.get(config.type);
         if (!preloaded) {
-          console.warn(`[AudioNotification] 音频不可用: ${config.type}`);
+          console.warn(`[AudioNotificationService] 音频不可用: ${config.type}`);
+          console.log(
+            '[AudioNotificationService] 已预加载的音频:',
+            Array.from(this.preloadedSounds.keys()),
+          );
           return;
         }
+        console.log('[AudioNotificationService] 使用预加载音频:', config.type);
         audio = preloaded.cloneNode() as HTMLAudioElement;
       }
 
@@ -94,9 +108,11 @@ export class AudioNotificationService {
       this.applyAudioConfig(audio, config);
 
       // 播放音频
+      console.log('[AudioNotificationService] 开始播放...');
       await this.playAudio(audio, notificationId);
+      console.log('[AudioNotificationService] ✅ 播放完成');
     } catch (error) {
-      console.error('[AudioNotification] 播放音效失败:', error);
+      console.error('[AudioNotificationService] ❌ 播放音效失败:', error);
       publishNotificationError(error as Error, 'audio_playback', notificationId, true);
     }
   }
