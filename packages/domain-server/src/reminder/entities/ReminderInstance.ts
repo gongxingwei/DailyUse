@@ -122,7 +122,7 @@ export class ReminderInstance extends ReminderInstanceCore {
 
     const now = new Date();
     const timeSinceTrigger = now.getTime() - (this.triggeredTime?.getTime() || 0);
-    
+
     // 根据优先级设置不同的升级阈值
     const escalationThresholds = {
       [ReminderContracts.ReminderPriority.LOW]: 60 * 60 * 1000, // 1小时
@@ -157,13 +157,88 @@ export class ReminderInstance extends ReminderInstanceCore {
     });
   }
 
+  static fromPersistence(data: ReminderContracts.ReminderInstancePersistenceDTO): ReminderInstance {
+    const parseJsonObject = (value: any): any => {
+      if (typeof value === 'object' && value !== null) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return {};
+        }
+      }
+      return {};
+    };
+
+    const parseSnoozeHistory = (value: any): any[] => {
+      if (Array.isArray(value)) return value;
+      if (typeof value === 'string') {
+        try {
+          const parsed = JSON.parse(value);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    return new ReminderInstance({
+      uuid: data.uuid,
+      templateUuid: data.templateUuid,
+      title: data.title,
+      message: data.message,
+      scheduledTime: data.scheduledTime,
+      triggeredTime: data.triggeredTime,
+      acknowledgedTime: data.acknowledgedTime,
+      dismissedTime: data.dismissedTime,
+      snoozedUntil: data.snoozedUntil,
+      status: data.status,
+      priority: data.priority,
+      metadata: parseJsonObject(data.metadata),
+      snoozeHistory: parseSnoozeHistory(data.snoozeHistory),
+      createdAt: data.createdAt,
+      updatedAt: data.updatedAt,
+      version: data.version,
+    });
+  }
+
+  toPersistence(accountUuid: string): ReminderContracts.ReminderInstancePersistenceDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid,
+      templateUuid: this.templateUuid,
+      title: this.title,
+      message: this.message,
+      scheduledTime: this.scheduledTime,
+      triggeredTime: this.triggeredTime,
+      acknowledgedTime: this.acknowledgedTime,
+      dismissedTime: this.dismissedTime,
+      snoozedUntil: this.snoozedUntil,
+      status: this.status,
+      priority: this.priority,
+      type: ReminderContracts.ReminderType.ABSOLUTE, // Default type
+      // Extract from metadata
+      category: this.metadata?.category || '',
+      tags: JSON.stringify(this.metadata?.tags || []),
+      sourceType: this.metadata?.sourceType,
+      sourceId: this.metadata?.sourceId,
+      metadata: JSON.stringify(this.metadata || {}),
+      snoozeHistory: JSON.stringify(this.snoozeHistory),
+      currentSnoozeCount: this.snoozeHistory.length,
+      version: this.version,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
+  }
+
   /**
    * 从模板创建实例
    */
   static createFromTemplate(
     template: { uuid: string; message: string; priority: ReminderContracts.ReminderPriority },
     scheduledTime: Date,
-    context?: any
+    context?: any,
   ): ReminderInstance {
     const now = new Date();
     return new ReminderInstance({
@@ -183,5 +258,70 @@ export class ReminderInstance extends ReminderInstanceCore {
       createdAt: now,
       updatedAt: now,
     });
+  }
+
+  /**
+   * 转换为客户端 DTO（包含计算属性）
+   */
+  toClient(): ReminderContracts.ReminderInstanceClientDTO {
+    const baseDTO = this.toDTO();
+
+    const now = new Date();
+    const scheduledTime = this.scheduledTime.getTime();
+    const timeUntil = scheduledTime - now.getTime();
+    const isOverdue = now.getTime() > scheduledTime;
+
+    // 格式化时间显示
+    let formattedTime: string;
+    const absTimeUntil = Math.abs(timeUntil);
+    const hours = Math.floor(absTimeUntil / (60 * 60 * 1000));
+    const minutes = Math.floor((absTimeUntil % (60 * 60 * 1000)) / (60 * 1000));
+
+    if (isOverdue) {
+      if (hours > 0) {
+        formattedTime = `已逾期 ${hours} 小时 ${minutes} 分钟`;
+      } else {
+        formattedTime = `已逾期 ${minutes} 分钟`;
+      }
+    } else {
+      if (hours > 24) {
+        const days = Math.floor(hours / 24);
+        formattedTime = `${days} 天后`;
+      } else if (hours > 0) {
+        formattedTime = `${hours} 小时 ${minutes} 分钟后`;
+      } else {
+        formattedTime = `${minutes} 分钟后`;
+      }
+    }
+
+    return {
+      uuid: baseDTO.uuid,
+      templateUuid: baseDTO.templateUuid,
+      title: baseDTO.title,
+      message: baseDTO.message,
+      scheduledTime: baseDTO.scheduledTime.getTime(),
+      triggeredTime: baseDTO.triggeredTime?.getTime(),
+      acknowledgedTime: baseDTO.acknowledgedTime?.getTime(),
+      dismissedTime: baseDTO.dismissedTime?.getTime(),
+      snoozedUntil: baseDTO.snoozedUntil?.getTime(),
+      status: baseDTO.status,
+      priority: baseDTO.priority,
+      metadata: baseDTO.metadata,
+      snoozeHistory: baseDTO.snoozeHistory.map((h) => ({
+        snoozedAt: h.snoozedAt.getTime(),
+        snoozeUntil: h.snoozeUntil.getTime(),
+        snoozeType: h.snoozeType,
+        customMinutes: h.customMinutes,
+        reason: h.reason,
+      })),
+      currentSnoozeCount: baseDTO.currentSnoozeCount || 0,
+      createdAt: baseDTO.createdAt?.getTime() || Date.now(),
+      updatedAt: baseDTO.updatedAt?.getTime() || Date.now(),
+      version: baseDTO.version,
+      // 计算属性
+      isOverdue,
+      timeUntil,
+      formattedTime,
+    };
   }
 }

@@ -1,6 +1,7 @@
 import type { EventHandler } from '@dailyuse/domain-core';
 import { ReminderInstanceCreatedEvent } from '../../../reminder/domain/events/ReminderEvents';
 import type { ScheduleApplicationService } from '../../application/services/ScheduleApplicationService';
+import { ScheduleContracts } from '@dailyuse/contracts';
 
 /**
  * Reminder 实例创建事件处理器
@@ -40,7 +41,11 @@ export class ReminderInstanceCreatedHandler implements EventHandler<ReminderInst
         scheduledTime: event.scheduledTime,
         priority: event.priority as any,
         alertConfig: {
-          channels: ['notification'], // 通过通知模块发送
+          methods: [ScheduleContracts.AlertMethod.POPUP, ScheduleContracts.AlertMethod.SOUND],
+          soundVolume: 80,
+          popupDuration: 10,
+          allowSnooze: true,
+          snoozeOptions: [5, 10, 15, 30], // 延后选项：5、10、15、30 分钟
         } as any,
         enabled: true,
       });

@@ -72,9 +72,10 @@ export class ReminderTemplateController {
         uuid: request.uuid,
       });
 
-      const template = await ReminderTemplateController.domainService.createReminderTemplate(
-        accountUuid,
+      // ✅ 使用 DDD Contract 接口方法，传递 accountUuid
+      const template = await ReminderTemplateController.domainService.createTemplate(
         request,
+        accountUuid,
       );
 
       logger.info('Reminder template created successfully', {

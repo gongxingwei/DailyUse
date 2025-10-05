@@ -53,6 +53,7 @@ export interface ReminderTemplateGroupPersistenceDTO {
 
 export interface ReminderInstancePersistenceDTO {
   uuid: string;
+  accountUuid: string; // Added for repository consistency
   templateUuid: string;
   title?: string;
   message: string;
@@ -64,6 +65,11 @@ export interface ReminderInstancePersistenceDTO {
   status: ReminderStatus;
   priority: ReminderPriority;
   type: ReminderType;
+  // Flattened metadata fields for Prisma schema
+  category: string;
+  tags: string; // JSON string
+  sourceType?: string;
+  sourceId?: string;
   metadata: string; // JSON string
   snoozeHistory: string; // JSON string of Snooze entries
   currentSnoozeCount?: number;

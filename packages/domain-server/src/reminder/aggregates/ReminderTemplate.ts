@@ -248,4 +248,139 @@ export class ReminderTemplate extends ReminderTemplateCore {
       version: dto.version,
     });
   }
+
+  static fromPersistence(data: ReminderContracts.ReminderTemplatePersistenceDTO): ReminderTemplate {
+    // 安全解析 JSON 字段
+    const parseTags = (tags: any): string[] => {
+      if (Array.isArray(tags)) return tags;
+      if (typeof tags === 'string') {
+        try {
+          const parsed = JSON.parse(tags);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    const parseJsonObject = (value: any): any => {
+      if (typeof value === 'object' && value !== null) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return {};
+        }
+      }
+      return {};
+    };
+
+    const timeConfig = parseJsonObject(data.timeConfig) as ReminderContracts.ReminderTimeConfig;
+
+    return new ReminderTemplate({
+      uuid: data.uuid,
+      groupUuid: data.groupUuid,
+      name: data.name,
+      description: data.description,
+      message: data.message,
+      enabled: Boolean(data.enabled), // Convert number to boolean
+      selfEnabled: Boolean(data.selfEnabled), // Convert number to boolean
+      importanceLevel: data.importanceLevel,
+      timeConfig: timeConfig,
+      priority: data.priority,
+      category: data.category,
+      tags: parseTags(data.tags),
+      icon: data.icon,
+      color: data.color,
+      position: parseJsonObject(data.position),
+      displayOrder: data.displayOrder,
+      notificationSettings: parseJsonObject(data.notificationSettings),
+      snoozeConfig: parseJsonObject(data.snoozeConfig),
+      lifecycle: parseJsonObject(data.lifecycle),
+      analytics: parseJsonObject(data.analytics),
+      version: data.version,
+      instances: [], // 子实体单独设置
+    });
+  }
+
+  toPersistence(accountUuid: string): ReminderContracts.ReminderTemplatePersistenceDTO {
+    return {
+      uuid: this.uuid,
+      groupUuid: this.groupUuid,
+      name: this.name,
+      description: this.description,
+      message: this.message,
+      enabled: this.enabled ? 1 : 0, // Convert boolean to number for DB
+      selfEnabled: this.selfEnabled ? 1 : 0,
+      importanceLevel: this.importanceLevel,
+      timeConfig: JSON.stringify(this.timeConfig),
+      priority: this.priority,
+      category: this.category,
+      tags: this.tags,
+      icon: this.icon,
+      color: this.color,
+      position: this.position ? JSON.stringify(this.position) : undefined,
+      displayOrder: this.displayOrder,
+      notificationSettings: this.notificationSettings
+        ? JSON.stringify(this.notificationSettings)
+        : undefined,
+      snoozeConfig: this.snoozeConfig ? JSON.stringify(this.snoozeConfig) : undefined,
+      lifecycle: JSON.stringify(this.lifecycle),
+      analytics: JSON.stringify(this.analytics),
+      version: this.version,
+    };
+  }
+
+  /**
+   * 转换为客户端 DTO（包含计算属性）
+   */
+  toClient(): ReminderContracts.ReminderTemplateClientDTO {
+    const baseDTO = this.toDTO();
+
+    // 计算下次触发时间
+    const nextTriggerTime = this.getNextTriggerTime();
+
+    // 计算活跃实例数量（pending 和 triggered 状态）
+    const activeInstancesCount = this.instances.filter(
+      (inst) =>
+        inst.status === ReminderContracts.ReminderStatus.PENDING ||
+        inst.status === ReminderContracts.ReminderStatus.TRIGGERED,
+    ).length;
+
+    return {
+      uuid: baseDTO.uuid,
+      groupUuid: baseDTO.groupUuid,
+      name: baseDTO.name,
+      description: baseDTO.description,
+      message: baseDTO.message,
+      enabled: baseDTO.enabled,
+      selfEnabled: baseDTO.selfEnabled,
+      importanceLevel: baseDTO.importanceLevel,
+      timeConfig: baseDTO.timeConfig,
+      priority: baseDTO.priority,
+      category: baseDTO.category,
+      tags: baseDTO.tags,
+      icon: baseDTO.icon,
+      color: baseDTO.color,
+      position: baseDTO.position,
+      displayOrder: baseDTO.displayOrder,
+      notificationSettings: baseDTO.notificationSettings,
+      snoozeConfig: baseDTO.snoozeConfig,
+      lifecycle: {
+        createdAt: baseDTO.lifecycle.createdAt.getTime(),
+        updatedAt: baseDTO.lifecycle.updatedAt.getTime(),
+        lastTriggered: baseDTO.lifecycle.lastTriggered?.getTime(),
+        triggerCount: baseDTO.lifecycle.triggerCount,
+      },
+      analytics: baseDTO.analytics,
+      version: baseDTO.version,
+      // 子实体序列化（参考 Goal 模块）
+      instances: this.instances.map((inst) => inst.toClient()),
+      // 计算属性
+      effectiveEnabled: this.enabled && this.selfEnabled,
+      nextTriggerTime: nextTriggerTime?.getTime(),
+      activeInstancesCount,
+    };
+  }
 }

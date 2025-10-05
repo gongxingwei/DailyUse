@@ -2,6 +2,8 @@ import type { ReminderContracts } from '@dailyuse/contracts';
 import { PrismaReminderAggregateRepository } from '../../infrastructure/repositories/prisma/PrismaReminderAggregateRepository';
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
+import { getEventBus } from '@dailyuse/domain-core';
+import { ReminderInstanceCreatedEvent } from '../events/ReminderEvents';
 
 type CreateReminderTemplateRequest = ReminderContracts.CreateReminderTemplateRequest;
 type UpdateReminderTemplateRequest = ReminderContracts.UpdateReminderTemplateRequest;
@@ -24,13 +26,36 @@ export class ReminderDomainService {
    * 获取账户的所有提醒模板聚合根
    */
   async getReminderTemplatesByAccount(accountUuid: string): Promise<any[]> {
-    return this.repository.getAggregatesByAccountUuid(accountUuid);
+    const entities = await this.repository.getAggregatesByAccountUuid(accountUuid);
+    return entities.map((e) => e.toClient());
   }
 
   /**
    * 创建提醒模板聚合根
    */
   async createReminderTemplate(accountUuid: string, data: any): Promise<any> {
+    console.log('🏗️ [ReminderDomainService] 创建模板数据:', JSON.stringify(data, null, 2));
+
+    const timeConfig = data.timeConfig || {};
+
+    // 处理 CUSTOM 类型的 timeConfig
+    let timeConfigDuration: number | null = null;
+    let timeConfigSchedule: any = {};
+
+    if (timeConfig.type === 'CUSTOM' && timeConfig.customPattern) {
+      // 将间隔转换为毫秒
+      const { interval, unit } = timeConfig.customPattern;
+      const unitToMs: Record<string, number> = {
+        MINUTES: 60 * 1000,
+        HOURS: 60 * 60 * 1000,
+        DAYS: 24 * 60 * 60 * 1000,
+      };
+      timeConfigDuration = interval * (unitToMs[unit] || 60000);
+      timeConfigSchedule = timeConfig.customPattern;
+
+      console.log(`⏱️ 自定义间隔: ${interval} ${unit} = ${timeConfigDuration}ms`);
+    }
+
     const templateData = {
       uuid: randomUUID(),
       accountUuid,
@@ -42,26 +67,34 @@ export class ReminderDomainService {
       tags: data.tags || [],
       priority: data.priority || 'normal',
       groupUuid: data.groupUuid || null,
-      // 添加时间配置的默认值
-      timeConfigType: data.timeConfig?.type || 'daily',
-      timeConfigTimes: JSON.stringify(data.timeConfig?.times || ['09:00']),
-      timeConfigWeekdays: JSON.stringify(data.timeConfig?.weekdays || [1, 2, 3, 4, 5]),
-      timeConfigMonthDays: JSON.stringify(data.timeConfig?.monthDays || []),
+      // ✅ 正确保存时间配置
+      timeConfigType: timeConfig.type || 'DAILY',
+      timeConfigTimes: JSON.stringify(timeConfig.times || []),
+      timeConfigWeekdays: JSON.stringify(timeConfig.weekdays || []),
+      timeConfigMonthDays: JSON.stringify(timeConfig.monthDays || []),
+      timeConfigDuration: timeConfigDuration,
+      timeConfigSchedule: JSON.stringify(timeConfigSchedule),
     };
+
+    console.log('💾 [ReminderDomainService] 保存到数据库的数据:', templateData);
 
     const template = await this.repository.createReminderTemplate(templateData);
 
-    // 如果模板创建时就是启用状态，自动创建实例
+    console.log('✅ [ReminderDomainService] 模板已保存到数据库');
+
+    // ✅ 如果模板创建时就是启用状态，自动创建 Instance
+    // Instance 创建时会发布事件，Schedule 模块会监听事件并创建 Schedule
     if (templateData.enabled) {
       try {
-        await this.createInstancesFromTemplate(template.uuid);
+        console.log('🔄 [ReminderDomainService] 创建初始 Instances...');
+        await this.createInstancesFromTemplate(template.uuid, template.accountUuid);
       } catch (error) {
-        console.error('创建模板实例时出错:', error);
+        console.error('❌ 创建模板实例时出错:', error);
         // 不阻断模板创建流程
       }
     }
 
-    return template;
+    return template.toClient();
   }
 
   /**
@@ -82,7 +115,8 @@ export class ReminderDomainService {
    * 获取单个提醒模板聚合根
    */
   async getReminderTemplate(templateUuid: string): Promise<any | null> {
-    return this.repository.getReminderTemplate(templateUuid);
+    const entity = await this.repository.getReminderTemplate(templateUuid);
+    return entity ? entity.toClient() : null;
   }
 
   /**
@@ -107,7 +141,11 @@ export class ReminderDomainService {
 
     // 如果启用模板，自动创建实例和调度
     if (enabled) {
-      await this.createInstancesFromTemplate(templateUuid);
+      // 获取模板以获得 accountUuid
+      const template = await this.repository.getReminderTemplate(templateUuid);
+      if (template) {
+        await this.createInstancesFromTemplate(templateUuid, template.accountUuid);
+      }
     } else {
       // 如果禁用模板，取消未来的实例
       await this.cancelFutureInstances(templateUuid);
@@ -130,22 +168,58 @@ export class ReminderDomainService {
 
   /**
    * 创建提醒实例
+   * 创建后会发布 ReminderInstanceCreatedEvent，Schedule 模块会监听此事件并创建对应的 Schedule
    */
   async createReminderInstance(templateUuid: string, accountUuid: string, data: any): Promise<any> {
+    // 获取模板信息（用于事件发布）
+    const template = await this.repository.getReminderTemplate(templateUuid);
+    if (!template) {
+      throw new Error(`模板不存在: ${templateUuid}`);
+    }
+
     const instanceData = {
       uuid: randomUUID(),
       templateUuid,
       accountUuid,
-      title: data.title || null,
-      message: data.message,
+      title: data.title || template.name,
+      message: data.message || template.message,
       scheduledTime: new Date(data.scheduledTime),
       status: data.status || 'pending',
-      priority: data.priority || 'normal',
-      category: data.category || 'general',
-      tags: data.tags || [],
+      priority: data.priority || template.priority || 'normal',
+      category: data.category || template.category || 'general',
+      tags: data.tags || template.tags || [],
     };
 
-    return this.repository.createReminderInstance(instanceData);
+    // 创建实例
+    const createdInstance = await this.repository.createReminderInstance(instanceData);
+
+    // 🔥 发布 ReminderInstanceCreatedEvent
+    // Schedule 模块的 ReminderInstanceCreatedHandler 会监听此事件并创建 Schedule
+    const eventBus = getEventBus();
+    const event = new ReminderInstanceCreatedEvent(
+      createdInstance.uuid,
+      templateUuid,
+      accountUuid,
+      new Date(createdInstance.scheduledTime),
+      createdInstance.title || template.name,
+      createdInstance.message,
+      createdInstance.priority,
+      createdInstance.category,
+      {
+        tags: createdInstance.tags,
+        templateName: template.name,
+      },
+    );
+
+    await eventBus.publish([event]);
+
+    console.log(`📢 [ReminderDomainService] 已发布 ReminderInstanceCreatedEvent:`, {
+      instanceUuid: createdInstance.uuid,
+      templateUuid,
+      scheduledTime: createdInstance.scheduledTime,
+    });
+
+    return createdInstance;
   }
 
   /**
@@ -260,7 +334,18 @@ export class ReminderDomainService {
   // ========== DDD Contract 接口实现 ==========
 
   // 提醒模板相关方法
-  async createTemplate(request: CreateReminderTemplateRequest): Promise<ReminderTemplateResponse> {
+  async createTemplate(
+    request: CreateReminderTemplateRequest,
+    accountUuid?: string,
+  ): Promise<ReminderTemplateResponse> {
+    console.log(
+      '📝 [ReminderDomainService] 创建提醒模板，请求数据:',
+      JSON.stringify(request, null, 2),
+    );
+
+    // 使用传入的 accountUuid 或默认值
+    const effectiveAccountUuid = accountUuid || 'current-account-uuid';
+
     // 映射contracts到内部数据结构
     const templateData = {
       name: request.name,
@@ -271,146 +356,31 @@ export class ReminderDomainService {
       tags: request.tags,
       priority: request.priority,
       groupUuid: request.groupUuid || null,
-    };
-
-    // 需要传入accountUuid，这里暂时用占位符
-    const accountUuid = 'current-account-uuid'; // TODO: 从认证中间件获取
-    const template = await this.createReminderTemplate(accountUuid, templateData);
-
-    // 映射到response格式
-    return {
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
+      // ✅ 传递完整的 timeConfig
       timeConfig: request.timeConfig,
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
     };
+
+    const template = await this.createReminderTemplate(effectiveAccountUuid, templateData);
+
+    console.log('✅ [ReminderDomainService] 提醒模板已创建:', template.uuid);
+
+    return template; // Already ClientDTO from createReminderTemplate
   }
 
   async getTemplates(queryParams: any): Promise<ReminderTemplateResponse[]> {
-    const templates = await this.getReminderTemplatesByAccount(queryParams.accountUuid);
-
-    return templates.map((template) => ({
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
-      timeConfig: {
-        type: 'daily' as const,
-        times: ['09:00'],
-      },
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
-    }));
+    return this.getReminderTemplatesByAccount(queryParams.accountUuid); // Already ClientDTO[]
   }
 
   async getTemplateById(id: string): Promise<ReminderTemplateResponse | null> {
-    const template = await this.getReminderTemplate(id);
-
-    if (!template) return null;
-
-    return {
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
-      timeConfig: {
-        type: 'daily' as const,
-        times: ['09:00'],
-      },
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
-    };
+    return this.getReminderTemplate(id); // Already ClientDTO | null
   }
 
   async updateTemplate(
     id: string,
     request: UpdateReminderTemplateRequest,
   ): Promise<ReminderTemplateResponse> {
-    const template = await this.updateReminderTemplate(id, request);
-
-    return {
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
-      timeConfig: request.timeConfig || {
-        type: 'daily' as const,
-        times: ['09:00'],
-      },
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
-    };
+    const entity = await this.updateReminderTemplate(id, request);
+    return entity.toClient();
   }
 
   async deleteTemplate(id: string): Promise<void> {
@@ -419,72 +389,13 @@ export class ReminderDomainService {
 
   async activateTemplate(id: string): Promise<ReminderTemplateResponse> {
     await this.toggleReminderTemplateEnabled(id, true);
-    const template = await this.getReminderTemplate(id);
-
-    return {
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
-      timeConfig: {
-        type: 'daily' as const,
-        times: ['09:00'],
-      },
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
-    };
+    return this.getReminderTemplate(id); // Already ClientDTO
   }
 
   async pauseTemplate(id: string): Promise<ReminderTemplateResponse> {
     await this.toggleReminderTemplateEnabled(id, false);
-    const template = await this.getReminderTemplate(id);
-
-    return {
-      uuid: template.uuid,
-      groupUuid: template.groupUuid,
-      name: template.name,
-      description: template.description,
-      message: template.message,
-      enabled: template.enabled,
-      selfEnabled: template.enabled,
-      timeConfig: {
-        type: 'daily' as const,
-        times: ['09:00'],
-      },
-      priority: template.priority,
-      category: template.category,
-      tags: template.tags,
-      displayOrder: 0,
-      lifecycle: {
-        createdAt: template.createdAt.toISOString(),
-        updatedAt: template.updatedAt.toISOString(),
-        triggerCount: 0,
-      },
-      analytics: {
-        totalTriggers: 0,
-        acknowledgedCount: 0,
-        dismissedCount: 0,
-        snoozeCount: 0,
-      },
-      version: template.version,
-    };
+    const entity = await this.getReminderTemplate(id);
+    return entity; // Already ClientDTO
   }
 
   // 提醒实例相关方法
@@ -730,8 +641,13 @@ export class ReminderDomainService {
 
   /**
    * 根据模板创建实例和调度
+   * 创建 Instance 后会发布 ReminderInstanceCreatedEvent
+   * Schedule 模块会监听此事件并创建对应的 Schedule
    */
-  private async createInstancesFromTemplate(templateUuid: string): Promise<void> {
+  private async createInstancesFromTemplate(
+    templateUuid: string,
+    accountUuid: string,
+  ): Promise<void> {
     const template = await this.repository.getReminderTemplate(templateUuid);
     if (!template) {
       throw new Error('模板不存在');
@@ -743,13 +659,14 @@ export class ReminderDomainService {
 
     const instances = this.generateInstancesFromTimeConfig(template, now, endDate);
 
-    // 批量创建实例
+    // 批量创建实例，并发布事件让 Schedule 模块创建 Schedule
     for (const instanceData of instances) {
-      await this.repository.createReminderInstance(instanceData);
+      // 创建实例（会自动发布 ReminderInstanceCreatedEvent）
+      await this.createReminderInstance(template.uuid, accountUuid, instanceData);
     }
 
-    // TODO: 创建调度记录 - 需要在仓储中实现 createReminderSchedule 方法
-    console.log(`已为模板 ${template.name} 创建 ${instances.length} 个实例`);
+    console.log(`✅ 已为模板 ${template.name} 创建 ${instances.length} 个实例`);
+    console.log(`📢 已发布 ${instances.length} 个 ReminderInstanceCreatedEvent 事件`);
   }
 
   /**

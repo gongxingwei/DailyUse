@@ -1,0 +1,12 @@
+{
+  "name": "测试事件驱动-修复后",
+  "message": "这是第二次测试提醒",
+  "enabled": true,
+  "timeConfig": {
+    "type": "CUSTOM",
+    "customPattern": {
+      "interval": 3,
+      "unit": "MINUTES"
+    }
+  }
+}

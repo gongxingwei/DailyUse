@@ -73,31 +73,34 @@ export const useReminderStore = defineStore('reminder', () => {
   const reminderTemplateGroups = computed(() => reminderGroups.value);
 
   /**
-   * 获取所有提醒实例
+   * 获取所有提醒实例 (从模板中提取)
    */
-  const getAllReminderInstances = computed(() => reminderInstances.value);
-
-  /**
-   * 获取活跃的提醒实例
-   */
-  const getActiveReminderInstances = computed(() =>
-    reminderInstances.value.filter(
-      (instance) =>
-        instance.status === ReminderContracts.ReminderStatus.TRIGGERED ||
-        instance.status === ReminderContracts.ReminderStatus.PENDING,
-    ),
+  const getAllReminderInstances = computed(() =>
+    reminderTemplates.value.flatMap((template) => template.instances || []),
   );
 
   /**
-   * 根据模板分组的实例 (域实体对象)
+   * 获取活跃的提醒实例 (从模板中提取)
+   */
+  const getActiveReminderInstances = computed(() =>
+    reminderTemplates.value
+      .flatMap((template) => template.instances || [])
+      .filter(
+        (instance) =>
+          instance.status === ReminderContracts.ReminderStatus.TRIGGERED ||
+          instance.status === ReminderContracts.ReminderStatus.PENDING,
+      ),
+  );
+
+  /**
+   * 根据模板分组的实例 (域实体对象) - 直接从模板中访问
    */
   const getInstancesByTemplate = computed(() => {
     const grouped: Record<string, ReminderInstance[]> = {};
-    reminderInstances.value.forEach((instance) => {
-      if (!grouped[instance.templateUuid]) {
-        grouped[instance.templateUuid] = [];
+    reminderTemplates.value.forEach((template) => {
+      if (template.instances && template.instances.length > 0) {
+        grouped[template.uuid] = template.instances;
       }
-      grouped[instance.templateUuid].push(instance as ReminderInstance);
     });
     return grouped;
   });
@@ -273,8 +276,11 @@ export const useReminderStore = defineStore('reminder', () => {
   };
 
   // ===== 提醒实例管理 =====
+  // 注意：Instances 现在通过 Template 聚合根管理，不再维护独立的 instances 数组
+  // 所有实例操作应该通过更新对应的 Template 来完成
 
   /**
+   * @deprecated 实例现在在 Template 内部，通过 getAllReminderInstances 计算属性访问
    * 设置提醒实例列表 (域实体对象)
    */
   const setReminderInstances = (instances: ReminderInstance[]) => {
@@ -283,8 +289,21 @@ export const useReminderStore = defineStore('reminder', () => {
 
   /**
    * 添加或更新提醒实例 (域实体对象)
+   * 注意：这会同时更新对应的 Template 对象
    */
   const addOrUpdateReminderInstance = (instance: ReminderInstance) => {
+    // 找到对应的 template
+    const template = reminderTemplates.value.find((t) => t.uuid === instance.templateUuid);
+    if (template && template.instances) {
+      const instanceIndex = template.instances.findIndex((i) => i.uuid === instance.uuid);
+      if (instanceIndex >= 0) {
+        template.instances[instanceIndex] = instance;
+      } else {
+        template.instances.push(instance);
+      }
+    }
+
+    // 兼容旧代码：同时更新独立的 instances 数组
     const index = reminderInstances.value.findIndex((i) => i.uuid === instance.uuid);
     if (index >= 0) {
       reminderInstances.value[index] = instance;
@@ -306,6 +325,17 @@ export const useReminderStore = defineStore('reminder', () => {
    * 删除提醒实例
    */
   const removeReminderInstance = (uuid: string) => {
+    // 从所有 templates 中删除
+    reminderTemplates.value.forEach((template) => {
+      if (template.instances) {
+        const index = template.instances.findIndex((i) => i.uuid === uuid);
+        if (index >= 0) {
+          template.instances.splice(index, 1);
+        }
+      }
+    });
+
+    // 兼容旧代码：同时删除独立数组中的实例
     const index = reminderInstances.value.findIndex((i) => i.uuid === uuid);
     if (index >= 0) {
       reminderInstances.value.splice(index, 1);
@@ -314,18 +344,27 @@ export const useReminderStore = defineStore('reminder', () => {
 
   /**
    * 根据UUID获取提醒实例 (返回域实体对象)
+   * 从所有模板中查找
    */
   const getReminderInstanceByUuid = (uuid: string): ReminderInstance | null => {
-    return (reminderInstances.value.find((i) => i.uuid === uuid) as ReminderInstance) || null;
+    for (const template of reminderTemplates.value) {
+      if (template.instances) {
+        const instance = template.instances.find((i) => i.uuid === uuid);
+        if (instance) {
+          return instance;
+        }
+      }
+    }
+    return null;
   };
 
   /**
    * 根据模板UUID获取提醒实例列表 (返回域实体对象数组)
+   * 直接从模板中访问
    */
   const getReminderInstancesByTemplate = (templateUuid: string): ReminderInstance[] => {
-    return reminderInstances.value.filter(
-      (i) => i.templateUuid === templateUuid,
-    ) as ReminderInstance[];
+    const template = reminderTemplates.value.find((t) => t.uuid === templateUuid);
+    return template?.instances || [];
   };
 
   // ===== 过滤器管理 =====

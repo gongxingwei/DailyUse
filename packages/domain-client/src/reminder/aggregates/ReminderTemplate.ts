@@ -206,7 +206,7 @@ export class ReminderTemplate extends ReminderTemplateCore {
    * 从 API 响应创建模板实例
    */
   static fromApiResponse(response: any): ReminderTemplate {
-    return new ReminderTemplate({
+    const template = new ReminderTemplate({
       uuid: response.uuid,
       groupUuid: response.groupUuid,
       name: response.name,
@@ -242,6 +242,15 @@ export class ReminderTemplate extends ReminderTemplateCore {
       analytics: response.analytics,
       version: response.version,
     });
+
+    // 转换 instances (如果存在)
+    if (response.instances && Array.isArray(response.instances)) {
+      template.instances = response.instances.map((instanceData: any) =>
+        ReminderInstance.fromResponse(instanceData),
+      );
+    }
+
+    return template;
   }
 
   /**
@@ -261,5 +270,51 @@ export class ReminderTemplate extends ReminderTemplateCore {
         times: ['09:00'],
       },
     });
+  }
+
+  /**
+   * 从客户端 DTO 创建实体（用于 API 响应）
+   */
+  static fromClientDTO(dto: ReminderContracts.ReminderTemplateClientDTO): ReminderTemplate {
+    const template = new ReminderTemplate({
+      uuid: dto.uuid,
+      groupUuid: dto.groupUuid,
+      name: dto.name,
+      description: dto.description,
+      message: dto.message,
+      enabled: dto.enabled,
+      selfEnabled: dto.selfEnabled,
+      importanceLevel: dto.importanceLevel,
+      timeConfig: dto.timeConfig,
+      priority: dto.priority,
+      category: dto.category,
+      tags: dto.tags,
+      icon: dto.icon,
+      color: dto.color,
+      position: dto.position,
+      displayOrder: dto.displayOrder,
+      notificationSettings: dto.notificationSettings,
+      snoozeConfig: dto.snoozeConfig,
+      lifecycle: {
+        createdAt: new Date(dto.lifecycle.createdAt),
+        updatedAt: new Date(dto.lifecycle.updatedAt),
+        lastTriggered: dto.lifecycle.lastTriggered
+          ? new Date(dto.lifecycle.lastTriggered)
+          : undefined,
+        triggerCount: dto.lifecycle.triggerCount,
+      },
+      analytics: dto.analytics,
+      version: dto.version,
+    });
+
+    // 转换 instances (如果存在)
+    if (dto.instances && Array.isArray(dto.instances)) {
+      template.instances = dto.instances.map(
+        (instanceDTO: ReminderContracts.ReminderInstanceClientDTO) =>
+          ReminderInstance.fromClientDTO(instanceDTO),
+      );
+    }
+
+    return template;
   }
 }

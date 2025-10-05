@@ -38,7 +38,6 @@ import { ImportanceLevel } from '../../shared/index';
  */
 export interface ReminderTemplateDTO {
   uuid: string;
-  accountUuid: string;
   groupUuid?: string;
   name: string;
   description?: string;
@@ -77,9 +76,11 @@ export interface ReminderTemplateDTO {
 
 /**
  * 提醒模板客户端 DTO - 前端渲染对象
- * 包含所有服务端数据 + 计算属性
+ * 包含所有服务端数据 + 计算属性 + 子实体
  */
 export interface ReminderTemplateClientDTO extends ReminderTemplateDTO {
+  // 子实体
+  instances?: ReminderInstanceClientDTO[]; // 提醒实例列表
   // 计算属性
   effectiveEnabled: boolean; // 综合考虑 selfEnabled 和 group.enabled
   nextTriggerTime?: number; // 下次触发时间
@@ -175,7 +176,6 @@ export type UpdateReminderTemplateGroupRequest = Partial<
  */
 export interface ReminderInstanceDTO {
   uuid: string;
-  accountUuid: string;
   templateUuid: string;
   title?: string;
   message: string;
