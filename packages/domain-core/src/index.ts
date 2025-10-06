@@ -45,6 +45,7 @@ export * from './reminder';
 
 // Setting domain exports
 export * from './setting/SettingCore';
+export * from './setting/aggregates';
 
 // Schedule domain exports
 export * from './schedule';

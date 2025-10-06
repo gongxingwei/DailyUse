@@ -5,11 +5,13 @@
  */
 
 // 聚合根
-export * from './aggregates/SettingDefinition';
+export * from './aggregates';
 
-// TODO: 添加其他实体、值对象和仓储接口
+// 仓储接口
+export * from './repositories';
+
+// TODO: 添加其他实体、值对象
 // export * from './entities/SettingGroup';
 // export * from './entities/SettingValue';
 // export * from './entities/SettingChangeRecord';
 // export * from './entities/SettingBackup';
-// export * from './repositories/ISettingRepository';

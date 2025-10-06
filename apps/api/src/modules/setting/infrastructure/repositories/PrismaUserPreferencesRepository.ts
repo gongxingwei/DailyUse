@@ -4,8 +4,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { IUserPreferencesRepository } from '../../domain/repositories/IUserPreferencesRepository';
-import { UserPreferences } from '../../domain/aggregates/UserPreferences';
+import { UserPreferences, type IUserPreferencesRepository } from '@dailyuse/domain-server';
 
 export class PrismaUserPreferencesRepository implements IUserPreferencesRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -15,51 +14,51 @@ export class PrismaUserPreferencesRepository implements IUserPreferencesReposito
       where: { accountUuid },
     });
 
-    return data ? this.toDomain(data) : null;
+    return data ? UserPreferences.fromPersistence(data) : null;
+  }
+
+  async findByUuid(uuid: string): Promise<UserPreferences | null> {
+    const data = await this.prisma.userPreferences.findUnique({
+      where: { uuid },
+    });
+
+    return data ? UserPreferences.fromPersistence(data) : null;
   }
 
   async save(preferences: UserPreferences): Promise<UserPreferences> {
+    const persistenceData = preferences.toPersistence();
+
     const data = await this.prisma.userPreferences.upsert({
       where: { accountUuid: preferences.accountUuid },
-      create: {
-        uuid: preferences.uuid,
-        accountUuid: preferences.accountUuid,
-        language: preferences.language,
-        timezone: preferences.timezone,
-        locale: preferences.locale,
-        themeMode: preferences.themeMode,
-        notificationsEnabled: preferences.notificationsEnabled,
-        emailNotifications: preferences.emailNotifications,
-        pushNotifications: preferences.pushNotifications,
-        autoLaunch: preferences.autoLaunch,
-        defaultModule: preferences.defaultModule,
-        analyticsEnabled: preferences.analyticsEnabled,
-        crashReportsEnabled: preferences.crashReportsEnabled,
-        createdAt: new Date(preferences.createdAt),
-        updatedAt: new Date(preferences.updatedAt),
-      },
+      create: persistenceData,
       update: {
-        language: preferences.language,
-        timezone: preferences.timezone,
-        locale: preferences.locale,
-        themeMode: preferences.themeMode,
-        notificationsEnabled: preferences.notificationsEnabled,
-        emailNotifications: preferences.emailNotifications,
-        pushNotifications: preferences.pushNotifications,
-        autoLaunch: preferences.autoLaunch,
-        defaultModule: preferences.defaultModule,
-        analyticsEnabled: preferences.analyticsEnabled,
-        crashReportsEnabled: preferences.crashReportsEnabled,
-        updatedAt: new Date(preferences.updatedAt),
+        language: persistenceData.language,
+        timezone: persistenceData.timezone,
+        locale: persistenceData.locale,
+        themeMode: persistenceData.themeMode,
+        notificationsEnabled: persistenceData.notificationsEnabled,
+        emailNotifications: persistenceData.emailNotifications,
+        pushNotifications: persistenceData.pushNotifications,
+        autoLaunch: persistenceData.autoLaunch,
+        defaultModule: persistenceData.defaultModule,
+        analyticsEnabled: persistenceData.analyticsEnabled,
+        crashReportsEnabled: persistenceData.crashReportsEnabled,
+        updatedAt: persistenceData.updatedAt,
       },
     });
 
-    return this.toDomain(data);
+    return UserPreferences.fromPersistence(data);
   }
 
-  async delete(accountUuid: string): Promise<void> {
+  async deleteByAccountUuid(accountUuid: string): Promise<void> {
     await this.prisma.userPreferences.delete({
       where: { accountUuid },
+    });
+  }
+
+  async delete(uuid: string): Promise<void> {
+    await this.prisma.userPreferences.delete({
+      where: { uuid },
     });
   }
 
@@ -72,29 +71,38 @@ export class PrismaUserPreferencesRepository implements IUserPreferencesReposito
       },
     });
 
-    return data.map((item) => this.toDomain(item));
+    return data.map((item) => UserPreferences.fromPersistence(item));
   }
 
-  /**
-   * 将 Prisma 数据转换为领域实体
-   */
-  private toDomain(data: any): UserPreferences {
-    return new UserPreferences({
-      uuid: data.uuid,
-      accountUuid: data.accountUuid,
-      language: data.language,
-      timezone: data.timezone,
-      locale: data.locale,
-      themeMode: data.themeMode as 'light' | 'dark' | 'system',
-      notificationsEnabled: data.notificationsEnabled,
-      emailNotifications: data.emailNotifications,
-      pushNotifications: data.pushNotifications,
-      autoLaunch: data.autoLaunch,
-      defaultModule: data.defaultModule,
-      analyticsEnabled: data.analyticsEnabled,
-      crashReportsEnabled: data.crashReportsEnabled,
-      createdAt: data.createdAt.getTime(),
-      updatedAt: data.updatedAt.getTime(),
+  async saveMany(preferencesList: UserPreferences[]): Promise<UserPreferences[]> {
+    const results: UserPreferences[] = [];
+
+    for (const preferences of preferencesList) {
+      const saved = await this.save(preferences);
+      results.push(saved);
+    }
+
+    return results;
+  }
+
+  async exists(accountUuid: string): Promise<boolean> {
+    const count = await this.prisma.userPreferences.count({
+      where: { accountUuid },
     });
+    return count > 0;
+  }
+
+  async findAll(offset: number, limit: number): Promise<UserPreferences[]> {
+    const data = await this.prisma.userPreferences.findMany({
+      skip: offset,
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return data.map((item) => UserPreferences.fromPersistence(item));
+  }
+
+  async count(): Promise<number> {
+    return await this.prisma.userPreferences.count();
   }
 }

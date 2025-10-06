@@ -5,7 +5,7 @@
  * @description 处理设置相关的业务逻辑
  */
 
-import { UserPreferences } from '../aggregates/UserPreferences';
+import { UserPreferences } from '@dailyuse/domain-server';
 import { generateUUID } from '@dailyuse/utils';
 import type {
   ThemeModeChangedEvent,

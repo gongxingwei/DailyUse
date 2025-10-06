@@ -6,6 +6,146 @@
 
 import type { SettingType, SettingScope, SettingCategory } from './types';
 
+// ========== 用户偏好事件 ==========
+
+/**
+ * 用户偏好创建事件载荷
+ */
+export interface UserPreferencesCreatedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 语言 */
+  language: string;
+  /** 时区 */
+  timezone: string;
+  /** 主题模式 */
+  themeMode: 'light' | 'dark' | 'system';
+  /** 创建时间 */
+  createdAt: Date;
+}
+
+/**
+ * 用户偏好更新事件载荷
+ */
+export interface UserPreferencesUpdatedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 更新的字段 */
+  updatedFields: string[];
+  /** 旧值 */
+  oldValues: Record<string, any>;
+  /** 新值 */
+  newValues: Record<string, any>;
+  /** 更新时间 */
+  updatedAt: Date;
+}
+
+/**
+ * 主题模式切换事件载荷
+ */
+export interface ThemeModeChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 旧主题模式 */
+  oldMode: 'light' | 'dark' | 'system';
+  /** 新主题模式 */
+  newMode: 'light' | 'dark' | 'system';
+  /** 实际应用的主题（如果是system，则为解析后的值） */
+  effectiveTheme: 'light' | 'dark';
+  /** 切换时间 */
+  changedAt: Date;
+  /** 切换原因 */
+  reason?: 'user' | 'system' | 'schedule';
+}
+
+/**
+ * 语言更改事件载荷
+ */
+export interface LanguageChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 旧语言 */
+  oldLanguage: string;
+  /** 新语言 */
+  newLanguage: string;
+  /** 更改时间 */
+  changedAt: Date;
+}
+
+/**
+ * 时区更改事件载荷
+ */
+export interface TimezoneChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 旧时区 */
+  oldTimezone: string;
+  /** 新时区 */
+  newTimezone: string;
+  /** 更改时间 */
+  changedAt: Date;
+}
+
+/**
+ * 通知设置更改事件载荷
+ */
+export interface NotificationSettingsChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 总开关状态 */
+  notificationsEnabled: boolean;
+  /** 邮件通知状态 */
+  emailNotifications: boolean;
+  /** 推送通知状态 */
+  pushNotifications: boolean;
+  /** 更改时间 */
+  changedAt: Date;
+}
+
+/**
+ * 应用偏好更改事件载荷
+ */
+export interface AppPreferencesChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 自动启动状态 */
+  autoLaunch?: boolean;
+  /** 默认模块 */
+  defaultModule?: string;
+  /** 更改时间 */
+  changedAt: Date;
+}
+
+/**
+ * 隐私设置更改事件载荷
+ */
+export interface PrivacySettingsChangedEventPayload {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 数据分析状态 */
+  analyticsEnabled: boolean;
+  /** 崩溃报告状态 */
+  crashReportsEnabled: boolean;
+  /** 更改时间 */
+  changedAt: Date;
+}
+
 // ========== 设置定义事件 ==========
 
 /**
@@ -407,6 +547,19 @@ export type SettingMonitoringDomainEvent =
   | { type: 'SettingUsageStats'; payload: SettingUsageStatsEventPayload };
 
 /**
+ * 用户偏好领域事件
+ */
+export type UserPreferencesDomainEvent =
+  | { type: 'UserPreferencesCreated'; payload: UserPreferencesCreatedEventPayload }
+  | { type: 'UserPreferencesUpdated'; payload: UserPreferencesUpdatedEventPayload }
+  | { type: 'ThemeModeChanged'; payload: ThemeModeChangedEventPayload }
+  | { type: 'LanguageChanged'; payload: LanguageChangedEventPayload }
+  | { type: 'TimezoneChanged'; payload: TimezoneChangedEventPayload }
+  | { type: 'NotificationSettingsChanged'; payload: NotificationSettingsChangedEventPayload }
+  | { type: 'AppPreferencesChanged'; payload: AppPreferencesChangedEventPayload }
+  | { type: 'PrivacySettingsChanged'; payload: PrivacySettingsChangedEventPayload };
+
+/**
  * 所有设置领域事件
  */
 export type SettingDomainEvent =
@@ -416,4 +569,5 @@ export type SettingDomainEvent =
   | SettingBackupDomainEvent
   | SettingValidationDomainEvent
   | SettingMigrationDomainEvent
-  | SettingMonitoringDomainEvent;
+  | SettingMonitoringDomainEvent
+  | UserPreferencesDomainEvent;

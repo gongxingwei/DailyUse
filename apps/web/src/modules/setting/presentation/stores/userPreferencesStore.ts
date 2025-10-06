@@ -5,10 +5,11 @@
 
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { UserPreferences } from '@dailyuse/domain-client';
 import {
   userPreferencesApi,
-  type UserPreferences,
-  type NotificationPreferences,
+  type UserPreferencesDTO,
+  type UpdateUserPreferencesRequestDTO,
 } from '../../api/userPreferencesApi';
 
 /**
@@ -87,7 +88,7 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
 
     try {
       const data = await userPreferencesApi.getPreferences();
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '获取用户偏好失败';
       console.error('获取用户偏好失败:', err);
@@ -106,7 +107,7 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
 
     try {
       const data = await userPreferencesApi.switchThemeMode(themeMode);
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '切换主题模式失败';
       console.error('切换主题模式失败:', err);
@@ -125,7 +126,7 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
 
     try {
       const data = await userPreferencesApi.changeLanguage(language);
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更改语言失败';
       console.error('更改语言失败:', err);
@@ -139,14 +140,14 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
    * 更新通知偏好
    */
   async function updateNotificationPreferences(
-    notificationPrefs: NotificationPreferences,
+    notificationPrefs: Partial<UpdateUserPreferencesRequestDTO>,
   ): Promise<void> {
     loading.value = true;
     error.value = null;
 
     try {
       const data = await userPreferencesApi.updateNotificationPreferences(notificationPrefs);
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新通知偏好失败';
       console.error('更新通知偏好失败:', err);
@@ -159,13 +160,13 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
   /**
    * 更新用户偏好（批量）
    */
-  async function updatePreferences(updates: Partial<UserPreferences>): Promise<void> {
+  async function updatePreferences(updates: UpdateUserPreferencesRequestDTO): Promise<void> {
     loading.value = true;
     error.value = null;
 
     try {
       const data = await userPreferencesApi.updatePreferences(updates);
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '更新用户偏好失败';
       console.error('更新用户偏好失败:', err);
@@ -184,7 +185,7 @@ export const useUserPreferencesStore = defineStore('userPreferences', () => {
 
     try {
       const data = await userPreferencesApi.resetToDefault();
-      preferences.value = data;
+      preferences.value = UserPreferences.fromDTO(data);
     } catch (err) {
       error.value = err instanceof Error ? err.message : '重置设置失败';
       console.error('重置设置失败:', err);

@@ -28,3 +28,6 @@ export * from './schedule';
 
 // Theme domain client exports
 export * from './theme';
+
+// Setting domain client exports
+export * from './setting';

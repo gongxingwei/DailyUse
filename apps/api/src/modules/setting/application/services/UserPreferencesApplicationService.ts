@@ -6,11 +6,13 @@
  */
 
 import { SettingDomainService } from '../../domain/services/SettingDomainService';
-import type { IUserPreferencesRepository } from '../../domain/repositories/IUserPreferencesRepository';
-import type { IUserPreferences } from '../../domain/aggregates/UserPreferences';
+import type { IUserPreferencesRepository, UserPreferences } from '@dailyuse/domain-server';
+import { SettingContracts } from '@dailyuse/contracts';
 import type { SettingDomainEvent } from '../../domain/events/SettingDomainEvents';
 import type { IEventPublisher } from '../interfaces/IEventPublisher';
 import { createLogger } from '@dailyuse/utils';
+
+type UserPreferencesDTO = SettingContracts.UserPreferencesDTO;
 
 const logger = createLogger('UserPreferencesApplicationService');
 
@@ -33,7 +35,7 @@ export class UserPreferencesApplicationService {
    * 获取用户偏好
    * 如果不存在，创建默认偏好
    */
-  async getUserPreferences(accountUuid: string): Promise<IUserPreferences> {
+  async getUserPreferences(accountUuid: string): Promise<UserPreferencesDTO> {
     logger.info('Getting user preferences', { accountUuid });
 
     let preferences = await this.repository.findByAccountUuid(accountUuid);
@@ -44,7 +46,7 @@ export class UserPreferencesApplicationService {
       preferences = await this.repository.save(preferences);
     }
 
-    return preferences.toObject();
+    return preferences.toDTO();
   }
 
   /**
@@ -54,7 +56,7 @@ export class UserPreferencesApplicationService {
   async switchThemeMode(
     accountUuid: string,
     mode: 'light' | 'dark' | 'system',
-  ): Promise<IUserPreferences> {
+  ): Promise<UserPreferencesDTO> {
     logger.info('Switching theme mode', { accountUuid, mode });
 
     let preferences = await this.repository.findByAccountUuid(accountUuid);
@@ -78,13 +80,13 @@ export class UserPreferencesApplicationService {
       logger.info('Published THEME_MODE_CHANGED event', { accountUuid, mode });
     }
 
-    return saved.toObject();
+    return saved.toDTO();
   }
 
   /**
    * 更改语言
    */
-  async changeLanguage(accountUuid: string, language: string): Promise<IUserPreferences> {
+  async changeLanguage(accountUuid: string, language: string): Promise<UserPreferencesDTO> {
     logger.info('Changing language', { accountUuid, language });
 
     let preferences = await this.repository.findByAccountUuid(accountUuid);
@@ -105,7 +107,7 @@ export class UserPreferencesApplicationService {
       logger.info('Published LANGUAGE_CHANGED event', { accountUuid, language });
     }
 
-    return saved.toObject();
+    return saved.toDTO();
   }
 
   /**
@@ -118,7 +120,7 @@ export class UserPreferencesApplicationService {
       emailNotifications?: boolean;
       pushNotifications?: boolean;
     },
-  ): Promise<IUserPreferences> {
+  ): Promise<UserPreferencesDTO> {
     logger.info('Updating notification preferences', { accountUuid, config });
 
     let preferences = await this.repository.findByAccountUuid(accountUuid);
@@ -137,7 +139,7 @@ export class UserPreferencesApplicationService {
       logger.info('Published NOTIFICATION_PREFERENCES_CHANGED event', { accountUuid });
     }
 
-    return saved.toObject();
+    return saved.toDTO();
   }
 
   /**
@@ -145,8 +147,8 @@ export class UserPreferencesApplicationService {
    */
   async updatePreferences(
     accountUuid: string,
-    updates: Partial<IUserPreferences>,
-  ): Promise<IUserPreferences> {
+    updates: Partial<UserPreferencesDTO>,
+  ): Promise<UserPreferencesDTO> {
     logger.info('Updating user preferences', { accountUuid, updates });
 
     let preferences = await this.repository.findByAccountUuid(accountUuid);
@@ -161,13 +163,13 @@ export class UserPreferencesApplicationService {
 
     logger.info('User preferences updated successfully', { accountUuid });
 
-    return saved.toObject();
+    return saved.toDTO();
   }
 
   /**
    * 重置为默认偏好
    */
-  async resetToDefault(accountUuid: string): Promise<IUserPreferences> {
+  async resetToDefault(accountUuid: string): Promise<UserPreferencesDTO> {
     logger.info('Resetting preferences to default', { accountUuid });
 
     const preferences = this.domainService.createDefaultPreferences(accountUuid);
@@ -175,6 +177,6 @@ export class UserPreferencesApplicationService {
 
     logger.info('Preferences reset successfully', { accountUuid });
 
-    return saved.toObject();
+    return saved.toDTO();
   }
 }

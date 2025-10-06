@@ -517,3 +517,205 @@ export interface SettingBackupQueryParamsDTO {
   /** 排序方向 */
   sortOrder?: 'asc' | 'desc';
 }
+
+// ========== UserPreferences（用户偏好）DTO ==========
+
+/**
+ * 用户偏好基础接口
+ */
+export interface IUserPreferences {
+  /** 用户偏好UUID */
+  uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
+
+  // 基础偏好
+  /** 语言设置 */
+  language: string; // 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR'
+  /** 时区设置 */
+  timezone: string; // 'Asia/Shanghai' | 'America/New_York' | ...
+  /** 地区设置 */
+  locale: string;
+
+  // 主题偏好
+  /** 主题模式 */
+  themeMode: 'light' | 'dark' | 'system';
+
+  // 通知偏好
+  /** 是否启用通知 */
+  notificationsEnabled: boolean;
+  /** 是否启用邮件通知 */
+  emailNotifications: boolean;
+  /** 是否启用推送通知 */
+  pushNotifications: boolean;
+
+  // 应用偏好
+  /** 是否开机自启动 */
+  autoLaunch: boolean;
+  /** 默认打开的模块 */
+  defaultModule: string; // 'goal' | 'task' | 'editor' | 'schedule'
+
+  // 隐私偏好
+  /** 是否启用数据分析 */
+  analyticsEnabled: boolean;
+  /** 是否启用崩溃报告 */
+  crashReportsEnabled: boolean;
+
+  // 时间戳
+  /** 创建时间 */
+  createdAt: string;
+  /** 更新时间 */
+  updatedAt: string;
+}
+
+/**
+ * 用户偏好客户端扩展接口
+ */
+export interface IUserPreferencesClient extends IUserPreferences {
+  // UI 计算属性
+  /** 语言显示文本 */
+  languageText: string; // '简体中文' | 'English' | ...
+  /** 时区显示文本 */
+  timezoneText: string; // 'GMT+8 上海' | 'GMT-5 纽约' | ...
+  /** 主题模式图标 */
+  themeModeIcon: string; // 'mdi-white-balance-sunny' | 'mdi-weather-night' | 'mdi-theme-light-dark'
+  /** 主题模式显示文本 */
+  themeModeText: string; // '浅色' | '深色' | '跟随系统'
+
+  // 状态属性
+  /** 是否可以更改主题 */
+  canChangeTheme: boolean;
+  /** 是否已启用邮件 */
+  hasEmailEnabled: boolean;
+  /** 是否已启用推送 */
+  hasPushEnabled: boolean;
+
+  // 格式化时间
+  /** 格式化的创建时间 */
+  formattedCreatedAt: string;
+  /** 格式化的更新时间 */
+  formattedUpdatedAt: string;
+}
+
+/**
+ * 用户偏好 DTO
+ */
+export type UserPreferencesDTO = IUserPreferences;
+
+/**
+ * 用户偏好客户端 DTO
+ */
+export type UserPreferencesClientDTO = IUserPreferencesClient;
+
+/**
+ * 用户偏好持久化 DTO（数据库格式）
+ */
+export interface UserPreferencesPersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  language: string;
+  timezone: string;
+  locale: string;
+  themeMode: string;
+  notificationsEnabled: boolean;
+  emailNotifications: boolean;
+  pushNotifications: boolean;
+  autoLaunch: boolean;
+  defaultModule: string;
+  analyticsEnabled: boolean;
+  crashReportsEnabled: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ========== UserPreferences 请求 DTO ==========
+
+/**
+ * 更新用户偏好请求 DTO
+ */
+export interface UpdateUserPreferencesRequestDTO {
+  /** 语言设置 */
+  language?: string;
+  /** 时区设置 */
+  timezone?: string;
+  /** 地区设置 */
+  locale?: string;
+  /** 主题模式 */
+  themeMode?: 'light' | 'dark' | 'system';
+  /** 是否启用通知 */
+  notificationsEnabled?: boolean;
+  /** 是否启用邮件通知 */
+  emailNotifications?: boolean;
+  /** 是否启用推送通知 */
+  pushNotifications?: boolean;
+  /** 是否开机自启动 */
+  autoLaunch?: boolean;
+  /** 默认打开的模块 */
+  defaultModule?: string;
+  /** 是否启用数据分析 */
+  analyticsEnabled?: boolean;
+  /** 是否启用崩溃报告 */
+  crashReportsEnabled?: boolean;
+}
+
+/**
+ * 切换主题模式请求 DTO
+ */
+export interface SwitchThemeModeRequestDTO {
+  /** 主题模式 */
+  mode: 'light' | 'dark' | 'system';
+}
+
+/**
+ * 更改语言请求 DTO
+ */
+export interface ChangeLanguageRequestDTO {
+  /** 语言代码 */
+  language: string; // 'zh-CN' | 'en-US' | 'ja-JP' | 'ko-KR'
+}
+
+/**
+ * 更改时区请求 DTO
+ */
+export interface ChangeTimezoneRequestDTO {
+  /** 时区 */
+  timezone: string;
+}
+
+/**
+ * 设置通知请求 DTO
+ */
+export interface SetNotificationsRequestDTO {
+  /** 是否启用通知 */
+  enabled: boolean;
+  /** 是否同时设置子选项 */
+  includeSubOptions?: boolean;
+}
+
+// ========== UserPreferences 响应 DTO ==========
+
+/**
+ * 用户偏好响应 DTO
+ */
+export interface UserPreferencesResponseDTO {
+  /** 用户偏好数据 */
+  preferences: UserPreferencesDTO;
+}
+
+/**
+ * 用户偏好客户端响应 DTO
+ */
+export interface UserPreferencesClientResponseDTO {
+  /** 用户偏好客户端数据 */
+  preferences: UserPreferencesClientDTO;
+}
+
+/**
+ * 用户偏好列表响应 DTO
+ */
+export interface UserPreferencesListResponseDTO {
+  /** 用户偏好列表 */
+  preferences: UserPreferencesDTO[];
+  /** 总数 */
+  total: number;
+}

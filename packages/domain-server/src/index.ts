@@ -64,7 +64,7 @@ export * from './repository';
 export * from './editor';
 
 // Setting domain exports
-export * from './setting/aggregates/SettingDefinition';
+export * from './setting';
 
 // Schedule domain exports
 export * from './schedule';
