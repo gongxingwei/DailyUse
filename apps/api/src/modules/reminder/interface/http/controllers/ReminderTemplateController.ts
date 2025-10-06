@@ -522,8 +522,10 @@ export class ReminderTemplateController {
   }
 
   /**
-   * 获取活跃的提醒模板
+   * 获取所有活跃的提醒实例（从活跃模板中提取）
    * GET /reminders/templates/active
+   *
+   * 注意：此端点返回 ReminderInstance 数据，用于侧边栏显示即将到来的提醒
    */
   static async getActiveTemplates(req: Request, res: Response): Promise<Response> {
     try {
@@ -531,38 +533,57 @@ export class ReminderTemplateController {
       const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
       const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
 
-      logger.debug('Fetching active reminder templates', { accountUuid, page, limit });
-
-      // 获取所有模板，然后过滤出活跃的
-      const applicationService = await ReminderTemplateController.getApplicationService();
-      const result = await applicationService.getTemplates(accountUuid);
-      const activeTemplates = result.templates
-        .filter((template: any) => template.enabled === true)
-        .slice(0, limit);
-
-      // 移除 schedules 字段，这应该由 Schedule 模块管理
-      const cleanedTemplates = activeTemplates.map((template: any) => {
-        const { schedules, ...templateWithoutSchedules } = template;
-        return templateWithoutSchedules;
-      });
-
-      const listResponse: ReminderContracts.ReminderTemplateListResponse = {
-        reminders: cleanedTemplates,
-        total: cleanedTemplates.length,
+      logger.debug('Fetching active reminder instances from templates', {
+        accountUuid,
         page,
         limit,
-        hasMore: cleanedTemplates.length >= limit,
+      });
+
+      // 获取所有活跃的模板
+      const applicationService = await ReminderTemplateController.getApplicationService();
+      const result = await applicationService.getTemplates(accountUuid);
+      const activeTemplates = result.templates.filter((template: any) => template.enabled === true);
+
+      // 从所有活跃模板中提取并扁平化所有 instances
+      const allInstances: ReminderContracts.ReminderInstanceClientDTO[] = [];
+      activeTemplates.forEach((template: any) => {
+        if (template.instances && Array.isArray(template.instances)) {
+          // 为每个 instance 添加模板的 title 和其他必要信息
+          template.instances.forEach((instance: any) => {
+            allInstances.push({
+              ...instance,
+              title: instance.title || template.name, // 如果 instance 没有 title，使用模板名称
+              templateUuid: template.uuid,
+            });
+          });
+        }
+      });
+
+      // 按 scheduledTime 排序，最近的在前
+      allInstances.sort((a, b) => a.scheduledTime - b.scheduledTime);
+
+      // 分页
+      const paginatedInstances = allInstances.slice(0, limit);
+
+      const listResponse: ReminderContracts.ReminderInstanceListResponse = {
+        reminders: paginatedInstances,
+        total: allInstances.length,
+        page,
+        limit,
+        hasMore: allInstances.length > limit,
       };
 
-      logger.info('Active reminder templates retrieved successfully', {
+      logger.info('Active reminder instances retrieved successfully', {
         accountUuid,
-        total: cleanedTemplates.length,
+        totalTemplates: activeTemplates.length,
+        totalInstances: allInstances.length,
+        returnedInstances: paginatedInstances.length,
       });
 
       return ReminderTemplateController.responseBuilder.sendSuccess(
         res,
         listResponse,
-        'Active reminder templates retrieved successfully',
+        'Active reminder instances retrieved successfully',
       );
     } catch (error: unknown) {
       if (error instanceof Error && error.message.includes('Authentication')) {
@@ -574,12 +595,12 @@ export class ReminderTemplateController {
       }
 
       logger.error(
-        error instanceof Error ? error.message : 'Failed to retrieve active templates',
+        error instanceof Error ? error.message : 'Failed to retrieve active instances',
         error,
       );
       return ReminderTemplateController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to retrieve active templates',
+        message: error instanceof Error ? error.message : 'Failed to retrieve active instances',
       });
     }
   }

@@ -97,11 +97,11 @@
 
               <!-- 主要内容 -->
               <v-list-item-title class="text-wrap">
-                {{ reminder.title }}
+                {{ reminder.title || reminder.message }}
               </v-list-item-title>
 
-              <v-list-item-subtitle v-if="reminder.content" class="text-wrap mt-1">
-                {{ reminder.content }}
+              <v-list-item-subtitle v-if="reminder.message" class="text-wrap mt-1">
+                {{ reminder.message }}
               </v-list-item-subtitle>
 
               <!-- 时间和标签 -->
@@ -110,12 +110,12 @@
                   {{ formatTime(reminder.scheduledTime) }}
                 </v-chip>
 
-                <div v-if="reminder.tags?.length" class="d-flex gap-1">
-                  <v-chip v-for="tag in reminder.tags.slice(0, 2)" :key="tag" size="x-small" variant="outlined">
+                <div v-if="reminder.metadata?.tags?.length" class="d-flex gap-1">
+                  <v-chip v-for="tag in reminder.metadata.tags.slice(0, 2)" :key="tag" size="x-small" variant="outlined">
                     {{ tag }}
                   </v-chip>
-                  <v-chip v-if="reminder.tags.length > 2" size="x-small" variant="text">
-                    +{{ reminder.tags.length - 2 }}
+                  <v-chip v-if="reminder.metadata.tags.length > 2" size="x-small" variant="text">
+                    +{{ reminder.metadata.tags.length - 2 }}
                   </v-chip>
                 </div>
               </div>
@@ -344,8 +344,9 @@ async function fetchUpcomingReminders(): Promise<void> {
       limit: settings.value.maxItems,
       // TODO: 根据实际 API 调整参数
     });
-    const { reminders, total, page, limit, hasMore } = response;
-    upcomingData.value = reminders;
+    // 将整个响应对象赋值，包含 reminders、total、page 等属性
+    upcomingData.value = response;
+    console.log('📋 侧边栏获取到的提醒数据:', upcomingData.value);
   } catch (err: any) {
     console.error('获取即将到来的提醒失败:', err);
   }
@@ -378,8 +379,8 @@ function formatGroupDate(dateStr: string): string {
 /**
  * 格式化时间
  */
-function formatTime(dateStr: string): string {
-  const date = new Date(dateStr);
+function formatTime(timestamp: number): string {
+  const date = new Date(timestamp);
   if (isPast(date)) {
     return `逾期 ${formatDistanceToNow(date, { locale: zhCN })}`;
   }
@@ -389,8 +390,8 @@ function formatTime(dateStr: string): string {
 /**
  * 检查是否逾期
  */
-function isOverdue(dateStr: string): boolean {
-  return isPast(new Date(dateStr));
+function isOverdue(timestamp: number): boolean {
+  return isPast(new Date(timestamp));
 }
 
 /**
