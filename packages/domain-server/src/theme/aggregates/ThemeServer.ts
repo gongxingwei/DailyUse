@@ -1,11 +1,16 @@
 /**
- * Theme Server Implementation
- * @description 主题模块服务端实现
+ * Theme Server Implementation (Legacy - ThemeConfig Stub)
+ * @description ThemeConfig stub for backwards compatibility
  * @author DailyUse Team
  * @date 2025-09-29
+ * @deprecated ThemeConfig should be refactored - this is a temporary stub
  */
 
-import { type IThemeDefinition, type IThemeConfig, ThemeType } from '@dailyuse/contracts';
+import { ThemeContracts } from '@dailyuse/contracts';
+
+type IThemeDefinition = ThemeContracts.IThemeDefinition;
+type IThemeConfig = ThemeContracts.IThemeConfig;
+type ThemeType = ThemeContracts.ThemeType;
 
 /**
  * 主题定义服务端实现

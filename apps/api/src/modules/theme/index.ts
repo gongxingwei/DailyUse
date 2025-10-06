@@ -3,10 +3,12 @@
  * 主题模块统一导出
  */
 
-// Domain Layer
-export { UserThemePreference } from './domain/entities/UserThemePreference';
-export { ThemeDomainService } from './domain/services/ThemeDomainService';
-export type { IUserThemePreferenceRepository } from './domain/repositories/IUserThemePreferenceRepository';
+// Domain Layer (now in @dailyuse/domain-server)
+// export { UserThemePreference } from '@dailyuse/domain-server';
+// export { ThemeDomainService } from '@dailyuse/domain-server';
+
+// Repository Interface (in infrastructure)
+export type { IUserThemePreferenceRepository } from './infrastructure/repositories/IUserThemePreferenceRepository';
 
 // Application Layer
 export { ThemeApplicationService } from './application/services/ThemeApplicationService';

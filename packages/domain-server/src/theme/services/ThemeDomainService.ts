@@ -3,6 +3,9 @@
  * 主题领域服务
  *
  * @description 处理主题相关的业务逻辑，不依赖基础设施
+ * @author DailyUse Team
+ * @date 2025-10-06
+ * @moved-from apps/api/src/modules/theme/domain/services/ThemeDomainService.ts
  */
 
 import { UserThemePreference } from '../entities/UserThemePreference';

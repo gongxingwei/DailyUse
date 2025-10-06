@@ -113,7 +113,7 @@ export interface ImportThemeRequestDto {
 // ========== 响应 DTOs ==========
 
 /**
- * 主题响应 DTO
+ * 主题响应 DTO（服务端基础数据）
  */
 export interface ThemeResponseDto {
   /** 主题ID */
@@ -141,6 +141,22 @@ export interface ThemeResponseDto {
 }
 
 /**
+ * 主题客户端 DTO（包含UI计算属性）
+ */
+export interface ThemeClientDTO extends ThemeResponseDto {
+  /** 主题类型文本 */
+  typeText: string;
+  /** 主题状态文本 */
+  statusText: string;
+  /** 使用统计（如果可用） */
+  usageStats?: {
+    usageCount: number;
+    lastUsed?: Date;
+    totalDuration: number;
+  };
+}
+
+/**
  * 主题详情响应 DTO
  */
 export interface ThemeDetailResponseDto extends ThemeResponseDto {
@@ -152,6 +168,18 @@ export interface ThemeDetailResponseDto extends ThemeResponseDto {
     lastUsed?: Date;
     totalDuration: number;
   };
+}
+
+/**
+ * 主题详情客户端 DTO（包含完整定义和计算属性）
+ */
+export interface ThemeDetailClientDTO extends ThemeClientDTO {
+  /** 完整主题定义 */
+  definition: IThemeDefinition;
+  /** CSS变量数量 */
+  cssVariablesCount: number;
+  /** 生成的CSS */
+  generatedCSS?: string;
 }
 
 /**

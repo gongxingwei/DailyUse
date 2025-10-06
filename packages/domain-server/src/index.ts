@@ -68,3 +68,6 @@ export * from './setting/aggregates/SettingDefinition';
 
 // Schedule domain exports
 export * from './schedule';
+
+// Theme domain exports
+export * from './theme';

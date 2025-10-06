@@ -4,8 +4,8 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { IUserThemePreferenceRepository } from '../../domain/repositories/IUserThemePreferenceRepository';
-import { UserThemePreference } from '../../domain/entities/UserThemePreference';
+import type { IUserThemePreferenceRepository } from './IUserThemePreferenceRepository';
+import { UserThemePreference } from '@dailyuse/domain-server';
 import type { ThemeContracts } from '@dailyuse/contracts';
 
 type ThemeMode = ThemeContracts.ThemeMode;

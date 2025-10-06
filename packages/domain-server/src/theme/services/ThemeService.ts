@@ -2,11 +2,17 @@
  * Theme Service
  * @description 主题模块服务层
  * @author DailyUse Team
- * @date 2025-09-29
+ * @date 2025-10-06
  */
 
-import { ThemeDefinition, ThemeConfig } from '../aggregates/ThemeServer';
-import { ThemeType, type IThemeDefinition, type IThemeConfig } from '@dailyuse/contracts';
+import { ThemeDefinition } from '../aggregates/ThemeDefinition';
+import { ThemeConfig } from '../aggregates/ThemeServer';
+import { ThemeContracts } from '@dailyuse/contracts';
+
+// Type aliases
+type IThemeDefinition = ThemeContracts.IThemeDefinition;
+type IThemeConfig = ThemeContracts.IThemeConfig;
+type ThemeType = ThemeContracts.ThemeType;
 
 // 定义服务层的类型
 export interface CreateThemeRequest {
@@ -101,7 +107,7 @@ export class ThemeService {
     const lightTheme = ThemeDefinition.create({
       name: '浅色主题',
       description: '系统默认浅色主题',
-      type: ThemeType.LIGHT,
+      type: ThemeContracts.ThemeType.SYSTEM,
       author: 'DailyUse Team',
     });
 
@@ -109,7 +115,7 @@ export class ThemeService {
     const darkTheme = ThemeDefinition.create({
       name: '深色主题',
       description: '系统默认深色主题',
-      type: ThemeType.DARK,
+      type: ThemeContracts.ThemeType.CUSTOM,
       author: 'DailyUse Team',
     });
 

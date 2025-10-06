@@ -3,6 +3,9 @@
  * 用户主题偏好实体
  *
  * @description 用户的主题偏好配置，包括当前使用的主题、偏好模式等
+ * @author DailyUse Team
+ * @date 2025-10-06
+ * @moved-from apps/api/src/modules/theme/domain/entities/UserThemePreference.ts
  */
 
 import type { ThemeContracts } from '@dailyuse/contracts';

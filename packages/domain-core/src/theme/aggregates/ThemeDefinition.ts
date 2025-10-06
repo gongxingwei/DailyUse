@@ -1,6 +1,6 @@
 /**
- * Theme Core Aggregate Root
- * @description 主题模块核心聚合根抽象类
+ * Theme Definition Core Aggregate Root
+ * @description 主题定义核心聚合根抽象类
  * @author DailyUse Team
  * @date 2025-10-06
  */

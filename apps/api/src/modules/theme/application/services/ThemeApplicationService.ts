@@ -5,8 +5,8 @@
  * @description 协调领域服务和仓储，处理主题相关的应用逻辑
  */
 
-import { ThemeDomainService } from '../../domain/services/ThemeDomainService';
-import type { IUserThemePreferenceRepository } from '../../domain/repositories/IUserThemePreferenceRepository';
+import { ThemeDomainService } from '@dailyuse/domain-server';
+import type { IUserThemePreferenceRepository } from '../../infrastructure/repositories/IUserThemePreferenceRepository';
 import { ThemeContracts } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
 

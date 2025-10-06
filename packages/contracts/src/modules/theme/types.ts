@@ -300,3 +300,115 @@ export interface IUserThemePreference {
   createdAt: number;
   updatedAt: number;
 }
+
+// ========== 服务端实体接口（不加后缀表示服务端） ==========
+
+/**
+ * 主题定义服务端接口
+ * 用于服务端业务逻辑和数据库持久化
+ */
+export interface IThemeDefinition {
+  /** 主题ID */
+  id: string;
+  /** 主题名称 */
+  name: string;
+  /** 主题描述 */
+  description?: string;
+  /** 主题类型 */
+  type: ThemeType;
+  /** 主题作者 */
+  author?: string;
+  /** 主题版本 */
+  version: string;
+  /** 颜色调色板 */
+  colors: ColorPalette;
+  /** 字体配置 */
+  fonts: {
+    /** 标题字体 */
+    heading: FontConfig;
+    /** 正文字体 */
+    body: FontConfig;
+    /** 等宽字体 */
+    mono: FontConfig;
+  };
+  /** 间距配置 */
+  spacing: SpacingConfig;
+  /** 圆角配置 */
+  borderRadius: BorderRadiusConfig;
+  /** 阴影配置 */
+  shadows: ShadowConfig;
+  /** 动画配置 */
+  animations: AnimationConfig;
+  /** 自定义CSS变量 */
+  customVariables?: Record<string, string>;
+  /** 主题预览图 */
+  preview?: string;
+  /** 是否为内置主题 */
+  isBuiltIn: boolean;
+  /** 创建时间 */
+  createdAt: Date;
+  /** 更新时间 */
+  updatedAt: Date;
+}
+
+/**
+ * 主题定义客户端接口
+ * 扩展服务端接口，添加客户端特有的计算属性和UI辅助信息
+ */
+export interface IThemeDefinitionClient extends IThemeDefinition {
+  /** 是否为当前激活主题（UI计算属性） */
+  isActive?: boolean;
+  /** 主题分类文本（UI计算属性） */
+  typeText?: string;
+  /** 主题状态文本（UI计算属性） */
+  statusText?: string;
+  /** CSS变量数量（UI计算属性） */
+  cssVariablesCount?: number;
+  /** 预览URL（UI计算属性） */
+  previewUrl?: string;
+}
+
+/**
+ * 主题配置服务端接口
+ */
+export interface IThemeConfig {
+  /** 当前激活主题ID */
+  activeThemeId: string;
+  /** 是否跟随系统主题 */
+  followSystemTheme: boolean;
+  /** 自动切换主题 */
+  autoSwitchTheme: boolean;
+  /** 白天主题ID */
+  lightThemeId?: string;
+  /** 夜间主题ID */
+  darkThemeId?: string;
+  /** 切换时间 */
+  switchTimes?: {
+    /** 白天开始时间 */
+    dayStart: string;
+    /** 夜间开始时间 */
+    nightStart: string;
+  };
+  /** 自定义主题变量 */
+  customVariables?: Record<string, string>;
+  /** 是否启用主题过渡动画 */
+  enableTransitions: boolean;
+  /** 过渡动画持续时间 */
+  transitionDuration: number;
+}
+
+/**
+ * 主题配置客户端接口
+ */
+export interface IThemeConfigClient extends IThemeConfig {
+  /** 当前主题信息（UI计算属性） */
+  currentTheme?: {
+    id: string;
+    name: string;
+    type: ThemeType;
+  };
+  /** 自动切换状态文本（UI计算属性） */
+  autoSwitchStatusText?: string;
+  /** 是否处于日间模式（UI计算属性） */
+  isDayMode?: boolean;
+}
