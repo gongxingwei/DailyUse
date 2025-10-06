@@ -7,7 +7,14 @@ import {
   TaskInstance,
 } from '@dailyuse/domain-server';
 
+// EventEmitter 类型（可选依赖，用于发送领域事件）
+type EventEmitter = {
+  emit(event: string, payload: any): boolean;
+};
+
 export class TaskTemplateDomainService {
+  public eventEmitter?: EventEmitter;
+
   constructor(private readonly templateRepository: ITaskTemplateAggregateRepository) {}
 
   async createTemplate(
@@ -33,6 +40,19 @@ export class TaskTemplateDomainService {
       goalLinks: request.goalLinks,
     });
     const savedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
+
+    // 发射 TaskTemplateCreated 事件
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('TaskTemplateCreated', {
+        aggregateId: savedTemplate.uuid,
+        payload: {
+          templateUuid: savedTemplate.uuid,
+          accountUuid,
+          template: savedTemplate.toDTO(),
+        },
+      });
+    }
+
     return savedTemplate.toDTO();
   }
 
@@ -91,6 +111,19 @@ export class TaskTemplateDomainService {
     }
     if (request.reminderConfig !== undefined) template.updateReminderConfig(request.reminderConfig);
     const updatedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
+
+    // 发射 TaskTemplateUpdated 事件
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('TaskTemplateUpdated', {
+        aggregateId: updatedTemplate.uuid,
+        payload: {
+          templateUuid: updatedTemplate.uuid,
+          accountUuid,
+          template: updatedTemplate.toDTO(),
+        },
+      });
+    }
+
     return updatedTemplate.toDTO();
   }
 
@@ -101,7 +134,21 @@ export class TaskTemplateDomainService {
         TaskErrorCode.TEMPLATE_NOT_FOUND,
         'Task template not found: ' + templateUuid,
       );
+
+    const templateTitle = template.title;
     await this.templateRepository.deleteTemplate(accountUuid, templateUuid);
+
+    // 发射 TaskTemplateDeleted 事件
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('TaskTemplateDeleted', {
+        aggregateId: templateUuid,
+        payload: {
+          templateUuid,
+          accountUuid,
+          templateTitle,
+        },
+      });
+    }
   }
 
   async activateTemplate(

@@ -12,6 +12,11 @@ import type {
   GoalReview,
 } from '@dailyuse/domain-server';
 
+// EventEmitter 类型（可选依赖，用于发送领域事件）
+type EventEmitter = {
+  emit(event: string, payload: any): boolean;
+};
+
 /**
  * Goal 领域服务
  *
@@ -28,6 +33,8 @@ import type {
  * - 可移植：可安全移动到 @dailyuse/domain-server 包
  */
 export class GoalDomainService {
+  public eventEmitter?: EventEmitter;
+
   constructor(private readonly goalAggregateRepository: IGoalAggregateRepository) {}
 
   // ==================== Goal CRUD 操作 ====================
@@ -343,7 +350,40 @@ export class GoalDomainService {
       throw new Error('KeyResult not found after update');
     }
 
-    // 5. 返回响应
+    // 5. 计算并发射进度更新事件
+    if (this.eventEmitter) {
+      // 计算时间进度
+      const now = Date.now();
+      const startTime = (savedGoal as any).startTime || now;
+      const endTime = (savedGoal as any).endTime || now;
+      const totalDuration = endTime - startTime;
+      const elapsed = now - startTime;
+      const timeProgress =
+        totalDuration > 0 ? Math.min(1, Math.max(0, elapsed / totalDuration)) : 0;
+
+      // 计算绩效进度（关键结果的平均进度）
+      const keyResults = savedGoal.keyResults;
+      const performanceProgress =
+        keyResults.length > 0
+          ? keyResults.reduce((sum, kr) => sum + kr.progress, 0) / keyResults.length
+          : 0;
+
+      this.eventEmitter.emit('GoalProgressUpdated', {
+        aggregateId: savedGoal.uuid,
+        payload: {
+          goalUuid: savedGoal.uuid,
+          accountUuid,
+          timeProgress,
+          performanceProgress,
+          keyResultUpdated: {
+            keyResultUuid: updatedKeyResult.uuid,
+            progress: updatedKeyResult.progress,
+          },
+        },
+      });
+    }
+
+    // 6. 返回响应
     return {
       uuid: updatedKeyResult.uuid,
       goalUuid: updatedKeyResult.goalUuid,
@@ -745,7 +785,32 @@ export class GoalDomainService {
         accountUuid,
         savedGoalEntity,
       );
+
+      // 发射 GoalCreated 事件
+      if (this.eventEmitter) {
+        this.eventEmitter.emit('GoalCreated', {
+          aggregateId: finalSavedGoal.uuid,
+          payload: {
+            goalUuid: finalSavedGoal.uuid,
+            accountUuid,
+            goal: finalSavedGoal.toClient(),
+          },
+        });
+      }
+
       return finalSavedGoal.toClient();
+    }
+
+    // 发射 GoalCreated 事件
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('GoalCreated', {
+        aggregateId: savedGoalEntity.uuid,
+        payload: {
+          goalUuid: savedGoalEntity.uuid,
+          accountUuid,
+          goal: savedGoalEntity.toClient(),
+        },
+      });
     }
 
     return savedGoalEntity.toClient();
@@ -776,6 +841,27 @@ export class GoalDomainService {
 
     const updatedGoalEntity = await this.createEntityFromDTO(updatedGoalDTO);
     const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, updatedGoalEntity);
+
+    // 发射状态变更事件
+    if (this.eventEmitter) {
+      if (status === GoalContractsEnums.GoalStatus.COMPLETED) {
+        this.eventEmitter.emit('GoalCompleted', {
+          aggregateId: savedGoal.uuid,
+          payload: {
+            goalUuid: savedGoal.uuid,
+            accountUuid,
+          },
+        });
+      } else if (status === GoalContractsEnums.GoalStatus.ARCHIVED) {
+        this.eventEmitter.emit('GoalArchived', {
+          aggregateId: savedGoal.uuid,
+          payload: {
+            goalUuid: savedGoal.uuid,
+            accountUuid,
+          },
+        });
+      }
+    }
 
     return savedGoal.toClient();
   }
