@@ -1,233 +1,239 @@
 /**
- * Schedule Task Domain Client Implementation
- * @description 调度任务客户端领域实现
- * @auth    return {
-      taskUuid:     return {
-      taskUuid: this.uuid,
-      status: ScheduleStatus.COMPLETED,
-      executedAt: new Date(),
-      duration: 100,
-      result: 'Reminder shown successfully',
-    };id,
-      status: ScheduleStatus.COMPLETED,
-      executedAt: new Date(),
-      duration: 100,
-      result: 'Reminder shown successfully',
-    };    result: 'Reminder shown successfully', DailyUse Team
- * @d        result: 'Notification shown successfully',te 2025-01-09        result: 'System task executed successfully',
+ * ScheduleTask Client Entity
+ * 调度任务客户端聚合根
+ *
+ * 职责:
+ * - 继承核心业务逻辑
+ * - 提供客户端特有的UI辅助方法
+ * - 实现数据转换方法（fromDTO, toClientDTO等）
+ * - 变更跟踪系统
+ *
+ * @author DailyUse Team
+ * @date 2025-01-09
  */
 
+import { ScheduleTaskCore } from '@dailyuse/domain-core';
+import type { ScheduleContracts } from '@dailyuse/contracts';
+
 import {
-  type IScheduleTask,
-  type IScheduleExecutionResult,
   ScheduleStatus,
   SchedulePriority,
   ScheduleTaskType,
   RecurrenceType,
+  AlertMethod,
 } from '@dailyuse/contracts';
 
-import { ScheduleTaskCore } from '@dailyuse/domain-core';
-
 /**
- * 客户端调度任务实现
- * 重点关注UI交互和用户体验
+ * 客户端 ScheduleTask 聚合根
+ * 继承核心类，添加客户端特有功能
  */
 export class ScheduleTask extends ScheduleTaskCore {
-  constructor(data: IScheduleTask) {
+  // 变更跟踪系统
+  private _originalState: ScheduleContracts.IScheduleTask | null = null;
+  private _isDirty = false;
+
+  constructor(data: ScheduleContracts.IScheduleTask) {
     super(data);
   }
 
-  get currentRetries(): number {
-    return this.currentRetries;
+  // ===== 静态工厂方法 =====
+
+  /**
+   * 从服务端 DTO 创建实体
+   */
+  static fromDTO(dto: ScheduleContracts.ScheduleTaskResponseDto): ScheduleTask {
+    return new ScheduleTask({
+      uuid: dto.uuid,
+      basic: {
+        name: dto.name,
+        description: dto.description,
+        taskType: dto.taskType,
+        createdBy: dto.createdBy,
+        payload: dto.payload,
+      },
+      scheduling: {
+        scheduledTime: new Date(dto.scheduledTime),
+        recurrence: dto.recurrence,
+        priority: dto.priority,
+        status: dto.status,
+        nextExecutionTime: dto.nextExecutionTime ? new Date(dto.nextExecutionTime) : undefined,
+      },
+      execution: {
+        executionCount: dto.executionCount,
+        maxRetries: dto.maxRetries,
+        currentRetries: dto.currentRetries,
+        timeoutSeconds: dto.timeoutSeconds,
+      },
+      alertConfig: dto.alertConfig,
+      lifecycle: {
+        createdAt: new Date(dto.createdAt),
+        updatedAt: new Date(dto.updatedAt),
+      },
+      metadata: {
+        tags: dto.tags,
+        enabled: dto.enabled,
+        version: 1,
+      },
+    });
   }
 
-  get status(): ScheduleStatus {
-    return this.status;
+  /**
+   * 从客户端 DTO 创建实体（用于表单提交等）
+   * ClientDTO与ResponseDTO结构相同，只是增加了计算属性
+   */
+  static fromClientDTO(dto: ScheduleContracts.ScheduleTaskResponseDto): ScheduleTask {
+    return ScheduleTask.fromDTO(dto);
   }
 
-  set status(value: ScheduleStatus) {
-    this.status = value;
+  /**
+   * 创建新的空任务（用于新建表单）
+   */
+  static forCreate(accountUuid: string): ScheduleTask {
+    const now = new Date();
+    const defaultScheduledTime = new Date(now.getTime() + 60 * 60 * 1000); // 1小时后
+
+    return new ScheduleTask({
+      uuid: '',
+      basic: {
+        name: '',
+        description: '',
+        taskType: ScheduleTaskType.GENERAL_REMINDER,
+        createdBy: accountUuid,
+        payload: { type: ScheduleTaskType.GENERAL_REMINDER, data: {} },
+      },
+      scheduling: {
+        scheduledTime: defaultScheduledTime,
+        recurrence: undefined,
+        priority: SchedulePriority.NORMAL,
+        status: ScheduleStatus.PENDING,
+        nextExecutionTime: defaultScheduledTime,
+      },
+      execution: {
+        executionCount: 0,
+        maxRetries: 3,
+        currentRetries: 0,
+        timeoutSeconds: 300,
+      },
+      alertConfig: {
+        methods: [AlertMethod.POPUP],
+        allowSnooze: true,
+        snoozeOptions: [5, 10, 15, 30],
+      },
+      lifecycle: {
+        createdAt: now,
+        updatedAt: now,
+      },
+      metadata: {
+        tags: [],
+        enabled: true,
+        version: 1,
+      },
+    });
   }
 
-  set currentRetries(value: number) {
-    this.currentRetries = value;
+  // ===== 数据转换方法 =====
+
+  /**
+   * 转换为服务端 DTO
+   */
+  toResponseDTO(): ScheduleContracts.ScheduleTaskResponseDto {
+    return {
+      uuid: this._uuid,
+      name: this._basic.name,
+      description: this._basic.description,
+      taskType: this._basic.taskType,
+      createdBy: this._basic.createdBy,
+      payload: this._basic.payload,
+      scheduledTime: this._scheduling.scheduledTime,
+      recurrence: this._scheduling.recurrence,
+      priority: this._scheduling.priority,
+      status: this._scheduling.status,
+      nextExecutionTime: this._scheduling.nextExecutionTime,
+      executionCount: this._execution.executionCount,
+      maxRetries: this._execution.maxRetries,
+      currentRetries: this._execution.currentRetries,
+      timeoutSeconds: this._execution.timeoutSeconds,
+      alertConfig: this._alertConfig,
+      enabled: this._metadata.enabled,
+      tags: this._metadata.tags,
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+    };
   }
 
-  set nextExecutionTime(value: Date | undefined) {
-    this.nextExecutionTime = value;
+  /**
+   * 转换为客户端 DTO（包含所有计算属性）
+   */
+  toClientDTO(): ScheduleContracts.ScheduleTaskResponseDto & {
+    statusText: string;
+    priorityText: string;
+    taskTypeText: string;
+    timeRemainingText: string;
+    isOverdue: boolean;
+    canExecute: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+  } {
+    return {
+      ...this.toResponseDTO(),
+      // 客户端计算属性
+      statusText: this.statusText,
+      priorityText: this.priorityText,
+      taskTypeText: this.taskTypeText,
+      timeRemainingText: this.timeRemainingText,
+      isOverdue: this.isOverdue,
+      canExecute: this.canExecuteNow,
+      canEdit: this.canEditNow,
+      canDelete: this.canDeleteNow,
+    };
   }
 
-  startExecution(): void {
-    this.startExecution();
-  }
-
-  completeExecution(result: IScheduleExecutionResult): void {
-    this.completeExecution(result);
-  }
+  // ===== 实现抽象方法 =====
 
   /**
    * 执行任务 - 客户端版本
-   * 主要用于UI更新和用户交互
    */
-  public async execute(): Promise<IScheduleExecutionResult> {
+  public async execute(): Promise<ScheduleContracts.IScheduleExecutionResult> {
+    const startTime = Date.now();
+
     try {
-      this.status = ScheduleStatus.RUNNING;
-      this.startExecution();
+      this.updateScheduling({ status: ScheduleStatus.RUNNING });
 
-      // 客户端执行逻辑
-      const result = await this.performClientExecution();
+      // 客户端执行逻辑（显示通知等）
+      await this.performClientExecution();
 
-      this.completeExecution(result);
-      this.status = result.status;
+      const duration = Date.now() - startTime;
+      const result: ScheduleContracts.IScheduleExecutionResult = {
+        taskUuid: this.uuid,
+        executedAt: new Date(),
+        status: ScheduleStatus.COMPLETED,
+        duration,
+        result: 'Task executed successfully on client',
+      };
+
+      this.updateScheduling({ status: ScheduleStatus.COMPLETED });
+      this.updateExecution({ executionCount: this._execution.executionCount + 1 });
+
+      // 计算下次执行时间
+      const nextTime = this.calculateNextExecutionTime();
+      this.updateScheduling({ nextExecutionTime: nextTime });
 
       return result;
     } catch (error) {
-      const failureResult: IScheduleExecutionResult = {
+      const duration = Date.now() - startTime;
+      const result: ScheduleContracts.IScheduleExecutionResult = {
         taskUuid: this.uuid,
-        status: ScheduleStatus.FAILED,
         executedAt: new Date(),
-        duration: 0,
+        status: ScheduleStatus.FAILED,
+        duration,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
 
-      this.completeExecution(failureResult);
-      this.status = ScheduleStatus.FAILED;
+      this.updateScheduling({ status: ScheduleStatus.FAILED });
+      this.updateExecution({ currentRetries: this._execution.currentRetries + 1 });
 
-      return failureResult;
+      return result;
     }
-  }
-
-  /**
-   * 客户端任务执行逻辑
-   */
-  private async performClientExecution(): Promise<IScheduleExecutionResult> {
-    // 根据任务类型执行不同的客户端逻辑
-    switch (this.taskType) {
-      case ScheduleTaskType.TASK_REMINDER:
-      case ScheduleTaskType.GOAL_REMINDER:
-      case ScheduleTaskType.GENERAL_REMINDER:
-        return this.showReminder();
-
-      case ScheduleTaskType.SYSTEM_MAINTENANCE:
-      case ScheduleTaskType.DATA_BACKUP:
-      case ScheduleTaskType.CLEANUP_TASK:
-        return this.executeSystemTask();
-
-      default:
-        throw new Error(`Unsupported task type: ${this.taskType}`);
-    }
-  }
-
-  /**
-   * 显示提醒
-   */
-  private async showReminder(): Promise<IScheduleExecutionResult> {
-    // 显示提醒UI
-    console.log(`显示提醒: ${this.name}`);
-
-    // 这里可以调用UI组件显示提醒
-    // await this.$toast.success(this.name, { description: this.description });
-
-    return {
-      taskUuid: this.uuid,
-      status: ScheduleStatus.COMPLETED,
-      executedAt: new Date(),
-      duration: 100,
-      result: 'Reminder shown successfully',
-    };
-  }
-
-  /**
-   * 显示通知
-   */
-  private async showNotification(): Promise<IScheduleExecutionResult> {
-    // 显示系统通知
-    console.log(`显示通知: ${this.name}`);
-
-    // 这里可以调用浏览器通知API
-    // if ('Notification' in window) {
-    //   new Notification(this.name, {
-    //     body: this.description,
-    //     icon: '/favicon.ico'
-    //   });
-    // }
-
-    return {
-      taskUuid: this.uuid,
-      status: ScheduleStatus.COMPLETED,
-      executedAt: new Date(),
-      duration: 100,
-      result: 'Notification shown successfully',
-    };
-  }
-
-  /**
-   * 执行系统任务
-   */
-  private async executeSystemTask(): Promise<IScheduleExecutionResult> {
-    // 执行客户端系统任务
-    console.log(`执行系统任务: ${this.name}`);
-
-    return {
-      taskUuid: this.uuid,
-      status: ScheduleStatus.COMPLETED,
-      executedAt: new Date(),
-      duration: 200,
-      result: 'System task executed successfully',
-    };
-  }
-
-  /**
-   * 计算重复执行时间
-   */
-  protected calculateRecurringTime(): Date {
-    if (!this.recurrence) {
-      return this.scheduledTime;
-    }
-
-    const now = new Date();
-    const nextTime = new Date(this.scheduledTime);
-
-    switch (this.recurrence.type) {
-      case RecurrenceType.DAILY:
-        nextTime.setDate(nextTime.getDate() + (this.recurrence.interval || 1));
-        break;
-
-      case RecurrenceType.WEEKLY:
-        nextTime.setDate(nextTime.getDate() + 7 * (this.recurrence.interval || 1));
-        break;
-
-      case RecurrenceType.MONTHLY:
-        nextTime.setMonth(nextTime.getMonth() + (this.recurrence.interval || 1));
-        break;
-
-      case RecurrenceType.YEARLY:
-        nextTime.setFullYear(nextTime.getFullYear() + (this.recurrence.interval || 1));
-        break;
-
-      default:
-        return this.scheduledTime;
-    }
-
-    // 确保下次执行时间在当前时间之后
-    while (nextTime <= now) {
-      switch (this.recurrence.type) {
-        case RecurrenceType.DAILY:
-          nextTime.setDate(nextTime.getDate() + (this.recurrence.interval || 1));
-          break;
-        case RecurrenceType.WEEKLY:
-          nextTime.setDate(nextTime.getDate() + 7 * (this.recurrence.interval || 1));
-          break;
-        case RecurrenceType.MONTHLY:
-          nextTime.setMonth(nextTime.getMonth() + (this.recurrence.interval || 1));
-          break;
-        case RecurrenceType.YEARLY:
-          nextTime.setFullYear(nextTime.getFullYear() + (this.recurrence.interval || 1));
-          break;
-      }
-    }
-
-    return nextTime;
   }
 
   /**
@@ -237,36 +243,35 @@ export class ScheduleTask extends ScheduleTaskCore {
     const errors: string[] = [];
 
     // 基础验证
-    if (!this.name?.trim()) {
+    if (!this._basic.name?.trim()) {
       errors.push('任务名称不能为空');
     }
 
-    if (!this.scheduledTime) {
+    if (!this._scheduling.scheduledTime) {
       errors.push('执行时间不能为空');
     }
 
-    if (this.scheduledTime && this.scheduledTime < new Date()) {
-      errors.push('执行时间不能是过去的时间');
-    }
-
     // 重复规则验证
-    if (this.recurrence) {
-      if (!this.recurrence.type) {
+    if (this._scheduling.recurrence) {
+      if (!this._scheduling.recurrence.type) {
         errors.push('重复类型不能为空');
       }
 
-      if (this.recurrence.interval && this.recurrence.interval <= 0) {
+      if (this._scheduling.recurrence.interval && this._scheduling.recurrence.interval <= 0) {
         errors.push('重复间隔必须大于0');
       }
 
-      if (this.recurrence.endDate && this.recurrence.endDate <= this.scheduledTime) {
+      if (
+        this._scheduling.recurrence.endDate &&
+        this._scheduling.recurrence.endDate <= this._scheduling.scheduledTime
+      ) {
         errors.push('结束日期必须晚于开始时间');
       }
     }
 
-    // 告警配置验证
-    if (this.alertConfig) {
-      if (this.alertConfig.popupDuration && this.alertConfig.popupDuration < 0) {
+    // 提醒配置验证
+    if (this._alertConfig) {
+      if (this._alertConfig.popupDuration && this._alertConfig.popupDuration < 0) {
         errors.push('弹窗持续时间不能为负数');
       }
     }
@@ -277,82 +282,222 @@ export class ScheduleTask extends ScheduleTaskCore {
     };
   }
 
-  // 客户端特有的 UI 辅助方法
+  /**
+   * 计算下次执行时间
+   */
+  protected calculateNextExecutionTime(): Date | undefined {
+    if (!this._scheduling.recurrence) {
+      return undefined;
+    }
+
+    const nextTime = new Date(this._scheduling.scheduledTime);
+    const now = new Date();
+
+    switch (this._scheduling.recurrence.type) {
+      case RecurrenceType.DAILY:
+        nextTime.setDate(nextTime.getDate() + (this._scheduling.recurrence.interval || 1));
+        break;
+
+      case RecurrenceType.WEEKLY:
+        nextTime.setDate(nextTime.getDate() + 7 * (this._scheduling.recurrence.interval || 1));
+        break;
+
+      case RecurrenceType.MONTHLY:
+        nextTime.setMonth(nextTime.getMonth() + (this._scheduling.recurrence.interval || 1));
+        break;
+
+      case RecurrenceType.YEARLY:
+        nextTime.setFullYear(nextTime.getFullYear() + (this._scheduling.recurrence.interval || 1));
+        break;
+
+      default:
+        return undefined;
+    }
+
+    // 确保下次执行时间在当前时间之后
+    while (nextTime <= now) {
+      switch (this._scheduling.recurrence.type) {
+        case RecurrenceType.DAILY:
+          nextTime.setDate(nextTime.getDate() + (this._scheduling.recurrence.interval || 1));
+          break;
+        case RecurrenceType.WEEKLY:
+          nextTime.setDate(nextTime.getDate() + 7 * (this._scheduling.recurrence.interval || 1));
+          break;
+        case RecurrenceType.MONTHLY:
+          nextTime.setMonth(nextTime.getMonth() + (this._scheduling.recurrence.interval || 1));
+          break;
+        case RecurrenceType.YEARLY:
+          nextTime.setFullYear(
+            nextTime.getFullYear() + (this._scheduling.recurrence.interval || 1),
+          );
+          break;
+      }
+    }
+
+    // 检查是否超过结束日期或最大次数
+    if (this._scheduling.recurrence.endDate && nextTime > this._scheduling.recurrence.endDate) {
+      return undefined;
+    }
+
+    if (
+      this._scheduling.recurrence.maxOccurrences &&
+      this._execution.executionCount >= this._scheduling.recurrence.maxOccurrences
+    ) {
+      return undefined;
+    }
+
+    return nextTime;
+  }
+
+  // ===== 变更跟踪 =====
+
+  /**
+   * 开始编辑模式 - 保存当前状态
+   */
+  startEditing(): void {
+    this._originalState = this.toDTO();
+    this._isDirty = false;
+  }
+
+  /**
+   * 取消编辑 - 恢复原始状态
+   */
+  cancelEditing(): void {
+    if (this._originalState) {
+      this._basic = { ...this._originalState.basic };
+      this._scheduling = { ...this._originalState.scheduling };
+      this._execution = { ...this._originalState.execution };
+      this._alertConfig = { ...this._originalState.alertConfig };
+      this._lifecycle = { ...this._originalState.lifecycle };
+      this._metadata = { ...this._originalState.metadata };
+      this._isDirty = false;
+      this._originalState = null;
+    }
+  }
+
+  /**
+   * 提交编辑 - 清除原始状态
+   */
+  commitEditing(): void {
+    this._originalState = null;
+    this._isDirty = false;
+  }
+
+  /**
+   * 检查是否有未保存的更改
+   */
+  get isDirty(): boolean {
+    return this._isDirty;
+  }
+
+  /**
+   * 标记为已修改
+   */
+  protected markDirty(): void {
+    this._isDirty = true;
+  }
+
+  // ===== 业务操作（覆盖父类以添加变更跟踪） =====
+
+  /**
+   * 更新基本信息
+   */
+  public override updateBasicInfo(updates: Partial<ScheduleContracts.IScheduleTaskBasic>): void {
+    super.updateBasicInfo(updates);
+    this.markDirty();
+  }
+
+  /**
+   * 更新调度信息
+   */
+  public override updateScheduling(
+    updates: Partial<ScheduleContracts.IScheduleTaskScheduling>,
+  ): void {
+    super.updateScheduling(updates);
+    this.markDirty();
+  }
+
+  /**
+   * 更新执行信息
+   */
+  public override updateExecution(
+    updates: Partial<ScheduleContracts.IScheduleTaskExecution>,
+  ): void {
+    super.updateExecution(updates);
+    this.markDirty();
+  }
+
+  /**
+   * 更新元数据
+   */
+  public override updateMetadata(updates: Partial<ScheduleContracts.IScheduleTaskMetadata>): void {
+    super.updateMetadata(updates);
+    this.markDirty();
+  }
+
+  /**
+   * 更新提醒配置
+   */
+  updateAlertConfig(config: ScheduleContracts.IAlertConfig): void {
+    this._alertConfig = config;
+    this._lifecycle.updatedAt = new Date();
+    this.markDirty();
+  }
+
+  // ===== 客户端UI辅助方法 =====
 
   /**
    * 获取状态文本
    */
-  public get statusText(): string {
-    switch (this.status) {
-      case ScheduleStatus.PENDING:
-        return '待执行';
-      case ScheduleStatus.RUNNING:
-        return '执行中';
-      case ScheduleStatus.COMPLETED:
-        return '已完成';
-      case ScheduleStatus.FAILED:
-        return '执行失败';
-      case ScheduleStatus.CANCELLED:
-        return '已取消';
-      case ScheduleStatus.PAUSED:
-        return '已暂停';
-      default:
-        return '未知状态';
-    }
+  get statusText(): string {
+    const statusMap: Record<ScheduleContracts.ScheduleStatus, string> = {
+      [ScheduleStatus.PENDING]: '待执行',
+      [ScheduleStatus.RUNNING]: '执行中',
+      [ScheduleStatus.PAUSED]: '已暂停',
+      [ScheduleStatus.COMPLETED]: '已完成',
+      [ScheduleStatus.FAILED]: '执行失败',
+      [ScheduleStatus.CANCELLED]: '已取消',
+    };
+    return statusMap[this._scheduling.status] || '未知';
   }
 
   /**
    * 获取优先级文本
    */
-  public get priorityText(): string {
-    switch (this.priority) {
-      case SchedulePriority.LOW:
-        return '低';
-      case SchedulePriority.NORMAL:
-        return '普通';
-      case SchedulePriority.HIGH:
-        return '高';
-      case SchedulePriority.URGENT:
-        return '紧急';
-      default:
-        return '未知';
-    }
+  get priorityText(): string {
+    const priorityMap: Record<ScheduleContracts.SchedulePriority, string> = {
+      [SchedulePriority.LOW]: '低',
+      [SchedulePriority.NORMAL]: '普通',
+      [SchedulePriority.HIGH]: '高',
+      [SchedulePriority.URGENT]: '紧急',
+    };
+    return priorityMap[this._scheduling.priority] || '未知';
   }
 
   /**
    * 获取任务类型文本
    */
-  public get taskTypeText(): string {
-    switch (this.taskType) {
-      case ScheduleTaskType.TASK_REMINDER:
-        return '任务提醒';
-      case ScheduleTaskType.GOAL_REMINDER:
-        return '目标提醒';
-      case ScheduleTaskType.GENERAL_REMINDER:
-        return '通用提醒';
-      case ScheduleTaskType.SYSTEM_MAINTENANCE:
-        return '系统维护';
-      case ScheduleTaskType.DATA_BACKUP:
-        return '数据备份';
-      case ScheduleTaskType.CLEANUP_TASK:
-        return '清理任务';
-      default:
-        return '未知类型';
-    }
+  get taskTypeText(): string {
+    const typeMap: Record<ScheduleContracts.ScheduleTaskType, string> = {
+      [ScheduleTaskType.TASK_REMINDER]: '任务提醒',
+      [ScheduleTaskType.GOAL_REMINDER]: '目标提醒',
+      [ScheduleTaskType.GENERAL_REMINDER]: '通用提醒',
+      [ScheduleTaskType.SYSTEM_MAINTENANCE]: '系统维护',
+      [ScheduleTaskType.DATA_BACKUP]: '数据备份',
+      [ScheduleTaskType.CLEANUP_TASK]: '清理任务',
+    };
+    return typeMap[this._basic.taskType] || '未知类型';
   }
 
   /**
    * 获取剩余时间文本
    */
-  public get timeRemainingText(): string {
+  get timeRemainingText(): string {
     const minutes = this.getMinutesUntilExecution();
 
     if (minutes < 0) return '已过期';
     if (minutes === 0) return '即将执行';
-
-    if (minutes < 60) {
-      return `${minutes}分钟后`;
-    }
+    if (minutes < 60) return `${minutes}分钟后`;
 
     const hours = Math.floor(minutes / 60);
     const remainingMinutes = minutes % 60;
@@ -368,54 +513,125 @@ export class ScheduleTask extends ScheduleTaskCore {
   }
 
   /**
-   * 检查是否可以重新执行
+   * 获取状态颜色
    */
-  public canReExecute(): boolean {
-    return this.status === ScheduleStatus.FAILED || this.status === ScheduleStatus.COMPLETED;
+  get statusColor(): string {
+    const colorMap: Record<ScheduleContracts.ScheduleStatus, string> = {
+      [ScheduleStatus.PENDING]: '#2196F3',
+      [ScheduleStatus.RUNNING]: '#4CAF50',
+      [ScheduleStatus.PAUSED]: '#FF9800',
+      [ScheduleStatus.COMPLETED]: '#4CAF50',
+      [ScheduleStatus.FAILED]: '#F44336',
+      [ScheduleStatus.CANCELLED]: '#9E9E9E',
+    };
+    return colorMap[this._scheduling.status] || '#9E9E9E';
   }
 
   /**
-   * 检查是否可以编辑
+   * 获取优先级颜色
    */
-  public canEdit(): boolean {
-    return this.status !== ScheduleStatus.RUNNING;
+  get priorityColor(): string {
+    const colorMap: Record<ScheduleContracts.SchedulePriority, string> = {
+      [SchedulePriority.LOW]: '#9E9E9E',
+      [SchedulePriority.NORMAL]: '#2196F3',
+      [SchedulePriority.HIGH]: '#FF9800',
+      [SchedulePriority.URGENT]: '#F44336',
+    };
+    return colorMap[this._scheduling.priority] || '#2196F3';
   }
 
   /**
-   * 重新执行任务
+   * 是否已过期
    */
-  public async reExecute(): Promise<IScheduleExecutionResult> {
-    if (!this.canReExecute()) {
-      throw new Error('当前状态不允许重新执行');
+  get isOverdue(): boolean {
+    return (
+      this._scheduling.status === ScheduleStatus.PENDING &&
+      this._scheduling.scheduledTime < new Date()
+    );
+  }
+
+  /**
+   * 是否可以执行（UI判断）
+   */
+  get canExecuteNow(): boolean {
+    return (
+      this._metadata.enabled &&
+      (this._scheduling.status === ScheduleStatus.PENDING ||
+        this._scheduling.status === ScheduleStatus.PAUSED)
+    );
+  }
+
+  /**
+   * 是否可以编辑
+   */
+  get canEditNow(): boolean {
+    return this._scheduling.status !== ScheduleStatus.RUNNING;
+  }
+
+  /**
+   * 是否可以删除
+   */
+  get canDeleteNow(): boolean {
+    return this._scheduling.status !== ScheduleStatus.RUNNING;
+  }
+
+  /**
+   * 是否可以重试
+   */
+  get canRetry(): boolean {
+    return (
+      this._scheduling.status === ScheduleStatus.FAILED &&
+      this._execution.currentRetries < this._execution.maxRetries
+    );
+  }
+
+  /**
+   * 克隆实体
+   */
+  clone(): ScheduleTask {
+    const dto = this.toResponseDTO();
+    return ScheduleTask.fromDTO(dto);
+  }
+
+  // ===== 私有辅助方法 =====
+
+  /**
+   * 客户端任务执行逻辑
+   */
+  private async performClientExecution(): Promise<void> {
+    // 根据任务类型执行不同的客户端逻辑
+    switch (this._basic.taskType) {
+      case ScheduleTaskType.TASK_REMINDER:
+      case ScheduleTaskType.GOAL_REMINDER:
+      case ScheduleTaskType.GENERAL_REMINDER:
+        await this.showReminder();
+        break;
+
+      case ScheduleTaskType.SYSTEM_MAINTENANCE:
+      case ScheduleTaskType.DATA_BACKUP:
+      case ScheduleTaskType.CLEANUP_TASK:
+        await this.executeSystemTask();
+        break;
+
+      default:
+        console.log(`Executing task: ${this._basic.name}`);
     }
-
-    // 重置状态
-    this.status = ScheduleStatus.PENDING;
-    this.currentRetries = 0;
-    this.calculateNextExecutionTime();
-
-    return this.execute();
   }
 
   /**
-   * 立即执行
+   * 显示提醒
    */
-  public async executeNow(): Promise<IScheduleExecutionResult> {
-    // 临时设置为当前时间
-    const originalTime = this.nextExecutionTime;
-    this.nextExecutionTime = new Date();
-
-    try {
-      return await this.execute();
-    } finally {
-      // 恢复原时间
-      this.nextExecutionTime = originalTime;
-    }
+  private async showReminder(): Promise<void> {
+    console.log(`显示提醒: ${this._basic.name}`);
+    // 实际应用中调用UI组件显示提醒
+    // await this.$toast.success(this._basic.name, { description: this._basic.description });
   }
 
-  calculateNextExecutionTime(): Date | undefined {
-    console.log('客户端计算下次执行时间');
-    return this.nextExecutionTime;
+  /**
+   * 执行系统任务
+   */
+  private async executeSystemTask(): Promise<void> {
+    console.log(`执行系统任务: ${this._basic.name}`);
+    // 实际应用中执行客户端系统任务
   }
 }
-  

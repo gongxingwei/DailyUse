@@ -1,13 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 import { randomUUID } from 'crypto';
 import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
+import { ScheduleTask } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
 import { ScheduleStatus } from '@dailyuse/contracts';
 
 type CreateScheduleTaskRequestDto = ScheduleContracts.CreateScheduleTaskRequestDto;
 type UpdateScheduleTaskRequestDto = ScheduleContracts.UpdateScheduleTaskRequestDto;
-type ScheduleTaskResponseDto = ScheduleContracts.ScheduleTaskResponseDto;
-type ScheduleTaskListResponseDto = ScheduleContracts.ScheduleTaskListResponseDto;
 type IScheduleTaskQuery = ScheduleContracts.IScheduleTaskQuery;
 type IScheduleTaskStatistics = ScheduleContracts.IScheduleTaskStatistics;
 type ScheduleExecutionResultResponseDto = ScheduleContracts.ScheduleExecutionResultResponseDto;
@@ -19,45 +18,21 @@ type SchedulePriority = ScheduleContracts.SchedulePriority;
 /**
  * Prisma Schedule Task Repository Implementation
  * 调度任务的 Prisma 仓储实现
+ * 返回 ScheduleTask 聚合根实体
  */
 export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   constructor(private prisma: PrismaClient) {}
 
-  // ===== 数据库实体到DTO的转换 =====
-
-  private mapScheduleTaskToDTO(task: any): ScheduleTaskResponseDto {
-    return {
-      uuid: task.uuid,
-      name: task.title, // 数据库字段是 title
-      description: task.description,
-      taskType: task.taskType as ScheduleTaskType,
-      payload: task.payload as any, // Prisma JSON 字段
-      scheduledTime: task.scheduledTime,
-      recurrence: task.recurrence as any, // Prisma JSON 字段
-      priority: task.priority as SchedulePriority,
-      status: task.status as ScheduleStatus,
-      alertConfig: task.alertConfig as any, // Prisma JSON 字段
-      createdBy: task.accountUuid, // 数据库字段是 accountUuid
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
-      nextExecutionTime: task.nextScheduledAt, // 数据库字段是 nextScheduledAt
-      executionCount: task.executionCount,
-      maxRetries: 3, // 默认值，数据库中没有这个字段
-      currentRetries: task.failureCount || 0, // 使用 failureCount 字段
-      timeoutSeconds: 300, // 默认值，数据库中没有这个字段
-      tags: task.tags || [], // Prisma 自动处理数组
-      enabled: task.enabled,
-    };
-  }
+  // ===== 辅助方法 =====
 
   private mapScheduleExecutionToLogDTO(execution: any): ScheduleTaskLogResponseDto {
     return {
       id: execution.uuid,
       taskUuid: execution.taskUuid,
-      executedAt: execution.startedAt || execution.createdAt, // 使用 startedAt 或 createdAt
+      executedAt: execution.startedAt || execution.createdAt,
       status: execution.status as ScheduleStatus,
-      result: execution.result, // Prisma 自动解析 JSON
-      error: execution.errorMessage, // 使用 errorMessage 字段
+      result: execution.result,
+      error: execution.errorMessage,
       duration: execution.duration || 0,
       retryCount: execution.retryCount,
     };
@@ -65,44 +40,60 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
 
   // ===== IScheduleTaskRepository 接口实现 =====
 
-  async create(
-    request: CreateScheduleTaskRequestDto,
-    createdBy: string,
-  ): Promise<ScheduleTaskResponseDto> {
+  async create(request: CreateScheduleTaskRequestDto, createdBy: string): Promise<ScheduleTask> {
     const uuid = randomUUID();
-    const now = new Date();
 
     const created = await this.prisma.scheduleTask.create({
       data: {
         uuid,
-        accountUuid: createdBy, // 将 createdBy 作为 accountUuid
-        title: request.name, // 使用 request.name 作为 title
+        accountUuid: createdBy,
+        title: request.name,
         description: request.description,
         taskType: request.taskType,
-        payload: request.payload as any, // Prisma JSON 字段
-        scheduledTime: request.scheduledTime, // 必需字段
-        recurrence: request.recurrence as any, // Prisma JSON 字段
+        payload: request.payload as any,
+        scheduledTime: request.scheduledTime,
+        recurrence: request.recurrence as any,
         priority: request.priority,
-        status: 'pending', // 数据库默认值是小写
-        alertConfig: request.alertConfig as any, // Prisma JSON 字段
-        tags: request.tags || [], // Prisma 自动处理数组
-        enabled: request.enabled !== false, // 默认启用
-        nextScheduledAt: request.scheduledTime, // 数据库字段是 nextScheduledAt
+        status: 'pending',
+        alertConfig: request.alertConfig as any,
+        tags: request.tags || [],
+        enabled: request.enabled !== false,
+        nextScheduledAt: request.scheduledTime,
       },
     });
 
-    return this.mapScheduleTaskToDTO(created);
+    return ScheduleTask.fromPersistence(created);
   }
 
-  async findByUuid(uuid: string): Promise<ScheduleTaskResponseDto | null> {
+  async findByUuid(uuid: string): Promise<ScheduleTask | null> {
     const task = await this.prisma.scheduleTask.findUnique({
       where: { uuid },
     });
 
-    return task ? this.mapScheduleTaskToDTO(task) : null;
+    return task ? ScheduleTask.fromPersistence(task) : null;
   }
 
-  async findMany(query: IScheduleTaskQuery): Promise<ScheduleTaskListResponseDto> {
+  async save(task: ScheduleTask): Promise<ScheduleTask> {
+    const persistence = task.toPersistence();
+
+    const saved = await this.prisma.scheduleTask.upsert({
+      where: { uuid: task.uuid },
+      create: persistence,
+      update: persistence,
+    });
+
+    return ScheduleTask.fromPersistence(saved);
+  }
+
+  async findMany(query: IScheduleTaskQuery): Promise<{
+    tasks: ScheduleTask[];
+    total: number;
+    pagination: {
+      offset: number;
+      limit: number;
+      hasMore: boolean;
+    };
+  }> {
     const where: any = {};
 
     // 构建查询条件
@@ -134,9 +125,8 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     }
 
     if (query.tags && query.tags.length > 0) {
-      // 在 JSON 数组中搜索标签
       where.tags = {
-        contains: JSON.stringify(query.tags).slice(1, -1), // 移除方括号进行部分匹配
+        contains: JSON.stringify(query.tags).slice(1, -1),
       };
     }
 
@@ -145,14 +135,14 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     if (query.sorting) {
       orderBy[query.sorting.field] = query.sorting.order;
     } else {
-      orderBy.scheduledTime = 'asc'; // 默认按调度时间升序
+      orderBy.scheduledTime = 'asc';
     }
 
     // 分页
     const offset = query.pagination?.offset || 0;
     const limit = query.pagination?.limit || 50;
 
-    const [tasks, total] = await Promise.all([
+    const [dbTasks, total] = await Promise.all([
       this.prisma.scheduleTask.findMany({
         where,
         orderBy,
@@ -162,8 +152,10 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       this.prisma.scheduleTask.count({ where }),
     ]);
 
+    const tasks = dbTasks.map((task) => ScheduleTask.fromPersistence(task));
+
     return {
-      tasks: tasks.map((task) => this.mapScheduleTaskToDTO(task)),
+      tasks,
       total,
       pagination: {
         offset,
@@ -173,13 +165,10 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     };
   }
 
-  async update(
-    uuid: string,
-    request: UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleTaskResponseDto> {
+  async update(uuid: string, request: UpdateScheduleTaskRequestDto): Promise<ScheduleTask> {
     const updateData: any = { updatedAt: new Date() };
 
-    if (request.name !== undefined) updateData.title = request.name; // 数据库字段是 title
+    if (request.name !== undefined) updateData.title = request.name;
     if (request.description !== undefined) updateData.description = request.description;
     if (request.scheduledTime !== undefined) {
       updateData.scheduledTime = request.scheduledTime;
@@ -206,7 +195,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       data: updateData,
     });
 
-    return this.mapScheduleTaskToDTO(updated);
+    return ScheduleTask.fromPersistence(updated);
   }
 
   async delete(uuid: string): Promise<void> {
@@ -223,23 +212,23 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     });
   }
 
-  async enable(uuid: string): Promise<ScheduleTaskResponseDto> {
+  async enable(uuid: string): Promise<ScheduleTask> {
     return this.update(uuid, { enabled: true });
   }
 
-  async disable(uuid: string): Promise<ScheduleTaskResponseDto> {
+  async disable(uuid: string): Promise<ScheduleTask> {
     return this.update(uuid, { enabled: false });
   }
 
-  async pause(uuid: string): Promise<ScheduleTaskResponseDto> {
+  async pause(uuid: string): Promise<ScheduleTask> {
     return this.update(uuid, { status: ScheduleStatus.PAUSED });
   }
 
-  async resume(uuid: string): Promise<ScheduleTaskResponseDto> {
+  async resume(uuid: string): Promise<ScheduleTask> {
     return this.update(uuid, { status: ScheduleStatus.PENDING });
   }
 
-  async updateStatus(uuid: string, status: ScheduleStatus): Promise<ScheduleTaskResponseDto> {
+  async updateStatus(uuid: string, status: ScheduleStatus): Promise<ScheduleTask> {
     return this.update(uuid, { status });
   }
 
@@ -280,7 +269,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     };
   }
 
-  async findExecutableTasks(limit?: number): Promise<ScheduleTaskResponseDto[]> {
+  async findExecutableTasks(limit?: number): Promise<ScheduleTask[]> {
     const now = new Date();
 
     const tasks = await this.prisma.scheduleTask.findMany({
@@ -298,10 +287,10 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       take: limit || 50,
     });
 
-    return tasks.map((task) => this.mapScheduleTaskToDTO(task));
+    return tasks.map((task) => ScheduleTask.fromPersistence(task));
   }
 
-  async findTimeoutTasks(): Promise<ScheduleTaskResponseDto[]> {
+  async findTimeoutTasks(): Promise<ScheduleTask[]> {
     const tasks = await this.prisma.scheduleTask.findMany({
       where: {
         status: 'RUNNING',
@@ -315,10 +304,10 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       return now > timeoutTime;
     });
 
-    return timeoutTasks.map((task) => this.mapScheduleTaskToDTO(task));
+    return timeoutTasks.map((task) => ScheduleTask.fromPersistence(task));
   }
 
-  async findRetryTasks(): Promise<ScheduleTaskResponseDto[]> {
+  async findRetryTasks(): Promise<ScheduleTask[]> {
     const tasks = await this.prisma.scheduleTask.findMany({
       where: {
         status: 'FAILED',
@@ -328,13 +317,13 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
 
     const retryTasks = tasks.filter((task) => task.failureCount < 3); // 最大重试3次
 
-    return retryTasks.map((task) => this.mapScheduleTaskToDTO(task));
+    return retryTasks.map((task) => ScheduleTask.fromPersistence(task));
   }
 
   async findByUser(
     userId: string,
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto> {
+  ): Promise<{ tasks: ScheduleTask[]; total: number }> {
     const fullQuery: IScheduleTaskQuery = {
       ...query,
       createdBy: userId,
@@ -346,7 +335,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   async findByTaskType(
     taskType: ScheduleTaskType,
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto> {
+  ): Promise<{ tasks: ScheduleTask[]; total: number }> {
     const fullQuery: IScheduleTaskQuery = {
       ...query,
       taskType: [taskType],
@@ -358,7 +347,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   async findByStatus(
     status: ScheduleStatus[],
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto> {
+  ): Promise<{ tasks: ScheduleTask[]; total: number }> {
     const fullQuery: IScheduleTaskQuery = {
       ...query,
       status,
@@ -370,7 +359,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   async findByTags(
     tags: string[],
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto> {
+  ): Promise<{ tasks: ScheduleTask[]; total: number }> {
     const fullQuery: IScheduleTaskQuery = {
       ...query,
       tags,
@@ -607,7 +596,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     });
   }
 
-  async exportTasks(query: IScheduleTaskQuery): Promise<ScheduleTaskResponseDto[]> {
+  async exportTasks(query: IScheduleTaskQuery): Promise<ScheduleTask[]> {
     const result = await this.findMany(query);
     return result.tasks;
   }
@@ -615,8 +604,8 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
   async importTasks(
     tasks: CreateScheduleTaskRequestDto[],
     createdBy: string,
-  ): Promise<ScheduleTaskResponseDto[]> {
-    const results: ScheduleTaskResponseDto[] = [];
+  ): Promise<ScheduleTask[]> {
+    const results: ScheduleTask[] = [];
 
     for (const taskData of tasks) {
       const created = await this.create(taskData, createdBy);

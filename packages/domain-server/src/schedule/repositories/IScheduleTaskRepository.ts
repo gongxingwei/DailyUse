@@ -5,9 +5,8 @@
  * @date 2025-01-09
  */
 
+import type { ScheduleTask } from '../aggregates/ScheduleTask';
 import type {
-  ScheduleTaskResponseDto,
-  ScheduleTaskListResponseDto,
   CreateScheduleTaskRequestDto,
   UpdateScheduleTaskRequestDto,
   IScheduleTaskQuery,
@@ -27,25 +26,35 @@ export interface IScheduleTaskRepository {
   /**
    * 创建调度任务
    */
-  create(
-    request: CreateScheduleTaskRequestDto,
-    createdBy: string,
-  ): Promise<ScheduleTaskResponseDto>;
+  create(request: CreateScheduleTaskRequestDto, createdBy: string): Promise<ScheduleTask>;
 
   /**
    * 根据UUID获取任务
    */
-  findByUuid(uuid: string): Promise<ScheduleTaskResponseDto | null>;
+  findByUuid(uuid: string): Promise<ScheduleTask | null>;
 
   /**
    * 根据查询条件获取任务列表
    */
-  findMany(query: IScheduleTaskQuery): Promise<ScheduleTaskListResponseDto>;
+  findMany(query: IScheduleTaskQuery): Promise<{
+    tasks: ScheduleTask[];
+    total: number;
+    pagination: {
+      offset: number;
+      limit: number;
+      hasMore: boolean;
+    };
+  }>;
 
   /**
    * 更新任务
    */
-  update(uuid: string, request: UpdateScheduleTaskRequestDto): Promise<ScheduleTaskResponseDto>;
+  update(uuid: string, request: UpdateScheduleTaskRequestDto): Promise<ScheduleTask>;
+
+  /**
+   * 保存任务（创建或更新）
+   */
+  save(task: ScheduleTask): Promise<ScheduleTask>;
 
   /**
    * 删除任务
@@ -60,27 +69,27 @@ export interface IScheduleTaskRepository {
   /**
    * 启用任务
    */
-  enable(uuid: string): Promise<ScheduleTaskResponseDto>;
+  enable(uuid: string): Promise<ScheduleTask>;
 
   /**
    * 禁用任务
    */
-  disable(uuid: string): Promise<ScheduleTaskResponseDto>;
+  disable(uuid: string): Promise<ScheduleTask>;
 
   /**
    * 暂停任务
    */
-  pause(uuid: string): Promise<ScheduleTaskResponseDto>;
+  pause(uuid: string): Promise<ScheduleTask>;
 
   /**
    * 恢复任务
    */
-  resume(uuid: string): Promise<ScheduleTaskResponseDto>;
+  resume(uuid: string): Promise<ScheduleTask>;
 
   /**
    * 更新任务状态
    */
-  updateStatus(uuid: string, status: ScheduleStatus): Promise<ScheduleTaskResponseDto>;
+  updateStatus(uuid: string, status: ScheduleStatus): Promise<ScheduleTask>;
 
   /**
    * 获取即将执行的任务
@@ -90,17 +99,17 @@ export interface IScheduleTaskRepository {
   /**
    * 获取可执行的任务
    */
-  findExecutableTasks(limit?: number): Promise<ScheduleTaskResponseDto[]>;
+  findExecutableTasks(limit?: number): Promise<ScheduleTask[]>;
 
   /**
    * 获取超时的任务
    */
-  findTimeoutTasks(): Promise<ScheduleTaskResponseDto[]>;
+  findTimeoutTasks(): Promise<ScheduleTask[]>;
 
   /**
    * 获取失败需要重试的任务
    */
-  findRetryTasks(): Promise<ScheduleTaskResponseDto[]>;
+  findRetryTasks(): Promise<ScheduleTask[]>;
 
   /**
    * 根据用户获取任务
@@ -108,7 +117,7 @@ export interface IScheduleTaskRepository {
   findByUser(
     userId: string,
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto>;
+  ): Promise<{ tasks: ScheduleTask[]; total: number }>;
 
   /**
    * 根据任务类型获取任务
@@ -116,7 +125,7 @@ export interface IScheduleTaskRepository {
   findByTaskType(
     taskType: ScheduleTaskType,
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto>;
+  ): Promise<{ tasks: ScheduleTask[]; total: number }>;
 
   /**
    * 根据状态获取任务
@@ -124,7 +133,7 @@ export interface IScheduleTaskRepository {
   findByStatus(
     status: ScheduleStatus[],
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto>;
+  ): Promise<{ tasks: ScheduleTask[]; total: number }>;
 
   /**
    * 根据标签获取任务
@@ -132,7 +141,7 @@ export interface IScheduleTaskRepository {
   findByTags(
     tags: string[],
     query?: Partial<IScheduleTaskQuery>,
-  ): Promise<ScheduleTaskListResponseDto>;
+  ): Promise<{ tasks: ScheduleTask[]; total: number }>;
 
   /**
    * 增加执行次数
@@ -198,13 +207,10 @@ export interface IScheduleTaskRepository {
   /**
    * 导出任务数据
    */
-  exportTasks(query: IScheduleTaskQuery): Promise<ScheduleTaskResponseDto[]>;
+  exportTasks(query: IScheduleTaskQuery): Promise<ScheduleTask[]>;
 
   /**
    * 导入任务数据
    */
-  importTasks(
-    tasks: CreateScheduleTaskRequestDto[],
-    createdBy: string,
-  ): Promise<ScheduleTaskResponseDto[]>;
+  importTasks(tasks: CreateScheduleTaskRequestDto[], createdBy: string): Promise<ScheduleTask[]>;
 }

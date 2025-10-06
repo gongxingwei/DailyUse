@@ -516,4 +516,116 @@ export class ScheduleTask extends ScheduleTaskCore {
       },
     });
   }
+
+  // ===== 持久化转换方法 =====
+
+  /**
+   * 从数据库持久化数据创建聚合根实例
+   */
+  static fromPersistence(data: any): ScheduleTask {
+    // 解析 JSON 字段
+    const parseJson = (value: any): any => {
+      if (typeof value === 'object' && value !== null) return value;
+      if (typeof value === 'string') {
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      }
+      return null;
+    };
+
+    const payload = parseJson(data.payload) || {};
+    const recurrence = parseJson(data.recurrence);
+    const alertConfig = parseJson(data.alertConfig) || {};
+
+    return new ScheduleTask({
+      uuid: data.uuid,
+      basic: {
+        name: data.title,
+        description: data.description,
+        taskType: data.taskType as ScheduleTaskType,
+        payload,
+        createdBy: data.accountUuid,
+      },
+      scheduling: {
+        scheduledTime: new Date(data.scheduledTime),
+        recurrence,
+        priority: data.priority as SchedulePriority,
+        status: data.status as ScheduleStatus,
+        nextExecutionTime: data.nextScheduledAt ? new Date(data.nextScheduledAt) : undefined,
+      },
+      execution: {
+        executionCount: data.executionCount || 0,
+        maxRetries: 3, // 默认值
+        currentRetries: data.failureCount || 0,
+        timeoutSeconds: 300, // 默认值
+      },
+      alertConfig,
+      lifecycle: {
+        createdAt: new Date(data.createdAt),
+        updatedAt: new Date(data.updatedAt),
+      },
+      metadata: {
+        tags: Array.isArray(data.tags) ? data.tags : [],
+        enabled: Boolean(data.enabled),
+      },
+    });
+  }
+
+  /**
+   * 转换为数据库持久化格式
+   */
+  toPersistence(): any {
+    return {
+      uuid: this.uuid,
+      accountUuid: this._basic.createdBy,
+      title: this._basic.name,
+      description: this._basic.description,
+      taskType: this._basic.taskType,
+      status: this._scheduling.status,
+      priority: this._scheduling.priority,
+      enabled: this._metadata.enabled,
+      scheduledTime: this._scheduling.scheduledTime,
+      payload: this._basic.payload,
+      recurrence: this._scheduling.recurrence,
+      alertConfig: this.alertConfig,
+      tags: this._metadata.tags || [],
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+      lastExecutedAt: this._lifecycle.updatedAt, // 可以添加专门的字段
+      nextScheduledAt: this._scheduling.nextExecutionTime,
+      executionCount: this._execution.executionCount,
+      failureCount: this._execution.currentRetries,
+    };
+  }
+
+  /**
+   * 转换为客户端 DTO
+   */
+  toClient(): ScheduleTaskResponseDto {
+    return {
+      uuid: this.uuid,
+      name: this._basic.name,
+      description: this._basic.description,
+      taskType: this._basic.taskType,
+      payload: this._basic.payload,
+      scheduledTime: this._scheduling.scheduledTime,
+      recurrence: this._scheduling.recurrence,
+      priority: this._scheduling.priority,
+      status: this._scheduling.status,
+      alertConfig: this.alertConfig,
+      createdBy: this._basic.createdBy,
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+      nextExecutionTime: this._scheduling.nextExecutionTime,
+      executionCount: this._execution.executionCount,
+      maxRetries: this._execution.maxRetries,
+      currentRetries: this._execution.currentRetries,
+      timeoutSeconds: this._execution.timeoutSeconds,
+      tags: this._metadata.tags,
+      enabled: this._metadata.enabled,
+    };
+  }
 }

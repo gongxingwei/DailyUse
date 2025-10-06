@@ -1,26 +1,24 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import type { ScheduleContracts } from '@dailyuse/contracts';
-import {
-  type ApiResponse,
-  type SuccessResponse,
-  type ErrorResponse,
-  ResponseCode,
-  createResponseBuilder,
-  getHttpStatusCode,
-} from '@dailyuse/contracts';
+import { ResponseCode, createResponseBuilder } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
-import { ScheduleContainer } from '../../infrastructure/di/ScheduleContainer';
+import { ScheduleContainer } from '../../../infrastructure/di/ScheduleContainer';
 import { PrismaClient } from '@prisma/client';
 
-// 创建 logger 实例
-const logger = createLogger('ScheduleController');
+const logger = createLogger('ScheduleTaskController');
 
 /**
- * Schedule Controller
- * 调度模块控制器 - 处理 HTTP 请求和响应
+ * ScheduleTask Controller
+ * 调度任务聚合根控制器 - 处理调度任务相关的 HTTP 请求
+ *
+ * 职责:
+ * - 处理 HTTP 请求和响应
+ * - 身份验证和授权
+ * - 输入验证和错误处理
+ * - 调用 ApplicationService 完成业务逻辑
  */
-export class ScheduleController {
+export class ScheduleTaskController {
   private prisma = new PrismaClient();
   private static responseBuilder = createResponseBuilder();
 
@@ -31,7 +29,7 @@ export class ScheduleController {
   /**
    * 从请求中提取用户账户UUID
    */
-  private getAccountUuid(req: Request): string {
+  private extractAccountUuid(req: Request): string {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       logger.warn('Authentication attempt without Bearer token');
@@ -49,14 +47,14 @@ export class ScheduleController {
     return decoded.accountUuid;
   }
 
-  // ==================== Schedule Management ====================
+  // ==================== CRUD Operations ====================
 
   /**
-   * 获取所有计划任务
+   * 获取所有调度任务
    */
-  async getAllSchedules(req: Request, res: Response): Promise<Response> {
+  async getAllScheduleTasks(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { page = 1, limit = 50, status, taskType, enabled, tags } = req.query;
 
       logger.debug('Fetching schedule tasks list', { accountUuid, page, limit });
@@ -103,14 +101,14 @@ export class ScheduleController {
       });
 
       const responseData = {
-        schedules: result.tasks,
+        tasks: result.tasks,
         total: result.total,
         page: Number(page),
         limit: Number(limit),
         hasMore: result.pagination.hasMore,
       };
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         responseData,
         'Schedule tasks retrieved successfully',
@@ -118,14 +116,14 @@ export class ScheduleController {
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
         logger.warn('Authentication error retrieving schedule tasks');
-        return ScheduleController.responseBuilder.sendError(res, {
+        return ScheduleTaskController.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
 
       logger.error('Failed to retrieve schedule tasks', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve schedule tasks',
       });
@@ -133,20 +131,20 @@ export class ScheduleController {
   }
 
   /**
-   * 获取单个计划任务
+   * 获取单个调度任务
    */
-  async getScheduleById(req: Request, res: Response): Promise<Response> {
+  async getScheduleTaskById(req: Request, res: Response): Promise<Response> {
     try {
       const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
 
       logger.debug('Fetching schedule task by ID', { uuid, accountUuid });
 
-      const schedule = await this.scheduleService.getScheduleTask(accountUuid, uuid);
+      const task = await this.scheduleService.getScheduleTask(accountUuid, uuid);
 
-      if (!schedule) {
+      if (!task) {
         logger.warn('Schedule task not found', { uuid, accountUuid });
-        return ScheduleController.responseBuilder.sendError(res, {
+        return ScheduleTaskController.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Schedule task not found',
         });
@@ -154,22 +152,22 @@ export class ScheduleController {
 
       logger.info('Schedule task retrieved successfully', { uuid, accountUuid });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
-        { schedule },
+        { task },
         'Schedule task retrieved successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
         logger.warn('Authentication error retrieving schedule task');
-        return ScheduleController.responseBuilder.sendError(res, {
+        return ScheduleTaskController.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
 
       logger.error('Failed to retrieve schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve schedule task',
       });
@@ -177,25 +175,25 @@ export class ScheduleController {
   }
 
   /**
-   * 创建计划任务
+   * 创建调度任务
    */
-  async createSchedule(req: Request, res: Response): Promise<Response> {
+  async createScheduleTask(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
-      const scheduleData: ScheduleContracts.CreateScheduleTaskRequestDto = req.body;
+      const accountUuid = this.extractAccountUuid(req);
+      const taskData: ScheduleContracts.CreateScheduleTaskRequestDto = req.body;
 
-      logger.info('Creating schedule task', { accountUuid, taskName: scheduleData.name });
+      logger.info('Creating schedule task', { accountUuid, taskName: taskData.name });
 
-      const newSchedule = await this.scheduleService.createScheduleTask(accountUuid, scheduleData);
+      const newTask = await this.scheduleService.createScheduleTask(accountUuid, taskData);
 
       logger.info('Schedule task created successfully', {
-        taskUuid: newSchedule.uuid,
+        taskUuid: newTask.uuid,
         accountUuid,
       });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
-        { schedule: newSchedule },
+        { task: newTask },
         'Schedule task created successfully',
         201,
       );
@@ -203,14 +201,14 @@ export class ScheduleController {
       if (error instanceof Error) {
         if (error.message.includes('Scheduled time cannot be in the past')) {
           logger.error('Validation error creating schedule task');
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
         if (error.message.includes('Authentication')) {
           logger.warn('Authentication error creating schedule task');
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.UNAUTHORIZED,
             message: error.message,
           });
@@ -218,7 +216,7 @@ export class ScheduleController {
       }
 
       logger.error('Failed to create schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to create schedule task',
       });
@@ -226,17 +224,17 @@ export class ScheduleController {
   }
 
   /**
-   * 更新计划任务
+   * 更新调度任务
    */
-  async updateSchedule(req: Request, res: Response): Promise<Response> {
+  async updateScheduleTask(req: Request, res: Response): Promise<Response> {
     try {
       const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const updateData: ScheduleContracts.UpdateScheduleTaskRequestDto = req.body;
 
       logger.info('Updating schedule task', { uuid, accountUuid });
 
-      const updatedSchedule = await this.scheduleService.updateScheduleTask(
+      const updatedTask = await this.scheduleService.updateScheduleTask(
         accountUuid,
         uuid,
         updateData,
@@ -244,23 +242,23 @@ export class ScheduleController {
 
       logger.info('Schedule task updated successfully', { uuid, accountUuid });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
-        { schedule: updatedSchedule },
+        { task: updatedTask },
         'Schedule task updated successfully',
       );
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('not found')) {
           logger.warn('Schedule task not found for update', { uuid: req.params.uuid });
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
         if (error.message.includes('Authentication')) {
           logger.warn('Authentication error updating schedule task');
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.UNAUTHORIZED,
             message: error.message,
           });
@@ -268,7 +266,7 @@ export class ScheduleController {
       }
 
       logger.error('Failed to update schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to update schedule task',
       });
@@ -276,12 +274,12 @@ export class ScheduleController {
   }
 
   /**
-   * 删除计划任务
+   * 删除调度任务
    */
-  async deleteSchedule(req: Request, res: Response): Promise<Response> {
+  async deleteScheduleTask(req: Request, res: Response): Promise<Response> {
     try {
       const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
 
       logger.info('Deleting schedule task', { uuid, accountUuid });
 
@@ -289,7 +287,7 @@ export class ScheduleController {
 
       logger.info('Schedule task deleted successfully', { uuid, accountUuid });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         null,
         'Schedule task deleted successfully',
@@ -298,14 +296,14 @@ export class ScheduleController {
       if (error instanceof Error) {
         if (error.message.includes('not found')) {
           logger.warn('Schedule task not found for deletion', { uuid: req.params.uuid });
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
         if (error.message.includes('Authentication')) {
           logger.warn('Authentication error deleting schedule task');
-          return ScheduleController.responseBuilder.sendError(res, {
+          return ScheduleTaskController.responseBuilder.sendError(res, {
             code: ResponseCode.UNAUTHORIZED,
             message: error.message,
           });
@@ -313,22 +311,134 @@ export class ScheduleController {
       }
 
       logger.error('Failed to delete schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to delete schedule task',
       });
     }
   }
 
-  // ==================== Schedule Operations ====================
+  // ==================== State Management ====================
 
   /**
-   * 执行计划任务
+   * 启用调度任务
    */
-  async executeSchedule(req: Request, res: Response): Promise<Response> {
+  async enableScheduleTask(req: Request, res: Response): Promise<Response> {
     try {
       const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
+
+      logger.info('Enabling schedule task', { uuid, accountUuid });
+
+      const task = await this.scheduleService.enableScheduleTask(accountUuid, uuid);
+
+      logger.info('Schedule task enabled successfully', { uuid, accountUuid });
+
+      return ScheduleTaskController.responseBuilder.sendSuccess(
+        res,
+        { task },
+        'Schedule task enabled successfully',
+      );
+    } catch (error) {
+      logger.error('Failed to enable schedule task', error);
+      return ScheduleTaskController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to enable schedule task',
+      });
+    }
+  }
+
+  /**
+   * 禁用调度任务
+   */
+  async disableScheduleTask(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.extractAccountUuid(req);
+
+      logger.info('Disabling schedule task', { uuid, accountUuid });
+
+      const task = await this.scheduleService.disableScheduleTask(accountUuid, uuid);
+
+      logger.info('Schedule task disabled successfully', { uuid, accountUuid });
+
+      return ScheduleTaskController.responseBuilder.sendSuccess(
+        res,
+        { task },
+        'Schedule task disabled successfully',
+      );
+    } catch (error) {
+      logger.error('Failed to disable schedule task', error);
+      return ScheduleTaskController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to disable schedule task',
+      });
+    }
+  }
+
+  /**
+   * 暂停调度任务
+   */
+  async pauseScheduleTask(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.extractAccountUuid(req);
+
+      logger.info('Pausing schedule task', { uuid, accountUuid });
+
+      const task = await this.scheduleService.pauseScheduleTask(accountUuid, uuid);
+
+      logger.info('Schedule task paused successfully', { uuid, accountUuid });
+
+      return ScheduleTaskController.responseBuilder.sendSuccess(
+        res,
+        { task },
+        'Schedule task paused successfully',
+      );
+    } catch (error) {
+      logger.error('Failed to pause schedule task', error);
+      return ScheduleTaskController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to pause schedule task',
+      });
+    }
+  }
+
+  /**
+   * 恢复调度任务
+   */
+  async resumeScheduleTask(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.extractAccountUuid(req);
+
+      logger.info('Resuming schedule task', { uuid, accountUuid });
+
+      const task = await this.scheduleService.resumeScheduleTask(accountUuid, uuid);
+
+      logger.info('Schedule task resumed successfully', { uuid, accountUuid });
+
+      return ScheduleTaskController.responseBuilder.sendSuccess(
+        res,
+        { task },
+        'Schedule task resumed successfully',
+      );
+    } catch (error) {
+      logger.error('Failed to resume schedule task', error);
+      return ScheduleTaskController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to resume schedule task',
+      });
+    }
+  }
+
+  /**
+   * 执行调度任务
+   */
+  async executeScheduleTask(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.extractAccountUuid(req);
       const { force } = req.body;
 
       logger.info('Executing schedule task', { uuid, accountUuid, force });
@@ -337,161 +447,16 @@ export class ScheduleController {
 
       logger.info('Schedule task executed successfully', { uuid, accountUuid });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         { executionResult: result },
         'Schedule task executed successfully',
       );
     } catch (error) {
       logger.error('Failed to execute schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to execute schedule task',
-      });
-    }
-  }
-
-  /**
-   * 启用计划任务
-   */
-  async enableSchedule(req: Request, res: Response): Promise<Response> {
-    try {
-      const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
-
-      logger.info('Enabling schedule task', { uuid, accountUuid });
-
-      const schedule = await this.scheduleService.enableScheduleTask(accountUuid, uuid);
-
-      logger.info('Schedule task enabled successfully', { uuid, accountUuid });
-
-      return ScheduleController.responseBuilder.sendSuccess(
-        res,
-        { schedule },
-        'Schedule task enabled successfully',
-      );
-    } catch (error) {
-      logger.error('Failed to enable schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to enable schedule task',
-      });
-    }
-  }
-
-  /**
-   * 禁用计划任务
-   */
-  async disableSchedule(req: Request, res: Response): Promise<Response> {
-    try {
-      const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
-
-      logger.info('Disabling schedule task', { uuid, accountUuid });
-
-      const schedule = await this.scheduleService.disableScheduleTask(accountUuid, uuid);
-
-      logger.info('Schedule task disabled successfully', { uuid, accountUuid });
-
-      return ScheduleController.responseBuilder.sendSuccess(
-        res,
-        { schedule },
-        'Schedule task disabled successfully',
-      );
-    } catch (error) {
-      logger.error('Failed to disable schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to disable schedule task',
-      });
-    }
-  }
-
-  /**
-   * 暂停计划任务
-   */
-  async pauseSchedule(req: Request, res: Response): Promise<Response> {
-    try {
-      const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
-
-      logger.info('Pausing schedule task', { uuid, accountUuid });
-
-      const schedule = await this.scheduleService.pauseScheduleTask(accountUuid, uuid);
-
-      logger.info('Schedule task paused successfully', { uuid, accountUuid });
-
-      return ScheduleController.responseBuilder.sendSuccess(
-        res,
-        { schedule },
-        'Schedule task paused successfully',
-      );
-    } catch (error) {
-      logger.error('Failed to pause schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to pause schedule task',
-      });
-    }
-  }
-
-  /**
-   * 恢复计划任务
-   */
-  async resumeSchedule(req: Request, res: Response): Promise<Response> {
-    try {
-      const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
-
-      logger.info('Resuming schedule task', { uuid, accountUuid });
-
-      const schedule = await this.scheduleService.resumeScheduleTask(accountUuid, uuid);
-
-      logger.info('Schedule task resumed successfully', { uuid, accountUuid });
-
-      return ScheduleController.responseBuilder.sendSuccess(
-        res,
-        { schedule },
-        'Schedule task resumed successfully',
-      );
-    } catch (error) {
-      logger.error('Failed to resume schedule task', error);
-      return ScheduleController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to resume schedule task',
-      });
-    }
-  }
-
-  /**
-   * 延后提醒
-   */
-  async snoozeReminder(req: Request, res: Response): Promise<Response> {
-    try {
-      const { uuid } = req.params;
-      const accountUuid = this.getAccountUuid(req);
-      const { snoozeMinutes, reason }: ScheduleContracts.SnoozeReminderRequestDto = req.body;
-
-      logger.info('Snoozing reminder', { uuid, accountUuid, snoozeMinutes });
-
-      const schedule = await this.scheduleService.snoozeReminder(accountUuid, {
-        taskUuid: uuid,
-        snoozeMinutes,
-        reason,
-      });
-
-      logger.info('Reminder snoozed successfully', { uuid, accountUuid });
-
-      return ScheduleController.responseBuilder.sendSuccess(
-        res,
-        { schedule },
-        'Reminder snoozed successfully',
-      );
-    } catch (error) {
-      logger.error('Failed to snooze reminder', error);
-      return ScheduleController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to snooze reminder',
       });
     }
   }
@@ -499,11 +464,44 @@ export class ScheduleController {
   // ==================== Additional Features ====================
 
   /**
+   * 延后提醒
+   */
+  async snoozeReminder(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+      const accountUuid = this.extractAccountUuid(req);
+      const { snoozeMinutes, reason }: ScheduleContracts.SnoozeReminderRequestDto = req.body;
+
+      logger.info('Snoozing reminder', { uuid, accountUuid, snoozeMinutes });
+
+      const task = await this.scheduleService.snoozeReminder(accountUuid, {
+        taskUuid: uuid,
+        snoozeMinutes,
+        reason,
+      });
+
+      logger.info('Reminder snoozed successfully', { uuid, accountUuid });
+
+      return ScheduleTaskController.responseBuilder.sendSuccess(
+        res,
+        { task },
+        'Reminder snoozed successfully',
+      );
+    } catch (error) {
+      logger.error('Failed to snooze reminder', error);
+      return ScheduleTaskController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to snooze reminder',
+      });
+    }
+  }
+
+  /**
    * 获取即将到来的任务
    */
-  async getUpcomingSchedules(req: Request, res: Response): Promise<Response> {
+  async getUpcomingTasks(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { withinMinutes = 60, limit = 100 } = req.query;
 
       logger.debug('Fetching upcoming tasks', { accountUuid, withinMinutes, limit });
@@ -519,14 +517,14 @@ export class ScheduleController {
         count: result.tasks.length,
       });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         result,
         'Upcoming tasks retrieved successfully',
       );
     } catch (error) {
       logger.error('Failed to retrieve upcoming tasks', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve upcoming tasks',
       });
@@ -538,27 +536,27 @@ export class ScheduleController {
    */
   async createQuickReminder(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const reminderData: ScheduleContracts.QuickReminderRequestDto = req.body;
 
       logger.info('Creating quick reminder', { accountUuid, title: reminderData.title });
 
-      const schedule = await this.scheduleService.createQuickReminder(accountUuid, reminderData);
+      const task = await this.scheduleService.createQuickReminder(accountUuid, reminderData);
 
       logger.info('Quick reminder created successfully', {
-        taskUuid: schedule.uuid,
+        taskUuid: task.uuid,
         accountUuid,
       });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
-        { schedule },
+        { task },
         'Quick reminder created successfully',
         201,
       );
     } catch (error) {
       logger.error('Failed to create quick reminder', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to create quick reminder',
       });
@@ -566,11 +564,11 @@ export class ScheduleController {
   }
 
   /**
-   * 批量操作计划任务
+   * 批量操作调度任务
    */
-  async batchOperateSchedules(req: Request, res: Response): Promise<Response> {
+  async batchOperateTasks(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const batchRequest: ScheduleContracts.BatchScheduleTaskOperationRequestDto = req.body;
 
       logger.info('Batch operating schedule tasks', {
@@ -590,14 +588,14 @@ export class ScheduleController {
         failureCount: result.summary.failed,
       });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         result,
         'Batch operation completed successfully',
       );
     } catch (error) {
       logger.error('Failed to perform batch operation', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to perform batch operation',
       });
@@ -612,14 +610,14 @@ export class ScheduleController {
       logger.debug('Fetching execution history (placeholder)');
 
       // TODO: 实现执行历史功能
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         { history: [], total: 0 },
         'Execution history retrieved successfully',
       );
     } catch (error) {
       logger.error('Failed to retrieve execution history', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve execution history',
       });
@@ -631,7 +629,7 @@ export class ScheduleController {
    */
   async getStatistics(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = this.getAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
 
       logger.debug('Fetching schedule statistics', { accountUuid });
 
@@ -641,14 +639,14 @@ export class ScheduleController {
 
       logger.info('Schedule statistics retrieved successfully', { accountUuid });
 
-      return ScheduleController.responseBuilder.sendSuccess(
+      return ScheduleTaskController.responseBuilder.sendSuccess(
         res,
         stats,
         'Schedule statistics retrieved successfully',
       );
     } catch (error) {
       logger.error('Failed to retrieve schedule statistics', error);
-      return ScheduleController.responseBuilder.sendError(res, {
+      return ScheduleTaskController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve schedule statistics',
       });

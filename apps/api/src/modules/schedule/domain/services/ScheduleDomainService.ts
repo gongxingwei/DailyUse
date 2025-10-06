@@ -1,4 +1,5 @@
 import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
+import { ScheduleTask } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
 import { ScheduleStatus } from '@dailyuse/contracts';
 
@@ -33,7 +34,7 @@ export class ScheduleDomainService {
   async createScheduleTask(
     accountUuid: string,
     request: ScheduleContracts.CreateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleTask> {
     // 业务规则验证
     await this.validateScheduleTaskCreation(accountUuid, request);
 
@@ -44,10 +45,7 @@ export class ScheduleDomainService {
   /**
    * 获取调度任务
    */
-  async getScheduleTaskByUuid(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto | null> {
+  async getScheduleTaskByUuid(accountUuid: string, uuid: string): Promise<ScheduleTask | null> {
     const task = await this.scheduleRepository.findByUuid(uuid);
 
     // 验证权限
@@ -64,7 +62,15 @@ export class ScheduleDomainService {
   async getScheduleTasks(
     accountUuid: string,
     query: ScheduleContracts.IScheduleTaskQuery,
-  ): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
+  ): Promise<{
+    tasks: ScheduleTask[];
+    total: number;
+    pagination?: {
+      offset: number;
+      limit: number;
+      hasMore: boolean;
+    };
+  }> {
     // 添加账户过滤
     const accountQuery: ScheduleContracts.IScheduleTaskQuery = {
       ...query,
@@ -85,7 +91,7 @@ export class ScheduleDomainService {
     accountUuid: string,
     uuid: string,
     request: ScheduleContracts.UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleTask> {
     // 验证权限
     const existing = await this.getScheduleTaskByUuid(accountUuid, uuid);
     if (!existing) {
@@ -115,40 +121,28 @@ export class ScheduleDomainService {
   /**
    * 启用调度任务
    */
-  async enableScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  async enableScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTask> {
     return await this.scheduleRepository.enable(uuid);
   }
 
   /**
    * 禁用调度任务
    */
-  async disableScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  async disableScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTask> {
     return await this.scheduleRepository.disable(uuid);
   }
 
   /**
    * 暂停调度任务
    */
-  async pauseScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  async pauseScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTask> {
     return await this.scheduleRepository.pause(uuid);
   }
 
   /**
    * 恢复调度任务
    */
-  async resumeScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  async resumeScheduleTask(accountUuid: string, uuid: string): Promise<ScheduleTask> {
     return await this.scheduleRepository.resume(uuid);
   }
 

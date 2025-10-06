@@ -60,7 +60,8 @@ export class ScheduleApplicationService {
     // 2. 配额检查
     // 3. 业务规则验证
 
-    return await this.scheduleDomainService.createScheduleTask(accountUuid, request);
+    const task = await this.scheduleDomainService.createScheduleTask(accountUuid, request);
+    return task.toClient();
   }
 
   /**
@@ -70,7 +71,8 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto | null> {
-    return await this.scheduleDomainService.getScheduleTaskByUuid(accountUuid, uuid);
+    const task = await this.scheduleDomainService.getScheduleTaskByUuid(accountUuid, uuid);
+    return task ? task.toClient() : null;
   }
 
   /**
@@ -80,7 +82,16 @@ export class ScheduleApplicationService {
     accountUuid: string,
     query: ScheduleContracts.IScheduleTaskQuery,
   ): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
-    return await this.scheduleDomainService.getScheduleTasks(accountUuid, query);
+    const result = await this.scheduleDomainService.getScheduleTasks(accountUuid, query);
+    return {
+      tasks: result.tasks.map((task) => task.toClient()),
+      total: result.total,
+      pagination: result.pagination || {
+        offset: 0,
+        limit: result.tasks.length,
+        hasMore: false,
+      },
+    };
   }
 
   /**
@@ -91,7 +102,8 @@ export class ScheduleApplicationService {
     uuid: string,
     request: ScheduleContracts.UpdateScheduleTaskRequestDto,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    return await this.scheduleDomainService.updateScheduleTask(accountUuid, uuid, request);
+    const task = await this.scheduleDomainService.updateScheduleTask(accountUuid, uuid, request);
+    return task.toClient();
   }
 
   /**
@@ -110,7 +122,8 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    return await this.scheduleDomainService.enableScheduleTask(accountUuid, uuid);
+    const task = await this.scheduleDomainService.enableScheduleTask(accountUuid, uuid);
+    return task.toClient();
   }
 
   /**
@@ -120,7 +133,8 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    return await this.scheduleDomainService.disableScheduleTask(accountUuid, uuid);
+    const task = await this.scheduleDomainService.disableScheduleTask(accountUuid, uuid);
+    return task.toClient();
   }
 
   /**
@@ -130,7 +144,8 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    return await this.scheduleDomainService.pauseScheduleTask(accountUuid, uuid);
+    const task = await this.scheduleDomainService.pauseScheduleTask(accountUuid, uuid);
+    return task.toClient();
   }
 
   /**
@@ -140,7 +155,8 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
   ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    return await this.scheduleDomainService.resumeScheduleTask(accountUuid, uuid);
+    const task = await this.scheduleDomainService.resumeScheduleTask(accountUuid, uuid);
+    return task.toClient();
   }
 
   /**

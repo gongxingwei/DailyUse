@@ -295,3 +295,25 @@ export interface UpcomingTasksResponseDto {
   /** 查询时间 */
   queryTime: Date;
 }
+
+/**
+ * 调度任务客户端DTO（包含UI计算属性）
+ */
+export interface ScheduleTaskClientDTO extends ScheduleTaskResponseDto {
+  /** 状态文本（中文） */
+  statusText: string;
+  /** 优先级文本（中文） */
+  priorityText: string;
+  /** 任务类型文本（中文） */
+  taskTypeText: string;
+  /** 剩余时间文本 */
+  timeRemainingText: string;
+  /** 是否已过期 */
+  isOverdue: boolean;
+  /** 是否可以执行 */
+  canExecute: boolean;
+  /** 是否可以编辑 */
+  canEdit: boolean;
+  /** 是否可以删除 */
+  canDelete: boolean;
+}

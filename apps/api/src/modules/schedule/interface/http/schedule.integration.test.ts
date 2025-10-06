@@ -576,7 +576,7 @@ describe('[API集成测试] Schedule 模块', () => {
 
   describe('POST /api/v1/schedules/batch', () => {
     const batchOperationData: ScheduleContracts.BatchScheduleTaskOperationRequestDto = {
-      operation: 'pause',
+      operation: ScheduleContracts.ScheduleBatchOperationType.PAUSE,
       taskUuids: ['task-1', 'task-2', 'task-3'],
     };
 
