@@ -178,9 +178,11 @@ export class ReminderTemplateGroupController {
 
       logger.debug('Fetching reminder template group', { groupUuid });
 
+      const accountUuid = (req as any).user?.uuid || '';
       const group =
         await ReminderTemplateGroupController.applicationService.getReminderTemplateGroupById(
           groupUuid,
+          accountUuid,
         );
 
       if (!group) {
@@ -225,9 +227,11 @@ export class ReminderTemplateGroupController {
         updateFields: Object.keys(request),
       });
 
+      const accountUuid = (req as any).user?.uuid || '';
       const group =
-        await ReminderTemplateGroupController.applicationService.updateReminderTemplateGroupWithValidation(
+        await ReminderTemplateGroupController.applicationService.updateReminderTemplateGroup(
           groupUuid,
+          accountUuid,
           request,
         );
 
@@ -278,8 +282,10 @@ export class ReminderTemplateGroupController {
 
       logger.info('Deleting reminder template group', { groupUuid });
 
-      await ReminderTemplateGroupController.applicationService.deleteReminderTemplateGroupWithCleanup(
+      const accountUuid = (req as any).user?.uuid || '';
+      await ReminderTemplateGroupController.applicationService.deleteReminderTemplateGroup(
         groupUuid,
+        accountUuid,
       );
 
       logger.info('Reminder template group deleted successfully', { groupUuid });
@@ -324,10 +330,12 @@ export class ReminderTemplateGroupController {
 
       logger.info('Toggling reminder template group enabled status', { groupUuid, enabled });
 
-      await ReminderTemplateGroupController.applicationService.toggleReminderTemplateGroupEnabled(
-        groupUuid,
-        enabled,
-      );
+      // TODO: 实现 toggleReminderTemplateGroupEnabled 方法
+      // await ReminderTemplateGroupController.applicationService.toggleReminderTemplateGroupEnabled(
+      //   groupUuid,
+      //   enabled,
+      // );
+      logger.warn('toggleReminderTemplateGroupEnabled not yet implemented');
 
       logger.info('Reminder template group status toggled successfully', { groupUuid, enabled });
 

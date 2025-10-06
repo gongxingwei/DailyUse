@@ -189,16 +189,23 @@ export class ReminderTemplate extends ReminderTemplateCore {
       ...dto,
       lifecycle: dto.lifecycle
         ? {
-            createdAt: dto.lifecycle.createdAt.toISOString(),
-            updatedAt: dto.lifecycle.updatedAt.toISOString(),
-            lastTriggered: dto.lifecycle.lastTriggered?.toISOString(),
+            createdAt: dto.lifecycle.createdAt.getTime(),
+            updatedAt: dto.lifecycle.updatedAt.getTime(),
+            lastTriggered: dto.lifecycle.lastTriggered?.getTime(),
             triggerCount: dto.lifecycle.triggerCount,
           }
         : {
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
+            createdAt: Date.now(),
+            updatedAt: Date.now(),
             triggerCount: 0,
           },
+      // 添加 ClientDTO 所需的计算属性
+      effectiveEnabled: this.enabled && this.selfEnabled,
+      activeInstancesCount: this.instances.filter(
+        (inst) =>
+          inst.status === ReminderContracts.ReminderStatus.PENDING ||
+          inst.status === ReminderContracts.ReminderStatus.TRIGGERED,
+      ).length,
     };
   }
 

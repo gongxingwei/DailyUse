@@ -192,7 +192,6 @@ export class ReminderInstance extends ReminderInstanceCore {
 
     return {
       uuid: dto.uuid,
-      accountUuid,
       templateUuid: dto.templateUuid,
       title: dto.title,
       message: dto.message,

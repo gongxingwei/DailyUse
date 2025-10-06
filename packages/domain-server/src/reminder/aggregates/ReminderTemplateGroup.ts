@@ -213,4 +213,81 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
     group.templates = config.templates.map((dto) => ReminderTemplate.fromDTO(dto));
     return group;
   }
+
+  /**
+   * 从持久化数据重建聚合根
+   */
+  static fromPersistence(data: any): ReminderTemplateGroup {
+    return new ReminderTemplateGroup({
+      uuid: data.uuid,
+      name: data.name,
+      description: data.description,
+      enabled: data.enabled,
+      enableMode: data.enableMode,
+      parentUuid: data.parentUuid,
+      icon: data.icon,
+      color: data.color,
+      sortOrder: data.sortOrder,
+      createdAt: data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt),
+      updatedAt: data.updatedAt instanceof Date ? data.updatedAt : new Date(data.updatedAt),
+      // templates 在查询时单独加载
+      templates: [],
+    });
+  }
+
+  /**
+   * 转换为持久化数据
+   */
+  toPersistence(accountUuid: string) {
+    return {
+      uuid: this._uuid,
+      accountUuid,
+      name: this._name,
+      description: this._description,
+      enabled: this._enabled,
+      enableMode: this._enableMode,
+      parentUuid: this._parentUuid,
+      icon: this._icon,
+      color: this._color,
+      sortOrder: this._sortOrder,
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+    };
+  }
+
+  /**
+   * 转换为客户端 DTO（包含计算属性）
+   */
+  toClient() {
+    const baseDTO = this.toDTO();
+    const stats = this.getStatistics();
+
+    return {
+      uuid: baseDTO.uuid,
+      name: baseDTO.name,
+      description: baseDTO.description,
+      enabled: baseDTO.enabled,
+      enableMode: baseDTO.enableMode,
+      parentUuid: baseDTO.parentUuid,
+      icon: baseDTO.icon,
+      color: baseDTO.color,
+      sortOrder: baseDTO.sortOrder,
+      createdAt: baseDTO.createdAt.getTime(),
+      updatedAt: baseDTO.updatedAt.getTime(),
+      // 子实体
+      templates: this.templates.map((t) => t.toClient()),
+      // 计算属性
+      displayName: `${baseDTO.name} (${stats.totalTemplates})`,
+      templateCount: stats.totalTemplates,
+      enabledTemplateCount: stats.enabledTemplates,
+      totalInstanceCount: stats.totalInstances,
+      activeInstanceCount: stats.activeInstances,
+      completedInstanceCount: stats.completedInstances,
+      canEdit: true,
+      canDelete: stats.totalTemplates === 0,
+      canReorder: true,
+      statusText: baseDTO.enabled ? '已启用' : '已禁用',
+      statusColor: baseDTO.enabled ? '#4CAF50' : '#9E9E9E',
+    };
+  }
 }

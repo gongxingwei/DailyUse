@@ -54,7 +54,8 @@ export * from './reminder/aggregates/ReminderTemplate';
 export * from './reminder/aggregates/ReminderTemplateGroup';
 export * from './reminder/entities/ReminderInstance';
 export * from './reminder/repositories/IReminderAggregateRepository';
-export * from './reminder/services/ReminderAggregateService';
+export * from './reminder/repositories/IReminderTemplateAggregateRepository';
+export * from './reminder/repositories/IReminderTemplateGroupAggregateRepository';
 
 // Repository domain exports
 export * from './repository';
