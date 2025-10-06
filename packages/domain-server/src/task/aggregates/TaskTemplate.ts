@@ -62,6 +62,78 @@ export class TaskTemplate extends TaskTemplateCore {
   }
 
   /**
+   * 创建任务实例（业务方法）
+   * 参考 Goal.createReview 模式
+   */
+  createInstance(params: {
+    title?: string;
+    description?: string;
+    scheduledDate: Date;
+    startTime?: string;
+    endTime?: string;
+    estimatedDuration?: number;
+    properties?: {
+      importance?: ImportanceLevel;
+      urgency?: UrgencyLevel;
+      location?: string;
+      tags?: string[];
+    };
+    goalLinks?: TaskContracts.KeyResultLink[];
+  }): string {
+    // 1. 生成 UUID
+    const instanceUuid = this.generateUUID();
+
+    // 2. 创建 TaskInstance 子实体
+    const instance = TaskInstance.create({
+      templateUuid: this.uuid,
+      accountUuid: this._accountUuid,
+      title: params.title || this._title,
+      description: params.description || this._description,
+      timeConfig: {
+        timeType: this._timeConfig.time.timeType,
+        scheduledDate: params.scheduledDate,
+        startTime: params.startTime || this._timeConfig.time.startTime,
+        endTime: params.endTime || this._timeConfig.time.endTime,
+        estimatedDuration: params.estimatedDuration,
+        timezone: this._timeConfig.timezone,
+      },
+      properties: {
+        importance: params.properties?.importance || this._properties.importance,
+        urgency: params.properties?.urgency || this._properties.urgency,
+        location: params.properties?.location || this._properties.location,
+        tags: params.properties?.tags || this._properties.tags,
+      },
+      goalLinks: params.goalLinks || this._goalLinks,
+    });
+
+    // 3. 添加到聚合根的子实体集合
+    this._instances.push(instance);
+
+    // 4. 更新统计信息
+    this.updateStats(this._instances.length, this._instances.filter((i) => i.isCompleted).length);
+
+    // 5. 更新版本号
+    this.updateVersion();
+
+    // 6. 发布领域事件
+    this.addDomainEvent({
+      eventType: 'TaskInstanceCreated',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      accountUuid: this._accountUuid,
+      payload: {
+        instanceUuid,
+        templateUuid: this.uuid,
+        title: instance.title,
+        scheduledDate: params.scheduledDate.toISOString(),
+      },
+    });
+
+    // 7. 返回新创建的实例 UUID
+    return instanceUuid;
+  }
+
+  /**
    * 从 DTO 创建任务模板实例
    * 同时恢复所有子实体（TaskInstance）
    */
@@ -623,5 +695,16 @@ export class TaskTemplate extends TaskTemplateCore {
       lastExecutedTime: this._stats.lastInstanceDate?.toISOString() || null,
       averageCompletionMinutes: null, // TODO: 实现平均完成时长计算
     };
+  }
+
+  /**
+   * 生成 UUID（私有辅助方法）
+   */
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c == 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
   }
 }
