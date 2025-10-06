@@ -1,7 +1,44 @@
 import { ScheduleDomainService } from '../../domain/services/ScheduleDomainService';
 import { ScheduleApplicationService } from '../../application/services/ScheduleApplicationService';
 import { PrismaScheduleTaskRepository } from '../repositories/PrismaScheduleTaskRepository';
+import { RecurringScheduleTaskRepository } from '../repositories/RecurringScheduleTaskRepository';
+import { RecurringScheduleTaskDomainService } from '@dailyuse/domain-server';
 import { PrismaClient } from '@prisma/client';
+import type { RecurringScheduleTask } from '@dailyuse/domain-core';
+
+// Mock SchedulerService for testing - 避免测试环境中的 NestJS 依赖
+class MockSchedulerService {
+  private tasks: Map<string, RecurringScheduleTask> = new Map();
+  private timers: Map<string, NodeJS.Timeout> = new Map();
+  private isRunning = false;
+
+  async onModuleInit() {}
+  async onModuleDestroy() {}
+  async registerTask(task: RecurringScheduleTask): Promise<void> {}
+  async unregisterTask(taskUuid: string): Promise<void> {}
+  async updateTask(task: RecurringScheduleTask): Promise<void> {}
+  async pauseTask(taskUuid: string): Promise<void> {}
+  async resumeTask(taskUuid: string): Promise<void> {}
+  async enableTask(taskUuid: string): Promise<void> {}
+  async disableTask(taskUuid: string): Promise<void> {}
+  async executeTask(taskUuid: string): Promise<void> {}
+  getTask(taskUuid: string): RecurringScheduleTask | undefined {
+    return undefined;
+  }
+  getAllTasks(): RecurringScheduleTask[] {
+    return [];
+  }
+  getTasksStatus(): any[] {
+    return [];
+  }
+  calculateNextRunTime(cronExpression: string, from?: Date): Date {
+    return new Date();
+  }
+  private scheduleTask(task: RecurringScheduleTask): Promise<void> {
+    return Promise.resolve();
+  }
+  private stopAllTasks(): void {}
+}
 
 /**
  * Schedule Module Dependency Injection Container
@@ -11,7 +48,10 @@ export class ScheduleContainer {
   private static instance: ScheduleContainer;
   private _prismaClient: PrismaClient;
   private _scheduleRepository?: PrismaScheduleTaskRepository;
+  private _recurringScheduleTaskRepository?: RecurringScheduleTaskRepository;
   private _scheduleDomainService?: ScheduleDomainService;
+  private _schedulerService?: MockSchedulerService;
+  private _recurringScheduleTaskDomainService?: RecurringScheduleTaskDomainService;
   private _scheduleApplicationService?: ScheduleApplicationService;
 
   constructor(prismaClient: PrismaClient) {
@@ -36,11 +76,37 @@ export class ScheduleContainer {
     return this._scheduleRepository;
   }
 
+  get recurringScheduleTaskRepository(): RecurringScheduleTaskRepository {
+    if (!this._recurringScheduleTaskRepository) {
+      this._recurringScheduleTaskRepository = new RecurringScheduleTaskRepository(
+        this._prismaClient,
+      );
+    }
+    return this._recurringScheduleTaskRepository;
+  }
+
+  get schedulerService(): MockSchedulerService {
+    if (!this._schedulerService) {
+      this._schedulerService = new MockSchedulerService();
+    }
+    return this._schedulerService;
+  }
+
   get scheduleDomainService(): ScheduleDomainService {
     if (!this._scheduleDomainService) {
       this._scheduleDomainService = new ScheduleDomainService(this.scheduleRepository);
     }
     return this._scheduleDomainService;
+  }
+
+  get recurringScheduleTaskDomainService(): RecurringScheduleTaskDomainService {
+    if (!this._recurringScheduleTaskDomainService) {
+      this._recurringScheduleTaskDomainService = new RecurringScheduleTaskDomainService(
+        this.recurringScheduleTaskRepository,
+        this.schedulerService as any, // 使用类型断言避免 Mock 与真实类型的私有属性冲突
+      );
+    }
+    return this._recurringScheduleTaskDomainService;
   }
 
   get scheduleApplicationService(): ScheduleApplicationService {

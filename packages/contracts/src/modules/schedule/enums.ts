@@ -82,3 +82,27 @@ export enum ScheduleBatchOperationType {
   PAUSE = 'pause',
   RESUME = 'resume',
 }
+
+/**
+ * 定时任务状态（用于 RecurringScheduleTask）
+ */
+export enum ScheduleTaskStatus {
+  /** 活跃 - 正在运行中 */
+  ACTIVE = 'active',
+  /** 暂停 - 临时停止 */
+  PAUSED = 'paused',
+  /** 已完成 - 仅用于一次性任务 */
+  COMPLETED = 'completed',
+  /** 已取消 */
+  CANCELLED = 'cancelled',
+}
+
+/**
+ * 任务触发器类型
+ */
+export enum TriggerType {
+  /** Cron 表达式 */
+  CRON = 'cron',
+  /** 一次性定时 */
+  ONCE = 'once',
+}

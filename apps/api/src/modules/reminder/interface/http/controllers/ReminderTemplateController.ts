@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ReminderApplicationService } from '../../../application/services/ReminderApplicationService';
+import { ScheduleContainer } from '../../../../schedule/infrastructure/di/ScheduleContainer';
+import { PrismaClient } from '@prisma/client';
 import type { ReminderContracts } from '@dailyuse/contracts';
 import {
   type SuccessResponse,
@@ -10,6 +12,7 @@ import {
   getHttpStatusCode,
 } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
+import cronstrue from 'cronstrue/i18n';
 
 // 创建 logger 实例
 const logger = createLogger('ReminderTemplateController');
@@ -58,6 +61,9 @@ export class ReminderTemplateController {
   /**
    * 创建提醒模板聚合根
    * POST /reminders/templates
+   *
+   * ⚠️ 架构更改：不再自动生成实例
+   * 调度由 Schedule 模块的 RecurringScheduleTask 自动处理
    */
   static async createTemplate(req: Request, res: Response): Promise<Response> {
     try {
@@ -70,7 +76,6 @@ export class ReminderTemplateController {
         uuid: request.uuid,
       });
 
-      // ✅ 使用 DDD Contract 接口方法，传递 accountUuid
       const applicationService = await ReminderTemplateController.getApplicationService();
       const template = await applicationService.createTemplate(accountUuid, request);
 
@@ -522,121 +527,79 @@ export class ReminderTemplateController {
   }
 
   /**
-   * 获取所有活跃的提醒实例（从活跃模板中提取）
-   * GET /reminders/templates/active
+   * 获取模板的调度状态
+   * GET /reminders/templates/:templateUuid/schedule-status
    *
-   * 注意：此端点返回 ReminderInstance 数据，用于侧边栏显示即将到来的提醒
+   * 返回关联的 RecurringScheduleTask 信息
    */
-  static async getActiveTemplates(req: Request, res: Response): Promise<Response> {
-    try {
-      const accountUuid = ReminderTemplateController.extractAccountUuid(req);
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : 50;
-      const page = req.query.page ? parseInt(req.query.page as string, 10) : 1;
-
-      logger.debug('Fetching active reminder instances from templates', {
-        accountUuid,
-        page,
-        limit,
-      });
-
-      // 获取所有活跃的模板
-      const applicationService = await ReminderTemplateController.getApplicationService();
-      const result = await applicationService.getTemplates(accountUuid);
-      const activeTemplates = result.templates.filter((template: any) => template.enabled === true);
-
-      // 从所有活跃模板中提取并扁平化所有 instances
-      const allInstances: ReminderContracts.ReminderInstanceClientDTO[] = [];
-      activeTemplates.forEach((template: any) => {
-        if (template.instances && Array.isArray(template.instances)) {
-          // 为每个 instance 添加模板的 title 和其他必要信息
-          template.instances.forEach((instance: any) => {
-            allInstances.push({
-              ...instance,
-              title: instance.title || template.name, // 如果 instance 没有 title，使用模板名称
-              templateUuid: template.uuid,
-            });
-          });
-        }
-      });
-
-      // 按 scheduledTime 排序，最近的在前
-      allInstances.sort((a, b) => a.scheduledTime - b.scheduledTime);
-
-      // 分页
-      const paginatedInstances = allInstances.slice(0, limit);
-
-      const listResponse: ReminderContracts.ReminderInstanceListResponse = {
-        reminders: paginatedInstances,
-        total: allInstances.length,
-        page,
-        limit,
-        hasMore: allInstances.length > limit,
-      };
-
-      logger.info('Active reminder instances retrieved successfully', {
-        accountUuid,
-        totalTemplates: activeTemplates.length,
-        totalInstances: allInstances.length,
-        returnedInstances: paginatedInstances.length,
-      });
-
-      return ReminderTemplateController.responseBuilder.sendSuccess(
-        res,
-        listResponse,
-        'Active reminder instances retrieved successfully',
-      );
-    } catch (error: unknown) {
-      if (error instanceof Error && error.message.includes('Authentication')) {
-        logger.error(error.message, error);
-        return ReminderTemplateController.responseBuilder.sendError(res, {
-          code: ResponseCode.UNAUTHORIZED,
-          message: error.message,
-        });
-      }
-
-      logger.error(
-        error instanceof Error ? error.message : 'Failed to retrieve active instances',
-        error,
-      );
-      return ReminderTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to retrieve active instances',
-      });
-    }
-  }
-
-  /**
-   * 为指定模板生成实例和调度
-   * POST /reminders/templates/:templateUuid/generate-instances
-   */
-  static async generateInstancesAndSchedules(req: Request, res: Response): Promise<Response> {
+  static async getScheduleStatus(req: Request, res: Response): Promise<Response> {
     try {
       const { templateUuid } = req.params;
-      const { days = 7, regenerate = false } = req.body;
+      const accountUuid = ReminderTemplateController.extractAccountUuid(req);
 
-      logger.info('Generating instances and schedules for template', {
-        templateUuid,
-        days,
-        regenerate,
-      });
+      logger.debug('Fetching schedule status for template', { templateUuid });
 
-      // TODO: 实现 generateInstancesAndSchedules 方法
-      // const applicationService = await ReminderTemplateController.getApplicationService();
-      // const result = await applicationService.generateInstancesAndSchedules(templateUuid, {
-      //   days: parseInt(days, 10),
-      //   regenerate,
-      // });
+      // 获取 Schedule 模块的服务
+      const prismaClient = new PrismaClient();
+      const scheduleContainer = ScheduleContainer.getInstance(prismaClient);
+      const recurringScheduleTaskDomainService =
+        scheduleContainer.recurringScheduleTaskDomainService;
 
-      logger.warn('generateInstancesAndSchedules not yet implemented', {
-        templateUuid,
-        days,
-        regenerate,
-      });
+      // 查找关联的调度任务
+      const tasks = await recurringScheduleTaskDomainService.findBySource('reminder', templateUuid);
+
+      if (tasks.length === 0) {
+        // 没有关联的调度任务
+        const scheduleStatus = {
+          hasSchedule: false,
+          enabled: false,
+          nextRunAt: null,
+          lastRunAt: null,
+          executionCount: 0,
+          recentExecutions: [],
+          cronExpression: null,
+          cronDescription: null,
+        };
+
+        logger.info('No schedule found for template', { templateUuid });
+
+        return ReminderTemplateController.responseBuilder.sendSuccess(
+          res,
+          scheduleStatus,
+          'No schedule found for this template',
+        );
+      }
+
+      // 获取第一个任务（一个模板应该只有一个调度任务）
+      const task = tasks[0];
+      const taskDTO = task.toDTO();
+
+      // 构建调度状态响应
+      const scheduleStatus = {
+        hasSchedule: true,
+        enabled: taskDTO.enabled,
+        nextRunAt: taskDTO.nextRunAt,
+        lastRunAt: taskDTO.lastRunAt,
+        executionCount: taskDTO.executionCount,
+        recentExecutions: (taskDTO.executionHistory || []).slice(0, 10), // 最近10条
+        cronExpression: taskDTO.cronExpression,
+        cronDescription: taskDTO.cronExpression
+          ? cronstrue.toString(taskDTO.cronExpression, {
+              locale: 'zh_CN',
+              use24HourTimeFormat: true,
+            })
+          : null,
+        triggerType: taskDTO.triggerType,
+        scheduledTime: taskDTO.scheduledTime,
+        status: taskDTO.status,
+      };
+
+      logger.info('Schedule status retrieved successfully', { templateUuid, hasSchedule: true });
 
       return ReminderTemplateController.responseBuilder.sendSuccess(
         res,
-        { instanceCount: 0, scheduleCount: 0 },
-        'generateInstancesAndSchedules not yet implemented',
+        scheduleStatus,
+        'Schedule status retrieved successfully',
       );
     } catch (error: unknown) {
       if (
@@ -651,13 +614,12 @@ export class ReminderTemplateController {
       }
 
       logger.error(
-        error instanceof Error ? error.message : 'Failed to generate instances and schedules',
+        error instanceof Error ? error.message : 'Failed to retrieve schedule status',
         error,
       );
       return ReminderTemplateController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
-        message:
-          error instanceof Error ? error.message : 'Failed to generate instances and schedules',
+        message: error instanceof Error ? error.message : 'Failed to retrieve schedule status',
       });
     }
   }

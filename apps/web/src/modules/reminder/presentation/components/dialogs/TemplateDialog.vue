@@ -240,7 +240,8 @@ const timeConfigType = computed({
 const timeConfigTimes = computed({
     get: () => localReminderTemplate.value.timeConfig?.times || ['09:00'],
     set: (val: string[]) => {
-        const newConfig = { ...localReminderTemplate.value.timeConfig, times: val };
+        const currentConfig = localReminderTemplate.value.timeConfig || { type: 'daily' };
+        const newConfig = { ...currentConfig, times: val };
         localReminderTemplate.value.updateTimeConfig(newConfig as any);
     }
 });
@@ -248,7 +249,8 @@ const timeConfigTimes = computed({
 const weekdays = computed({
     get: () => localReminderTemplate.value.timeConfig?.weekdays || [],
     set: (val: number[]) => {
-        const newConfig = { ...localReminderTemplate.value.timeConfig, weekdays: val };
+        const currentConfig = localReminderTemplate.value.timeConfig || { type: 'weekly' };
+        const newConfig = { ...currentConfig, weekdays: val };
         localReminderTemplate.value.updateTimeConfig(newConfig as any);
     }
 });
@@ -256,7 +258,8 @@ const weekdays = computed({
 const monthDays = computed({
     get: () => localReminderTemplate.value.timeConfig?.monthDays || [],
     set: (val: number[]) => {
-        const newConfig = { ...localReminderTemplate.value.timeConfig, monthDays: val };
+        const currentConfig = localReminderTemplate.value.timeConfig || { type: 'monthly' };
+        const newConfig = { ...currentConfig, monthDays: val };
         localReminderTemplate.value.updateTimeConfig(newConfig as any);
     }
 });
@@ -264,10 +267,11 @@ const monthDays = computed({
 const customInterval = computed({
     get: () => localReminderTemplate.value.timeConfig?.customPattern?.interval || 1,
     set: (val: number) => {
+        const currentConfig = localReminderTemplate.value.timeConfig || { type: 'custom' };
         const newConfig = {
-            ...localReminderTemplate.value.timeConfig,
+            ...currentConfig,
             customPattern: {
-                ...(localReminderTemplate.value.timeConfig?.customPattern || {}),
+                ...(currentConfig.customPattern || {}),
                 interval: val
             }
         };
@@ -278,10 +282,11 @@ const customInterval = computed({
 const customUnit = computed({
     get: () => (localReminderTemplate.value.timeConfig?.customPattern?.unit as any) || 'hours',
     set: (val: 'minutes' | 'hours' | 'days') => {
+        const currentConfig = localReminderTemplate.value.timeConfig || { type: 'custom' };
         const newConfig = {
-            ...localReminderTemplate.value.timeConfig,
+            ...currentConfig,
             customPattern: {
-                ...(localReminderTemplate.value.timeConfig?.customPattern || {}),
+                ...(currentConfig.customPattern || {}),
                 unit: val
             }
         };

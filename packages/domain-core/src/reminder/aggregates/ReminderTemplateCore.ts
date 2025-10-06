@@ -1,6 +1,5 @@
 import { AggregateRoot } from '@dailyuse/utils';
 import { sharedContracts, ReminderContracts } from '@dailyuse/contracts';
-import type { ReminderInstanceCore } from '../entities/ReminderInstanceCore';
 
 // ===== 类型和枚举别名 =====
 // sharedContracts 类型别名
@@ -57,9 +56,6 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     avgResponseTime?: number;
   };
   protected _version: number;
-
-  // 聚合根关联的实体 - 由子类实现具体类型
-  abstract instances: ReminderInstanceCore[];
 
   constructor(params: {
     uuid?: string;
@@ -281,44 +277,6 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   }
 
   /**
-   * 获取活跃实例数量
-   */
-  get activeInstanceCount(): number {
-    return this.instances.filter((instance) => instance.isActive).length;
-  }
-
-  /**
-   * 获取今日实例数量
-   */
-  get todayInstanceCount(): number {
-    const today = new Date();
-    const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0, 0);
-    const todayEnd = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate(),
-      23,
-      59,
-      59,
-      999,
-    );
-
-    return this.instances.filter((instance) => {
-      const triggerTime = instance.triggerTime;
-      return triggerTime >= todayStart && triggerTime <= todayEnd;
-    }).length;
-  }
-
-  /**
-   * 获取完成率
-   */
-  get completionRate(): number {
-    if (this.instances.length === 0) return 0;
-    const completedCount = this.instances.filter((instance) => instance.isCompleted).length;
-    return (completedCount / this.instances.length) * 100;
-  }
-
-  /**
    * 获取平均响应时间
    */
   get averageResponseTime(): number | undefined {
@@ -334,10 +292,9 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
         ? (this._analytics.acknowledgedCount / this._analytics.totalTriggers) * 100
         : 0;
 
-    const completionRate = this.completionRate;
     const consistencyScore = this.calculateConsistencyScore();
 
-    return acknowledgmentRate * 0.4 + completionRate * 0.4 + consistencyScore * 0.2;
+    return acknowledgmentRate * 0.5 + consistencyScore * 0.5;
   }
 
   // ===== 共享验证方法 =====
@@ -449,25 +406,17 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
 
   /**
    * 计算一致性评分
+   * 基于确认率和忽略率计算
    */
   protected calculateConsistencyScore(): number {
-    if (this.instances.length < 3) return 100; // 数据不足时返回满分
+    if (this._analytics.totalTriggers < 3) return 100; // 数据不足时返回满分
 
-    const recentInstances = this.instances
-      .filter((instance) => {
-        const daysDiff =
-          (new Date().getTime() - instance.triggerTime.getTime()) / (1000 * 60 * 60 * 24);
-        return daysDiff <= 30; // 最近30天
-      })
-      .sort((a, b) => b.triggerTime.getTime() - a.triggerTime.getTime())
-      .slice(0, 10); // 最近10次
+    const acknowledgedRate =
+      (this._analytics.acknowledgedCount / this._analytics.totalTriggers) * 100;
+    const dismissedRate = (this._analytics.dismissedCount / this._analytics.totalTriggers) * 100;
 
-    if (recentInstances.length < 3) return 100;
-
-    const acknowledgedCount = recentInstances.filter((instance) => instance.isAcknowledged).length;
-    const consistencyRate = (acknowledgedCount / recentInstances.length) * 100;
-
-    return Math.max(0, Math.min(100, consistencyRate));
+    // 确认率高、忽略率低 = 高一致性
+    return Math.max(0, Math.min(100, acknowledgedRate - dismissedRate * 0.5));
   }
 
   // ===== 共享业务方法 =====
@@ -703,37 +652,29 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
 
   /**
    * 处理来自 Schedule 的触发请求
+   * 不再创建实例，直接发布通知事件
    */
   handleScheduleTrigger(params: {
     scheduledTime: Date;
     scheduleTaskId: string;
     metadata?: Record<string, any>;
-  }): string {
-    // 创建实例来响应 Schedule 触发
-    const instanceId = this.createInstance(params.scheduledTime, {
-      sourceType: 'schedule',
-      sourceId: params.scheduleTaskId,
-      metadata: params.metadata,
-    });
-
+  }): void {
     // 记录触发统计
     this.recordTrigger();
 
-    // 发布实例已创建事件
+    // 直接发布提醒触发事件给 Notification 模块
     this.addDomainEvent({
-      eventType: 'ReminderInstanceCreatedFromSchedule',
+      eventType: 'ReminderTriggeredBySchedule',
       aggregateId: this.uuid,
       occurredOn: new Date(),
       payload: {
         templateUuid: this.uuid,
-        instanceUuid: instanceId,
         scheduleTaskId: params.scheduleTaskId,
         scheduledTime: params.scheduledTime,
+        template: this.toDTO(),
         metadata: params.metadata,
       },
     });
-
-    return instanceId;
   }
 
   /**
@@ -855,21 +796,6 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   }
 
   // ===== 抽象方法（由子类实现）=====
-
-  /**
-   * 创建提醒实例（抽象方法）
-   */
-  abstract createInstance(triggerTime: Date, context?: any): string;
-
-  /**
-   * 获取指定实例（抽象方法）
-   */
-  abstract getInstance(instanceUuid: string): ReminderInstanceCore | undefined;
-
-  /**
-   * 删除实例（抽象方法）
-   */
-  abstract removeInstance(instanceUuid: string): void;
 
   /**
    * 克隆模板（抽象方法）

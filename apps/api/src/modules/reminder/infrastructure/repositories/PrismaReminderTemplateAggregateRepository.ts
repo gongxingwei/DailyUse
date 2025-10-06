@@ -129,15 +129,8 @@ export class PrismaReminderTemplateAggregateRepository
         },
       });
 
-      // 2. Upsert ReminderInstances
-      for (const instance of template.instances) {
-        const instancePersistence = (instance as ReminderInstance).toPersistence(accountUuid);
-        await tx.reminderInstance.upsert({
-          where: { uuid: instancePersistence.uuid },
-          create: instancePersistence,
-          update: instancePersistence,
-        });
-      }
+      // ⚠️ Cron 调度迁移后：instances 已移除
+      // 所有提醒调度由 Schedule 模块的 RecurringScheduleTask 负责
     });
 
     return template;
@@ -146,9 +139,7 @@ export class PrismaReminderTemplateAggregateRepository
   async getTemplateByUuid(accountUuid: string, uuid: string): Promise<ReminderTemplate | null> {
     const data = await this.prisma.reminderTemplate.findFirst({
       where: { uuid, accountUuid },
-      include: {
-        instances: true,
-      },
+      // ⚠️ Cron 迁移后：instances 已由 Schedule 模块管理
     });
     return data ? this.mapToEntity(data) : null;
   }
@@ -173,9 +164,7 @@ export class PrismaReminderTemplateAggregateRepository
     const [data, total] = await Promise.all([
       this.prisma.reminderTemplate.findMany({
         where,
-        include: {
-          instances: true,
-        },
+        // ⚠️ Cron 迁移后：instances 已由 Schedule 模块管理
         skip: params?.offset || 0,
         take: params?.limit || 50,
         orderBy: {
@@ -194,14 +183,10 @@ export class PrismaReminderTemplateAggregateRepository
 
   async deleteTemplate(accountUuid: string, uuid: string): Promise<boolean> {
     try {
-      // 级联删除：先删除所有实例，再删除模板
-      await this.prisma.$transaction(async (tx) => {
-        await tx.reminderInstance.deleteMany({
-          where: { templateUuid: uuid },
-        });
-        await tx.reminderTemplate.delete({
-          where: { uuid, accountUuid },
-        });
+      // ⚠️ Cron 迁移后：不再需要删除 instances（由 Schedule 模块管理）
+      // 只删除 ReminderTemplate 主实体
+      await this.prisma.reminderTemplate.delete({
+        where: { uuid, accountUuid },
       });
       return true;
     } catch {

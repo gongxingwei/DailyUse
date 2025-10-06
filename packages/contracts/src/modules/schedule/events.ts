@@ -328,3 +328,39 @@ export enum ScheduleEventType {
   SCHEDULE_SYSTEM_STARTED = 'SCHEDULE_SYSTEM_STARTED',
   SCHEDULE_SYSTEM_SHUTDOWN = 'SCHEDULE_SYSTEM_SHUTDOWN',
 }
+
+// ========== RecurringScheduleTask Events ==========
+
+/**
+ * 定时任务触发事件
+ */
+export interface ScheduleTaskTriggeredEvent {
+  /** 任务 UUID */
+  taskUuid: string;
+  /** 任务名称 */
+  taskName: string;
+  /** 触发时间 */
+  triggeredAt: Date;
+  /** 关联的源模块 */
+  sourceModule: string;
+  /** 关联的源实体 ID */
+  sourceEntityId: string;
+  /** 任务元数据 */
+  metadata?: Record<string, any>;
+}
+
+/**
+ * 定时任务执行完成事件
+ */
+export interface ScheduleTaskCompletedEvent {
+  /** 任务 UUID */
+  taskUuid: string;
+  /** 执行是否成功 */
+  success: boolean;
+  /** 错误信息 */
+  error?: string;
+  /** 执行耗时（毫秒） */
+  durationMs: number;
+  /** 完成时间 */
+  completedAt: Date;
+}

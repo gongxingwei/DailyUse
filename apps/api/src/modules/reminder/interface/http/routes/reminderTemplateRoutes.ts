@@ -21,8 +21,14 @@ const router = Router();
  * /reminders/templates:
  *   post:
  *     tags: [Reminder Templates]
- *     summary: 创建提醒模板
- *     description: 创建新的提醒模板
+ *     summary: 创建提醒模板（智能版）
+ *     description: |
+ *       创建新的提醒模板，并自动生成提醒实例。
+ *
+ *       **智能特性**：
+ *       - 如果 `enabled=true` 且 `selfEnabled=true`，自动生成未来 N 天的提醒实例
+ *       - 支持自定义生成天数（默认 7 天）
+ *       - 一次请求完成模板创建和实例生成
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -31,30 +37,100 @@ const router = Router();
  *         application/json:
  *           schema:
  *             type: object
- *             required: [title, triggerTime]
+ *             required: [uuid, name, message, timeConfig, priority, category, tags]
  *             properties:
- *               title:
+ *               uuid:
  *                 type: string
- *                 description: 模板标题
+ *                 format: uuid
+ *                 description: 模板唯一标识（前端生成）
+ *               name:
+ *                 type: string
+ *                 description: 模板名称
+ *                 example: "每日站会提醒"
+ *               message:
+ *                 type: string
+ *                 description: 提醒消息内容
+ *                 example: "记得参加每日站会"
  *               description:
  *                 type: string
- *                 description: 模板描述
- *               triggerTime:
+ *                 description: 模板描述（可选）
+ *               enabled:
+ *                 type: boolean
+ *                 default: true
+ *                 description: 是否启用（启用时会自动生成实例）
+ *               selfEnabled:
+ *                 type: boolean
+ *                 default: true
+ *                 description: 自身启用状态
+ *               timeConfig:
+ *                 type: object
+ *                 description: 时间配置
+ *                 properties:
+ *                   type:
+ *                     type: string
+ *                     enum: [daily, weekly, monthly, absolute]
+ *                     description: 时间类型
+ *                   times:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                     example: ["09:00", "14:00"]
+ *                     description: 触发时间点
+ *                   weekDays:
+ *                     type: array
+ *                     items:
+ *                       type: integer
+ *                     example: [1, 3, 5]
+ *                     description: 周几（1-7，仅 weekly 类型）
+ *               priority:
  *                 type: string
- *                 format: date-time
- *                 description: 触发时间
- *               repeatType:
+ *                 enum: [urgent, high, normal, low]
+ *                 description: 优先级
+ *               category:
  *                 type: string
- *                 enum: [NONE, DAILY, WEEKLY, MONTHLY]
- *                 default: NONE
- *                 description: 重复类型
+ *                 description: 分类
+ *                 example: "work"
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 标签
+ *                 example: ["meeting", "daily"]
+ *               instanceDays:
+ *                 type: integer
+ *                 default: 7
+ *                 description: 自动生成实例的天数（可选）
+ *                 example: 30
+ *               autoGenerateInstances:
+ *                 type: boolean
+ *                 default: true
+ *                 description: 是否自动生成实例（可选）
  *     responses:
  *       201:
- *         description: 模板创建成功
+ *         description: 模板创建成功（包含自动生成的实例）
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     uuid:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *                     instances:
+ *                       type: array
+ *                       description: 自动生成的提醒实例列表
+ *                       items:
+ *                         type: object
+ *                 message:
+ *                   type: string
+ *                   example: "Reminder template created successfully with 7 instances"
  *       400:
  *         description: 请求参数错误
  *         content:
@@ -139,25 +215,6 @@ router.get('/', ReminderTemplateController.getTemplatesByAccount);
  *               $ref: '#/components/schemas/PaginatedResponse'
  */
 router.get('/search', ReminderTemplateController.searchTemplates);
-
-/**
- * @swagger
- * /reminders/templates/active:
- *   get:
- *     tags: [Reminder Templates]
- *     summary: 获取活跃的提醒模板
- *     description: 获取当前用户所有启用的提醒模板
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: 活跃模板列表
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/ApiResponse'
- */
-router.get('/active', ReminderTemplateController.getActiveTemplates);
 
 /**
  * @swagger
@@ -380,11 +437,16 @@ router.get('/:templateUuid/stats', ReminderTemplateController.getTemplateStats);
 
 /**
  * @swagger
- * /reminders/templates/{templateUuid}/generate-instances:
- *   post:
+ * /reminders/templates/{templateUuid}/schedule-status:
+ *   get:
  *     tags: [Reminder Templates]
- *     summary: 生成模板实例
- *     description: 为指定模板生成实例和调度
+ *     summary: 获取模板的调度状态
+ *     description: |
+ *       获取模板关联的 RecurringScheduleTask 信息
+ *
+ *       ⚠️ 架构更改：
+ *       - 不再返回 ReminderInstance 列表
+ *       - 返回 Schedule 模块的调度任务状态
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -394,29 +456,9 @@ router.get('/:templateUuid/stats', ReminderTemplateController.getTemplateStats);
  *         schema:
  *           type: string
  *         description: 模板UUID
- *     requestBody:
- *       required: false
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               startDate:
- *                 type: string
- *                 format: date
- *                 description: 生成开始日期
- *               endDate:
- *                 type: string
- *                 format: date
- *                 description: 生成结束日期
- *               count:
- *                 type: integer
- *                 minimum: 1
- *                 maximum: 100
- *                 description: 生成实例数量
  *     responses:
- *       201:
- *         description: 实例生成成功
+ *       200:
+ *         description: 调度状态
  *         content:
  *           application/json:
  *             schema:
@@ -427,9 +469,34 @@ router.get('/:templateUuid/stats', ReminderTemplateController.getTemplateStats);
  *                 data:
  *                   type: object
  *                   properties:
- *                     generatedCount:
+ *                     hasSchedule:
+ *                       type: boolean
+ *                       description: 是否有调度任务
+ *                     enabled:
+ *                       type: boolean
+ *                       description: 调度是否启用
+ *                     nextRunAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 下次执行时间
+ *                     lastRunAt:
+ *                       type: string
+ *                       format: date-time
+ *                       description: 上次执行时间
+ *                     executionCount:
  *                       type: integer
- *                       description: 生成的实例数量
+ *                       description: 执行次数
+ *                     recentExecutions:
+ *                       type: array
+ *                       description: 最近执行记录
+ *                       items:
+ *                         type: object
+ *                     cronExpression:
+ *                       type: string
+ *                       description: Cron 表达式
+ *                     cronDescription:
+ *                       type: string
+ *                       description: Cron 描述（人类可读）
  *       404:
  *         description: 模板不存在
  *         content:
@@ -437,9 +504,6 @@ router.get('/:templateUuid/stats', ReminderTemplateController.getTemplateStats);
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post(
-  '/:templateUuid/generate-instances',
-  ReminderTemplateController.generateInstancesAndSchedules,
-);
+router.get('/:templateUuid/schedule-status', ReminderTemplateController.getScheduleStatus);
 
 export default router;

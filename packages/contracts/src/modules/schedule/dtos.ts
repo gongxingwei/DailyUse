@@ -317,3 +317,103 @@ export interface ScheduleTaskClientDTO extends ScheduleTaskResponseDto {
   /** 是否可以删除 */
   canDelete: boolean;
 }
+
+// ========== RecurringScheduleTask DTOs ==========
+
+/**
+ * 执行历史记录
+ */
+export interface ScheduleExecutionHistory {
+  /** 执行时间 */
+  executedAt: Date;
+  /** 是否成功 */
+  success: boolean;
+  /** 错误信息（如果失败） */
+  error?: string;
+  /** 执行耗时（毫秒） */
+  durationMs?: number;
+}
+
+/**
+ * 定时任务配置
+ */
+export interface RecurringScheduleTaskDTO {
+  /** 任务 UUID */
+  uuid: string;
+  /** 任务名称 */
+  name: string;
+  /** 任务描述 */
+  description?: string;
+  /** 触发器类型 */
+  triggerType: import('./enums').TriggerType;
+  /** Cron 表达式（triggerType 为 CRON 时必填） */
+  cronExpression?: string;
+  /** 一次性触发时间（triggerType 为 ONCE 时必填） */
+  scheduledTime?: Date;
+  /** 任务状态 */
+  status: import('./enums').ScheduleTaskStatus;
+  /** 是否启用 */
+  enabled: boolean;
+  /** 关联的源模块（如 'reminder'） */
+  sourceModule: string;
+  /** 关联的源实体 ID（如 ReminderTemplate.uuid） */
+  sourceEntityId: string;
+  /** 任务元数据（JSON 格式，用于传递上下文） */
+  metadata?: Record<string, any>;
+  /** 下次执行时间 */
+  nextRunAt?: Date;
+  /** 上次执行时间 */
+  lastRunAt?: Date;
+  /** 执行次数 */
+  executionCount: number;
+  /** 最近 10 次执行历史 */
+  executionHistory?: ScheduleExecutionHistory[];
+  /** 创建时间 */
+  createdAt: Date;
+  /** 更新时间 */
+  updatedAt: Date;
+}
+
+/**
+ * 创建定时任务 DTO
+ */
+export interface CreateScheduleTaskDTO {
+  /** 任务名称 */
+  name: string;
+  /** 任务描述 */
+  description?: string;
+  /** 触发器类型 */
+  triggerType: import('./enums').TriggerType;
+  /** Cron 表达式 */
+  cronExpression?: string;
+  /** 一次性触发时间 */
+  scheduledTime?: Date;
+  /** 关联的源模块 */
+  sourceModule: string;
+  /** 关联的源实体 ID */
+  sourceEntityId: string;
+  /** 任务元数据 */
+  metadata?: Record<string, any>;
+  /** 是否启用 */
+  enabled?: boolean;
+}
+
+/**
+ * 更新定时任务 DTO
+ */
+export interface UpdateScheduleTaskDTO {
+  /** 任务名称 */
+  name?: string;
+  /** 任务描述 */
+  description?: string;
+  /** Cron 表达式 */
+  cronExpression?: string;
+  /** 一次性触发时间 */
+  scheduledTime?: Date;
+  /** 任务元数据 */
+  metadata?: Record<string, any>;
+  /** 是否启用 */
+  enabled?: boolean;
+  /** 任务状态 */
+  status?: import('./enums').ScheduleTaskStatus;
+}

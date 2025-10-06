@@ -7,6 +7,11 @@ import type {
   IReminderTemplateGroupAggregateRepository,
 } from '@dailyuse/domain-server';
 
+// EventEmitter 类型（可选依赖，用于发送领域事件）
+type EventEmitter = {
+  emit(event: string, ...args: any[]): boolean;
+};
+
 /**
  * Reminder 应用服务
  *
@@ -22,13 +27,16 @@ export class ReminderApplicationService {
   private groupDomainService: ReminderTemplateGroupDomainService;
   private templateRepository: IReminderTemplateAggregateRepository;
   private groupRepository: IReminderTemplateGroupAggregateRepository;
+  private eventEmitter?: EventEmitter;
 
   constructor(
     templateRepository: IReminderTemplateAggregateRepository,
     groupRepository: IReminderTemplateGroupAggregateRepository,
+    eventEmitter?: EventEmitter,
   ) {
     this.templateRepository = templateRepository;
     this.groupRepository = groupRepository;
+    this.eventEmitter = eventEmitter;
     this.templateDomainService = new ReminderTemplateDomainService(templateRepository);
     this.groupDomainService = new ReminderTemplateGroupDomainService(groupRepository);
   }
@@ -64,6 +72,9 @@ export class ReminderApplicationService {
 
   /**
    * 创建提醒模板
+   *
+   * ⚠️ 架构更改：不再自动生成实例
+   * 调度由 Schedule 模块的 RecurringScheduleTask 自动处理
    */
   async createTemplate(
     accountUuid: string,
@@ -78,7 +89,31 @@ export class ReminderApplicationService {
       throw new Error('提醒消息不能为空');
     }
 
-    return this.templateDomainService.createTemplate(accountUuid, request);
+    const template = await this.templateDomainService.createReminderTemplate(accountUuid, request);
+
+    // 发送领域事件，触发 Schedule 模块创建调度任务
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('ReminderTemplateCreated', {
+        aggregateId: template.uuid,
+        payload: {
+          templateUuid: template.uuid,
+          accountUuid,
+          template,
+        },
+      });
+    }
+
+    return template;
+  }
+
+  /**
+   * 创建提醒模板 (别名方法，更清晰的命名)
+   */
+  async createReminderTemplate(
+    request: ReminderContracts.CreateReminderTemplateRequest,
+    accountUuid: string,
+  ): Promise<any> {
+    return this.createTemplate(accountUuid, request);
   }
 
   /**
@@ -106,14 +141,59 @@ export class ReminderApplicationService {
     uuid: string,
     request: ReminderContracts.UpdateReminderTemplateRequest,
   ): Promise<any> {
-    return this.templateDomainService.updateTemplate(accountUuid, uuid, request);
+    const template = await this.templateDomainService.updateTemplate(accountUuid, uuid, request);
+
+    // 发送领域事件，触发 Schedule 模块更新调度任务
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('ReminderTemplateUpdated', {
+        aggregateId: template.uuid,
+        payload: {
+          templateUuid: template.uuid,
+          accountUuid,
+          template,
+        },
+      });
+    }
+
+    return template;
+  }
+
+  /**
+   * 更新提醒模板 (别名方法，更清晰的命名)
+   */
+  async updateReminderTemplate(
+    uuid: string,
+    request: ReminderContracts.UpdateReminderTemplateRequest,
+    accountUuid: string,
+  ): Promise<any> {
+    return this.updateTemplate(accountUuid, uuid, request);
   }
 
   /**
    * 删除模板
    */
   async deleteTemplate(accountUuid: string, uuid: string): Promise<boolean> {
-    return this.templateDomainService.deleteTemplate(accountUuid, uuid);
+    const result = await this.templateDomainService.deleteTemplate(accountUuid, uuid);
+
+    // 发送领域事件，触发 Schedule 模块删除调度任务
+    if (this.eventEmitter && result) {
+      this.eventEmitter.emit('ReminderTemplateDeleted', {
+        aggregateId: uuid,
+        payload: {
+          templateUuid: uuid,
+          accountUuid,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  /**
+   * 删除提醒模板 (别名方法，更清晰的命名)
+   */
+  async deleteReminderTemplate(uuid: string, accountUuid: string): Promise<boolean> {
+    return this.deleteTemplate(accountUuid, uuid);
   }
 
   /**

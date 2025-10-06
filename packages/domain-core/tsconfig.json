@@ -7,7 +7,12 @@
     "declaration": true,
     "preserveSymlinks": true,
     "noEmit": false,
-    "moduleResolution": "node"  // 确保模块解析正确
+    "moduleResolution": "node",  // 确保模块解析正确
+    "paths": {
+      "@/*": ["./src/*"],
+      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
+      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
+    }
   },
   "include": [
     "src/**/*.ts",

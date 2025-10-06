@@ -117,15 +117,23 @@
             </v-card-text>
 
             <v-card-actions>
-                <v-btn color="success" variant="text" @click="generateInstances" :loading="isGenerating">
-                    生成实例
-                </v-btn>
                 <v-spacer />
-                <v-btn color="grey" variant="text" @click="close">
+                <!-- 关闭按钮 -->
+                <v-btn variant="text" size="small" color="grey" @click="close">
+                    <v-icon left size="16">mdi-close</v-icon>
                     关闭
                 </v-btn>
-                <v-btn :color="template?.color || 'primary'" @click="openEditDialog">
+
+                <!-- 编辑按钮 -->
+                <v-btn variant="text" size="small" :color="template?.color || 'primary'" @click="handleEdit">
+                    <v-icon left size="16">mdi-pencil</v-icon>
                     编辑
+                </v-btn>
+
+                <!-- 删除按钮 -->
+                <v-btn variant="text" size="small" color="error" @click="handleDelete">
+                    <v-icon left size="16">mdi-delete</v-icon>
+                    删除
                 </v-btn>
             </v-card-actions>
         </v-card>
@@ -137,19 +145,23 @@ import { ref, computed, watch } from 'vue'
 import { ReminderTemplate } from '@dailyuse/domain-client'
 import { ReminderContracts } from '@dailyuse/contracts'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
+import { useReminder } from '../../composables/useReminder'
 import { format } from 'date-fns'
+
+// 定义 emits
+const emit = defineEmits<{
+    close: []
+    'edit-template': [template: ReminderTemplate]
+}>()
+
 // 组件状态
 const visible = ref(false)
 const template = ref<ReminderTemplate | null>(null)
 const enabled = ref(false)
-const isGenerating = ref(false)
 
 // 服务
 const snackbar = useSnackbar()
-
-// 获取reminder服务
-import { getReminderService } from '../../../application/services/ReminderWebApplicationService'
-const reminderService = getReminderService()
+const { deleteTemplate: deleteTemplateAction } = useReminder()
 
 // 计算属性
 const priorityColor = computed(() => {
@@ -246,44 +258,32 @@ const toggleEnabled = async () => {
     }
 }
 
-const generateInstances = async () => {
+// 编辑模板
+const handleEdit = () => {
     if (!template.value) return
-
-    isGenerating.value = true
-    try {
-        // 调用后端API生成实例和调度
-        const response = await fetch(`/api/v1/reminders/templates/${template.value.uuid}/generate-instances`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${localStorage.getItem('token')}` // 假设token存在localStorage
-            },
-            body: JSON.stringify({
-                days: 7, // 生成7天的实例
-                regenerate: false // 不重新生成现有的
-            })
-        })
-
-        const data = await response.json()
-
-        if (data.success) {
-            snackbar.showSuccess(`${data.message}`)
-        } else {
-            snackbar.showError(`生成失败: ${data.error}`)
-        }
-    } catch (error) {
-        console.error('生成实例失败:', error)
-        snackbar.showError('生成实例失败: ' + (error instanceof Error ? error.message : '未知错误'))
-    } finally {
-        isGenerating.value = false
-    }
+    // TODO: 打开编辑对话框 - 需要实现 TemplateEditDialog 或通过 emit 通知父组件
+    emit('edit-template', template.value)
+    close()
 }
 
-const openEditDialog = () => {
-    // 这里可以打开编辑对话框
-    // 或者发送事件给父组件
-    snackbar.showInfo('编辑功能待实现')
-    close()
+// 删除模板
+const handleDelete = async () => {
+    if (!template.value) return
+
+    const confirmMessage = `确定要删除提醒模板 "${template.value.name}" 吗？\n\n此操作将同时删除该模板下的所有提醒实例，且无法撤销。`
+
+    if (!confirm(confirmMessage)) {
+        return
+    }
+
+    try {
+        await deleteTemplateAction(template.value.uuid)
+        snackbar.showSuccess('提醒模板已删除')
+        close()
+    } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : '未知错误'
+        snackbar.showError(`删除失败：${errorMessage}`)
+    }
 }
 
 // 暴露方法给父组件

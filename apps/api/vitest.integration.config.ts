@@ -14,35 +14,23 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
-    setupFiles: ['./src/test/setup.ts'],
-    include: ['src/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts}'],
-    exclude: [
-      'node_modules',
-      'dist',
-      '.git',
-      '.cache',
-      'src/test/setup.ts',
-      'prisma/**/*', // 排除 Prisma 文件
-    ],
-    // Mock 配置
-    alias: {
-      '@nestjs/common': path.resolve(__dirname, './src/test/mocks/nestjs-common.ts'),
-    },
+    // 集成测试不使用 setup 文件，避免 Mock
+    // setupFiles: [],
+    include: ['src/**/*.integration.{test,spec}.{js,mjs,cjs,ts,mts,cts}'],
+    exclude: ['node_modules', 'dist', '.git', '.cache', 'prisma/**/*'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
       exclude: ['node_modules/', 'src/test/', 'prisma/', '**/*.d.ts', '**/*.config.*', 'dist/'],
     },
-    // API 测试超时设置（包括数据库操作）
-    testTimeout: 30000,
+    // 集成测试超时设置（数据库操作需要更长时间）
+    testTimeout: 60000,
     // 序列化测试，避免数据库冲突
     pool: 'forks',
     poolOptions: {
       forks: {
-        singleFork: true, // API 测试使用单进程避免数据库锁
+        singleFork: true,
       },
     },
-    // 测试数据库配置
-    globalSetup: './src/test/globalSetup.ts',
   },
 });

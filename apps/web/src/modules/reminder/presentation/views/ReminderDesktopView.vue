@@ -97,7 +97,7 @@
 
                 <!-- 模板用于展示item的信息和状态切换的卡片组件 -->
                 <!-- TemplateCard 组件 -->
-                <TemplateDesktopCard ref="templateDesktopCardRef" />
+                <TemplateDesktopCard ref="templateDesktopCardRef" @edit-template="handleEditTemplate" />
 
                 <!-- GroupDesktopCard 组件 -->
                 <GroupDesktopCard ref="groupDesktopCardRef" />
@@ -527,6 +527,14 @@ const confirmDelete = async () => {
 const handleTemplateCreated = async (template: ReminderTemplate) => {
     console.log('模板已创建:', template)
     await refresh()
+}
+
+/**
+ * 处理模板编辑事件（从 TemplateDesktopCard 触发）
+ */
+const handleEditTemplate = (template: ReminderTemplate) => {
+    console.log('打开编辑模板对话框:', template)
+    templateDialogRef.value?.openForEdit(template)
 }
 
 /**

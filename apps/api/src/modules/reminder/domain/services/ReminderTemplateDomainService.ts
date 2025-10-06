@@ -26,16 +26,74 @@ export class ReminderTemplateDomainService {
 
   /**
    * 创建提醒模板
+   *
+   * ⚠️ 架构更改：
+   * 1. 不再生成 ReminderInstance
+   * 2. 调度由 Schedule 模块的 RecurringScheduleTask 自动处理
+   * 3. 通过事件监听器 (ReminderTemplateScheduleSyncListener) 自动创建调度任务
+   *
+   * 业务逻辑：
+   * 1. 创建聚合根实例
+   * 2. 持久化模板
+   * 3. 发布 ReminderTemplateCreated 事件（触发 Schedule 同步）
+   */
+  async createReminderTemplate(
+    accountUuid: string,
+    request: ReminderContracts.CreateReminderTemplateRequest,
+  ): Promise<ReminderContracts.ReminderTemplateResponse> {
+    // 创建 ReminderTemplate 聚合根实例
+    const template = new ReminderTemplateAggregate({
+      uuid: request.uuid,
+      groupUuid: request.groupUuid,
+      name: request.name,
+      description: request.description,
+      message: request.message,
+      enabled: request.enabled ?? true,
+      selfEnabled: request.selfEnabled ?? true,
+      importanceLevel: request.importanceLevel,
+      timeConfig: request.timeConfig,
+      priority: request.priority,
+      category: request.category,
+      tags: request.tags,
+      icon: request.icon,
+      color: request.color,
+      position: request.position,
+      displayOrder: request.displayOrder ?? 0,
+      notificationSettings: request.notificationSettings,
+      snoozeConfig: request.snoozeConfig,
+      lifecycle: {
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        triggerCount: 0,
+      },
+      analytics: {
+        totalTriggers: 0,
+        acknowledgedCount: 0,
+        dismissedCount: 0,
+        snoozeCount: 0,
+      },
+      version: 1,
+    });
+
+    // 持久化聚合根
+    const savedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
+
+    console.log(
+      `✅ 模板 [${template.name}] 已创建，调度任务将由 Schedule 模块通过事件监听器自动管理`,
+    );
+
+    return savedTemplate.toClient();
+  }
+
+  /**
+   * 创建提醒模板（旧方法，保持向后兼容）
+   * @deprecated 使用 createReminderTemplate 代替
    */
   async createTemplate(
     accountUuid: string,
     request: ReminderContracts.CreateReminderTemplateRequest,
   ): Promise<ReminderContracts.ReminderTemplateResponse> {
-    // TODO: 使用聚合根工厂方法创建
-    // const template = ReminderTemplateAggregate.create({...});
-
-    // 暂时抛出错误，等待实现
-    throw new Error('ReminderTemplateDomainService.createTemplate not yet implemented');
+    return this.createReminderTemplate(accountUuid, request);
   }
 
   /**
@@ -85,10 +143,75 @@ export class ReminderTemplateDomainService {
       throw new Error(`Template ${uuid} not found`);
     }
 
-    // TODO: 使用聚合根方法更新
-    // template.updateBasicInfo({...});
+    // 更新基本信息
+    if (
+      request.name !== undefined ||
+      request.description !== undefined ||
+      request.message !== undefined ||
+      request.category !== undefined ||
+      request.tags !== undefined ||
+      request.icon !== undefined ||
+      request.color !== undefined ||
+      request.position !== undefined ||
+      request.displayOrder !== undefined
+    ) {
+      template.updateBasicInfo({
+        name: request.name,
+        description: request.description,
+        message: request.message,
+        category: request.category,
+        tags: request.tags,
+        icon: request.icon,
+        color: request.color,
+        position: request.position,
+        displayOrder: request.displayOrder,
+      });
+    }
 
-    throw new Error('ReminderTemplateDomainService.updateTemplate not yet implemented');
+    // 更新时间配置
+    if (request.timeConfig !== undefined) {
+      template.updateTimeConfig(request.timeConfig);
+    }
+
+    // 更新通知设置
+    if (request.notificationSettings !== undefined) {
+      template.updateNotificationSettings(request.notificationSettings);
+    }
+
+    // 更新延迟配置
+    if (request.snoozeConfig !== undefined) {
+      template.updateSnoozeConfig(request.snoozeConfig);
+    }
+
+    // 更新启用状态
+    if (request.enabled !== undefined) {
+      template.toggleEnabled(request.enabled, { accountUuid });
+    }
+
+    // 更新自身启用状态
+    if (request.selfEnabled !== undefined) {
+      template.toggleSelfEnabled(request.selfEnabled, { accountUuid });
+    }
+
+    // 更新分组（直接修改私有属性，因为核心类没有提供 setter）
+    if (request.groupUuid !== undefined) {
+      (template as any)._groupUuid = request.groupUuid;
+    }
+
+    // 更新优先级
+    if (request.priority !== undefined) {
+      (template as any)._priority = request.priority;
+    }
+
+    // 更新重要性级别
+    if (request.importanceLevel !== undefined) {
+      (template as any)._importanceLevel = request.importanceLevel;
+    }
+
+    // 持久化更新
+    const updatedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
+
+    return updatedTemplate.toClient();
   }
 
   /**
@@ -109,13 +232,24 @@ export class ReminderTemplateDomainService {
       offset?: number;
     },
   ): Promise<{ templates: ReminderContracts.ReminderTemplateClientDTO[]; total: number }> {
-    // TODO: 需要在仓储接口添加 findByKeyword 方法
-    // const result = await this.templateRepository.findByKeyword(accountUuid, keyword, params);
+    // 获取所有模板
+    const result = await this.templateRepository.getAllTemplates(accountUuid, params);
 
-    // 暂时返回空结果
+    // 在应用层进行关键词过滤（临时方案，生产环境应该在数据库层过滤）
+    const keyword_lower = keyword.toLowerCase();
+    const filteredTemplates = result.templates.filter((template) => {
+      return (
+        template.name.toLowerCase().includes(keyword_lower) ||
+        template.message?.toLowerCase().includes(keyword_lower) ||
+        template.description?.toLowerCase().includes(keyword_lower) ||
+        template.tags.some((tag) => tag.toLowerCase().includes(keyword_lower)) ||
+        template.category.toLowerCase().includes(keyword_lower)
+      );
+    });
+
     return {
-      templates: [],
-      total: 0,
+      templates: filteredTemplates.map((t) => t.toClient()),
+      total: filteredTemplates.length,
     };
   }
 
@@ -134,9 +268,12 @@ export class ReminderTemplateDomainService {
       throw new Error(`Template ${uuid} not found`);
     }
 
-    // TODO: 使用聚合根方法
-    // template.setEnabled(enabled);
+    // 使用聚合根方法切换启用状态
+    template.toggleEnabled(enabled, { accountUuid });
 
-    throw new Error('ReminderTemplateDomainService.toggleTemplateEnabled not yet implemented');
+    // 持久化更新
+    const updatedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
+
+    return updatedTemplate.toClient();
   }
 }

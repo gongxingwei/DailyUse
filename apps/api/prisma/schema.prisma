@@ -32,8 +32,6 @@ model Account {
   goalDirs               GoalDir[]
   goals                  Goal[]
   mfaDevices             MFADevice[]
-  reminderInstances      ReminderInstance[]
-  reminderSchedules      ReminderSchedule[]
   reminderTemplateGroups ReminderTemplateGroup[]
   reminderTemplates      ReminderTemplate[]
   repositories           Repository[]
@@ -520,8 +518,6 @@ model ReminderTemplate {
   version                Int                    @default(1)
   createdAt              DateTime               @default(now()) @map("created_at")
   updatedAt              DateTime               @updatedAt @map("updated_at")
-  instances              ReminderInstance[]
-  schedules              ReminderSchedule[]
   account                Account                @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   group                  ReminderTemplateGroup? @relation(fields: [groupUuid], references: [uuid])
 
@@ -534,63 +530,34 @@ model ReminderTemplate {
   @@map("reminder_templates")
 }
 
-model ReminderInstance {
-  uuid               String           @id @default(cuid())
-  templateUuid       String           @map("template_uuid")
-  accountUuid        String           @map("account_uuid")
-  title              String?
-  message            String
-  scheduledTime      DateTime         @map("scheduled_time")
-  triggeredTime      DateTime?        @map("triggered_time")
-  acknowledgedTime   DateTime?        @map("acknowledged_time")
-  dismissedTime      DateTime?        @map("dismissed_time")
-  snoozedUntil       DateTime?        @map("snoozed_until")
-  status             String           @default("pending")
-  priority           String           @default("normal")
-  category           String
-  tags               String           @default("[]")
-  sourceType         String?          @map("source_type")
-  sourceId           String?          @map("source_id")
-  snoozeHistory      String           @default("[]") @map("snooze_history")
-  currentSnoozeCount Int              @default(0) @map("current_snooze_count")
-  version            Int              @default(1)
-  createdAt          DateTime         @default(now()) @map("created_at")
-  updatedAt          DateTime         @updatedAt @map("updated_at")
-  account            Account          @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  template           ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
+/// RecurringScheduleTask - 可重复的调度任务
+/// 支持 cron 表达式和一次性任务，用于替代 ReminderInstance 和 ReminderSchedule
+model RecurringScheduleTask {
+  uuid             String    @id @default(cuid())
+  name             String
+  description      String?
+  triggerType      String    @map("trigger_type") // "CRON" | "ONCE"
+  cronExpression   String?   @map("cron_expression") // Cron 表达式（仅 CRON 类型）
+  scheduledTime    DateTime? @map("scheduled_time") // 预定时间（仅 ONCE 类型）
+  status           String    @default("ACTIVE") // "ACTIVE" | "PAUSED" | "COMPLETED" | "CANCELLED"
+  enabled          Boolean   @default(true)
+  sourceModule     String    @map("source_module") // 来源模块（如 "reminder"）
+  sourceEntityId   String    @map("source_entity_id") // 来源实体 ID（如 templateUuid）
+  metadata         String    @default("{}") // JSON 元数据
+  nextRunAt        DateTime? @map("next_run_at")
+  lastRunAt        DateTime? @map("last_run_at")
+  executionCount   Int       @default(0) @map("execution_count")
+  executionHistory String    @default("[]") @map("execution_history") // JSON 数组，存储最近 10 次执行记录
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  @@index([templateUuid])
-  @@index([accountUuid])
+  @@index([sourceModule, sourceEntityId])
   @@index([status])
-  @@index([priority])
-  @@index([scheduledTime])
-  @@index([category])
-  @@map("reminder_instances")
-}
-
-model ReminderSchedule {
-  uuid              String           @id @default(cuid())
-  templateUuid      String           @map("template_uuid")
-  accountUuid       String           @map("account_uuid")
-  name              String
-  description       String?
-  enabled           Boolean          @default(true)
-  nextExecutionTime DateTime         @map("next_execution_time")
-  lastExecutionTime DateTime?        @map("last_execution_time")
-  executionCount    Int              @default(0) @map("execution_count")
-  maxExecutions     Int?             @map("max_executions")
-  recurrenceRule    String           @map("recurrence_rule")
-  timezone          String           @default("UTC")
-  createdAt         DateTime         @default(now()) @map("created_at")
-  updatedAt         DateTime         @updatedAt @map("updated_at")
-  account           Account          @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  template          ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
-
-  @@index([templateUuid])
-  @@index([accountUuid])
   @@index([enabled])
-  @@index([nextExecutionTime])
-  @@map("reminder_schedules")
+  @@index([nextRunAt])
+  @@index([triggerType])
+  @@map("recurring_schedule_tasks")
 }
 
 model SettingDefinition {
@@ -803,29 +770,29 @@ model EditorFileContent {
 }
 
 model ScheduleTask {
-  uuid             String               @id @default(cuid())
-  accountUuid      String               @map("account_uuid")
-  title            String
-  description      String?
-  taskType         String               @map("task_type")
-  status           String               @default("pending")
-  priority         String               @default("medium")
-  enabled          Boolean              @default(true)
-  scheduledTime    DateTime             @map("scheduled_time")
-  payload          Json?
-  recurrence       Json?
-  alertConfig      Json?                @map("alert_config")
-  tags             String[]             @default([])
-  createdAt        DateTime             @default(now()) @map("created_at")
-  updatedAt        DateTime             @updatedAt @map("updated_at")
-  lastExecutedAt   DateTime?            @map("last_executed_at")
-  nextScheduledAt  DateTime?            @map("next_scheduled_at")
-  executionCount   Int                  @default(0) @map("execution_count")
-  failureCount     Int                  @default(0) @map("failure_count")
-  
+  uuid            String    @id @default(cuid())
+  accountUuid     String    @map("account_uuid")
+  title           String
+  description     String?
+  taskType        String    @map("task_type")
+  status          String    @default("pending")
+  priority        String    @default("medium")
+  enabled         Boolean   @default(true)
+  scheduledTime   DateTime  @map("scheduled_time")
+  payload         Json?
+  recurrence      Json?
+  alertConfig     Json?     @map("alert_config")
+  tags            String[]  @default([])
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  lastExecutedAt  DateTime? @map("last_executed_at")
+  nextScheduledAt DateTime? @map("next_scheduled_at")
+  executionCount  Int       @default(0) @map("execution_count")
+  failureCount    Int       @default(0) @map("failure_count")
+
   // Relations
-  account          Account              @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  executions       ScheduleExecution[]
+  account    Account             @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  executions ScheduleExecution[]
 
   @@index([accountUuid])
   @@index([status])
@@ -838,22 +805,22 @@ model ScheduleTask {
 }
 
 model ScheduleExecution {
-  uuid           String      @id @default(cuid())
-  taskUuid       String      @map("task_uuid")
-  accountUuid    String      @map("account_uuid")
-  status         String      @default("pending")
-  startedAt      DateTime?   @map("started_at")
-  completedAt    DateTime?   @map("completed_at")
-  duration       Int?        @map("duration_ms")
-  result         Json?
-  errorMessage   String?     @map("error_message")
-  retryCount     Int         @default(0) @map("retry_count")
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  
+  uuid         String    @id @default(cuid())
+  taskUuid     String    @map("task_uuid")
+  accountUuid  String    @map("account_uuid")
+  status       String    @default("pending")
+  startedAt    DateTime? @map("started_at")
+  completedAt  DateTime? @map("completed_at")
+  duration     Int?      @map("duration_ms")
+  result       Json?
+  errorMessage String?   @map("error_message")
+  retryCount   Int       @default(0) @map("retry_count")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
   // Relations
-  task           ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
-  account        Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  task    ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
+  account Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
 
   @@index([taskUuid])
   @@index([accountUuid])
@@ -887,15 +854,15 @@ model UserPreferences {
 }
 
 model UserThemePreference {
-  uuid             String    @id @default(cuid())
-  accountUuid      String    @unique @map("account_uuid")
-  currentThemeUuid String?   @map("current_theme_uuid")
-  preferredMode    String    @default("system") @map("preferred_mode")
-  autoSwitch       Boolean   @default(false) @map("auto_switch")
-  scheduleStart    String?   @map("schedule_start")
-  scheduleEnd      String?   @map("schedule_end")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+  uuid             String   @id @default(cuid())
+  accountUuid      String   @unique @map("account_uuid")
+  currentThemeUuid String?  @map("current_theme_uuid")
+  preferredMode    String   @default("system") @map("preferred_mode")
+  autoSwitch       Boolean  @default(false) @map("auto_switch")
+  scheduleStart    String?  @map("schedule_start")
+  scheduleEnd      String?  @map("schedule_end")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   @@index([accountUuid])
   @@index([preferredMode])

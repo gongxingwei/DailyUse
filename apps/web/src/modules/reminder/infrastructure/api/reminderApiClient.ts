@@ -96,106 +96,26 @@ class ReminderApiClient {
     return Array.isArray(response) ? response : [];
   }
 
-  // ===== 实例管理 (通过聚合根) =====
+  // ===== 调度状态管理 =====
 
   /**
-   * 通过聚合根创建提醒实例
+   * 获取模板的调度状态
    */
-  async createReminderInstance(
-    templateUuid: string,
-    request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
-    const data = await apiClient.post(`${this.baseUrl}/${templateUuid}/instances`, request);
+  async getScheduleStatus(templateUuid: string): Promise<{
+    hasSchedule: boolean;
+    enabled: boolean;
+    nextRunAt: Date | null;
+    lastRunAt: Date | null;
+    executionCount: number;
+    recentExecutions: any[];
+    cronExpression: string | null;
+    cronDescription: string | null;
+  }> {
+    const data = await apiClient.get(`${this.baseUrl}/${templateUuid}/schedule-status`);
     return data;
   }
 
-  /**
-   * 通过聚合根获取实例列表
-   */
-  async getReminderInstances(
-    templateUuid: string,
-    params?: {
-      page?: number;
-      limit?: number;
-      status?: string;
-      startDate?: string;
-      endDate?: string;
-    },
-  ): Promise<ReminderContracts.ReminderInstanceListResponse> {
-    const data = await apiClient.get(`${this.baseUrl}/${templateUuid}/instances`, { params });
-    console.log('📋 getReminderInstances 响应:', data);
-
-    // 确保返回的数据结构完整
-    if (!data || typeof data !== 'object') {
-      return { reminders: [], total: 0, page: 1, limit: params?.limit || 50, hasMore: false };
-    }
-
-    // 如果 reminders 字段不存在或不是数组，返回空数据
-    if (!Array.isArray(data.reminders)) {
-      return {
-        reminders: [],
-        total: data.total || 0,
-        page: data.page || 1,
-        limit: data.limit || params?.limit || 50,
-        hasMore: data.hasMore || false,
-      };
-    }
-
-    return data;
-  }
-
-  /**
-   * 用户响应提醒实例 (通过聚合根)
-   */
-  async respondToReminder(
-    templateUuid: string,
-    instanceUuid: string,
-    response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
-    const data = await apiClient.put(
-      `${this.baseUrl}/${templateUuid}/instances/${instanceUuid}/respond`,
-      response,
-    );
-    return data;
-  }
-
-  /**
-   * 更新提醒实例 (通过聚合根)
-   */
-  async updateReminderInstance(
-    templateUuid: string,
-    instanceUuid: string,
-    request: Partial<ReminderContracts.CreateReminderInstanceRequest>,
-  ): Promise<ReminderContracts.ReminderInstanceResponse> {
-    const data = await apiClient.put(
-      `${this.baseUrl}/${templateUuid}/instances/${instanceUuid}`,
-      request,
-    );
-    return data;
-  }
-
-  /**
-   * 删除提醒实例 (通过聚合根)
-   */
-  async deleteReminderInstance(templateUuid: string, instanceUuid: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/${templateUuid}/instances/${instanceUuid}`);
-  }
-
-  // ===== 聚合根批量操作 =====
-
-  /**
-   * 批量处理提醒实例
-   */
-  async batchProcessInstances(
-    templateUuid: string,
-    request: { instanceUuids: string[]; action: 'snooze' | 'dismiss' | 'complete' },
-  ): Promise<{ success: boolean; processedCount: number }> {
-    const data = await apiClient.post(
-      `${this.baseUrl}/${templateUuid}/instances/batch-process`,
-      request,
-    );
-    return data;
-  }
+  // ===== 聚合根统计信息 =====
 
   /**
    * 聚合根统计信息

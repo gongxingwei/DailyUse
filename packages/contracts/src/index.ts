@@ -25,10 +25,8 @@ export * as AppContracts from './modules/app';
 export * as SettingContracts from './modules/setting';
 export * as ThemeContracts from './modules/theme';
 export * as ScheduleContracts from './modules/schedule';
-export * from './modules/schedule';
 export * from './modules/index';
 
 // 导出模块的枚举类型
-
 export * from './modules/goal/enums';
 export * from './modules/schedule/enums';
