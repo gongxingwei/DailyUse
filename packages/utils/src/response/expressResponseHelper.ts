@@ -43,7 +43,8 @@ export class ExpressResponseHelper {
    * 发送错误响应
    */
   error(response: ApiErrorResponse) {
-    const httpStatus = getHttpStatusCode(response.status);
+    // response.code is already a number (ResponseCode), can be used directly as HTTP status
+    const httpStatus = response.code;
     return this.res.status(httpStatus).json(response);
   }
 

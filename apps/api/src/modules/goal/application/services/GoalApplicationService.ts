@@ -1,5 +1,9 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import { type IGoalRepository, UserDataInitializationService } from '@dailyuse/domain-server';
+import {
+  type IGoalAggregateRepository,
+  type IGoalDirRepository,
+  UserDataInitializationService,
+} from '@dailyuse/domain-server';
 import { GoalDomainService } from '../../domain/services/GoalDomainService';
 import { GoalContainer } from '../../infrastructure/di/GoalContainer';
 
@@ -7,18 +11,30 @@ export class GoalApplicationService {
   private static instance: GoalApplicationService;
   private domainService: GoalDomainService;
   private userInitService: UserDataInitializationService;
-  private goalRepository: IGoalRepository;
+  private goalAggregateRepository: IGoalAggregateRepository;
+  private goalDirRepository: IGoalDirRepository;
 
-  constructor(goalRepository: IGoalRepository) {
-    this.domainService = new GoalDomainService(goalRepository);
-    this.userInitService = new UserDataInitializationService(goalRepository);
-    this.goalRepository = goalRepository;
+  constructor(
+    goalAggregateRepository: IGoalAggregateRepository,
+    goalDirRepository: IGoalDirRepository,
+  ) {
+    this.domainService = new GoalDomainService(goalAggregateRepository);
+    this.userInitService = new UserDataInitializationService(
+      goalAggregateRepository,
+      goalDirRepository,
+    );
+    this.goalAggregateRepository = goalAggregateRepository;
+    this.goalDirRepository = goalDirRepository;
   }
 
-  static async createInstance(goalRepository?: IGoalRepository): Promise<GoalApplicationService> {
+  static async createInstance(
+    goalAggregateRepository?: IGoalAggregateRepository,
+    goalDirRepository?: IGoalDirRepository,
+  ): Promise<GoalApplicationService> {
     const goalContainer = GoalContainer.getInstance();
-    goalRepository = goalRepository || (await goalContainer.getPrismaGoalRepository());
-    this.instance = new GoalApplicationService(goalRepository);
+    goalAggregateRepository = goalAggregateRepository || goalContainer.getGoalAggregateRepository();
+    goalDirRepository = goalDirRepository || goalContainer.getGoalDirRepository();
+    this.instance = new GoalApplicationService(goalAggregateRepository, goalDirRepository);
     return this.instance;
   }
 

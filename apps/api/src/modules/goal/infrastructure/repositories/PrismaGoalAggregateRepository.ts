@@ -1,18 +1,23 @@
 import { PrismaClient } from '@prisma/client';
-import { randomUUID } from 'crypto';
-import type { IGoalRepository } from '@dailyuse/domain-server';
+import type { IGoalAggregateRepository } from '@dailyuse/domain-server';
 import type { GoalContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel, GoalStatus } from '@dailyuse/contracts';
-import { Goal, KeyResult, GoalRecord, GoalReview, GoalDir } from '@dailyuse/domain-server';
+import { Goal, KeyResult, GoalRecord, GoalReview } from '@dailyuse/domain-server';
 
-export class PrismaGoalRepository implements IGoalRepository {
+/**
+ * Goal 聚合根 Prisma 仓储实现
+ * 负责 Goal 及其所有子实体（KeyResult, Record, Review）的持久化
+ */
+export class PrismaGoalAggregateRepository implements IGoalAggregateRepository {
   constructor(private prisma: PrismaClient) {}
 
-  // ===== 数据库实体到DTO的转换 =====
+  // ===== 数据映射方法 =====
 
+  /**
+   * 将 Prisma 数据映射为 Goal 聚合根实体
+   */
   private mapGoalToEntity(goal: any): Goal {
     // 使用领域实体的 fromPersistence 方法创建实体
-    // 将 Prisma 的 null 值转换为 undefined
     const goalEntity = Goal.fromPersistence({
       ...goal,
       description: goal.description ?? undefined,
@@ -25,7 +30,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       status: goal.status as GoalStatus,
     });
 
-    // 转换子实体
+    // 转换 KeyResult 子实体
     if (goal.keyResults) {
       goalEntity.keyResults = goal.keyResults.map((kr: any) =>
         KeyResult.fromPersistence({
@@ -35,7 +40,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       );
     }
 
-    // 收集所有 records
+    // 收集所有 GoalRecord（从 KeyResult.records 中提取）
     const allRecords: any[] = [];
     if (goal.keyResults) {
       goal.keyResults.forEach((kr: any) => {
@@ -53,6 +58,7 @@ export class PrismaGoalRepository implements IGoalRepository {
 
     goalEntity.records = allRecords.map((record: any) => GoalRecord.fromPersistence(record));
 
+    // 转换 GoalReview 子实体
     if (goal.reviews) {
       goalEntity.reviews = goal.reviews.map((review: any) =>
         GoalReview.fromPersistence({
@@ -64,15 +70,10 @@ export class PrismaGoalRepository implements IGoalRepository {
       );
     }
 
-    // 直接返回实体对象
     return goalEntity;
   }
 
-  private mapGoalDirToEntity(dir: any): GoalDir {
-    return GoalDir.fromPersistence(dir);
-  }
-
-  // ===== Goal CRUD 操作 - 新的实体接口 =====
+  // ===== Goal 聚合根 CRUD =====
 
   async saveGoal(accountUuid: string, goal: Goal): Promise<Goal> {
     // 使用实体的 toPersistence 方法转换为持久化数据
@@ -80,7 +81,7 @@ export class PrismaGoalRepository implements IGoalRepository {
 
     // 使用事务保存 Goal 及其所有子实体
     await this.prisma.$transaction(async (tx) => {
-      // 1. Upsert goal 主实体
+      // 1. Upsert Goal 主实体
       await tx.goal.upsert({
         where: {
           uuid: goalPersistence.uuid,
@@ -121,7 +122,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         },
       });
 
-      // 2. Upsert keyResults
+      // 2. Upsert KeyResults
       for (const kr of goal.keyResults) {
         const krPersistence = (kr as KeyResult).toPersistence();
         await tx.keyResult.upsert({
@@ -131,7 +132,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         });
       }
 
-      // 3. Upsert records
+      // 3. Upsert GoalRecords
       for (const record of goal.records) {
         const recordPersistence = (record as GoalRecord).toPersistence();
         await tx.goalRecord.upsert({
@@ -141,7 +142,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         });
       }
 
-      // 4. Upsert reviews
+      // 4. Upsert GoalReviews
       for (const review of goal.reviews) {
         const reviewPersistence = (review as GoalReview).toPersistence();
         await tx.goalReview.upsert({
@@ -152,7 +153,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       }
     });
 
-    // 重新加载完整的 Goal 实体
+    // 重新加载完整的 Goal 聚合根
     const reloaded = await this.prisma.goal.findFirst({
       where: {
         uuid: goalPersistence.uuid,
@@ -176,42 +177,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       throw new Error('Failed to reload saved goal');
     }
 
-    // 使用 mapGoalToEntity 将保存后的数据转换回实体
     return this.mapGoalToEntity(reloaded);
-  }
-
-  async saveGoalDirectory(accountUuid: string, goalDir: GoalDir): Promise<GoalDir> {
-    // 使用实体的 toPersistence 方法转换为持久化数据
-    const dirPersistence = goalDir.toPersistence(accountUuid);
-
-    // Upsert goal directory
-    const savedDir = await this.prisma.goalDir.upsert({
-      where: {
-        uuid: dirPersistence.uuid,
-      },
-      create: {
-        uuid: dirPersistence.uuid,
-        name: dirPersistence.name,
-        description: dirPersistence.description,
-        color: dirPersistence.color,
-        icon: dirPersistence.icon,
-        parentUuid: dirPersistence.parentUuid,
-        createdAt: dirPersistence.createdAt,
-        updatedAt: dirPersistence.updatedAt,
-        accountUuid,
-      },
-      update: {
-        name: dirPersistence.name,
-        description: dirPersistence.description,
-        color: dirPersistence.color,
-        icon: dirPersistence.icon,
-        parentUuid: dirPersistence.parentUuid,
-        updatedAt: dirPersistence.updatedAt,
-      },
-    });
-
-    // 使用 mapGoalDirToEntity 将保存后的数据转换回实体
-    return this.mapGoalDirToEntity(savedDir);
   }
 
   async getGoalByUuid(accountUuid: string, uuid: string): Promise<Goal | null> {
@@ -281,85 +247,11 @@ export class PrismaGoalRepository implements IGoalRepository {
       this.prisma.goal.count({ where }),
     ]);
 
-    const goalEntities = goals.map((goal) => this.mapGoalToEntity(goal));
     return {
-      goals: goalEntities,
+      goals: goals.map((goal) => this.mapGoalToEntity(goal)),
       total,
     };
   }
-
-  async deleteGoal(accountUuid: string, uuid: string): Promise<boolean> {
-    const result = await this.prisma.goal.deleteMany({
-      where: {
-        uuid,
-        accountUuid,
-      },
-    });
-
-    return result.count > 0;
-  }
-
-  async getGoalDirectoryByUuid(accountUuid: string, uuid: string): Promise<GoalDir | null> {
-    const dir = await this.prisma.goalDir.findFirst({
-      where: {
-        uuid,
-        accountUuid,
-      },
-    });
-
-    return dir ? this.mapGoalDirToEntity(dir) : null;
-  }
-
-  async getAllGoalDirectories(
-    accountUuid: string,
-    params?: { parentUuid?: string },
-  ): Promise<{ goalDirs: GoalDir[]; total: number }> {
-    const where = {
-      accountUuid,
-      ...(params?.parentUuid !== undefined && { parentUuid: params.parentUuid }),
-    };
-
-    const [directories, total] = await Promise.all([
-      this.prisma.goalDir.findMany({
-        where,
-        orderBy: {
-          createdAt: 'desc',
-        },
-      }),
-      this.prisma.goalDir.count({ where }),
-    ]);
-
-    return {
-      goalDirs: directories.map((dir) => this.mapGoalDirToEntity(dir)),
-      total,
-    };
-  }
-
-  async deleteGoalDirectory(accountUuid: string, uuid: string): Promise<boolean> {
-    const result = await this.prisma.goalDir.deleteMany({
-      where: {
-        uuid,
-        accountUuid,
-      },
-    });
-
-    return result.count > 0;
-  }
-
-  async deleteKeyResult(accountUuid: string, uuid: string): Promise<boolean> {
-    const result = await this.prisma.keyResult.deleteMany({
-      where: {
-        uuid,
-        goal: {
-          accountUuid, // 通过Goal聚合根验证权限
-        },
-      },
-    });
-
-    return result.count > 0;
-  }
-
-  // ===== 额外的 Goal 方法 =====
 
   async getGoalsByDirectoryUuid(accountUuid: string, directoryUuid: string): Promise<Goal[]> {
     const goals = await this.prisma.goal.findMany({
@@ -384,8 +276,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       },
     });
 
-    const goalEntities = goals.map((goal) => this.mapGoalToEntity(goal));
-    return goalEntities; // 返回实体数组
+    return goals.map((goal) => this.mapGoalToEntity(goal));
   }
 
   async getGoalsByStatus(accountUuid: string, status: GoalContracts.GoalStatus): Promise<Goal[]> {
@@ -414,6 +305,17 @@ export class PrismaGoalRepository implements IGoalRepository {
     return goals.map((goal) => this.mapGoalToEntity(goal));
   }
 
+  async deleteGoal(accountUuid: string, uuid: string): Promise<boolean> {
+    const result = await this.prisma.goal.deleteMany({
+      where: {
+        uuid,
+        accountUuid,
+      },
+    });
+
+    return result.count > 0;
+  }
+
   async batchUpdateGoalStatus(
     accountUuid: string,
     uuids: string[],
@@ -435,51 +337,7 @@ export class PrismaGoalRepository implements IGoalRepository {
     return result.count > 0;
   }
 
-  // ===== 其他必需方法的基础实现 =====
-
-  async getGoalDirectoryTree(accountUuid: string): Promise<GoalDir[]> {
-    const dirs = await this.prisma.goalDir.findMany({
-      where: {
-        accountUuid,
-        parentUuid: null, // 只获取根级目录
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return dirs.map((dir) => this.mapGoalDirToEntity(dir));
-  }
-
-  async deleteGoalRecord(accountUuid: string, uuid: string): Promise<boolean> {
-    const result = await this.prisma.goalRecord.deleteMany({
-      where: {
-        uuid,
-        keyResult: {
-          goal: {
-            accountUuid, // 通过Goal聚合根验证权限
-          },
-        },
-      },
-    });
-
-    return result.count > 0;
-  }
-
-  async deleteGoalReview(accountUuid: string, uuid: string): Promise<boolean> {
-    const result = await this.prisma.goalReview.deleteMany({
-      where: {
-        uuid,
-        goal: {
-          accountUuid,
-        },
-      },
-    });
-
-    return result.count > 0;
-  }
-
-  // ===== 统计方法 =====
+  // ===== 统计分析 =====
 
   async getGoalStats(
     accountUuid: string,
@@ -514,7 +372,7 @@ export class PrismaGoalRepository implements IGoalRepository {
         this.prisma.goal.findMany({ where, include: { _count: { select: { keyResults: true } } } }),
         this.prisma.keyResult.findMany({
           where: {
-            goal: where, // 通过Goal关联进行查询
+            goal: where,
           },
         }),
       ]);
@@ -548,9 +406,8 @@ export class PrismaGoalRepository implements IGoalRepository {
     throw new Error('Method not implemented');
   }
 
-  /**
-   * 验证聚合根业务规则
-   */
+  // ===== 聚合根业务规则验证 =====
+
   async validateGoalAggregateRules(
     accountUuid: string,
     goalUuid: string,
@@ -593,17 +450,12 @@ export class PrismaGoalRepository implements IGoalRepository {
       });
     }
 
-    // 可以添加更多业务规则验证...
-
     return {
       isValid: violations.filter((v) => v.severity === 'error').length === 0,
       violations,
     };
   }
 
-  /**
-   * 聚合根版本控制
-   */
   async updateGoalVersion(
     accountUuid: string,
     goalUuid: string,
@@ -629,9 +481,6 @@ export class PrismaGoalRepository implements IGoalRepository {
     }
   }
 
-  /**
-   * 获取聚合根变更历史
-   */
   async getGoalAggregateHistory(
     accountUuid: string,
     goalUuid: string,

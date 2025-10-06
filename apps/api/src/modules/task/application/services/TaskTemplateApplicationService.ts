@@ -1,11 +1,11 @@
 import type { TaskContracts } from '@dailyuse/contracts';
-import type { ITaskTemplateRepository, ITaskInstanceRepository } from '@dailyuse/domain-server';
+import type { ITaskTemplateAggregateRepository } from '@dailyuse/domain-server';
 import { TaskTemplateDomainService } from '../../domain/services/TaskTemplateDomainService';
 import { TaskContainer } from '../../infrastructure/di/TaskContainer';
 
 /**
  * TaskTemplate 应用服务
- * 
+ *
  * 职责：
  * 1. 注入具体的 Repository 实现
  * 2. 协调领域服务
@@ -15,37 +15,24 @@ import { TaskContainer } from '../../infrastructure/di/TaskContainer';
  * - 通过聚合根控制所有子实体操作
  * - TaskInstance 必须通过 TaskTemplate 来创建/更新/删除
  * - 业务逻辑委托给领域服务
- * 
- * 整合说明：
- * - 合并了 TaskAggregateService 的聚合根控制逻辑
- * - 合并了 TaskApplicationService 的基础CRUD操作
- * - TaskInstance 操作全部通过 TaskTemplate 聚合根控制
  */
 export class TaskTemplateApplicationService {
   private static instance: TaskTemplateApplicationService;
   private domainService: TaskTemplateDomainService;
-  private templateRepository: ITaskTemplateRepository;
-  private instanceRepository: ITaskInstanceRepository;
+  private templateRepository: ITaskTemplateAggregateRepository;
 
-  constructor(
-    templateRepository: ITaskTemplateRepository,
-    instanceRepository: ITaskInstanceRepository,
-  ) {
+  constructor(templateRepository: ITaskTemplateAggregateRepository) {
     this.templateRepository = templateRepository;
-    this.instanceRepository = instanceRepository;
-    this.domainService = new TaskTemplateDomainService(templateRepository, instanceRepository);
+    this.domainService = new TaskTemplateDomainService(templateRepository);
   }
 
   static async createInstance(
-    templateRepository?: ITaskTemplateRepository,
-    instanceRepository?: ITaskInstanceRepository,
+    templateRepository?: ITaskTemplateAggregateRepository,
   ): Promise<TaskTemplateApplicationService> {
     const taskContainer = TaskContainer.getInstance();
     templateRepository =
       templateRepository || (await taskContainer.getPrismaTaskTemplateRepository());
-    instanceRepository =
-      instanceRepository || (await taskContainer.getPrismaTaskInstanceRepository());
-    this.instance = new TaskTemplateApplicationService(templateRepository, instanceRepository);
+    this.instance = new TaskTemplateApplicationService(templateRepository);
     return this.instance;
   }
 

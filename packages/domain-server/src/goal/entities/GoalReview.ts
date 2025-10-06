@@ -371,17 +371,34 @@ export class GoalReview extends AggregateRoot implements IGoalReview {
    * 从持久化 DTO 创建实例
    */
   static fromPersistence(data: GoalReviewPersistenceDTO): GoalReview {
+    // 确保日期字段是 Date 对象
+    const reviewDate =
+      data.reviewDate instanceof Date ? data.reviewDate : new Date(data.reviewDate);
+    const createdAt = data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt);
+    const updatedAt = data.updatedAt instanceof Date ? data.updatedAt : new Date(data.updatedAt);
+
+    // 解析 snapshot 并确保其中的日期也是 Date 对象
+    const parsedSnapshot =
+      typeof data.snapshot === 'string' ? JSON.parse(data.snapshot) : data.snapshot;
+    const snapshotDate =
+      parsedSnapshot.snapshotDate instanceof Date
+        ? parsedSnapshot.snapshotDate
+        : new Date(parsedSnapshot.snapshotDate);
+
     return new GoalReview({
       uuid: data.uuid,
       goalUuid: data.goalUuid,
       title: data.title,
       type: data.type,
-      reviewDate: data.reviewDate,
-      content: JSON.parse(data.content),
-      snapshot: JSON.parse(data.snapshot),
-      rating: JSON.parse(data.rating),
-      createdAt: data.createdAt,
-      updatedAt: data.updatedAt,
+      reviewDate: reviewDate,
+      content: typeof data.content === 'string' ? JSON.parse(data.content) : data.content,
+      snapshot: {
+        ...parsedSnapshot,
+        snapshotDate: snapshotDate,
+      },
+      rating: typeof data.rating === 'string' ? JSON.parse(data.rating) : data.rating,
+      createdAt: createdAt,
+      updatedAt: updatedAt,
     });
   }
 }

@@ -1,5 +1,5 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import type { IGoalRepository } from '@dailyuse/domain-server';
+import type { IGoalDirRepository, IGoalAggregateRepository } from '@dailyuse/domain-server';
 import { GoalDirDomainService } from '../../domain/services/GoalDirDomainService.js';
 
 /**
@@ -12,9 +12,15 @@ import { GoalDirDomainService } from '../../domain/services/GoalDirDomainService
 export class GoalDirApplicationService {
   private goalDirDomainService: GoalDirDomainService;
 
-  constructor(goalRepository: IGoalRepository) {
+  constructor(
+    goalDirRepository: IGoalDirRepository,
+    goalAggregateRepository: IGoalAggregateRepository,
+  ) {
     // 注入 Repository 到领域服务
-    this.goalDirDomainService = new GoalDirDomainService(goalRepository);
+    this.goalDirDomainService = new GoalDirDomainService(
+      goalDirRepository,
+      goalAggregateRepository,
+    );
   }
 
   // ===== GoalDir 管理 =====

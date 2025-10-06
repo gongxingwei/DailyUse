@@ -1,7 +1,8 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { GoalApplicationService } from '../../../application/services/GoalApplicationService';
-import { PrismaGoalRepository } from '../../../infrastructure/repositories/prismaGoalRepository';
+import { PrismaGoalAggregateRepository } from '../../../infrastructure/repositories/PrismaGoalAggregateRepository';
+import { PrismaGoalDirRepository } from '../../../infrastructure/repositories/PrismaGoalDirRepository';
 import { prisma } from '../../../../../config/prisma';
 import type { GoalContracts } from '@dailyuse/contracts';
 import {
@@ -18,7 +19,10 @@ import { createLogger } from '@dailyuse/utils';
 const logger = createLogger('GoalController');
 
 export class GoalController {
-  private static goalService = new GoalApplicationService(new PrismaGoalRepository(prisma));
+  private static goalService = new GoalApplicationService(
+    new PrismaGoalAggregateRepository(prisma),
+    new PrismaGoalDirRepository(prisma),
+  );
   private static responseBuilder = createResponseBuilder();
 
   /**
@@ -67,19 +71,25 @@ export class GoalController {
       if (error instanceof Error) {
         if (error.message.includes('Invalid UUID')) {
           logger.error('Validation error creating goal');
-          return GoalController.responseBuilder.sendError(res, { code: ResponseCode.VALIDATION_ERROR, message: error.message,
-           });
+          return GoalController.responseBuilder.sendError(res, {
+            code: ResponseCode.VALIDATION_ERROR,
+            message: error.message,
+          });
         }
         if (error.message.includes('Authentication')) {
           logger.warn('Authentication error creating goal');
-          return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message,
-           });
+          return GoalController.responseBuilder.sendError(res, {
+            code: ResponseCode.UNAUTHORIZED,
+            message: error.message,
+          });
         }
       }
 
       logger.error('Failed to create goal');
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to create goal',
-       });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to create goal',
+      });
     }
   }
 
@@ -110,13 +120,17 @@ export class GoalController {
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
         logger.warn('Authentication error retrieving goals');
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message,
-         });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
 
       logger.error('Failed to retrieve goals');
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve goals',
-       });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to retrieve goals',
+      });
     }
   }
 
@@ -145,13 +159,17 @@ export class GoalController {
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
         logger.warn('Authentication error searching goals');
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message,
-         });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
 
       logger.error('Failed to search goals');
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to search goals',
-       });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to search goals',
+      });
     }
   }
 
@@ -169,8 +187,10 @@ export class GoalController {
 
       if (!goal) {
         logger.warn('Goal not found', { accountUuid, goalId: id });
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: 'Goal not found',
-         });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: 'Goal not found',
+        });
       }
 
       logger.info('Goal retrieved successfully', { accountUuid, goalId: id });
@@ -179,13 +199,17 @@ export class GoalController {
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
         logger.warn('Authentication error retrieving goal');
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message,
-         });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
 
       logger.error('Failed to retrieve goal');
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve goal',
-       });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to retrieve goal',
+      });
     }
   }
 
@@ -207,13 +231,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal updated successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to update goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to update goal',
+      });
     }
   }
 
@@ -234,13 +267,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, null, 'Goal deleted successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to delete goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to delete goal',
+      });
     }
   }
 
@@ -261,13 +303,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal activated successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to activate goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to activate goal',
+      });
     }
   }
 
@@ -288,13 +339,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal paused successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to pause goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to pause goal',
+      });
     }
   }
 
@@ -315,13 +375,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal completed successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to complete goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to complete goal',
+      });
     }
   }
 
@@ -342,13 +411,22 @@ export class GoalController {
       return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal archived successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to archive goal' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to archive goal',
+      });
     }
   }
 
@@ -393,16 +471,28 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('Invalid UUID')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.VALIDATION_ERROR, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to create key result' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to create key result',
+      });
     }
   }
 
@@ -438,13 +528,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to update key result' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to update key result',
+      });
     }
   }
 
@@ -472,16 +571,29 @@ export class GoalController {
 
       logger.info('Key result deleted successfully', { accountUuid, goalId: id, keyResultId });
 
-      return GoalController.responseBuilder.sendSuccess(res, null, 'Key result deleted successfully');
+      return GoalController.responseBuilder.sendSuccess(
+        res,
+        null,
+        'Key result deleted successfully',
+      );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to delete key result' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to delete key result',
+      });
     }
   }
 
@@ -526,13 +638,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to create goal record' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to create goal record',
+      });
     }
   }
 
@@ -577,13 +698,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to create goal review' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to create goal review',
+      });
     }
   }
 
@@ -621,13 +751,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to retrieve goal aggregate view' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to retrieve goal aggregate view',
+      });
     }
   }
 
@@ -660,8 +799,10 @@ export class GoalController {
       const totalWeight = keyResults.reduce((sum, kr) => sum + kr.weight, 0);
       if (totalWeight > 100) {
         logger.warn('Total weight exceeds 100%', { accountUuid, goalId: id, totalWeight });
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.VALIDATION_ERROR, message: `Total weight cannot exceed 100%. Current total: ${totalWeight}%`,
-         });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: `Total weight cannot exceed 100%. Current total: ${totalWeight}%`,
+        });
       }
 
       // 通过聚合根逐个更新（保证业务规则）
@@ -689,13 +830,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to update key result weights' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to update key result weights',
+      });
     }
   }
 
@@ -774,18 +924,22 @@ export class GoalController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.UNAUTHORIZED, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: error.message,
+        });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return GoalController.responseBuilder.sendError(res, { code: ResponseCode.NOT_FOUND, message: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
       }
 
-      return GoalController.responseBuilder.sendError(res, { code: ResponseCode.INTERNAL_ERROR, message: error instanceof Error ? error.message : 'Failed to clone goal aggregate' });
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to clone goal aggregate',
+      });
     }
   }
 }
-
-
-
-
-

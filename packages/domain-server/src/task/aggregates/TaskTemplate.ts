@@ -437,4 +437,191 @@ export class TaskTemplate extends TaskTemplateCore {
       instances: this._instances.map((instance) => instance.toDTO()),
     };
   }
+
+  /**
+   * 转换为持久化 DTO（扁平化格式，用于数据库存储）
+   */
+  toPersistence(accountUuid: string): TaskContracts.TaskTemplatePersistenceDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid,
+
+      // 基本信息
+      title: this._title,
+      description: this._description,
+
+      // 时间配置 - 扁平化
+      timeType: this._timeConfig.time.timeType,
+      startTime: this._timeConfig.time.startTime,
+      endTime: this._timeConfig.time.endTime,
+      startDate: this._timeConfig.date.startDate,
+      endDate: this._timeConfig.date.endDate,
+      scheduleMode: this._timeConfig.schedule.mode,
+      intervalDays: this._timeConfig.schedule.intervalDays,
+      weekdays: JSON.stringify(this._timeConfig.schedule.weekdays || []),
+      monthDays: JSON.stringify(this._timeConfig.schedule.monthDays || []),
+      timezone: this._timeConfig.timezone,
+
+      // 提醒配置 - 扁平化
+      reminderEnabled: this._reminderConfig.enabled,
+      reminderMinutesBefore: this._reminderConfig.minutesBefore || 0,
+      reminderMethods: JSON.stringify(this._reminderConfig.methods || []),
+
+      // 属性 - 扁平化
+      importance: this._properties.importance,
+      urgency: this._properties.urgency,
+      location: this._properties.location,
+      tags: JSON.stringify(this._properties.tags || []),
+
+      // 目标关联
+      goalLinks: JSON.stringify(this._goalLinks || []),
+
+      // 状态（强制转换为 TaskTemplateStatus）
+      status: this._lifecycle.status as TaskContracts.TaskTemplateStatus,
+
+      // 统计信息
+      totalInstances: this._stats.totalInstances,
+      completedInstances: this._stats.completedInstances,
+      lastInstanceDate: this._stats.lastInstanceDate,
+
+      // 生命周期
+      createdAt: this._lifecycle.createdAt,
+      updatedAt: this._lifecycle.updatedAt,
+
+      // 版本控制（可选）
+      version: undefined,
+    };
+  }
+
+  /**
+   * 从持久化 DTO 创建实体（不包含子实体）
+   */
+  static fromPersistence(data: TaskContracts.TaskTemplatePersistenceDTO): TaskTemplate {
+    // 安全 JSON 解析
+    const safeJsonParse = <T>(jsonString: string | T | null | undefined, defaultValue: T): T => {
+      if (typeof jsonString === 'object' && jsonString !== null) {
+        return jsonString as T;
+      }
+      if (!jsonString || (typeof jsonString === 'string' && jsonString.trim() === '')) {
+        return defaultValue;
+      }
+      try {
+        const parsed = JSON.parse(jsonString as string);
+        return parsed !== null && parsed !== undefined ? parsed : defaultValue;
+      } catch (error) {
+        console.warn(`Failed to parse JSON: ${jsonString}`);
+        return defaultValue;
+      }
+    };
+
+    return new TaskTemplate({
+      uuid: data.uuid,
+      accountUuid: data.accountUuid,
+      title: data.title,
+      description: data.description,
+      timeConfig: {
+        time: {
+          timeType: data.timeType,
+          startTime: data.startTime,
+          endTime: data.endTime,
+        },
+        date: {
+          startDate: data.startDate instanceof Date ? data.startDate : new Date(data.startDate),
+          endDate: data.endDate
+            ? data.endDate instanceof Date
+              ? data.endDate
+              : new Date(data.endDate)
+            : undefined,
+        },
+        schedule: {
+          mode: data.scheduleMode,
+          intervalDays: data.intervalDays,
+          weekdays: safeJsonParse(data.weekdays, []),
+          monthDays: safeJsonParse(data.monthDays, []),
+        },
+        timezone: data.timezone,
+      },
+      reminderConfig: {
+        enabled: data.reminderEnabled,
+        minutesBefore: data.reminderMinutesBefore,
+        methods: safeJsonParse(data.reminderMethods, []),
+      },
+      properties: {
+        importance: data.importance,
+        urgency: data.urgency,
+        location: data.location,
+        tags: safeJsonParse(data.tags, []),
+      },
+      goalLinks: safeJsonParse(data.goalLinks, []),
+      createdAt: data.createdAt instanceof Date ? data.createdAt : new Date(data.createdAt),
+      updatedAt: data.updatedAt instanceof Date ? data.updatedAt : new Date(data.updatedAt),
+      // 子实体在加载时单独设置
+      instances: [],
+    });
+  }
+
+  /**
+   * 转换为客户端 DTO（包含所有计算属性）
+   */
+  toClient(): TaskContracts.TaskTemplateClientDTO {
+    const baseDTO = this.toDTO();
+    const now = new Date();
+    const daysSinceCreation = Math.floor(
+      (now.getTime() - this._lifecycle.createdAt.getTime()) / (1000 * 60 * 60 * 24),
+    );
+
+    // 计算状态文本和颜色
+    const statusMap: Record<string, { text: string; color: string }> = {
+      draft: { text: '草稿', color: '#9E9E9E' },
+      active: { text: '进行中', color: '#4CAF50' },
+      paused: { text: '已暂停', color: '#FF9800' },
+      completed: { text: '已完成', color: '#2196F3' },
+      archived: { text: '已归档', color: '#607D8B' },
+    };
+
+    const statusInfo = statusMap[this._lifecycle.status] || { text: '未知', color: '#000000' };
+
+    // 计算调度规则文本
+    const scheduleTextMap: Record<string, string> = {
+      once: '仅一次',
+      daily: '每日',
+      weekly: '每周',
+      monthly: '每月',
+      custom: '自定义',
+    };
+    const scheduleText = scheduleTextMap[this._timeConfig.schedule.mode] || '未设置';
+
+    // 计算实例统计
+    const activeInstances = this._instances.filter((i) => !i.isCompleted && !i.isCancelled);
+    const pendingInstances = this._instances.filter((i) => !i.isCompleted && !i.isCancelled);
+    const overdueInstances = this._instances.filter((i) => {
+      if (i.isCompleted || i.isCancelled) return false;
+      const scheduledDate = i.timeConfig.scheduledDate;
+      return scheduledDate < now;
+    });
+
+    return {
+      ...baseDTO,
+      displayTitle: `${statusInfo.text} - ${this._title}`,
+      statusText: statusInfo.text,
+      statusColor: statusInfo.color,
+      scheduleText,
+      completionRateText: `${Math.round(this._stats.completionRate)}%`,
+      canActivate: this._lifecycle.status === 'draft' || this._lifecycle.status === 'paused',
+      canPause: this._lifecycle.status === 'active',
+      canEdit: this._lifecycle.status !== 'archived',
+      canDelete: this._lifecycle.status === 'draft' || this._lifecycle.status === 'archived',
+      canCreateInstance: this._lifecycle.status === 'active',
+      activeInstancesCount: activeInstances.length,
+      totalInstancesCount: this._stats.totalInstances,
+      completedInstancesCount: this._stats.completedInstances,
+      instanceCompletionRate: this._stats.completionRate,
+      nextScheduledTime: null, // TODO: 实现下次调度时间计算
+      hasPendingInstances: pendingInstances.length > 0,
+      hasOverdueInstances: overdueInstances.length > 0,
+      daysSinceCreation,
+      lastExecutedTime: this._stats.lastInstanceDate?.toISOString() || null,
+      averageCompletionMinutes: null, // TODO: 实现平均完成时长计算
+    };
+  }
 }

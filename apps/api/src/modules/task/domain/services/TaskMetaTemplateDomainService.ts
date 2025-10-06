@@ -1,13 +1,16 @@
 import type { TaskContracts } from '@dailyuse/contracts';
-import type { ITaskMetaTemplateRepository, TaskMetaTemplate } from '@dailyuse/domain-server';
-import { TaskDomainException } from '@dailyuse/domain-server';
+import type {
+  ITaskMetaTemplateAggregateRepository,
+  TaskMetaTemplate,
+} from '@dailyuse/domain-server';
+import { TaskDomainException, TaskErrorCode } from '@dailyuse/domain-server';
 
 /**
  * TaskMetaTemplate 领域服务
  *
  * 职责：
  * - 处理 TaskMetaTemplate 聚合根的核心业务逻辑
- * - 通过 ITaskMetaTemplateRepository 接口操作数据
+ * - 通过 ITaskMetaTemplateAggregateRepository 接口操作数据（返回实体）
  * - 验证业务规则
  * - 管理元模板的使用统计
  *
@@ -15,9 +18,10 @@ import { TaskDomainException } from '@dailyuse/domain-server';
  * - 依赖倒置：只依赖仓储接口
  * - 单一职责：只处理 TaskMetaTemplate 聚合根相关的领域逻辑
  * - 与技术解耦：无任何基础设施细节
+ * - 仓储返回实体，服务层转换为DTO/ClientDTO
  */
 export class TaskMetaTemplateDomainService {
-  constructor(private readonly metaTemplateRepository: ITaskMetaTemplateRepository) {}
+  constructor(private readonly metaTemplateRepository: ITaskMetaTemplateAggregateRepository) {}
 
   // ===== TaskMetaTemplate CRUD 操作 =====
 
@@ -42,11 +46,14 @@ export class TaskMetaTemplateDomainService {
       defaultProperties: request.defaultProperties,
     });
 
-    // 保存到仓储
-    const metaTemplateDTO = metaTemplateEntity.toDTO();
-    await this.metaTemplateRepository.save(metaTemplateDTO);
+    // 保存到仓储（返回实体）
+    const savedEntity = await this.metaTemplateRepository.saveMetaTemplate(
+      accountUuid,
+      metaTemplateEntity,
+    );
 
-    return metaTemplateDTO;
+    // 转换为DTO返回
+    return savedEntity.toDTO();
   }
 
   /**
@@ -56,13 +63,16 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     metaTemplateUuid: string,
   ): Promise<TaskContracts.TaskMetaTemplateResponse | null> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO || metaTemplateDTO.accountUuid !== accountUuid) {
+    if (!entity) {
       return null;
     }
 
-    return metaTemplateDTO;
+    return entity.toDTO();
   }
 
   /**
@@ -80,14 +90,28 @@ export class TaskMetaTemplateDomainService {
       sortOrder?: 'asc' | 'desc';
     },
   ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
-    // 使用 findByAccountUuid 方法
-    return await this.metaTemplateRepository.findByAccountUuid(accountUuid, {
-      limit: queryParams.limit || 10,
-      offset: ((queryParams.page || 1) - 1) * (queryParams.limit || 10),
+    const limit = queryParams.limit || 10;
+    const offset = ((queryParams.page || 1) - 1) * limit;
+
+    // 调用仓储获取实体列表
+    const result = await this.metaTemplateRepository.getAllMetaTemplates(accountUuid, {
       isActive: queryParams.isActive,
+      isFavorite: queryParams.isFavorite,
+      category: queryParams.category,
+      limit,
+      offset,
       sortBy: (queryParams.sortBy as any) || 'usageCount',
       sortOrder: queryParams.sortOrder || 'desc',
     });
+
+    // 转换为DTO
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: queryParams.page || 1,
+      limit,
+      hasMore: offset + limit < result.total,
+    };
   }
 
   /**
@@ -98,51 +122,45 @@ export class TaskMetaTemplateDomainService {
     metaTemplateUuid: string,
     request: TaskContracts.UpdateTaskMetaTemplateRequest,
   ): Promise<TaskContracts.TaskMetaTemplateResponse> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    // 获取现有实体
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!entity) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权访问此元模板');
-    }
-
-    // 动态导入实体类
-    const { TaskMetaTemplate } = await import('@dailyuse/domain-server');
-    const metaTemplateEntity = TaskMetaTemplate.fromDTO(metaTemplateDTO);
-
-    // 更新属性
+    // 应用更新
     if (request.name !== undefined) {
-      metaTemplateEntity.updateName(request.name);
+      entity.updateName(request.name);
     }
 
     if (request.appearance !== undefined) {
-      metaTemplateEntity.updateAppearance(request.appearance);
+      entity.updateAppearance(request.appearance);
     }
 
-    // 保存更新
-    const updatedDTO = metaTemplateEntity.toDTO();
-    await this.metaTemplateRepository.save(updatedDTO);
+    // 保存更新后的实体
+    const savedEntity = await this.metaTemplateRepository.saveMetaTemplate(accountUuid, entity);
 
-    return updatedDTO;
+    return savedEntity.toDTO();
   }
 
   /**
    * 删除任务元模板
    */
   async deleteMetaTemplate(accountUuid: string, metaTemplateUuid: string): Promise<void> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const exists = await this.metaTemplateRepository.metaTemplateExists(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!exists) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权删除此元模板');
-    }
-
-    await this.metaTemplateRepository.delete(metaTemplateUuid);
+    await this.metaTemplateRepository.deleteMetaTemplate(accountUuid, metaTemplateUuid);
   }
 
   // ===== TaskMetaTemplate 状态管理 =====
@@ -154,25 +172,19 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     metaTemplateUuid: string,
   ): Promise<TaskContracts.TaskMetaTemplateResponse> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!entity) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权访问此元模板');
-    }
+    entity.activate();
 
-    const { TaskMetaTemplate } = await import('@dailyuse/domain-server');
-    const metaTemplateEntity = TaskMetaTemplate.fromDTO(metaTemplateDTO);
-
-    metaTemplateEntity.activate();
-
-    const updatedDTO = metaTemplateEntity.toDTO();
-    await this.metaTemplateRepository.save(updatedDTO);
-
-    return updatedDTO;
+    const savedEntity = await this.metaTemplateRepository.saveMetaTemplate(accountUuid, entity);
+    return savedEntity.toDTO();
   }
 
   /**
@@ -182,25 +194,19 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     metaTemplateUuid: string,
   ): Promise<TaskContracts.TaskMetaTemplateResponse> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!entity) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权访问此元模板');
-    }
+    entity.deactivate();
 
-    const { TaskMetaTemplate } = await import('@dailyuse/domain-server');
-    const metaTemplateEntity = TaskMetaTemplate.fromDTO(metaTemplateDTO);
-
-    metaTemplateEntity.deactivate();
-
-    const updatedDTO = metaTemplateEntity.toDTO();
-    await this.metaTemplateRepository.save(updatedDTO);
-
-    return updatedDTO;
+    const savedEntity = await this.metaTemplateRepository.saveMetaTemplate(accountUuid, entity);
+    return savedEntity.toDTO();
   }
 
   /**
@@ -210,32 +216,26 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     metaTemplateUuid: string,
   ): Promise<TaskContracts.TaskMetaTemplateResponse> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!entity) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权访问此元模板');
-    }
+    entity.toggleFavorite();
 
-    const { TaskMetaTemplate } = await import('@dailyuse/domain-server');
-    const metaTemplateEntity = TaskMetaTemplate.fromDTO(metaTemplateDTO);
-
-    metaTemplateEntity.toggleFavorite();
-
-    const updatedDTO = metaTemplateEntity.toDTO();
-    await this.metaTemplateRepository.save(updatedDTO);
-
-    return updatedDTO;
+    const savedEntity = await this.metaTemplateRepository.saveMetaTemplate(accountUuid, entity);
+    return savedEntity.toDTO();
   }
 
   // ===== 基于元模板创建任务模板 =====
 
   /**
-   * 使用元模板创建任务模板配置
-   * 返回用于创建 TaskTemplate 的请求对象
+   * 使用元模板创建任务模板
+   * 这个方法会记录元模板的使用次数
    */
   async createTemplateFromMetaTemplate(
     accountUuid: string,
@@ -246,48 +246,49 @@ export class TaskMetaTemplateDomainService {
       timeConfig?: Partial<TaskContracts.CreateTaskTemplateRequest['timeConfig']>;
     },
   ): Promise<TaskContracts.CreateTaskTemplateRequest> {
-    const metaTemplateDTO = await this.metaTemplateRepository.findById(metaTemplateUuid);
+    const entity = await this.metaTemplateRepository.getMetaTemplateByUuid(
+      accountUuid,
+      metaTemplateUuid,
+    );
 
-    if (!metaTemplateDTO) {
-      throw TaskDomainException.templateNotFound(metaTemplateUuid);
+    if (!entity) {
+      throw new TaskDomainException(TaskErrorCode.META_TEMPLATE_NOT_FOUND, '元模板不存在');
     }
 
-    if (metaTemplateDTO.accountUuid !== accountUuid) {
-      throw TaskDomainException.businessRuleViolation('无权访问此元模板');
-    }
+    // 使用元模板
+    entity.use();
 
-    // 记录使用
-    const { TaskMetaTemplate } = await import('@dailyuse/domain-server');
-    const metaTemplateEntity = TaskMetaTemplate.fromDTO(metaTemplateDTO);
-    metaTemplateEntity.use();
-    await this.metaTemplateRepository.save(metaTemplateEntity.toDTO());
+    // 保存更新后的使用统计
+    await this.metaTemplateRepository.saveMetaTemplate(accountUuid, entity);
 
-    // 构建任务模板创建请求
-    const now = new Date();
-    const templateRequest: TaskContracts.CreateTaskTemplateRequest = {
-      title: overrides?.title || `基于${metaTemplateDTO.name}的任务`,
-      description: overrides?.description || metaTemplateDTO.description,
+    // 基于元模板生成任务模板请求
+    const dto = entity.toDTO();
+    return {
+      title: overrides?.title || dto.name,
+      description: overrides?.description || dto.description,
       timeConfig: {
         time: {
-          timeType: metaTemplateDTO.defaultTimeConfig.timeType,
-          startTime: metaTemplateDTO.defaultTimeConfig.commonTimeSettings?.startTime,
-          endTime: metaTemplateDTO.defaultTimeConfig.commonTimeSettings?.endTime,
+          timeType: dto.defaultTimeConfig.timeType,
+          startTime: dto.defaultTimeConfig.commonTimeSettings?.startTime,
+          endTime: dto.defaultTimeConfig.commonTimeSettings?.endTime,
         },
         date: {
-          startDate: now.toISOString(),
+          startDate: new Date().toISOString(),
           endDate: undefined,
         },
         schedule: {
-          mode: metaTemplateDTO.defaultTimeConfig.scheduleMode,
+          mode: dto.defaultTimeConfig.scheduleMode,
+          intervalDays: undefined,
+          weekdays: [],
+          monthDays: [],
         },
-        timezone: metaTemplateDTO.defaultTimeConfig.timezone,
+        timezone: dto.defaultTimeConfig.timezone,
         ...overrides?.timeConfig,
       },
-      reminderConfig: metaTemplateDTO.defaultReminderConfig,
-      properties: metaTemplateDTO.defaultProperties,
+      reminderConfig: dto.defaultReminderConfig,
+      properties: dto.defaultProperties,
+      goalLinks: [],
     };
-
-    return templateRequest;
   }
 
   // ===== 查询和统计 =====
@@ -299,7 +300,18 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     category: string,
   ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
-    return await this.metaTemplateRepository.findByCategory(accountUuid, category);
+    const result = await this.metaTemplateRepository.getAllMetaTemplates(accountUuid, {
+      category,
+      isActive: true,
+    });
+
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: 1,
+      limit: result.total,
+      hasMore: false,
+    };
   }
 
   /**
@@ -308,7 +320,18 @@ export class TaskMetaTemplateDomainService {
   async getFavoriteMetaTemplates(
     accountUuid: string,
   ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
-    return await this.metaTemplateRepository.findFavorites(accountUuid);
+    const result = await this.metaTemplateRepository.getAllMetaTemplates(accountUuid, {
+      isFavorite: true,
+      isActive: true,
+    });
+
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: 1,
+      limit: result.total,
+      hasMore: false,
+    };
   }
 
   /**
@@ -318,10 +341,20 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     limit: number = 10,
   ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
-    return await this.metaTemplateRepository.findPopular(accountUuid, {
-      limit: limit,
-      minUsageCount: 1,
+    const result = await this.metaTemplateRepository.getAllMetaTemplates(accountUuid, {
+      isActive: true,
+      limit,
+      sortBy: 'usageCount',
+      sortOrder: 'desc',
     });
+
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: 1,
+      limit,
+      hasMore: result.total > limit,
+    };
   }
 
   /**
@@ -331,11 +364,66 @@ export class TaskMetaTemplateDomainService {
     accountUuid: string,
     limit: number = 10,
   ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
-    // 使用 findByAccountUuid 并按 lastUsedAt 排序
-    return await this.metaTemplateRepository.findByAccountUuid(accountUuid, {
-      limit: limit,
+    const result = await this.metaTemplateRepository.getAllMetaTemplates(accountUuid, {
+      isActive: true,
+      limit,
       sortBy: 'updatedAt',
       sortOrder: 'desc',
     });
+
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: 1,
+      limit,
+      hasMore: result.total > limit,
+    };
+  }
+
+  /**
+   * 搜索元模板
+   */
+  async searchMetaTemplates(
+    accountUuid: string,
+    query: string,
+    options?: {
+      limit?: number;
+      page?: number;
+    },
+  ): Promise<TaskContracts.TaskMetaTemplateListResponse> {
+    const limit = options?.limit || 10;
+    const offset = ((options?.page || 1) - 1) * limit;
+
+    const result = await this.metaTemplateRepository.searchMetaTemplates(accountUuid, query, {
+      limit,
+      offset,
+    });
+
+    return {
+      data: result.metaTemplates.map((entity) => entity.toDTO()),
+      total: result.total,
+      page: options?.page || 1,
+      limit,
+      hasMore: offset + limit < result.total,
+    };
+  }
+
+  /**
+   * 统计元模板数量
+   */
+  async countMetaTemplates(
+    accountUuid: string,
+    isActive?: boolean,
+  ): Promise<{ total: number; active: number; inactive: number }> {
+    const [total, active] = await Promise.all([
+      this.metaTemplateRepository.countMetaTemplates(accountUuid),
+      this.metaTemplateRepository.countMetaTemplates(accountUuid, true),
+    ]);
+
+    return {
+      total,
+      active,
+      inactive: total - active,
+    };
   }
 }

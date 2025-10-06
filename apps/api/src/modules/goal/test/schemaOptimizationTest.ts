@@ -2,12 +2,15 @@
 // 验证展开的JSON字段在查询中的正确性
 
 import { PrismaClient } from '@prisma/client';
-import { PrismaGoalRepository } from '../infrastructure/repositories/prismaGoalRepository';
+import { PrismaGoalAggregateRepository } from '../infrastructure/repositories/PrismaGoalAggregateRepository';
+import { PrismaGoalDirRepository } from '../infrastructure/repositories/PrismaGoalDirRepository';
 import type { GoalContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
+import { ImportanceLevel, UrgencyLevel, GoalStatus } from '@dailyuse/contracts';
+import { Goal, GoalDir } from '@dailyuse/domain-server';
 
 const prisma = new PrismaClient();
-const goalRepository = new PrismaGoalRepository(prisma);
+const goalAggregateRepository = new PrismaGoalAggregateRepository(prisma);
+const goalDirRepository = new PrismaGoalDirRepository(prisma);
 
 /**
  * 测试JSON字段展开后的数据库操作
@@ -41,7 +44,7 @@ async function testDatabaseSchemaOptimization() {
       version: 1,
     };
 
-    const createdGoal = await goalRepository.createGoal(testAccountUuid, testGoalData);
+    const createdGoal = await goalAggregateRepository.saveGoal(testAccountUuid, testGoalData);
     console.log('✅ 目标创建成功:', createdGoal.name);
     console.log('   - 重要程度:', createdGoal.analysis.importanceLevel);
     console.log('   - 紧急程度:', createdGoal.analysis.urgencyLevel);
@@ -52,21 +55,21 @@ async function testDatabaseSchemaOptimization() {
     console.log('\n🔍 测试高性能查询功能...');
 
     // 按重要程度查询
-    const highImportanceGoals = await goalRepository.getAllGoals(testAccountUuid, {
+    const highImportanceGoals = await goalAggregateRepository.getAllGoals(testAccountUuid, {
       importanceLevel: ImportanceLevel.Important,
       limit: 10,
     });
     console.log('✅ 按重要程度查询成功:', highImportanceGoals.goals.length, '个目标');
 
     // 按分类查询
-    const techGoals = await goalRepository.getAllGoals(testAccountUuid, {
+    const techGoals = await goalAggregateRepository.getAllGoals(testAccountUuid, {
       category: '技术',
       limit: 10,
     });
     console.log('✅ 按分类查询成功:', techGoals.goals.length, '个目标');
 
     // 按标签查询
-    const dddGoals = await goalRepository.getAllGoals(testAccountUuid, {
+    const dddGoals = await goalAggregateRepository.getAllGoals(testAccountUuid, {
       tags: ['DDD'],
       limit: 10,
     });
@@ -74,7 +77,7 @@ async function testDatabaseSchemaOptimization() {
 
     // 3. 测试复合查询
     console.log('\n🎯 测试复合查询...');
-    const complexQuery = await goalRepository.getAllGoals(testAccountUuid, {
+    const complexQuery = await goalAggregateRepository.getAllGoals(testAccountUuid, {
       status: 'active',
       importanceLevel: ImportanceLevel.Important,
       urgencyLevel: UrgencyLevel.Medium,
@@ -85,7 +88,7 @@ async function testDatabaseSchemaOptimization() {
 
     // 4. 测试更新操作
     console.log('\n📝 测试更新操作...');
-    const updatedGoal = await goalRepository.updateGoal(testAccountUuid, createdGoal.uuid, {
+    const updatedGoal = await goalAggregateRepository.saveGoal(testAccountUuid, createdGoal.uuid, {
       analysis: {
         ...createdGoal.analysis,
         urgencyLevel: UrgencyLevel.High, // 提升紧急程度
@@ -101,7 +104,7 @@ async function testDatabaseSchemaOptimization() {
 
     // 5. 清理测试数据
     console.log('\n🧹 清理测试数据...');
-    await goalRepository.deleteGoal(testAccountUuid, createdGoal.uuid);
+    await goalAggregateRepository.deleteGoal(testAccountUuid, createdGoal.uuid);
     console.log('✅ 测试数据清理完成');
 
     console.log('\n🎉 Goal模块数据库架构优化测试全部通过！');

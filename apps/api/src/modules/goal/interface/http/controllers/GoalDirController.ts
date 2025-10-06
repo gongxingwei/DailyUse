@@ -26,8 +26,12 @@ export class GoalDirController {
   private static async initializeService(): Promise<void> {
     if (!this.goalDirService) {
       const container = GoalContainer.getInstance();
-      const goalRepository = await container.getPrismaGoalRepository();
-      this.goalDirService = new GoalDirApplicationService(goalRepository);
+      const goalDirRepository = container.getGoalDirRepository();
+      const goalAggregateRepository = container.getGoalAggregateRepository();
+      this.goalDirService = new GoalDirApplicationService(
+        goalDirRepository,
+        goalAggregateRepository,
+      );
     }
   }
 

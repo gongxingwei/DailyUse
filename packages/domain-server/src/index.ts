@@ -34,7 +34,8 @@ export * from './goal/aggregates/GoalDir';
 export * from './goal/entities/KeyResult';
 export * from './goal/entities/GoalRecord';
 export * from './goal/entities/GoalReview';
-export * from './goal/repositories/iGoalRepository';
+export * from './goal/repositories/IGoalAggregateRepository';
+export * from './goal/repositories/IGoalDirRepository';
 export * from './goal/services/UserDataInitializationService';
 export * from './goal/exceptions/GoalDomainException';
 
@@ -42,7 +43,9 @@ export * from './goal/exceptions/GoalDomainException';
 export * from './task/aggregates/TaskTemplate';
 export * from './task/aggregates/TaskMetaTemplate';
 export * from './task/entities/TaskInstance';
-export * from './task/repositories/iTaskRepository';
+export * from './task/repositories/ITaskTemplateAggregateRepository';
+export * from './task/repositories/ITaskMetaTemplateAggregateRepository';
+export * from './task/repositories/ITaskStatsAggregateRepository';
 export * from './task/exceptions/TaskDomainException';
 
 // Reminder domain exports

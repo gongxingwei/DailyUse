@@ -5,7 +5,7 @@ import {
   GoalContracts as GoalContractsEnums,
 } from '@dailyuse/contracts';
 import type {
-  IGoalRepository,
+  IGoalAggregateRepository,
   Goal,
   KeyResult,
   GoalRecord,
@@ -17,18 +17,18 @@ import type {
  *
  * 职责：
  * - 处理 Goal 聚合根的核心业务逻辑
- * - 通过 IGoalRepository 接口操作数据
+ * - 通过 IGoalAggregateRepository 接口操作数据
  * - 验证业务规则
  * - 管理 Goal 及其子实体（KeyResult、GoalRecord、GoalReview）
  *
  * 设计原则：
- * - 依赖倒置：只依赖 IGoalRepository 接口
+ * - 依赖倒置：只依赖 IGoalAggregateRepository 接口
  * - 单一职责：只处理 Goal 相关的领域逻辑
  * - 与技术解耦：无任何基础设施细节
  * - 可移植：可安全移动到 @dailyuse/domain-server 包
  */
 export class GoalDomainService {
-  constructor(private readonly goalRepository: IGoalRepository) {}
+  constructor(private readonly goalAggregateRepository: IGoalAggregateRepository) {}
 
   // ==================== Goal CRUD 操作 ====================
 
@@ -94,7 +94,7 @@ export class GoalDomainService {
     accountUuid: string,
     goalUuid: string,
   ): Promise<GoalContracts.GoalResponse | null> {
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       return null;
     }
@@ -114,7 +114,7 @@ export class GoalDomainService {
       offset?: number;
     },
   ): Promise<GoalContracts.GoalListResponse> {
-    const result = await this.goalRepository.getAllGoals(accountUuid, queryParams);
+    const result = await this.goalAggregateRepository.getAllGoals(accountUuid, queryParams);
 
     const goals = result.goals.map((goalEntity) => goalEntity.toClient());
 
@@ -140,7 +140,7 @@ export class GoalDomainService {
     request: GoalContracts.UpdateGoalRequest,
   ): Promise<GoalContracts.GoalResponse> {
     // 获取现有目标
-    const existingGoal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const existingGoal = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!existingGoal) {
       throw new Error('Goal not found');
     }
@@ -175,7 +175,7 @@ export class GoalDomainService {
 
     // 创建更新后的实体并保存
     const updatedGoalEntity = await this.createEntityFromDTO(updatedGoalDTO);
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, updatedGoalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, updatedGoalEntity);
 
     return savedGoal.toClient();
   }
@@ -187,12 +187,12 @@ export class GoalDomainService {
    * 2. 级联删除所有子实体
    */
   async deleteGoal(accountUuid: string, goalUuid: string): Promise<void> {
-    const existingGoal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const existingGoal = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!existingGoal) {
       throw new Error('Goal not found');
     }
 
-    const deleted = await this.goalRepository.deleteGoal(accountUuid, goalUuid);
+    const deleted = await this.goalAggregateRepository.deleteGoal(accountUuid, goalUuid);
     if (!deleted) {
       throw new Error('Failed to delete goal');
     }
@@ -256,7 +256,7 @@ export class GoalDomainService {
     },
   ): Promise<GoalContracts.KeyResultResponse> {
     // 1. 获取聚合根实体
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -274,7 +274,7 @@ export class GoalDomainService {
     });
 
     // 3. 保存整个聚合根（包括新的关键结果）
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
 
     // 4. 从保存后的聚合中获取关键结果
     const savedKeyResult = savedGoal.getKeyResult(keyResultUuid);
@@ -320,7 +320,7 @@ export class GoalDomainService {
     },
   ): Promise<GoalContracts.KeyResultResponse> {
     // 1. 获取聚合根实体
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -335,7 +335,7 @@ export class GoalDomainService {
     goalEntity.updateKeyResult(keyResultUuid, updates);
 
     // 3. 保存整个聚合根
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
 
     // 4. 获取更新后的关键结果
     const updatedKeyResult = savedGoal.getKeyResult(keyResultUuid);
@@ -375,7 +375,7 @@ export class GoalDomainService {
     keyResultUuid: string,
   ): Promise<void> {
     // 1. 获取聚合根实体
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -384,7 +384,7 @@ export class GoalDomainService {
     goalEntity.removeKeyResult(keyResultUuid);
 
     // 3. 保存整个聚合根
-    await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
   }
 
   // ==================== GoalRecord 管理 ====================
@@ -402,7 +402,7 @@ export class GoalDomainService {
     },
   ): Promise<GoalContracts.GoalRecordClientDTO> {
     // 1. 获取聚合根实体
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -415,7 +415,7 @@ export class GoalDomainService {
     });
 
     // 3. 保存整个聚合根
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
 
     // 4. 从保存后的聚合中获取记录
     const savedRecord = savedGoal.records.find((r) => r.uuid === recordUuid);
@@ -461,7 +461,7 @@ export class GoalDomainService {
     },
   ): Promise<GoalContracts.GoalReviewClientDTO> {
     // 1. 获取聚合根实体
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -476,7 +476,7 @@ export class GoalDomainService {
     });
 
     // 3. 保存整个聚合根
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
 
     // 4. 获取生成的复盘
     const savedReview = savedGoal.reviews.find((r) => r.uuid === reviewUuid);
@@ -521,7 +521,7 @@ export class GoalDomainService {
     goalUuid: string,
   ): Promise<GoalContracts.GoalAggregateViewResponse> {
     // 1. 获取聚合根实体（包含所有子实体）
-    const goalEntity = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const goalEntity = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!goalEntity) {
       throw new Error('Goal not found');
     }
@@ -619,7 +619,7 @@ export class GoalDomainService {
    */
   async getGoalStats(accountUuid: string): Promise<any> {
     // TODO: 将 repository 返回的统计数据转换为完整的 GoalStatsResponse
-    const stats = await this.goalRepository.getGoalStats(accountUuid);
+    const stats = await this.goalAggregateRepository.getGoalStats(accountUuid);
     return {
       ...stats,
       progressTrend: [],
@@ -703,7 +703,7 @@ export class GoalDomainService {
     }
 
     // 保存聚合根
-    const savedGoalEntity = await this.goalRepository.saveGoal(accountUuid, goalEntity);
+    const savedGoalEntity = await this.goalAggregateRepository.saveGoal(accountUuid, goalEntity);
 
     // 处理 reviews（需要特殊的 snapshot 计算）
     for (const reviewRequest of subEntities.reviews) {
@@ -741,7 +741,10 @@ export class GoalDomainService {
 
     // 如果有 reviews，需要再次保存
     if (subEntities.reviews.length > 0) {
-      const finalSavedGoal = await this.goalRepository.saveGoal(accountUuid, savedGoalEntity);
+      const finalSavedGoal = await this.goalAggregateRepository.saveGoal(
+        accountUuid,
+        savedGoalEntity,
+      );
       return finalSavedGoal.toClient();
     }
 
@@ -756,7 +759,7 @@ export class GoalDomainService {
     goalUuid: string,
     status: GoalContracts.GoalStatus,
   ): Promise<GoalContracts.GoalResponse> {
-    const existingGoal = await this.goalRepository.getGoalByUuid(accountUuid, goalUuid);
+    const existingGoal = await this.goalAggregateRepository.getGoalByUuid(accountUuid, goalUuid);
     if (!existingGoal) {
       throw new Error('Goal not found');
     }
@@ -772,7 +775,7 @@ export class GoalDomainService {
     };
 
     const updatedGoalEntity = await this.createEntityFromDTO(updatedGoalDTO);
-    const savedGoal = await this.goalRepository.saveGoal(accountUuid, updatedGoalEntity);
+    const savedGoal = await this.goalAggregateRepository.saveGoal(accountUuid, updatedGoalEntity);
 
     return savedGoal.toClient();
   }

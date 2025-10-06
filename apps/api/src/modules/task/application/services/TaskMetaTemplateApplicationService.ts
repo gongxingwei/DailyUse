@@ -1,11 +1,11 @@
 import type { TaskContracts } from '@dailyuse/contracts';
-import type { ITaskMetaTemplateRepository } from '@dailyuse/domain-server';
+import type { ITaskMetaTemplateAggregateRepository } from '@dailyuse/domain-server';
 import { TaskMetaTemplateDomainService } from '../../domain/services/TaskMetaTemplateDomainService';
 import { TaskContainer } from '../../infrastructure/di/TaskContainer';
 
 /**
  * TaskMetaTemplate 应用服务
- * 
+ *
  * 职责：
  * 1. 注入具体的 Repository 实现
  * 2. 协调领域服务
@@ -19,15 +19,15 @@ import { TaskContainer } from '../../infrastructure/di/TaskContainer';
 export class TaskMetaTemplateApplicationService {
   private static instance: TaskMetaTemplateApplicationService;
   private domainService: TaskMetaTemplateDomainService;
-  private metaTemplateRepository: ITaskMetaTemplateRepository;
+  private metaTemplateRepository: ITaskMetaTemplateAggregateRepository;
 
-  constructor(metaTemplateRepository: ITaskMetaTemplateRepository) {
+  constructor(metaTemplateRepository: ITaskMetaTemplateAggregateRepository) {
     this.metaTemplateRepository = metaTemplateRepository;
     this.domainService = new TaskMetaTemplateDomainService(metaTemplateRepository);
   }
 
   static async createInstance(
-    metaTemplateRepository?: ITaskMetaTemplateRepository,
+    metaTemplateRepository?: ITaskMetaTemplateAggregateRepository,
   ): Promise<TaskMetaTemplateApplicationService> {
     const taskContainer = TaskContainer.getInstance();
     metaTemplateRepository =

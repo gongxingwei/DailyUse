@@ -301,11 +301,19 @@ export class MFADevice extends MFADeviceCore implements IMFADeviceServer {
   toDTO(): MFADeviceDTO {
     return {
       uuid: this.uuid,
+      accountUuid: '', // Note: accountUuid should be provided by the caller/repository layer
       type: this.type,
       name: this.name,
+      secretKey: this.secretKey,
+      phoneNumber: this.phoneNumber,
+      emailAddress: this.emailAddress,
       isVerified: this.isVerified,
       isEnabled: this.isEnabled,
+      verificationAttempts: this.verificationAttempts,
+      maxAttempts: this.maxAttempts,
+      isLocked: this.verificationAttempts >= this.maxAttempts,
       createdAt: this.createdAt.getTime(),
+      updatedAt: this.createdAt.getTime(), // Use createdAt if updatedAt not tracked
       lastUsedAt: this.lastUsedAt ? this.lastUsedAt.getTime() : undefined,
     };
   }

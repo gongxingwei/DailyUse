@@ -1,5 +1,9 @@
 import type { GoalContracts } from '@dailyuse/contracts';
-import type { IGoalRepository, GoalDir } from '@dailyuse/domain-server';
+import type {
+  IGoalDirRepository,
+  IGoalAggregateRepository,
+  GoalDir,
+} from '@dailyuse/domain-server';
 
 type CreateGoalDirRequest = GoalContracts.CreateGoalDirRequest;
 type UpdateGoalDirRequest = GoalContracts.UpdateGoalDirRequest;
@@ -11,7 +15,7 @@ type GoalDirListResponse = GoalContracts.GoalDirListResponse;
  *
  * 职责：
  * - 纯领域逻辑，不依赖具体技术实现
- * - 通过 IGoalRepository 接口操作数据
+ * - 通过 IGoalDirRepository 接口操作数据
  * - 处理 GoalDir 聚合根的业务规则
  * - 可以安全地移动到 @dailyuse/domain-server 包
  *
@@ -21,7 +25,10 @@ type GoalDirListResponse = GoalContracts.GoalDirListResponse;
  * - 与技术解耦：不包含任何基础设施细节（Prisma、Express等）
  */
 export class GoalDirDomainService {
-  constructor(private readonly goalRepository: IGoalRepository) {}
+  constructor(
+    private readonly goalDirRepository: IGoalDirRepository,
+    private readonly goalAggregateRepository: IGoalAggregateRepository,
+  ) {}
 
   /**
    * 创建目标目录
@@ -68,7 +75,7 @@ export class GoalDirDomainService {
     };
 
     const dirEntity = await this.createEntityFromDTO(dirDTO);
-    const savedDirEntity = await this.goalRepository.saveGoalDirectory(accountUuid, dirEntity);
+    const savedDirEntity = await this.goalDirRepository.saveGoalDirectory(accountUuid, dirEntity);
     const createdDir = savedDirEntity.toDTO();
 
     return {
@@ -90,14 +97,17 @@ export class GoalDirDomainService {
       offset: queryParams.offset || 0,
     };
 
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid, {
+    const result = await this.goalDirRepository.getAllGoalDirectories(accountUuid, {
       parentUuid: params.parentUuid,
     });
 
     const goalDirsWithCount = await Promise.all(
       result.goalDirs.map(async (dirEntity) => {
         const dirDTO = dirEntity.toDTO();
-        const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, dirDTO.uuid);
+        const goals = await this.goalAggregateRepository.getGoalsByDirectoryUuid(
+          accountUuid,
+          dirDTO.uuid,
+        );
         return {
           ...dirDTO,
           goalsCount: goals.length,
@@ -115,13 +125,13 @@ export class GoalDirDomainService {
    * 根据ID获取目标目录
    */
   async getGoalDirById(uuid: string, accountUuid: string): Promise<GoalDirResponse | null> {
-    const dirEntity = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
+    const dirEntity = await this.goalDirRepository.getGoalDirectoryByUuid(accountUuid, uuid);
     if (!dirEntity) {
       return null;
     }
 
     const dir = dirEntity.toDTO();
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, dir.uuid);
+    const goals = await this.goalAggregateRepository.getGoalsByDirectoryUuid(accountUuid, dir.uuid);
 
     return {
       ...dir,
@@ -142,7 +152,7 @@ export class GoalDirDomainService {
     accountUuid: string,
   ): Promise<GoalDirResponse> {
     // 验证目录存在
-    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
+    const existingDir = await this.goalDirRepository.getGoalDirectoryByUuid(accountUuid, uuid);
     if (!existingDir) {
       throw new Error('目录不存在');
     }
@@ -190,10 +200,13 @@ export class GoalDirDomainService {
 
     // 保存更新
     const updatedDirEntity = await this.createEntityFromDTO(updatedDirDTO);
-    const savedDir = await this.goalRepository.saveGoalDirectory(accountUuid, updatedDirEntity);
+    const savedDir = await this.goalDirRepository.saveGoalDirectory(accountUuid, updatedDirEntity);
 
     // 计算目标数量
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, savedDir.uuid);
+    const goals = await this.goalAggregateRepository.getGoalsByDirectoryUuid(
+      accountUuid,
+      savedDir.uuid,
+    );
 
     return {
       ...savedDir.toDTO(),
@@ -210,13 +223,13 @@ export class GoalDirDomainService {
    */
   async deleteGoalDir(uuid: string, accountUuid: string): Promise<void> {
     // 验证目录存在
-    const existingDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, uuid);
+    const existingDir = await this.goalDirRepository.getGoalDirectoryByUuid(accountUuid, uuid);
     if (!existingDir) {
       throw new Error('目录不存在');
     }
 
     // 检查子目录
-    const subDirs = await this.goalRepository.getAllGoalDirectories(accountUuid, {
+    const subDirs = await this.goalDirRepository.getAllGoalDirectories(accountUuid, {
       parentUuid: uuid,
     });
     if (subDirs.goalDirs.length > 0) {
@@ -224,13 +237,13 @@ export class GoalDirDomainService {
     }
 
     // 检查关联目标
-    const goals = await this.goalRepository.getGoalsByDirectoryUuid(accountUuid, uuid);
+    const goals = await this.goalAggregateRepository.getGoalsByDirectoryUuid(accountUuid, uuid);
     if (goals.length > 0) {
       throw new Error(`无法删除目录，还有 ${goals.length} 个目标在使用此目录`);
     }
 
     // 执行删除
-    const deleted = await this.goalRepository.deleteGoalDirectory(accountUuid, uuid);
+    const deleted = await this.goalDirRepository.deleteGoalDirectory(accountUuid, uuid);
     if (!deleted) {
       throw new Error('删除目录失败');
     }
@@ -273,7 +286,10 @@ export class GoalDirDomainService {
    */
   private async validateParentDirectory(accountUuid: string, parentUuid?: string): Promise<void> {
     if (parentUuid) {
-      const parentDir = await this.goalRepository.getGoalDirectoryByUuid(accountUuid, parentUuid);
+      const parentDir = await this.goalDirRepository.getGoalDirectoryByUuid(
+        accountUuid,
+        parentUuid,
+      );
       if (!parentDir) {
         throw new Error('父目录不存在');
       }
@@ -289,7 +305,7 @@ export class GoalDirDomainService {
     parentUuid?: string,
     excludeUuid?: string,
   ): Promise<void> {
-    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid, {
+    const existingDirs = await this.goalDirRepository.getAllGoalDirectories(accountUuid, {
       parentUuid,
     });
 

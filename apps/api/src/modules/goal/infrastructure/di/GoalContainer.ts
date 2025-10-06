@@ -1,10 +1,16 @@
-import type { IGoalRepository } from '@dailyuse/domain-server';
-import { PrismaGoalRepository } from '../repositories/prismaGoalRepository';
+import type { IGoalAggregateRepository, IGoalDirRepository } from '@dailyuse/domain-server';
+import { PrismaGoalAggregateRepository } from '../repositories/PrismaGoalAggregateRepository';
+import { PrismaGoalDirRepository } from '../repositories/PrismaGoalDirRepository';
 import { prisma } from '@/config/prisma';
 
+/**
+ * Goal 模块 DI 容器
+ * 按聚合根提供独立的仓储实例
+ */
 export class GoalContainer {
   private static instance: GoalContainer;
-  private goalRepository: IGoalRepository | null = null;
+  private goalAggregateRepository: IGoalAggregateRepository | null = null;
+  private goalDirRepository: IGoalDirRepository | null = null;
 
   private constructor() {}
 
@@ -16,17 +22,31 @@ export class GoalContainer {
   }
 
   /**
-   * 获取 Goal Prisma 仓库实例
+   * 获取 Goal 聚合根仓储
    */
-  async getPrismaGoalRepository(): Promise<IGoalRepository> {
-    if (!this.goalRepository) {
-      this.goalRepository = new PrismaGoalRepository(prisma);
+  getGoalAggregateRepository(): IGoalAggregateRepository {
+    if (!this.goalAggregateRepository) {
+      this.goalAggregateRepository = new PrismaGoalAggregateRepository(prisma);
     }
-    return this.goalRepository;
+    return this.goalAggregateRepository;
+  }
+
+  /**
+   * 获取 GoalDir 仓储
+   */
+  getGoalDirRepository(): IGoalDirRepository {
+    if (!this.goalDirRepository) {
+      this.goalDirRepository = new PrismaGoalDirRepository(prisma);
+    }
+    return this.goalDirRepository;
   }
 
   // 用于测试时替换实现
-  setGoalRepository(repository: IGoalRepository): void {
-    this.goalRepository = repository;
+  setGoalAggregateRepository(repository: IGoalAggregateRepository): void {
+    this.goalAggregateRepository = repository;
+  }
+
+  setGoalDirRepository(repository: IGoalDirRepository): void {
+    this.goalDirRepository = repository;
   }
 }

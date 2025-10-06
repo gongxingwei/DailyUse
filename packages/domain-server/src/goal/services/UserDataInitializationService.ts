@@ -1,4 +1,5 @@
-import type { IGoalRepository } from '../repositories/iGoalRepository';
+import type { IGoalAggregateRepository } from '../repositories/IGoalAggregateRepository';
+import type { IGoalDirRepository } from '../repositories/IGoalDirRepository';
 import { GoalDir } from '../aggregates/GoalDir';
 import { GoalContracts } from '@dailyuse/contracts';
 import { generateUUID } from '@dailyuse/utils';
@@ -16,7 +17,10 @@ const GoalDirStatusEnum = GoalContracts.GoalDirStatus;
  * 此服务通过直接操作持久化层来创建系统目录
  */
 export class UserDataInitializationService {
-  constructor(private readonly goalRepository: IGoalRepository) {}
+  constructor(
+    private readonly goalAggregateRepository: IGoalAggregateRepository,
+    private readonly goalDirRepository: IGoalDirRepository,
+  ) {}
 
   /**
    * 初始化用户的目标模块数据
@@ -24,7 +28,7 @@ export class UserDataInitializationService {
    */
   async initializeUserGoalData(accountUuid: string): Promise<void> {
     // 检查用户是否已有目录
-    const existingDirs = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    const existingDirs = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
 
     if (existingDirs.goalDirs.length > 0) {
       // 用户已有数据，不需要初始化
@@ -118,7 +122,7 @@ export class UserDataInitializationService {
     // 创建默认目录
     for (const dirData of defaultDirectories) {
       const dirEntity = GoalDir.fromDTO(dirData);
-      await this.goalRepository.saveGoalDirectory(accountUuid, dirEntity);
+      await this.goalDirRepository.saveGoalDirectory(accountUuid, dirEntity);
     }
   }
 
@@ -127,7 +131,7 @@ export class UserDataInitializationService {
    * @param accountUuid 用户账户UUID
    */
   async ensureDefaultDirectories(accountUuid: string): Promise<void> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    const result = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
 
     // 转换为 DTO 数组以访问 systemType
     const existingDirDTOs = result.goalDirs.map((dir) => dir.toDTO());
@@ -216,7 +220,7 @@ export class UserDataInitializationService {
 
     for (const dirData of directoriesToCreate) {
       const dirEntity = GoalDir.fromDTO(dirData);
-      await this.goalRepository.saveGoalDirectory(accountUuid, dirEntity);
+      await this.goalDirRepository.saveGoalDirectory(accountUuid, dirEntity);
     }
   }
 
@@ -226,7 +230,7 @@ export class UserDataInitializationService {
    * @returns 默认目录DTO，如果不存在则创建
    */
   async getDefaultDirectory(accountUuid: string): Promise<GoalContracts.GoalDirDTO> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    const result = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
     const dirDTOs = result.goalDirs.map((dir) => dir.toDTO());
 
     let defaultDir = dirDTOs.find((dir) => dir.systemType === 'ALL' && dir.isDefault);
@@ -236,7 +240,7 @@ export class UserDataInitializationService {
       await this.ensureDefaultDirectories(accountUuid);
 
       // 重新获取
-      const updatedResult = await this.goalRepository.getAllGoalDirectories(accountUuid);
+      const updatedResult = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
       const updatedDTOs = updatedResult.goalDirs.map((dir) => dir.toDTO());
 
       defaultDir = updatedDTOs.find((dir) => dir.systemType === 'ALL' && dir.isDefault);
@@ -255,7 +259,7 @@ export class UserDataInitializationService {
    * @returns 未分类目录DTO
    */
   async getUncategorizedDirectory(accountUuid: string): Promise<GoalContracts.GoalDirDTO> {
-    const result = await this.goalRepository.getAllGoalDirectories(accountUuid);
+    const result = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
     const dirDTOs = result.goalDirs.map((dir) => dir.toDTO());
 
     let uncategorizedDir = dirDTOs.find((dir) => dir.systemType === 'UNCATEGORIZED');
@@ -263,7 +267,7 @@ export class UserDataInitializationService {
     if (!uncategorizedDir) {
       await this.ensureDefaultDirectories(accountUuid);
 
-      const updatedResult = await this.goalRepository.getAllGoalDirectories(accountUuid);
+      const updatedResult = await this.goalDirRepository.getAllGoalDirectories(accountUuid);
       const updatedDTOs = updatedResult.goalDirs.map((dir) => dir.toDTO());
 
       uncategorizedDir = updatedDTOs.find((dir) => dir.systemType === 'UNCATEGORIZED');

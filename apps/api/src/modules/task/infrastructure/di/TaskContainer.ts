@@ -1,21 +1,18 @@
 import type {
-  ITaskTemplateRepository,
-  ITaskInstanceRepository,
-  ITaskMetaTemplateRepository,
-  ITaskStatsRepository,
+  ITaskTemplateAggregateRepository,
+  ITaskMetaTemplateAggregateRepository,
+  ITaskStatsAggregateRepository,
 } from '@dailyuse/domain-server';
-import { PrismaTaskTemplateRepository } from '../repositories/prisma/PrismaTaskTemplateRepository';
-import { PrismaTaskInstanceRepository } from '../repositories/prisma/PrismaTaskInstanceRepository';
-import { PrismaTaskMetaTemplateRepository } from '../repositories/prisma/PrismaTaskMetaTemplateRepository';
-import { PrismaTaskStatsRepository } from '../repositories/prisma/PrismaTaskStatsRepository';
+import { PrismaTaskTemplateAggregateRepository } from '../repositories/prisma/PrismaTaskTemplateAggregateRepository';
+import { PrismaTaskMetaTemplateAggregateRepository } from '../repositories/prisma/PrismaTaskMetaTemplateAggregateRepository';
+import { PrismaTaskStatsRepository } from '../repositories/prisma/PrismaTaskStatsAggregateRepository';
 import { prisma } from '@/config/prisma';
 
 export class TaskContainer {
   private static instance: TaskContainer;
-  private taskTemplateRepository?: ITaskTemplateRepository;
-  private taskInstanceRepository?: ITaskInstanceRepository;
-  private taskMetaTemplateRepository?: ITaskMetaTemplateRepository;
-  private taskStatsRepository?: ITaskStatsRepository;
+  private taskTemplateRepository?: ITaskTemplateAggregateRepository;
+  private taskMetaTemplateRepository?: ITaskMetaTemplateAggregateRepository;
+  private taskStatsRepository?: ITaskStatsAggregateRepository;
 
   private constructor() {}
 
@@ -27,39 +24,29 @@ export class TaskContainer {
   }
 
   /**
-   * 获取 TaskTemplate Prisma 仓库实例
+   * 获取 TaskTemplate Aggregate Prisma 仓库实例
    */
-  async getPrismaTaskTemplateRepository(): Promise<ITaskTemplateRepository> {
+  async getPrismaTaskTemplateRepository(): Promise<ITaskTemplateAggregateRepository> {
     if (!this.taskTemplateRepository) {
-      this.taskTemplateRepository = new PrismaTaskTemplateRepository(prisma);
+      this.taskTemplateRepository = new PrismaTaskTemplateAggregateRepository(prisma);
     }
     return this.taskTemplateRepository;
   }
 
   /**
-   * 获取 TaskInstance Prisma 仓库实例
+   * 获取 TaskMetaTemplate Aggregate Prisma 仓库实例
    */
-  async getPrismaTaskInstanceRepository(): Promise<ITaskInstanceRepository> {
-    if (!this.taskInstanceRepository) {
-      this.taskInstanceRepository = new PrismaTaskInstanceRepository(prisma);
-    }
-    return this.taskInstanceRepository;
-  }
-
-  /**
-   * 获取 TaskMetaTemplate Prisma 仓库实例
-   */
-  async getPrismaTaskMetaTemplateRepository(): Promise<ITaskMetaTemplateRepository> {
+  async getPrismaTaskMetaTemplateRepository(): Promise<ITaskMetaTemplateAggregateRepository> {
     if (!this.taskMetaTemplateRepository) {
-      this.taskMetaTemplateRepository = new PrismaTaskMetaTemplateRepository(prisma);
+      this.taskMetaTemplateRepository = new PrismaTaskMetaTemplateAggregateRepository(prisma);
     }
     return this.taskMetaTemplateRepository;
   }
 
   /**
-   * 获取 TaskStats 仓库实例
+   * 获取 TaskStats Aggregate 仓库实例
    */
-  async getPrismaTaskStatsRepository(): Promise<ITaskStatsRepository> {
+  async getPrismaTaskStatsRepository(): Promise<ITaskStatsAggregateRepository> {
     if (!this.taskStatsRepository) {
       this.taskStatsRepository = new PrismaTaskStatsRepository(prisma);
     }
@@ -67,15 +54,15 @@ export class TaskContainer {
   }
 
   // 用于测试时替换实现
-  setTaskTemplateRepository(repository: ITaskTemplateRepository): void {
+  setTaskTemplateRepository(repository: ITaskTemplateAggregateRepository): void {
     this.taskTemplateRepository = repository;
   }
 
-  setTaskInstanceRepository(repository: ITaskInstanceRepository): void {
-    this.taskInstanceRepository = repository;
+  setTaskMetaTemplateRepository(repository: ITaskMetaTemplateAggregateRepository): void {
+    this.taskMetaTemplateRepository = repository;
   }
 
-  setTaskMetaTemplateRepository(repository: ITaskMetaTemplateRepository): void {
-    this.taskMetaTemplateRepository = repository;
+  setTaskStatsRepository(repository: ITaskStatsAggregateRepository): void {
+    this.taskStatsRepository = repository;
   }
 }
