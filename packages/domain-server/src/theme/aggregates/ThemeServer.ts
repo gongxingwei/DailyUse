@@ -3,7 +3,24 @@
  * @description ThemeConfig stub for backwards compatibility
  * @author DailyUse Team
  * @date 2025-09-29
+ *
+ * ⚠️ TECHNICAL DEBT ⚠️
  * @deprecated ThemeConfig should be refactored - this is a temporary stub
+ *
+ * Current Status:
+ * - ThemeConfig class is used by ThemeService.ts (getThemeConfig, updateThemeConfig methods)
+ * - ThemeDefinition class in this file is NOT USED (replaced by aggregates/ThemeDefinition.ts)
+ *
+ * TODO - Refactoring Plan:
+ * 1. Decide ThemeConfig architecture:
+ *    - Option A: Separate aggregate root (if it has its own business logic)
+ *    - Option B: Value object within ThemeDefinition
+ *    - Option C: Part of UserThemePreference entity
+ *    - Option D: Application state (not domain)
+ * 2. Migrate ThemeService.ts to use new structure
+ * 3. Delete this entire file
+ *
+ * For now: Keeping ThemeConfig to avoid breaking ThemeService functionality
  */
 
 import { ThemeContracts } from '@dailyuse/contracts';

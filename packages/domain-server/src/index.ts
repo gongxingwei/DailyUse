@@ -40,12 +40,12 @@ export * from './goal/services/UserDataInitializationService';
 export * from './goal/exceptions/GoalDomainException';
 
 // Task domain exports
+// TaskStats 不是真正的聚合根，只是读模型，已合并到 TaskTemplate 仓储中
 export * from './task/aggregates/TaskTemplate';
 export * from './task/aggregates/TaskMetaTemplate';
 export * from './task/entities/TaskInstance';
 export * from './task/repositories/ITaskTemplateAggregateRepository';
 export * from './task/repositories/ITaskMetaTemplateAggregateRepository';
-export * from './task/repositories/ITaskStatsAggregateRepository';
 export * from './task/exceptions/TaskDomainException';
 
 // Reminder domain exports
