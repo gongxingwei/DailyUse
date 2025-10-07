@@ -9,7 +9,12 @@
     "preview": "nx vite:preview",
     "test": "vitest",
     "test:watch": "vitest watch",
-    "lint": "nx eslint --fix"
+    "lint": "nx eslint --fix",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:debug": "playwright test --debug",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
@@ -31,6 +36,7 @@
     "vuetify": "^3.7.5"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.0",
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/vue": "^8.1.0",
     "@types/markdown-it": "^14.1.2",
