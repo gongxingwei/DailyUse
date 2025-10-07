@@ -8,7 +8,9 @@
 import type { EventHandler } from '@dailyuse/domain-core';
 import { TaskTriggeredEvent } from '../../../schedule/domain/events/ScheduleEvents';
 import type { NotificationContracts } from '@dailyuse/contracts';
+import { NotificationChannel } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
+import { v4 as uuidv4 } from 'uuid';
 import type { NotificationApplicationService } from '../services/NotificationApplicationService';
 import type { SSEController } from '../../../schedule/interface/http/SSEController';
 
@@ -118,21 +120,30 @@ export class TaskTriggeredHandler implements EventHandler {
     });
 
     // 1. 创建 Notification 聚合根（持久化记录）
-    const notification = await this.notificationService.createNotification(accountUuid, {
-      title: reminderData.title || '提醒',
-      content: reminderData.message || reminderData.content || '',
+    const title = reminderData.title || '提醒';
+    const content = reminderData.message || reminderData.content || title; // 如果没有内容，使用标题作为内容
+
+    const request: NotificationContracts.CreateNotificationRequest = {
+      uuid: uuidv4(), // 生成 UUID
+      accountUuid, // 添加 accountUuid
+      title,
+      content,
       type: this.mapNotificationType(payload.type),
       priority: this.mapPriority(reminderData.priority),
       channels: this.mapChannels(reminderData.notificationSettings),
       icon: reminderData.icon,
       actions: reminderData.actions,
       metadata: {
-        sourceModule: event.sourceType || 'reminder',
+        sourceType: event.sourceType || 'reminder',
         sourceId: event.sourceId,
-        taskUuid: event.aggregateId,
-        reminderData,
+        additionalData: {
+          taskUuid: event.aggregateId,
+          reminderData,
+        },
       },
-    });
+    };
+
+    const notification = await this.notificationService.createNotification(accountUuid, request);
 
     logger.info('✅ Notification 聚合根已创建', {
       notificationUuid: notification.uuid,
@@ -243,19 +254,19 @@ export class TaskTriggeredHandler implements EventHandler {
     reminderData: any,
   ): Promise<void> {
     switch (channel) {
-      case 'DESKTOP':
+      case NotificationChannel.DESKTOP:
         await this.sendDesktopNotification(notification, accountUuid, reminderData);
         break;
 
-      case 'EMAIL':
+      case NotificationChannel.EMAIL:
         await this.sendEmailNotification(notification, accountUuid);
         break;
 
-      case 'SMS':
+      case NotificationChannel.SMS:
         await this.sendSmsNotification(notification, accountUuid);
         break;
 
-      case 'IN_APP':
+      case NotificationChannel.IN_APP:
         await this.sendInAppNotification(notification, accountUuid);
         break;
 
@@ -277,38 +288,47 @@ export class TaskTriggeredHandler implements EventHandler {
       accountUuid,
     });
 
-    // 构建 SSE 事件数据
-    const sseData = {
-      type: 'notification:desktop',
-      data: {
-        // Notification 数据
-        notificationId: notification.uuid,
-        title: notification.title,
-        content: notification.content,
-        priority: notification.priority,
-        type: notification.type,
+    // 构建通知数据
+    const notificationData = {
+      accountUuid,
+      notificationId: notification.uuid,
+      title: notification.title,
+      content: notification.content,
+      priority: notification.priority,
+      type: notification.type,
 
-        // 提醒配置（声音、持续时间等）
-        soundVolume: reminderData.notificationSettings?.soundVolume || 70,
-        popupDuration: reminderData.notificationSettings?.popupDuration || 10,
-        allowSnooze: reminderData.notificationSettings?.allowSnooze !== false,
-        snoozeOptions: reminderData.notificationSettings?.snoozeOptions || [5, 10, 15],
+      // 提醒配置（声音、持续时间等）
+      soundVolume: reminderData.notificationSettings?.soundVolume || 70,
+      popupDuration: reminderData.notificationSettings?.popupDuration || 10,
+      allowSnooze: reminderData.notificationSettings?.allowSnooze !== false,
+      snoozeOptions: reminderData.notificationSettings?.snoozeOptions || [5, 10, 15],
 
-        // 操作按钮
-        actions: notification.actions || [],
+      // 操作按钮
+      actions: notification.actions || [],
 
-        // 元数据
-        metadata: notification.metadata,
-      },
+      // 元数据
+      metadata: notification.metadata,
       timestamp: new Date().toISOString(),
     };
 
-    // 通过 SSE 广播
-    await this.sseController.broadcastToAccount(accountUuid, sseData);
+    // 通过 eventBus 发送事件，由 Notification SSE 监听器推送
+    const { eventBus } = await import('@dailyuse/utils');
 
-    logger.debug('✅ SSE 事件已广播', {
+    // 发送弹窗提醒事件
+    eventBus.emit('ui:show-popup-reminder', notificationData);
+
+    // 如果配置了声音，同时发送声音提醒事件
+    if (reminderData.notificationSettings?.soundEnabled !== false) {
+      eventBus.emit('ui:play-reminder-sound', {
+        accountUuid,
+        soundVolume: reminderData.notificationSettings?.soundVolume || 70,
+      });
+    }
+
+    logger.info('✅ 桌面通知事件已发送到 eventBus', {
       notificationId: notification.uuid,
       accountUuid,
+      events: ['ui:show-popup-reminder', 'ui:play-reminder-sound'],
     });
   }
 
@@ -449,8 +469,8 @@ export class TaskTriggeredHandler implements EventHandler {
    */
   private mapChannels(notificationSettings?: any): NotificationContracts.NotificationChannel[] {
     if (!notificationSettings || !notificationSettings.channels) {
-      // 默认通道
-      return ['DESKTOP' as NotificationContracts.NotificationChannel];
+      // 默认通道 - 使用枚举值
+      return [NotificationChannel.DESKTOP];
     }
 
     return notificationSettings.channels as NotificationContracts.NotificationChannel[];

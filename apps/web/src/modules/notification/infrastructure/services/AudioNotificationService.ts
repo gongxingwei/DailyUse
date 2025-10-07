@@ -25,9 +25,44 @@ export class AudioNotificationService {
   private preloadedSounds = new Map<SoundType, HTMLAudioElement>();
   private globalVolume: number = 0.7;
   private enabled: boolean = true;
+  private userInteracted: boolean = false;
+  private pendingPlays: Array<{ config: SoundConfig; notificationId: string }> = [];
 
   constructor() {
     this.initializeDefaultSounds();
+    this.setupUserInteractionDetection();
+  }
+
+  /**
+   * 设置用户交互检测
+   * 浏览器要求用户交互后才能自动播放音频
+   */
+  private setupUserInteractionDetection(): void {
+    const enableAutoplay = () => {
+      console.log('[AudioNotificationService] ✅ 检测到用户交互，启用音频自动播放');
+      this.userInteracted = true;
+
+      // 播放所有待处理的音频
+      if (this.pendingPlays.length > 0) {
+        console.log(`[AudioNotificationService] 播放 ${this.pendingPlays.length} 个待处理音效`);
+        this.pendingPlays.forEach(({ config, notificationId }) => {
+          this.play(config, notificationId).catch((err) => {
+            console.error('[AudioNotificationService] 待处理音效播放失败:', err);
+          });
+        });
+        this.pendingPlays = [];
+      }
+
+      // 移除事件监听器
+      ['click', 'keydown', 'touchstart'].forEach((event) => {
+        document.removeEventListener(event, enableAutoplay);
+      });
+    };
+
+    // 监听用户交互事件
+    ['click', 'keydown', 'touchstart'].forEach((event) => {
+      document.addEventListener(event, enableAutoplay, { once: true });
+    });
   }
 
   /**
@@ -76,10 +111,22 @@ export class AudioNotificationService {
       configEnabled: config.enabled,
       soundType: config.type,
       volume: config.volume,
+      userInteracted: this.userInteracted,
     });
 
     if (!this.enabled || !config.enabled) {
       console.warn('[AudioNotificationService] 音效被禁用，跳过播放');
+      return;
+    }
+
+    // 🔊 检查用户交互状态
+    if (!this.userInteracted) {
+      console.warn('[AudioNotificationService] ⚠️ 尚未检测到用户交互，将音效加入待播放队列');
+      this.pendingPlays.push({ config, notificationId });
+      console.log(
+        `[AudioNotificationService] 📝 当前待播放队列: ${this.pendingPlays.length} 个音效`,
+      );
+      console.log('[AudioNotificationService] 💡 提示：请点击页面任意位置以启用音效播放');
       return;
     }
 
@@ -112,6 +159,15 @@ export class AudioNotificationService {
       await this.playAudio(audio, notificationId);
       console.log('[AudioNotificationService] ✅ 播放完成');
     } catch (error) {
+      // 🔍 特殊处理 NotAllowedError
+      if (error instanceof Error && error.name === 'NotAllowedError') {
+        console.warn('[AudioNotificationService] ⚠️ 浏览器阻止自动播放，加入待播放队列');
+        this.userInteracted = false; // 重置交互状态
+        this.pendingPlays.push({ config, notificationId });
+        console.log('[AudioNotificationService] 💡 提示：请点击页面任意位置以启用音效播放');
+        return;
+      }
+
       console.error('[AudioNotificationService] ❌ 播放音效失败:', error);
       publishNotificationError(error as Error, 'audio_playback', notificationId, true);
     }

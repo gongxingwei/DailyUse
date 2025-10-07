@@ -111,7 +111,10 @@ export class ScheduleContainer {
 
   get scheduleApplicationService(): ScheduleApplicationService {
     if (!this._scheduleApplicationService) {
-      this._scheduleApplicationService = new ScheduleApplicationService(this.scheduleDomainService);
+      this._scheduleApplicationService = new ScheduleApplicationService(
+        this.scheduleDomainService,
+        this.recurringScheduleTaskDomainService, // ✅ 注入周期性任务服务
+      );
     }
     return this._scheduleApplicationService;
   }

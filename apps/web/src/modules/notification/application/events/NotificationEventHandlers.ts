@@ -167,6 +167,36 @@ export class NotificationEventHandlers {
   private setupSystemEventListeners(): void {
     logger.debug('设置系统事件监听器');
 
+    // 🔊 监听 SSE 推送的提醒音效播放事件
+    eventBus.on('ui:play-reminder-sound', (data: any) => {
+      logger.info('收到提醒音效播放事件', {
+        accountUuid: data?.accountUuid,
+        soundVolume: data?.soundVolume,
+      });
+
+      // 播放提醒音效
+      const soundConfig: SoundConfig = {
+        enabled: true,
+        type: SoundType.REMINDER,
+        volume: (data?.soundVolume ?? 70) / 100, // 转换为 0-1 范围
+      };
+
+      const notificationId = `reminder-sound-${Date.now()}`;
+
+      this.notificationService
+        .getAudioService()
+        .play(soundConfig, notificationId)
+        .then(() => {
+          logger.info('提醒音效播放完成', { notificationId });
+        })
+        .catch((error: unknown) => {
+          logger.error('提醒音效播放失败', {
+            notificationId,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        });
+    });
+
     // 监听用户登出事件
     eventBus.on('auth:user-logged-out', () => {
       logger.info('用户登出，清理所有通知');

@@ -39,7 +39,9 @@ export enum NotificationPriority {
 export enum NotificationChannel {
   IN_APP = 'in_app',
   SSE = 'sse',
-  SYSTEM = 'system',
+  DESKTOP = 'desktop', // 桌面应用通知（通过 SSE 推送）
+  SOUND = 'sound', // 声音提醒
+  SYSTEM = 'system', // 系统通知
   EMAIL = 'email',
   SMS = 'sms',
   PUSH = 'push',

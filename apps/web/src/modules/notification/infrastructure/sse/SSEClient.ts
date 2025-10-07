@@ -62,9 +62,9 @@ export class SSEClient {
 
     this.isConnecting = true;
     // 将 token 作为 URL 参数传递（因为 EventSource 不支持自定义请求头）
-    const url = `${this.baseUrl}/api/v1/schedules/events?token=${encodeURIComponent(token)}`;
+    const url = `${this.baseUrl}/api/v1/notifications/sse/events?token=${encodeURIComponent(token)}`;
 
-    console.log('[SSE Client] 连接到:', this.baseUrl + '/api/v1/schedules/events');
+    console.log('[SSE Client] 连接到:', this.baseUrl + '/api/v1/notifications/sse/events');
 
     try {
       this.eventSource = new EventSource(url);
@@ -97,30 +97,40 @@ export class SSEClient {
         console.log('[SSE Client] 💓 心跳:', event.data);
       });
 
-      // 调度器事件
-      this.eventSource.addEventListener('schedule:popup-reminder', (event) => {
+      // 通知事件
+      this.eventSource.addEventListener('notification:created', (event) => {
+        console.log('[SSE Client] 📩 通知创建事件:', event.data);
+        this.handleNotificationEvent('created', event.data);
+      });
+
+      this.eventSource.addEventListener('notification:sent', (event) => {
+        console.log('[SSE Client] 📤 通知发送事件:', event.data);
+        this.handleNotificationEvent('sent', event.data);
+      });
+
+      this.eventSource.addEventListener('notification:popup-reminder', (event) => {
         console.log('[SSE Client] 🔔 弹窗提醒事件:', event.data);
-        this.handleScheduleEvent('popup-reminder', event.data);
+        this.handleNotificationEvent('popup-reminder', event.data);
       });
 
-      this.eventSource.addEventListener('schedule:sound-reminder', (event) => {
+      this.eventSource.addEventListener('notification:sound-reminder', (event) => {
         console.log('[SSE Client] 🔊 声音提醒事件:', event.data);
-        this.handleScheduleEvent('sound-reminder', event.data);
+        this.handleNotificationEvent('sound-reminder', event.data);
       });
 
-      this.eventSource.addEventListener('schedule:system-notification', (event) => {
+      this.eventSource.addEventListener('notification:system-notification', (event) => {
         console.log('[SSE Client] 📢 系统通知事件:', event.data);
-        this.handleScheduleEvent('system-notification', event.data);
+        this.handleNotificationEvent('system-notification', event.data);
       });
 
-      this.eventSource.addEventListener('schedule:reminder-triggered', (event) => {
-        console.log('[SSE Client] 📨 通用提醒事件:', event.data);
-        this.handleScheduleEvent('reminder-triggered', event.data);
+      this.eventSource.addEventListener('notification:reminder-triggered', (event) => {
+        console.log('[SSE Client] 📨 Reminder 触发事件:', event.data);
+        this.handleNotificationEvent('reminder-triggered', event.data);
       });
 
-      this.eventSource.addEventListener('schedule:task-executed', (event) => {
+      this.eventSource.addEventListener('notification:task-executed', (event) => {
         console.log('[SSE Client] ⚡ 任务执行事件:', event.data);
-        this.handleScheduleEvent('task-executed', event.data);
+        this.handleNotificationEvent('task-executed', event.data);
       });
 
       // 连接错误
@@ -160,15 +170,23 @@ export class SSEClient {
   }
 
   /**
-   * 处理调度事件
+   * 处理通知事件
    */
-  private handleScheduleEvent(eventType: string, data: string): void {
+  private handleNotificationEvent(eventType: string, data: string): void {
     try {
       const parsedData = JSON.parse(data);
-      console.log(`[SSE Client] 处理调度事件 ${eventType}:`, parsedData);
+      console.log(`[SSE Client] 处理通知事件 ${eventType}:`, parsedData);
 
       // 根据事件类型转发到前端事件总线
       switch (eventType) {
+        case 'created':
+          eventBus.emit('notification:created', parsedData.data);
+          break;
+
+        case 'sent':
+          eventBus.emit('notification:sent', parsedData.data);
+          break;
+
         case 'popup-reminder':
           // 转发为前端通知事件
           eventBus.emit('ui:show-popup-reminder', parsedData.data);
@@ -191,13 +209,13 @@ export class SSEClient {
           break;
 
         default:
-          console.warn('[SSE Client] 未知调度事件类型:', eventType);
+          console.warn('[SSE Client] 未知通知事件类型:', eventType);
       }
 
       // 同时发送通用的 SSE 事件
-      eventBus.emit(`sse:schedule:${eventType}`, parsedData);
+      eventBus.emit(`sse:notification:${eventType}`, parsedData);
     } catch (error) {
-      console.error('[SSE Client] 处理调度事件失败:', error, data);
+      console.error('[SSE Client] 处理通知事件失败:', error, data);
     }
   }
 

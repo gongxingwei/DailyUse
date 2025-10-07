@@ -138,32 +138,54 @@ class ReminderApiClient {
   // ===== 全局操作 =====
 
   /**
-   * 获取当前活跃的提醒实例
+   * 获取即将到来的提醒任务
+   * 使用 Schedule 模块的 upcoming API
    */
   async getActiveReminders(params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
   }): Promise<ReminderContracts.ReminderInstanceListResponse> {
-    const data = await apiClient.get(`${this.baseUrl}/active`, { params });
-    console.log('📋 getActiveReminders 响应:', data);
+    // ✅ 使用新的 Schedule 模块 API
+    const withinMinutes = 60 * 24; // 默认获取未来 24 小时的任务
+    const data = await apiClient.get('/schedules/upcoming', {
+      params: {
+        withinMinutes,
+        limit: params?.limit || 50,
+      },
+    });
+    console.log('📋 getActiveReminders (Schedule API) 响应:', data);
 
-    // 确保返回的数据结构完整
-    if (!data || typeof data !== 'object') {
+    // 转换 Schedule 响应格式为 Reminder 格式
+    if (!data || !Array.isArray(data.tasks)) {
       return { reminders: [], total: 0, page: 1, limit: params?.limit || 50, hasMore: false };
     }
 
-    // 如果 reminders 字段不存在或不是数组，返回空数据
-    if (!Array.isArray(data.reminders)) {
-      return {
-        reminders: [],
-        total: data.total || 0,
-        page: data.page || 1,
-        limit: data.limit || params?.limit || 50,
-        hasMore: data.hasMore || false,
-      };
-    }
+    // 过滤出提醒类型的任务
+    const reminderTasks = data.tasks.filter(
+      (task: any) => task.type === 'reminder' || task.sourceType === 'reminder',
+    );
 
-    return data;
+    // 转换为 Reminder 格式
+    const reminders = reminderTasks.map((task: any) => ({
+      uuid: task.uuid,
+      templateUuid: task.sourceId,
+      title: task.name || task.title,
+      message: task.description || task.message,
+      scheduledTime: task.nextRunAt || task.scheduledTime,
+      priority: task.priority || 'normal',
+      status: task.status || 'pending',
+      enabled: task.enabled,
+      createdAt: task.createdAt,
+      updatedAt: task.updatedAt,
+    }));
+
+    return {
+      reminders,
+      total: reminderTasks.length,
+      page: 1,
+      limit: params?.limit || 50,
+      hasMore: false,
+    };
   }
 
   /**

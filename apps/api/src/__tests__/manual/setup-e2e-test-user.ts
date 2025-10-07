@@ -93,16 +93,32 @@ async function setupTestUser() {
       'custom',
     ]);
 
+    // 创建完整的通知渠道偏好设置
+    const channelPreferences = {
+      in_app: {
+        enabled: true,
+        types: [], // 空数组表示允许所有 enabledTypes
+        settings: { showPreview: true, displayDuration: 5000 },
+      },
+      sse: {
+        enabled: true,
+        types: [], // 允许所有类型
+      },
+      desktop: {
+        enabled: true,
+        types: [], // 允许所有类型（包括 schedule_reminder）
+      },
+      sound: {
+        enabled: true,
+        types: [], // 允许所有类型
+      },
+    };
+
     await prisma.notificationPreference.create({
       data: {
         accountUuid: account.uuid,
         enabledTypes: defaultEnabledTypes,
-        channelPreferences: JSON.stringify({
-          sse: { enabled: true },
-          in_app: { enabled: true },
-          desktop: { enabled: true },
-          sound: { enabled: true },
-        }),
+        channelPreferences: JSON.stringify(channelPreferences),
       },
     });
 

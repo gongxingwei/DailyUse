@@ -11,3 +11,4 @@ export {
   notificationPreferenceRoutes,
   notificationTemplateRoutes,
 } from './routes/notificationRoutes';
+export { notificationSSERoutes } from './routes/notificationSSERoutes';

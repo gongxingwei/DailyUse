@@ -574,6 +574,13 @@ export class NotificationService implements INotificationService {
     return { ...this.config };
   }
 
+  /**
+   * 获取音频服务实例
+   */
+  getAudioService(): AudioNotificationService {
+    return this.audioService;
+  }
+
   // =============== 统计和历史 ===============
 
   getStats(): NotificationStats {

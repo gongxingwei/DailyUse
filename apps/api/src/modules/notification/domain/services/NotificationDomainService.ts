@@ -84,6 +84,15 @@ export class NotificationDomainService {
       expiresAt: params.expiresAt,
     });
 
+    // 4.5 创建元数据值对象（如果提供了的话）
+    const metadata = params.metadata
+      ? NotificationMetadata.create({
+          sourceType: params.metadata.sourceType || 'system',
+          sourceId: params.metadata.sourceId || params.uuid,
+          additionalData: params.metadata.additionalData,
+        })
+      : undefined;
+
     // 5. 创建通知聚合
     const notification = Notification.create({
       uuid: params.uuid,
@@ -92,7 +101,7 @@ export class NotificationDomainService {
       type: params.type,
       deliveryChannels,
       scheduleTime,
-      metadata: params.metadata,
+      metadata,
       templateUuid: params.templateUuid,
       actions: params.actions,
     });

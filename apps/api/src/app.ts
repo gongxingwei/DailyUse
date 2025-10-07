@@ -19,6 +19,7 @@ import {
   notificationRoutes,
   notificationPreferenceRoutes,
   notificationTemplateRoutes,
+  notificationSSERoutes,
 } from './modules/notification/interface';
 import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
 import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
@@ -143,6 +144,10 @@ api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
 
 // 挂载主题管理路由 - 需要认证
 api.use('/theme', authMiddleware, themeRoutes);
+
+// 挂载通知 SSE 路由 - 必须在 /notifications 之前！（避免被 authMiddleware 拦截）
+// token 通过 URL 参数传递，路由内部自行验证
+api.use('/notifications/sse', notificationSSERoutes);
 
 // 挂载通知管理路由 - 需要认证
 api.use('/notifications', authMiddleware, notificationRoutes);
