@@ -255,6 +255,74 @@ router.get('/account-stats', ReminderTemplateController.getAccountStats);
 
 /**
  * @swagger
+ * /reminders/templates/upcoming:
+ *   get:
+ *     tags: [Reminder Templates]
+ *     summary: 获取即将到来的提醒列表
+ *     description: |
+ *       根据所有启用的模板计算即将到来的提醒，不依赖 Schedule 模块。
+ *
+ *       **特性**：
+ *       - 仅计算启用的模板
+ *       - 支持自定义时间窗口（默认24小时）
+ *       - 支持限制返回数量
+ *       - 按触发时间排序
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: 返回的最大数量
+ *       - in: query
+ *         name: timeWindow
+ *         schema:
+ *           type: integer
+ *           default: 24
+ *         description: 时间窗口（小时）
+ *     responses:
+ *       200:
+ *         description: 即将到来的提醒列表
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       templateUuid:
+ *                         type: string
+ *                       templateName:
+ *                         type: string
+ *                       message:
+ *                         type: string
+ *                       nextTriggerTime:
+ *                         type: string
+ *                         format: date-time
+ *                       priority:
+ *                         type: string
+ *                       category:
+ *                         type: string
+ *                       tags:
+ *                         type: array
+ *                         items:
+ *                           type: string
+ *                       icon:
+ *                         type: string
+ *                       color:
+ *                         type: string
+ */
+router.get('/upcoming', ReminderTemplateController.getUpcomingReminders);
+
+/**
+ * @swagger
  * /reminders/templates/{templateUuid}:
  *   get:
  *     tags: [Reminder Templates]

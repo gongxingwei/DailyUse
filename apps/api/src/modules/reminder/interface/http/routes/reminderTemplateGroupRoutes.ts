@@ -206,6 +206,17 @@ router.delete('/:groupUuid', ReminderTemplateGroupController.deleteTemplateGroup
  *         schema:
  *           type: string
  *         description: 分组UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [enabled]
+ *             properties:
+ *               enabled:
+ *                 type: boolean
+ *                 description: 是否启用
  *     responses:
  *       200:
  *         description: 状态切换成功
@@ -221,5 +232,49 @@ router.delete('/:groupUuid', ReminderTemplateGroupController.deleteTemplateGroup
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 router.patch('/:groupUuid/toggle', ReminderTemplateGroupController.toggleTemplateGroupEnabled);
+
+/**
+ * @swagger
+ * /reminders/groups/{groupUuid}/enable-mode:
+ *   put:
+ *     tags: [Reminder Template Groups]
+ *     summary: 更新分组启用模式
+ *     description: 更新提醒模板分组的启用模式 (group/individual)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: groupUuid
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 分组UUID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [enableMode]
+ *             properties:
+ *               enableMode:
+ *                 type: string
+ *                 enum: [group, individual]
+ *                 description: 启用模式
+ *     responses:
+ *       200:
+ *         description: 启用模式更新成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ApiResponse'
+ *       404:
+ *         description: 分组不存在
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+router.put('/:groupUuid/enable-mode', ReminderTemplateGroupController.updateGroupEnableMode);
 
 export default router;

@@ -2,11 +2,7 @@ import { ref, computed, onMounted } from 'vue';
 import { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderWebApplicationService } from '../../application/services/ReminderWebApplicationService';
 import { useReminderStore } from '../stores/reminderStore';
-import type {
-  ReminderTemplateGroup,
-  ReminderInstance,
-  ReminderTemplate,
-} from '@dailyuse/domain-client';
+import { ReminderTemplateGroup, ReminderInstance, ReminderTemplate } from '@dailyuse/domain-client';
 
 /**
  * useReminder Composable
@@ -277,11 +273,15 @@ export function useReminder() {
   /**
    * 切换模板启用状态
    */
-  const toggleTemplateEnabled = async (uuid: string): Promise<void> => {
-    const template = reminderStore.getReminderTemplateByUuid(uuid);
-    if (template) {
-      await updateTemplate(uuid, { enabled: !template.enabled });
-    }
+  /**
+   * 切换模板启用状态
+   */
+  const toggleTemplateEnabled = async (
+    uuid: string,
+    enabled: boolean,
+  ): Promise<ReminderTemplate> => {
+    const templateData = await reminderService.toggleTemplateEnabled(uuid, enabled);
+    return ReminderTemplate.fromApiResponse(templateData);
   };
 
   // ===== 提醒实例操作 =====

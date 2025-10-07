@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ReminderTemplateGroupApplicationService } from '../../../application/services/ReminderTemplateGroupApplicationService';
+import { ReminderTemplateGroupDomainService } from '../../../domain/services/ReminderTemplateGroupDomainService';
+import { ReminderContainer } from '../../../infrastructure/di/ReminderContainer';
 import type { ReminderContracts } from '@dailyuse/contracts';
 import {
   type SuccessResponse,
@@ -22,6 +24,9 @@ const logger = createLogger('ReminderTemplateGroupController');
  */
 export class ReminderTemplateGroupController {
   private static applicationService = new ReminderTemplateGroupApplicationService();
+  private static groupDomainService = new ReminderTemplateGroupDomainService(
+    ReminderContainer.getInstance().getReminderTemplateGroupAggregateRepository(),
+  );
   private static responseBuilder = createResponseBuilder();
 
   /**
@@ -327,21 +332,41 @@ export class ReminderTemplateGroupController {
     try {
       const { groupUuid } = req.params;
       const { enabled } = req.body;
+      const accountUuid = (req as any).user?.accountUuid;
+
+      if (!accountUuid) {
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: 'User not authenticated',
+        });
+      }
+
+      if (typeof enabled !== 'boolean') {
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.BAD_REQUEST,
+          message: 'enabled must be a boolean',
+        });
+      }
 
       logger.info('Toggling reminder template group enabled status', { groupUuid, enabled });
 
-      // TODO: 实现 toggleReminderTemplateGroupEnabled 方法
-      // await ReminderTemplateGroupController.applicationService.toggleReminderTemplateGroupEnabled(
-      //   groupUuid,
-      //   enabled,
-      // );
-      logger.warn('toggleReminderTemplateGroupEnabled not yet implemented');
+      // 调用 Domain Service 切换启用状态
+      const updatedGroup =
+        await ReminderTemplateGroupController.groupDomainService.toggleGroupEnabled(
+          accountUuid,
+          groupUuid,
+          enabled,
+        );
 
-      logger.info('Reminder template group status toggled successfully', { groupUuid, enabled });
+      logger.info('Reminder template group status toggled successfully', {
+        groupUuid,
+        enabled,
+        affectedTemplates: updatedGroup.templates?.length || 0,
+      });
 
       return ReminderTemplateGroupController.responseBuilder.sendSuccess(
         res,
-        { groupUuid, enabled },
+        updatedGroup,
         enabled ? 'Group enabled successfully' : 'Group disabled successfully',
       );
     } catch (error: unknown) {
@@ -360,6 +385,71 @@ export class ReminderTemplateGroupController {
       return ReminderTemplateGroupController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to toggle group status',
+      });
+    }
+  }
+
+  /**
+   * 更新分组启用模式
+   * PUT /reminders/groups/:groupUuid/enable-mode
+   */
+  static async updateGroupEnableMode(req: Request, res: Response): Promise<Response> {
+    try {
+      const { groupUuid } = req.params;
+      const { enableMode } = req.body;
+      const accountUuid = (req as any).user?.accountUuid;
+
+      if (!accountUuid) {
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: 'User not authenticated',
+        });
+      }
+
+      if (!enableMode || !['group', 'individual'].includes(enableMode)) {
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.BAD_REQUEST,
+          message: 'enableMode must be "group" or "individual"',
+        });
+      }
+
+      logger.info('Updating reminder template group enable mode', { groupUuid, enableMode });
+
+      // 调用 Domain Service 更新启用模式
+      const updatedGroup =
+        await ReminderTemplateGroupController.groupDomainService.updateGroupEnableMode(
+          accountUuid,
+          groupUuid,
+          enableMode,
+        );
+
+      logger.info('Reminder template group enable mode updated successfully', {
+        groupUuid,
+        enableMode,
+        affectedTemplates: updatedGroup.templates?.length || 0,
+      });
+
+      return ReminderTemplateGroupController.responseBuilder.sendSuccess(
+        res,
+        updatedGroup,
+        `Enable mode updated to ${enableMode}`,
+      );
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        (error.message.includes('not found') || error.message.includes('不存在'))
+      ) {
+        logger.error(error.message, error);
+        return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+          code: ResponseCode.NOT_FOUND,
+          message: error.message,
+        });
+      }
+
+      logger.error(error instanceof Error ? error.message : 'Failed to update enable mode', error);
+      return ReminderTemplateGroupController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to update enable mode',
       });
     }
   }

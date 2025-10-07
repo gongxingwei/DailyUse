@@ -29,8 +29,8 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   protected _name: string;
   protected _description?: string;
   protected _message: string;
-  protected _enabled: boolean;
-  protected _selfEnabled: boolean;
+  protected _enabled: boolean; // 实际启用状态（可能受组控制）
+  protected _selfEnabled: boolean; // 模板自身的启用偏好
   protected _importanceLevel: ImportanceLevel;
   protected _timeConfig: ReminderTimeConfig;
   protected _priority: ReminderPriority;
@@ -241,13 +241,50 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
     return this._lifecycle.triggerCount;
   }
 
+  // ===== 组状态管理 =====
+
+  /**
+   * 直接更新 enabled 状态（由 Group 调用）
+   * 当组的启用状态或模式变化时，组会调用此方法同步模板的 enabled 值
+   */
+  updateEnabled(enabled: boolean, context?: { source: 'group' | 'self' }): void {
+    const oldEnabled = this._enabled;
+
+    if (oldEnabled === enabled) {
+      return;
+    }
+
+    this._enabled = enabled;
+    this.updateVersion();
+
+    // 发布状态变化事件
+    this.addDomainEvent({
+      eventType: 'ReminderTemplateStatusChanged',
+      aggregateId: this.uuid,
+      occurredOn: new Date(),
+      payload: {
+        templateUuid: this.uuid,
+        oldEnabled,
+        newEnabled: this._enabled,
+        template: this.toDTO(),
+      },
+    });
+  }
+
   // ===== 共享计算属性 =====
 
   /**
-   * 检查模板是否实际启用（考虑自身和组的启用状态）
+   * 检查模板是否实际启用
    */
   get isActuallyEnabled(): boolean {
-    return this._enabled && this._selfEnabled;
+    return this._enabled;
+  }
+
+  /**
+   * 实际启用状态（向后兼容）
+   */
+  get effectiveEnabled(): boolean {
+    return this._enabled;
   }
 
   /**
@@ -540,31 +577,28 @@ export abstract class ReminderTemplateCore extends AggregateRoot {
   }
 
   /**
-   * 切换自身启用状态
+   * 更新自身启用状态（用户直接修改模板的启用偏好）
+   * 注意：
+   * - 如果模板无组，则 enabled 也会更新
+   * - 如果模板有组且处于 INDIVIDUAL 模式，enabled 也会更新
+   * - 如果模板有组且处于 GROUP 模式，enabled 不变（由组控制）
+   */
+  updateSelfEnabled(selfEnabled: boolean, context?: { accountUuid: string }): void {
+    this._selfEnabled = selfEnabled;
+
+    // 如果无组，直接同步 enabled
+    if (!this._groupUuid) {
+      this.updateEnabled(selfEnabled, { source: 'self' });
+    }
+    // 如果有组，enabled 由组根据模式决定是否更新
+    // 这里不处理，由组的 updateEnableMode 或者外部逻辑处理
+  }
+
+  /**
+   * @deprecated 使用 updateSelfEnabled 代替
    */
   toggleSelfEnabled(selfEnabled: boolean, context?: { accountUuid: string }): void {
-    const oldSelfEnabled = this._selfEnabled;
-    this._selfEnabled = selfEnabled;
-    this.updateVersion();
-
-    // 自身启用状态变化也影响整体启用状态
-    const oldActualEnabled = oldSelfEnabled && this._enabled;
-    const newActualEnabled = selfEnabled && this._enabled;
-
-    if (oldActualEnabled !== newActualEnabled) {
-      this.addDomainEvent({
-        eventType: 'ReminderTemplateStatusChanged',
-        aggregateId: this.uuid,
-        occurredOn: new Date(),
-        payload: {
-          templateUuid: this.uuid,
-          oldEnabled: oldActualEnabled,
-          newEnabled: newActualEnabled,
-          template: this.toDTO(),
-          accountUuid: context?.accountUuid,
-        },
-      });
-    }
+    this.updateSelfEnabled(selfEnabled, context);
   }
 
   /**

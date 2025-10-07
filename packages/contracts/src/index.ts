@@ -31,3 +31,10 @@ export * from './modules/index';
 export * from './modules/goal/enums';
 export * from './modules/schedule/enums';
 export * from './modules/notification/enums';
+export {
+  ReminderTimeConfigType,
+  ReminderDurationUnit,
+  ReminderPriority,
+  ReminderStatus,
+  ReminderTemplateEnableMode,
+} from './modules/reminder/enums';

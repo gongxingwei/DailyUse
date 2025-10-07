@@ -4,6 +4,7 @@ import type {
   ReminderTemplate,
 } from '@dailyuse/domain-server';
 import { ReminderTemplate as ReminderTemplateAggregate } from '@dailyuse/domain-server';
+import { eventBus } from '@dailyuse/utils';
 
 /**
  * ReminderTemplate 领域服务
@@ -258,22 +259,55 @@ export class ReminderTemplateDomainService {
   /**
    * 切换模板启用状态
    */
-  async toggleTemplateEnabled(
+  /**
+   * 更新模板自身的启用状态（用户直接修改）
+   */
+  async updateTemplateSelfEnabled(
     accountUuid: string,
     uuid: string,
-    enabled: boolean,
+    selfEnabled: boolean,
   ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
     const template = await this.templateRepository.getTemplateByUuid(accountUuid, uuid);
     if (!template) {
       throw new Error(`Template ${uuid} not found`);
     }
 
-    // 使用聚合根方法切换启用状态
-    template.toggleEnabled(enabled, { accountUuid });
+    const oldEnabled = template.enabled;
+
+    // 使用新的 updateSelfEnabled 方法
+    template.updateSelfEnabled(selfEnabled, { accountUuid });
 
     // 持久化更新
     const updatedTemplate = await this.templateRepository.saveTemplate(accountUuid, template);
 
+    // 🔥 手动发布领域事件（因为 Repository 没有集成 EventBus）
+    if (oldEnabled !== updatedTemplate.enabled) {
+      await eventBus.publish({
+        eventType: 'ReminderTemplateStatusChanged',
+        aggregateId: uuid,
+        occurredOn: new Date(),
+        payload: {
+          templateUuid: uuid,
+          templateName: updatedTemplate.name,
+          oldEnabled,
+          newEnabled: updatedTemplate.enabled,
+          template: updatedTemplate.toClient(),
+          accountUuid,
+        },
+      });
+    }
+
     return updatedTemplate.toClient();
+  }
+
+  /**
+   * @deprecated 使用 updateTemplateSelfEnabled 代替
+   */
+  async toggleTemplateEnabled(
+    accountUuid: string,
+    uuid: string,
+    enabled: boolean,
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
+    return this.updateTemplateSelfEnabled(accountUuid, uuid, enabled);
   }
 }

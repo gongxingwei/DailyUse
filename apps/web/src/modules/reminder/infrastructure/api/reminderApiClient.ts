@@ -1,4 +1,5 @@
 import type { ReminderContracts } from '@dailyuse/contracts';
+import { ReminderPriority, ReminderStatus } from '@dailyuse/contracts';
 import { apiClient } from '@/shared/api/instances';
 
 /**
@@ -46,6 +47,17 @@ class ReminderApiClient {
    */
   async deleteReminderTemplate(templateUuid: string): Promise<void> {
     await apiClient.delete(`${this.baseUrl}/${templateUuid}`);
+  }
+
+  /**
+   * 切换模板启用状态（更新 selfEnabled）
+   */
+  async toggleTemplateEnabled(
+    templateUuid: string,
+    enabled: boolean,
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
+    const data = await apiClient.patch(`${this.baseUrl}/${templateUuid}/toggle`, { enabled });
+    return data;
   }
 
   /**
@@ -139,51 +151,60 @@ class ReminderApiClient {
 
   /**
    * 获取即将到来的提醒任务
-   * 使用 Schedule 模块的 upcoming API
+   * ⚠️ 架构变更：使用 Reminder 模块内部计算，不再依赖 Schedule 模块
    */
   async getActiveReminders(params?: {
     limit?: number;
+    timeWindow?: number; // 时间窗口（小时）
     priority?: ReminderContracts.ReminderPriority;
   }): Promise<ReminderContracts.ReminderInstanceListResponse> {
-    // ✅ 使用新的 Schedule 模块 API
-    const withinMinutes = 60 * 24; // 默认获取未来 24 小时的任务
-    const data = await apiClient.get('/schedules/upcoming', {
+    // ✅ 使用 Reminder 模块的新 API
+    const data = await apiClient.get(`${this.baseUrl}/upcoming`, {
       params: {
-        withinMinutes,
-        limit: params?.limit || 50,
+        limit: params?.limit || 10,
+        timeWindow: params?.timeWindow || 24, // 默认 24 小时
       },
     });
-    console.log('📋 getActiveReminders (Schedule API) 响应:', data);
+    console.log('📋 getActiveReminders (Reminder API) 响应:', data);
 
-    // 转换 Schedule 响应格式为 Reminder 格式
-    if (!data || !Array.isArray(data.tasks)) {
-      return { reminders: [], total: 0, page: 1, limit: params?.limit || 50, hasMore: false };
+    // 后端返回的格式已经是 UpcomingReminderItem[]
+    // 转换为 ReminderInstanceListResponse 格式
+    if (!data || !Array.isArray(data)) {
+      return { reminders: [], total: 0, page: 1, limit: params?.limit || 10, hasMore: false };
     }
 
-    // 过滤出提醒类型的任务
-    const reminderTasks = data.tasks.filter(
-      (task: any) => task.type === 'reminder' || task.sourceType === 'reminder',
-    );
-
-    // 转换为 Reminder 格式
-    const reminders = reminderTasks.map((task: any) => ({
-      uuid: task.uuid,
-      templateUuid: task.sourceId,
-      title: task.name || task.title,
-      message: task.description || task.message,
-      scheduledTime: task.nextRunAt || task.scheduledTime,
-      priority: task.priority || 'normal',
-      status: task.status || 'pending',
-      enabled: task.enabled,
-      createdAt: task.createdAt,
-      updatedAt: task.updatedAt,
+    // 转换为 ReminderInstance 格式
+    const reminders = data.map((item: any) => ({
+      uuid: item.templateUuid, // 使用 templateUuid 作为实例 uuid
+      templateUuid: item.templateUuid,
+      title: item.templateName,
+      message: item.message,
+      scheduledTime: item.nextTriggerTime,
+      priority: item.priority || ReminderPriority.NORMAL,
+      status: ReminderStatus.PENDING,
+      enabled: true,
+      metadata: {
+        category: item.category,
+        tags: item.tags,
+        sourceType: 'template' as const,
+        sourceId: item.templateUuid,
+      },
+      snoozeHistory: [],
+      version: 1,
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+      // 客户端 DTO 需要的额外字段
+      isOverdue: new Date(item.nextTriggerTime) < new Date(),
+      timeUntil: Math.max(0, new Date(item.nextTriggerTime).getTime() - Date.now()),
+      formattedTime: new Date(item.nextTriggerTime).toLocaleString(),
+      currentSnoozeCount: 0,
     }));
 
     return {
       reminders,
-      total: reminderTasks.length,
+      total: reminders.length,
       page: 1,
-      limit: params?.limit || 50,
+      limit: params?.limit || 10,
       hasMore: false,
     };
   }

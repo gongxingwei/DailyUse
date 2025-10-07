@@ -328,21 +328,28 @@ export class ReminderTemplateController {
     try {
       const { templateUuid } = req.params;
       const { enabled } = req.body;
+      const accountUuid = ReminderTemplateController.extractAccountUuid(req);
 
-      logger.info('Toggling reminder template enabled status', { templateUuid, enabled });
+      logger.info('Updating reminder template self-enabled status', { templateUuid, enabled });
 
-      // TODO: 实现 toggleReminderTemplateEnabled
-      // await ReminderTemplateController.applicationService.toggleReminderTemplateEnabled(
-      //   templateUuid,
-      //   enabled,
-      // );
-      logger.warn('toggleReminderTemplateEnabled not yet implemented');
+      // 获取应用服务
+      const applicationService = await ReminderTemplateController.getApplicationService();
 
-      logger.info('Reminder template status toggled successfully', { templateUuid, enabled });
+      // 使用 updateTemplateSelfEnabled 方法更新模板自身的启用状态
+      const updatedTemplate = await applicationService.updateTemplateSelfEnabled(
+        accountUuid,
+        templateUuid,
+        enabled,
+      );
+
+      logger.info('Reminder template self-enabled status updated successfully', {
+        templateUuid,
+        enabled,
+      });
 
       return ReminderTemplateController.responseBuilder.sendSuccess(
         res,
-        { templateUuid, enabled },
+        updatedTemplate,
         enabled ? 'Template enabled successfully' : 'Template disabled successfully',
       );
     } catch (error: unknown) {
@@ -357,13 +364,10 @@ export class ReminderTemplateController {
         });
       }
 
-      logger.error(
-        error instanceof Error ? error.message : 'Failed to toggle template status',
-        error,
-      );
+      logger.error('Failed to update reminder template self-enabled status', error);
       return ReminderTemplateController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to toggle template status',
+        message: 'Failed to update template status',
       });
     }
   }
@@ -620,6 +624,54 @@ export class ReminderTemplateController {
       return ReminderTemplateController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve schedule status',
+      });
+    }
+  }
+
+  /**
+   * 获取即将到来的提醒列表
+   * GET /reminders/templates/upcoming
+   *
+   * ⚠️ 架构变更：不依赖 Schedule 模块
+   * 直接在 Reminder 模块内部根据 timeConfig 计算下次触发时间
+   */
+  static async getUpcomingReminders(req: Request, res: Response): Promise<Response> {
+    try {
+      const accountUuid = ReminderTemplateController.extractAccountUuid(req);
+      const limit = parseInt(req.query.limit as string) || 10;
+      const timeWindow = parseInt(req.query.timeWindow as string) || 24;
+
+      logger.info('Getting upcoming reminders', {
+        accountUuid,
+        limit,
+        timeWindow,
+      });
+
+      const applicationService = await ReminderTemplateController.getApplicationService();
+      const upcomingReminders = await applicationService.getUpcomingReminders(
+        accountUuid,
+        limit,
+        timeWindow,
+      );
+
+      logger.info('Upcoming reminders retrieved successfully', {
+        accountUuid,
+        count: upcomingReminders.length,
+      });
+
+      return ReminderTemplateController.responseBuilder.sendSuccess(
+        res,
+        upcomingReminders,
+        'Upcoming reminders retrieved successfully',
+      );
+    } catch (error: unknown) {
+      logger.error(
+        error instanceof Error ? error.message : 'Failed to retrieve upcoming reminders',
+        error,
+      );
+      return ReminderTemplateController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: error instanceof Error ? error.message : 'Failed to retrieve upcoming reminders',
       });
     }
   }

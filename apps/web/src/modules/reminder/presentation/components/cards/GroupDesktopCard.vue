@@ -98,6 +98,7 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import { ReminderTemplateGroup, ReminderTemplate } from '@dailyuse/domain-client'
+import { ReminderContracts } from '@dailyuse/contracts'
 import { reminderService } from '../../../application/services/ReminderWebApplicationService'
 import { useSnackbar } from '@/shared/composables/useSnackbar'
 import TemplateCard from './TemplateDesktopCard.vue'
@@ -155,15 +156,21 @@ const close = () => {
 const toggleGroupEnabled = async () => {
     if (!group.value) return
 
+    const previousValue = groupEnabled.value
+
     try {
+        // 调用 API 更新分组启用状态
         await reminderService.toggleReminderTemplateGroupEnabled(group.value.uuid, groupEnabled.value)
         snackbar.showSuccess(`模板组已${groupEnabled.value ? '启用' : '禁用'}`)
 
-        // 更新本地状态 - 调用 toggleEnabled 方法而不是直接赋值
-        group.value.toggleEnabled(groupEnabled.value)
+        // 刷新分组数据以获取最新状态（包括子模板的状态更新）
+        const refreshedGroup = await reminderService.getReminderTemplateGroup(group.value.uuid)
+        if (refreshedGroup) {
+            group.value = refreshedGroup
+        }
     } catch (error) {
         // 回滚状态
-        groupEnabled.value = !groupEnabled.value
+        groupEnabled.value = previousValue
         snackbar.showError('操作失败：' + (error instanceof Error ? error.message : '未知错误'))
     }
 }
@@ -234,15 +241,16 @@ const createTemplate = async () => {
 
     try {
         const templateResponse = await reminderService.createReminderTemplate({
+            uuid: crypto.randomUUID(), // 前端生成 UUID
             name: '新建模板',
             description: '',
             message: '提醒消息',
             groupUuid: group.value.uuid,
             timeConfig: {
-                type: 'daily',
+                type: ReminderContracts.ReminderTimeConfigType.DAILY,
                 times: ['09:00']
             },
-            priority: 'normal',
+            priority: ReminderContracts.ReminderPriority.NORMAL,
             category: '默认',
             tags: []
         })
@@ -274,19 +282,23 @@ const duplicateTemplate = async (template: ReminderTemplate) => {
         // 创建一个复制的模板，转换timeConfig类型
         let timeConfig: any
 
-        if (template.timeConfig.type === 'daily' ||
-            template.timeConfig.type === 'weekly' ||
-            template.timeConfig.type === 'monthly' ||
-            template.timeConfig.type === 'custom') {
+        if (template.timeConfig.type === ReminderContracts.ReminderTimeConfigType.DAILY ||
+            template.timeConfig.type === ReminderContracts.ReminderTimeConfigType.WEEKLY ||
+            template.timeConfig.type === ReminderContracts.ReminderTimeConfigType.MONTHLY ||
+            template.timeConfig.type === ReminderContracts.ReminderTimeConfigType.CUSTOM) {
             timeConfig = template.timeConfig
         } else {
             // 对于不支持的类型，使用默认的daily配置
-            timeConfig = { type: 'daily', times: ['09:00'] }
+            timeConfig = {
+                type: ReminderContracts.ReminderTimeConfigType.DAILY,
+                times: ['09:00']
+            }
         }
 
         const duplicatedTemplateResponse = await reminderService.createReminderTemplate({
+            uuid: crypto.randomUUID(), // 前端生成 UUID
             name: `${template.name} (副本)`,
-            description: template.description,
+            description: template.description || '',
             message: template.message,
             groupUuid: group.value.uuid,
             timeConfig,
@@ -312,13 +324,20 @@ const duplicateTemplate = async (template: ReminderTemplate) => {
 }
 
 const toggleTemplateEnabled = async (template: ReminderTemplate) => {
+    const newEnabled = !template.enabled
+
     try {
-        const newEnabled = !template.enabled
-
-        // 直接调用模板的方法，实际应用中可能需要调用API
-        template.toggleEnabled(newEnabled)
-
+        // 调用 toggle API 更新模板启用状态
+        await reminderService.toggleTemplateEnabled(template.uuid, newEnabled)
         snackbar.showSuccess(`模板已${newEnabled ? '启用' : '禁用'}`)
+
+        // 刷新分组数据以获取最新状态
+        if (group.value) {
+            const refreshedGroup = await reminderService.getReminderTemplateGroup(group.value.uuid)
+            if (refreshedGroup) {
+                group.value = refreshedGroup
+            }
+        }
     } catch (error) {
         snackbar.showError('操作失败：' + (error instanceof Error ? error.message : '未知错误'))
     }

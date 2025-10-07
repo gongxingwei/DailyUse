@@ -214,11 +214,12 @@ export abstract class ReminderTemplateGroupCore extends AggregateRoot {
 
     // 根据启用模式处理组内模板
     if (this._enableMode === ReminderContracts.ReminderTemplateEnableMode.GROUP) {
-      // 组模式：组的启用状态影响所有模板
+      // 组模式：直接修改所有模板的 enabled 值
       this.templates.forEach((template) => {
-        template.toggleEnabled(enabled);
+        template.updateEnabled(enabled, { source: 'group' });
       });
     }
+    // INDIVIDUAL 模式：不修改模板的 enabled，模板使用自己的 selfEnabled
   }
 
   /**
@@ -233,12 +234,16 @@ export abstract class ReminderTemplateGroupCore extends AggregateRoot {
     this._enableMode = enableMode;
     this.updateTimestamp();
 
-    // 如果切换到组模式，同步所有模板的启用状态
-    if (enableMode === ReminderContracts.ReminderTemplateEnableMode.GROUP) {
-      this.templates.forEach((template) => {
-        template.toggleEnabled(this._enabled);
-      });
-    }
+    // 根据新模式同步模板的 enabled 值
+    this.templates.forEach((template) => {
+      if (enableMode === ReminderContracts.ReminderTemplateEnableMode.GROUP) {
+        // 切换到 GROUP 模式：所有模板跟随组的 enabled
+        template.updateEnabled(this._enabled, { source: 'group' });
+      } else {
+        // 切换到 INDIVIDUAL 模式：模板使用自己的 selfEnabled
+        template.updateEnabled(template.selfEnabled, { source: 'self' });
+      }
+    });
   }
 
   /**

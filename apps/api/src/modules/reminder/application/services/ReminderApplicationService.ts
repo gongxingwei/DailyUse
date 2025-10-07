@@ -2,6 +2,10 @@ import type { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderContainer } from '../../infrastructure/di/ReminderContainer';
 import { ReminderTemplateDomainService } from '../../domain/services/ReminderTemplateDomainService';
 import { ReminderTemplateGroupDomainService } from '../../domain/services/ReminderTemplateGroupDomainService';
+import {
+  UpcomingReminderCalculator,
+  type UpcomingReminderItem,
+} from '../../domain/services/UpcomingReminderCalculator';
 import type {
   IReminderTemplateAggregateRepository,
   IReminderTemplateGroupAggregateRepository,
@@ -25,6 +29,7 @@ export class ReminderApplicationService {
   private static instance: ReminderApplicationService;
   private templateDomainService: ReminderTemplateDomainService;
   private groupDomainService: ReminderTemplateGroupDomainService;
+  private upcomingCalculator: UpcomingReminderCalculator;
   private templateRepository: IReminderTemplateAggregateRepository;
   private groupRepository: IReminderTemplateGroupAggregateRepository;
   private eventEmitter?: EventEmitter;
@@ -39,6 +44,7 @@ export class ReminderApplicationService {
     this.eventEmitter = eventEmitter;
     this.templateDomainService = new ReminderTemplateDomainService(templateRepository);
     this.groupDomainService = new ReminderTemplateGroupDomainService(groupRepository);
+    this.upcomingCalculator = new UpcomingReminderCalculator();
   }
 
   /**
@@ -170,6 +176,35 @@ export class ReminderApplicationService {
   }
 
   /**
+   * 更新模板自身的启用状态（用户直接修改）
+   */
+  async updateTemplateSelfEnabled(
+    accountUuid: string,
+    uuid: string,
+    selfEnabled: boolean,
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
+    const result = await this.templateDomainService.updateTemplateSelfEnabled(
+      accountUuid,
+      uuid,
+      selfEnabled,
+    );
+
+    // 发送领域事件通知其他模块
+    if (this.eventEmitter) {
+      this.eventEmitter.emit('ReminderTemplateStatusChanged', {
+        aggregateId: uuid,
+        payload: {
+          templateUuid: uuid,
+          accountUuid,
+          selfEnabled,
+        },
+      });
+    }
+
+    return result;
+  }
+
+  /**
    * 删除模板
    */
   async deleteTemplate(accountUuid: string, uuid: string): Promise<boolean> {
@@ -264,6 +299,46 @@ export class ReminderApplicationService {
     groupOrders: Array<{ uuid: string; order: number }>,
   ): Promise<boolean> {
     return this.groupDomainService.updateGroupOrder(accountUuid, groupOrders);
+  }
+
+  // ========== 即将到来的提醒 ==========
+
+  /**
+   * 获取即将到来的提醒列表
+   *
+   * @param accountUuid - 账户UUID
+   * @param limit - 返回的最大数量，默认10
+   * @param timeWindow - 时间窗口（小时），默认24小时
+   * @returns 排序后的即将到来的提醒列表
+   */
+  async getUpcomingReminders(
+    accountUuid: string,
+    limit: number = 10,
+    timeWindow: number = 24,
+  ): Promise<UpcomingReminderItem[]> {
+    // 获取所有模板（不过滤启用状态，由 calculator 处理）
+    const { templates } = await this.templateDomainService.getAllTemplates(accountUuid, {});
+
+    // 使用计算器获取即将到来的提醒
+    return this.upcomingCalculator.calculateUpcomingReminders(templates, limit, timeWindow);
+  }
+
+  /**
+   * 获取单个模板的下次触发时间
+   *
+   * @param accountUuid - 账户UUID
+   * @param templateUuid - 模板UUID
+   * @returns 下次触发时间，如果模板禁用或不存在则返回null
+   */
+  async getTemplateNextTriggerTime(
+    accountUuid: string,
+    templateUuid: string,
+  ): Promise<Date | null> {
+    const template = await this.templateDomainService.getTemplateByUuid(accountUuid, templateUuid);
+    if (!template) {
+      return null;
+    }
+    return this.upcomingCalculator.getNextTriggerTime(template);
   }
 
   // TODO: 添加 Instance 相关方法

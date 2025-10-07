@@ -217,6 +217,33 @@ export class ReminderWebApplicationService {
   }
 
   /**
+   * 切换模板启用状态（更新 selfEnabled）
+   */
+  async toggleTemplateEnabled(
+    uuid: string,
+    enabled: boolean,
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
+    try {
+      this.reminderStore.setLoading(true);
+      this.reminderStore.setError(null);
+
+      const templateData = await reminderApiClient.toggleTemplateEnabled(uuid, enabled);
+
+      // 转换为客户端实体并更新 store
+      const template = ReminderTemplate.fromApiResponse(templateData);
+      this.reminderStore.addOrUpdateReminderTemplate(template);
+
+      return templateData;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '切换模板状态失败';
+      this.reminderStore.setError(errorMessage);
+      throw error;
+    } finally {
+      this.reminderStore.setLoading(false);
+    }
+  }
+
+  /**
    * 移动提醒模板到指定分组
    */
   async moveTemplateToGroup(templateUuid: string, targetGroupUuid: string): Promise<void> {

@@ -161,7 +161,7 @@ const enabled = ref(false)
 
 // 服务
 const snackbar = useSnackbar()
-const { deleteTemplate: deleteTemplateAction } = useReminder()
+const { deleteTemplate: deleteTemplateAction, updateTemplate, toggleTemplateEnabled: toggleTemplateEnabledAction } = useReminder()
 
 // 计算属性
 const priorityColor = computed(() => {
@@ -247,13 +247,25 @@ const close = () => {
 const toggleEnabled = async () => {
     if (!template.value) return
 
+    const previousValue = enabled.value
+
     try {
-        // 直接调用模板的方法，实际应用中可能需要调用API
-        template.value.toggleEnabled(enabled.value)
+        // 调用 toggle API 更新模板启用状态（修改 selfEnabled）
+        const updatedTemplate = await toggleTemplateEnabledAction(
+            template.value.uuid,
+            enabled.value
+        )
+
+        // 更新本地模板数据
+        if (updatedTemplate) {
+            template.value = updatedTemplate
+            enabled.value = template.value.enabled
+        }
+
         snackbar.showSuccess(`提醒模板已${enabled.value ? '启用' : '禁用'}`)
     } catch (error) {
         // 回滚状态
-        enabled.value = !enabled.value
+        enabled.value = previousValue
         snackbar.showError('操作失败：' + (error instanceof Error ? error.message : '未知错误'))
     }
 }
