@@ -47,6 +47,8 @@ model Account {
   sessions               UserSession[]
   scheduleTasks          ScheduleTask[]
   scheduleExecutions     ScheduleExecution[]
+  notifications          Notification[]
+  notificationPreference NotificationPreference?
 
   @@map("accounts")
 }
@@ -867,4 +869,108 @@ model UserThemePreference {
   @@index([accountUuid])
   @@index([preferredMode])
   @@map("user_theme_preferences")
+}
+
+// ========== Notification Module ==========
+
+model Notification {
+  uuid          String    @id @default(cuid())
+  accountUuid   String    @map("account_uuid")
+  templateUuid  String?   @map("template_uuid")
+  title         String
+  content       String    @db.Text
+  type          String
+  priority      String
+  status        String    @default("pending")
+  channels      String    @default("[]") // JSON array
+  icon          String?
+  image         String?
+  actions       String?   @db.Text // JSON array
+  scheduledAt   DateTime? @map("scheduled_at")
+  sentAt        DateTime? @map("sent_at")
+  readAt        DateTime? @map("read_at")
+  dismissedAt   DateTime? @map("dismissed_at")
+  expiresAt     DateTime? @map("expires_at")
+  metadata      String?   @db.Text // JSON
+  version       Int       @default(1)
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  account          Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  template         NotificationTemplate? @relation(fields: [templateUuid], references: [uuid], onDelete: SetNull)
+  deliveryReceipts DeliveryReceipt[]
+
+  @@index([accountUuid])
+  @@index([templateUuid])
+  @@index([type])
+  @@index([status])
+  @@index([priority])
+  @@index([scheduledAt])
+  @@index([sentAt])
+  @@index([createdAt])
+  @@index([accountUuid, status])
+  @@index([accountUuid, type])
+  @@map("notifications")
+}
+
+model NotificationTemplate {
+  uuid            String   @id @default(cuid())
+  name            String   @unique
+  type            String
+  titleTemplate   String   @map("title_template")
+  contentTemplate String   @map("content_template") @db.Text
+  icon            String?
+  defaultPriority String   @map("default_priority")
+  defaultChannels String   @default("[]") @map("default_channels") // JSON array
+  defaultActions  String?  @map("default_actions") @db.Text // JSON array
+  variables       String   @default("[]") // JSON array
+  enabled         Boolean  @default(true)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  notifications Notification[]
+
+  @@index([name])
+  @@index([type])
+  @@index([enabled])
+  @@map("notification_templates")
+}
+
+model NotificationPreference {
+  uuid               String   @id @default(cuid())
+  accountUuid        String   @unique @map("account_uuid")
+  enabledTypes       String   @default("[]") @map("enabled_types") // JSON array
+  channelPreferences String   @default("{}") @map("channel_preferences") @db.Text // JSON
+  maxNotifications   Int      @default(100) @map("max_notifications")
+  autoArchiveDays    Int      @default(30) @map("auto_archive_days")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@map("notification_preferences")
+}
+
+model DeliveryReceipt {
+  uuid             String    @id @default(cuid())
+  notificationUuid String    @map("notification_uuid")
+  channel          String
+  status           String    @default("pending")
+  sentAt           DateTime? @map("sent_at")
+  deliveredAt      DateTime? @map("delivered_at")
+  failureReason    String?   @map("failure_reason") @db.Text
+  retryCount       Int       @default(0) @map("retry_count")
+  metadata         String?   @db.Text // JSON
+
+  // Relations
+  notification Notification @relation(fields: [notificationUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([notificationUuid])
+  @@index([channel])
+  @@index([status])
+  @@map("delivery_receipts")
 }

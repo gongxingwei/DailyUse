@@ -15,6 +15,7 @@ import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
 import { scheduleRoutes } from './modules/schedule';
+import { notificationRoutes, notificationPreferenceRoutes } from './modules/notification/interface';
 import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
 import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
 import { createEditorRoutes, EditorAggregateController } from './modules/editor';
@@ -138,6 +139,10 @@ api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
 
 // 挂载主题管理路由 - 需要认证
 api.use('/theme', authMiddleware, themeRoutes);
+
+// 挂载通知管理路由 - 需要认证
+api.use('/notifications', authMiddleware, notificationRoutes);
+api.use('/notification-preferences', authMiddleware, notificationPreferenceRoutes);
 
 // Setup event system - 设置事件系统
 // 初始化事件发布器

@@ -8,6 +8,7 @@ import {
   NotificationPriority,
   NotificationStatus,
   NotificationType,
+  DeliveryStatus,
 } from './enums';
 
 export interface NotificationTemplatePersistenceDTO {
@@ -18,8 +19,9 @@ export interface NotificationTemplatePersistenceDTO {
   contentTemplate: string;
   icon?: string;
   defaultPriority: NotificationPriority;
-  defaultChannels: NotificationChannel[];
-  defaultActions?: NotificationActionPersistenceDTO[];
+  defaultChannels: string; // JSON string of NotificationChannel[]
+  defaultActions?: string; // JSON string of NotificationActionPersistenceDTO[]
+  variables: string; // JSON string of string[]
   enabled: number; // 0 or 1
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
@@ -27,22 +29,24 @@ export interface NotificationTemplatePersistenceDTO {
 
 export interface NotificationPersistenceDTO {
   uuid: string;
+  accountUuid: string;
   templateUuid?: string;
   title: string;
   content: string;
   type: NotificationType;
   priority: NotificationPriority;
   status: NotificationStatus;
-  channels: NotificationChannel[];
+  channels: string; // JSON string of NotificationChannel[]
   icon?: string;
   image?: string;
-  actions?: NotificationActionPersistenceDTO[];
-  targetUser?: string;
+  actions?: string; // JSON string of NotificationActionPersistenceDTO[]
   scheduledAt?: number; // timestamp
   sentAt?: number; // timestamp
   readAt?: number; // timestamp
+  dismissedAt?: number; // timestamp
   expiresAt?: number; // timestamp
   metadata?: string; // JSON string
+  version: number;
   createdAt: number; // timestamp
   updatedAt: number; // timestamp
 }
@@ -52,20 +56,35 @@ export interface NotificationActionPersistenceDTO {
   title: string;
   icon?: string;
   type: NotificationActionType;
+  payload?: string; // JSON string
 }
 
-export interface NotificationQueuePersistenceDTO {
+export interface DeliveryReceiptPersistenceDTO {
   uuid: string;
-  name: string;
-  maxLength: number;
-  processingInterval: number;
-  maxRetries: number;
-  enabled: number; // 0 or 1
-  currentLength: number;
-  isProcessing: number; // 0 or 1
-  lastProcessedAt?: number; // timestamp
+  notificationUuid: string;
+  channel: NotificationChannel;
+  status: DeliveryStatus;
+  sentAt?: number; // timestamp
+  deliveredAt?: number; // timestamp
+  failureReason?: string;
+  retryCount: number;
+  metadata?: string; // JSON string
 }
 
+export interface NotificationPreferencePersistenceDTO {
+  uuid: string;
+  accountUuid: string;
+  enabledTypes: string; // JSON string of NotificationType[]
+  channelPreferences: string; // JSON string
+  maxNotifications: number;
+  autoArchiveDays: number;
+  createdAt: number; // timestamp
+  updatedAt: number; // timestamp
+}
+
+/**
+ * @deprecated 使用 NotificationPreferencePersistenceDTO 替代
+ */
 export interface NotificationSubscriptionPersistenceDTO {
   uuid: string;
   userId: string;
@@ -77,6 +96,9 @@ export interface NotificationSubscriptionPersistenceDTO {
   updatedAt: number; // timestamp
 }
 
+/**
+ * @deprecated
+ */
 export interface NotificationSettingsPersistenceDTO {
   enabled: number; // 0 or 1
   channels: NotificationChannel[];
@@ -87,4 +109,19 @@ export interface NotificationSettingsPersistenceDTO {
   displayDuration: number;
   autoClose: number; // 0 or 1
   maxNotifications: number;
+}
+
+/**
+ * @deprecated
+ */
+export interface NotificationQueuePersistenceDTO {
+  uuid: string;
+  name: string;
+  maxLength: number;
+  processingInterval: number;
+  maxRetries: number;
+  enabled: number; // 0 or 1
+  currentLength: number;
+  isProcessing: number; // 0 or 1
+  lastProcessedAt?: number; // timestamp
 }

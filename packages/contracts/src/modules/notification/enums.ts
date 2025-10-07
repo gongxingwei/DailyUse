@@ -9,6 +9,9 @@ export enum NotificationType {
   ERROR = 'error',
   REMINDER = 'reminder',
   SYSTEM = 'system',
+  ALERT = 'alert',
+  MESSAGE = 'message',
+  UPDATE = 'update',
 }
 
 export enum NotificationStatus {
@@ -29,6 +32,7 @@ export enum NotificationPriority {
 
 export enum NotificationChannel {
   IN_APP = 'in_app',
+  SSE = 'sse',
   SYSTEM = 'system',
   EMAIL = 'email',
   SMS = 'sms',
@@ -36,9 +40,9 @@ export enum NotificationChannel {
 }
 
 export enum NotificationActionType {
-  PRIMARY = 'primary',
-  SECONDARY = 'secondary',
-  DANGER = 'danger',
+  NAVIGATE = 'navigate',
+  EXECUTE = 'execute',
+  DISMISS = 'dismiss',
 }
 
 export enum NotificationSortField {
@@ -46,9 +50,14 @@ export enum NotificationSortField {
   UPDATED_AT = 'updatedAt',
   PRIORITY = 'priority',
   STATUS = 'status',
+  SENT_AT = 'sentAt',
+  READ_AT = 'readAt',
 }
 
-export enum SortOrder {
-  ASC = 'asc',
-  DESC = 'desc',
+export enum DeliveryStatus {
+  PENDING = 'pending',
+  SENT = 'sent',
+  DELIVERED = 'delivered',
+  FAILED = 'failed',
+  RETRYING = 'retrying',
 }

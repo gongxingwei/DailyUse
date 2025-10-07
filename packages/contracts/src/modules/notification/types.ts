@@ -78,6 +78,8 @@ export interface INotificationTemplate {
   defaultChannels: NotificationChannel[];
   /** 默认动作 */
   defaultActions?: NotificationAction[];
+  /** 模板变量名称列表 */
+  variables: string[];
   /** 是否启用 */
   enabled: boolean;
   /** 创建时间 */
@@ -92,6 +94,8 @@ export interface INotificationTemplate {
 export interface INotification {
   /** 通知UUID */
   uuid: string;
+  /** 账户UUID */
+  accountUuid: string;
   /** 关联模板UUID */
   templateUuid?: string;
   /** 标题 */
@@ -112,18 +116,24 @@ export interface INotification {
   image?: string;
   /** 动作列表 */
   actions?: NotificationAction[];
-  /** 目标用户 */
-  targetUser?: string;
-  /** 发送时间 */
+  /** 调度发送时间 */
   scheduledAt?: Date;
   /** 实际发送时间 */
   sentAt?: Date;
   /** 阅读时间 */
   readAt?: Date;
+  /** 忽略时间 */
+  dismissedAt?: Date;
   /** 过期时间 */
   expiresAt?: Date;
   /** 元数据 */
-  metadata?: Record<string, any>;
+  metadata?: {
+    sourceType?: string;
+    sourceId?: string;
+    additionalData?: Record<string, any>;
+  };
+  /** 版本号 */
+  version: number;
   /** 创建时间 */
   createdAt: Date;
   /** 更新时间 */
@@ -155,26 +165,48 @@ export interface INotificationQueue {
 }
 
 /**
- * 通知订阅接口
+ * 通知偏好接口 (重命名自 NotificationSubscription)
  */
-export interface INotificationSubscription {
-  /** 订阅UUID */
+export interface INotificationPreference {
+  /** 偏好UUID */
   uuid: string;
-  /** 用户ID */
-  userId: string;
-  /** 订阅类型 */
-  notificationType: NotificationType[];
-  /** 订阅渠道 */
-  channels: NotificationChannel[];
-  /** 通知设置 */
-  settings: NotificationSettings;
-  /** 是否启用 */
-  enabled: boolean;
+  /** 账户UUID */
+  accountUuid: string;
+  /** 启用的通知类型 */
+  enabledTypes: NotificationType[];
+  /** 渠道偏好设置 */
+  channelPreferences: {
+    [key in NotificationChannel]?: {
+      enabled: boolean;
+      types?: NotificationType[];
+      quietHours?: {
+        enabled: boolean;
+        startTime: string;
+        endTime: string;
+      };
+      settings?: {
+        showPreview?: boolean;
+        playSound?: boolean;
+        soundFile?: string;
+        vibrate?: boolean;
+        displayDuration?: number;
+      };
+    };
+  };
+  /** 最大通知数量 */
+  maxNotifications: number;
+  /** 自动归档天数 */
+  autoArchiveDays: number;
   /** 创建时间 */
   createdAt: Date;
   /** 更新时间 */
   updatedAt: Date;
 }
+
+/**
+ * @deprecated 使用 INotificationPreference 替代
+ */
+export type INotificationSubscription = INotificationPreference;
 
 /**
  * 通知统计信息接口

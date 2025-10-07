@@ -30,3 +30,4 @@ export * from './modules/index';
 // 导出模块的枚举类型
 export * from './modules/goal/enums';
 export * from './modules/schedule/enums';
+export * from './modules/notification/enums';
