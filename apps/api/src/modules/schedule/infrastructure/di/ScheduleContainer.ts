@@ -2,30 +2,34 @@ import { ScheduleDomainService } from '../../domain/services/ScheduleDomainServi
 import { ScheduleApplicationService } from '../../application/services/ScheduleApplicationService';
 import { PrismaScheduleTaskRepository } from '../repositories/PrismaScheduleTaskRepository';
 import { RecurringScheduleTaskRepository } from '../repositories/RecurringScheduleTaskRepository';
-import { RecurringScheduleTaskDomainService } from '@dailyuse/domain-server';
+import { ScheduleTaskRepository } from '../repositories/ScheduleTaskRepository';
+import {
+  RecurringScheduleTaskDomainService,
+  ScheduleTaskDomainService,
+} from '@dailyuse/domain-server';
 import { PrismaClient } from '@prisma/client';
-import type { RecurringScheduleTask } from '@dailyuse/domain-core';
+import type { RecurringScheduleTask, ScheduleTask } from '@dailyuse/domain-core';
 
 // Mock SchedulerService for testing - 避免测试环境中的 NestJS 依赖
 class MockSchedulerService {
-  private tasks: Map<string, RecurringScheduleTask> = new Map();
+  private tasks: Map<string, RecurringScheduleTask | ScheduleTask> = new Map();
   private timers: Map<string, NodeJS.Timeout> = new Map();
   private isRunning = false;
 
   async onModuleInit() {}
   async onModuleDestroy() {}
-  async registerTask(task: RecurringScheduleTask): Promise<void> {}
+  async registerTask(task: RecurringScheduleTask | ScheduleTask): Promise<void> {}
   async unregisterTask(taskUuid: string): Promise<void> {}
-  async updateTask(task: RecurringScheduleTask): Promise<void> {}
+  async updateTask(task: RecurringScheduleTask | ScheduleTask): Promise<void> {}
   async pauseTask(taskUuid: string): Promise<void> {}
   async resumeTask(taskUuid: string): Promise<void> {}
   async enableTask(taskUuid: string): Promise<void> {}
   async disableTask(taskUuid: string): Promise<void> {}
   async executeTask(taskUuid: string): Promise<void> {}
-  getTask(taskUuid: string): RecurringScheduleTask | undefined {
+  getTask(taskUuid: string): RecurringScheduleTask | ScheduleTask | undefined {
     return undefined;
   }
-  getAllTasks(): RecurringScheduleTask[] {
+  getAllTasks(): Array<RecurringScheduleTask | ScheduleTask> {
     return [];
   }
   getTasksStatus(): any[] {
@@ -34,7 +38,7 @@ class MockSchedulerService {
   calculateNextRunTime(cronExpression: string, from?: Date): Date {
     return new Date();
   }
-  private scheduleTask(task: RecurringScheduleTask): Promise<void> {
+  private scheduleTask(task: RecurringScheduleTask | ScheduleTask): Promise<void> {
     return Promise.resolve();
   }
   private stopAllTasks(): void {}
@@ -49,9 +53,11 @@ export class ScheduleContainer {
   private _prismaClient: PrismaClient;
   private _scheduleRepository?: PrismaScheduleTaskRepository;
   private _recurringScheduleTaskRepository?: RecurringScheduleTaskRepository;
+  private _scheduleTaskRepository?: ScheduleTaskRepository;
   private _scheduleDomainService?: ScheduleDomainService;
   private _schedulerService?: MockSchedulerService;
   private _recurringScheduleTaskDomainService?: RecurringScheduleTaskDomainService;
+  private _scheduleTaskDomainService?: ScheduleTaskDomainService;
   private _scheduleApplicationService?: ScheduleApplicationService;
 
   constructor(prismaClient: PrismaClient) {
@@ -85,6 +91,13 @@ export class ScheduleContainer {
     return this._recurringScheduleTaskRepository;
   }
 
+  get scheduleTaskRepository(): ScheduleTaskRepository {
+    if (!this._scheduleTaskRepository) {
+      this._scheduleTaskRepository = new ScheduleTaskRepository(this._prismaClient);
+    }
+    return this._scheduleTaskRepository;
+  }
+
   get schedulerService(): MockSchedulerService {
     if (!this._schedulerService) {
       this._schedulerService = new MockSchedulerService();
@@ -107,6 +120,16 @@ export class ScheduleContainer {
       );
     }
     return this._recurringScheduleTaskDomainService;
+  }
+
+  get scheduleTaskDomainService(): ScheduleTaskDomainService {
+    if (!this._scheduleTaskDomainService) {
+      this._scheduleTaskDomainService = new ScheduleTaskDomainService(
+        this.scheduleTaskRepository,
+        this.schedulerService as any,
+      );
+    }
+    return this._scheduleTaskDomainService;
   }
 
   get scheduleApplicationService(): ScheduleApplicationService {

@@ -8,7 +8,15 @@
 import type { EventHandler, DomainEvent } from '@dailyuse/domain-core';
 import { ScheduleContracts } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
-import type { ScheduleDomainService } from '../../domain/services/ScheduleDomainService';
+import {
+  dailyAtTimeToCron,
+  weeklyAtTimeToCron,
+  monthlyAtTimeToCron,
+  everyNHoursToCron,
+  everyNMinutesToCron,
+  dateTimeToCron,
+} from '@dailyuse/domain-server';
+import type { ScheduleTaskDomainService } from '@dailyuse/domain-server';
 
 const logger = createLogger('ReminderTemplateCreatedHandler');
 
@@ -50,7 +58,7 @@ interface ReminderTemplateCreatedEvent extends DomainEvent {
  *   → ScheduleDomainService.createScheduleTask()
  */
 export class ReminderTemplateCreatedHandler implements EventHandler {
-  constructor(private readonly scheduleDomainService: ScheduleDomainService) {}
+  constructor(private readonly scheduleTaskDomainService: ScheduleTaskDomainService) {}
 
   /**
    * 获取此处理器关注的事件类型
@@ -81,10 +89,10 @@ export class ReminderTemplateCreatedHandler implements EventHandler {
     }
 
     try {
-      // 解析 timeConfig 生成调度配置
-      const scheduleConfig = this.parseTimeConfig(template);
+      // 解析 timeConfig 生成 Cron 表达式
+      const cronExpression = this.parseTimeConfig(template);
 
-      if (!scheduleConfig) {
+      if (!cronExpression) {
         logger.warn('无法解析 timeConfig，跳过创建调度任务', {
           templateUuid: template.uuid,
           timeConfig: template.timeConfig,
@@ -92,59 +100,30 @@ export class ReminderTemplateCreatedHandler implements EventHandler {
         return;
       }
 
-      // 创建调度任务
-      const createRequest: ScheduleContracts.CreateScheduleTaskRequestDto = {
+      // 创建调度任务（使用新的统一 Cron 设计）
+      const createRequest: ScheduleContracts.CreateScheduleTaskDTO = {
         name: `Reminder: ${template.name}`,
         description: template.description || template.message,
-        taskType: ScheduleContracts.ScheduleTaskType.GENERAL_REMINDER,
-
-        // 调度时间配置
-        ...scheduleConfig,
-
-        // 载荷：包含提醒数据
-        payload: {
-          type: ScheduleContracts.ScheduleTaskType.TASK_REMINDER,
-          data: {
-            sourceType: 'reminder',
-            sourceId: template.uuid,
-            reminderData: {
-              title: template.name,
-              message: template.message,
-              priority: template.priority || 'NORMAL',
-              notificationSettings: template.notificationSettings,
-            },
-          },
-        },
-
-        // 优先级
-        priority: this.mapPriority(template.priority),
-
-        // 提醒配置
-        alertConfig: this.buildAlertConfig(template.notificationSettings) || {
-          methods: [ScheduleContracts.AlertMethod.POPUP],
-          allowSnooze: true,
-        },
-
-        // 元数据
+        cronExpression,
+        sourceModule: 'reminder',
+        sourceEntityId: template.uuid,
         metadata: {
-          sourceModule: 'reminder',
-          sourceEntityId: template.uuid,
+          accountUuid,
           templateName: template.name,
+          message: template.message,
+          priority: template.priority || 'NORMAL',
+          notificationSettings: template.notificationSettings,
           ...template.metadata,
         },
-
-        tags: ['reminder', 'auto-created'],
+        enabled: template.enabled,
       };
 
-      const scheduleTask = await this.scheduleDomainService.createScheduleTask(
-        accountUuid,
-        createRequest,
-      );
+      const scheduleTask = await this.scheduleTaskDomainService.createTask(createRequest);
 
       logger.info('✅ 调度任务创建成功', {
         templateUuid: template.uuid,
         scheduleTaskUuid: scheduleTask.uuid,
-        scheduledTime: scheduleTask.scheduledTime,
+        cronExpression: scheduleTask.cronExpression,
       });
     } catch (error) {
       logger.error('❌ 创建调度任务失败', {
@@ -159,203 +138,121 @@ export class ReminderTemplateCreatedHandler implements EventHandler {
   }
 
   /**
-   * 解析 timeConfig 生成调度配置
+   * 解析 timeConfig 生成 Cron 表达式
+   *
+   * @description 使用统一的 Cron 设计，将所有时间配置转换为 Cron 表达式
    */
   private parseTimeConfig(
     template: ReminderTemplateCreatedEvent['payload']['template'],
-  ): Partial<ScheduleContracts.CreateScheduleTaskRequestDto> | null {
+  ): string | null {
     const { timeConfig } = template;
 
     if (!timeConfig) {
+      logger.warn('模板缺少 timeConfig', { templateUuid: template.uuid });
       return null;
     }
 
-    // 处理 CRON 类型
-    if (timeConfig.type === 'CRON' && timeConfig.cronExpression) {
-      return {
-        scheduledTime: new Date(), // 立即开始
-        recurrence: {
-          type: ScheduleContracts.RecurrenceType.CUSTOM,
-          interval: 1,
+    try {
+      // 处理 CRON 类型 - 直接使用提供的 cron 表达式
+      if (timeConfig.type === 'CRON' && timeConfig.cronExpression) {
+        logger.debug('使用 CRON 表达式', {
+          templateUuid: template.uuid,
           cronExpression: timeConfig.cronExpression,
-        },
-      };
-    }
+        });
+        return timeConfig.cronExpression;
+      }
 
-    // 处理 RELATIVE 类型（相对时间）
-    if (timeConfig.type === 'RELATIVE' && timeConfig.schedule) {
-      const { pattern, interval } = timeConfig.schedule;
+      // 处理 RELATIVE 类型（相对时间）
+      if (timeConfig.type === 'RELATIVE' && timeConfig.schedule) {
+        const { pattern, interval } = timeConfig.schedule;
+        const int = interval || 1;
 
-      // 转换为 cron 表达式
-      const cronExpression = this.relativeToCron(pattern, interval);
+        let cronExpression: string | null = null;
 
-      if (cronExpression) {
-        return {
-          scheduledTime: new Date(), // 立即开始
-          recurrence: {
-            type: this.mapRecurrenceType(pattern),
-            interval: interval || 1,
+        switch (pattern) {
+          case 'daily':
+            cronExpression = dailyAtTimeToCron(9, 0); // 默认每天 9:00
+            break;
+          case 'weekly':
+            cronExpression = weeklyAtTimeToCron(int, 9, 0); // 每周指定天 9:00
+            break;
+          case 'monthly':
+            cronExpression = monthlyAtTimeToCron(int, 9, 0); // 每月指定日 9:00
+            break;
+          case 'hourly':
+            cronExpression = everyNHoursToCron(int, 0); // 每 N 小时
+            break;
+          case 'minutely':
+            cronExpression = everyNMinutesToCron(int); // 每 N 分钟
+            break;
+          default:
+            logger.warn('未知的 RELATIVE pattern', { pattern, templateUuid: template.uuid });
+            return null;
+        }
+
+        logger.debug('转换 RELATIVE 时间为 Cron', {
+          templateUuid: template.uuid,
+          pattern,
+          interval: int,
+          cronExpression,
+        });
+        return cronExpression;
+      }
+
+      // 处理 ABSOLUTE 类型（绝对时间）
+      if (timeConfig.type === 'ABSOLUTE' && timeConfig.schedule) {
+        const { pattern, endCondition } = timeConfig.schedule;
+
+        // ONCE 类型：一次性任务
+        if (pattern === 'once' && endCondition?.endDate) {
+          const targetDate = new Date(endCondition.endDate);
+          const cronExpression = dateTimeToCron(targetDate);
+          logger.debug('转换 ONCE 任务为 Cron', {
+            templateUuid: template.uuid,
+            targetDate: targetDate.toISOString(),
             cronExpression,
-          },
-        };
+          });
+          return cronExpression;
+        }
+
+        // 其他重复类型
+        let cronExpression: string | null = null;
+
+        switch (pattern) {
+          case 'daily':
+            cronExpression = dailyAtTimeToCron(9, 0);
+            break;
+          case 'weekly':
+            cronExpression = weeklyAtTimeToCron(1, 9, 0); // 默认周一 9:00
+            break;
+          case 'monthly':
+            cronExpression = monthlyAtTimeToCron(1, 9, 0); // 默认每月1号 9:00
+            break;
+          default:
+            logger.warn('未知的 ABSOLUTE pattern', { pattern, templateUuid: template.uuid });
+            return null;
+        }
+
+        logger.debug('转换 ABSOLUTE 时间为 Cron', {
+          templateUuid: template.uuid,
+          pattern,
+          cronExpression,
+        });
+        return cronExpression;
       }
+
+      logger.warn('无法识别的 timeConfig 类型', {
+        templateUuid: template.uuid,
+        type: timeConfig.type,
+      });
+      return null;
+    } catch (error) {
+      logger.error('转换 timeConfig 为 Cron 表达式失败', {
+        templateUuid: template.uuid,
+        timeConfig,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return null;
     }
-
-    // 处理 ABSOLUTE 类型（绝对时间）
-    if (timeConfig.type === 'ABSOLUTE' && timeConfig.schedule) {
-      const { pattern, endCondition } = timeConfig.schedule;
-
-      // ONCE 类型：一次性任务
-      if (pattern === 'once' && endCondition?.endDate) {
-        return {
-          scheduledTime: new Date(endCondition.endDate),
-          recurrence: {
-            type: ScheduleContracts.RecurrenceType.NONE,
-            interval: 1,
-          },
-        };
-      }
-
-      // 其他绝对时间类型
-      const cronExpression = this.absoluteToCron(pattern, timeConfig.schedule);
-      if (cronExpression) {
-        return {
-          scheduledTime: endCondition?.endDate ? new Date(endCondition.endDate) : new Date(),
-          recurrence: {
-            type: this.mapRecurrenceType(pattern),
-            interval: 1,
-            cronExpression,
-          },
-        };
-      }
-    }
-
-    return null;
-  }
-
-  /**
-   * 将相对时间转换为 cron 表达式
-   */
-  private relativeToCron(pattern: string, interval?: number): string | null {
-    const int = interval || 1;
-
-    switch (pattern) {
-      case 'daily':
-        return '0 9 * * *'; // 每天 9:00
-      case 'weekly':
-        return `0 9 * * ${int}`; // 每周指定天
-      case 'monthly':
-        return `0 9 ${int} * *`; // 每月指定日
-      case 'hourly':
-        return `0 */${int} * * *`; // 每 N 小时
-      case 'minutely':
-        return `*/${int} * * * *`; // 每 N 分钟
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * 将绝对时间转换为 cron 表达式
-   */
-  private absoluteToCron(pattern: string, schedule: any): string | null {
-    switch (pattern) {
-      case 'daily':
-        return '0 9 * * *';
-      case 'weekly':
-        return '0 9 * * 1'; // 每周一
-      case 'monthly':
-        return '0 9 1 * *'; // 每月1号
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * 映射重复类型
-   */
-  private mapRecurrenceType(pattern: string): ScheduleContracts.RecurrenceType {
-    const map: Record<string, ScheduleContracts.RecurrenceType> = {
-      once: ScheduleContracts.RecurrenceType.NONE,
-      daily: ScheduleContracts.RecurrenceType.DAILY,
-      weekly: ScheduleContracts.RecurrenceType.WEEKLY,
-      monthly: ScheduleContracts.RecurrenceType.MONTHLY,
-      yearly: ScheduleContracts.RecurrenceType.YEARLY,
-      hourly: ScheduleContracts.RecurrenceType.CUSTOM,
-      minutely: ScheduleContracts.RecurrenceType.CUSTOM,
-    };
-
-    return map[pattern] || ScheduleContracts.RecurrenceType.CUSTOM;
-  }
-
-  /**
-   * 映射优先级
-   */
-  private mapPriority(priority?: string): ScheduleContracts.SchedulePriority {
-    const map: Record<string, ScheduleContracts.SchedulePriority> = {
-      LOW: ScheduleContracts.SchedulePriority.LOW,
-      NORMAL: ScheduleContracts.SchedulePriority.NORMAL,
-      HIGH: ScheduleContracts.SchedulePriority.HIGH,
-      URGENT: ScheduleContracts.SchedulePriority.URGENT,
-    };
-
-    return map[priority || 'NORMAL'] || ScheduleContracts.SchedulePriority.NORMAL;
-  }
-
-  /**
-   * 构建提醒配置
-   */
-  private buildAlertConfig(notificationSettings?: any): ScheduleContracts.IAlertConfig | undefined {
-    if (!notificationSettings) {
-      return {
-        methods: [
-          ScheduleContracts.AlertMethod.POPUP,
-          ScheduleContracts.AlertMethod.SYSTEM_NOTIFICATION,
-        ],
-        allowSnooze: true,
-        snoozeOptions: [5, 10, 15, 30],
-      };
-    }
-
-    return {
-      methods: this.mapAlertMethods(notificationSettings.channels || []),
-      soundVolume: notificationSettings.soundVolume,
-      popupDuration: notificationSettings.popupDuration,
-      allowSnooze: notificationSettings.allowSnooze !== false,
-      snoozeOptions: notificationSettings.snoozeOptions || [5, 10, 15, 30],
-      customActions: notificationSettings.customActions,
-    };
-  }
-
-  /**
-   * 映射提醒方法
-   */
-  private mapAlertMethods(channels: string[]): ScheduleContracts.AlertMethod[] {
-    const methodMap: Record<string, ScheduleContracts.AlertMethod> = {
-      DESKTOP: ScheduleContracts.AlertMethod.POPUP,
-      SOUND: ScheduleContracts.AlertMethod.SOUND,
-      EMAIL: ScheduleContracts.AlertMethod.EMAIL,
-      SMS: ScheduleContracts.AlertMethod.SMS,
-      IN_APP: ScheduleContracts.AlertMethod.POPUP,
-    };
-
-    const methods: ScheduleContracts.AlertMethod[] = [];
-
-    channels.forEach((channel) => {
-      const method = methodMap[channel];
-      if (method && !methods.includes(method)) {
-        methods.push(method);
-      }
-    });
-
-    // 默认至少有一个方法
-    if (methods.length === 0) {
-      methods.push(
-        ScheduleContracts.AlertMethod.POPUP,
-        ScheduleContracts.AlertMethod.SYSTEM_NOTIFICATION,
-      );
-    }
-
-    return methods;
   }
 }

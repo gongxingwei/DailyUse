@@ -12,6 +12,7 @@ export { ScheduleDomainService } from './domain/index';
 // 基础设施层
 export { PrismaScheduleTaskRepository } from './infrastructure/repositories/PrismaScheduleTaskRepository';
 export { RecurringScheduleTaskRepository } from './infrastructure/repositories/RecurringScheduleTaskRepository';
+export { ScheduleTaskRepository } from './infrastructure/repositories/ScheduleTaskRepository';
 export { ScheduleContainer } from './infrastructure/di/ScheduleContainer';
 
 // 接口层

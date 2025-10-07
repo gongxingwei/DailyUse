@@ -318,7 +318,7 @@ export interface ScheduleTaskClientDTO extends ScheduleTaskResponseDto {
   canDelete: boolean;
 }
 
-// ========== RecurringScheduleTask DTOs ==========
+// ========== ScheduleTask DTOs (Unified Design) ==========
 
 /**
  * 执行历史记录
@@ -335,21 +335,21 @@ export interface ScheduleExecutionHistory {
 }
 
 /**
- * 定时任务配置
+ * 统一的调度任务 DTO
+ *
+ * 使用 Cron 表达式统一支持单次和重复任务：
+ * - 单次任务: 使用特定日期时间的 Cron 表达式（如 "0 10 15 1 * 2025" 表示 2025年1月15日10:00）
+ * - 重复任务: 使用标准 Cron 表达式（如 "0 9 * * 1-5" 表示工作日每天9:00）
  */
-export interface RecurringScheduleTaskDTO {
+export interface ScheduleTaskDTO {
   /** 任务 UUID */
   uuid: string;
   /** 任务名称 */
   name: string;
   /** 任务描述 */
   description?: string;
-  /** 触发器类型 */
-  triggerType: import('./enums').TriggerType;
-  /** Cron 表达式（triggerType 为 CRON 时必填） */
-  cronExpression?: string;
-  /** 一次性触发时间（triggerType 为 ONCE 时必填） */
-  scheduledTime?: Date;
+  /** Cron 表达式（支持单次和重复任务） */
+  cronExpression: string;
   /** 任务状态 */
   status: import('./enums').ScheduleTaskStatus;
   /** 是否启用 */
@@ -382,12 +382,8 @@ export interface CreateScheduleTaskDTO {
   name: string;
   /** 任务描述 */
   description?: string;
-  /** 触发器类型 */
-  triggerType: import('./enums').TriggerType;
   /** Cron 表达式 */
-  cronExpression?: string;
-  /** 一次性触发时间 */
-  scheduledTime?: Date;
+  cronExpression: string;
   /** 关联的源模块 */
   sourceModule: string;
   /** 关联的源实体 ID */
@@ -408,8 +404,6 @@ export interface UpdateScheduleTaskDTO {
   description?: string;
   /** Cron 表达式 */
   cronExpression?: string;
-  /** 一次性触发时间 */
-  scheduledTime?: Date;
   /** 任务元数据 */
   metadata?: Record<string, any>;
   /** 是否启用 */
@@ -417,3 +411,15 @@ export interface UpdateScheduleTaskDTO {
   /** 任务状态 */
   status?: import('./enums').ScheduleTaskStatus;
 }
+
+// ========== Deprecated DTOs (For Backward Compatibility) ==========
+
+/**
+ * @deprecated Use ScheduleTaskDTO instead
+ */
+export type RecurringScheduleTaskDTO = ScheduleTaskDTO & {
+  /** @deprecated Use cronExpression instead */
+  triggerType?: 'cron';
+  /** @deprecated Merged into cronExpression */
+  scheduledTime?: Date;
+};

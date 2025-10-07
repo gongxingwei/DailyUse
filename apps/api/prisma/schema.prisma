@@ -45,7 +45,7 @@ model Account {
   taskTemplates          TaskTemplate[]
   userProfile            UserProfile?
   sessions               UserSession[]
-  scheduleTasks          ScheduleTask[]
+  oldScheduleTasks       OldScheduleTask[]
   scheduleExecutions     ScheduleExecution[]
   notifications          Notification[]
   notificationPreference NotificationPreference?
@@ -534,6 +534,36 @@ model ReminderTemplate {
 
 /// RecurringScheduleTask - 可重复的调度任务
 /// 支持 cron 表达式和一次性任务，用于替代 ReminderInstance 和 ReminderSchedule
+// 统一的调度任务模型
+// 使用 Cron 表达式支持单次和重复任务
+// - 单次任务: "0 10 15 1 * 2025" (2025年1月15日10:00执行)
+// - 重复任务: "0 9 * * 1-5" (工作日每天9:00执行)
+model ScheduleTask {
+  uuid             String    @id @default(cuid())
+  name             String
+  description      String?
+  cronExpression   String    @map("cron_expression") // Cron 表达式（统一支持单次和重复任务）
+  status           String    @default("active") // "active" | "paused" | "completed" | "cancelled"
+  enabled          Boolean   @default(true)
+  sourceModule     String    @map("source_module") // 来源模块（如 "reminder"）
+  sourceEntityId   String    @map("source_entity_id") // 来源实体 ID（如 templateUuid）
+  metadata         String    @default("{}") // JSON 元数据
+  nextRunAt        DateTime? @map("next_run_at")
+  lastRunAt        DateTime? @map("last_run_at")
+  executionCount   Int       @default(0) @map("execution_count")
+  executionHistory String    @default("[]") @map("execution_history") // JSON 数组，存储最近 10 次执行记录
+  version          Int       @default(1)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  @@index([sourceModule, sourceEntityId])
+  @@index([status])
+  @@index([enabled])
+  @@index([nextRunAt])
+  @@map("schedule_tasks")
+}
+
+// 旧模型 - 将被迁移到 ScheduleTask
 model RecurringScheduleTask {
   uuid             String    @id @default(cuid())
   name             String
@@ -771,7 +801,8 @@ model EditorFileContent {
   @@map("editor_file_contents")
 }
 
-model ScheduleTask {
+// 旧的 ScheduleTask 模型 - 将被废弃
+model OldScheduleTask {
   uuid            String    @id @default(cuid())
   accountUuid     String    @map("account_uuid")
   title           String
@@ -803,7 +834,7 @@ model ScheduleTask {
   @@index([scheduledTime])
   @@index([nextScheduledAt])
   @@index([priority])
-  @@map("schedule_tasks")
+  @@map("old_schedule_tasks")
 }
 
 model ScheduleExecution {
@@ -821,8 +852,8 @@ model ScheduleExecution {
   updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  task    ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
-  account Account      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  task    OldScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
+  account Account         @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
 
   @@index([taskUuid])
   @@index([accountUuid])

@@ -6,7 +6,7 @@
  */
 
 import type { EventHandler, DomainEvent } from '@dailyuse/domain-core';
-import type { RecurringScheduleTaskDomainService } from '@dailyuse/domain-server';
+import type { ScheduleTaskDomainService } from '@dailyuse/domain-server';
 import { createLogger } from '@dailyuse/utils';
 
 const logger = createLogger('ReminderTemplateStatusChangedHandler');
@@ -34,12 +34,11 @@ interface ReminderTemplateStatusChangedEvent extends DomainEvent {
  *
  * 职责：
  * 1. 监听 ReminderTemplateStatusChanged 事件
- * 2. 查找对应的 RecurringScheduleTask
+ * 2. 查找对应的 ScheduleTask
  * 3. 根据 newEnabled 启用/禁用调度任务
- * 4. 更新 nextRunAt 时间
  */
 export class ReminderTemplateStatusChangedHandler implements EventHandler {
-  constructor(private recurringScheduleTaskDomainService: RecurringScheduleTaskDomainService) {}
+  constructor(private scheduleTaskDomainService: ScheduleTaskDomainService) {}
 
   /**
    * 获取此处理器关注的事件类型
@@ -71,14 +70,11 @@ export class ReminderTemplateStatusChangedHandler implements EventHandler {
         return;
       }
 
-      // 查找关联的 RecurringScheduleTask
-      const tasks = await this.recurringScheduleTaskDomainService.findBySource(
-        'reminder',
-        templateUuid,
-      );
+      // 查找关联的 ScheduleTask
+      const tasks = await this.scheduleTaskDomainService.findBySource('reminder', templateUuid);
 
       if (!tasks || tasks.length === 0) {
-        logger.warn('⚠️ 未找到关联的 RecurringScheduleTask', {
+        logger.warn('⚠️ 未找到关联的 ScheduleTask', {
           sourceModule: 'reminder',
           sourceEntityId: templateUuid,
           templateName,
@@ -92,28 +88,28 @@ export class ReminderTemplateStatusChangedHandler implements EventHandler {
 
         if (newEnabled) {
           // 启用任务
-          await this.recurringScheduleTaskDomainService.updateTask(task.uuid, {
+          await this.scheduleTaskDomainService.updateTask(task.uuid, {
             enabled: true,
           });
-          logger.info('✅ RecurringScheduleTask 已启用', {
+          logger.info('✅ ScheduleTask 已启用', {
             taskUuid: task.uuid,
             taskName: task.name,
             templateUuid,
-            nextRunAt: task.nextRunAt,
+            cronExpression: task.cronExpression,
           });
         } else {
           // 禁用任务
-          await this.recurringScheduleTaskDomainService.updateTask(task.uuid, {
+          await this.scheduleTaskDomainService.updateTask(task.uuid, {
             enabled: false,
           });
-          logger.info('🚫 RecurringScheduleTask 已禁用', {
+          logger.info('🚫 ScheduleTask 已禁用', {
             taskUuid: task.uuid,
             taskName: task.name,
             templateUuid,
           });
         }
 
-        logger.info('💾 RecurringScheduleTask 状态已更新', {
+        logger.info('💾 ScheduleTask 状态已更新', {
           taskUuid: task.uuid,
           oldEnabled: oldTaskEnabled,
           newEnabled: task.enabled,

@@ -99,10 +99,13 @@ export enum ScheduleTaskStatus {
 
 /**
  * 任务触发器类型
+ * @deprecated No longer needed - all tasks use cron expressions
+ * - For single tasks: use specific date-time cron (e.g., "0 10 15 1 * 2025")
+ * - For recurring tasks: use standard cron (e.g., "0 9 * * 1-5")
  */
 export enum TriggerType {
-  /** Cron 表达式 */
+  /** @deprecated All tasks use cron expressions now */
   CRON = 'cron',
-  /** 一次性定时 */
+  /** @deprecated Use cron expression with specific date instead */
   ONCE = 'once',
 }
