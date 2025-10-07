@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { NotificationController } from '../controllers/NotificationController';
 import { NotificationPreferenceController } from '../controllers/NotificationPreferenceController';
+import { NotificationTemplateController } from '../controllers/NotificationTemplateController';
 
 /**
  * @swagger
@@ -9,6 +10,8 @@ import { NotificationPreferenceController } from '../controllers/NotificationPre
  *     description: 通知管理相关接口（DDD 聚合根控制模式）
  *   - name: Notification Preferences
  *     description: 通知偏好设置
+ *   - name: Notification Templates
+ *     description: 通知模板管理
  */
 
 /**
@@ -475,6 +478,287 @@ notificationPreferenceRoutes.patch(
   '/channels/:channel',
   NotificationPreferenceController.updateChannelPreference,
 );
+
+// ============================================================
+// Notification Templates 路由
+// ============================================================
+
+/**
+ * @swagger
+ * /notification-templates:
+ *   post:
+ *     tags: [Notification Templates]
+ *     summary: 创建通知模板
+ *     description: 创建新的通知模板，用于批量生成相似通知
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [uuid, name, type, titleTemplate, contentTemplate, defaultPriority, defaultChannels, variables]
+ *             properties:
+ *               uuid:
+ *                 type: string
+ *                 format: uuid
+ *               name:
+ *                 type: string
+ *                 description: 模板名称（唯一）
+ *               type:
+ *                 type: string
+ *                 enum: [info, success, warning, error, system, task_reminder, goal_milestone, schedule_reminder, notification, custom]
+ *               titleTemplate:
+ *                 type: string
+ *                 description: 标题模板，支持 {{variable}} 变量
+ *               contentTemplate:
+ *                 type: string
+ *                 description: 内容模板，支持 {{variable}} 变量
+ *               defaultPriority:
+ *                 type: string
+ *                 enum: [LOW, NORMAL, HIGH, URGENT]
+ *               defaultChannels:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [in_app, sse, system, email, sms, push]
+ *               variables:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 description: 模板变量列表
+ *               icon:
+ *                 type: string
+ *               defaultActions:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *               enabled:
+ *                 type: boolean
+ *                 default: true
+ *     responses:
+ *       201:
+ *         description: 模板创建成功
+ *       400:
+ *         description: 验证失败或模板名称已存在
+ *   get:
+ *     tags: [Notification Templates]
+ *     summary: 获取模板列表
+ *     description: 查询通知模板列表，支持筛选
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: type
+ *         schema:
+ *           type: string
+ *         description: 按类型筛选
+ *       - in: query
+ *         name: enabled
+ *         schema:
+ *           type: boolean
+ *         description: 按启用状态筛选
+ *       - in: query
+ *         name: nameContains
+ *         schema:
+ *           type: string
+ *         description: 按名称模糊搜索
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 50
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *     responses:
+ *       200:
+ *         description: 模板列表
+ */
+
+/**
+ * @swagger
+ * /notification-templates/{id}:
+ *   get:
+ *     tags: [Notification Templates]
+ *     summary: 获取模板详情
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 模板UUID
+ *     responses:
+ *       200:
+ *         description: 模板详情
+ *       404:
+ *         description: 模板不存在
+ *   put:
+ *     tags: [Notification Templates]
+ *     summary: 更新模板
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               titleTemplate:
+ *                 type: string
+ *               contentTemplate:
+ *                 type: string
+ *               defaultPriority:
+ *                 type: string
+ *               defaultChannels:
+ *                 type: array
+ *               variables:
+ *                 type: array
+ *               icon:
+ *                 type: string
+ *               defaultActions:
+ *                 type: array
+ *     responses:
+ *       200:
+ *         description: 更新成功
+ *       404:
+ *         description: 模板不存在
+ *   delete:
+ *     tags: [Notification Templates]
+ *     summary: 删除模板
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ *       404:
+ *         description: 模板不存在
+ */
+
+/**
+ * @swagger
+ * /notification-templates/{id}/preview:
+ *   post:
+ *     tags: [Notification Templates]
+ *     summary: 预览模板渲染结果
+ *     description: 使用提供的变量预览模板渲染后的标题和内容
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [variables]
+ *             properties:
+ *               variables:
+ *                 type: object
+ *                 description: 变量键值对
+ *                 example:
+ *                   userName: "张三"
+ *                   taskName: "完成报告"
+ *     responses:
+ *       200:
+ *         description: 预览结果
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 title:
+ *                   type: string
+ *                 content:
+ *                   type: string
+ *                 variables:
+ *                   type: object
+ *       404:
+ *         description: 模板不存在
+ *       400:
+ *         description: 缺少必需变量
+ */
+
+/**
+ * @swagger
+ * /notification-templates/{id}/enable:
+ *   post:
+ *     tags: [Notification Templates]
+ *     summary: 启用模板
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 启用成功
+ *       404:
+ *         description: 模板不存在
+ */
+
+/**
+ * @swagger
+ * /notification-templates/{id}/disable:
+ *   post:
+ *     tags: [Notification Templates]
+ *     summary: 禁用模板
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 禁用成功
+ *       404:
+ *         description: 模板不存在
+ */
+
+export const notificationTemplateRoutes = Router();
+
+// 特殊路由必须在 /:id 之前
+notificationTemplateRoutes.post('/:id/preview', NotificationTemplateController.previewTemplate);
+notificationTemplateRoutes.post('/:id/enable', NotificationTemplateController.enableTemplate);
+notificationTemplateRoutes.post('/:id/disable', NotificationTemplateController.disableTemplate);
+
+// CRUD 路由
+notificationTemplateRoutes.post('/', NotificationTemplateController.createTemplate);
+notificationTemplateRoutes.get('/', NotificationTemplateController.getTemplates);
+notificationTemplateRoutes.get('/:id', NotificationTemplateController.getTemplateById);
+notificationTemplateRoutes.put('/:id', NotificationTemplateController.updateTemplate);
+notificationTemplateRoutes.delete('/:id', NotificationTemplateController.deleteTemplate);
 
 export default router;
 

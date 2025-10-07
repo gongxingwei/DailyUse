@@ -12,6 +12,12 @@ export enum NotificationType {
   ALERT = 'alert',
   MESSAGE = 'message',
   UPDATE = 'update',
+  // Schedule 相关通知类型
+  SCHEDULE_REMINDER = 'schedule_reminder',
+  TASK_REMINDER = 'task_reminder',
+  GOAL_MILESTONE = 'goal_milestone',
+  // 自定义通知
+  CUSTOM = 'custom',
 }
 
 export enum NotificationStatus {
@@ -52,6 +58,11 @@ export enum NotificationSortField {
   STATUS = 'status',
   SENT_AT = 'sentAt',
   READ_AT = 'readAt',
+}
+
+export enum SortOrder {
+  ASC = 'asc',
+  DESC = 'desc',
 }
 
 export enum DeliveryStatus {

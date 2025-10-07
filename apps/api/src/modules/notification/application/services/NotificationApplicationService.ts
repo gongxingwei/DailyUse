@@ -19,6 +19,8 @@ import { NotificationDomainService } from '../../domain/services/NotificationDom
 import { TemplateRenderService } from '../../domain/services/TemplateRenderService';
 import { ChannelSelectionService } from '../../domain/services/ChannelSelectionService';
 import { NotificationMapper } from '../../infrastructure/mappers/NotificationMapper';
+import { NotificationTemplate } from '../../domain/aggregates/NotificationTemplate';
+import { NotificationAction } from '../../domain/value-objects/NotificationAction';
 import { createLogger } from '@dailyuse/utils';
 
 const logger = createLogger('NotificationApplicationService');
@@ -437,6 +439,242 @@ export class NotificationApplicationService {
     });
 
     return NotificationMapper.toClientDTO(notification);
+  }
+
+  // ============================================================
+  // NotificationTemplate - 模板管理
+  // ============================================================
+
+  /**
+   * 创建通知模板
+   * POST /api/v1/notification-templates
+   */
+  async createTemplate(
+    request: NotificationContracts.CreateNotificationTemplateRequest,
+  ): Promise<NotificationContracts.NotificationTemplateClientDTO> {
+    logger.info('Creating notification template', { name: request.name, type: request.type });
+
+    // Check if name already exists
+    const existing = await this.templateRepository.findByName(request.name);
+    if (existing) {
+      throw new Error(`Template with name "${request.name}" already exists`);
+    }
+
+    // Create template aggregate
+    const template = NotificationTemplate.create({
+      uuid: request.uuid,
+      name: request.name,
+      type: request.type,
+      titleTemplate: request.titleTemplate,
+      contentTemplate: request.contentTemplate,
+      defaultPriority: request.defaultPriority,
+      defaultChannels: request.defaultChannels,
+      variables: request.variables,
+      icon: request.icon,
+      defaultActions: request.defaultActions?.map((a) => NotificationAction.create(a)),
+      enabled: request.enabled !== undefined ? request.enabled : true,
+    });
+
+    // Save to repository
+    await this.templateRepository.save(template);
+
+    logger.info('Notification template created', { templateId: template.uuid });
+
+    return this.templateToDTO(template);
+  }
+
+  /**
+   * 查询通知模板
+   * GET /api/v1/notification-templates
+   */
+  async getTemplates(
+    queryParams: NotificationContracts.QueryNotificationTemplatesRequest,
+  ): Promise<NotificationContracts.NotificationTemplateListResponse> {
+    logger.debug('Querying notification templates', { queryParams });
+
+    const result = await this.templateRepository.query({
+      type: queryParams.type,
+      enabled: queryParams.enabled,
+      nameContains: queryParams.nameContains,
+      limit: queryParams.limit,
+      offset: queryParams.offset,
+    });
+
+    return {
+      data: result.templates.map((t) => this.templateToDTO(t)),
+      total: result.total,
+    };
+  }
+
+  /**
+   * 获取单个模板
+   * GET /api/v1/notification-templates/:id
+   */
+  async getTemplateById(
+    uuid: string,
+  ): Promise<NotificationContracts.NotificationTemplateClientDTO | null> {
+    logger.debug('Getting template by id', { uuid });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      return null;
+    }
+
+    return this.templateToDTO(template);
+  }
+
+  /**
+   * 更新通知模板
+   * PUT /api/v1/notification-templates/:id
+   */
+  async updateTemplate(
+    uuid: string,
+    updates: NotificationContracts.UpdateNotificationTemplateRequest,
+  ): Promise<NotificationContracts.NotificationTemplateClientDTO | null> {
+    logger.info('Updating notification template', { uuid, updates });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      throw new Error(`Template with UUID "${uuid}" not found`);
+    }
+
+    // Check name uniqueness if name is being updated
+    if (updates.name && updates.name !== template.name) {
+      const nameExists = await this.templateRepository.existsByName(updates.name, uuid);
+      if (nameExists) {
+        throw new Error(`Template with name "${updates.name}" already exists`);
+      }
+    }
+
+    // Update template - convert DTOs to value objects
+    const updateData: any = { ...updates };
+    if (updates.defaultActions) {
+      updateData.defaultActions = updates.defaultActions.map((a) => NotificationAction.create(a));
+    }
+
+    template.update(updateData);
+
+    // Save
+    await this.templateRepository.save(template);
+
+    logger.info('Notification template updated', { uuid });
+
+    return this.templateToDTO(template);
+  }
+
+  /**
+   * 删除通知模板
+   * DELETE /api/v1/notification-templates/:id
+   */
+  async deleteTemplate(uuid: string): Promise<void> {
+    logger.info('Deleting notification template', { uuid });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      throw new Error(`Template with UUID "${uuid}" not found`);
+    }
+
+    await this.templateRepository.delete(uuid);
+
+    logger.info('Notification template deleted', { uuid });
+  }
+
+  /**
+   * 预览模板渲染结果
+   * POST /api/v1/notification-templates/:id/preview
+   */
+  async previewTemplate(
+    uuid: string,
+    variables: Record<string, string>,
+  ): Promise<NotificationContracts.PreviewNotificationTemplateResponse> {
+    logger.debug('Previewing template', { uuid, variables });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      throw new Error(`Template with UUID "${uuid}" not found`);
+    }
+
+    const { title, content } = template.render(variables);
+
+    return {
+      title,
+      content,
+      variables,
+    };
+  }
+
+  /**
+   * 启用模板
+   * POST /api/v1/notification-templates/:id/enable
+   */
+  async enableTemplate(
+    uuid: string,
+  ): Promise<NotificationContracts.NotificationTemplateClientDTO | null> {
+    logger.info('Enabling notification template', { uuid });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      throw new Error(`Template with UUID "${uuid}" not found`);
+    }
+
+    template.enable();
+    await this.templateRepository.save(template);
+
+    logger.info('Notification template enabled', { uuid });
+
+    return this.templateToDTO(template);
+  }
+
+  /**
+   * 禁用模板
+   * POST /api/v1/notification-templates/:id/disable
+   */
+  async disableTemplate(
+    uuid: string,
+  ): Promise<NotificationContracts.NotificationTemplateClientDTO | null> {
+    logger.info('Disabling notification template', { uuid });
+
+    const template = await this.templateRepository.findByUuid(uuid);
+    if (!template) {
+      throw new Error(`Template with UUID "${uuid}" not found`);
+    }
+
+    template.disable();
+    await this.templateRepository.save(template);
+
+    logger.info('Notification template disabled', { uuid });
+
+    return this.templateToDTO(template);
+  }
+
+  /**
+   * 模板领域对象转 DTO
+   */
+  private templateToDTO(
+    template: NotificationTemplate,
+  ): NotificationContracts.NotificationTemplateClientDTO {
+    const plainObj = template.toPlainObject();
+
+    return {
+      uuid: plainObj.uuid,
+      name: plainObj.name,
+      type: plainObj.type,
+      titleTemplate: plainObj.titleTemplate,
+      contentTemplate: plainObj.contentTemplate,
+      defaultPriority: plainObj.defaultPriority,
+      defaultChannels: plainObj.defaultChannels,
+      variables: plainObj.variables,
+      icon: plainObj.icon,
+      defaultActions: plainObj.defaultActions,
+      enabled: plainObj.enabled,
+      lifecycle: {
+        createdAt: plainObj.createdAt.getTime(),
+        updatedAt: plainObj.updatedAt.getTime(),
+      },
+      // Computed properties - would need tracking to implement
+      usageCount: 0,
+      lastUsedAt: undefined,
+    };
   }
 
   // ============================================================

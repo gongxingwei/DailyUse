@@ -5,7 +5,9 @@
 
 export * from './controllers/NotificationController';
 export * from './controllers/NotificationPreferenceController';
+export * from './controllers/NotificationTemplateController';
 export {
   default as notificationRoutes,
   notificationPreferenceRoutes,
+  notificationTemplateRoutes,
 } from './routes/notificationRoutes';

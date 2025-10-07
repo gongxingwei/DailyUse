@@ -249,6 +249,33 @@ export type UpdateNotificationTemplateRequest = Partial<
   Omit<NotificationTemplateDTO, 'uuid' | 'lifecycle'>
 >;
 
+/**
+ * 查询通知模板请求 - GET /api/v1/notification-templates
+ */
+export interface QueryNotificationTemplatesRequest {
+  type?: NotificationType;
+  enabled?: boolean;
+  nameContains?: string;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * 预览通知模板请求 - POST /api/v1/notification-templates/:id/preview
+ */
+export interface PreviewNotificationTemplateRequest {
+  variables: Record<string, string>;
+}
+
+/**
+ * 预览通知模板响应
+ */
+export interface PreviewNotificationTemplateResponse {
+  title: string;
+  content: string;
+  variables: Record<string, string>;
+}
+
 // ==================== 通知偏好 (NotificationPreference) ====================
 
 /**

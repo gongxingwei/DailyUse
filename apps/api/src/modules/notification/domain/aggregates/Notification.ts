@@ -4,12 +4,24 @@ import {
   NotificationPriority,
   NotificationChannel,
 } from '@dailyuse/contracts';
+import { AggregateRoot } from '@dailyuse/utils';
 import { NotificationContent } from '../value-objects/NotificationContent';
 import { NotificationAction } from '../value-objects/NotificationAction';
 import { DeliveryChannels } from '../value-objects/DeliveryChannels';
 import { ScheduleTime } from '../value-objects/ScheduleTime';
 import { NotificationMetadata } from '../value-objects/NotificationMetadata';
 import { DeliveryReceipt } from '../entities/DeliveryReceipt';
+import {
+  NotificationCreatedEvent,
+  NotificationSendingEvent,
+  NotificationSentEvent,
+  NotificationChannelSentEvent,
+  NotificationChannelFailedEvent,
+  NotificationReadEvent,
+  NotificationDismissedEvent,
+  NotificationExpiredEvent,
+  NotificationFailedEvent,
+} from '../events/NotificationEvents';
 
 /**
  * Notification 聚合根
@@ -18,18 +30,25 @@ import { DeliveryReceipt } from '../entities/DeliveryReceipt';
  * - 管理通知的完整生命周期
  * - 控制通知状态转换
  * - 管理多渠道发送回执
+ * - 发布领域事件
  * - 保证业务不变量
  *
  * 生命周期：
  * PENDING → SENT → READ/DISMISSED (正常流程)
  * PENDING → EXPIRED (过期)
  * PENDING → SENT → FAILED (发送失败)
+ *
+ * 多通道发送管理：
+ * - 为每个通道创建 DeliveryReceipt
+ * - 跟踪各通道的发送状态
+ * - 支持部分成功（某些通道成功，某些失败）
+ * - 自动发布通道级别的领域事件
  */
-export class Notification {
+export class Notification extends AggregateRoot {
   private _deliveryReceipts: Map<NotificationChannel, DeliveryReceipt> = new Map();
 
   private constructor(
-    private _uuid: string,
+    uuid: string,
     private _accountUuid: string,
     private _content: NotificationContent,
     private _type: NotificationType,
@@ -46,6 +65,7 @@ export class Notification {
     private _createdAt: Date = new Date(),
     private _updatedAt: Date = new Date(),
   ) {
+    super(uuid);
     this.validate();
   }
 
@@ -80,7 +100,7 @@ export class Notification {
   // ========== Getters ==========
 
   get uuid(): string {
-    return this._uuid;
+    return this._uuid; // 继承自 AggregateRoot
   }
 
   get accountUuid(): string {
@@ -185,6 +205,19 @@ export class Notification {
       notification._deliveryReceipts.set(channel, receipt);
     });
 
+    // 发布领域事件：通知已创建
+    notification.addDomainEvent(
+      new NotificationCreatedEvent(params.uuid, params.accountUuid, {
+        title: params.content.title,
+        content: params.content.content,
+        type: params.type,
+        priority: 'normal', // TODO: 从 metadata 或参数获取
+        channels: params.deliveryChannels.channels,
+        scheduledTime: params.scheduleTime.scheduledAt,
+        metadata: params.metadata?.toPlainObject(),
+      }),
+    );
+
     return notification;
   }
 
@@ -273,53 +306,6 @@ export class Notification {
   }
 
   /**
-   * 标记为已读
-   */
-  markAsRead(readAt: Date = new Date()): void {
-    if (this._status !== NotificationStatus.SENT) {
-      throw new Error(`Cannot mark as READ from status ${this._status}. Must be SENT.`);
-    }
-
-    this._status = NotificationStatus.READ;
-    this._readAt = readAt;
-    this._updatedAt = new Date();
-    this._version += 1;
-  }
-
-  /**
-   * 标记为已忽略
-   */
-  markAsDismissed(dismissedAt: Date = new Date()): void {
-    if (this._status !== NotificationStatus.SENT && this._status !== NotificationStatus.READ) {
-      throw new Error(
-        `Cannot mark as DISMISSED from status ${this._status}. Must be SENT or READ.`,
-      );
-    }
-
-    this._status = NotificationStatus.DISMISSED;
-    this._dismissedAt = dismissedAt;
-    this._updatedAt = new Date();
-    this._version += 1;
-  }
-
-  /**
-   * 标记为过期
-   */
-  markAsExpired(): void {
-    if (this._status !== NotificationStatus.PENDING) {
-      throw new Error(`Cannot mark as EXPIRED from status ${this._status}. Must be PENDING.`);
-    }
-
-    if (!this._scheduleTime.isExpired()) {
-      throw new Error('Cannot mark as EXPIRED before expiration time');
-    }
-
-    this._status = NotificationStatus.EXPIRED;
-    this._updatedAt = new Date();
-    this._version += 1;
-  }
-
-  /**
    * 标记为发送失败
    */
   markAsFailed(): void {
@@ -396,6 +382,266 @@ export class Notification {
    */
   isExpired(): boolean {
     return this._status === NotificationStatus.EXPIRED || this._scheduleTime.isExpired();
+  }
+
+  // ========== 多通道状态管理方法（新增） ==========
+
+  /**
+   * 标记单个通道发送成功
+   *
+   * 用途：
+   * - TaskTriggeredHandler 调用此方法记录各通道发送状态
+   * - 自动发布 NotificationChannelSentEvent 事件
+   * - 当所有通道都成功后，自动标记通知为 SENT
+   *
+   * @param channel 通道类型
+   * @param sentAt 发送时间
+   * @param metadata 通道特定元数据（如邮件ID、短信ID等）
+   */
+  markChannelSent(
+    channel: NotificationChannel,
+    sentAt: Date = new Date(),
+    metadata?: Record<string, any>,
+  ): void {
+    const receipt = this._deliveryReceipts.get(channel);
+
+    if (!receipt) {
+      throw new Error(`No delivery receipt found for channel: ${channel}`);
+    }
+
+    // 更新回执状态
+    receipt.markAsSent(sentAt);
+    if (metadata) {
+      receipt.updateMetadata(metadata);
+    }
+
+    // 发布领域事件：通道发送成功
+    this.addDomainEvent(
+      new NotificationChannelSentEvent(this._uuid, this._accountUuid, {
+        channel,
+        sentAt,
+        deliveredAt: sentAt, // 对于某些通道（如SSE），发送即交付
+        metadata,
+      }),
+    );
+
+    // 检查是否所有通道都已发送
+    const allSent = Array.from(this._deliveryReceipts.values()).every(
+      (r) => r.status !== 'pending',
+    );
+
+    if (allSent && this._status === NotificationStatus.PENDING) {
+      // 自动标记为已发送
+      const sentChannels = this.getSentChannels();
+      const failedChannels = this.getFailedChannels();
+
+      this._status = NotificationStatus.SENT;
+      this._sentAt = sentAt;
+      this._updatedAt = new Date();
+
+      // 发布领域事件：通知已发送（所有通道完成）
+      this.addDomainEvent(
+        new NotificationSentEvent(this._uuid, this._accountUuid, {
+          sentChannels,
+          failedChannels,
+          totalChannels: this._deliveryChannels.channels.length,
+          successRate: this.getDeliverySuccessRate(),
+          sentAt,
+        }),
+      );
+    }
+  }
+
+  /**
+   * 标记单个通道发送失败
+   *
+   * 用途：
+   * - TaskTriggeredHandler 在重试失败后调用此方法
+   * - 自动发布 NotificationChannelFailedEvent 事件
+   * - 如果所有通道都失败，自动标记通知为 FAILED
+   *
+   * @param channel 通道类型
+   * @param failureReason 失败原因
+   * @param retryCount 当前重试次数
+   * @param canRetry 是否还能重试
+   */
+  markChannelFailed(
+    channel: NotificationChannel,
+    failureReason: string,
+    retryCount: number = 0,
+    canRetry: boolean = false,
+  ): void {
+    const receipt = this._deliveryReceipts.get(channel);
+
+    if (!receipt) {
+      throw new Error(`No delivery receipt found for channel: ${channel}`);
+    }
+
+    // 更新回执状态
+    receipt.markAsFailed(failureReason, canRetry);
+
+    // 发布领域事件：通道发送失败
+    this.addDomainEvent(
+      new NotificationChannelFailedEvent(this._uuid, this._accountUuid, {
+        channel,
+        failureReason,
+        retryCount,
+        canRetry,
+        failedAt: new Date(),
+      }),
+    );
+
+    // 检查是否所有通道都失败了
+    const allFailed = Array.from(this._deliveryReceipts.values()).every(
+      (r) => r.status === 'failed',
+    );
+
+    if (allFailed && this._status !== NotificationStatus.FAILED) {
+      // 所有通道都失败：标记通知为失败
+      this._status = NotificationStatus.FAILED;
+      this._updatedAt = new Date();
+
+      // 发布领域事件：通知失败（所有通道）
+      const failureReasons: Record<string, string> = {};
+      this._deliveryReceipts.forEach((receipt, ch) => {
+        if (receipt.failureReason) {
+          failureReasons[ch] = receipt.failureReason;
+        }
+      });
+
+      this.addDomainEvent(
+        new NotificationFailedEvent(this._uuid, this._accountUuid, {
+          failedChannels: this.getFailedChannels(),
+          failureReasons,
+          failedAt: new Date(),
+        }),
+      );
+    }
+  }
+
+  /**
+   * 开始发送通知（准备发送）
+   *
+   * 用途：
+   * - TaskTriggeredHandler 在开始发送前调用
+   * - 发布 NotificationSendingEvent 事件
+   */
+  startSending(): void {
+    if (this._status !== NotificationStatus.PENDING) {
+      throw new Error(`Cannot start sending from status ${this._status}. Must be PENDING.`);
+    }
+
+    // 发布领域事件：通知发送中
+    this.addDomainEvent(
+      new NotificationSendingEvent(this._uuid, this._accountUuid, {
+        channels: this._deliveryChannels.channels,
+        sentAt: new Date(),
+      }),
+    );
+  }
+
+  /**
+   * 获取已成功发送的通道列表
+   */
+  getSentChannels(): NotificationChannel[] {
+    return Array.from(this._deliveryReceipts.entries())
+      .filter(([_, receipt]) => receipt.isDelivered())
+      .map(([channel, _]) => channel);
+  }
+
+  /**
+   * 获取发送失败的通道列表
+   */
+  getFailedChannels(): NotificationChannel[] {
+    return Array.from(this._deliveryReceipts.entries())
+      .filter(([_, receipt]) => receipt.isFailed())
+      .map(([channel, _]) => channel);
+  }
+
+  /**
+   * 获取待发送的通道列表
+   */
+  getPendingChannels(): NotificationChannel[] {
+    return Array.from(this._deliveryReceipts.entries())
+      .filter(([_, receipt]) => receipt.status === 'pending')
+      .map(([channel, _]) => channel);
+  }
+
+  // ========== 增强现有方法，添加领域事件发布 ==========
+
+  /**
+   * 标记为已读（增强版）
+   */
+  markAsRead(readAt: Date = new Date()): void {
+    if (this._status !== NotificationStatus.SENT) {
+      throw new Error(`Cannot mark as READ from status ${this._status}. Must be SENT.`);
+    }
+
+    const readDuration = this._sentAt ? readAt.getTime() - this._sentAt.getTime() : undefined;
+
+    this._status = NotificationStatus.READ;
+    this._readAt = readAt;
+    this._updatedAt = new Date();
+    this._version += 1;
+
+    // 发布领域事件：通知已读
+    this.addDomainEvent(
+      new NotificationReadEvent(this._uuid, this._accountUuid, {
+        readAt,
+        readDuration,
+      }),
+    );
+  }
+
+  /**
+   * 标记为已忽略（增强版）
+   */
+  markAsDismissed(dismissedAt: Date = new Date()): void {
+    if (this._status !== NotificationStatus.SENT && this._status !== NotificationStatus.READ) {
+      throw new Error(
+        `Cannot mark as DISMISSED from status ${this._status}. Must be SENT or READ.`,
+      );
+    }
+
+    this._status = NotificationStatus.DISMISSED;
+    this._dismissedAt = dismissedAt;
+    this._updatedAt = new Date();
+    this._version += 1;
+
+    // 发布领域事件：通知已忽略
+    this.addDomainEvent(
+      new NotificationDismissedEvent(this._uuid, this._accountUuid, {
+        dismissedAt,
+      }),
+    );
+  }
+
+  /**
+   * 标记为过期（增强版）
+   */
+  markAsExpired(): void {
+    if (this._status !== NotificationStatus.PENDING) {
+      throw new Error(`Cannot mark as EXPIRED from status ${this._status}. Must be PENDING.`);
+    }
+
+    if (!this._scheduleTime.isExpired()) {
+      throw new Error('Cannot mark as EXPIRED before expiration time');
+    }
+
+    // 记录当前状态是否为已读
+    const wasRead = this._readAt !== undefined;
+
+    this._status = NotificationStatus.EXPIRED;
+    this._updatedAt = new Date();
+    this._version += 1;
+
+    // 发布领域事件：通知已过期
+    this.addDomainEvent(
+      new NotificationExpiredEvent(this._uuid, this._accountUuid, {
+        expiredAt: new Date(),
+        wasRead,
+      }),
+    );
   }
 
   /**

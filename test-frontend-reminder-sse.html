@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>前端 SSE Reminder 测试 - DailyUse</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.1em;
+        opacity: 0.9;
+      }
+
+      .card {
+        background: white;
+        border-radius: 12px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+      }
+
+      .card h2 {
+        color: #667eea;
+        margin-bottom: 20px;
+        border-bottom: 3px solid #667eea;
+        padding-bottom: 10px;
+      }
+
+      .status-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .status-card {
+        padding: 20px;
+        border-radius: 8px;
+        border-left: 4px solid #ccc;
+      }
+
+      .status-ok {
+        background: #d4edda;
+        border-left-color: #28a745;
+      }
+
+      .status-error {
+        background: #f8d7da;
+        border-left-color: #dc3545;
+      }
+
+      .status-warning {
+        background: #fff3cd;
+        border-left-color: #ffc107;
+      }
+
+      .status-card h3 {
+        margin-bottom: 8px;
+        font-size: 0.9em;
+        color: #666;
+        text-transform: uppercase;
+      }
+
+      .status-card .value {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #333;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      .input-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      .input-group input {
+        width: 100%;
+        padding: 12px;
+        border: 2px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        transition: border-color 0.3s;
+      }
+
+      .input-group input:focus {
+        outline: none;
+        border-color: #667eea;
+      }
+
+      .btn {
+        padding: 12px 30px;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-right: 10px;
+      }
+
+      .btn-primary {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-primary:hover:not(:disabled) {
+        background: #5568d3;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+      }
+
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+
+      .btn-success:hover:not(:disabled) {
+        background: #218838;
+        transform: translateY(-2px);
+      }
+
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+
+      .btn-danger:hover:not(:disabled) {
+        background: #c82333;
+      }
+
+      .btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .log-container {
+        background: #1e1e1e;
+        border-radius: 8px;
+        padding: 20px;
+        max-height: 500px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+      }
+
+      .log-entry {
+        padding: 6px 0;
+        border-bottom: 1px solid #333;
+      }
+
+      .log-entry:last-child {
+        border-bottom: none;
+      }
+
+      .log-time {
+        color: #888;
+        margin-right: 10px;
+      }
+
+      .log-success {
+        color: #4caf50;
+      }
+
+      .log-error {
+        color: #f44336;
+      }
+
+      .log-warning {
+        color: #ff9800;
+      }
+
+      .log-info {
+        color: #2196f3;
+      }
+
+      .notification-preview {
+        border: 2px dashed #667eea;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 20px;
+        background: #f8f9ff;
+      }
+
+      .notification-item {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-left: 4px solid #667eea;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .notification-item h4 {
+        margin-bottom: 8px;
+        color: #333;
+      }
+
+      .notification-item p {
+        color: #666;
+        margin-bottom: 8px;
+      }
+
+      .notification-item small {
+        color: #999;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-right: 8px;
+      }
+
+      .badge-sound {
+        background: #ffeaa7;
+        color: #d63031;
+      }
+
+      .badge-popup {
+        background: #74b9ff;
+        color: #0984e3;
+      }
+
+      .badge-sse {
+        background: #a29bfe;
+        color: #6c5ce7;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+        margin-top: 20px;
+      }
+
+      .stat-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9ff;
+        border-radius: 8px;
+      }
+
+      .stat-item .label {
+        font-size: 0.9em;
+        color: #666;
+        margin-bottom: 5px;
+      }
+
+      .stat-item .value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #667eea;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1>🔔 前端 SSE Reminder 测试</h1>
+        <p>测试 Reminder 创建 → Schedule → Notification → SSE 事件 → 前端弹窗+声音</p>
+      </div>
+
+      <!-- 连接状态 -->
+      <div class="card">
+        <h2>📡 SSE 连接状态</h2>
+        <div class="status-grid">
+          <div id="sseStatus" class="status-card status-error">
+            <h3>连接状态</h3>
+            <div class="value" id="sseStatusText">未连接</div>
+          </div>
+          <div id="authStatus" class="status-card status-error">
+            <h3>认证状态</h3>
+            <div class="value" id="authStatusText">未登录</div>
+          </div>
+          <div id="eventCount" class="status-card">
+            <h3>接收事件数</h3>
+            <div class="value" id="eventCountValue">0</div>
+          </div>
+          <div id="reminderCount" class="status-card">
+            <h3>提醒通知数</h3>
+            <div class="value" id="reminderCountValue">0</div>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label>Bearer Token (从登录后获取):</label>
+          <input type="password" id="tokenInput" placeholder="粘贴你的 access token..." />
+          <small style="color: #666; display: block; margin-top: 5px">
+            提示：登录后从浏览器 DevTools → Application → Local Storage → access_token 获取
+          </small>
+        </div>
+
+        <button class="btn btn-primary" id="connectBtn" onclick="connectSSE()">
+          🔌 建立 SSE 连接
+        </button>
+        <button class="btn btn-danger" id="disconnectBtn" onclick="disconnectSSE()" disabled>
+          🔌 断开连接
+        </button>
+        <button class="btn btn-success" id="testReminderBtn" onclick="testReminderFlow()" disabled>
+          🧪 测试完整流程
+        </button>
+      </div>
+
+      <!-- 实时通知预览 -->
+      <div class="card">
+        <h2>🔔 实时通知预览</h2>
+        <div id="notificationPreview" class="notification-preview">
+          <p style="color: #999; text-align: center">暂无通知...</p>
+        </div>
+        <div class="stats">
+          <div class="stat-item">
+            <div class="label">🔊 声音提醒</div>
+            <div class="value" id="soundCount">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">💬 弹窗提醒</div>
+            <div class="value" id="popupCount">0</div>
+          </div>
+          <div class="stat-item">
+            <div class="label">📨 SSE 事件</div>
+            <div class="value" id="sseEventCount">0</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 日志输出 -->
+      <div class="card">
+        <h2>📋 实时日志</h2>
+        <button
+          class="btn"
+          onclick="clearLog()"
+          style="background: #6c757d; color: white; margin-bottom: 10px"
+        >
+          🗑️ 清空日志
+        </button>
+        <div id="logOutput" class="log-container"></div>
+      </div>
+    </div>
+
+    <script>
+      let eventSource = null;
+      let token = null;
+      let eventCount = 0;
+      let reminderCount = 0;
+      let soundCount = 0;
+      let popupCount = 0;
+      let sseEventCount = 0;
+
+      // DOM 元素
+      const tokenInput = document.getElementById('tokenInput');
+      const connectBtn = document.getElementById('connectBtn');
+      const disconnectBtn = document.getElementById('disconnectBtn');
+      const testReminderBtn = document.getElementById('testReminderBtn');
+      const sseStatusText = document.getElementById('sseStatusText');
+      const sseStatus = document.getElementById('sseStatus');
+      const authStatusText = document.getElementById('authStatusText');
+      const authStatus = document.getElementById('authStatus');
+      const eventCountValue = document.getElementById('eventCountValue');
+      const reminderCountValue = document.getElementById('reminderCountValue');
+      const notificationPreview = document.getElementById('notificationPreview');
+      const logOutput = document.getElementById('logOutput');
+
+      // 日志函数
+      function log(message, type = 'info') {
+        const time = new Date().toLocaleTimeString();
+        const logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = `<span class="log-time">[${time}]</span><span class="log-${type}">${message}</span>`;
+        logOutput.insertBefore(logEntry, logOutput.firstChild);
+        console.log(`[${time}] ${message}`);
+      }
+
+      function clearLog() {
+        logOutput.innerHTML = '';
+        log('日志已清空', 'info');
+      }
+
+      // 更新状态
+      function updateSSEStatus(text, isConnected) {
+        sseStatusText.textContent = text;
+        sseStatus.className = `status-card ${isConnected ? 'status-ok' : 'status-error'}`;
+        disconnectBtn.disabled = !isConnected;
+        testReminderBtn.disabled = !isConnected;
+      }
+
+      function updateAuthStatus(text, isAuthed) {
+        authStatusText.textContent = text;
+        authStatus.className = `status-card ${isAuthed ? 'status-ok' : 'status-error'}`;
+      }
+
+      // 连接 SSE
+      async function connectSSE() {
+        token = tokenInput.value.trim();
+
+        if (!token) {
+          log('❌ 请先输入 token', 'error');
+          alert('请在输入框中粘贴你的 Bearer Token');
+          return;
+        }
+
+        if (eventSource) {
+          log('断开现有连接...', 'warning');
+          disconnectSSE();
+        }
+
+        try {
+          log('🔌 正在建立 SSE 连接...', 'info');
+          connectBtn.disabled = true;
+          updateSSEStatus('连接中...', false);
+          updateAuthStatus('验证中...', false);
+
+          const url = `http://localhost:3888/api/v1/schedules/events?token=${encodeURIComponent(token)}`;
+          eventSource = new EventSource(url);
+
+          eventSource.onopen = () => {
+            log('✅ SSE 连接已建立', 'success');
+            updateSSEStatus('已连接', true);
+            updateAuthStatus('已认证', true);
+            connectBtn.disabled = false;
+            connectBtn.textContent = '🔄 重新连接';
+          };
+
+          eventSource.onerror = (error) => {
+            log('❌ SSE 连接错误', 'error');
+            console.error('SSE Error:', error);
+            updateSSEStatus('连接错误', false);
+            updateAuthStatus('认证失败', false);
+            connectBtn.disabled = false;
+          };
+
+          // 连接确认事件
+          eventSource.addEventListener('connected', (event) => {
+            const data = JSON.parse(event.data);
+            log(`🔗 连接确认: 客户端ID = ${data.clientId}`, 'success');
+            eventCount++;
+            eventCountValue.textContent = eventCount;
+          });
+
+          // 心跳事件
+          eventSource.addEventListener('heartbeat', (event) => {
+            log('💓 心跳', 'info');
+          });
+
+          // 🔥 监听提醒触发事件
+          eventSource.addEventListener('schedule:reminder-triggered', (event) => {
+            log('🔔 收到提醒触发事件!', 'success');
+            const data = JSON.parse(event.data);
+            handleReminderEvent(data);
+          });
+
+          // 监听弹窗提醒事件
+          eventSource.addEventListener('schedule:popup-reminder', (event) => {
+            log('💬 收到弹窗提醒事件!', 'success');
+            const data = JSON.parse(event.data);
+            handlePopupReminder(data);
+          });
+
+          // 监听声音提醒事件
+          eventSource.addEventListener('schedule:sound-reminder', (event) => {
+            log('🔊 收到声音提醒事件!', 'success');
+            const data = JSON.parse(event.data);
+            handleSoundReminder(data);
+          });
+
+          // 监听系统通知事件
+          eventSource.addEventListener('schedule:system-notification', (event) => {
+            log('📢 收到系统通知事件!', 'success');
+            const data = JSON.parse(event.data);
+            handleSystemNotification(data);
+          });
+
+          // 监听任务执行事件
+          eventSource.addEventListener('schedule:task-executed', (event) => {
+            log('⚡ 收到任务执行事件!', 'info');
+            const data = JSON.parse(event.data);
+            eventCount++;
+            eventCountValue.textContent = eventCount;
+          });
+        } catch (error) {
+          log(`❌ 连接失败: ${error.message}`, 'error');
+          updateSSEStatus('连接失败', false);
+          connectBtn.disabled = false;
+        }
+      }
+
+      // 断开 SSE
+      function disconnectSSE() {
+        if (eventSource) {
+          eventSource.close();
+          eventSource = null;
+          log('🔌 SSE 连接已断开', 'warning');
+          updateSSEStatus('已断开', false);
+          connectBtn.textContent = '🔌 建立 SSE 连接';
+        }
+      }
+
+      // 处理提醒事件
+      function handleReminderEvent(data) {
+        reminderCount++;
+        reminderCountValue.textContent = reminderCount;
+        sseEventCount++;
+        document.getElementById('sseEventCount').textContent = sseEventCount;
+
+        log(`📨 提醒内容: ${JSON.stringify(data.data || data)}`, 'success');
+
+        const reminderData = data.data || data;
+        showNotificationPreview({
+          title: reminderData.title || '提醒通知',
+          message: reminderData.message || reminderData.content || '无内容',
+          hasSound: reminderData.notificationSound || false,
+          hasPopup: reminderData.notificationPopup || false,
+          icon: reminderData.icon || '🔔',
+          timestamp: new Date().toLocaleString(),
+        });
+      }
+
+      // 处理弹窗提醒
+      function handlePopupReminder(data) {
+        popupCount++;
+        document.getElementById('popupCount').textContent = popupCount;
+
+        log('💬 触发弹窗提醒!', 'success');
+
+        // 显示浏览器原生通知
+        if ('Notification' in window && Notification.permission === 'granted') {
+          const reminderData = data.data || data;
+          new Notification(reminderData.title || '提醒', {
+            body: reminderData.message || reminderData.content,
+            icon: '/DailyUse-256.png',
+            tag: 'reminder-' + Date.now(),
+          });
+        }
+      }
+
+      // 处理声音提醒
+      function handleSoundReminder(data) {
+        soundCount++;
+        document.getElementById('soundCount').textContent = soundCount;
+
+        log('🔊 触发声音提醒!', 'success');
+
+        // 播放提示音（这里使用浏览器默认声音）
+        const audio = new Audio(
+          'data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZUQ8MUKjj8LdlHQc5j9jyzn0vBSl+y/Dej0MLFmO38+ulWhELR6Df8r5wIwU0iNHz1YU1Bx9vwu/mnFQPDU+m4vC2aB0HOYzX8s1/MAUpfsvw34xDCxVltPPrpVsRDEah3vK/cSQFNIjR89WGNQY=',
+        );
+        audio.play().catch((err) => log('声音播放失败: ' + err.message, 'warning'));
+      }
+
+      // 处理系统通知
+      function handleSystemNotification(data) {
+        log('📢 系统通知: ' + JSON.stringify(data.data || data), 'info');
+      }
+
+      // 显示通知预览
+      function showNotificationPreview(notification) {
+        const item = document.createElement('div');
+        item.className = 'notification-item';
+
+        const badges = [];
+        if (notification.hasSound) badges.push('<span class="badge badge-sound">🔊 声音</span>');
+        if (notification.hasPopup) badges.push('<span class="badge badge-popup">💬 弹窗</span>');
+        badges.push('<span class="badge badge-sse">📡 SSE</span>');
+
+        item.innerHTML = `
+                <h4>${notification.icon} ${notification.title}</h4>
+                <p>${notification.message}</p>
+                <div>${badges.join('')}</div>
+                <small>${notification.timestamp}</small>
+            `;
+
+        // 如果容器中有"暂无通知"的提示，先清除
+        if (notificationPreview.querySelector('p')) {
+          notificationPreview.innerHTML = '';
+        }
+
+        notificationPreview.insertBefore(item, notificationPreview.firstChild);
+
+        // 限制最多显示 10 条
+        while (notificationPreview.children.length > 10) {
+          notificationPreview.removeChild(notificationPreview.lastChild);
+        }
+      }
+
+      // 测试完整流程
+      async function testReminderFlow() {
+        if (!token) {
+          log('❌ 请先建立 SSE 连接', 'error');
+          return;
+        }
+
+        log('🧪 开始测试完整流程...', 'info');
+        testReminderBtn.disabled = true;
+
+        try {
+          // 创建 Reminder
+          log('📝 Step 1: 创建 ReminderTemplate...', 'info');
+
+          const response = await fetch('http://localhost:3888/api/v1/reminders/templates', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({
+              name: 'Frontend Test - Every 1 Minute',
+              message: '🔔 前端测试提醒：这是一个完整流程测试！',
+              timeConfigType: 'interval',
+              timeConfigDuration: 60, // 60 秒
+              notificationSound: true,
+              notificationPopup: true,
+              enabled: true,
+            }),
+          });
+
+          if (!response.ok) {
+            throw new Error(`API 请求失败: ${response.status}`);
+          }
+
+          const result = await response.json();
+          log(`✅ ReminderTemplate 创建成功: ${result.data.uuid}`, 'success');
+          log('⏳ 等待 SSE 事件触发（可能需要几秒钟）...', 'info');
+          log('💡 你应该会看到 schedule:reminder-triggered 事件', 'info');
+        } catch (error) {
+          log(`❌ 测试失败: ${error.message}`, 'error');
+          console.error('Test Error:', error);
+        } finally {
+          testReminderBtn.disabled = false;
+        }
+      }
+
+      // 请求通知权限
+      if ('Notification' in window && Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          log(`通知权限: ${permission}`, 'info');
+        });
+      }
+
+      // 页面加载完成
+      window.addEventListener('load', () => {
+        log('🚀 测试页面已加载', 'success');
+        log('📝 请先输入 token 并建立 SSE 连接', 'info');
+
+        // 尝试从 localStorage 获取 token
+        try {
+          const storedToken = localStorage.getItem('access_token');
+          if (storedToken) {
+            tokenInput.value = storedToken;
+            log('✅ 从 localStorage 自动填充 token', 'success');
+            updateAuthStatus('已自动填充', true);
+          }
+        } catch (e) {
+          log('无法访问 localStorage', 'warning');
+        }
+      });
+    </script>
+  </body>
+</html>

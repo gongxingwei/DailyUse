@@ -15,7 +15,11 @@ import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
 import { scheduleRoutes } from './modules/schedule';
-import { notificationRoutes, notificationPreferenceRoutes } from './modules/notification/interface';
+import {
+  notificationRoutes,
+  notificationPreferenceRoutes,
+  notificationTemplateRoutes,
+} from './modules/notification/interface';
 import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
 import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
 import { createEditorRoutes, EditorAggregateController } from './modules/editor';
@@ -143,6 +147,30 @@ api.use('/theme', authMiddleware, themeRoutes);
 // 挂载通知管理路由 - 需要认证
 api.use('/notifications', authMiddleware, notificationRoutes);
 api.use('/notification-preferences', authMiddleware, notificationPreferenceRoutes);
+api.use('/notification-templates', authMiddleware, notificationTemplateRoutes);
+
+// Setup Notification Module - 初始化通知模块
+// NotificationController 和 NotificationPreferenceController 使用静态服务实例
+// 需要初始化 NotificationTemplateController 使其共享同一服务实例
+import {
+  NotificationTemplateController,
+  NotificationController,
+} from './modules/notification/interface';
+import { NotificationApplicationService } from './modules/notification/application/services/NotificationApplicationService';
+import { NotificationRepository } from './modules/notification/infrastructure/repositories/NotificationRepository';
+import { NotificationTemplateRepository } from './modules/notification/infrastructure/repositories/NotificationTemplateRepository';
+import { NotificationPreferenceRepository } from './modules/notification/infrastructure/repositories/NotificationPreferenceRepository';
+
+const notificationService = new NotificationApplicationService(
+  new NotificationRepository(prisma),
+  new NotificationTemplateRepository(prisma),
+  new NotificationPreferenceRepository(prisma),
+);
+
+// 初始化 NotificationTemplateController
+NotificationTemplateController.initialize(notificationService);
+
+logger.info('Notification module initialized successfully');
 
 // Setup event system - 设置事件系统
 // 初始化事件发布器

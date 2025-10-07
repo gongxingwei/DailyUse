@@ -1,7 +1,9 @@
-// ⚠️ ScheduleTask 已废弃，现在使用 RecurringScheduleTask
-// export * from './aggregates/ScheduleTask';
+// Schedule aggregates
+export * from './aggregates/ScheduleTask';
 
+// Schedule repositories
 export * from './repositories/IScheduleTaskRepository';
 export * from './repositories';
 
+// Schedule services
 export * from './services';

@@ -15,6 +15,7 @@ import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { NotificationApplicationService } from '../../../application/services/NotificationApplicationService';
 import { NotificationRepository } from '../../../infrastructure/repositories/NotificationRepository';
+import { NotificationTemplateRepository } from '../../../infrastructure/repositories/NotificationTemplateRepository';
 import { NotificationPreferenceRepository } from '../../../infrastructure/repositories/NotificationPreferenceRepository';
 import { prisma } from '../../../../../config/prisma';
 import type { NotificationContracts } from '@dailyuse/contracts';
@@ -32,8 +33,7 @@ const logger = createLogger('NotificationController');
 export class NotificationController {
   private static notificationService = new NotificationApplicationService(
     new NotificationRepository(prisma),
-    // TODO: 实现 NotificationTemplateRepository
-    {} as any,
+    new NotificationTemplateRepository(prisma),
     new NotificationPreferenceRepository(prisma),
   );
   private static responseBuilder = createResponseBuilder();

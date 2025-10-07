@@ -1,11 +1,11 @@
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { parseExpression } from 'cron-parser';
+import { Injectable, type OnModuleInit, type OnModuleDestroy } from '@nestjs/common';
+import { CronExpressionParser } from 'cron-parser';
 import { RecurringScheduleTask } from '@dailyuse/domain-core';
 import { ScheduleContracts } from '@dailyuse/contracts';
 
 /**
  * SchedulerService 核心调度服务
- * 
+ *
  * 职责：
  * 1. 注册和管理 cron 定时任务
  * 2. 解析 cron 表达式并计算下次执行时间
@@ -117,7 +117,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   private async scheduleTask(task: RecurringScheduleTask): Promise<void> {
     const nextRunTime = this.calculateNextRunTime(task);
-    
+
     if (!nextRunTime) {
       console.log(`⚠️ 无法计算下次执行时间: ${task.name}`);
       return;
@@ -145,7 +145,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
    */
   private async executeTask(task: RecurringScheduleTask): Promise<void> {
     const startTime = Date.now();
-    
+
     try {
       console.log(`🚀 执行任务: ${task.name} (${task.uuid})`);
 
@@ -175,7 +175,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       const durationMs = Date.now() - startTime;
       const errorMessage = error instanceof Error ? error.message : String(error);
-      
+
       task.recordExecution(false, errorMessage, durationMs);
       console.error(`❌ 任务执行失败: ${task.name}, 错误: ${errorMessage}`);
 
@@ -196,7 +196,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       }
 
       try {
-        const interval = parseExpression(task.cronExpression);
+        const interval = CronExpressionParser.parse(task.cronExpression);
         return interval.next().toDate();
       } catch (error) {
         console.error(`❌ 解析 cron 表达式失败: ${task.cronExpression}`, error);
@@ -242,7 +242,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     lastRunAt?: Date;
     executionCount: number;
   }> {
-    return Array.from(this.tasks.values()).map(task => ({
+    return Array.from(this.tasks.values()).map((task) => ({
       uuid: task.uuid,
       name: task.name,
       enabled: task.enabled,
