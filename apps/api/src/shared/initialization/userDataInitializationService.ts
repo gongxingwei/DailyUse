@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalSortField, GoalDirSystemType } from '@dailyuse/contracts';
 
 /**
  * 用户数据初始化服务
@@ -43,10 +44,10 @@ export class UserDataInitializationService {
       color: '#2196F3',
       parentUuid: undefined,
       sortConfig: {
-        sortKey: 'createdAt',
+        sortKey: GoalSortField.CREATED_AT,
         sortOrder: 1,
       },
-      systemType: 'ALL', // 标记为系统类型
+      systemType: GoalDirSystemType.ALL, // 标记为系统类型
       isDefault: true,
       metadata: {
         isSystemCreated: true,

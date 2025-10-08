@@ -1,6 +1,10 @@
 import { ref, computed, watch, readonly, type Ref } from 'vue';
-import type { TaskTimeConfig, TaskScheduleMode } from '@dailyuse/contracts/modules/task/types';
+import type { TaskContracts } from '@dailyuse/contracts';
 import { format } from 'date-fns';
+
+// 使用类型别名
+type TaskTimeConfig = TaskContracts.TaskTimeConfig;
+type TaskScheduleMode = TaskContracts.TaskScheduleMode;
 
 /**
  * 任务调度验证组合式函数

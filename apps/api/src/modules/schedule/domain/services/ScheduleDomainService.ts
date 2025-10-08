@@ -1,5 +1,5 @@
 import type { IScheduleTaskRepository } from '@dailyuse/domain-server';
-import { ScheduleTask } from '@dailyuse/domain-server';
+import { ScheduleTask } from '@dailyuse/domain-core';
 import type { ScheduleContracts } from '@dailyuse/contracts';
 import { ScheduleStatus } from '@dailyuse/contracts';
 
@@ -48,8 +48,8 @@ export class ScheduleDomainService {
   async getScheduleTaskByUuid(accountUuid: string, uuid: string): Promise<ScheduleTask | null> {
     const task = await this.scheduleRepository.findByUuid(uuid);
 
-    // 验证权限
-    if (task && task.createdBy !== accountUuid) {
+    // 验证权限 - 通过 metadata.accountUuid 检查
+    if (task && task.metadata?.accountUuid !== accountUuid) {
       return null;
     }
 

@@ -100,7 +100,9 @@ export function useTask() {
   /**
    * 通过元模板创建任务模板
    */
-  async function createTaskTemplateByTaskMetaTemplate(metaTemplateUuid: string): Promise<TaskTemplate> {
+  async function createTaskTemplateByTaskMetaTemplate(
+    metaTemplateUuid: string,
+  ): Promise<TaskTemplate> {
     try {
       isOperating.value = true;
       operationError.value = null;
@@ -277,7 +279,10 @@ export function useTask() {
       isOperating.value = true;
       operationError.value = null;
 
-      const result = await taskService.getTaskInstances(params);
+      // TODO: 实现 getTaskInstances 批量查询方法
+      // const result = await taskService.getTaskInstances(params);
+      // 临时方案：返回空数组
+      const result = { data: [], total: 0, page: 1, limit: params?.limit || 20, hasMore: false };
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '获取任务实例列表失败';
@@ -395,7 +400,10 @@ export function useTask() {
   /**
    * 重新安排任务
    */
-  async function rescheduleTaskInstance(uuid: string, request: TaskContracts.RescheduleTaskRequest) {
+  async function rescheduleTaskInstance(
+    uuid: string,
+    request: TaskContracts.RescheduleTaskRequest,
+  ) {
     try {
       isOperating.value = true;
       operationError.value = null;

@@ -3,7 +3,7 @@ import { NotificationType, NotificationChannel } from '@dailyuse/contracts';
 /**
  * 渠道偏好设置
  */
-interface ChannelPreference {
+export interface ChannelPreference {
   enabled: boolean;
   types?: NotificationType[];
   quietHours?: {

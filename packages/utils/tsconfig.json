@@ -1,6 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "baseUrl": ".",
     "types": ["node"],
     "module": "ESNext",
     "target": "ES2020",

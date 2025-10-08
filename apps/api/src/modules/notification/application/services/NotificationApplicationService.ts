@@ -21,6 +21,7 @@ import { ChannelSelectionService } from '../../domain/services/ChannelSelectionS
 import { NotificationMapper } from '../../infrastructure/mappers/NotificationMapper';
 import { NotificationTemplate } from '../../domain/aggregates/NotificationTemplate';
 import { NotificationAction } from '../../domain/value-objects/NotificationAction';
+import { NotificationMetadata } from '../../domain/value-objects/NotificationMetadata';
 import { createLogger } from '@dailyuse/utils';
 
 const logger = createLogger('NotificationApplicationService');
@@ -77,10 +78,17 @@ export class NotificationApplicationService {
       channels: request.channels,
       icon: request.icon,
       image: request.image,
-      actions: request.actions,
+      actions: request.actions?.map((a) => NotificationAction.create(a)),
       scheduledAt: request.scheduledAt ? new Date(request.scheduledAt) : undefined,
       expiresAt: request.expiresAt ? new Date(request.expiresAt) : undefined,
-      metadata: request.metadata,
+      metadata:
+        request.metadata?.sourceType && request.metadata?.sourceId
+          ? NotificationMetadata.create({
+              sourceType: request.metadata.sourceType,
+              sourceId: request.metadata.sourceId,
+              additionalData: request.metadata.additionalData,
+            })
+          : undefined,
       templateUuid: request.templateUuid,
     });
 
@@ -104,28 +112,35 @@ export class NotificationApplicationService {
 
     // 解析查询参数
     const parsedParams: NotificationContracts.NotificationQueryParams = {
-      accountUuid,
-      status: queryParams.status as NotificationStatus | undefined,
-      type: queryParams.type as NotificationType | undefined,
+      status: queryParams.status
+        ? Array.isArray(queryParams.status)
+          ? queryParams.status
+          : [queryParams.status]
+        : undefined,
+      type: queryParams.type
+        ? Array.isArray(queryParams.type)
+          ? queryParams.type
+          : [queryParams.type]
+        : undefined,
       channels: queryParams.channels
         ? Array.isArray(queryParams.channels)
           ? queryParams.channels
           : [queryParams.channels]
         : undefined,
-      scheduledBefore: queryParams.scheduledBefore
-        ? new Date(queryParams.scheduledBefore)
-        : undefined,
-      scheduledAfter: queryParams.scheduledAfter ? new Date(queryParams.scheduledAfter) : undefined,
-      createdBefore: queryParams.createdBefore ? new Date(queryParams.createdBefore) : undefined,
-      createdAfter: queryParams.createdAfter ? new Date(queryParams.createdAfter) : undefined,
+      targetUser: accountUuid, // 使用 targetUser 字段传递 accountUuid
+      keyword: queryParams.keyword,
       limit: queryParams.limit ? parseInt(queryParams.limit, 10) : 50,
       offset: queryParams.offset ? parseInt(queryParams.offset, 10) : 0,
       sortBy: queryParams.sortBy,
       sortOrder: queryParams.sortOrder,
     };
 
-    // 查询通知
-    const result = await this.notificationRepository.query(parsedParams);
+    // 查询通知 - 转换 sortBy 到 repository 接受的类型
+    const repositoryParams = {
+      ...parsedParams,
+      sortBy: parsedParams.sortBy as 'createdAt' | 'updatedAt' | 'priority' | 'sentAt' | undefined,
+    };
+    const result = await this.notificationRepository.query(repositoryParams);
 
     // 转换为 ClientDTO
     const notifications = result.notifications.map((n) => NotificationMapper.toClientDTO(n));
@@ -137,7 +152,7 @@ export class NotificationApplicationService {
     });
 
     return {
-      notifications,
+      data: notifications,
       total: result.total,
       page: Math.floor(parsedParams.offset! / parsedParams.limit!) + 1,
       limit: parsedParams.limit!,
@@ -271,11 +286,20 @@ export class NotificationApplicationService {
       }
     }
 
-    const updated = await this.notificationDomainService.batchMarkAsRead(notificationIds);
+    await this.notificationDomainService.batchMarkAsRead(notificationIds);
+
+    // 重新查询更新后的通知
+    const updated = [];
+    for (const id of notificationIds) {
+      const notification = await this.notificationRepository.findByUuid(id);
+      if (notification) {
+        updated.push(NotificationMapper.toClientDTO(notification));
+      }
+    }
 
     logger.info('Notifications batch marked as read', { count: updated.length });
 
-    return updated.map((n) => NotificationMapper.toClientDTO(n));
+    return updated;
   }
 
   /**
@@ -299,11 +323,20 @@ export class NotificationApplicationService {
       }
     }
 
-    const updated = await this.notificationDomainService.batchMarkAsDismissed(notificationIds);
+    await this.notificationDomainService.batchMarkAsDismissed(notificationIds);
+
+    // 重新查询更新后的通知
+    const updated = [];
+    for (const id of notificationIds) {
+      const notification = await this.notificationRepository.findByUuid(id);
+      if (notification) {
+        updated.push(NotificationMapper.toClientDTO(notification));
+      }
+    }
 
     logger.info('Notifications batch marked as dismissed', { count: updated.length });
 
-    return updated.map((n) => NotificationMapper.toClientDTO(n));
+    return updated;
   }
 
   /**
@@ -367,11 +400,18 @@ export class NotificationApplicationService {
     ]);
 
     const stats: NotificationContracts.NotificationStatsResponse = {
-      unreadCount,
-      totalCount,
-      todayCount,
-      byType: {}, // 可以进一步扩展按类型统计
-      byChannel: {},
+      totalNotifications: totalCount,
+      unreadNotifications: unreadCount,
+      readNotifications: 0, // TODO: 实现
+      dismissedNotifications: 0, // TODO: 实现
+      failedNotifications: 0, // TODO: 实现
+      readRate: 0, // TODO: 实现
+      dismissalRate: 0, // TODO: 实现
+      byType: {} as Record<NotificationType, number>,
+      byPriority: {} as Record<NotificationPriority, number>,
+      byChannel: {} as Record<NotificationChannel, number>,
+      byStatus: {} as Record<NotificationStatus, number>,
+      recentTrend: [], // TODO: 实现
     };
 
     logger.debug('Notification stats retrieved', { accountUuid, stats });

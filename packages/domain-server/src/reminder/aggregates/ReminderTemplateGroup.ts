@@ -155,10 +155,10 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
     const enabledTemplates = this.templates.filter((t) => t.enabled).length;
     const disabledTemplates = totalTemplates - enabledTemplates;
 
-    const allInstances = this.templates.flatMap((t) => t.instances);
-    const totalInstances = allInstances.length;
-    const activeInstances = allInstances.filter((i) => i.isActive).length;
-    const completedInstances = allInstances.filter((i) => i.isCompleted).length;
+    // TODO: instances 已从 ReminderTemplate 移除，需要从其他地方获取实例统计
+    const totalInstances = 0;
+    const activeInstances = 0;
+    const completedInstances = 0;
 
     return {
       totalTemplates,

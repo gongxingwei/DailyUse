@@ -9,26 +9,43 @@ import type {
   PaginatedData,
   UploadOptions,
 } from '../../../../shared/api/core/types';
-import type {
-  FrontendAccountInfo,
-  FrontendCreateAccountRequest,
-  FrontendUpdateAccountRequest,
-  FrontendAccountQueryParams,
-  EmailVerifyRequest,
-  PhoneVerifyRequest,
-  RegistrationByUsernameAndPasswordRequestDTO,
-  RegistrationResponseDTO,
-  SuccessResponse,
-  ApiResponse,
-  AccountDTO,
-} from '@dailyuse/contracts';
+import type { AccountContracts } from '@dailyuse/contracts';
 
-// 重新导出常用类型
-export type AccountInfo = FrontendAccountInfo;
-export type CreateAccountRequest = FrontendCreateAccountRequest;
-export type UpdateAccountRequest = FrontendUpdateAccountRequest;
-export type AccountQueryParams = FrontendAccountQueryParams;
-export type { EmailVerifyRequest, PhoneVerifyRequest };
+// 使用 AccountContracts 命名空间中的类型
+type AccountDTO = AccountContracts.AccountDTO;
+type CreateAccountRequest = AccountContracts.CreateAccountRequest;
+type UpdateAccountRequest = AccountContracts.UpdateAccountRequest;
+type VerifyEmailRequest = AccountContracts.VerifyEmailRequest;
+type VerifyPhoneRequest = AccountContracts.VerifyPhoneRequest;
+type AccountCreationResponse = AccountContracts.AccountCreationResponse;
+type AccountDetailResponse = AccountContracts.AccountDetailResponse;
+type AccountListResponse = AccountContracts.AccountListResponse;
+
+// 注册相关类型
+type RegistrationByUsernameAndPasswordRequestDTO = CreateAccountRequest;
+type RegistrationResponseDTO = AccountCreationResponse;
+
+// 查询参数类型（使用通用的分页查询）
+interface AccountQueryParams {
+  page?: number;
+  limit?: number;
+  status?: string;
+  accountType?: string;
+  search?: string;
+}
+
+// 通用响应类型
+interface SuccessResponse<T = any> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+// 重新导出常用类型（使用新的类型名）
+export type AccountInfo = AccountDTO;
+export type { CreateAccountRequest, UpdateAccountRequest, AccountQueryParams };
+export type EmailVerifyRequest = VerifyEmailRequest;
+export type PhoneVerifyRequest = VerifyPhoneRequest;
 
 /**
  * 账户管理API服务

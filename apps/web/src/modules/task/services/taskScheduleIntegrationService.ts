@@ -4,7 +4,10 @@
  */
 
 import { getScheduleWebService } from '@/modules/schedule/application/services/ScheduleWebApplicationService';
-import type { CreateScheduleTaskRequestApi } from '@dailyuse/contracts/modules/schedule';
+import type { ScheduleContracts } from '@dailyuse/contracts';
+import { ScheduleTaskType, SchedulePriority } from '@dailyuse/contracts';
+
+type CreateScheduleTaskRequest = ScheduleContracts.CreateScheduleTaskRequestDto;
 import { eventBus } from '@dailyuse/utils';
 
 /**
@@ -59,13 +62,13 @@ export class TaskScheduleIntegrationService {
         const reminderTime = new Date(task.scheduledTime);
         reminderTime.setMinutes(reminderTime.getMinutes() - minutesBefore);
 
-        const scheduleTaskRequest: CreateScheduleTaskRequestApi = {
+        const scheduleTaskRequest: CreateScheduleTaskRequest = {
           name: `任务提醒: ${task.name}`,
           description: `${minutesBefore}分钟后执行任务"${task.name}"`,
-          taskType: 'TASK_REMINDER',
+          taskType: ScheduleTaskType.TASK_REMINDER,
           cronExpression: this.createCronFromDate(reminderTime),
           payload: {
-            type: 'TASK_REMINDER',
+            type: ScheduleTaskType.TASK_REMINDER,
             taskId: task.id,
             taskName: task.name,
             taskDescription: task.description,
@@ -75,12 +78,12 @@ export class TaskScheduleIntegrationService {
             allowSnooze: scheduleConfig.allowSnooze,
             snoozeOptions: scheduleConfig.snoozeOptions,
           },
-          priority: scheduleConfig.priority,
+          priority: this.mapPriority(scheduleConfig.priority),
           status: 'ACTIVE',
         };
 
         const scheduleTask = await getScheduleWebService().createScheduleTask(scheduleTaskRequest);
-        scheduleTaskIds.push(scheduleTask.id);
+        scheduleTaskIds.push(scheduleTask.uuid);
       }
 
       // 发布任务调度创建事件
@@ -289,6 +292,18 @@ export class TaskScheduleIntegrationService {
       priority: 'MEDIUM',
       alertMethods: ['POPUP', 'SYSTEM_NOTIFICATION'],
     };
+  }
+
+  /**
+   * 映射优先级到枚举值
+   */
+  static mapPriority(priority: string): SchedulePriority {
+    const mapping: Record<string, SchedulePriority> = {
+      LOW: SchedulePriority.LOW,
+      MEDIUM: SchedulePriority.NORMAL,
+      HIGH: SchedulePriority.HIGH,
+    };
+    return mapping[priority] || SchedulePriority.NORMAL;
   }
 
   /**

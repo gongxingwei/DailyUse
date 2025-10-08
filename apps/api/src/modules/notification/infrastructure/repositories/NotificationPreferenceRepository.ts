@@ -1,5 +1,6 @@
 import type { INotificationPreferenceRepository } from '../../domain/repositories/INotificationPreferenceRepository';
 import { NotificationPreference } from '../../domain/aggregates/NotificationPreference';
+import type { ChannelPreference } from '../../domain/aggregates/NotificationPreference';
 import { PrismaClient } from '@prisma/client';
 import { NotificationType, NotificationChannel } from '@dailyuse/contracts';
 import { v4 as uuidv4 } from 'uuid';
@@ -85,8 +86,11 @@ export class NotificationPreferenceRepository implements INotificationPreference
     const enabledTypes = JSON.parse(prismaPreference.enabledTypes || '[]');
     const channelPreferences = JSON.parse(prismaPreference.channelPreferences || '{}');
 
-    // 将普通对象转换为 Map
-    const channelPrefsMap = new Map(Object.entries(channelPreferences));
+    // 将普通对象转换为 Map<NotificationChannel, ChannelPreference>
+    const channelPrefsMap = new Map(Object.entries(channelPreferences)) as Map<
+      NotificationChannel,
+      ChannelPreference
+    >;
 
     return NotificationPreference.fromPersistence({
       uuid: prismaPreference.uuid,

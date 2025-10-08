@@ -1,14 +1,19 @@
 /**
  * 全局初始化服务使用示例
  * 展示如何在不同场景下使用全局初始化服务
+ *
+ * @deprecated 此示例文件依赖的 useGlobalInitialization 已被重构
+ * TODO: 更新示例以使用新的初始化架构
  */
 
-import { useGlobalInitialization } from '@/composables/useGlobalInitialization';
+// import { useGlobalInitialization } from '@/composables/useGlobalInitialization';
 
 /**
  * 示例 1：在 Vue 组件中使用
  */
 export function useInitializationExample() {
+  // TODO: 更新为使用新的初始化 API
+  /*
   const {
     initializeAllModules,
     forceSyncAllData,
@@ -18,13 +23,17 @@ export function useInitializationExample() {
     syncStatus,
     clearError,
   } = useGlobalInitialization();
+  */
 
   // 在组件挂载时检查并初始化
   const checkAndInitialize = async () => {
+    /* 
     if (!isFullyInitialized.value) {
       console.log('检测到未初始化，开始初始化...');
       await initializeAllModules();
     }
+    */
+    console.warn('此功能待重构');
   };
 
   // 强制刷新所有数据

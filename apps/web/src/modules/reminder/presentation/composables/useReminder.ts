@@ -87,7 +87,7 @@ export function useReminder() {
    * 创建提醒分组
    */
   const createGroup = async (
-    request: ReminderContracts.CreateReminderGroupRequest,
+    request: ReminderContracts.CreateReminderTemplateGroupRequest,
   ): Promise<ReminderTemplateGroup> => {
     return await reminderService.createReminderTemplateGroup(request);
   };
@@ -115,7 +115,7 @@ export function useReminder() {
    */
   const updateGroup = async (
     uuid: string,
-    request: Partial<ReminderContracts.CreateReminderGroupRequest>,
+    request: Partial<ReminderContracts.CreateReminderTemplateGroupRequest>,
   ): Promise<ReminderTemplateGroup> => {
     return await reminderService.updateReminderTemplateGroup(uuid, request);
   };
@@ -216,7 +216,7 @@ export function useReminder() {
    */
   const createTemplate = async (
     request: ReminderContracts.CreateReminderTemplateRequest,
-  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> => {
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> => {
     return await reminderService.createReminderTemplate(request);
   };
 
@@ -292,7 +292,7 @@ export function useReminder() {
   const createInstance = async (
     templateUuid: string,
     request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> => {
+  ): Promise<ReminderContracts.ReminderInstanceClientDTO> => {
     const instance = await reminderService.createReminderInstance(templateUuid, request);
     if (currentTemplate.value?.uuid === templateUuid) {
       await loadTemplateInstances(templateUuid);
@@ -341,7 +341,7 @@ export function useReminder() {
     templateUuid: string,
     instanceUuid: string,
     response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> => {
+  ): Promise<ReminderContracts.ReminderInstanceClientDTO> => {
     const instance = await reminderService.respondToReminder(templateUuid, instanceUuid, response);
     // 刷新当前实例列表
     if (currentTemplate.value?.uuid === templateUuid) {
@@ -409,14 +409,14 @@ export function useReminder() {
   const getActiveReminders = async (params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderInstanceListResponse['data']> => {
+  }): Promise<ReminderContracts.ReminderInstanceListResponse> => {
     return await reminderService.getActiveReminders(params);
   };
 
   /**
    * 获取全局统计
    */
-  const getGlobalStats = async (): Promise<ReminderContracts.ReminderStatsResponse['data']> => {
+  const getGlobalStats = async (): Promise<ReminderContracts.ReminderStatsResponse> => {
     return await reminderService.getGlobalStats();
   };
 
@@ -425,7 +425,7 @@ export function useReminder() {
    */
   const getAggregateStats = async (
     templateUuid: string,
-  ): Promise<ReminderContracts.ReminderStatsResponse['data']> => {
+  ): Promise<ReminderContracts.ReminderStatsResponse> => {
     return await reminderService.getAggregateStats(templateUuid);
   };
 

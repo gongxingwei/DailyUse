@@ -27,10 +27,11 @@ export * as ThemeContracts from './modules/theme';
 export * as ScheduleContracts from './modules/schedule';
 export * from './modules/index';
 
-// 导出模块的枚举类型
-export * from './modules/goal/enums';
-export * from './modules/schedule/enums';
-export * from './modules/notification/enums';
+// 注意：不再直接导出所有枚举，避免 SortOrder 等重复定义冲突
+// SortOrder 在 goal/notification/reminder 模块中都有定义，必须通过命名空间访问
+// 例如: GoalContracts.SortOrder, NotificationContracts.SortOrder
+
+// 保留 Reminder 枚举导出（代码中有直接使用）
 export {
   ReminderTimeConfigType,
   ReminderDurationUnit,
@@ -38,3 +39,43 @@ export {
   ReminderStatus,
   ReminderTemplateEnableMode,
 } from './modules/reminder/enums';
+
+// 导出 Schedule 枚举（不包含 SortOrder）
+export {
+  ScheduleStatus,
+  SchedulePriority,
+  ScheduleTaskType,
+  RecurrenceType,
+  AlertMethod,
+  AlertActionStyle,
+  ScheduleBatchOperationType,
+  ScheduleTaskStatus,
+  TriggerType,
+} from './modules/schedule/enums';
+
+// 导出 Goal 枚举（不包含 SortOrder）
+export {
+  GoalStatus,
+  KeyResultStatus,
+  GoalProgressStatus,
+  GoalSortField,
+  GoalDirSystemType,
+} from './modules/goal/enums';
+
+// 导出 Notification 枚举（不包含 SortOrder）
+export {
+  NotificationType,
+  NotificationStatus,
+  NotificationPriority,
+  NotificationChannel,
+  DeliveryStatus,
+  NotificationActionType, // 添加 NotificationActionType
+} from './modules/notification/enums';
+
+// 导出 Task 枚举（常用的）
+export {
+  TaskTemplateStatus,
+  TaskInstanceStatus,
+  TaskTimeType,
+  TaskScheduleMode,
+} from './modules/task/enums';

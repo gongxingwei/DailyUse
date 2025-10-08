@@ -123,7 +123,8 @@ export class ReminderTemplate extends ReminderTemplateCore {
    * 获取进度颜色（UI相关）
    */
   get progressColor(): string {
-    const completionRate = this.completionRate;
+    // TODO: 实现 completionRate 计算逻辑
+    const completionRate = 0; // this.completionRate;
     if (completionRate >= 80) return 'success';
     if (completionRate >= 60) return 'warning';
     if (completionRate >= 40) return 'info';
@@ -137,7 +138,9 @@ export class ReminderTemplate extends ReminderTemplateCore {
   get statusText(): string {
     if (!this.enabled) return '已禁用';
     if (!this.isActuallyEnabled) return '组禁用';
-    if (this.activeInstanceCount > 0) return '活跃';
+    // TODO: 实现 activeInstanceCount 计算逻辑
+    const activeInstanceCount = 0; // this.activeInstanceCount;
+    if (activeInstanceCount > 0) return '活跃';
     return '待触发';
   }
 

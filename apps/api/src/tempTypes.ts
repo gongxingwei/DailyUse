@@ -1,18 +1,8 @@
-import { AccountType, type AccountDTO } from '@dailyuse/domain-client';
+import { AccountContracts } from '@dailyuse/contracts';
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+// 使用类型和enum
+type AccountDTO = AccountContracts.AccountDTO;
+const { AccountType } = AccountContracts;
 
 export type TResponse<T = any> = {
   success: boolean;

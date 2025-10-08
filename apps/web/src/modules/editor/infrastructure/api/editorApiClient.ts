@@ -27,7 +27,7 @@ export class EditorSessionApiClient {
     limit?: number;
     accountUuid?: string;
     status?: string;
-  }): Promise<EditorContracts.EditorSessionListResponse['data']> {
+  }): Promise<EditorContracts.EditorSessionListResponse> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }

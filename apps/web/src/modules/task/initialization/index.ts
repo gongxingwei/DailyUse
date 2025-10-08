@@ -70,9 +70,9 @@ export function registerTaskInitializationTasks(): void {
         // 2. 获取 TaskMetaTemplates（元模板）
         console.log('📥 [Task] 获取 TaskMetaTemplate 列表...');
         try {
-          const metaTemplates = await taskService.getTaskMetaTemplates();
+          const metaTemplatesResponse = await taskService.getTaskMetaTemplates();
           console.log(
-            `✅ [Task] 成功获取 ${metaTemplates.metaTemplates.length} 个 TaskMetaTemplate`,
+            `✅ [Task] 成功获取 ${metaTemplatesResponse.data.length} 个 TaskMetaTemplate`,
           );
         } catch (error) {
           console.warn('⚠️ [Task] 获取 TaskMetaTemplate 失败，继续初始化', error);
@@ -81,8 +81,8 @@ export function registerTaskInitializationTasks(): void {
         // 3. 获取 TaskTemplates（包含 instances）
         console.log('📥 [Task] 获取 TaskTemplate 列表（包含 instances）...');
         try {
-          const templates = await taskService.getTaskTemplates({ limit: 100 });
-          console.log(`✅ [Task] 成功获取 ${templates.templates.length} 个 TaskTemplate`);
+          const templatesResponse = await taskService.getTaskTemplates({ limit: 100 });
+          console.log(`✅ [Task] 成功获取 ${templatesResponse.data.length} 个 TaskTemplate`);
         } catch (error) {
           console.warn('⚠️ [Task] 获取 TaskTemplate 失败，继续初始化', error);
         }

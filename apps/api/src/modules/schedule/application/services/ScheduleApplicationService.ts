@@ -62,14 +62,14 @@ export class ScheduleApplicationService {
   async createScheduleTask(
     accountUuid: string,
     request: ScheduleContracts.CreateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     // 应用层可以添加额外的业务逻辑：
     // 1. 权限验证
     // 2. 配额检查
     // 3. 业务规则验证
 
     const task = await this.scheduleDomainService.createScheduleTask(accountUuid, request);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -78,9 +78,9 @@ export class ScheduleApplicationService {
   async getScheduleTask(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto | null> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO | null> {
     const task = await this.scheduleDomainService.getScheduleTaskByUuid(accountUuid, uuid);
-    return task ? task.toClient() : null;
+    return task ? task.toDTO() : null;
   }
 
   /**
@@ -92,7 +92,7 @@ export class ScheduleApplicationService {
   ): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
     const result = await this.scheduleDomainService.getScheduleTasks(accountUuid, query);
     return {
-      tasks: result.tasks.map((task) => task.toClient()),
+      tasks: result.tasks.map((task) => task.toDTO()),
       total: result.total,
       pagination: result.pagination || {
         offset: 0,
@@ -109,9 +109,9 @@ export class ScheduleApplicationService {
     accountUuid: string,
     uuid: string,
     request: ScheduleContracts.UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const task = await this.scheduleDomainService.updateScheduleTask(accountUuid, uuid, request);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -129,9 +129,9 @@ export class ScheduleApplicationService {
   async enableScheduleTask(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const task = await this.scheduleDomainService.enableScheduleTask(accountUuid, uuid);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -140,9 +140,9 @@ export class ScheduleApplicationService {
   async disableScheduleTask(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const task = await this.scheduleDomainService.disableScheduleTask(accountUuid, uuid);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -151,9 +151,9 @@ export class ScheduleApplicationService {
   async pauseScheduleTask(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const task = await this.scheduleDomainService.pauseScheduleTask(accountUuid, uuid);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -162,9 +162,9 @@ export class ScheduleApplicationService {
   async resumeScheduleTask(
     accountUuid: string,
     uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const task = await this.scheduleDomainService.resumeScheduleTask(accountUuid, uuid);
-    return task.toClient();
+    return task.toDTO();
   }
 
   /**
@@ -242,7 +242,7 @@ export class ScheduleApplicationService {
   async createQuickReminder(
     accountUuid: string,
     request: ScheduleContracts.QuickReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const createRequest: ScheduleContracts.CreateScheduleTaskRequestDto = {
       name: request.title,
       description: request.message,
@@ -273,7 +273,7 @@ export class ScheduleApplicationService {
   async snoozeReminder(
     accountUuid: string,
     request: ScheduleContracts.SnoozeReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
+  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
     const snoozeTime = new Date(Date.now() + request.snoozeMinutes * 60 * 1000);
 
     return await this.updateScheduleTask(accountUuid, request.taskUuid, {

@@ -1,5 +1,9 @@
 import { ref, computed } from 'vue';
-import type { TaskTimeConfig, TaskTimeType } from '@dailyuse/contracts/modules/task/types';
+import type { TaskContracts } from '@dailyuse/contracts';
+
+// 使用类型别名
+type TaskTimeConfig = TaskContracts.TaskTimeConfig;
+type TaskTimeType = TaskContracts.TaskTimeType;
 
 /**
  * 时间配置验证组合式函数

@@ -23,7 +23,8 @@ async function testDatabaseSchemaOptimization() {
   try {
     // 1. 创建测试目标
     console.log('📝 创建测试目标...');
-    const testGoalData: Omit<GoalContracts.GoalDTO, 'uuid' | 'lifecycle'> = {
+    const testGoalData: GoalContracts.GoalDTO = {
+      uuid: crypto.randomUUID(),
       name: '完成DDD架构迁移',
       description: '将Goal模块迁移到DDD架构，优化数据库性能',
       color: '#4CAF50',
@@ -41,10 +42,17 @@ async function testDatabaseSchemaOptimization() {
         tags: ['DDD', '架构优化', '数据库', '性能'],
         category: '技术架构',
       },
+      lifecycle: {
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        status: GoalStatus.ACTIVE,
+      },
       version: 1,
     };
 
-    const createdGoal = await goalAggregateRepository.saveGoal(testAccountUuid, testGoalData);
+    // 创建Goal实体
+    const goalEntity = Goal.fromDTO(testGoalData);
+    const createdGoal = await goalAggregateRepository.saveGoal(testAccountUuid, goalEntity);
     console.log('✅ 目标创建成功:', createdGoal.name);
     console.log('   - 重要程度:', createdGoal.analysis.importanceLevel);
     console.log('   - 紧急程度:', createdGoal.analysis.urgencyLevel);
@@ -78,7 +86,7 @@ async function testDatabaseSchemaOptimization() {
     // 3. 测试复合查询
     console.log('\n🎯 测试复合查询...');
     const complexQuery = await goalAggregateRepository.getAllGoals(testAccountUuid, {
-      status: 'active',
+      // status: GoalStatus.ACTIVE, // TODO: 需要导入 GoalStatus
       importanceLevel: ImportanceLevel.Important,
       urgencyLevel: UrgencyLevel.Medium,
       category: '技术',
@@ -88,16 +96,10 @@ async function testDatabaseSchemaOptimization() {
 
     // 4. 测试更新操作
     console.log('\n📝 测试更新操作...');
-    const updatedGoal = await goalAggregateRepository.saveGoal(testAccountUuid, createdGoal.uuid, {
-      analysis: {
-        ...createdGoal.analysis,
-        urgencyLevel: UrgencyLevel.High, // 提升紧急程度
-      },
-      metadata: {
-        ...createdGoal.metadata,
-        category: '技术架构升级', // 更新分类
-      },
-    });
+    // 更新Goal实体属性
+    createdGoal.analysis.urgencyLevel = UrgencyLevel.High;
+    createdGoal.metadata.category = '技术架构升级';
+    const updatedGoal = await goalAggregateRepository.saveGoal(testAccountUuid, createdGoal);
     console.log('✅ 目标更新成功');
     console.log('   - 紧急程度更新为:', updatedGoal.analysis.urgencyLevel);
     console.log('   - 分类更新为:', updatedGoal.metadata.category);

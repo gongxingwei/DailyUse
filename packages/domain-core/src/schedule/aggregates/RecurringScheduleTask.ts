@@ -191,8 +191,8 @@ export class RecurringScheduleTask extends AggregateRoot {
       dto.uuid,
       dto.name,
       dto.description,
-      dto.triggerType,
-      dto.cronExpression,
+      TriggerEnum.CRON, // 统一使用 CRON
+      dto.cronExpression || '', // 确保不为 undefined
       dto.scheduledTime,
       dto.status,
       dto.enabled,
@@ -316,8 +316,8 @@ export class RecurringScheduleTask extends AggregateRoot {
       uuid: this.uuid,
       name: this._name,
       description: this._description,
-      triggerType: this._triggerType,
-      cronExpression: this._cronExpression,
+      triggerType: TriggerEnum.CRON, // 始终返回 CRON
+      cronExpression: this._cronExpression || '', // 确保不为 undefined
       scheduledTime: this._scheduledTime,
       status: this._status,
       enabled: this._enabled,

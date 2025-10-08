@@ -59,7 +59,10 @@ export class AuthenticationController {
 
       if (result.success && result.data) {
         // 成功登录，返回完整的令牌信息
-        logger.info('Login successful', { username, accountUuid: result.data.accountUuid });
+        logger.info('Login successful', {
+          username,
+          userId: result.data.user?.uuid || 'unknown',
+        });
         return AuthenticationController.responseBuilder.sendSuccess(
           res,
           result.data,

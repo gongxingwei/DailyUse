@@ -2,14 +2,14 @@
 import type { IUserRepository } from '@dailyuse/domain-client';
 // import type { UserDomainService } from '../../domain/services/UserDomainService';
 
-import type { AccountDTO, UserDTO } from '@dailyuse/domain-client';
+import type { AccountContracts } from '@dailyuse/contracts';
 import { AccountApiService } from '../../infrastructure/api/ApiClient';
-import type {
-  RegistrationByUsernameAndPasswordRequestDTO,
-  RegistrationResponseDTO,
-  SuccessResponse,
-  ApiResponse,
-} from '@dailyuse/contracts';
+
+// 使用 AccountContracts 命名空间中的类型
+type AccountDTO = AccountContracts.AccountDTO;
+type UserDTO = AccountContracts.UserDTO;
+type RegistrationByUsernameAndPasswordRequestDTO = AccountContracts.CreateAccountRequest;
+type RegistrationResponseDTO = AccountContracts.AccountCreationResponse;
 
 /**
  * 用户应用服务

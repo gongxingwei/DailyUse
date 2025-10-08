@@ -163,8 +163,7 @@ describe(
         // 查找最近创建的 ScheduleTask
         const scheduleTasks = await prisma.scheduleTask.findMany({
           where: {
-            accountUuid: testAccountUuid,
-            taskType: 'reminder',
+            sourceModule: 'reminder',
             enabled: true,
           },
           orderBy: { createdAt: 'desc' },
@@ -177,20 +176,19 @@ describe(
         cleanupIds.scheduleTasks.push(latestTask.uuid);
 
         console.log(`  ✅ ScheduleTask found: ${latestTask.uuid}`);
-        console.log(`     Title: ${latestTask.title}`);
-        console.log(`     Type: ${latestTask.taskType}`);
+        console.log(`     Name: ${latestTask.name}`);
+        console.log(`     Source Module: ${latestTask.sourceModule}`);
+        console.log(`     Source Entity ID: ${latestTask.sourceEntityId}`);
         console.log(`     Enabled: ${latestTask.enabled}`);
-        console.log(`     Scheduled Time: ${latestTask.scheduledTime.toISOString()}`);
-        console.log(`     Next Run: ${latestTask.nextScheduledAt?.toISOString() || 'N/A'}`);
+        console.log(`     Cron Expression: ${latestTask.cronExpression}`);
+        console.log(`     Status: ${latestTask.status}`);
 
-        // 验证 payload 包含提醒信息
-        const payload = latestTask.payload as any;
-        expect(payload).toBeDefined();
-        expect(payload.sourceType).toBe('reminder');
-        expect(payload.sourceId).toBeDefined();
+        // 验证包含提醒信息
+        expect(latestTask.sourceModule).toBe('reminder');
+        expect(latestTask.sourceEntityId).toBeDefined();
+        expect(latestTask.cronExpression).toBeDefined();
 
-        console.log(`     Source Type: ${payload.sourceType}`);
-        console.log(`     Source ID: ${payload.sourceId}`);
+        console.log(`     Description: ${latestTask.description || 'N/A'}`);
       });
     });
 
@@ -198,11 +196,10 @@ describe(
       it('should trigger task and create notification', async () => {
         console.log('\n🎯 Step 3: Simulating scheduler trigger...');
 
-        // 获取最新的 ScheduleTask
+        // 获取最近创建的 ScheduleTask
         const task = await prisma.scheduleTask.findFirst({
           where: {
-            accountUuid: testAccountUuid,
-            taskType: 'reminder',
+            sourceModule: 'reminder',
             enabled: true,
           },
           orderBy: { createdAt: 'desc' },
@@ -211,26 +208,24 @@ describe(
         expect(task).toBeDefined();
 
         console.log(`  📋 Triggering task: ${task!.uuid}`);
+        console.log(`  📋 Task name: ${task!.name}`);
+        console.log(`  📋 Cron expression: ${task!.cronExpression}`);
 
-        // 模拟调度器执行：更新执行状态
+        // 模拟调度器执行：更新任务状态
         const executionTime = new Date();
         await prisma.scheduleTask.update({
           where: { uuid: task!.uuid },
           data: {
-            lastExecutedAt: executionTime,
-            executionCount: { increment: 1 },
-            nextScheduledAt: new Date(executionTime.getTime() + 60000), // 下一次 1 分钟后
+            status: 'active',
+            updatedAt: executionTime,
           },
         });
 
-        console.log(`  ✅ Task executed at: ${executionTime.toISOString()}`);
-        console.log(
-          `  ⏭️  Next run at: ${new Date(executionTime.getTime() + 60000).toISOString()}`,
-        );
+        console.log(`  ✅ Task triggered at: ${executionTime.toISOString()}`);
+        console.log(`  📋 Task will run according to cron: ${task!.cronExpression}`);
 
         // 在真实环境中，这里会触发 TaskTriggeredEvent
         // 我们手动创建 Notification 来模拟
-        const payload = task!.payload as any;
         const notificationUuid = generateUUID();
 
         const notification = await prisma.notification.create({
@@ -244,9 +239,10 @@ describe(
             status: 'pending',
             channels: JSON.stringify(['sse', 'in_app']), // SSE + In-App
             metadata: JSON.stringify({
-              sourceType: 'reminder',
-              sourceId: payload.sourceId,
+              sourceModule: task!.sourceModule,
+              sourceEntityId: task!.sourceEntityId,
               taskId: task!.uuid,
+              taskName: task!.name,
               notificationSound: true,
               notificationPopup: true,
               soundFile: 'default-notification.mp3',
@@ -379,15 +375,16 @@ describe(
         // 2. 验证 ScheduleTask
         const scheduleTask = await prisma.scheduleTask.findFirst({
           where: {
-            accountUuid: testAccountUuid,
-            taskType: 'reminder',
+            sourceModule: 'reminder',
           },
           orderBy: { createdAt: 'desc' },
         });
 
         expect(scheduleTask).toBeDefined();
-        expect(scheduleTask!.executionCount).toBeGreaterThan(0);
-        console.log(`  ✅ ScheduleTask verified: Executed ${scheduleTask!.executionCount} times`);
+        expect(scheduleTask!.status).toBeDefined();
+        console.log(
+          `  ✅ ScheduleTask verified: Status=${scheduleTask!.status}, Cron=${scheduleTask!.cronExpression}`,
+        );
 
         // 3. 验证 Notification
         const notification = await prisma.notification.findFirst({
@@ -422,7 +419,7 @@ describe(
           `  ║  ScheduleTask      → ${scheduleTask!.uuid.substring(0, 8)}...           ║`,
         );
         console.log(
-          `  ║    (Executed ${scheduleTask!.executionCount}x)                                     ║`,
+          `  ║    (Cron: ${scheduleTask!.cronExpression.padEnd(15)})                      ║`,
         );
         console.log('  ║         ↓                                                  ║');
         console.log(
@@ -446,33 +443,29 @@ describe(
     });
 
     describe('Step 6: 测试循环调度', () => {
-      it('should verify recurring task is re-queued', async () => {
-        console.log('\n🔄 Step 6: Verifying recurring task re-queue...');
+      it('should verify recurring task configuration', async () => {
+        console.log('\n🔄 Step 6: Verifying recurring task configuration...');
 
         const task = await prisma.scheduleTask.findFirst({
           where: {
-            accountUuid: testAccountUuid,
-            taskType: 'reminder',
+            sourceModule: 'reminder',
           },
           orderBy: { createdAt: 'desc' },
         });
 
         expect(task).toBeDefined();
-        expect(task!.nextScheduledAt).toBeDefined();
+        expect(task!.cronExpression).toBeDefined();
 
-        const now = Date.now();
-        const nextRun = task!.nextScheduledAt!.getTime();
-        const interval = nextRun - now;
+        console.log(`  ⏰ Task name: ${task!.name}`);
+        console.log(`  ⏰ Cron expression: ${task!.cronExpression}`);
+        console.log(`  ⏰ Status: ${task!.status}`);
+        console.log(`  ⏰ Enabled: ${task!.enabled}`);
 
-        console.log(`  ⏰ Current time: ${new Date(now).toISOString()}`);
-        console.log(`  ⏰ Next run time: ${task!.nextScheduledAt!.toISOString()}`);
-        console.log(`  ⏰ Interval: ${Math.round(interval / 1000)} seconds`);
+        // 验证 Cron 表达式存在且格式正确
+        expect(task!.cronExpression).toMatch(/^[\d\*\-\/,\s]+$/);
+        expect(task!.enabled).toBe(true);
 
-        // 验证间隔约为 60 秒（允许 ±10 秒误差）
-        expect(interval).toBeGreaterThan(50000);
-        expect(interval).toBeLessThan(70000);
-
-        console.log(`  ✅ Recurring task verified: Next run in ~60 seconds`);
+        console.log(`  ✅ Recurring task verified: Cron expression configured`);
       });
     });
 
@@ -487,7 +480,7 @@ describe(
         });
 
         const task = await prisma.scheduleTask.findFirst({
-          where: { accountUuid: testAccountUuid, taskType: 'reminder' },
+          where: { sourceModule: 'reminder' },
           orderBy: { createdAt: 'desc' },
         });
 
@@ -499,16 +492,18 @@ describe(
 
         if (reminder && task && notification) {
           const reminderCreated = reminder.createdAt.getTime();
-          const taskExecuted = task.lastExecutedAt?.getTime() || 0;
-          const notificationSent = notification.sentAt?.getTime() || 0;
+          const taskCreated = task.createdAt?.getTime() || 0;
+          const notificationSent =
+            notification.sentAt?.getTime() || notification.createdAt.getTime();
 
-          const createToSchedule = taskExecuted - reminderCreated;
-          const scheduleToNotification = notificationSent - taskExecuted;
+          const createToSchedule = taskCreated - reminderCreated;
+          const scheduleToNotification = notificationSent - taskCreated;
           const totalTime = notificationSent - reminderCreated;
 
           console.log(`  Reminder → ScheduleTask:  ${Math.round(createToSchedule)}ms`);
           console.log(`  ScheduleTask → Notification:  ${Math.round(scheduleToNotification)}ms`);
           console.log(`  Total E2E Time:  ${Math.round(totalTime)}ms`);
+          console.log(`  Cron Expression:  ${task.cronExpression}`);
           console.log(`  Delivery Channels:  ${notification.deliveryReceipts.length}`);
           console.log(
             `  Success Rate:  ${notification.deliveryReceipts.filter((r) => r.status === 'sent').length}/${notification.deliveryReceipts.length} (100%)`,

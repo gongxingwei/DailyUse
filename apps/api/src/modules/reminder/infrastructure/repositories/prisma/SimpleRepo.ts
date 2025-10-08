@@ -8,8 +8,7 @@ export class PrismaReminderAggregateRepository {
       const templates = await this.prisma.reminderTemplate.findMany({
         where: { accountUuid },
         include: {
-          instances: true,
-          schedules: true,
+          // instances 和 schedules 在当前 schema 中不存在，已移除
           group: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -29,8 +28,9 @@ export class PrismaReminderAggregateRepository {
         version: template.version || 1,
         createdAt: template.createdAt,
         updatedAt: template.updatedAt,
-        instances: template.instances || [],
-        schedules: template.schedules || [],
+        // instances 和 schedules 数据需要单独查询
+        instances: [],
+        schedules: [],
       }));
     } catch (error) {
       console.error('获取聚合根列表错误:', error);

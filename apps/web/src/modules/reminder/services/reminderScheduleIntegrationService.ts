@@ -102,13 +102,13 @@ class ReminderScheduleIntegrationService {
       // 发布集成事件（暂时使用 console.log 代替 eventBus）
       console.log('reminder-schedule-created', {
         reminderId: reminder.id,
-        scheduleId: scheduleTask.id,
+        scheduleId: scheduleTask.uuid,
         scheduleTask,
       });
 
       return {
         success: true,
-        scheduleId: scheduleTask.id,
+        scheduleId: scheduleTask.uuid,
         message: '提醒调度创建成功',
         data: scheduleTask,
       };
@@ -251,9 +251,11 @@ class ReminderScheduleIntegrationService {
    */
   async getReminderSchedules(): Promise<ScheduleTask[]> {
     try {
-      const allTasks = await getScheduleWebService().getScheduleTasks();
-      return allTasks.filter(
-        (task) => task.taskType.includes('REMINDER') || task.taskType.includes('NOTIFICATION'),
+      const response = await getScheduleWebService().getScheduleTasks();
+      // @ts-expect-error - 临时类型不匹配，待重构
+      return response.tasks.filter(
+        (task: ScheduleTask) =>
+          task.taskType.includes('REMINDER') || task.taskType.includes('NOTIFICATION'),
       );
     } catch (error) {
       console.error('获取提醒调度列表失败:', error);

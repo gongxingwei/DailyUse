@@ -58,17 +58,15 @@ export class GoalWebApplicationService {
       const goalsData = await goalApiClient.getGoals(params);
 
       // 批量创建客户端实体并同步到 store
-      const goals = (goalsData?.data || []).map((goalData) => Goal.fromClientDTO(goalData));
+      const goals = (goalsData.data || []).map((goalData) => Goal.fromClientDTO(goalData));
       this.goalStore.setGoals(goals);
 
       // 更新分页信息
-      if (goalsData?.page) {
-        this.goalStore.setPagination({
-          page: goalsData.page,
-          limit: goalsData.limit,
-          total: goalsData.total,
-        });
-      }
+      this.goalStore.setPagination({
+        page: goalsData.page,
+        limit: goalsData.limit,
+        total: goalsData.total,
+      });
 
       return goalsData;
     } catch (error) {

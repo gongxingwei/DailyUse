@@ -1,9 +1,12 @@
 /**
  * Editor Domain Service
  * 编辑器领域服务 - 实现核心业务逻辑
+ *
+ * @deprecated 此文件的类型定义与 contracts 不匹配，需要重构
+ * TODO: 更新 EditorContracts 类型定义以包含所有运行时属性
  */
 
-import { EditorContracts, type CoreContracts } from '@dailyuse/contracts';
+import { EditorContracts } from '@dailyuse/contracts';
 
 // 使用类型别名来简化类型引用
 type IEditorTab = EditorContracts.IEditorTab;

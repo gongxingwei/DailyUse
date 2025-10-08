@@ -100,14 +100,14 @@ export class ScheduleTaskScheduler {
           status: 'pending',
           OR: [
             // 调度时间已到
-            { scheduledTime: { lte: now } },
+            { nextRunAt: { lte: now } },
             // 下次执行时间已到或为空
-            { nextScheduledAt: { lte: now } },
-            { nextScheduledAt: null },
+            { nextRunAt: { lte: now } },
+            { nextRunAt: null },
           ],
         },
         orderBy: {
-          scheduledTime: 'asc',
+          nextRunAt: 'asc',
         },
         take: 10, // 每次最多处理10个任务
       });
@@ -120,29 +120,29 @@ export class ScheduleTaskScheduler {
       logger.info('找到待执行任务', {
         taskCount: tasks.length,
         taskIds: tasks.map((t) => t.uuid),
-        taskTitles: tasks.map((t) => t.title),
+        taskTitles: tasks.map((t) => t.name),
       });
 
       for (const task of tasks) {
         try {
           logger.debug('开始执行任务', {
             taskId: task.uuid,
-            taskTitle: task.title,
-            taskType: task.taskType,
-            scheduledTime: task.scheduledTime,
-            nextScheduledAt: task.nextScheduledAt,
+            taskTitle: task.name,
+            taskType: task.sourceModule,
+            nextRunAt: task.nextRunAt,
+            nextRunAt: task.nextRunAt,
           });
 
           await this.executeTask(task);
 
           logger.info('任务执行成功', {
             taskId: task.uuid,
-            taskTitle: task.title,
+            taskTitle: task.name,
           });
         } catch (error) {
           logger.error('任务执行失败', {
             taskId: task.uuid,
-            taskTitle: task.title,
+            taskTitle: task.name,
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined,
           });
@@ -151,16 +151,16 @@ export class ScheduleTaskScheduler {
           await this.prisma.scheduleTask.update({
             where: { uuid: task.uuid },
             data: {
-              failureCount: { increment: 1 },
+              executionCount: { increment: 1 },
               lastExecutedAt: now,
-              status: task.failureCount >= 2 ? 'failed' : 'pending', // 失败3次后标记为失败
+              status: task.executionCount >= 2 ? 'failed' : 'pending', // 失败3次后标记为失败
             },
           });
 
           logger.warn('更新任务失败计数', {
             taskId: task.uuid,
-            newFailureCount: task.failureCount + 1,
-            newStatus: task.failureCount >= 2 ? 'failed' : 'pending',
+            newexecutionCount: task.executionCount + 1,
+            newStatus: task.executionCount >= 2 ? 'failed' : 'pending',
           });
         }
       }
@@ -179,8 +179,8 @@ export class ScheduleTaskScheduler {
     const now = new Date();
     logger.debug('开始执行任务详情', {
       taskId: task.uuid,
-      taskTitle: task.title,
-      taskType: task.taskType,
+      taskTitle: task.name,
+      taskType: task.sourceModule,
       priority: task.priority,
       executionCount: task.executionCount,
     });
@@ -241,9 +241,9 @@ export class ScheduleTaskScheduler {
 
     // 计算下次执行时间（如果是重复任务）
     if (recurrence && recurrence.type !== 'NONE') {
-      const nextTime = this.calculateNextExecution(task.scheduledTime, recurrence, now);
+      const nextTime = this.calculateNextExecution(task.nextRunAt, recurrence, now);
       if (nextTime) {
-        updateData.nextScheduledAt = nextTime;
+        updateData.nextRunAt = nextTime;
         logger.info('计算下次执行时间', {
           taskId: task.uuid,
           recurrenceType: recurrence.type,
@@ -268,7 +268,7 @@ export class ScheduleTaskScheduler {
       taskId: task.uuid,
       newExecutionCount: task.executionCount + 1,
       newStatus: updateData.status,
-      nextScheduledAt: updateData.nextScheduledAt?.toISOString(),
+      nextRunAt: updateData.nextRunAt?.toISOString(),
     });
   }
 
@@ -278,9 +278,9 @@ export class ScheduleTaskScheduler {
   private async sendReminderEvent(task: any, payload: any, alertConfig: any): Promise<void> {
     const reminderData = {
       id: task.uuid,
-      title: task.title,
+      title: task.name,
       message: payload.data?.message || task.description || '计划提醒',
-      type: task.taskType,
+      type: task.sourceModule,
       priority: task.priority,
       alertMethods: alertConfig.methods || ['POPUP'],
       soundVolume: alertConfig.soundVolume || 80,
@@ -323,7 +323,7 @@ export class ScheduleTaskScheduler {
 
     if (alertConfig.methods?.includes('SYSTEM_NOTIFICATION')) {
       const notificationData = {
-        title: reminderData.title,
+        title: reminderData.name,
         body: reminderData.message,
         icon: 'schedule',
       };
@@ -331,7 +331,7 @@ export class ScheduleTaskScheduler {
       logger.info('发送系统通知事件', {
         taskId: task.uuid,
         eventType: 'system:show-notification',
-        title: notificationData.title,
+        title: notificationData.name,
       });
     }
 
@@ -353,7 +353,7 @@ export class ScheduleTaskScheduler {
    * 计算下次执行时间
    */
   private calculateNextExecution(
-    scheduledTime: Date,
+    nextRunAt: Date,
     recurrence: any,
     currentTime: Date,
   ): Date | null {
@@ -361,7 +361,7 @@ export class ScheduleTaskScheduler {
       return null;
     }
 
-    const scheduled = new Date(scheduledTime);
+    const scheduled = new Date(nextRunAt);
     const interval = recurrence.interval || 1;
 
     switch (recurrence.type) {

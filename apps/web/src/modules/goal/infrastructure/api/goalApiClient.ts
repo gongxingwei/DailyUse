@@ -27,7 +27,7 @@ export class GoalApiClient {
     dirUuid?: string;
     startDate?: string;
     endDate?: string;
-  }): Promise<GoalContracts.GoalListResponse['data']> {
+  }): Promise<GoalContracts.GoalListResponse> {
     const data = await apiClient.get(this.baseUrl, { params });
     console.log('🌐 获取目标列表响应:', data);
     return data;
@@ -104,7 +104,7 @@ export class GoalApiClient {
     limit?: number;
     status?: string;
     dirUuid?: string;
-  }): Promise<GoalContracts.GoalListResponse['data']> {
+  }): Promise<GoalContracts.GoalListResponse> {
     const data = await apiClient.get(`${this.baseUrl}/search`, { params });
     return data;
   }
@@ -134,9 +134,7 @@ export class GoalApiClient {
   /**
    * 获取目标的所有关键结果
    */
-  async getKeyResultsByGoal(
-    goalUuid: string,
-  ): Promise<GoalContracts.KeyResultListResponse['data']> {
+  async getKeyResultsByGoal(goalUuid: string): Promise<GoalContracts.KeyResultListResponse> {
     const data = await apiClient.get(`${this.baseUrl}/${goalUuid}/key-results`);
     return data;
   }
@@ -194,7 +192,7 @@ export class GoalApiClient {
       limit?: number;
       dateRange?: { start?: string; end?: string };
     },
-  ): Promise<GoalContracts.GoalRecordListResponse['data']> {
+  ): Promise<GoalContracts.GoalRecordListResponse> {
     const data = await apiClient.get(`${this.baseUrl}/key-results/${keyResultUuid}/records`, {
       params,
     });
@@ -211,7 +209,7 @@ export class GoalApiClient {
       limit?: number;
       dateRange?: { start?: string; end?: string };
     },
-  ): Promise<GoalContracts.GoalRecordListResponse['data']> {
+  ): Promise<GoalContracts.GoalRecordListResponse> {
     const data = await apiClient.get(`${this.baseUrl}/${goalUuid}/records`, { params });
     return data;
   }
@@ -232,9 +230,7 @@ export class GoalApiClient {
   /**
    * 获取目标的所有复盘
    */
-  async getGoalReviewsByGoal(
-    goalUuid: string,
-  ): Promise<GoalContracts.GoalReviewListResponse['data']> {
+  async getGoalReviewsByGoal(goalUuid: string): Promise<GoalContracts.GoalReviewListResponse> {
     const data = await apiClient.get(`${this.baseUrl}/${goalUuid}/reviews`);
     return data;
   }
@@ -280,7 +276,7 @@ export class GoalApiClient {
         weight: number;
       }>;
     },
-  ): Promise<GoalContracts.KeyResultListResponse['data']> {
+  ): Promise<GoalContracts.KeyResultListResponse> {
     const data = await apiClient.put(
       `${this.baseUrl}/${goalUuid}/key-results/batch-weight`,
       request,
@@ -331,7 +327,7 @@ export class GoalDirApiClient {
     limit?: number;
     status?: string;
     parentUuid?: string;
-  }): Promise<GoalContracts.GoalDirListResponse['data']> {
+  }): Promise<GoalContracts.GoalDirListResponse> {
     const data = await apiClient.get(this.baseUrl, { params });
     return data;
   }

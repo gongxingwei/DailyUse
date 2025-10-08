@@ -22,13 +22,13 @@ interface ScheduledTaskInfo {
   title: string;
   taskType: string;
   priority: string;
-  scheduledTime: Date;
+  nextRunAt: Date;
   nextScheduledAt?: Date;
   payload: any;
   alertConfig: any;
   recurrence: any;
   executionCount: number;
-  failureCount: number;
+  executionCount: number;
 }
 
 /**
@@ -126,7 +126,7 @@ export class PriorityQueueScheduler {
           status: 'pending',
         },
         orderBy: {
-          scheduledTime: 'asc',
+          nextRunAt: 'asc',
         },
       });
 
@@ -174,17 +174,17 @@ export class PriorityQueueScheduler {
         title: task.title,
         taskType: task.taskType,
         priority: task.priority,
-        scheduledTime: new Date(task.scheduledTime),
+        nextRunAt: new Date(task.nextRunAt),
         nextScheduledAt: task.nextScheduledAt ? new Date(task.nextScheduledAt) : undefined,
         payload,
         alertConfig,
         recurrence,
         executionCount: task.executionCount || 0,
-        failureCount: task.failureCount || 0,
+        executionCount: task.executionCount || 0,
       };
 
       // 确定执行时间
-      const executionTime = taskInfo.nextScheduledAt || taskInfo.scheduledTime;
+      const executionTime = taskInfo.nextScheduledAt || taskInfo.nextRunAt;
       const executionTimestamp = executionTime.getTime();
 
       // 添加到队列
@@ -361,13 +361,13 @@ export class PriorityQueueScheduler {
       const updateData: any = {
         executionCount: { increment: 1 },
         lastExecutedAt: now,
-        failureCount: 0, // 成功后重置失败计数
+        executionCount: 0, // 成功后重置失败计数
       };
 
       // 计算下次执行时间
       if (taskInfo.recurrence && taskInfo.recurrence.type !== 'NONE') {
         const nextTime = this.calculateNextExecution(
-          taskInfo.scheduledTime,
+          taskInfo.nextRunAt,
           taskInfo.recurrence,
           now,
         );
@@ -422,9 +422,9 @@ export class PriorityQueueScheduler {
       await this.prisma.scheduleTask.update({
         where: { uuid: taskInfo.uuid },
         data: {
-          failureCount: { increment: 1 },
+          executionCount: { increment: 1 },
           lastExecutedAt: now,
-          status: taskInfo.failureCount >= 2 ? 'failed' : 'pending',
+          status: taskInfo.executionCount >= 2 ? 'failed' : 'pending',
         },
       });
 
@@ -436,7 +436,7 @@ export class PriorityQueueScheduler {
    * 计算下次执行时间
    */
   private calculateNextExecution(
-    scheduledTime: Date,
+    nextRunAt: Date,
     recurrence: any,
     currentTime: Date,
   ): Date | null {
@@ -444,7 +444,7 @@ export class PriorityQueueScheduler {
       return null;
     }
 
-    const scheduled = new Date(scheduledTime);
+    const scheduled = new Date(nextRunAt);
     const interval = recurrence.interval || 1;
 
     switch (recurrence.type) {

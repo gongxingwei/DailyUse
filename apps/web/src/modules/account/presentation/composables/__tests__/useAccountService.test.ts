@@ -2,9 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAccountService } from '../useAccountService';
 import { useSnackbar } from '@/shared/composables/useSnackbar';
 import { ApplicationService } from '../../../application/services/ApplicationService';
-import { AccountType } from '@dailyuse/contracts';
-import type { RegistrationByUsernameAndPasswordForm } from '@dailyuse/contracts';
+import { AccountContracts } from '@dailyuse/contracts';
 // Pinia setup is handled globally in tests/setup.ts
+
+// 表单类型（前端使用）
+interface RegistrationByUsernameAndPasswordForm {
+  username: string;
+  password: string;
+  confirmPassword: string;
+  agree: boolean;
+}
+
+// 获取 AccountType enum
+const { AccountType } = AccountContracts;
 
 // Mock dependencies
 vi.mock('@/shared/composables/useSnackbar');

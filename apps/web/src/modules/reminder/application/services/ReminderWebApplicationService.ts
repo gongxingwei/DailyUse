@@ -34,7 +34,7 @@ export class ReminderWebApplicationService {
    */
   async createReminderTemplate(
     request: ReminderContracts.CreateReminderTemplateRequest,
-  ): Promise<ReminderContracts.ReminderTemplateResponse['data']> {
+  ): Promise<ReminderContracts.ReminderTemplateClientDTO> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -275,7 +275,7 @@ export class ReminderWebApplicationService {
   async createReminderInstance(
     templateUuid: string,
     request: ReminderContracts.CreateReminderInstanceRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
+  ): Promise<ReminderContracts.ReminderInstanceClientDTO> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -368,7 +368,7 @@ export class ReminderWebApplicationService {
     templateUuid: string,
     instanceUuid: string,
     response: ReminderContracts.SnoozeReminderRequest,
-  ): Promise<ReminderContracts.ReminderInstanceResponse['data']> {
+  ): Promise<ReminderContracts.ReminderInstanceClientDTO> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -432,7 +432,7 @@ export class ReminderWebApplicationService {
   async getActiveReminders(params?: {
     limit?: number;
     priority?: ReminderContracts.ReminderPriority;
-  }): Promise<ReminderContracts.ReminderInstanceListResponse['data']> {
+  }): Promise<ReminderContracts.ReminderInstanceListResponse> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -459,7 +459,7 @@ export class ReminderWebApplicationService {
   /**
    * 获取全局统计信息
    */
-  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse['data']> {
+  async getGlobalStats(): Promise<ReminderContracts.ReminderStatsResponse> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -483,7 +483,7 @@ export class ReminderWebApplicationService {
    */
   async getAggregateStats(
     templateUuid: string,
-  ): Promise<ReminderContracts.ReminderStatsResponse['data']> {
+  ): Promise<ReminderContracts.ReminderStatsResponse> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
@@ -668,7 +668,7 @@ export class ReminderWebApplicationService {
     priorities?: ReminderContracts.ReminderPriority[];
     categories?: string[];
     tags?: string[];
-  }): Promise<ReminderContracts.UpcomingRemindersResponse['data']> {
+  }): Promise<ReminderContracts.UpcomingRemindersResponse> {
     try {
       this.reminderStore.setLoading(true);
       this.reminderStore.setError(null);
