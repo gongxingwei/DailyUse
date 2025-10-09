@@ -1,9 +1,25 @@
 /**
  * Repository Module - Contracts
  * 仓储模块契约定义
+ *
+ * 统一导出所有 Repository 模块的契约定义
  */
 
-export * from './types';
-export * from './dtos';
-export * from './events';
-export * from './errors';
+// ============ 枚举 ============
+export * from './enums';
+
+// ============ 聚合根 ============
+export * from './aggregates/RepositoryServer';
+export * from './aggregates/RepositoryClient';
+
+// ============ 实体 ============
+export * from './entities/ResourceServer';
+export * from './entities/ResourceClient';
+export * from './entities/ResourceReferenceServer';
+export * from './entities/ResourceReferenceClient';
+export * from './entities/LinkedContentServer';
+export * from './entities/LinkedContentClient';
+export * from './entities/RepositoryExplorerServer';
+export * from './entities/RepositoryExplorerClient';
+
+// 注意：领域事件已在聚合根文件中定义并导出

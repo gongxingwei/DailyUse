@@ -3,23 +3,22 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": "./src",
+    "composite": true,
+    "declaration": true,
     "skipLibCheck": true, // 跳过第三方库的类型检查，提高性能
     "types": ["vitest/globals"], // 添加 Vitest 全局类型支持
     "paths": {
       "@/*": ["./src/*"],
-      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
-      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
-      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
     }
   },
   "include": ["src/**/*"],
-  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"]
-  // "references": [
-  //   {
-  //     "path": "../domain-core"
-  //   },
-  //   {
-  //     "path": "../utils"
-  //   }
-  // ]
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts"],
+  "references": [
+    {
+      "path": "../domain-core"
+    },
+    {
+      "path": "../utils"
+    }
+  ]
 }
