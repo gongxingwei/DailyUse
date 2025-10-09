@@ -4,6 +4,11 @@
  */
 
 import type { ResourceType, ResourceStatus } from '../enums';
+import type {
+  ResourceReferenceServer,
+  ResourceReferenceServerDTO,
+} from './ResourceReferenceServer';
+import type { LinkedContentServer, LinkedContentServerDTO } from './LinkedContentServer';
 
 // ============ 值对象接口 ============
 
@@ -42,6 +47,10 @@ export interface ResourceServerDTO {
   createdAt: number; // epoch ms
   updatedAt: number; // epoch ms
   modifiedAt?: number | null; // epoch ms
+
+  // ===== 子实体 DTO =====
+  references?: ResourceReferenceServerDTO[] | null; // 资源引用列表（可选加载）
+  linkedContents?: LinkedContentServerDTO[] | null; // 关联内容列表（可选加载）
 }
 
 /**
@@ -92,6 +101,84 @@ export interface ResourceServer {
   updatedAt: number;
   modifiedAt?: number | null;
 
+  // ===== 子实体集合 =====
+
+  /**
+   * 资源引用列表（懒加载，可选）
+   */
+  references?: ResourceReferenceServer[] | null;
+
+  /**
+   * 关联内容列表（懒加载，可选）
+   */
+  linkedContents?: LinkedContentServer[] | null;
+
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 Resource 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    name: string;
+    type: ResourceType;
+    path: string;
+    content?: string | Uint8Array;
+    description?: string;
+    tags?: string[];
+  }): ResourceServer;
+
+  /**
+   * 创建子实体：ResourceReference（通过实体创建）
+   */
+  createReference(params: {
+    targetResourceUuid: string;
+    referenceType: string;
+    description?: string;
+  }): ResourceReferenceServer;
+
+  /**
+   * 创建子实体：LinkedContent（通过实体创建）
+   */
+  createLinkedContent(params: {
+    title: string;
+    url: string;
+    contentType: string;
+    description?: string;
+  }): LinkedContentServer;
+
+  // ===== 子实体管理方法 =====
+
+  /**
+   * 添加引用
+   */
+  addReference(reference: ResourceReferenceServer): void;
+
+  /**
+   * 移除引用
+   */
+  removeReference(referenceUuid: string): ResourceReferenceServer | null;
+
+  /**
+   * 获取所有引用
+   */
+  getAllReferences(): ResourceReferenceServer[];
+
+  /**
+   * 添加关联内容
+   */
+  addLinkedContent(content: LinkedContentServer): void;
+
+  /**
+   * 移除关联内容
+   */
+  removeLinkedContent(contentUuid: string): LinkedContentServer | null;
+
+  /**
+   * 获取所有关联内容
+   */
+  getAllLinkedContents(): LinkedContentServer[];
+
   // ===== 业务方法 =====
 
   // 内容管理
@@ -120,9 +207,10 @@ export interface ResourceServer {
   // ===== 转换方法 (To) =====
 
   /**
-   * 转换为 Server DTO
+   * 转换为 Server DTO（递归转换子实体）
+   * @param includeChildren 是否包含子实体（默认 false）
    */
-  toServerDTO(): ResourceServerDTO;
+  toServerDTO(includeChildren?: boolean): ResourceServerDTO;
 
   /**
    * 转换为 Persistence DTO (数据库)
@@ -132,7 +220,7 @@ export interface ResourceServer {
   // ===== 转换方法 (From - 静态工厂) =====
 
   /**
-   * 从 Server DTO 创建实体
+   * 从 Server DTO 创建实体（递归创建子实体）
    */
   fromServerDTO(dto: ResourceServerDTO): ResourceServer;
 

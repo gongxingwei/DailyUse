@@ -267,4 +267,4 @@ test('show() should start queue processor', async () => {
 
 - [SSE 通知测试指南](./SSE_NOTIFICATION_TEST_GUIDE.md)
 - [SSE 通知流程修复总结](./SSE_NOTIFICATION_FIX_SUMMARY.md)
-- [Notification 模块架构](../modules/NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [Notification 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)

@@ -22,4 +22,7 @@ export * from './entities/LinkedContentClient';
 export * from './entities/RepositoryExplorerServer';
 export * from './entities/RepositoryExplorerClient';
 
+// ============ 值对象 ============
+export * from './value-objects';
+
 // 注意：领域事件已在聚合根文件中定义并导出

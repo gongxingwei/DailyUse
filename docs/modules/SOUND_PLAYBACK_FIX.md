@@ -369,7 +369,7 @@ console.log(audioService.getAudioSupportInfo());
 
 ## 📚 相关文档
 
-- [Notification 模块架构](./NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [Notification 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)
 - [SSE 连接修复](./SSE_CONNECTION_FIX_SUMMARY.md)
 - [Notification 元数据值对象修复](./NOTIFICATION_METADATA_VALUE_OBJECT_FIX.md)
 - [音频服务源码](../../apps/web/src/modules/notification/infrastructure/services/AudioNotificationService.ts)

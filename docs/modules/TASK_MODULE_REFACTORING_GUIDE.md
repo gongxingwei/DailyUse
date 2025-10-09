@@ -1,7 +1,7 @@
 # Task 模块重构实施指南
 
 **基于**: [[TASK_MODULE_REFACTORING_PLAN|Task 模块重构计划]]  
-**参考**: [[modules/Goal模块完整流程|Goal 模块完整流程]]
+**参考**: [[Goal模块完整流程|Goal 模块完整流程]]
 
 ---
 
@@ -789,11 +789,11 @@ export function useTask() {
 
 ## 📖 相关文档
 
-- [[modules/Goal模块完整流程|Goal模块完整流程]] - 最佳实践参考
+- [[Goal模块完整流程|Goal模块完整流程]] - 最佳实践参考
 - [[TASK_MODULE_REFACTORING_PLAN|Task 模块重构计划]] - 总体规划
-- [[systems/日志系统|日志系统]] - 日志使用指南
-- [[systems/API响应系统|API响应系统]] - 响应格式规范
-- [[modules/contracts-in-goal|Contracts 设计]] - 类型设计原则
+- [[日志系统|日志系统]] - 日志使用指南
+- [[API响应系统|API响应系统]] - 响应格式规范
+- [[contracts-in-goal|Contracts 设计]] - 类型设计原则
 
 ---
 

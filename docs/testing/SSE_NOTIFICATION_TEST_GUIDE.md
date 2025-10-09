@@ -291,9 +291,9 @@ AudioNotificationService → 🔊 播放声音
 
 ## 🔗 相关文档
 
-- [SSE 实现指南](../systems/SSE_IMPLEMENTATION_GUIDE.md)
-- [Notification 模块架构](../modules/NOTIFICATION_MODULE_ARCHITECTURE.md)
-- [Notification 快速开始](../modules/NOTIFICATION_QUICK_START.md)
+- [SSE 实现指南](SSE_IMPLEMENTATION_GUIDE.md)
+- [Notification 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [Notification 快速开始](NOTIFICATION_QUICK_START.md)
 - [事件系统文档](../systems/EVENT_BUS_GUIDE.md)
 
 ## 📞 联系方式

@@ -52,6 +52,18 @@ export interface ResourceReferenceClient {
   formattedLastVerified?: string;
   isVerified: boolean;
 
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 ResourceReference 实体（静态工厂方法）
+   */
+  create(params: {
+    sourceResourceUuid: string;
+    targetResourceUuid: string;
+    referenceType: ReferenceType;
+    description?: string;
+  }): ResourceReferenceClient;
+
   // ===== 转换方法 (To) =====
 
   /**

@@ -388,6 +388,6 @@ const group = await reminderApiClient.getReminderTemplateGroup(uuid);
 
 ## 参考文档
 
-- [API响应系统使用指南](./systems/API_RESPONSE_SYSTEM_GUIDE.md)
-- [API响应系统](./systems/API响应系统.md)
+- [API响应系统使用指南](API_RESPONSE_SYSTEM_GUIDE.md)
+- [API响应系统](API响应系统.md)
 - [DDD架构说明](./TASK_INSTANCE_AGGREGATE_ROOT_FIX.md)

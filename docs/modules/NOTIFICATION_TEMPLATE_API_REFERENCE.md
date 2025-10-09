@@ -453,8 +453,8 @@ curl -X GET "http://localhost:3000/api/v1/notification-templates?type=task_remin
 
 ## 相关文档
 
-- [通知模块架构文档](./NOTIFICATION_MODULE_ARCHITECTURE.md)
-- [通知快速开始指南](./NOTIFICATION_QUICK_START.md)
+- [通知模块架构文档](NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [通知快速开始指南](NOTIFICATION_QUICK_START.md)
 - [通知模板实现总结](./NOTIFICATION_TEMPLATE_IMPLEMENTATION_SUMMARY.md)
 - [Swagger API 文档](http://localhost:3000/api-docs)
 

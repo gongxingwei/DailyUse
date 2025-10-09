@@ -296,5 +296,5 @@ expect(handler).toHaveBeenCalledWith(
 
 - [完整实现文档](./SETTING_MODULE_REFACTORING_COMPLETE.md)
 - [Theme 模块文档](../theme/)
-- [API 响应系统](../systems/API_RESPONSE_SYSTEM_GUIDE.md)
+- [API 响应系统](API_RESPONSE_SYSTEM_GUIDE.md)
 - [DDD 架构指南](../architecture/)

@@ -408,7 +408,7 @@ task.toClient()                      // 实体 → DTO
 ## 📚 参考文档
 
 - [Reminder 模块重构总结](./NOTIFICATION_REFACTORING_SUMMARY.md)
-- [Goal 模块完整流程](./Goal模块完整流程.md)
+- [Goal 模块完整流程](Goal模块完整流程.md)
 - [Setting 模块重构](./SETTING_MODULE_REFACTORING_COMPLETE.md)
 - [TypeScript 导入修复](../TYPESCRIPT_IMPORT_FIX_SUMMARY.md)
 - [DDD 架构原则](../systems/DDD_ARCHITECTURE_PRINCIPLES.md)

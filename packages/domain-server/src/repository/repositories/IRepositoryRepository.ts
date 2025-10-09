@@ -1,218 +1,86 @@
 /**
- * IRepositoryRepository - 仓库聚合根的存储接口
- * 定义仓库相关的数据访问操作
+ * Repository 仓储接口
  *
- * 架构说明:
- * - 数据层接口，返回DTO对象而非领域实体
- * - 遵循DDD分层架构：Database → [Repository] → DTO → [Application] → Entity
- * - 应用层负责DTO到领域实体的转换
+ * DDD 仓储模式：
+ * - 只定义接口，不实现
+ * - 由基础设施层实现
+ * - 使用依赖注入
+ * - 隐藏数据访问细节
  */
 
-import { Repository } from '../aggregates/Repository';
-import { RepositoryContracts } from '@dailyuse/contracts';
+import type { Repository } from '../aggregates/RepositoryAggregate';
 
+/**
+ * IRepositoryRepository 仓储接口
+ *
+ * 职责：
+ * - 定义持久化操作的契约
+ * - 聚合根是操作的基本单位
+ * - 级联保存/加载子实体
+ */
 export interface IRepositoryRepository {
-  // ============ 基础CRUD操作 ============
-
   /**
-   * 根据UUID查找仓库
-   */
-  findByUuid(uuid: string): Promise<RepositoryContracts.RepositoryDTO | null>;
-
-  /**
-   * 根据账户UUID查找所有仓库
-   */
-  findByAccountUuid(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 根据路径查找仓库
-   */
-  findByPath(accountUuid: string, path: string): Promise<RepositoryContracts.RepositoryDTO | null>;
-
-  /**
-   * 保存仓库 (接受领域实体，存储为DTO格式)
+   * 保存聚合根（创建或更新）
+   *
+   * 注意：
+   * - 这是事务操作
+   * - 级联保存所有子实体
+   * - 如果 UUID 已存在则更新，否则插入
    */
   save(repository: Repository): Promise<void>;
 
   /**
-   * 删除仓库
+   * 通过 UUID 查找聚合根
+   *
+   * @param uuid 仓库 UUID
+   * @param options.includeChildren 是否加载子实体（默认 false，懒加载）
+   * @returns 聚合根实例，不存在则返回 null
+   */
+  findById(uuid: string, options?: { includeChildren?: boolean }): Promise<Repository | null>;
+
+  /**
+   * 通过账户 UUID 查找所有仓库
+   *
+   * @param accountUuid 账户 UUID
+   * @param options.includeChildren 是否加载子实体
+   * @returns 仓库列表
+   */
+  findByAccountUuid(
+    accountUuid: string,
+    options?: { includeChildren?: boolean },
+  ): Promise<Repository[]>;
+
+  /**
+   * 通过路径查找仓库
+   *
+   * @param path 仓库路径
+   * @returns 聚合根实例，不存在则返回 null
+   */
+  findByPath(path: string): Promise<Repository | null>;
+
+  /**
+   * 删除聚合根
+   *
+   * 注意：
+   * - 这是事务操作
+   * - 级联删除所有子实体
+   *
+   * @param uuid 仓库 UUID
    */
   delete(uuid: string): Promise<void>;
 
   /**
    * 检查仓库是否存在
+   *
+   * @param uuid 仓库 UUID
    */
   exists(uuid: string): Promise<boolean>;
 
-  // ============ 查询操作 ============
-
   /**
-   * 分页查询仓库
+   * 检查路径是否已被使用
+   *
+   * @param path 仓库路径
+   * @param excludeUuid 排除的 UUID（用于更新时检查）
    */
-  findWithPagination(params: {
-    accountUuid: string;
-    page: number;
-    limit: number;
-    status?: RepositoryContracts.RepositoryStatus;
-    type?: RepositoryContracts.RepositoryType;
-    searchTerm?: string;
-  }): Promise<{
-    repositories: RepositoryContracts.RepositoryDTO[];
-    total: number;
-    page: number;
-    limit: number;
-  }>;
-
-  /**
-   * 根据名称模糊查询
-   */
-  findByNamePattern(
-    accountUuid: string,
-    namePattern: string,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 查找关联特定目标的仓库
-   */
-  findByRelatedGoal(goalUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 查找需要同步的仓库
-   */
-  findPendingSync(): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 查找最近访问的仓库
-   */
-  findRecentlyAccessed(
-    accountUuid: string,
-    limit: number,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 根据状态查找仓库
-   */
-  findByStatus(
-    accountUuid: string,
-    status: RepositoryContracts.RepositoryStatus,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 根据类型查找仓库
-   */
-  findByType(
-    accountUuid: string,
-    type: RepositoryContracts.RepositoryType,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  // ============ 统计操作 ============
-
-  /**
-   * 获取账户的仓库统计信息
-   */
-  getAccountStats(accountUuid: string): Promise<{
-    totalRepositories: number;
-    repositoriesByType: Record<RepositoryContracts.RepositoryType, number>;
-    repositoriesByStatus: Record<RepositoryContracts.RepositoryStatus, number>;
-    totalResources: number;
-    totalSize: number;
-    lastAccessedAt?: Date;
-  }>;
-
-  /**
-   * 获取仓库大小统计
-   */
-  getSizeStats(accountUuid: string): Promise<{
-    totalSize: number;
-    averageSize: number;
-    largestRepository: {
-      uuid: string;
-      name: string;
-      size: number;
-    } | null;
-  }>;
-
-  // ============ 批量操作 ============
-
-  /**
-   * 批量保存仓库 (接受领域实体，存储为DTO格式)
-   */
-  saveMany(repositories: Repository[]): Promise<void>;
-
-  /**
-   * 批量删除仓库
-   */
-  deleteMany(uuids: string[]): Promise<void>;
-
-  /**
-   * 批量更新仓库状态
-   */
-  updateStatusBatch(uuids: string[], status: RepositoryContracts.RepositoryStatus): Promise<void>;
-
-  // ============ 高级查询 ============
-
-  /**
-   * 查找具有特定配置的仓库
-   */
-  findWithConfig(
-    accountUuid: string,
-    configFilter: {
-      enableGit?: boolean;
-      autoSync?: boolean;
-      enableVersionControl?: boolean;
-    },
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 查找具有Git配置的仓库
-   */
-  findGitRepositories(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 查找有变更的Git仓库
-   */
-  findRepositoriesWithChanges(accountUuid: string): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 根据资源数量范围查找仓库
-   */
-  findByResourceCount(
-    accountUuid: string,
-    minCount: number,
-    maxCount?: number,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  /**
-   * 根据最后访问时间查找仓库
-   */
-  findByLastAccessedRange(
-    accountUuid: string,
-    startDate: Date,
-    endDate?: Date,
-  ): Promise<RepositoryContracts.RepositoryDTO[]>;
-
-  // ============ 维护操作 ============
-
-  /**
-   * 清理已删除的仓库
-   */
-  cleanupDeleted(olderThanDays: number): Promise<number>;
-
-  /**
-   * 更新仓库统计信息
-   */
-  updateRepositoryStats(uuid: string, stats: RepositoryContracts.IRepositoryStats): Promise<void>;
-
-  /**
-   * 同步仓库Git信息
-   */
-  syncGitInfo(uuid: string, gitInfo: RepositoryContracts.IGitInfo): Promise<void>;
-
-  /**
-   * 更新仓库同步状态
-   */
-  updateSyncStatus(
-    uuid: string,
-    syncStatus: RepositoryContracts.IRepositorySyncStatus,
-  ): Promise<void>;
+  isPathUsed(path: string, excludeUuid?: string): Promise<boolean>;
 }

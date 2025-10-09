@@ -53,6 +53,18 @@ export interface ResourceReferenceServer {
   updatedAt?: number | null;
   lastVerifiedAt?: number | null;
 
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 ResourceReference 实体（静态工厂方法）
+   */
+  create(params: {
+    sourceResourceUuid: string;
+    targetResourceUuid: string;
+    referenceType: ReferenceType;
+    description?: string;
+  }): ResourceReferenceServer;
+
   // ===== 业务方法 =====
 
   // 引用管理

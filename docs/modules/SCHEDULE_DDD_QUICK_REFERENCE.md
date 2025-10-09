@@ -506,7 +506,7 @@ async getScheduleTasks(accountUuid: string, query): Promise<ScheduleTaskListResp
 
 - [完整重构总结](./SCHEDULE_MODULE_DDD_REFACTORING_COMPLETE.md) - 详细重构过程
 - [Reminder 模块参考](./NOTIFICATION_REFACTORING_SUMMARY.md) - 相同模式
-- [Goal 模块参考](./Goal模块完整流程.md) - 相同模式
+- [Goal 模块参考](Goal模块完整流程.md) - 相同模式
 - [DDD 架构原则](../systems/DDD_ARCHITECTURE_PRINCIPLES.md) - 架构理论
 
 ---

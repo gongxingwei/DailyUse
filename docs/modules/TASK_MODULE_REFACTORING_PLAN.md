@@ -47,10 +47,10 @@ Task 模块
 ```
 
 ### 3. 使用项目工具
-- [[systems/日志系统|日志系统]]
-- [[systems/API响应系统|API响应系统]]
-- [[systems/事件总线系统|事件总线系统]]
-- [[systems/校验系统|校验系统]]
+- [[日志系统|日志系统]]
+- [[API响应系统|API响应系统]]
+- [[事件总线系统|事件总线系统]]
+- [[校验系统|校验系统]]
 
 ---
 
@@ -354,10 +354,10 @@ Task 模块依赖：
 ## 🚀 快速开始
 
 ### 步骤 1: 阅读参考文档
-- [[modules/Goal模块完整流程|Goal模块完整流程]] ⭐⭐⭐⭐⭐
-- [[modules/contracts-in-goal|Contracts 设计]]
-- [[systems/日志系统|日志系统]]
-- [[systems/API响应系统|API响应系统]]
+- [[Goal模块完整流程|Goal模块完整流程]] ⭐⭐⭐⭐⭐
+- [[contracts-in-goal|Contracts 设计]]
+- [[日志系统|日志系统]]
+- [[API响应系统|API响应系统]]
 
 ### 步骤 2: 从 Contracts 开始
 ```bash
@@ -389,7 +389,7 @@ cd apps/web/src/modules/task
 
 ## 📖 相关文档
 
-- [[modules/Goal模块完整流程|Goal模块完整流程]]
+- [[Goal模块完整流程|Goal模块完整流程]]
 - [[GOAL_AGGREGATE_SERVICE_REFACTORING|Goal聚合服务重构]]
 - [[DOCUMENTATION_CLEANUP_SUMMARY|文档清理总结]]
 

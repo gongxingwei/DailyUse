@@ -9,5 +9,6 @@
   "foldIndent": false,
   "showFrontmatter": false,
   "showLineNumber": false,
-  "spellcheck": false
+  "spellcheck": false,
+  "promptDelete": false
 }

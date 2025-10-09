@@ -363,6 +363,6 @@ testPayloads.forEach(payload => {
 
 ## 相关文档
 
-- [通知系统优化总结](./NOTIFICATION_SYSTEM_OPTIMIZATION.md)
-- [SSE 提醒通知实现指南](./SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)
-- [通知系统快速开始指南](./NOTIFICATION_QUICK_START.md)
+- [通知系统优化总结](NOTIFICATION_SYSTEM_OPTIMIZATION.md)
+- [SSE 提醒通知实现指南](SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)
+- [通知系统快速开始指南](NOTIFICATION_QUICK_START.md)

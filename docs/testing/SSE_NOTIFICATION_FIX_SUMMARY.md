@@ -226,9 +226,9 @@ sequenceDiagram
 
 ## 📚 相关文档
 
-- [SSE 实现指南](../systems/SSE_IMPLEMENTATION_GUIDE.md)
+- [SSE 实现指南](SSE_IMPLEMENTATION_GUIDE.md)
 - [SSE 通知测试指南](./SSE_NOTIFICATION_TEST_GUIDE.md)
-- [Notification 模块架构](../modules/NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [Notification 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)
 - [事件总线最佳实践](../systems/EVENT_BUS_BEST_PRACTICES.md)
 
 ## 🎉 修复总结

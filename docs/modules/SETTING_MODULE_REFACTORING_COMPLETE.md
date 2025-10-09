@@ -586,7 +586,7 @@ const preferences = computed(() => store.preferences);
 ## 📚 参考文档
 
 - [Theme 模块重构](../../guides/THEME_SYSTEM_README.md)
-- [Goal 模块流程](./Goal模块完整流程.md)
+- [Goal 模块流程](Goal模块完整流程.md)
 - [DDD 架构指南](../../guides/DDD_ARCHITECTURE.md)
 
 ---

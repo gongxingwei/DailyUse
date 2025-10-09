@@ -248,10 +248,10 @@ eventBus.emit('reminder-triggered', {
 
 ## 📚 相关资源
 
-- [模块架构详细文档](./NOTIFICATION_MODULE_ARCHITECTURE.md)
-- [重构总结](./NOTIFICATION_REFACTORING_SUMMARY.md)
-- [通知系统优化](./NOTIFICATION_SYSTEM_OPTIMIZATION.md)
-- [快速开始指南](./NOTIFICATION_QUICK_START.md)
+- [模块架构详细文档](NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [重构总结](NOTIFICATION_REFACTORING_SUMMARY.md)
+- [通知系统优化](NOTIFICATION_SYSTEM_OPTIMIZATION.md)
+- [快速开始指南](NOTIFICATION_QUICK_START.md)
 
 ## ⚠️ 常见错误
 

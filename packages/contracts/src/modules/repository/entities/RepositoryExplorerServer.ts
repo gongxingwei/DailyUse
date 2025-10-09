@@ -100,6 +100,19 @@ export interface RepositoryExplorerServer {
   createdAt: number;
   updatedAt: number;
 
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    accountUuid: string;
+    name: string;
+    description?: string;
+    currentPath?: string;
+  }): RepositoryExplorerServer;
+
   // ===== 业务方法 =====
 
   // 导航

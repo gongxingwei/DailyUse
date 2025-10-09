@@ -363,8 +363,8 @@ console.log(error.message); // 丢失了错误分类信息
 
 ## 相关文档
 
-- [完整使用指南](../API_RESPONSE_SYSTEM_GUIDE.md)
-- [示例代码](./api-response-examples.md)
+- [完整使用指南](API_RESPONSE_SYSTEM_GUIDE.md)
+- [示例代码](api-response-examples.md)
 - [类型定义](../packages/contracts/src/response/index.ts)
 
 ---

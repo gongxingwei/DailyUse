@@ -71,6 +71,19 @@ export interface RepositoryExplorerClient {
   canNavigateBack: boolean;
   canNavigateForward: boolean;
 
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    accountUuid: string;
+    name: string;
+    description?: string;
+    currentPath?: string;
+  }): RepositoryExplorerClient;
+
   // ===== 转换方法 (To) =====
 
   /**

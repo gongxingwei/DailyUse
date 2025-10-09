@@ -269,8 +269,8 @@ grep "GoalAggregateService"
 
 ## 📖 相关文档
 
-- [[modules/Goal模块完整流程|Goal模块完整流程]]
-- [[systems/API响应系统|API响应系统]]
+- [[Goal模块完整流程|Goal模块完整流程]]
+- [[API响应系统|API响应系统]]
 - [[DOCUMENTATION_CLEANUP_SUMMARY|文档清理总结]]
 
 ---

@@ -303,5 +303,5 @@ const getAllReminderInstances = computed(() =>
 **推荐**: 逐步迁移所有使用 `reminderInstances.value` 的代码，改为使用 `getAllReminderInstances.value`
 
 ## 相关文档
-- [Goal 模块完整流程](./Goal模块完整流程.md)
+- [Goal 模块完整流程](Goal模块完整流程.md)
 - [CONTRACTS 命名规范](../CONTRACTS_NAMING_CONVENTION.md)

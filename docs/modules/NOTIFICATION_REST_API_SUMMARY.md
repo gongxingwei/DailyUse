@@ -421,7 +421,7 @@ async createAndSendNotification(params) {
 
 ## 📚 相关文档
 
-1. [Notification DDD 重构完成](./NOTIFICATION_DDD_REFACTORING_COMPLETE.md)
+1. [Notification DDD 重构完成](NOTIFICATION_DDD_REFACTORING_COMPLETE.md)
 2. [Notification REST API 实现](./NOTIFICATION_REST_API_COMPLETE.md)
 3. [Notification API 快速参考](./NOTIFICATION_API_QUICK_REFERENCE.md)
 4. [Notification 模块架构](../README.md)

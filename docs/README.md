@@ -11,12 +11,12 @@
 
 | 文档 | 描述 | 重要性 |
 |------|------|--------|
-| [[modules/Goal模块完整流程\|Goal模块完整流程]] | Goal 模块从前端到后端的完整实现，展示代码规范和最佳实践 | ⭐⭐⭐⭐⭐ |
-| [[systems/日志系统\|日志系统]] | 跨平台日志系统，统一的日志接口和格式 | ⭐⭐⭐⭐⭐ |
-| [[systems/API响应系统\|API响应系统]] | 统一的 RESTful API 响应格式 | ⭐⭐⭐⭐⭐ |
-| [[systems/事件总线系统\|事件总线系统]] | 基于 mitt 的跨模块事件通信 | ⭐⭐⭐⭐ |
-| [[systems/校验系统\|校验系统]] | 框架无关的前端表单校验解决方案 | ⭐⭐⭐⭐ |
-| [[systems/Initialize系统\|Initialize系统]] | 统一的应用初始化流程管理 | ⭐⭐⭐ |
+| [[Goal模块完整流程\|Goal模块完整流程]] | Goal 模块从前端到后端的完整实现，展示代码规范和最佳实践 | ⭐⭐⭐⭐⭐ |
+| [[日志系统\|日志系统]] | 跨平台日志系统，统一的日志接口和格式 | ⭐⭐⭐⭐⭐ |
+| [[API响应系统\|API响应系统]] | 统一的 RESTful API 响应格式 | ⭐⭐⭐⭐⭐ |
+| [[事件总线系统\|事件总线系统]] | 基于 mitt 的跨模块事件通信 | ⭐⭐⭐⭐ |
+| [[校验系统\|校验系统]] | 框架无关的前端表单校验解决方案 | ⭐⭐⭐⭐ |
+| [[Initialize系统\|Initialize系统]] | 统一的应用初始化流程管理 | ⭐⭐⭐ |
 
 ---
 
@@ -88,29 +88,29 @@ graph TB
     H[SSE系统] --> E
 ```
 
-#### 1. [[systems/日志系统|日志系统]]
+#### 1. [[日志系统|日志系统]]
 - **位置**: `packages/utils/src/logger`
 - **作用**: 提供跨平台（Node.js + Browser）的统一日志接口
 - **特性**: 多级别、彩色输出、文件日志、环境自适应
-- **文档**: [[systems/日志系统|完整文档]] | [[systems/LOGGER_INTEGRATION_GUIDE|集成指南]] | [[systems/LOGGER_QUICK_REFERENCE|快速参考]]
+- **文档**: [[日志系统|完整文档]] | [[LOGGER_INTEGRATION_GUIDE|集成指南]] | [[LOGGER_QUICK_REFERENCE|快速参考]]
 
-#### 2. [[systems/API响应系统|API响应系统]]
+#### 2. [[API响应系统|API响应系统]]
 - **位置**: `packages/contracts/src/response` + `packages/utils/src/response`
 - **作用**: 统一的 RESTful API 响应格式
 - **特性**: 类型安全、HTTP 状态码映射、前端自动提取 data
-- **文档**: [[systems/API响应系统|完整文档]] | [[systems/API_RESPONSE_SYSTEM_GUIDE|使用指南]]
+- **文档**: [[API响应系统|完整文档]] | [[API_RESPONSE_SYSTEM_GUIDE|使用指南]]
 
-#### 3. [[systems/事件总线系统|事件总线系统]]
+#### 3. [[事件总线系统|事件总线系统]]
 - **位置**: `packages/utils/src/domain`
 - **作用**: 跨模块解耦通信
 - **特性**: 基于 mitt、类型安全、双向通信、统计监控
 
-#### 4. [[systems/校验系统|校验系统]]
+#### 4. [[校验系统|校验系统]]
 - **位置**: `packages/utils/src/validation`
 - **作用**: 前端表单校验
 - **特性**: 框架无关、异步校验、条件校验、国际化
 
-#### 5. [[systems/Initialize系统|Initialize系统]]
+#### 5. [[Initialize系统|Initialize系统]]
 - **位置**: `packages/utils/src/initializationManager.ts`
 - **作用**: 应用初始化流程管理
 - **特性**: 依赖管理、生命周期钩子、并行初始化
@@ -177,7 +177,7 @@ graph TB
 
 ### Goal 模块 ⭐⭐⭐⭐⭐
 
-[[modules/Goal模块完整流程|Goal模块完整流程]]
+[[Goal模块完整流程|Goal模块完整流程]]
 
 完整展示 Goal 模块的实现：
 - 📁 文件树结构（前端 + 后端）
@@ -187,7 +187,7 @@ graph TB
 - 📝 代码规范
 
 **Goal 模块相关文档**:
-- [[modules/Goal模块完整流程|完整实现流程]] ⭐⭐⭐⭐⭐
+- [[Goal模块完整流程|完整实现流程]] ⭐⭐⭐⭐⭐
 - [[modules/GOAL_USER_DATA_INITIALIZATION_GUIDE|用户数据初始化指南]]
 - [[modules/GOAL_INITIALIZATION_QUICK_REFERENCE|初始化快速参考]]
 - `apps/api/src/modules/goal/docs/CORRECT_DDD_ARCHITECTURE.md` - DDD 架构设计
@@ -238,12 +238,12 @@ graph TB
    - 查看项目根目录的 `README.md`
 
 2. **学习核心系统** ⭐
-   - [[systems/日志系统|日志系统]] - 学习如何记录日志
-   - [[systems/API响应系统|API响应系统]] - 学习统一的响应格式
-   - [[systems/事件总线系统|事件总线系统]] - 学习模块间通信
+   - [[日志系统|日志系统]] - 学习如何记录日志
+   - [[API响应系统|API响应系统]] - 学习统一的响应格式
+   - [[事件总线系统|事件总线系统]] - 学习模块间通信
 
 3. **深入模块实现** ⭐⭐⭐
-   - [[modules/Goal模块完整流程|Goal模块完整流程]] - 完整的模块实现示例
+   - [[Goal模块完整流程|Goal模块完整流程]] - 完整的模块实现示例
    - 参考其代码规范和最佳实践
 
 4. **了解测试规范**
@@ -260,12 +260,12 @@ graph TB
 如果你是 AI Agent，需要重构或新增模块：
 
 1. **必读文档**:
-   - [[modules/Goal模块完整流程|Goal模块完整流程]] - 了解标准的模块结构
-   - [[systems/日志系统|日志系统]] - 使用 `createLogger()`
-   - [[systems/API响应系统|API响应系统]] - 使用 `Response.ok()` 等辅助函数
+   - [[Goal模块完整流程|Goal模块完整流程]] - 了解标准的模块结构
+   - [[日志系统|日志系统]] - 使用 `createLogger()`
+   - [[API响应系统|API响应系统]] - 使用 `Response.ok()` 等辅助函数
 
 2. **代码规范**:
-   - 参考 [[modules/Goal模块完整流程|Goal模块完整流程]] 的「代码规范」部分
+   - 参考 [[Goal模块完整流程|Goal模块完整流程]] 的「代码规范」部分
    - 使用 TypeScript 类型注解
    - 遵循命名规范
 

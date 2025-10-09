@@ -274,8 +274,8 @@ curl http://localhost:3888/api/v1/notifications/sse/status \
 
 ## 📖 相关文档
 
-- [Notification 模块架构](./NOTIFICATION_MODULE_ARCHITECTURE.md)
-- [SSE 事件快速参考](./NOTIFICATION_EVENT_QUICK_REFERENCE.md)
+- [Notification 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [SSE 事件快速参考](NOTIFICATION_EVENT_QUICK_REFERENCE.md)
 - [E2E 测试指南](../../apps/web/E2E_TESTING_GUIDE.md)
 
 ## ✅ 检查清单

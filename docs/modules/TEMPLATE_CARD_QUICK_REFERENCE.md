@@ -241,4 +241,4 @@ const handleDelete = async () => {
 
 **相关文档**:
 - [完整重构文档](./TEMPLATE_DESKTOP_CARD_REFACTORING.md)
-- [Reminder 模块架构](./NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [Reminder 模块架构](NOTIFICATION_MODULE_ARCHITECTURE.md)

@@ -246,5 +246,5 @@ async function requestPerm() {
 ## 7. 更多信息
 
 详细文档请参考：
-- [通知系统优化总结](./NOTIFICATION_SYSTEM_OPTIMIZATION.md)
-- [SSE 提醒通知实现指南](./SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)
+- [通知系统优化总结](NOTIFICATION_SYSTEM_OPTIMIZATION.md)
+- [SSE 提醒通知实现指南](SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)

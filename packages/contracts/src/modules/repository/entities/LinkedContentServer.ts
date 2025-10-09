@@ -73,6 +73,22 @@ export interface LinkedContentServer {
   createdAt: number;
   updatedAt?: number | null;
 
+  // ===== 工厂方法 =====
+
+  /**
+   * 创建新的 LinkedContent 实体（静态工厂方法）
+   */
+  create(params: {
+    resourceUuid: string;
+    title: string;
+    url: string;
+    contentType: ContentType;
+    description?: string;
+    thumbnail?: string;
+    author?: string;
+    publishedAt?: number;
+  }): LinkedContentServer;
+
   // ===== 业务方法 =====
 
   // 内容管理

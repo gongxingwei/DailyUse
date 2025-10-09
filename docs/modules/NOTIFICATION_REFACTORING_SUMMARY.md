@@ -460,10 +460,10 @@ test('提醒从 Schedule 到 Notification 的完整流程', async () => {
 
 ## 相关文档
 
-- [模块架构与职责划分](./NOTIFICATION_MODULE_ARCHITECTURE.md)
+- [模块架构与职责划分](NOTIFICATION_MODULE_ARCHITECTURE.md)
 - [通知系统优化总结](./NOTIFICATION_SYSTEM_OPTIMIZATION.md)
 - [SSE 提醒通知实现指南](./SSE_REMINDER_NOTIFICATION_IMPLEMENTATION.md)
-- [通知系统快速开始](./NOTIFICATION_QUICK_START.md)
+- [通知系统快速开始](NOTIFICATION_QUICK_START.md)
 
 ## 总结
 

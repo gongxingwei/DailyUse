@@ -495,7 +495,7 @@ POST /notifications/from-template
 
 ## 📚 相关文档
 
-- [Notification DDD 重构完成总结](./NOTIFICATION_DDD_REFACTORING_COMPLETE.md)
+- [Notification DDD 重构完成总结](NOTIFICATION_DDD_REFACTORING_COMPLETE.md)
 - [Notification REST API 实现完成](./NOTIFICATION_REST_API_COMPLETE.md)
 - [Notification 模块完整流程](./Notification模块完整流程.md)
 - [Notification 快速参考](./NOTIFICATION_QUICK_REFERENCE.md)
