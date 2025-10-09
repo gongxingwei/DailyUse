@@ -5,13 +5,13 @@
  */
 
 // ===== 聚合根 =====
-export { Repository as RepositoryAggregate } from './aggregates/RepositoryAggregate';
+export { Repository as RepositoryAggregate } from './aggregates/Repository';
 
 // ===== 实体 =====
-export { Resource as ResourceEntity } from './entities/ResourceEntity';
-export { RepositoryExplorerEntity } from './entities/RepositoryExplorerEntity';
-export { ResourceReference as ResourceReferenceEntity } from './entities/ResourceReferenceEntity';
-export { LinkedContent as LinkedContentEntity } from './entities/LinkedContentEntity';
+export { Resource as ResourceEntity } from './entities/Resource';
+export { RepositoryExplorerEntity } from './entities/RepositoryExplorer';
+export { ResourceReference as ResourceReferenceEntity } from './entities/ResourceReference';
+export { LinkedContent as LinkedContentEntity } from './entities/LinkedContent';
 
 // ===== 值对象 =====
 export { RepositoryConfig } from './value-objects/RepositoryConfig';

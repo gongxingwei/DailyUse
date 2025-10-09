@@ -9,8 +9,8 @@ import { RepositoryConfig } from '../value-objects/RepositoryConfig';
 import { RepositoryStats } from '../value-objects/RepositoryStats';
 import { SyncStatus } from '../value-objects/SyncStatus';
 import { GitInfo } from '../value-objects/GitInfo';
-import { Resource } from '../entities/ResourceEntity';
-import { RepositoryExplorerEntity } from '../entities/RepositoryExplorerEntity';
+import { Resource } from '../entities/Resource';
+import { RepositoryExplorerEntity } from '../entities/RepositoryExplorer';
 
 type IRepositoryServer = RepositoryContracts.RepositoryServer;
 type RepositoryServerDTO = RepositoryContracts.RepositoryServerDTO;
@@ -177,7 +177,7 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
       path: params.path,
       description: params.description,
       config,
-      status: 'ACTIVE' as RepositoryStatus,
+      status: RepositoryContracts.RepositoryStatus.ACTIVE,
       git: params.initializeGit ? GitInfo.createInitializedGit({}) : null,
       stats,
       createdAt: now,
@@ -455,7 +455,7 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
   }
 
   public archive(): void {
-    this._status = 'ARCHIVED' as RepositoryStatus;
+    this._status = RepositoryContracts.RepositoryStatus.ARCHIVED;
     this._updatedAt = Date.now();
 
     // 发布领域事件
@@ -472,7 +472,7 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
   }
 
   public activate(): void {
-    this._status = 'ACTIVE' as RepositoryStatus;
+    this._status = RepositoryContracts.RepositoryStatus.ACTIVE;
     this._updatedAt = Date.now();
 
     // 发布领域事件

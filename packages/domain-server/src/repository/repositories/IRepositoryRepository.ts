@@ -8,7 +8,7 @@
  * - 隐藏数据访问细节
  */
 
-import type { Repository } from '../aggregates/RepositoryAggregate';
+import type { Repository } from '../aggregates/Repository';
 
 /**
  * IRepositoryRepository 仓储接口

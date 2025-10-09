@@ -10,8 +10,8 @@
 
 import type { RepositoryContracts } from '@dailyuse/contracts';
 import { Entity } from '@dailyuse/utils';
-import { ResourceReference } from './ResourceReferenceEntity';
-import { LinkedContent } from './LinkedContentEntity';
+import { ResourceReference } from './ResourceReference';
+import { LinkedContent } from './LinkedContent';
 
 type IResourceServer = RepositoryContracts.ResourceServer;
 type ResourceServerDTO = RepositoryContracts.ResourceServerDTO;

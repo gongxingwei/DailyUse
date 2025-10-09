@@ -9,7 +9,7 @@
  */
 
 import type { IRepositoryRepository } from '../repositories/IRepositoryRepository';
-import { Repository } from '../aggregates/RepositoryAggregate';
+import { Repository } from '../aggregates/Repository';
 import type { RepositoryContracts } from '@dailyuse/contracts';
 
 type RepositoryType = RepositoryContracts.RepositoryType;
