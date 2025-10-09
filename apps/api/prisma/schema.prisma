@@ -150,20 +150,6 @@ model AuthToken {
   @@map("auth_tokens")
 }
 
-model Repository {
-  uuid         String   @id @default(cuid())
-  accountUuid  String   @map("account_uuid")
-  name         String
-  path         String
-  description  String?
-  relatedGoals String?  @map("related_goals")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  account      Account  @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-
-  @@map("repositories")
-}
-
 model Goal {
   uuid                String             @id @default(cuid())
   description         String?
@@ -1004,4 +990,36 @@ model DeliveryReceipt {
   @@index([channel])
   @@index([status])
   @@map("delivery_receipts")
+}
+
+// ========== Repository Module ==========
+
+model Repository {
+  uuid            String    @id @default(cuid())
+  accountUuid     String    @map("account_uuid")
+  name            String
+  type            String    // RepositoryType: 'file', 'git', 'web', 'database', 'api', 'other'
+  path            String
+  description     String?
+  config          String    @db.Text // JSON: RepositoryConfig
+  relatedGoals    String?   @map("related_goals") // JSON array of goal UUIDs
+  status          String    @default("active") // RepositoryStatus: 'active', 'archived', 'readonly', 'syncing', 'error'
+  git             String?   @db.Text // JSON: GitInfo (optional for git repositories)
+  syncStatus      String?   @map("sync_status") @db.Text // JSON: SyncStatus (optional)
+  stats           String    @db.Text // JSON: RepositoryStats
+  lastAccessedAt  DateTime? @map("last_accessed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([accountUuid, path])
+  @@index([accountUuid])
+  @@index([type])
+  @@index([status])
+  @@index([path])
+  @@index([createdAt])
+  @@index([lastAccessedAt])
+  @@map("repositories")
 }

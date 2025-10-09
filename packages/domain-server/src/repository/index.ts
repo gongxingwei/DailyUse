@@ -25,6 +25,23 @@ export { RepositoryDomainService } from './services/RepositoryDomainService';
 // ===== 仓储接口 =====
 export { type IRepositoryRepository } from './repositories/IRepositoryRepository';
 
+// ===== 基础设施层 =====
+export {
+  PrismaRepositoryRepository,
+  RepositoryMapper,
+  GitService,
+  FileSystemService,
+} from './infrastructure';
+
+export type {
+  PrismaRepository,
+  PrismaRepositoryWithRelations,
+  GitStatusInfo,
+  GitInitOptions,
+  FileStats,
+  ScanOptions,
+} from './infrastructure';
+
 // ===== 类型导出（从 contracts 重新导出，方便使用） =====
 // 注意：类型需要从 RepositoryContracts 命名空间导出
 import type { RepositoryContracts } from '@dailyuse/contracts';
