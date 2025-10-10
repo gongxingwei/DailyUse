@@ -35,6 +35,8 @@ model Account {
   reminderTemplateGroups ReminderTemplateGroup[]
   reminderTemplates      ReminderTemplate[]
   repositories           Repository[]
+  repositoryStatistics   RepositoryStatistics?
+  repositoryExplorers    RepositoryExplorer[]
   settingBackups         SettingBackup[]
   settingChangeRecords   SettingChangeRecord[]
   settingDefinitions     SettingDefinition[]
@@ -891,30 +893,30 @@ model UserThemePreference {
 // ========== Notification Module ==========
 
 model Notification {
-  uuid          String    @id @default(cuid())
-  accountUuid   String    @map("account_uuid")
-  templateUuid  String?   @map("template_uuid")
-  title         String
-  content       String    @db.Text
-  type          String
-  priority      String
-  status        String    @default("pending")
-  channels      String    @default("[]") // JSON array
-  icon          String?
-  image         String?
-  actions       String?   @db.Text // JSON array
-  scheduledAt   DateTime? @map("scheduled_at")
-  sentAt        DateTime? @map("sent_at")
-  readAt        DateTime? @map("read_at")
-  dismissedAt   DateTime? @map("dismissed_at")
-  expiresAt     DateTime? @map("expires_at")
-  metadata      String?   @db.Text // JSON
-  version       Int       @default(1)
-  createdAt     DateTime  @default(now()) @map("created_at")
-  updatedAt     DateTime  @updatedAt @map("updated_at")
+  uuid         String    @id @default(cuid())
+  accountUuid  String    @map("account_uuid")
+  templateUuid String?   @map("template_uuid")
+  title        String
+  content      String    @db.Text
+  type         String
+  priority     String
+  status       String    @default("pending")
+  channels     String    @default("[]") // JSON array
+  icon         String?
+  image        String?
+  actions      String?   @db.Text // JSON array
+  scheduledAt  DateTime? @map("scheduled_at")
+  sentAt       DateTime? @map("sent_at")
+  readAt       DateTime? @map("read_at")
+  dismissedAt  DateTime? @map("dismissed_at")
+  expiresAt    DateTime? @map("expires_at")
+  metadata     String?   @db.Text // JSON
+  version      Int       @default(1)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  account          Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  account          Account               @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   template         NotificationTemplate? @relation(fields: [templateUuid], references: [uuid], onDelete: SetNull)
   deliveryReceipts DeliveryReceipt[]
 
@@ -995,24 +997,26 @@ model DeliveryReceipt {
 // ========== Repository Module ==========
 
 model Repository {
-  uuid            String    @id @default(cuid())
-  accountUuid     String    @map("account_uuid")
-  name            String
-  type            String    // RepositoryType: 'file', 'git', 'web', 'database', 'api', 'other'
-  path            String
-  description     String?
-  config          String    @db.Text // JSON: RepositoryConfig
-  relatedGoals    String?   @map("related_goals") // JSON array of goal UUIDs
-  status          String    @default("active") // RepositoryStatus: 'active', 'archived', 'readonly', 'syncing', 'error'
-  git             String?   @db.Text // JSON: GitInfo (optional for git repositories)
-  syncStatus      String?   @map("sync_status") @db.Text // JSON: SyncStatus (optional)
-  stats           String    @db.Text // JSON: RepositoryStats
-  lastAccessedAt  DateTime? @map("last_accessed_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  uuid           String    @id @default(cuid())
+  accountUuid    String    @map("account_uuid")
+  name           String
+  type           String // RepositoryType: 'file', 'git', 'web', 'database', 'api', 'other'
+  path           String
+  description    String?
+  config         String    @db.Text // JSON: RepositoryConfig
+  relatedGoals   String?   @map("related_goals") // JSON array of goal UUIDs
+  status         String    @default("active") // RepositoryStatus: 'active', 'archived', 'readonly', 'syncing', 'error'
+  git            String?   @db.Text // JSON: GitInfo (optional for git repositories)
+  syncStatus     String?   @map("sync_status") @db.Text // JSON: SyncStatus (optional)
+  stats          String    @db.Text // JSON: RepositoryStats
+  lastAccessedAt DateTime? @map("last_accessed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  account   Account              @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  resources RepositoryResource[]
+  explorers RepositoryExplorer[]
 
   @@unique([accountUuid, path])
   @@index([accountUuid])
@@ -1022,4 +1026,146 @@ model Repository {
   @@index([createdAt])
   @@index([lastAccessedAt])
   @@map("repositories")
+}
+
+model RepositoryResource {
+  uuid           String    @id @default(cuid())
+  repositoryUuid String    @map("repository_uuid")
+  name           String
+  type           String // ResourceType: 'file', 'folder', 'link', 'image', 'video', 'document', 'code', 'data', 'config', 'other'
+  path           String
+  size           Int? // File size in bytes
+  description    String?
+  author         String?
+  version        String?
+  tags           String?   @db.Text // JSON array of tags
+  category       String?
+  status         String    @default("active") // ResourceStatus: 'active', 'archived', 'deleted', 'broken'
+  metadata       String?   @db.Text // JSON: additional metadata
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  modifiedAt     DateTime? @map("modified_at") // File system modification time
+
+  // Relations
+  repository       Repository          @relation(fields: [repositoryUuid], references: [uuid], onDelete: Cascade)
+  sourceReferences ResourceReference[] @relation("SourceResource")
+  targetReferences ResourceReference[] @relation("TargetResource")
+  linkedContents   LinkedContent[]
+
+  @@unique([repositoryUuid, path])
+  @@index([repositoryUuid])
+  @@index([type])
+  @@index([status])
+  @@index([path])
+  @@index([createdAt])
+  @@map("repository_resources")
+}
+
+model ResourceReference {
+  uuid               String    @id @default(cuid())
+  sourceResourceUuid String    @map("source_resource_uuid")
+  targetResourceUuid String    @map("target_resource_uuid")
+  referenceType      String    @map("reference_type") // ReferenceType: 'import', 'include', 'link', 'dependency', 'related', 'other'
+  description        String?
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  lastVerifiedAt     DateTime? @map("last_verified_at")
+
+  // Relations
+  sourceResource RepositoryResource @relation("SourceResource", fields: [sourceResourceUuid], references: [uuid], onDelete: Cascade)
+  targetResource RepositoryResource @relation("TargetResource", fields: [targetResourceUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([sourceResourceUuid, targetResourceUuid, referenceType])
+  @@index([sourceResourceUuid])
+  @@index([targetResourceUuid])
+  @@index([referenceType])
+  @@map("resource_references")
+}
+
+model LinkedContent {
+  uuid          String    @id @default(cuid())
+  resourceUuid  String    @map("resource_uuid")
+  title         String
+  url           String
+  contentType   String    @map("content_type") // ContentType: 'article', 'video', 'documentation', 'tutorial', 'reference', 'tool', 'library', 'other'
+  description   String?   @db.Text
+  thumbnail     String?
+  author        String?
+  publishedAt   DateTime? @map("published_at")
+  isAccessible  Boolean   @default(true) @map("is_accessible")
+  lastCheckedAt DateTime? @map("last_checked_at")
+  cachedAt      DateTime? @map("cached_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  resource RepositoryResource @relation(fields: [resourceUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([resourceUuid])
+  @@index([contentType])
+  @@index([url])
+  @@map("linked_contents")
+}
+
+model RepositoryExplorer {
+  uuid           String    @id @default(cuid())
+  repositoryUuid String    @map("repository_uuid")
+  accountUuid    String    @map("account_uuid")
+  name           String
+  description    String?
+  currentPath    String    @map("current_path")
+  filters        String?   @db.Text // JSON: filter configuration
+  viewConfig     String?   @map("view_config") @db.Text // JSON: view configuration
+  pinnedPaths    String?   @map("pinned_paths") @db.Text // JSON array of pinned paths
+  recentPaths    String?   @map("recent_paths") @db.Text // JSON array of recent paths
+  lastScanAt     DateTime? @map("last_scan_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  repository Repository @relation(fields: [repositoryUuid], references: [uuid], onDelete: Cascade)
+  account    Account    @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([repositoryUuid, accountUuid])
+  @@index([repositoryUuid])
+  @@index([accountUuid])
+  @@map("repository_explorers")
+}
+
+// ============ Repository Statistics (统计数据) ============
+
+model RepositoryStatistics {
+  id          Int    @id @default(autoincrement())
+  accountUuid String @unique @map("account_uuid")
+
+  // 仓库统计
+  totalRepositories    Int @default(0) @map("total_repositories")
+  activeRepositories   Int @default(0) @map("active_repositories")
+  archivedRepositories Int @default(0) @map("archived_repositories")
+
+  // 资源统计
+  totalResources Int @default(0) @map("total_resources")
+  totalFiles     Int @default(0) @map("total_files")
+  totalFolders   Int @default(0) @map("total_folders")
+
+  // Git 统计
+  gitEnabledRepos Int @default(0) @map("git_enabled_repos")
+  totalCommits    Int @default(0) @map("total_commits")
+
+  // 引用统计
+  totalReferences     Int @default(0) @map("total_references")
+  totalLinkedContents Int @default(0) @map("total_linked_contents")
+
+  // 存储统计
+  totalSizeBytes BigInt @default(0) @map("total_size_bytes")
+
+  // 时间戳
+  lastUpdatedAt DateTime @default(now()) @map("last_updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@map("repository_statistics")
 }

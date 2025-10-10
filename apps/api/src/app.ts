@@ -29,7 +29,7 @@ import { EditorApplicationService } from './modules/editor/application/services/
 import { InMemoryDocumentRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryDocumentRepository.js';
 import { InMemoryWorkspaceRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryWorkspaceRepository.js';
 import { RepositoryController, createRepositoryRoutes } from './modules/repository/index.js';
-import { RepositoryApplicationService } from './modules/repository/application/services/RepositoryApplicationService.js';
+import { RepositoryApplicationService } from './modules/repository/application/services/ApplicationService.js';
 import {
   PrismaRepositoryRepository,
   PrismaResourceRepository,

@@ -6,6 +6,7 @@
 
 // ===== 聚合根 =====
 export { Repository as RepositoryAggregate } from './aggregates/Repository';
+export { RepositoryStatistics as RepositoryStatisticsAggregate } from './aggregates/RepositoryStatistics';
 
 // ===== 实体 =====
 export { Resource as ResourceEntity } from './entities/Resource';
@@ -21,9 +22,11 @@ export { GitInfo } from './value-objects/GitInfo';
 
 // ===== 领域服务 =====
 export { RepositoryDomainService } from './services/RepositoryDomainService';
+export { RepositoryStatisticsDomainService } from './services/RepositoryStatisticsDomainService';
 
 // ===== 仓储接口 =====
 export { type IRepositoryRepository } from './repositories/IRepositoryRepository';
+export { type IRepositoryStatisticsRepository } from './repositories/IRepositoryStatisticsRepository';
 
 // ===== 基础设施层 =====
 export {

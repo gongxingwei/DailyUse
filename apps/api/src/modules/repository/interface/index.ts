@@ -1,7 +1,7 @@
 /**
- * Repository Interface Layer Index
- * 仓储接口层入口
+ * Repository Module - Interface Layer
+ * HTTP 接口层导出
  */
 
-export { RepositoryController } from './http/RepositoryController.js';
-export { createRepositoryRoutes } from './http/routes.js';
+export { RepositoryController } from './http/controllers/RepositoryController';
+export { default as repositoryRoutes } from './http/routes/repositoryRoutes';

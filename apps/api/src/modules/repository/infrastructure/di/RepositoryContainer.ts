@@ -1,15 +1,25 @@
-import type { IRepositoryRepository, IResourceRepository } from '@dailyuse/domain-server';
-import { PrismaRepositoryRepository } from '../repositories/PrismaRepositoryRepository';
-import { PrismaResourceRepository } from '../repositories/PrismaResourceRepository';
+import type {
+  IRepositoryRepository,
+  IRepositoryStatisticsRepository,
+} from '@dailyuse/domain-server';
+import { PrismaRepositoryAggregateRepository } from '../repositories/PrismaRepositoryAggregateRepository';
+import { PrismaRepositoryStatisticsRepository } from '../repositories/PrismaRepositoryStatisticsRepository';
 import { prisma } from '@/config/prisma';
 
+/**
+ * Repository Module DI Container
+ * 管理 Repository 模块的所有仓储实例
+ */
 export class RepositoryContainer {
   private static instance: RepositoryContainer;
-  private repositoryRepository: IRepositoryRepository | null = null;
-  private resourceRepository: IResourceRepository | null = null;
+  private repositoryAggregateRepository: IRepositoryRepository | null = null;
+  private repositoryStatisticsRepository: IRepositoryStatisticsRepository | null = null;
 
   private constructor() {}
 
+  /**
+   * 获取容器单例
+   */
   static getInstance(): RepositoryContainer {
     if (!RepositoryContainer.instance) {
       RepositoryContainer.instance = new RepositoryContainer();
@@ -18,31 +28,38 @@ export class RepositoryContainer {
   }
 
   /**
-   * 获取 Repository Prisma 仓库实例
+   * 获取 Repository 聚合根仓储
+   * 使用懒加载，第一次访问时创建实例
    */
-  async getPrismaRepositoryRepository(): Promise<IRepositoryRepository> {
-    if (!this.repositoryRepository) {
-      this.repositoryRepository = new PrismaRepositoryRepository(prisma);
+  getRepositoryAggregateRepository(): IRepositoryRepository {
+    if (!this.repositoryAggregateRepository) {
+      this.repositoryAggregateRepository = new PrismaRepositoryAggregateRepository(prisma);
     }
-    return this.repositoryRepository;
+    return this.repositoryAggregateRepository;
   }
 
   /**
-   * 获取 Resource Prisma 仓库实例
+   * 设置 Repository 聚合根仓储（用于测试）
    */
-  async getPrismaResourceRepository(): Promise<IResourceRepository> {
-    if (!this.resourceRepository) {
-      this.resourceRepository = new PrismaResourceRepository(prisma);
+  setRepositoryAggregateRepository(repository: IRepositoryRepository): void {
+    this.repositoryAggregateRepository = repository;
+  }
+
+  /**
+   * 获取 RepositoryStatistics 仓储
+   * 使用懒加载，第一次访问时创建实例
+   */
+  getRepositoryStatisticsRepository(): IRepositoryStatisticsRepository {
+    if (!this.repositoryStatisticsRepository) {
+      this.repositoryStatisticsRepository = new PrismaRepositoryStatisticsRepository(prisma);
     }
-    return this.resourceRepository;
+    return this.repositoryStatisticsRepository;
   }
 
-  // 用于测试时替换实现
-  setRepositoryRepository(repository: IRepositoryRepository): void {
-    this.repositoryRepository = repository;
-  }
-
-  setResourceRepository(repository: IResourceRepository): void {
-    this.resourceRepository = repository;
+  /**
+   * 设置 RepositoryStatistics 仓储（用于测试）
+   */
+  setRepositoryStatisticsRepository(repository: IRepositoryStatisticsRepository): void {
+    this.repositoryStatisticsRepository = repository;
   }
 }

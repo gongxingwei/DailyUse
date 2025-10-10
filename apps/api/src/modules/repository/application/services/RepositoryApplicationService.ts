@@ -1,450 +1,197 @@
-import { RepositoryContracts } from '@dailyuse/contracts';
-import { randomUUID } from 'node:crypto';
-import {
-  Repository,
-  type IRepositoryRepository,
-  type IResourceRepository,
-} from '@dailyuse/domain-server';
+import type { IRepositoryRepository } from '@dailyuse/domain-server';
 import { RepositoryContainer } from '../../infrastructure/di/RepositoryContainer';
+import { RepositoryDomainService } from '@dailyuse/domain-server';
+import type { RepositoryContracts } from '@dailyuse/contracts';
 
+/**
+ * Repository 应用服务
+ * 负责协调领域服务和仓储，处理业务用例
+ *
+ * 架构职责：
+ * - 委托给 DomainService 处理业务逻辑
+ * - 协调多个领域服务
+ * - 事务管理
+ * - DTO 转换（Domain ↔ Contracts）
+ */
 export class RepositoryApplicationService {
   private static instance: RepositoryApplicationService;
+  private domainService: RepositoryDomainService;
   private repositoryRepository: IRepositoryRepository;
-  private resourceRepository: IResourceRepository;
 
-  constructor(
-    repositoryRepository: IRepositoryRepository,
-    resourceRepository: IResourceRepository,
-  ) {
+  private constructor(repositoryRepository: IRepositoryRepository) {
+    this.domainService = new RepositoryDomainService(repositoryRepository);
     this.repositoryRepository = repositoryRepository;
-    this.resourceRepository = resourceRepository;
   }
 
   /**
-   * 创建实例时注入依赖，支持默认选项
+   * 创建应用服务实例（支持依赖注入）
    */
   static async createInstance(
     repositoryRepository?: IRepositoryRepository,
-    resourceRepository?: IResourceRepository,
   ): Promise<RepositoryApplicationService> {
     const container = RepositoryContainer.getInstance();
-    const finalRepositoryRepository =
-      repositoryRepository || (await container.getPrismaRepositoryRepository());
-    const finalResourceRepository =
-      resourceRepository || (await container.getPrismaResourceRepository());
+    const repo = repositoryRepository || container.getRepositoryAggregateRepository();
 
-    this.instance = new RepositoryApplicationService(
-      finalRepositoryRepository,
-      finalResourceRepository,
-    );
-    return this.instance;
+    RepositoryApplicationService.instance = new RepositoryApplicationService(repo);
+    return RepositoryApplicationService.instance;
   }
 
   /**
-   * 获取服务实例
+   * 获取应用服务单例
    */
   static async getInstance(): Promise<RepositoryApplicationService> {
-    if (!this.instance) {
+    if (!RepositoryApplicationService.instance) {
       RepositoryApplicationService.instance = await RepositoryApplicationService.createInstance();
     }
-    return this.instance;
+    return RepositoryApplicationService.instance;
   }
 
   // ===== Repository 管理 =====
 
-  async createRepository(
-    accountUuid: string,
-    request: RepositoryContracts.CreateRepositoryRequestDTO,
-  ): Promise<RepositoryContracts.RepositoryDTO> {
-    // 创建仓储领域实体
-    const repository = Repository.create({
-      accountUuid,
-      name: request.name,
-      type: request.type,
-      path: request.path,
-      description: request.description,
-      config: {
-        enableGit: request.initializeGit || false,
-        autoSync: false,
-        defaultLinkedDocName: 'README.md',
-        supportedFileTypes: [RepositoryContracts.ResourceType.MARKDOWN],
-        maxFileSize: 100 * 1024 * 1024, // 100MB
-        enableVersionControl: true,
-        ...request.config,
-      },
-    });
+  /**
+   * 创建仓库
+   */
+  async createRepository(params: {
+    accountUuid: string;
+    name: string;
+    type: RepositoryContracts.RepositoryType;
+    path: string;
+    description?: string;
+    config?: Partial<RepositoryContracts.RepositoryConfig>;
+    initializeGit?: boolean;
+  }): Promise<RepositoryContracts.RepositoryServerDTO> {
+    // 委托给领域服务处理业务逻辑
+    const repository = await this.domainService.createRepository(params);
 
-    // 保存到仓储
-    await this.repositoryRepository.save(repository);
-
-    // 保存后重新读取，确保包含数据库实际持久化后的完整信息（含关联、时间戳等）
-    const created = await this.repositoryRepository.findByUuid(repository.getUuid());
-    if (!created) {
-      throw new Error('Failed to retrieve created repository');
-    }
-
-    console.log(`✅ Repository created successfully: ${created.uuid} - ${created.name}`);
-    return created;
+    // 转换为 DTO
+    return repository.toServerDTO();
   }
 
-  async getRepositories(
-    accountUuid: string,
-    queryParams: RepositoryContracts.RepositoryQueryParamsDTO,
-  ): Promise<RepositoryContracts.RepositoryListResponseDTO> {
-    const page = queryParams.pagination?.page || 1;
-    const limit = queryParams.pagination?.limit || 10;
-
-    const result = await this.repositoryRepository.findWithPagination({
-      accountUuid,
-      page,
-      limit,
-      status: queryParams.status as RepositoryContracts.RepositoryStatus,
-      type: queryParams.type as RepositoryContracts.RepositoryType,
-      searchTerm: queryParams.keyword,
-    });
-    console.log("🚀 ~ RepositoryApplicationService ~ getRepositories ~ result:", result)
-
-    const repositories = result.repositories; // Repository层已经返回DTO
-
-    return {
-      repositories,
-      total: result.total,
-      page,
-      limit,
-    };
-  }
-
-  async getRepositoryById(
-    accountUuid: string,
+  /**
+   * 获取仓库详情
+   */
+  async getRepository(
     uuid: string,
-  ): Promise<RepositoryContracts.RepositoryDTO | null> {
-    const repository = await this.repositoryRepository.findByUuid(uuid);
-    if (!repository || repository.accountUuid !== accountUuid) return null;
+    options?: { includeChildren?: boolean },
+  ): Promise<RepositoryContracts.RepositoryServerDTO | null> {
+    // 委托给领域服务处理
+    const repository = await this.domainService.getRepository(uuid, options);
 
-    return repository; // Repository层已经返回DTO
+    return repository ? repository.toServerDTO() : null;
   }
 
-  async updateRepository(
+  /**
+   * 获取账户的所有仓库
+   */
+  async getRepositoriesByAccount(
     accountUuid: string,
-    uuid: string,
-    request: RepositoryContracts.UpdateRepositoryRequestDTO,
-  ): Promise<RepositoryContracts.RepositoryDTO> {
-    const repositoryDto = await this.repositoryRepository.findByUuid(uuid);
-    if (!repositoryDto || repositoryDto.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
+    options?: { includeChildren?: boolean },
+  ): Promise<RepositoryContracts.RepositoryServerDTO[]> {
+    // 委托给领域服务处理
+    const repositories = await this.domainService.getRepositoriesByAccount(accountUuid, options);
 
-    // 从DTO重建域对象进行业务逻辑操作
-    const repository = Repository.fromDTO(repositoryDto);
-
-    // 更新仓储
-    if (request.name !== undefined) repository.updateName(request.name);
-    if (request.description !== undefined) repository.updateDescription(request.description);
-    if (request.path !== undefined) repository.updatePath(request.path);
-    if (request.config !== undefined) repository.updateConfig(request.config);
-
-    // 更新关联目标
-    if (request.relatedGoals !== undefined) {
-      repository.updateRelatedGoals(request.relatedGoals);
-    }
-
-    // 更新状态
-    if (request.status !== undefined) {
-      repository.updateStatus(request.status);
-    }
-
-    // 保存更新
-    await this.repositoryRepository.save(repository);
-
-    // 返回更新后的DTO
-    const updatedRepository = await this.repositoryRepository.findByUuid(uuid);
-    if (!updatedRepository) {
-      throw new Error('Failed to retrieve updated repository');
-    }
-
-    console.log(
-      `✅ Repository updated successfully: ${updatedRepository.uuid} - ${updatedRepository.name}`,
-    );
-    return updatedRepository;
+    // 转换为 DTO 数组
+    return repositories.map((repo) => repo.toServerDTO());
   }
 
-  async deleteRepository(accountUuid: string, uuid: string): Promise<void> {
-    const repositoryDto = await this.repositoryRepository.findByUuid(uuid);
-    if (!repositoryDto || repositoryDto.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
+  /**
+   * 通过路径查找仓库
+   */
+  async getRepositoryByPath(path: string): Promise<RepositoryContracts.RepositoryServerDTO | null> {
+    // 委托给领域服务处理
+    const repository = await this.domainService.getRepositoryByPath(path);
 
-    // 重建域对象进行业务逻辑验证
-    const repository = Repository.fromDTO(repositoryDto);
-    if (!repository.canDelete()) {
-      throw new Error('Repository cannot be deleted');
-    }
+    return repository ? repository.toServerDTO() : null;
+  }
 
-    await this.repositoryRepository.delete(uuid);
+  /**
+   * 更新仓库配置
+   */
+  async updateRepositoryConfig(
+    uuid: string,
+    config: Partial<RepositoryContracts.RepositoryConfig>,
+  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+    // 委托给领域服务处理业务逻辑
+    const repository = await this.domainService.updateRepositoryConfig(uuid, config);
+
+    return repository.toServerDTO();
+  }
+
+  /**
+   * 删除仓库
+   */
+  async deleteRepository(uuid: string, options?: { deleteFiles?: boolean }): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.deleteRepository(uuid, options);
   }
 
   // ===== Repository 状态管理 =====
 
-  async activateRepository(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<RepositoryContracts.RepositoryDTO> {
-    return this.updateRepositoryStatus(
-      accountUuid,
-      uuid,
-      RepositoryContracts.RepositoryStatus.ACTIVE,
-    );
+  /**
+   * 归档仓库
+   */
+  async archiveRepository(uuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.archiveRepository(uuid);
   }
 
-  async archiveRepository(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<RepositoryContracts.RepositoryDTO> {
-    return this.updateRepositoryStatus(
-      accountUuid,
-      uuid,
-      RepositoryContracts.RepositoryStatus.ARCHIVED,
-    );
+  /**
+   * 激活仓库
+   */
+  async activateRepository(uuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.activateRepository(uuid);
   }
 
-  private async updateRepositoryStatus(
-    accountUuid: string,
-    uuid: string,
-    status: RepositoryContracts.RepositoryStatus,
-  ): Promise<RepositoryContracts.RepositoryDTO> {
-    const repositoryDto = await this.repositoryRepository.findByUuid(uuid);
-    if (!repositoryDto || repositoryDto.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
+  // ===== Git 管理 =====
 
-    // 重建域对象进行状态更新
-    const repository = Repository.fromDTO(repositoryDto);
-    repository.updateStatus(status);
-    await this.repositoryRepository.save(repository);
-
-    // 返回更新后的DTO
-    const updatedRepository = await this.repositoryRepository.findByUuid(uuid);
-    if (!updatedRepository) {
-      throw new Error('Failed to retrieve updated repository');
-    }
-
-    return updatedRepository;
+  /**
+   * 启用 Git
+   */
+  async enableGit(uuid: string, remoteUrl?: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.enableGit(uuid, remoteUrl);
   }
 
-  // ===== Git 操作 =====
-
-  async getGitStatus(
-    accountUuid: string,
-    repositoryUuid: string,
-  ): Promise<RepositoryContracts.GitStatusResponseDTO> {
-    const repository = await this.repositoryRepository.findByUuid(repositoryUuid);
-    if (!repository || repository.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
-
-    // 这里应该调用 Git 相关的服务
-    // 目前返回模拟数据
-    return {
-      current: 'main',
-      ahead: 0,
-      behind: 0,
-      staged: [],
-      unstaged: [],
-      not_added: [],
-      created: [],
-      modified: [],
-      deleted: [],
-      conflicted: [],
-      isClean: true,
-      detached: false,
-    };
+  /**
+   * 禁用 Git
+   */
+  async disableGit(uuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.disableGit(uuid);
   }
 
-  async commitChanges(
-    accountUuid: string,
-    repositoryUuid: string,
-    request: RepositoryContracts.GitCommitRequestDTO,
-  ): Promise<RepositoryContracts.GitCommitDTO> {
-    const repositoryDto = await this.repositoryRepository.findByUuid(repositoryUuid);
-    if (!repositoryDto || repositoryDto.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
-
-    // 检查Git配置
-    if (!repositoryDto.config?.enableGit) {
-      throw new Error('Git is not enabled for this repository');
-    }
-
-    // 这里应该调用 Git 相关的服务
-    // 目前返回模拟数据
-    return {
-      hash: `commit-${Date.now()}`,
-      message: request.message,
-      date: new Date().toISOString(),
-      author_name: 'current-user',
-      author_email: 'user@example.com',
-    };
+  /**
+   * 同步仓库
+   */
+  async syncRepository(uuid: string, type: 'pull' | 'push' | 'both', force = false): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.syncRepository(uuid, type, force);
   }
 
-  // ===== 资源管理 =====
+  // ===== 统计与关联 =====
 
-  async getResources(
-    accountUuid: string,
-    repositoryUuid: string,
-    queryParams: RepositoryContracts.ResourceQueryParamsDTO,
-  ): Promise<RepositoryContracts.ResourceListResponseDTO> {
-    // 首先验证仓储存在
-    const repository = await this.repositoryRepository.findByUuid(repositoryUuid);
-    if (!repository || repository.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
-
-    const page = queryParams.pagination?.page || 1;
-    const limit = queryParams.pagination?.limit || 20;
-
-    // 通过资源仓储获取资源
-    const result = await this.resourceRepository.findWithPagination({
-      repositoryUuid,
-      page,
-      limit,
-      type: queryParams.type as RepositoryContracts.ResourceType,
-      status: queryParams.status as RepositoryContracts.ResourceStatus,
-      searchTerm: queryParams.keyword,
-      tags: queryParams.tags,
-    });
-
-    return {
-      resources: result.resources,
-      total: result.total,
-      page,
-      limit,
-    };
+  /**
+   * 更新统计信息
+   */
+  async updateRepositoryStats(uuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.updateRepositoryStats(uuid);
   }
 
-  async createResource(
-    accountUuid: string,
-    repositoryUuid: string,
-    request: RepositoryContracts.CreateResourceRequestDTO,
-  ): Promise<RepositoryContracts.ResourceDTO> {
-    // 验证仓储存在
-    const repository = await this.repositoryRepository.findByUuid(repositoryUuid);
-    if (!repository || repository.accountUuid !== accountUuid) {
-      throw new Error('Repository not found');
-    }
-
-    const resourceData: Omit<RepositoryContracts.ResourceDTO, 'uuid' | 'createdAt' | 'updatedAt'> =
-      {
-        repositoryUuid,
-        name: request.name,
-        type: request.type,
-        path: request.path,
-        // 计算内容大小（Node环境下不使用Blob）
-        size: request.content
-          ? typeof request.content === 'string'
-            ? Buffer.byteLength(request.content)
-            : ((request.content as ArrayBuffer | Uint8Array).byteLength ?? 0)
-          : 0,
-        description: request.description,
-        author: request.author,
-        tags: request.tags || [],
-        category: request.category,
-        status: RepositoryContracts.ResourceStatus.ACTIVE,
-        metadata: request.metadata || {},
-      };
-
-    // 为资源生成UUID，保存并返回持久化后的完整DTO
-    const resourceUuidGenerated = randomUUID();
-    const resourceDto: RepositoryContracts.ResourceDTO = {
-      uuid: resourceUuidGenerated,
-      ...resourceData,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    await this.resourceRepository.save(resourceDto);
-
-    // 读取持久化后的完整数据确保包含所有数据库生成的字段
-    const created = await this.resourceRepository.findByUuid(resourceUuidGenerated);
-    if (!created) {
-      throw new Error('Failed to retrieve created resource');
-    }
-
-    console.log(`✅ Resource created successfully: ${created.uuid} - ${created.name}`);
-    return created;
+  /**
+   * 添加关联目标
+   */
+  async addRelatedGoal(repositoryUuid: string, goalUuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.addRelatedGoal(repositoryUuid, goalUuid);
   }
 
-  async updateResource(
-    accountUuid: string,
-    resourceUuid: string,
-    request: RepositoryContracts.UpdateResourceRequestDTO,
-  ): Promise<RepositoryContracts.ResourceDTO> {
-    const resource = await this.resourceRepository.findByUuid(resourceUuid);
-    if (!resource) {
-      throw new Error('Resource not found');
-    }
-
-    // 验证仓储归属
-    const repository = await this.repositoryRepository.findByUuid(resource.repositoryUuid);
-    if (!repository || repository.accountUuid !== accountUuid) {
-      throw new Error('Resource not found');
-    }
-
-    const updateData: Partial<RepositoryContracts.ResourceDTO> = {};
-
-    if (request.name !== undefined) updateData.name = request.name;
-    if (request.description !== undefined) updateData.description = request.description;
-    if (request.author !== undefined) updateData.author = request.author;
-    if (request.version !== undefined) updateData.version = request.version;
-    if (request.tags !== undefined) updateData.tags = request.tags;
-    if (request.category !== undefined) updateData.category = request.category;
-    if (request.status !== undefined) updateData.status = request.status;
-    if (request.metadata !== undefined) updateData.metadata = request.metadata;
-
-    // 获取现有资源并更新
-    const existingResource = await this.resourceRepository.findByUuid(resourceUuid);
-    if (!existingResource) {
-      throw new Error('Resource not found');
-    }
-
-    const updatedResource: RepositoryContracts.ResourceDTO = {
-      ...existingResource,
-      ...updateData,
-      updatedAt: new Date(),
-    };
-
-    await this.resourceRepository.save(updatedResource);
-
-    // 读取持久化后的完整数据
-    const persisted = await this.resourceRepository.findByUuid(resourceUuid);
-    if (!persisted) {
-      throw new Error('Failed to retrieve updated resource');
-    }
-
-    console.log(`✅ Resource updated successfully: ${persisted.uuid} - ${persisted.name}`);
-    return persisted;
-  }
-
-  async deleteResource(accountUuid: string, resourceUuid: string): Promise<void> {
-    const resource = await this.resourceRepository.findByUuid(resourceUuid);
-    if (!resource) {
-      throw new Error('Resource not found');
-    }
-
-    // 验证仓储归属
-    const repository = await this.repositoryRepository.findByUuid(resource.repositoryUuid);
-    if (!repository || repository.accountUuid !== accountUuid) {
-      throw new Error('Resource not found');
-    }
-
-    await this.resourceRepository.delete(resourceUuid);
-  }
-
-  // ===== 搜索和过滤 =====
-
-  async searchRepositories(
-    accountUuid: string,
-    queryParams: RepositoryContracts.RepositoryQueryParamsDTO,
-  ): Promise<RepositoryContracts.RepositoryListResponseDTO> {
-    return this.getRepositories(accountUuid, queryParams);
+  /**
+   * 移除关联目标
+   */
+  async removeRelatedGoal(repositoryUuid: string, goalUuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.removeRelatedGoal(repositoryUuid, goalUuid);
   }
 }

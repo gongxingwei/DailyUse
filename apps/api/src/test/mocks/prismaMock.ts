@@ -23,6 +23,8 @@ const mockDataStore = {
   // Reminder相关表
   reminderTemplate: new Map(),
   reminderExecution: new Map(),
+  // Repository相关表
+  repositoryStatistics: new Map(),
   // 添加其他需要的表...
 };
 
@@ -380,6 +382,9 @@ export const mockPrismaClient = {
   // Reminder相关表
   reminderTemplate: createMockModel('reminderTemplate'),
   reminderExecution: createMockModel('reminderExecution'),
+
+  // Repository相关表
+  repositoryStatistics: createMockModel('repositoryStatistics'),
 
   // 事务和连接操作
   $transaction: vi.fn(async (operations: any[]) => {

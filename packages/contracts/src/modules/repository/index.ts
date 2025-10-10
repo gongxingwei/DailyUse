@@ -11,6 +11,8 @@ export * from './enums';
 // ============ 聚合根 ============
 export * from './aggregates/RepositoryServer';
 export * from './aggregates/RepositoryClient';
+export * from './aggregates/RepositoryStatisticsServer';
+export * from './aggregates/RepositoryStatisticsClient';
 
 // ============ 实体 ============
 export * from './entities/ResourceServer';
