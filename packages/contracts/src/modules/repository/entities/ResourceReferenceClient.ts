@@ -52,18 +52,6 @@ export interface ResourceReferenceClient {
   formattedLastVerified?: string;
   isVerified: boolean;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 ResourceReference 实体（静态工厂方法）
-   */
-  create(params: {
-    sourceResourceUuid: string;
-    targetResourceUuid: string;
-    referenceType: ReferenceType;
-    description?: string;
-  }): ResourceReferenceClient;
-
   // ===== 转换方法 (To) =====
 
   /**
@@ -76,7 +64,30 @@ export interface ResourceReferenceClient {
    */
   toClientDTO(): ResourceReferenceClientDTO;
 
-  // ===== 转换方法 (From - 静态工厂) =====
+  /**
+   * 克隆当前实体（用于编辑表单）
+   */
+  clone(): ResourceReferenceClient;
+}
+
+/**
+ * ResourceReference 静态工厂方法接口
+ */
+export interface ResourceReferenceClientStatic {
+  /**
+   * 创建新的 ResourceReference 实体（静态工厂方法）
+   */
+  create(params: {
+    sourceResourceUuid: string;
+    targetResourceUuid: string;
+    referenceType: ReferenceType;
+    description?: string;
+  }): ResourceReferenceClient;
+
+  /**
+   * 创建用于创建表单的空 ResourceReference 实例
+   */
+  forCreate(sourceResourceUuid: string): ResourceReferenceClient;
 
   /**
    * 从 Server DTO 创建实体

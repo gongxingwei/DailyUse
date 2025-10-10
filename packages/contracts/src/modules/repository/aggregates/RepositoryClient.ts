@@ -61,7 +61,7 @@ export interface RepositoryClientDTO {
 // ============ 实体接口 ============
 
 /**
- * Repository 聚合根 - Client 接口
+ * Repository 聚合根 - Client 接口（实例方法）
  */
 export interface RepositoryClient {
   // 基础属性
@@ -108,22 +108,7 @@ export interface RepositoryClient {
    */
   explorer?: RepositoryExplorerClient | null;
 
-  // ===== 工厂方法（创建新实体） =====
-
-  /**
-   * 创建新的 Repository 聚合根（静态工厂方法）
-   * @param params 创建参数
-   * @returns 新的 Repository 实例
-   */
-  create(params: {
-    accountUuid: string;
-    name: string;
-    type: RepositoryType;
-    path: string;
-    description?: string;
-    config?: Partial<RepositoryConfigClientDTO>;
-    initializeGit?: boolean;
-  }): RepositoryClient;
+  // ===== 工厂方法（创建子实体 - 实例方法） =====
 
   /**
    * 创建子实体：Resource（通过聚合根创建）
@@ -200,8 +185,32 @@ export interface RepositoryClient {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toClientDTO(includeChildren?: boolean): RepositoryClientDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * Repository 静态工厂方法接口
+ * 注意：TypeScript 接口不能包含静态方法，这些方法应该在类上实现
+ */
+export interface RepositoryClientStatic {
+  /**
+   * 创建新的 Repository 聚合根（静态工厂方法）
+   * @param params 创建参数
+   * @returns 新的 Repository 实例
+   */
+  create(params: {
+    accountUuid: string;
+    name: string;
+    type: RepositoryType;
+    path: string;
+    description?: string;
+    config?: Partial<RepositoryConfigClientDTO>;
+    initializeGit?: boolean;
+  }): RepositoryClient;
+
+  /**
+   * 创建用于创建表单的空 Repository 实例
+   */
+  forCreate(accountUuid: string): RepositoryClient;
 
   /**
    * 从 Server DTO 创建实体（递归创建子实体）
@@ -212,4 +221,14 @@ export interface RepositoryClient {
    * 从 Client DTO 创建实体（递归创建子实体）
    */
   fromClientDTO(dto: RepositoryClientDTO): RepositoryClient;
+}
+
+/**
+ * Repository 实例方法接口（扩展，包含 clone）
+ */
+export interface RepositoryClientInstance extends RepositoryClient {
+  /**
+   * 克隆当前实体（用于编辑表单）
+   */
+  clone(): RepositoryClient;
 }

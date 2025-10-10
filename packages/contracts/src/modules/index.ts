@@ -14,7 +14,7 @@ export * as Goal from './goal';
 export * as Task from './task';
 export * as Reminder from './reminder';
 export * as Repository from './repository';
-export * as Editor from './editor';
+// export * as Editor from './editor'; // 暂时禁用，文件为空
 export * as Notification from './notification';
 export * as Schedule from './schedule';
 

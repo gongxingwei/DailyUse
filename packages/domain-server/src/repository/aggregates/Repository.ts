@@ -612,25 +612,4 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
       updatedAt: dto.updated_at,
     });
   }
-
-  // 实现接口要求的方法签名（作为实例方法）
-  public create(params: {
-    accountUuid: string;
-    name: string;
-    type: RepositoryType;
-    path: string;
-    description?: string;
-    config?: Partial<RepositoryContracts.RepositoryConfig>;
-    initializeGit?: boolean;
-  }): RepositoryContracts.RepositoryServer {
-    return Repository.create(params);
-  }
-
-  public fromServerDTO(dto: RepositoryServerDTO): RepositoryContracts.RepositoryServer {
-    return Repository.fromServerDTO(dto);
-  }
-
-  public fromPersistenceDTO(dto: RepositoryPersistenceDTO): RepositoryContracts.RepositoryServer {
-    return Repository.fromPersistenceDTO(dto);
-  }
 }

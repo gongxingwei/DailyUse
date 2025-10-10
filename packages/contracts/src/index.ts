@@ -15,7 +15,7 @@ export * as EventContracts from './events/index';
 export * as TaskContracts from './modules/task';
 export * as GoalContracts from './modules/goal';
 export * as ReminderContracts from './modules/reminder';
-export * as EditorContracts from './modules/editor';
+// export * as EditorContracts from './modules/editor'; // 暂时禁用，文件为空
 export * as RepositoryContracts from './modules/repository';
 export * as AccountContracts from './modules/account';
 export * as AuthenticationContracts from './modules/authentication';

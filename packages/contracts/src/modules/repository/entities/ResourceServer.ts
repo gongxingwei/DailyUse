@@ -113,20 +113,7 @@ export interface ResourceServer {
    */
   linkedContents?: LinkedContentServer[] | null;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 Resource 实体（静态工厂方法）
-   */
-  create(params: {
-    repositoryUuid: string;
-    name: string;
-    type: ResourceType;
-    path: string;
-    content?: string | Uint8Array;
-    description?: string;
-    tags?: string[];
-  }): ResourceServer;
+  // ===== 工厂方法（创建子实体 - 实例方法） =====
 
   /**
    * 创建子实体：ResourceReference（通过实体创建）
@@ -216,8 +203,24 @@ export interface ResourceServer {
    * 转换为 Persistence DTO (数据库)
    */
   toPersistenceDTO(): ResourcePersistenceDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * Resource 静态工厂方法接口
+ */
+export interface ResourceServerStatic {
+  /**
+   * 创建新的 Resource 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    name: string;
+    type: ResourceType;
+    path: string;
+    content?: string | Uint8Array;
+    description?: string;
+    tags?: string[];
+  }): ResourceServer;
 
   /**
    * 从 Server DTO 创建实体（递归创建子实体）

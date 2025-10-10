@@ -71,19 +71,6 @@ export interface RepositoryExplorerClient {
   canNavigateBack: boolean;
   canNavigateForward: boolean;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
-   */
-  create(params: {
-    repositoryUuid: string;
-    accountUuid: string;
-    name: string;
-    description?: string;
-    currentPath?: string;
-  }): RepositoryExplorerClient;
-
   // ===== 转换方法 (To) =====
 
   /**
@@ -96,7 +83,31 @@ export interface RepositoryExplorerClient {
    */
   toClientDTO(): RepositoryExplorerClientDTO;
 
-  // ===== 转换方法 (From - 静态工厂) =====
+  /**
+   * 克隆当前实体（用于编辑表单）
+   */
+  clone(): RepositoryExplorerClient;
+}
+
+/**
+ * RepositoryExplorer 静态工厂方法接口
+ */
+export interface RepositoryExplorerClientStatic {
+  /**
+   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    accountUuid: string;
+    name: string;
+    description?: string;
+    currentPath?: string;
+  }): RepositoryExplorerClient;
+
+  /**
+   * 创建用于创建表单的空 RepositoryExplorer 实例
+   */
+  forCreate(params: { repositoryUuid: string; accountUuid: string }): RepositoryExplorerClient;
 
   /**
    * 从 Server DTO 创建实体

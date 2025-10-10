@@ -225,7 +225,7 @@ export type RepositoryDomainEvent =
 // ============ 实体接口 ============
 
 /**
- * Repository 聚合根 - Server 接口
+ * Repository 聚合根 - Server 接口（实例方法）
  */
 export interface RepositoryServer {
   // 基础属性
@@ -264,22 +264,7 @@ export interface RepositoryServer {
    */
   explorer?: RepositoryExplorerServer | null;
 
-  // ===== 工厂方法（创建新实体） =====
-
-  /**
-   * 创建新的 Repository 聚合根（静态工厂方法）
-   * @param params 创建参数
-   * @returns 新的 Repository 实例
-   */
-  create(params: {
-    accountUuid: string;
-    name: string;
-    type: RepositoryType;
-    path: string;
-    description?: string;
-    config?: Partial<RepositoryConfigServerDTO>;
-    initializeGit?: boolean;
-  }): RepositoryServer;
+  // ===== 工厂方法（创建子实体 - 实例方法） =====
 
   /**
    * 创建子实体：Resource（通过聚合根创建）
@@ -382,8 +367,27 @@ export interface RepositoryServer {
    * 注意：子实体在数据库中是独立表，不包含在 Persistence DTO 中
    */
   toPersistenceDTO(): RepositoryPersistenceDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * Repository 静态工厂方法接口
+ * 注意：TypeScript 接口不能包含静态方法，这些方法应该在类上实现
+ */
+export interface RepositoryServerStatic {
+  /**
+   * 创建新的 Repository 聚合根（静态工厂方法）
+   * @param params 创建参数
+   * @returns 新的 Repository 实例
+   */
+  create(params: {
+    accountUuid: string;
+    name: string;
+    type: RepositoryType;
+    path: string;
+    description?: string;
+    config?: Partial<RepositoryConfigServerDTO>;
+    initializeGit?: boolean;
+  }): RepositoryServer;
 
   /**
    * 从 Server DTO 创建实体（递归创建子实体）

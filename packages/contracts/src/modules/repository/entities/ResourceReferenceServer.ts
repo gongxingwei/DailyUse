@@ -53,18 +53,6 @@ export interface ResourceReferenceServer {
   updatedAt?: number | null;
   lastVerifiedAt?: number | null;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 ResourceReference 实体（静态工厂方法）
-   */
-  create(params: {
-    sourceResourceUuid: string;
-    targetResourceUuid: string;
-    referenceType: ReferenceType;
-    description?: string;
-  }): ResourceReferenceServer;
-
   // ===== 业务方法 =====
 
   // 引用管理
@@ -86,8 +74,21 @@ export interface ResourceReferenceServer {
    * 转换为 Persistence DTO (数据库)
    */
   toPersistenceDTO(): ResourceReferencePersistenceDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * ResourceReference 静态工厂方法接口
+ */
+export interface ResourceReferenceServerStatic {
+  /**
+   * 创建新的 ResourceReference 实体（静态工厂方法）
+   */
+  create(params: {
+    sourceResourceUuid: string;
+    targetResourceUuid: string;
+    referenceType: ReferenceType;
+    description?: string;
+  }): ResourceReferenceServer;
 
   /**
    * 从 Server DTO 创建实体

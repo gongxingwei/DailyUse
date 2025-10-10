@@ -70,8 +70,28 @@ export interface LinkedContentClient {
   accessibilityStatusIcon: string;
   domain: string;
 
-  // ===== 工厂方法 =====
+  // ===== 转换方法 (To) =====
 
+  /**
+   * 转换为 Server DTO
+   */
+  toServerDTO(): LinkedContentServerDTO;
+
+  /**
+   * 转换为 Client DTO
+   */
+  toClientDTO(): LinkedContentClientDTO;
+
+  /**
+   * 克隆当前实体（用于编辑表单）
+   */
+  clone(): LinkedContentClient;
+}
+
+/**
+ * LinkedContent 静态工厂方法接口
+ */
+export interface LinkedContentClientStatic {
   /**
    * 创建新的 LinkedContent 实体（静态工厂方法）
    */
@@ -86,19 +106,10 @@ export interface LinkedContentClient {
     publishedAt?: number;
   }): LinkedContentClient;
 
-  // ===== 转换方法 (To) =====
-
   /**
-   * 转换为 Server DTO
+   * 创建用于创建表单的空 LinkedContent 实例
    */
-  toServerDTO(): LinkedContentServerDTO;
-
-  /**
-   * 转换为 Client DTO
-   */
-  toClientDTO(): LinkedContentClientDTO;
-
-  // ===== 转换方法 (From - 静态工厂) =====
+  forCreate(resourceUuid: string): LinkedContentClient;
 
   /**
    * 从 Server DTO 创建实体

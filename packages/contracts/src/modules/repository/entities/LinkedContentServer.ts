@@ -73,22 +73,6 @@ export interface LinkedContentServer {
   createdAt: number;
   updatedAt?: number | null;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 LinkedContent 实体（静态工厂方法）
-   */
-  create(params: {
-    resourceUuid: string;
-    title: string;
-    url: string;
-    contentType: ContentType;
-    description?: string;
-    thumbnail?: string;
-    author?: string;
-    publishedAt?: number;
-  }): LinkedContentServer;
-
   // ===== 业务方法 =====
 
   // 内容管理
@@ -120,8 +104,25 @@ export interface LinkedContentServer {
    * 转换为 Persistence DTO (数据库)
    */
   toPersistenceDTO(): LinkedContentPersistenceDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * LinkedContent 静态工厂方法接口
+ */
+export interface LinkedContentServerStatic {
+  /**
+   * 创建新的 LinkedContent 实体（静态工厂方法）
+   */
+  create(params: {
+    resourceUuid: string;
+    title: string;
+    url: string;
+    contentType: ContentType;
+    description?: string;
+    thumbnail?: string;
+    author?: string;
+    publishedAt?: number;
+  }): LinkedContentServer;
 
   /**
    * 从 Server DTO 创建实体

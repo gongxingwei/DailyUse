@@ -100,19 +100,6 @@ export interface RepositoryExplorerServer {
   createdAt: number;
   updatedAt: number;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
-   */
-  create(params: {
-    repositoryUuid: string;
-    accountUuid: string;
-    name: string;
-    description?: string;
-    currentPath?: string;
-  }): RepositoryExplorerServer;
-
   // ===== 业务方法 =====
 
   // 导航
@@ -149,8 +136,22 @@ export interface RepositoryExplorerServer {
    * 转换为 Persistence DTO (数据库)
    */
   toPersistenceDTO(): RepositoryExplorerPersistenceDTO;
+}
 
-  // ===== 转换方法 (From - 静态工厂) =====
+/**
+ * RepositoryExplorer 静态工厂方法接口
+ */
+export interface RepositoryExplorerServerStatic {
+  /**
+   * 创建新的 RepositoryExplorer 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    accountUuid: string;
+    name: string;
+    description?: string;
+    currentPath?: string;
+  }): RepositoryExplorerServer;
 
   /**
    * 从 Server DTO 创建实体

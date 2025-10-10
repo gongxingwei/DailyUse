@@ -52,7 +52,7 @@ export interface ResourceClientDTO {
 // ============ 实体接口 ============
 
 /**
- * Resource 实体 - Client 接口
+ * Resource 实体 - Client 接口（实例方法）
  */
 export interface ResourceClient {
   // 基础属性
@@ -97,20 +97,7 @@ export interface ResourceClient {
    */
   linkedContents?: LinkedContentClient[] | null;
 
-  // ===== 工厂方法 =====
-
-  /**
-   * 创建新的 Resource 实体（静态工厂方法）
-   */
-  create(params: {
-    repositoryUuid: string;
-    name: string;
-    type: ResourceType;
-    path: string;
-    content?: string | Uint8Array;
-    description?: string;
-    tags?: string[];
-  }): ResourceClient;
+  // ===== 工厂方法（创建子实体 - 实例方法） =====
 
   /**
    * 创建子实体：ResourceReference（通过实体创建）
@@ -177,7 +164,33 @@ export interface ResourceClient {
    */
   toClientDTO(includeChildren?: boolean): ResourceClientDTO;
 
-  // ===== 转换方法 (From - 静态工厂) =====
+  /**
+   * 克隆当前实体（用于编辑表单）
+   */
+  clone(): ResourceClient;
+}
+
+/**
+ * Resource 静态工厂方法接口
+ */
+export interface ResourceClientStatic {
+  /**
+   * 创建新的 Resource 实体（静态工厂方法）
+   */
+  create(params: {
+    repositoryUuid: string;
+    name: string;
+    type: ResourceType;
+    path: string;
+    content?: string | Uint8Array;
+    description?: string;
+    tags?: string[];
+  }): ResourceClient;
+
+  /**
+   * 创建用于创建表单的空 Resource 实例
+   */
+  forCreate(repositoryUuid: string): ResourceClient;
 
   /**
    * 从 Server DTO 创建实体（递归创建子实体）

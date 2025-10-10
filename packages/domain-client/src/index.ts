@@ -14,8 +14,7 @@ export { GoalReview } from './goal';
 export * from './task';
 
 // Repository domain client exports
-export { Repository } from './repository';
-export { Resource as RepositoryResource } from './repository';
+export * from './repository';
 
 // Editor domain client exports
 export * from './editor';

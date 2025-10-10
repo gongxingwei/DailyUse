@@ -10,21 +10,21 @@
     "moduleResolution": "node",  // 确保模块解析正确
     "paths": {
       "@/*": ["./src/*"],
-      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
-      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
     }
   },
   "include": [
     "src/**/*.ts",
-    "src/**/aggregates/*.ts",
-    "src/**/types.ts"
   ],
   "exclude": [
     "node_modules",
     "dist",
-    // 明确排除其他包的源码，只在类型检查时使用
-    "../../packages/contracts/src/**/*",
-    "../../packages/domain-core/src/**/*",
-    "../../packages/utils/src/**/*"
+  ],
+  "references": [
+    {
+      "path": "../contracts"
+    },
+    {
+      "path": "../utils"
+    }
   ]
 }
