@@ -1,18 +1,20 @@
-import { EditorDomainService } from '@dailyuse/domain-server';
-import type { IDocumentRepository } from '../repositories/interfaces/IDocumentRepository';
-import type { IWorkspaceRepository } from '../repositories/interfaces/IWorkspaceRepository';
-import { InMemoryDocumentRepository } from '../repositories/memory/InMemoryDocumentRepository';
-import { PrismaWorkspaceRepository } from '../repositories/prisma/PrismaWorkspaceRepository';
+import type { IEditorWorkspaceRepository } from '@dailyuse/domain-server';
+import { PrismaEditorWorkspaceRepository } from '../repositories/prisma/PrismaEditorWorkspaceRepository';
 import { prisma } from '@/config/prisma';
 
+/**
+ * Editor Module DI Container
+ * 管理 Editor 模块的所有仓储实例
+ */
 export class EditorContainer {
   private static instance: EditorContainer;
-  private editorDomainService?: EditorDomainService;
-  private documentRepository?: IDocumentRepository;
-  private workspaceRepository?: IWorkspaceRepository;
+  private editorWorkspaceRepository: IEditorWorkspaceRepository | null = null;
 
   private constructor() {}
 
+  /**
+   * 获取容器单例
+   */
   static getInstance(): EditorContainer {
     if (!EditorContainer.instance) {
       EditorContainer.instance = new EditorContainer();
@@ -21,45 +23,20 @@ export class EditorContainer {
   }
 
   /**
-   * 获取 Editor 领域服务实例
+   * 获取 EditorWorkspace 聚合根仓储
+   * 使用懒加载，第一次访问时创建实例
    */
-  async getEditorDomainService(): Promise<EditorDomainService> {
-    if (!this.editorDomainService) {
-      this.editorDomainService = new EditorDomainService();
+  getEditorWorkspaceRepository(): IEditorWorkspaceRepository {
+    if (!this.editorWorkspaceRepository) {
+      this.editorWorkspaceRepository = new PrismaEditorWorkspaceRepository(prisma);
     }
-    return this.editorDomainService;
+    return this.editorWorkspaceRepository;
   }
 
   /**
-   * 获取 Document 仓库实例 (使用内存实现)
+   * 设置 EditorWorkspace 聚合根仓储（用于测试）
    */
-  async getDocumentRepository(): Promise<IDocumentRepository> {
-    if (!this.documentRepository) {
-      this.documentRepository = new InMemoryDocumentRepository();
-    }
-    return this.documentRepository;
-  }
-
-  /**
-   * 获取 Workspace 仓库实例
-   */
-  async getWorkspaceRepository(): Promise<IWorkspaceRepository> {
-    if (!this.workspaceRepository) {
-      this.workspaceRepository = new PrismaWorkspaceRepository(prisma);
-    }
-    return this.workspaceRepository;
-  }
-
-  // 用于测试时替换实现
-  setEditorDomainService(service: EditorDomainService): void {
-    this.editorDomainService = service;
-  }
-
-  setDocumentRepository(repository: IDocumentRepository): void {
-    this.documentRepository = repository;
-  }
-
-  setWorkspaceRepository(repository: IWorkspaceRepository): void {
-    this.workspaceRepository = repository;
+  setEditorWorkspaceRepository(repository: IEditorWorkspaceRepository): void {
+    this.editorWorkspaceRepository = repository;
   }
 }

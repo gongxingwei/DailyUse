@@ -28,6 +28,10 @@ model Account {
   editorGroups           EditorGroup[]
   editorSessions         EditorSession[]
   editorTabs             EditorTab[]
+  editorWorkspaces                 EditorWorkspace[]
+  editorWorkspaceSessions          EditorWorkspaceSession[]
+  editorWorkspaceSessionGroups     EditorWorkspaceSessionGroup[]
+  editorWorkspaceSessionGroupTabs  EditorWorkspaceSessionGroupTab[]
   goalCategories         GoalCategory[]
   goalDirs               GoalDir[]
   goals                  Goal[]
@@ -1168,4 +1172,112 @@ model RepositoryStatistics {
 
   @@index([accountUuid])
   @@map("repository_statistics")
+}
+
+// ============================================================
+// Editor Module - DDD Design
+// 编辑器模块 - DDD 设计
+// ============================================================
+
+/// EditorWorkspace 聚合根
+/// 代表一个完整的编辑器工作区，包含多个会话
+model EditorWorkspace {
+  uuid        String   @id @default(cuid())
+  accountUuid String   @map("account_uuid")
+  name        String
+  description String?
+  projectPath String   @unique @map("project_path")
+  projectType String   @map("project_type")
+  layout      Json
+  settings    Json
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  accessedAt  DateTime @default(now()) @map("accessed_at")
+
+  // Relations
+  account  Account                 @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  sessions EditorWorkspaceSession[]
+
+  @@index([accountUuid])
+  @@index([isActive])
+  @@index([accessedAt])
+  @@map("editor_workspaces")
+}
+
+/// EditorWorkspaceSession - Session 实体
+/// 属于 EditorWorkspace 聚合根
+model EditorWorkspaceSession {
+  uuid          String   @id @default(cuid())
+  workspaceUuid String   @map("workspace_uuid")
+  accountUuid   String   @map("account_uuid")
+  name          String
+  layout        Json
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account   Account                      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  workspace EditorWorkspace              @relation(fields: [workspaceUuid], references: [uuid], onDelete: Cascade)
+  groups    EditorWorkspaceSessionGroup[]
+
+  @@index([workspaceUuid])
+  @@index([accountUuid])
+  @@index([isActive])
+  @@map("editor_workspace_sessions")
+}
+
+/// EditorWorkspaceSessionGroup - Group 实体
+/// 属于 EditorWorkspace 聚合根
+model EditorWorkspaceSessionGroup {
+  uuid           String   @id @default(cuid())
+  sessionUuid    String   @map("session_uuid")
+  workspaceUuid  String   @map("workspace_uuid")
+  accountUuid    String   @map("account_uuid")
+  groupIndex     Int      @map("group_index")
+  name           String?
+  splitDirection String   @map("split_direction")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account   Account                        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  session   EditorWorkspaceSession         @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
+  tabs      EditorWorkspaceSessionGroupTab[]
+
+  @@index([sessionUuid])
+  @@index([workspaceUuid])
+  @@index([accountUuid])
+  @@map("editor_workspace_session_groups")
+}
+
+/// EditorWorkspaceSessionGroupTab - Tab 实体
+/// 属于 EditorWorkspace 聚合根
+model EditorWorkspaceSessionGroupTab {
+  uuid          String   @id @default(cuid())
+  groupUuid     String   @map("group_uuid")
+  sessionUuid   String   @map("session_uuid")
+  workspaceUuid String   @map("workspace_uuid")
+  accountUuid   String   @map("account_uuid")
+  documentUuid  String?  @map("document_uuid")
+  tabIndex      Int      @map("tab_index")
+  tabType       String   @map("tab_type")
+  title         String
+  viewState     Json     @map("view_state")
+  isPinned      Boolean  @default(false) @map("is_pinned")
+  isActive      Boolean  @default(false) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account                     @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  group   EditorWorkspaceSessionGroup @relation(fields: [groupUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([groupUuid])
+  @@index([sessionUuid])
+  @@index([workspaceUuid])
+  @@index([accountUuid])
+  @@index([documentUuid])
+  @@map("editor_workspace_session_group_tabs")
 }

@@ -1,6 +1,6 @@
 /**
- * Editor Services
- * 编辑器模块服务导出
+ * Editor Domain Services
+ * 编辑器领域服务
  */
 
-export * from './EditorService.js';
+export * from './EditorWorkspaceDomainService';

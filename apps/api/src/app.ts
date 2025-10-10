@@ -24,6 +24,7 @@ import {
 import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
 import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
 import { createEditorRoutes, EditorAggregateController } from './modules/editor';
+import editorWorkspaceRoutes from './modules/editor/interface/http/routes/editorRoutes';
 import { EditorDomainService } from '@dailyuse/domain-server';
 import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
 import { InMemoryDocumentRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryDocumentRepository.js';
@@ -127,6 +128,9 @@ const editorApplicationService = new EditorApplicationService(
 EditorAggregateController.initialize(editorApplicationService);
 const editorRoutes = createEditorRoutes();
 api.use('/editor', authMiddleware, editorRoutes);
+
+// 挂载新的 EditorWorkspace 路由（DDD 架构）- 需要认证
+api.use('/editor-workspaces', authMiddleware, editorWorkspaceRoutes);
 
 // 挂载仓储路由
 const repositoryRepository = new PrismaRepositoryRepository(prisma);

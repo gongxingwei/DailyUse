@@ -1,12 +1,22 @@
 /**
- * Editor模块 - Domain Server
- * 编辑器模块服务端领域层导出
+ * Editor Domain-Server Module - Unified Exports
+ * 编辑器领域服务端模块 - 统一导出
  */
 
-// 仓储实现导出
-export { DocumentRepository } from './repositories/DocumentRepository';
-export { WorkspaceRepository } from './repositories/WorkspaceRepository';
+// Value Objects
+export * from './value-objects';
 
-// 现有的导出保持不变
-export type { IEditorRepository } from './repositories/iEditorRepository.js';
-export * from './services/index.js';
+// Aggregates
+export * from './aggregates';
+
+// Entities
+export * from './entities';
+
+// Repositories
+export * from './repositories';
+
+// Domain Services
+export * from './services';
+
+// Application Services
+export * from './application-services';

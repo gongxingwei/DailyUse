@@ -11,11 +11,11 @@ export { UrgencyLevel } from './shared/urgency';
 export * from './events/index';
 export * as EventContracts from './events/index';
 
-// 导出模块相关的类型定义（保持向后兼容）
+// 导出模块相关的类型定义（定义命名空间防止冲突）
 export * as TaskContracts from './modules/task';
 export * as GoalContracts from './modules/goal';
 export * as ReminderContracts from './modules/reminder';
-// export * as EditorContracts from './modules/editor'; // 暂时禁用，文件为空
+export * as EditorContracts from './modules/editor';
 export * as RepositoryContracts from './modules/repository';
 export * as AccountContracts from './modules/account';
 export * as AuthenticationContracts from './modules/authentication';

@@ -1,292 +1,370 @@
-import { EditorTabCore } from '@dailyuse/domain-core';
-import { type EditorContracts } from '@dailyuse/contracts';
+/**
+ * EditorTab 实体实现
+ * 实现 EditorTabServer 接口
+ * 作为 EditorGroup 实体的子实体
+ */
 
-// 获取类型定义
-type EditorTabDTO = EditorContracts.EditorTabDTO;
-type SupportedFileType = EditorContracts.SupportedFileType;
+import { EditorContracts } from '@dailyuse/contracts';
+import { Entity } from '@dailyuse/utils';
+import { TabViewState } from '../value-objects/TabViewState';
+
+type IEditorTabServer = EditorContracts.EditorTabServer;
+type EditorTabServerDTO = EditorContracts.EditorTabServerDTO;
+type EditorTabClientDTO = EditorContracts.EditorTabClientDTO;
+type EditorTabPersistenceDTO = EditorContracts.EditorTabPersistenceDTO;
+type TabType = EditorContracts.TabType;
 
 /**
- * 服务端 EditorTab 实体
- * 继承核心 EditorTab 类，添加服务端特有功能
+ * EditorTab 实体
+ * 作为 EditorGroup 实体的子实体
  */
-export class EditorTab extends EditorTabCore {
-  private _bookmarks: number[];
-  private _foldedLines: number[];
-  private _customSettings?: Record<string, any>;
-  private _collaborators?: string[];
+export class EditorTab extends Entity implements IEditorTabServer {
+  // ===== 私有字段 =====
+  private _groupUuid: string; // 父实体外键
+  private _sessionUuid: string;
+  private _workspaceUuid: string; // 聚合根外键
+  private _accountUuid: string;
+  private _documentUuid: string | null;
+  private _tabIndex: number;
+  private _tabType: TabType;
+  private _title: string;
+  private _viewState: TabViewState;
+  private _isPinned: boolean;
+  private _isDirty: boolean;
+  private _lastAccessedAt: number | null;
+  private _createdAt: number;
+  private _updatedAt: number;
 
-  constructor(params: {
+  // ===== 构造函数（私有） =====
+  private constructor(params: {
     uuid?: string;
+    groupUuid: string;
+    sessionUuid: string;
+    workspaceUuid: string;
+    accountUuid: string;
+    documentUuid?: string | null;
+    tabIndex: number;
+    tabType: TabType;
     title: string;
-    path: string;
-    active?: boolean;
-    isPreview?: boolean;
-    fileType?: SupportedFileType;
-    isDirty?: boolean;
-    content?: string;
-    lastModified?: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
-    // 服务端特有字段
-    bookmarks?: number[];
-    foldedLines?: number[];
-    customSettings?: Record<string, any>;
-    collaborators?: string[];
+    viewState: TabViewState;
+    isPinned: boolean;
+    isDirty: boolean;
+    lastAccessedAt?: number | null;
+    createdAt: number;
+    updatedAt: number;
   }) {
-    super(params);
-
-    this._bookmarks = params.bookmarks || [];
-    this._foldedLines = params.foldedLines || [];
-    this._customSettings = params.customSettings;
-    this._collaborators = params.collaborators;
+    super(params.uuid || Entity.generateUUID());
+    this._groupUuid = params.groupUuid;
+    this._sessionUuid = params.sessionUuid;
+    this._workspaceUuid = params.workspaceUuid;
+    this._accountUuid = params.accountUuid;
+    this._documentUuid = params.documentUuid ?? null;
+    this._tabIndex = params.tabIndex;
+    this._tabType = params.tabType;
+    this._title = params.title;
+    this._viewState = params.viewState;
+    this._isPinned = params.isPinned;
+    this._isDirty = params.isDirty;
+    this._lastAccessedAt = params.lastAccessedAt ?? null;
+    this._createdAt = params.createdAt;
+    this._updatedAt = params.updatedAt;
   }
 
-  // ===== 实现抽象方法 =====
+  // ===== Getter 属性 =====
+  public get uuid(): string {
+    return this._uuid;
+  }
+  public get groupUuid(): string {
+    return this._groupUuid;
+  }
+  public get sessionUuid(): string {
+    return this._sessionUuid;
+  }
+  public get workspaceUuid(): string {
+    return this._workspaceUuid;
+  }
+  public get accountUuid(): string {
+    return this._accountUuid;
+  }
+  public get documentUuid(): string | null {
+    return this._documentUuid;
+  }
+  public get tabIndex(): number {
+    return this._tabIndex;
+  }
+  public get tabType(): TabType {
+    return this._tabType;
+  }
+  public get title(): string {
+    return this._title;
+  }
+  public get viewState(): EditorContracts.TabViewStateServerDTO {
+    return this._viewState.toServerDTO();
+  }
+  public get isPinned(): boolean {
+    return this._isPinned;
+  }
+  public get isDirty(): boolean {
+    return this._isDirty;
+  }
+  public get lastAccessedAt(): number | null {
+    return this._lastAccessedAt;
+  }
+  public get createdAt(): number {
+    return this._createdAt;
+  }
+  public get updatedAt(): number {
+    return this._updatedAt;
+  }
+
+  // ===== 工厂方法 =====
 
   /**
-   * 转换为DTO
+   * 创建新的 EditorTab
    */
-  toDTO(): EditorTabDTO {
+  public static create(params: {
+    groupUuid: string;
+    sessionUuid: string;
+    workspaceUuid: string;
+    accountUuid: string;
+    documentUuid?: string | null;
+    tabIndex: number;
+    tabType: TabType;
+    title: string;
+    viewState?: Partial<EditorContracts.TabViewStateServerDTO>;
+    isPinned?: boolean;
+  }): EditorTab {
+    const uuid = crypto.randomUUID();
+    const now = Date.now();
+
+    // 创建默认视图状态
+    const viewState = params.viewState
+      ? TabViewState.fromServerDTO({
+          ...TabViewState.createDefault().toServerDTO(),
+          ...params.viewState,
+        })
+      : TabViewState.createDefault();
+
+    return new EditorTab({
+      uuid,
+      groupUuid: params.groupUuid,
+      sessionUuid: params.sessionUuid,
+      workspaceUuid: params.workspaceUuid,
+      accountUuid: params.accountUuid,
+      documentUuid: params.documentUuid,
+      tabIndex: params.tabIndex,
+      tabType: params.tabType,
+      title: params.title,
+      viewState,
+      isPinned: params.isPinned ?? false,
+      isDirty: false,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+
+  // ===== From DTO 方法 =====
+
+  /**
+   * 从 Server DTO 重建
+   */
+  public static fromServerDTO(dto: EditorTabServerDTO): EditorTab {
+    return new EditorTab({
+      uuid: dto.uuid,
+      groupUuid: dto.groupUuid,
+      sessionUuid: dto.sessionUuid,
+      workspaceUuid: dto.workspaceUuid,
+      accountUuid: dto.accountUuid,
+      documentUuid: dto.documentUuid,
+      tabIndex: dto.tabIndex,
+      tabType: dto.tabType,
+      title: dto.title,
+      viewState: TabViewState.fromServerDTO(dto.viewState),
+      isPinned: dto.isPinned,
+      isDirty: dto.isDirty,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+    });
+  }
+
+  /**
+   * 从 Client DTO 重建
+   */
+  public static fromClientDTO(dto: EditorTabClientDTO): EditorTab {
+    return new EditorTab({
+      uuid: dto.uuid,
+      groupUuid: dto.groupUuid,
+      sessionUuid: dto.sessionUuid,
+      workspaceUuid: dto.workspaceUuid,
+      accountUuid: dto.accountUuid,
+      documentUuid: dto.documentUuid,
+      tabIndex: dto.tabIndex,
+      tabType: dto.tabType,
+      title: dto.title,
+      viewState: dto.viewState
+        ? TabViewState.fromServerDTO(dto.viewState)
+        : TabViewState.createDefault(),
+      isPinned: dto.isPinned,
+      isDirty: dto.isDirty,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+    });
+  }
+
+  /**
+   * 从 Persistence DTO 重建
+   */
+  public static fromPersistenceDTO(dto: EditorTabPersistenceDTO): EditorTab {
+    return new EditorTab({
+      uuid: dto.uuid,
+      groupUuid: dto.group_uuid,
+      sessionUuid: dto.session_uuid,
+      workspaceUuid: dto.workspace_uuid,
+      accountUuid: dto.account_uuid,
+      documentUuid: dto.document_uuid,
+      tabIndex: dto.tab_index,
+      tabType: dto.tab_type,
+      title: dto.title,
+      viewState: TabViewState.fromPersistenceDTO(JSON.parse(dto.view_state)),
+      isPinned: dto.is_pinned,
+      isDirty: dto.is_dirty,
+      lastAccessedAt: dto.last_accessed_at,
+      createdAt: dto.created_at,
+      updatedAt: dto.updated_at,
+    });
+  }
+
+  // ===== 业务方法 =====
+
+  /**
+   * 更新标题
+   */
+  public updateTitle(title: string): void {
+    this._title = title;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新视图状态
+   */
+  public updateViewState(viewState: Partial<EditorContracts.TabViewStateServerDTO>): void {
+    this._viewState = this._viewState.with(viewState);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 切换固定状态
+   */
+  public togglePin(): void {
+    this._isPinned = !this._isPinned;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 标记为脏（有未保存更改）
+   */
+  public markDirty(): void {
+    this._isDirty = true;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 标记为干净（已保存）
+   */
+  public markClean(): void {
+    this._isDirty = false;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 记录访问时间
+   */
+  public recordAccess(): void {
+    this._lastAccessedAt = Date.now();
+    this._updatedAt = this._lastAccessedAt;
+  }
+
+  /**
+   * 更新标签索引（用于重新排序）
+   */
+  public updateTabIndex(newIndex: number): void {
+    this._tabIndex = newIndex;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 判断是否为文档标签
+   */
+  public isDocumentTab(): boolean {
+    return this._tabType === 'document' && this._documentUuid !== null;
+  }
+
+  // ===== DTO 转换方法 =====
+
+  public toServerDTO(): EditorTabServerDTO {
     return {
-      uuid: this.uuid,
-      title: this.title,
-      groupUuid: '1',
-      path: this.path,
-      active: this.active,
-      isPreview: this.isPreview,
-      fileType: this.fileType,
-      isDirty: this.isDirty,
-      content: this.content,
-      lastModified: this.lastModified?.getTime(),
-      createdAt: this.createdAt.getTime(),
-      updatedAt: this.updatedAt.getTime(),
+      uuid: this._uuid,
+      groupUuid: this._groupUuid,
+      sessionUuid: this._sessionUuid,
+      workspaceUuid: this._workspaceUuid,
+      accountUuid: this._accountUuid,
+      documentUuid: this._documentUuid,
+      tabIndex: this._tabIndex,
+      tabType: this._tabType,
+      title: this._title,
+      viewState: this._viewState.toServerDTO(),
+      isPinned: this._isPinned,
+      isDirty: this._isDirty,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
-  // ===== Getter 方法 =====
-  get bookmarks(): number[] {
-    return [...this._bookmarks];
-  }
-  get foldedLines(): number[] {
-    return [...this._foldedLines];
-  }
-  get customSettings(): Record<string, any> | undefined {
-    return this._customSettings;
-  }
-  get collaborators(): string[] | undefined {
-    return this._collaborators ? [...this._collaborators] : undefined;
-  }
-
-  // ===== 服务端特有方法 =====
-
-  /**
-   * 添加书签
-   */
-  addBookmark(line: number): void {
-    if (line < 1) {
-      throw new Error('行号必须大于0');
-    }
-    if (!this._bookmarks.includes(line)) {
-      this._bookmarks.push(line);
-      this._bookmarks.sort((a, b) => a - b);
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 移除书签
-   */
-  removeBookmark(line: number): void {
-    const index = this._bookmarks.indexOf(line);
-    if (index !== -1) {
-      this._bookmarks.splice(index, 1);
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 切换书签
-   */
-  toggleBookmark(line: number): void {
-    if (this._bookmarks.includes(line)) {
-      this.removeBookmark(line);
-    } else {
-      this.addBookmark(line);
-    }
-  }
-
-  /**
-   * 清除所有书签
-   */
-  clearBookmarks(): void {
-    if (this._bookmarks.length > 0) {
-      this._bookmarks = [];
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 折叠代码行
-   */
-  foldLine(line: number): void {
-    if (line < 1) {
-      throw new Error('行号必须大于0');
-    }
-    if (!this._foldedLines.includes(line)) {
-      this._foldedLines.push(line);
-      this._foldedLines.sort((a, b) => a - b);
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 展开代码行
-   */
-  unfoldLine(line: number): void {
-    const index = this._foldedLines.indexOf(line);
-    if (index !== -1) {
-      this._foldedLines.splice(index, 1);
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 切换代码折叠
-   */
-  toggleFold(line: number): void {
-    if (this._foldedLines.includes(line)) {
-      this.unfoldLine(line);
-    } else {
-      this.foldLine(line);
-    }
-  }
-
-  /**
-   * 展开所有折叠
-   */
-  unfoldAll(): void {
-    if (this._foldedLines.length > 0) {
-      this._foldedLines = [];
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 更新自定义设置
-   */
-  updateCustomSettings(settings: Record<string, any>): void {
-    this._customSettings = { ...this._customSettings, ...settings };
-    this.updateTimestamp();
-  }
-
-  /**
-   * 添加协作者
-   */
-  addCollaborator(userId: string): void {
-    if (!this._collaborators) {
-      this._collaborators = [];
-    }
-    if (!this._collaborators.includes(userId)) {
-      this._collaborators.push(userId);
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 移除协作者
-   */
-  removeCollaborator(userId: string): void {
-    if (this._collaborators) {
-      const index = this._collaborators.indexOf(userId);
-      if (index !== -1) {
-        this._collaborators.splice(index, 1);
-        this.updateTimestamp();
-      }
-    }
-  }
-
-  /**
-   * 检查是否为协作者
-   */
-  isCollaborator(userId: string): boolean {
-    return this._collaborators?.includes(userId) || false;
-  }
-
-  /**
-   * 获取持久化数据
-   */
-  toPersistenceData(): Record<string, any> {
+  public toClientDTO(): EditorTabClientDTO {
     return {
-      uuid: this.uuid,
-      title: this.title,
-      path: this.path,
-      active: this.active,
-      isPreview: this.isPreview,
-      fileType: this.fileType,
-      isDirty: this.isDirty,
-      content: this.content,
-      lastModified: this.lastModified,
-      createdAt: this.createdAt,
-      updatedAt: this.updatedAt,
-      bookmarks: this._bookmarks,
-      foldedLines: this._foldedLines,
-      customSettings: this._customSettings,
-      collaborators: this._collaborators,
+      uuid: this._uuid,
+      groupUuid: this._groupUuid,
+      sessionUuid: this._sessionUuid,
+      workspaceUuid: this._workspaceUuid,
+      accountUuid: this._accountUuid,
+      documentUuid: this._documentUuid,
+      tabIndex: this._tabIndex,
+      tabType: this._tabType,
+      title: this._title,
+      viewState: this._viewState.toClientDTO(),
+      isPinned: this._isPinned,
+      isDirty: this._isDirty,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      formattedLastAccessed: this._lastAccessedAt
+        ? new Date(this._lastAccessedAt).toLocaleString()
+        : null,
+      formattedCreatedAt: new Date(this._createdAt).toLocaleString(),
+      formattedUpdatedAt: new Date(this._updatedAt).toLocaleString(),
     };
   }
 
-  /**
-   * 标记为已保存
-   */
-  markAsSaved(): void {
-    this.setDirty(false);
-  }
-
-  /**
-   * 获取文件扩展名
-   */
-  getFileExtension(): string {
-    const parts = this.path.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : '';
-  }
-
-  /**
-   * 检查是否为图片文件
-   */
-  isImageFile(): boolean {
-    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'];
-    return imageExtensions.includes(this.getFileExtension());
-  }
-
-  /**
-   * 检查是否为文本文件
-   */
-  isTextFile(): boolean {
-    const textExtensions = ['txt', 'md', 'json', 'xml', 'csv', 'log'];
-    return textExtensions.includes(this.getFileExtension());
-  }
-
-  /**
-   * 检查是否为代码文件
-   */
-  isCodeFile(): boolean {
-    const codeExtensions = [
-      'js',
-      'ts',
-      'jsx',
-      'tsx',
-      'vue',
-      'py',
-      'java',
-      'cpp',
-      'c',
-      'cs',
-      'php',
-      'rb',
-      'go',
-      'rs',
-      'swift',
-    ];
-    return codeExtensions.includes(this.getFileExtension());
+  public toPersistenceDTO(): EditorTabPersistenceDTO {
+    return {
+      uuid: this._uuid,
+      group_uuid: this._groupUuid,
+      session_uuid: this._sessionUuid,
+      workspace_uuid: this._workspaceUuid,
+      account_uuid: this._accountUuid,
+      document_uuid: this._documentUuid,
+      tab_index: this._tabIndex,
+      tab_type: this._tabType,
+      title: this._title,
+      view_state: JSON.stringify(this._viewState.toPersistenceDTO()),
+      is_pinned: this._isPinned,
+      is_dirty: this._isDirty,
+      last_accessed_at: this._lastAccessedAt,
+      created_at: this._createdAt,
+      updated_at: this._updatedAt,
+    };
   }
 }
