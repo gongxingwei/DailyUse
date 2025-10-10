@@ -226,57 +226,57 @@ export function deepClone<T>(obj: T): T {
   return obj;
 }
 
-/**
- * 节流函数
- */
-export function throttle<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
-  let previous = 0;
+// /**
+//  * 节流函数
+//  */
+// export function throttle<T extends (...args: any[]) => any>(
+//   func: T,
+//   wait: number,
+// ): (...args: Parameters<T>) => void {
+//   let timeout: ReturnType<typeof setTimeout> | null = null;
+//   let previous = 0;
 
-  return function (this: any, ...args: Parameters<T>) {
-    const now = Date.now();
-    const remaining = wait - (now - previous);
+//   return function (this: any, ...args: Parameters<T>) {
+//     const now = Date.now();
+//     const remaining = wait - (now - previous);
 
-    if (remaining <= 0 || remaining > wait) {
-      if (timeout) {
-        clearTimeout(timeout);
-        timeout = null;
-      }
-      previous = now;
-      func.apply(this, args);
-    } else if (!timeout) {
-      timeout = setTimeout(() => {
-        previous = Date.now();
-        timeout = null;
-        func.apply(this, args);
-      }, remaining);
-    }
-  };
-}
+//     if (remaining <= 0 || remaining > wait) {
+//       if (timeout) {
+//         clearTimeout(timeout);
+//         timeout = null;
+//       }
+//       previous = now;
+//       func.apply(this, args);
+//     } else if (!timeout) {
+//       timeout = setTimeout(() => {
+//         previous = Date.now();
+//         timeout = null;
+//         func.apply(this, args);
+//       }, remaining);
+//     }
+//   };
+// }
 
-/**
- * 防抖函数
- */
-export function debounce<T extends (...args: any[]) => any>(
-  func: T,
-  wait: number,
-  immediate?: boolean,
-): (...args: Parameters<T>) => void {
-  let timeout: ReturnType<typeof setTimeout> | null = null;
+// /**
+//  * 防抖函数
+//  */
+// export function debounce<T extends (...args: any[]) => any>(
+//   func: T,
+//   wait: number,
+//   immediate?: boolean,
+// ): (...args: Parameters<T>) => void {
+//   let timeout: ReturnType<typeof setTimeout> | null = null;
 
-  return function (this: any, ...args: Parameters<T>) {
-    const callNow = immediate && !timeout;
+//   return function (this: any, ...args: Parameters<T>) {
+//     const callNow = immediate && !timeout;
 
-    if (timeout) clearTimeout(timeout);
+//     if (timeout) clearTimeout(timeout);
 
-    timeout = setTimeout(() => {
-      timeout = null;
-      if (!immediate) func.apply(this, args);
-    }, wait);
+//     timeout = setTimeout(() => {
+//       timeout = null;
+//       if (!immediate) func.apply(this, args);
+//     }, wait);
 
-    if (callNow) func.apply(this, args);
-  };
-}
+//     if (callNow) func.apply(this, args);
+//   };
+// }

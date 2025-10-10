@@ -11,6 +11,8 @@ export { default as DuConfirmDialog } from './components/dialog/DuConfirmDialog.
 
 // Components - Feedback
 export { default as DuSnackbar } from './components/feedback/DuSnackbar.vue';
+export { default as DuMessageProvider } from './components/feedback/DuMessageProvider.vue';
+export { default as DuLoadingOverlay } from './components/feedback/DuLoadingOverlay.vue';
 
 // Components - Form
 export { default as DuTextField } from './components/form/DuTextField.vue';
@@ -19,6 +21,23 @@ export { default as DuTextField } from './components/form/DuTextField.vue';
 export { useSnackbar } from './composables/useSnackbar';
 export { useFormRules } from './composables/useFormValidation';
 export { usePasswordStrength, generateStrongPassword } from './composables/usePasswordStrength';
+export {
+  useMessage,
+  getGlobalMessage,
+  type MessageType,
+  type MessageOptions,
+  type ConfirmOptions,
+  type MessageInstance,
+} from './composables/useMessage';
+export {
+  useLoading,
+  useGlobalLoading,
+  getGlobalLoading,
+  useAdvancedLoading,
+  useButtonLoading,
+  useTableLoading,
+  type LoadingOverlayOptions,
+} from './composables/useLoading';
 
 // Types
 export type {

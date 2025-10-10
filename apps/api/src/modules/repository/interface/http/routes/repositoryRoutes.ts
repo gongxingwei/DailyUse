@@ -239,7 +239,7 @@ router.get('/', RepositoryController.getRepositories);
  *       404:
  *         description: 仓库不存在
  */
-router.get('/:id', RepositoryController.getRepositoryById);
+router.get('/:id', RepositoryController.getRepository);
 router.put('/:id', RepositoryController.updateRepository);
 router.delete('/:id', RepositoryController.deleteRepository);
 

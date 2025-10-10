@@ -1,19 +1,24 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "declaration": true,
-    "declarationDir": "dist",
-    "outDir": "dist",
-    "rootDir": "src",
+    "baseUrl": "./src",
+    "declarationDir": "./dist",
+    "outDir": "./dist",
+    "rootDir": "./src",
     "composite": true,
-    "jsx": "preserve"
+    "declaration": true,
+    "noEmit": false,
+    "moduleResolution": "node", // 确保模块解析正确
+    "jsx": "preserve",
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": [
-    "src/**/*",
-    "src/**/*.vue"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist"
+  "include": ["src/**/*", "src/**/*.vue"],
+  "exclude": ["node_modules", "dist"],
+  "references": [
+    {
+      "path": "../utils"
+    }
   ]
 }
