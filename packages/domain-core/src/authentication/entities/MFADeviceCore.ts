@@ -3,7 +3,6 @@ import { AuthenticationContracts } from '@dailyuse/contracts';
 
 type IMFADeviceCore = AuthenticationContracts.IMFADeviceCore;
 
-
 /**
  * MFA设备实体
  * 管理多因素认证设备的绑定、验证和管理
@@ -42,7 +41,7 @@ export abstract class MFADeviceCore extends Entity implements IMFADeviceCore {
   }
 
   // Getters
-  get uuid(): string {
+  override get uuid(): string {
     return this._uuid;
   }
 
@@ -118,7 +117,6 @@ export abstract class MFADeviceCore extends Entity implements IMFADeviceCore {
     this._emailAddress = emailAddress;
   }
 
-
   /**
    * 验证MFA代码
    */
@@ -176,7 +174,6 @@ export abstract class MFADeviceCore extends Entity implements IMFADeviceCore {
   resetAttempts(): void {
     this._verificationAttempts = 0;
   }
-
 
   /**
    * 生成备用验证码

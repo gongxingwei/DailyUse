@@ -1,5 +1,5 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type AccountContracts } from "@dailyuse/contracts";
+import { type AccountContracts } from '@dailyuse/contracts';
 type ISexCore = AccountContracts.ISexCore;
 /**
  * 性别值对象核心类
@@ -40,7 +40,7 @@ export class SexCore extends ValueObject implements ISexCore {
   equalsSex(other: SexCore): boolean {
     return this.equals(other);
   }
-  toString(): string {
+  override toString(): string {
     if (this._value === 1) {
       return '男';
     } else if (this._value === 0) {

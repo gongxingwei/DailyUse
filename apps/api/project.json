@@ -5,13 +5,6 @@
   "sourceRoot": "apps/api/src",
   "tags": ["scope:api", "type:app"],
   "targets": {
-    "serve": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "pnpm dev",
-        "cwd": "apps/api"
-      }
-    },
     "dev": {
       "executor": "nx:run-commands",
       "options": {
@@ -46,9 +39,14 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "apps/api/**/*.{ts,js}"
-        ]
+        "lintFilePatterns": ["apps/api/**/*.{ts,js}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "apps/api"
       }
     }
   }

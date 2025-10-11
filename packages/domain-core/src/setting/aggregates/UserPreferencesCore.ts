@@ -82,7 +82,7 @@ export abstract class UserPreferencesCore extends AggregateRoot implements IUser
   }
 
   // ========== Getter 方法 ==========
-  get uuid(): string {
+  override get uuid(): string {
     return this._uuid;
   }
   get accountUuid(): string {

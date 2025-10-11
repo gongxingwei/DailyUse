@@ -1,5 +1,5 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type AccountContracts } from "@dailyuse/contracts";
+import { type AccountContracts } from '@dailyuse/contracts';
 type IPhoneNumberCore = AccountContracts.IPhoneNumberCore;
 /**
  * 手机号值对象核心类
@@ -96,7 +96,7 @@ export class PhoneNumberCore extends ValueObject implements IPhoneNumberCore {
     return new PhoneNumberCore(this._number, this._countryCode, true, new Date());
   }
 
-  toString(): string {
+  override toString(): string {
     return this.fullNumber;
   }
 }

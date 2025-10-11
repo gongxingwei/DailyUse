@@ -9,9 +9,9 @@
   "version": "0.1.10",
   "type": "module",
   "scripts": {
-    "dev:desktop": "pnpm nx serve desktop",
-    "dev:web": "pnpm nx serve web",
-    "dev:api": "pnpm nx serve api",
+    "dev:desktop": "pnpm nx dev desktop",
+    "dev:web": "pnpm nx dev web",
+    "dev:api": "pnpm nx dev api",
     "build": "pnpm nx run-many --target=build --all",
     "build:desktop": "pnpm nx build desktop",
     "build:web": "pnpm nx build web",

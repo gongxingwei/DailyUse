@@ -24,9 +24,14 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "packages/domain-server/**/*.{ts,js}"
-        ]
+        "lintFilePatterns": ["packages/domain-server/**/*.{ts,js}"]
+      }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit",
+        "cwd": "packages/domain-server"
       }
     }
   },

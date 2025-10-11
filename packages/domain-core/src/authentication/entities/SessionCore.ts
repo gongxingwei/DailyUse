@@ -44,7 +44,7 @@ export abstract class SessionCore extends Entity implements ISessionCore {
   }
 
   // Getters
-  get uuid(): string {
+  override get uuid(): string {
     return this._uuid;
   }
 
@@ -198,5 +198,4 @@ export abstract class SessionCore extends Entity implements ISessionCore {
       // 这里可以记录IP变化日志
     }
   }
-
 }

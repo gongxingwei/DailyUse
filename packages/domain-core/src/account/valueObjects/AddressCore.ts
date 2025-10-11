@@ -1,5 +1,5 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type AccountContracts } from "@dailyuse/contracts";
+import { type AccountContracts } from '@dailyuse/contracts';
 
 type IAddressCore = AccountContracts.IAddressCore;
 
@@ -85,7 +85,7 @@ export class AddressCore extends ValueObject implements IAddressCore {
     return this.equals(other);
   }
 
-  toString(): string {
+  override toString(): string {
     return this.fullAddress;
   }
 }

@@ -67,7 +67,7 @@
   "include": ["src/**/*"],
 
   // 排除的文件
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts", "**/*.example.ts"],
 
   // ============================================================
   // 项目引用配置

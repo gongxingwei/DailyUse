@@ -60,7 +60,17 @@ cd DailyUse
 # 安装依赖 (使用 pnpm，比 npm 快 3x)
 pnpm install
 
+# 【可选】安装全局 Nx CLI（推荐，可直接使用 nx 命令而不需要 pnpm 前缀）
+pnpm add -g nx
+# 安装后可以直接使用：nx serve api 而不是 pnpm nx serve api
+# 详见：docs/NX_USAGE_GUIDE.md#安装和配置
+
 # 开发模式运行
+pnpm nx serve api      # 启动 API 服务
+pnpm nx serve web      # 启动 Web 应用
+pnpm nx serve desktop  # 启动桌面应用
+
+# 或者使用 package.json 中的快捷脚本
 pnpm dev              # 启动桌面应用
 pnpm dev:web          # 启动 Web 应用
 pnpm dev:api          # 启动 API 服务
@@ -134,7 +144,12 @@ pnpm build:desktop    # 构建桌面应用
 
 ## 📖 开发文档
 
-### 核心文档
+### Nx Monorepo 指南 (新增)
+- [Nx 配置完整指南](docs/NX_CONFIGURATION_GUIDE.md) - nx.json 和 project.json 详解
+- [Nx 使用指南](docs/NX_USAGE_GUIDE.md) - 常用命令、优势、工作流
+- [Project.json 配置说明](docs/PROJECT_JSON_GUIDE.md) - 各项目配置详解
+
+### AI 辅助开发
 - [MCP 配置指南](docs/MCP-Configuration-Guide.md) - AI 辅助开发设置
 - [pnpm 最佳实践](docs/pnpm-MCP-Best-Practices.md) - 包管理优化
 - [MCP 快速开始](docs/MCP-Quick-Start.md) - 5分钟设置指南
@@ -162,34 +177,54 @@ pnpm build:desktop    # 构建桌面应用
 
 ### 项目脚本
 ```bash
-# 开发
-pnpm dev                    # 启动桌面应用
+# 开发（使用 Nx 命令）
+pnpm nx serve api          # 启动 API 服务
+pnpm nx serve web          # 启动 Web 应用
+pnpm nx serve desktop      # 启动桌面应用
+
+# 或使用快捷脚本（定义在 package.json）
+pnpm dev                   # 启动桌面应用
 pnpm dev:web               # 启动 Web 应用
 pnpm dev:api               # 启动 API 服务
 
 # 构建
-pnpm build                 # 构建所有项目
-pnpm build:desktop         # 构建桌面应用
-pnpm package              # 打包桌面应用
+pnpm nx build api          # 构建 API
+pnpm nx build web          # 构建 Web
+pnpm nx build desktop      # 构建桌面应用
+pnpm build                 # 构建所有项目（快捷脚本）
 
 # 代码质量
-pnpm lint                  # 代码检查
-pnpm format               # 代码格式化
+pnpm nx lint api           # 检查 API 代码
+pnpm nx lint web           # 检查 Web 代码
+pnpm lint                  # 检查所有代码（快捷脚本）
+pnpm format                # 代码格式化
 
 # 测试 (Vitest Workspace)
+pnpm nx test api           # 运行 API 测试
+pnpm nx test web           # 运行 Web 测试
 pnpm test                  # 运行所有测试
-pnpm test:ui              # UI 模式测试
-pnpm test:coverage        # 覆盖率报告
-pnpm test:api             # 运行 API 测试
-pnpm test:web             # 运行 Web 测试
-pnpm test:desktop         # 运行 Desktop 测试
+pnpm test:ui               # UI 模式测试
+pnpm test:coverage         # 覆盖率报告
 # 更多测试命令见 VITEST_WORKSPACE_GUIDE.md
 
-# Nx 工具
-pnpm graph                # 查看项目依赖图
-pnpm affected:build       # 构建受影响的项目
-pnpm affected:test        # 测试受影响的项目
+# Nx 高级功能
+pnpm nx graph              # 查看项目依赖图（交互式）
+pnpm nx affected:test      # 只测试受 Git 变更影响的项目
+pnpm nx affected:build     # 只构建受影响的项目
+pnpm nx affected:lint      # 只检查受影响的项目
+
+# 并行执行多个项目
+pnpm nx run-many --target=build --all      # 并行构建所有项目
+pnpm nx run-many --target=test --all       # 并行测试所有项目
+
+# 查看 Nx 缓存状态
+pnpm nx reset              # 清除 Nx 缓存
 ```
+
+**💡 提示**：
+- 安装全局 Nx CLI 后可省略 `pnpm` 前缀：`nx serve api`
+- 详细命令说明见：[Nx 使用指南](docs/NX_USAGE_GUIDE.md)
+- 配置说明见：[Nx 配置完整指南](docs/NX_CONFIGURATION_GUIDE.md)
 
 ## 🏗️ 架构设计
 

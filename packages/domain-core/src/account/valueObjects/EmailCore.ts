@@ -1,5 +1,5 @@
 import { ValueObject } from '@dailyuse/utils';
-import { type AccountContracts } from "@dailyuse/contracts";
+import { type AccountContracts } from '@dailyuse/contracts';
 type IEmailCore = AccountContracts.IEmailCore;
 /**
  * 邮箱值对象核心类
@@ -73,7 +73,7 @@ export class EmailCore extends ValueObject implements IEmailCore {
     return new EmailCore(this._value, true, new Date());
   }
 
-  toString(): string {
+  override toString(): string {
     return this._value;
   }
 }
