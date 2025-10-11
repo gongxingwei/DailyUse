@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { AuthenticationController } from './controller';
 import { AuthenticationApplicationService } from '../../application/services/AuthenticationApplicationService';
 
@@ -29,7 +29,7 @@ import { AuthenticationApplicationService } from '../../application/services/Aut
  *    - 统一使用 number 类型（毫秒时间戳）
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 const authenticationService = await AuthenticationApplicationService.getInstance();
 
@@ -540,4 +540,4 @@ router.get('/auth/sessions/:accountUuid', (req, res) => authController.getSessio
  */
 router.delete('/auth/sessions/:sessionId', (req, res) => authController.terminateSession(req, res));
 
-export { router as authenticationRoutes };
+export default router;

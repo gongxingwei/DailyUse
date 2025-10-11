@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { UserPreferencesController } from '../controllers/UserPreferencesController';
 
 /**
@@ -8,7 +8,7 @@ import { UserPreferencesController } from '../controllers/UserPreferencesControl
  *     description: 用户设置管理接口
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @swagger

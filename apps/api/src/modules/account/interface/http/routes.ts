@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { AccountController } from './controllers/AccountController';
 
 /**
@@ -29,7 +29,7 @@ import { AccountController } from './controllers/AccountController';
 // 如果认证中间件存在，取消注释下面的行
 // import { authenticateToken } from '../auth/middlewares/auth.middleware';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @swagger

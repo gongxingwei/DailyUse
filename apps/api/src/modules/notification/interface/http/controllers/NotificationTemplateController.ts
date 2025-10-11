@@ -1,19 +1,19 @@
 /**
  * NotificationTemplate Controller
- * @description 通知模板 REST API 控制器
+ * @description 通知模板 REST API 控制�?
  * @author DailyUse Team
  * @date 2025-01-07
  *
- * 设计原则：
- * 1. 聚合根控制 - NotificationTemplate 是聚合根，通过其方法进行状态变更
- * 2. JWT 认证 - 所有端点都需要 JWT Bearer Token (由 route middleware 处理)
+ * 设计原则�?
+ * 1. 聚合根控�?- NotificationTemplate 是聚合根，通过其方法进行状态变�?
+ * 2. JWT 认证 - 所有端点都需�?JWT Bearer Token (�?route middleware 处理)
  * 3. 统一响应 - 使用 ResponseBuilder 提供一致的响应格式
  * 4. 错误分类 - 使用 ResponseCode 枚举分类错误
- * 5. 参考标准 - 遵循 Goal 模块的代码规范和模式
+ * 5. 参考标�?- 遵循 Goal 模块的代码规范和模式
  */
 
 import type { Request, Response } from 'express';
-import type { NotificationApplicationService } from '../../../application/services/NotificationApplicationService';
+import { NotificationApplicationService } from '../../../application/services/NotificationApplicationService';
 import { createLogger } from '@dailyuse/utils';
 import type { NotificationContracts } from '@dailyuse/contracts';
 import { createResponseBuilder, ResponseCode } from '@dailyuse/contracts';
@@ -21,34 +21,57 @@ import { createResponseBuilder, ResponseCode } from '@dailyuse/contracts';
 const logger = createLogger('NotificationTemplateController');
 
 /**
- * 通知模板控制器
+ * 通知模板控制�?
  */
 export class NotificationTemplateController {
-  private static templateService: NotificationApplicationService;
-  private static responseBuilder = createResponseBuilder();
+  private static instance: NotificationTemplateController;
+  private templateService: NotificationApplicationService;
+  private responseBuilder = createResponseBuilder();
+
+  private constructor(templateService: NotificationApplicationService) {
+    this.templateService = templateService;
+  }
 
   /**
-   * 初始化控制器
+   * 创建控制器实例（在模块初始化时调用）
    */
-  static initialize(templateService: NotificationApplicationService): void {
-    NotificationTemplateController.templateService = templateService;
+  static createInstance(
+    templateService?: NotificationApplicationService,
+  ): NotificationTemplateController {
+    if (!templateService) {
+      templateService = NotificationApplicationService.getInstance();
+    }
+    NotificationTemplateController.instance = new NotificationTemplateController(templateService);
+    return NotificationTemplateController.instance;
+  }
+
+  /**
+   * 获取控制器单�?
+   */
+  static getInstance(): NotificationTemplateController {
+    if (!NotificationTemplateController.instance) {
+      throw new Error(
+        'NotificationTemplateController not initialized. Call createInstance() first.',
+      );
+    }
+    return NotificationTemplateController.instance;
   }
 
   /**
    * 创建通知模板
    * @route POST /notification-templates
    */
-  static async createTemplate(req: Request, res: Response): Promise<Response> {
+  async createTemplate(req: Request, res: Response): Promise<Response> {
     try {
       logger.debug('Creating notification template', { body: req.body });
 
       const request: NotificationContracts.CreateNotificationTemplateRequest = req.body;
 
-      const template = await NotificationTemplateController.templateService.createTemplate(request);
+      const template = await this.templateService.createTemplate(request);
 
       logger.info('Notification template created', { templateId: template.uuid });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         template,
         'Notification template created successfully',
@@ -59,21 +82,21 @@ export class NotificationTemplateController {
         logger.error('Failed to create notification template', { error: error.message });
 
         if (error.message.includes('already exists')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
 
         if (error.message.includes('Invalid')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to create notification template',
       });
@@ -84,7 +107,7 @@ export class NotificationTemplateController {
    * 获取模板列表
    * @route GET /notification-templates
    */
-  static async getTemplates(req: Request, res: Response): Promise<Response> {
+  async getTemplates(req: Request, res: Response): Promise<Response> {
     try {
       logger.debug('Getting notification templates', { query: req.query });
 
@@ -96,14 +119,14 @@ export class NotificationTemplateController {
         offset: req.query.offset ? parseInt(req.query.offset as string, 10) : undefined,
       };
 
-      const result = await NotificationTemplateController.templateService.getTemplates(queryParams);
+      const result = await this.templateService.getTemplates(queryParams);
 
       logger.debug('Notification templates retrieved', {
         total: result.total,
         returned: result.data.length,
       });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         result,
         'Notification templates retrieved successfully',
@@ -113,7 +136,7 @@ export class NotificationTemplateController {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to get notification templates',
       });
@@ -124,17 +147,16 @@ export class NotificationTemplateController {
    * 获取模板详情
    * @route GET /notification-templates/:id
    */
-  static async getTemplateById(req: Request, res: Response): Promise<Response> {
+  async getTemplateById(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.debug('Getting notification template', { templateId });
 
-      const template =
-        await NotificationTemplateController.templateService.getTemplateById(templateId);
+      const template = await this.templateService.getTemplateById(templateId);
 
       if (!template) {
         logger.debug('Notification template not found', { templateId });
-        return NotificationTemplateController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Notification template not found',
         });
@@ -142,7 +164,7 @@ export class NotificationTemplateController {
 
       logger.debug('Notification template retrieved', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         template,
         'Notification template retrieved successfully',
@@ -152,7 +174,7 @@ export class NotificationTemplateController {
         error: error instanceof Error ? error.message : String(error),
       });
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to get notification template',
       });
@@ -163,21 +185,18 @@ export class NotificationTemplateController {
    * 更新模板
    * @route PUT /notification-templates/:id
    */
-  static async updateTemplate(req: Request, res: Response): Promise<Response> {
+  async updateTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.debug('Updating notification template', { templateId, body: req.body });
 
       const request: NotificationContracts.UpdateNotificationTemplateRequest = req.body;
 
-      const template = await NotificationTemplateController.templateService.updateTemplate(
-        templateId,
-        request,
-      );
+      const template = await this.templateService.updateTemplate(templateId, request);
 
       if (!template) {
         logger.debug('Notification template not found', { templateId });
-        return NotificationTemplateController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Notification template not found',
         });
@@ -185,7 +204,7 @@ export class NotificationTemplateController {
 
       logger.info('Notification template updated', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         template,
         'Notification template updated successfully',
@@ -195,21 +214,21 @@ export class NotificationTemplateController {
         logger.error('Failed to update notification template', { error: error.message });
 
         if (error.message.includes('not found')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
 
         if (error.message.includes('Invalid') || error.message.includes('already exists')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to update notification template',
       });
@@ -220,16 +239,16 @@ export class NotificationTemplateController {
    * 删除模板
    * @route DELETE /notification-templates/:id
    */
-  static async deleteTemplate(req: Request, res: Response): Promise<Response> {
+  async deleteTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.info('Deleting notification template', { templateId });
 
-      await NotificationTemplateController.templateService.deleteTemplate(templateId);
+      await this.templateService.deleteTemplate(templateId);
 
       logger.info('Notification template deleted', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         { deletedId: templateId },
         'Notification template deleted successfully',
@@ -239,14 +258,14 @@ export class NotificationTemplateController {
         logger.error('Failed to delete notification template', { error: error.message });
 
         if (error.message.includes('not found')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to delete notification template',
       });
@@ -257,21 +276,18 @@ export class NotificationTemplateController {
    * 预览模板渲染
    * @route POST /notification-templates/:id/preview
    */
-  static async previewTemplate(req: Request, res: Response): Promise<Response> {
+  async previewTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.debug('Previewing notification template', { templateId, body: req.body });
 
       const request: NotificationContracts.PreviewNotificationTemplateRequest = req.body;
 
-      const preview = await NotificationTemplateController.templateService.previewTemplate(
-        templateId,
-        request.variables,
-      );
+      const preview = await this.templateService.previewTemplate(templateId, request.variables);
 
       logger.debug('Notification template preview generated', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         preview,
         'Notification template preview generated successfully',
@@ -281,7 +297,7 @@ export class NotificationTemplateController {
         logger.error('Failed to preview notification template', { error: error.message });
 
         if (error.message.includes('not found')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
@@ -291,14 +307,14 @@ export class NotificationTemplateController {
           error.message.includes('Missing required variable') ||
           error.message.includes('Invalid')
         ) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to preview notification template',
       });
@@ -309,17 +325,16 @@ export class NotificationTemplateController {
    * 启用模板
    * @route POST /notification-templates/:id/enable
    */
-  static async enableTemplate(req: Request, res: Response): Promise<Response> {
+  async enableTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.info('Enabling notification template', { templateId });
 
-      const template =
-        await NotificationTemplateController.templateService.enableTemplate(templateId);
+      const template = await this.templateService.enableTemplate(templateId);
 
       if (!template) {
         logger.debug('Notification template not found', { templateId });
-        return NotificationTemplateController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Notification template not found',
         });
@@ -327,7 +342,7 @@ export class NotificationTemplateController {
 
       logger.info('Notification template enabled', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         template,
         'Notification template enabled successfully',
@@ -337,14 +352,14 @@ export class NotificationTemplateController {
         logger.error('Failed to enable notification template', { error: error.message });
 
         if (error.message.includes('not found')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to enable notification template',
       });
@@ -355,17 +370,16 @@ export class NotificationTemplateController {
    * 禁用模板
    * @route POST /notification-templates/:id/disable
    */
-  static async disableTemplate(req: Request, res: Response): Promise<Response> {
+  async disableTemplate(req: Request, res: Response): Promise<Response> {
     try {
       const templateId = req.params.id;
       logger.info('Disabling notification template', { templateId });
 
-      const template =
-        await NotificationTemplateController.templateService.disableTemplate(templateId);
+      const template = await this.templateService.disableTemplate(templateId);
 
       if (!template) {
         logger.debug('Notification template not found', { templateId });
-        return NotificationTemplateController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Notification template not found',
         });
@@ -373,7 +387,7 @@ export class NotificationTemplateController {
 
       logger.info('Notification template disabled', { templateId });
 
-      return NotificationTemplateController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         template,
         'Notification template disabled successfully',
@@ -383,14 +397,14 @@ export class NotificationTemplateController {
         logger.error('Failed to disable notification template', { error: error.message });
 
         if (error.message.includes('not found')) {
-          return NotificationTemplateController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.NOT_FOUND,
             message: error.message,
           });
         }
       }
 
-      return NotificationTemplateController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to disable notification template',
       });

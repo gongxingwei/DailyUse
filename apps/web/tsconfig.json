@@ -1,24 +1,92 @@
 {
+  // 继承基础配置
   "extends": "../../tsconfig.base.json",
+
   "compilerOptions": {
+    // ============================================================
+    // 路径和输出配置
+    // ============================================================
+
+    // 基础路径：相对路径的起点
     "baseUrl": ".",
+
+    // 输出目录：编译后的文件
+    "outDir": "./dist",
+
+    // 源码根目录：限制编译范围
+    "rootDir": "./src",
+
+    // 生成输出文件
+    "noEmit": false,
+
+    // ============================================================
+    // Composite 项目配置（Monorepo 关键）
+    // ============================================================
+
+    // 启用项目引用模式（支持类型热更新）
+    "composite": true,
+
+    // 生成类型声明文件
+    "declaration": true,
+
+    // 生成声明文件的 source map（IDE 跳转源码）
+    "declarationMap": true,
+
+    // 生成 JavaScript 的 source map（调试支持）
+    "sourceMap": true,
+
+    // ============================================================
+    // 浏览器 + Vite 环境配置
+    // ============================================================
+
+    // 标准库：包含 ES2020 和浏览器 DOM API
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    // 类型定义：包含 Vite 客户端类型（如 import.meta.env）
+    "types": ["vite/client"],
+
+    // 模块解析：使用 Bundler 策略（适配 Vite）
+    // Bundler 策略会处理：
+    // 1. 导入非 JavaScript 文件（.vue, .css, .svg 等）
+    // 2. 路径别名（由 vite.config.ts 配置）
+    // 3. package.json 的 exports 字段
+    "moduleResolution": "Bundler",
+
+    // ============================================================
+    // 本地路径别名配置
+    // ============================================================
+
+    // 路径别名：仅用于项目内部导入
     "paths": {
-      "@/*": ["src/*"],
-      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
-      "@dailyuse/contracts/*": ["../../packages/contracts/src/*"],
-      "@dailyuse/domain-client": ["../../packages/domain-client/src/index.ts"],
-      "@dailyuse/domain-client/*": ["../../packages/domain-client/src/*"],
-      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
-      "@dailyuse/domain-core/*": ["../../packages/domain-core/src/*"],
-      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
-      "@dailyuse/domain-server/*": ["../../packages/domain-server/src/*"],
-      "@dailyuse/utils": ["../../packages/utils/src/index.ts"],
-      "@dailyuse/utils/*": ["../../packages/utils/src/*"],
-      "@dailyuse/ui": ["../../packages/ui/src/index.ts"],
-      "@dailyuse/ui/*": ["../../packages/ui/src/*"]
-    },
-    "types": ["vite/client"]
+      // 项目内部别名：@/ 指向 src 目录
+      "@/*": ["./src/*"]
+
+      // 跨包引用通过 package.json name + references 实现
+      // 例如：import { Goal } from '@dailyuse/domain-core'
+      // TypeScript 会从 packages/domain-core/dist 读取类型
+    }
   },
-  "include": ["src", "env.d.ts"],
-  "exclude": ["node_modules", "dist"]
+
+  // ============================================================
+  // 包含和排除配置
+  // ============================================================
+
+  // 包含的文件：src 目录和环境变量类型定义
+  "include": ["src/**/*", "env.d.ts"],
+
+  // 排除的文件
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+
+  // ============================================================
+  // 项目引用配置（依赖的包）
+  // ============================================================
+
+  // Web 应用依赖的包（客户端相关）
+  "references": [
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/domain-core" },
+    { "path": "../../packages/domain-client" },
+    { "path": "../../packages/utils" },
+    { "path": "../../packages/ui" }
+  ]
 }

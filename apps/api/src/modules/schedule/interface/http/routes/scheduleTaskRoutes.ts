@@ -5,10 +5,10 @@
  * 符合 RESTful API 设计原则，包含完整的 Swagger 文档注释
  */
 
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { ScheduleTaskController } from '../controllers/ScheduleTaskController';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const controller = new ScheduleTaskController();
 
 // ===== Special Routes (在参数路由之前) =====

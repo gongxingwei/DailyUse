@@ -1,31 +1,105 @@
 {
-  "compilerOptions": {
-    "target": "ES2020",
-    "useDefineForClassFields": true,
-    "module": "ESNext",
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+  // 继承基础配置
+  "extends": "../../tsconfig.base.json",
 
-    /* Bundler mode */
-    "moduleResolution": "bundler",
-    "allowImportingTsExtensions": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
+  "compilerOptions": {
+    // ============================================================
+    // 路径和输出配置
+    // ============================================================
+
+    // 基础路径：相对路径的起点
+    "baseUrl": ".",
+
+    // 输出目录：编译后的文件
+    "outDir": "./dist",
+
+    // 生成输出文件
+    "noEmit": false,
+
+    // ============================================================
+    // Composite 项目配置（Monorepo 关键）
+    // ============================================================
+
+    // 启用项目引用模式（支持类型热更新）
+    "composite": true,
+
+    // 生成类型声明文件
+    "declaration": true,
+
+    // 生成声明文件的 source map
+    "declarationMap": true,
+
+    // 生成 JavaScript 的 source map
+    "sourceMap": true,
+
+    // ============================================================
+    // Electron + Vue 混合环境配置
+    // ============================================================
+
+    // 标准库：浏览器 API（渲染进程）
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+
+    // 类型定义：Vite 客户端 + Node.js（主进程）
+    "types": ["vite/client", "node"],
+
+    // 模块解析：使用 Bundler 策略（Vite + Electron）
+    "moduleResolution": "Bundler",
+
+    // JSX 支持：Vue 3 使用 preserve 模式
+    // Vite 会处理 JSX/TSX 文件的转换
     "jsx": "preserve",
 
-    /* Linting */
-    "strict": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true,
-    "baseUrl": ".",
+    // ============================================================
+    // 本地路径别名配置
+    // ============================================================
+
+    // 路径别名：仅用于项目内部导入
     "paths": {
-      "@/*": ["src/*"],
-      "@electron/*": ["electron/*"],
-      "@common/*": ["common/*"],
+      // 渲染进程代码（Vue 组件等）
+      "@/*": ["./src/*"],
+
+      // Electron 主进程代码
+      "@electron/*": ["./electron/*"],
+
+      // 共享代码（主进程和渲染进程共用）
+      "@common/*": ["./common/*"]
+
+      // 跨包引用通过 references 实现
+      // 不要配置 @dailyuse/* 路径
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "electron", "common/modules/goal/types/goal.ts", "common/modules/reminder/types/reminder.ts", "common/shared/types/recurrenceRule.ts", "common/modules/account/types/account.ts", "common/modules/task/utils/taskTimeUtils.ts", "common/modules/task/utils/taskMetaTemplateFactory.ts", "common/shared/types/urgency.ts", "common/shared/types/importance.ts", "common/shared/types/response.ts"],
-  "references": [{ "path": "./tsconfig.node.json" }]
+
+  // ============================================================
+  // 包含和排除配置
+  // ============================================================
+
+  // 包含的文件：渲染进程、主进程、共享代码
+  "include": [
+    "src/**/*.ts", // 渲染进程 TypeScript
+    "src/**/*.d.ts", // 类型定义文件
+    "src/**/*.tsx", // TSX 文件
+    "src/**/*.vue", // Vue 单文件组件
+    "electron/**/*", // Electron 主进程
+    "common/**/*" // 共享代码
+  ],
+
+  // 排除的文件
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+
+  // ============================================================
+  // 项目引用配置（依赖的包）
+  // ============================================================
+
+  // Desktop 应用依赖的包
+  "references": [
+    // Vite 配置文件的类型检查
+    { "path": "./tsconfig.node.json" },
+
+    // 应用依赖的包
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/domain-core" },
+    { "path": "../../packages/domain-client" },
+    { "path": "../../packages/utils" },
+    { "path": "../../packages/ui" }
+  ]
 }

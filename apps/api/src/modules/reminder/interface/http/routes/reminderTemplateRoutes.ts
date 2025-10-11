@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { ReminderTemplateController } from '../controllers/ReminderTemplateController';
 
 /**
@@ -12,7 +12,7 @@ import { ReminderTemplateController } from '../controllers/ReminderTemplateContr
  * ReminderTemplate 聚合根的独立路由
  * 路径前缀：/api/reminders/templates
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ========== ReminderTemplate 聚合根路由 ==========
 

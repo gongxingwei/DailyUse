@@ -13,10 +13,31 @@ import { createLogger } from '@dailyuse/utils';
 const logger = createLogger('ThemeApplicationService');
 
 export class ThemeApplicationService {
+  private static instance: ThemeApplicationService;
   private readonly domainService: ThemeDomainService;
 
   constructor(private readonly preferenceRepository: IUserThemePreferenceRepository) {
     this.domainService = new ThemeDomainService();
+  }
+
+  /**
+   * 创建服务实例
+   */
+  static createInstance(
+    preferenceRepository: IUserThemePreferenceRepository,
+  ): ThemeApplicationService {
+    ThemeApplicationService.instance = new ThemeApplicationService(preferenceRepository);
+    return ThemeApplicationService.instance;
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): ThemeApplicationService {
+    if (!ThemeApplicationService.instance) {
+      throw new Error('ThemeApplicationService not initialized. Call createInstance() first.');
+    }
+    return ThemeApplicationService.instance;
   }
 
   /**

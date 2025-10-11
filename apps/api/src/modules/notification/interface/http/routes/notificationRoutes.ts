@@ -1,7 +1,12 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { NotificationController } from '../controllers/NotificationController';
 import { NotificationPreferenceController } from '../controllers/NotificationPreferenceController';
 import { NotificationTemplateController } from '../controllers/NotificationTemplateController';
+
+// Get controller instances
+const getNotificationController = () => NotificationController.getInstance();
+const getPreferenceController = () => NotificationPreferenceController.getInstance();
+const getTemplateController = () => NotificationTemplateController.getInstance();
 
 /**
  * @swagger
@@ -24,7 +29,7 @@ import { NotificationTemplateController } from '../controllers/NotificationTempl
  * 3. 批量操作保证业务规则一致性
  * 4. 所有方法统一使用 responseBuilder
  */
-const router = Router();
+export const router: ExpressRouter = Router();
 
 // ============ 查询和统计路由 ============
 // 注意：必须在 /:id 路由之前注册
@@ -48,7 +53,7 @@ const router = Router();
  *                 count:
  *                   type: number
  */
-router.get('/unread-count', NotificationController.getUnreadCount);
+router.get('/unread-count', (req, res) => getNotificationController().getUnreadCount(req, res));
 
 /**
  * @swagger
@@ -62,7 +67,7 @@ router.get('/unread-count', NotificationController.getUnreadCount);
  *       200:
  *         description: 统计信息
  */
-router.get('/stats', NotificationController.getNotificationStats);
+router.get('/stats', (req, res) => getNotificationController().getNotificationStats(req, res));
 
 /**
  * @swagger
@@ -102,7 +107,9 @@ router.get('/stats', NotificationController.getNotificationStats);
  *       404:
  *         description: 模板不存在
  */
-router.post('/from-template', NotificationController.createFromTemplate);
+router.post('/from-template', (req, res) =>
+  getNotificationController().createFromTemplate(req, res),
+);
 
 // ============ 批量操作路由 ============
 
@@ -132,7 +139,7 @@ router.post('/from-template', NotificationController.createFromTemplate);
  *       200:
  *         description: 批量标记成功
  */
-router.post('/batch-read', NotificationController.batchMarkAsRead);
+router.post('/batch-read', (req, res) => getNotificationController().batchMarkAsRead(req, res));
 
 /**
  * @swagger
@@ -158,7 +165,9 @@ router.post('/batch-read', NotificationController.batchMarkAsRead);
  *       200:
  *         description: 批量标记成功
  */
-router.post('/batch-dismiss', NotificationController.batchMarkAsDismissed);
+router.post('/batch-dismiss', (req, res) =>
+  getNotificationController().batchMarkAsDismissed(req, res),
+);
 
 /**
  * @swagger
@@ -185,7 +194,9 @@ router.post('/batch-dismiss', NotificationController.batchMarkAsDismissed);
  *       200:
  *         description: 批量删除成功
  */
-router.post('/batch-delete', NotificationController.batchDeleteNotifications);
+router.post('/batch-delete', (req, res) =>
+  getNotificationController().batchDeleteNotifications(req, res),
+);
 
 // ============ 基础 CRUD 路由 ============
 
@@ -291,8 +302,8 @@ router.post('/batch-delete', NotificationController.batchDeleteNotifications);
  *       200:
  *         description: 通知列表获取成功
  */
-router.post('/', NotificationController.createNotification);
-router.get('/', NotificationController.getNotifications);
+router.post('/', (req, res) => getNotificationController().createNotification(req, res));
+router.get('/', (req, res) => getNotificationController().getNotifications(req, res));
 
 /**
  * @swagger
@@ -330,8 +341,8 @@ router.get('/', NotificationController.getNotifications);
  *       404:
  *         description: 通知不存在
  */
-router.get('/:id', NotificationController.getNotificationById);
-router.delete('/:id', NotificationController.deleteNotification);
+router.get('/:id', (req, res) => getNotificationController().getNotificationById(req, res));
+router.delete('/:id', (req, res) => getNotificationController().deleteNotification(req, res));
 
 // ============ 聚合根状态转换路由 ============
 
@@ -358,7 +369,7 @@ router.delete('/:id', NotificationController.deleteNotification);
  *       404:
  *         description: 通知不存在
  */
-router.post('/:id/read', NotificationController.markAsRead);
+router.post('/:id/read', (req, res) => getNotificationController().markAsRead(req, res));
 
 /**
  * @swagger
@@ -383,7 +394,7 @@ router.post('/:id/read', NotificationController.markAsRead);
  *       404:
  *         description: 通知不存在
  */
-router.post('/:id/dismiss', NotificationController.markAsDismissed);
+router.post('/:id/dismiss', (req, res) => getNotificationController().markAsDismissed(req, res));
 
 // ============ 通知偏好设置路由 ============
 
@@ -471,12 +482,15 @@ router.post('/:id/dismiss', NotificationController.markAsDismissed);
  *         description: 渠道设置更新成功
  */
 
-export const notificationPreferenceRoutes = Router();
-notificationPreferenceRoutes.get('/', NotificationPreferenceController.getPreference);
-notificationPreferenceRoutes.put('/', NotificationPreferenceController.updatePreference);
-notificationPreferenceRoutes.patch(
-  '/channels/:channel',
-  NotificationPreferenceController.updateChannelPreference,
+export const notificationPreferenceRouter: ExpressRouter = Router();
+notificationPreferenceRouter.get('/', (req, res) =>
+  getPreferenceController().getPreference(req, res),
+);
+notificationPreferenceRouter.put('/', (req, res) =>
+  getPreferenceController().updatePreference(req, res),
+);
+notificationPreferenceRouter.patch('/channels/:channel', (req, res) =>
+  getPreferenceController().updateChannelPreference(req, res),
 );
 
 // ============================================================
@@ -746,21 +760,37 @@ notificationPreferenceRoutes.patch(
  *         description: 模板不存在
  */
 
-export const notificationTemplateRoutes = Router();
+export const notificationTemplateRouter: ExpressRouter = Router();
 
 // 特殊路由必须在 /:id 之前
-notificationTemplateRoutes.post('/:id/preview', NotificationTemplateController.previewTemplate);
-notificationTemplateRoutes.post('/:id/enable', NotificationTemplateController.enableTemplate);
-notificationTemplateRoutes.post('/:id/disable', NotificationTemplateController.disableTemplate);
-
-// CRUD 路由
-notificationTemplateRoutes.post('/', NotificationTemplateController.createTemplate);
-notificationTemplateRoutes.get('/', NotificationTemplateController.getTemplates);
-notificationTemplateRoutes.get('/:id', NotificationTemplateController.getTemplateById);
-notificationTemplateRoutes.put('/:id', NotificationTemplateController.updateTemplate);
-notificationTemplateRoutes.delete('/:id', NotificationTemplateController.deleteTemplate);
-
-export default router;
+notificationTemplateRouter.post('/:id/preview', (req, res) =>
+  getTemplateController().previewTemplate(req, res),
+);
+notificationTemplateRouter.post('/:id/enable', (req, res) =>
+  getTemplateController().enableTemplate(req, res),
+);
+notificationTemplateRouter.post('/:id/preview', (req, res) =>
+  getTemplateController().previewTemplate(req, res),
+);
+notificationTemplateRouter.post('/:id/enable', (req, res) =>
+  getTemplateController().enableTemplate(req, res),
+);
+notificationTemplateRouter.post('/:id/disable', (req, res) =>
+  getTemplateController().disableTemplate(req, res),
+);
+notificationTemplateRouter.post('/', (req, res) =>
+  getTemplateController().createTemplate(req, res),
+);
+notificationTemplateRouter.get('/', (req, res) => getTemplateController().getTemplates(req, res));
+notificationTemplateRouter.get('/:id', (req, res) =>
+  getTemplateController().getTemplateById(req, res),
+);
+notificationTemplateRouter.put('/:id', (req, res) =>
+  getTemplateController().updateTemplate(req, res),
+);
+notificationTemplateRouter.delete('/:id', (req, res) =>
+  getTemplateController().deleteTemplate(req, res),
+);
 
 /**
  * DDD 聚合根控制模式在 API 设计中的体现：

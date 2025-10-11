@@ -1,24 +1,102 @@
 {
+  // 继承基础配置
   "extends": "../../tsconfig.base.json",
+
   "compilerOptions": {
-    "outDir": "dist",
-    "module": "ESNext",
-    "target": "ES2022",
-    "moduleResolution": "Node",
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "skipLibCheck": true,
-    "resolveJsonModule": true,
+    // ============================================================
+    // 路径和输出配置
+    // ============================================================
+
+    // 基础路径：相对路径的起点
+    "baseUrl": ".",
+
+    // 输出目录：编译后的 JavaScript 和声明文件
+    "outDir": "./dist",
+
+    // 源码根目录：限制编译范围
+    "rootDir": "./src",
+
+    // 生成输出文件（应用项目需要构建产物）
+    "noEmit": false,
+
+    // ============================================================
+    // Composite 项目配置（Monorepo 关键）
+    // ============================================================
+
+    // 启用项目引用模式（必须与 references 配合使用）
+    // 作用：
+    // 1. 生成 .tsbuildinfo 文件用于增量编译
+    // 2. 允许其他项目引用此项目的类型定义
+    // 3. 支持跨项目的类型热更新
+    "composite": true,
+
+    // 生成类型声明文件（.d.ts）
+    "declaration": true,
+
+    // 生成声明文件的 source map（.d.ts.map）
+    // 作用：IDE 可以从声明文件跳转回 TypeScript 源码
+    "declarationMap": true,
+
+    // 生成 JavaScript 的 source map（.js.map）
+    // 作用：调试时可以断点到 TypeScript 源码
+    "sourceMap": true,
+
+    // ============================================================
+    // Node.js 环境配置
+    // ============================================================
+
+    // 标准库：仅包含 ES2020（不包含 DOM）
+    "lib": ["ES2020"],
+
+    // 类型定义：只包含 Node.js 类型
     "types": ["node"],
-    "typeRoots": ["./src/modules/users/types", "./node_modules/@types"],
+
+    // 模块解析：使用 Node 策略
+    "moduleResolution": "Node",
+
+    // ============================================================
+    // 本地路径别名配置
+    // ============================================================
+
+    // 路径别名：仅用于项目内部的相对导入
+    // 跨包导入应该使用 package.json 的 name 字段，而不是 paths
     "paths": {
-      "@/*": ["./src/*"],
-      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
-      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
-      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
-      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
+      // 项目内部别名：@/ 指向 src 目录
+      "@/*": ["./src/*"]
+
+      // 注意：不要配置 @dailyuse/* 别名！
+      // 跨包引用应该通过 references + package.json 实现
+      // TypeScript 会自动从 dist 目录读取类型定义
     }
   },
+
+  // ============================================================
+  // 包含和排除配置
+  // ============================================================
+
+  // 包含的文件：所有 src 目录下的 TypeScript 文件
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist"]
+
+  // 排除的文件：
+  // - node_modules: 第三方依赖
+  // - dist: 构建输出（避免重复编译）
+  // - *.test.ts: 测试文件（可选，根据需求决定）
+  // - *.spec.ts: 规范文件（可选）
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+
+  // ============================================================
+  // 项目引用配置（依赖的包）
+  // ============================================================
+
+  // 声明此项目依赖的其他 TypeScript 项目
+  // TypeScript 会：
+  // 1. 确保依赖项先构建
+  // 2. 从依赖项的 dist 目录读取类型定义（而不是 src）
+  // 3. 监听依赖项的变化并触发重新编译（热更新）
+  "references": [
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/domain-core" },
+    { "path": "../../packages/domain-server" },
+    { "path": "../../packages/utils" }
+  ]
 }

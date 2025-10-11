@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { RepositoryStatisticsController } from '../controllers/RepositoryStatisticsController';
 
 /**
@@ -17,7 +17,7 @@ import { RepositoryStatisticsController } from '../controllers/RepositoryStatist
  * 2. 清晰的职责边界
  * 3. 统一的响应格式
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @swagger

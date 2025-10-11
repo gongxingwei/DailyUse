@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { TaskMetaTemplateController } from '../controllers/TaskMetaTemplateController';
 
 /**
@@ -15,7 +15,7 @@ import { TaskMetaTemplateController } from '../controllers/TaskMetaTemplateContr
  *     description: 任务元模板管理接口（独立聚合根）
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ============ TaskMetaTemplate 管理（独立聚合根）============
 

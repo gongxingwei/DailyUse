@@ -20,7 +20,7 @@ export {
 export { authenticationContainer } from './infrastructure/di/container';
 
 // Export routes
-export { authenticationRoutes } from './interface/http/routes';
+export { default as authenticationRouter } from './interface/http/routes';
 
 // Export initialization
 export { registerAuthenticationInitializationTasks } from './initialization/authenticationInitialization';

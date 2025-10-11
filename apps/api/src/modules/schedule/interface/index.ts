@@ -3,7 +3,7 @@
  * 导出 Schedule 模块的接口层
  */
 
-export { scheduleRoutes } from './http/routes';
+export { default as scheduleRouter } from './http/routes';
 export { ScheduleTaskController } from './http/controllers/ScheduleTaskController';
 export { sseController } from './http/SSEController';
 export { ScheduleDebugController } from './http/debugController';

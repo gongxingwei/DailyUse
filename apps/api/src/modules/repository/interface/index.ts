@@ -4,4 +4,4 @@
  */
 
 export { RepositoryController } from './http/controllers/RepositoryController';
-export { default as repositoryRoutes } from './http/routes/repositoryRoutes';
+export { default as repositoryRouter } from './http/routes/repositoryRoutes';

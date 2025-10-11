@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { ReminderTemplateGroupController } from '../controllers/ReminderTemplateGroupController';
 
 /**
@@ -12,7 +12,7 @@ import { ReminderTemplateGroupController } from '../controllers/ReminderTemplate
  * ReminderTemplateGroup 聚合根的独立路由
  * 路径前缀：/api/reminders/groups
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ========== ReminderTemplateGroup 聚合根路由 ==========
 

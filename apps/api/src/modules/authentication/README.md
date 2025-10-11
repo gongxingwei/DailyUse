@@ -157,12 +157,12 @@ Presentation → Application → Domain ← Infrastructure
 
 ```typescript
 import express from 'express';
-import { authenticationRoutes } from './modules/authentication';
+import { authenticationRouter } from './modules/authentication';
 
 const app = express();
 
 app.use(express.json());
-app.use('/api/auth', authenticationRoutes);
+app.use('/api/auth', authenticationRouter);
 ```
 
 ### 2. 登录请求示例

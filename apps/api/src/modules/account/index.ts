@@ -18,7 +18,7 @@ export { accountContainer } from './infrastructure/di/container';
 export * from './infrastructure';
 
 // Routes
-export { default as accountRoutes } from './interface/http/routes';
+export { default as accountRouter } from './interface/http/routes';
 
 // Initialization
 export { registerAccountInitializationTasks } from './initialization/accountInitialization';

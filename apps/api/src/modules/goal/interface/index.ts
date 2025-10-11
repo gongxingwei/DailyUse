@@ -1,4 +1,4 @@
-export { GoalController } from './http/controllers/GoalController.js';
-export { GoalDirController } from './http/controllers/GoalDirController.js';
-export { default as goalRouter } from './http/routes/goalRoutes.js';
-export { default as goalDirRouter } from './http/routes/goalDirRoutes.js';
+export { GoalController } from './http/controllers/GoalController';
+export { GoalDirController } from './http/controllers/GoalDirController';
+export { default as goalRouter } from './http/routes/goalRoutes';
+export { default as goalDirRouter } from './http/routes/goalDirRoutes';

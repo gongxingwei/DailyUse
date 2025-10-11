@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import type { Request, Response } from 'express';
 import { createLogger } from '@dailyuse/utils';
 import { eventBus } from '@dailyuse/utils';
@@ -242,7 +242,7 @@ setupSSEEventListeners();
 /**
  * SSE 路由
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 /**
  * @swagger
@@ -386,4 +386,5 @@ router.get('/status', (req: Request, res: Response) => {
   });
 });
 
-export { router as notificationSSERoutes, sseClientManager };
+export { sseClientManager };
+export const notificationSSERouter = router;

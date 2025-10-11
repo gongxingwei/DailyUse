@@ -11,3 +11,6 @@ export * from './application/eventHandlers/TaskTriggeredHandler';
 
 // Interface 层导出
 export * from './interface';
+
+// Initialization 层导出
+export { registerNotificationInitializationTasks } from './initialization/notificationInitialization';

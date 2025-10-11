@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { TaskTemplateController } from '../controllers/TaskTemplateController';
 
 /**
@@ -19,7 +19,7 @@ import { TaskTemplateController } from '../controllers/TaskTemplateController';
  *     description: 任务统计和查询接口
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ============ TaskTemplate 聚合根管理 ============
 

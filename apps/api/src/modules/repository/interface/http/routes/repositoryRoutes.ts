@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { RepositoryController } from '../controllers/RepositoryController';
 import repositoryStatisticsRoutes from './repositoryStatisticsRoutes';
 
@@ -22,7 +22,7 @@ import repositoryStatisticsRoutes from './repositoryStatisticsRoutes';
  * 4. 所有方法统一使用 responseBuilder
  * 5. 每个聚合根独立的路由文件
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ============ DDD 聚合根控制路由 ============
 // 注意：聚合路由必须在通用 CRUD 路由之前注册，避免 /:id 路由冲突

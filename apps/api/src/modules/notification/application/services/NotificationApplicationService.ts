@@ -36,6 +36,7 @@ const logger = createLogger('NotificationApplicationService');
  * - 提供查询接口
  */
 export class NotificationApplicationService {
+  private static instance: NotificationApplicationService;
   private notificationDomainService: NotificationDomainService;
   private templateRenderService: TemplateRenderService;
   private channelSelectionService: ChannelSelectionService;
@@ -52,6 +53,34 @@ export class NotificationApplicationService {
     );
     this.templateRenderService = new TemplateRenderService();
     this.channelSelectionService = new ChannelSelectionService();
+  }
+
+  /**
+   * 创建服务实例
+   */
+  static createInstance(
+    notificationRepository: INotificationRepository,
+    templateRepository: INotificationTemplateRepository,
+    preferenceRepository: INotificationPreferenceRepository,
+  ): NotificationApplicationService {
+    NotificationApplicationService.instance = new NotificationApplicationService(
+      notificationRepository,
+      templateRepository,
+      preferenceRepository,
+    );
+    return NotificationApplicationService.instance;
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): NotificationApplicationService {
+    if (!NotificationApplicationService.instance) {
+      throw new Error(
+        'NotificationApplicationService not initialized. Call createInstance() first.',
+      );
+    }
+    return NotificationApplicationService.instance;
   }
 
   // ============================================================

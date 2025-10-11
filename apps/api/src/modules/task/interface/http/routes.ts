@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import taskTemplateRoutes from './routes/taskTemplateRoutes';
 import taskMetaTemplateRoutes from './routes/taskMetaTemplateRoutes';
 
@@ -18,7 +18,7 @@ import taskMetaTemplateRoutes from './routes/taskMetaTemplateRoutes';
  * 数据流转：
  * Backend: Template (含 instances[]) → Frontend Store: { templates, instances }
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ========== TaskTemplate 聚合根路由 ==========
 // 路径: /api/v1/tasks/templates/*

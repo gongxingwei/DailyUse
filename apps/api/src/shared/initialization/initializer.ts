@@ -9,6 +9,9 @@ import {
 import { registerAccountInitializationTasks } from '../../modules/account';
 import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
 import { registerGoalInitializationTasks } from '../../modules/goal';
+import { registerNotificationInitializationTasks } from '../../modules/notification/initialization/notificationInitialization';
+import { registerSettingInitializationTasks } from '../../modules/setting/initialization/settingInitialization';
+import { registerThemeInitializationTasks } from '../../modules/theme/initialization/themeInitialization';
 import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem';
 // import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 // import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
@@ -52,6 +55,9 @@ export function registerAllInitializationTasks(): void {
   registerAccountInitializationTasks();
   registerAuthenticationInitializationTasks();
   registerGoalInitializationTasks();
+  registerNotificationInitializationTasks();
+  registerSettingInitializationTasks();
+  registerThemeInitializationTasks();
 
   console.log('All initialization tasks registered');
 }

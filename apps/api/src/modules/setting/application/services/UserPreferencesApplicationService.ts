@@ -17,11 +17,32 @@ type UserPreferencesDTO = SettingContracts.UserPreferencesDTO;
 const logger = createLogger('UserPreferencesApplicationService');
 
 export class UserPreferencesApplicationService {
+  private static instance: UserPreferencesApplicationService;
   private readonly domainService: SettingDomainService;
   private eventPublisher?: IEventPublisher;
 
   constructor(private readonly repository: IUserPreferencesRepository) {
     this.domainService = new SettingDomainService();
+  }
+
+  /**
+   * 创建服务实例
+   */
+  static createInstance(repository: IUserPreferencesRepository): UserPreferencesApplicationService {
+    UserPreferencesApplicationService.instance = new UserPreferencesApplicationService(repository);
+    return UserPreferencesApplicationService.instance;
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): UserPreferencesApplicationService {
+    if (!UserPreferencesApplicationService.instance) {
+      throw new Error(
+        'UserPreferencesApplicationService not initialized. Call createInstance() first.',
+      );
+    }
+    return UserPreferencesApplicationService.instance;
   }
 
   /**

@@ -5,7 +5,7 @@
  * @description 主题偏好管理路由
  */
 
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { ThemeController } from '../controllers/ThemeController';
 
 /**
@@ -22,7 +22,7 @@ import { ThemeController } from '../controllers/ThemeController';
  *     description: 主题管理接口
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ============ 用户主题偏好管理 ============
 

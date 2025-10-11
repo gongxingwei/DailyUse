@@ -1,23 +1,82 @@
 {
   "compilerOptions": {
+    // ============================================================
+    // 语言和模块系统配置
+    // ============================================================
+
+    // 编译目标：使用 ES2020 以支持现代 JavaScript 特性
     "target": "ES2020",
+
+    // 模块系统：使用 ESNext 支持最新的 import/export 语法
     "module": "ESNext",
-    "moduleResolution": "Bundler",
+
+    // 标准库：默认只包含 ES2020，具体项目可以扩展（如添加 DOM）
+    "lib": ["ES2020"],
+
+    // 模块解析策略：使用 Node 策略以获得最佳兼容性
+    // Node 策略会查找 node_modules 和 package.json 的 main/types 字段
+    "moduleResolution": "Node",
+
+    // ============================================================
+    // 严格类型检查配置
+    // ============================================================
+
+    // 启用所有严格类型检查选项（推荐）
     "strict": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
+
+    // 函数必须显式返回值（防止意外的 undefined 返回）
+    "noImplicitReturns": true,
+
+    // 重写父类方法时必须使用 override 关键字
+    "noImplicitOverride": true,
+
+    // switch 语句必须处理所有分支或包含 default
+    "noFallthroughCasesInSwitch": true,
+
+    // ============================================================
+    // 模块解析和互操作性配置
+    // ============================================================
+
+    // 允许从 CommonJS 模块默认导入（如 import React from 'react'）
+    "esModuleInterop": true,
+
+    // 允许合成默认导入（配合 esModuleInterop 使用）
+    "allowSyntheticDefaultImports": true,
+
+    // 允许导入 JSON 文件
     "resolveJsonModule": true,
-    "useDefineForClassFields": true,
-    "verbatimModuleSyntax": true,
+
+    // 强制文件名大小写一致（避免跨平台问题）
+    "forceConsistentCasingInFileNames": true,
+
+    // ============================================================
+    // 性能优化配置
+    // ============================================================
+
+    // 跳过第三方库的类型检查（大幅提升编译速度）
+    "skipLibCheck": true,
+
+    // 启用增量编译（生成 .tsbuildinfo 缓存文件）
+    "incremental": true,
+
+    // ============================================================
+    // 代码生成配置
+    // ============================================================
+
+    // 每个文件都必须是独立模块（适用于打包工具）
     "isolatedModules": true,
-    "allowJs": false,
-    "noEmit": true,
-    "lib": ["ES2020", "DOM"],
-    "types": [],
-    "paths": {
-      "@dailyuse/assets": ["packages/assets/src/index.ts"],
-      "@dailyuse/assets/images": ["packages/assets/src/images/index.ts"],
-      "@dailyuse/assets/audio": ["packages/assets/src/audio/index.ts"]
-    }
+
+    // 使用 verbatim 导入语法（import type 不会被转换）
+    "verbatimModuleSyntax": true,
+
+    // 使用 ES2022 类字段语义
+    "useDefineForClassFields": true,
+
+    // 不允许 JavaScript 文件（纯 TypeScript 项目）
+    "allowJs": false
+
+    // 注意：此处不配置 paths，因为在 monorepo 中应该通过
+    // package.json 的 exports 字段和 TypeScript 的 references
+    // 来实现类型引用，而不是直接指向源码
   }
 }

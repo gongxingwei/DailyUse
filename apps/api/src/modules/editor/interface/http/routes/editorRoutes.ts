@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { EditorWorkspaceController } from '../controllers/EditorWorkspaceController';
 import { validate, validateAll } from '../middleware/validationMiddleware';
 import {
@@ -10,7 +10,7 @@ import {
   workspaceUuidPathSchema,
 } from '../validation/editorWorkspaceSchemas';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ===== Workspace Routes =====
 

@@ -1,7 +1,7 @@
-import { Router } from 'express';
-import { GoalDirController } from '../controllers/GoalDirController.js';
+import { Router, type Router as ExpressRouter } from 'express';
+import { GoalDirController } from '../controllers/GoalDirController';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // 基础 CRUD 路由
 router.post('/', GoalDirController.createGoalDir);

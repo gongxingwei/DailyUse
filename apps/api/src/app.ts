@@ -9,41 +9,25 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import accountRoutes from './modules/account/interface/http/routes';
-import { authenticationRoutes } from './modules/authentication';
+import { accountRouter } from './modules/account/interface';
+import { authenticationRouter } from './modules/authentication';
 import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
-import { scheduleRoutes } from './modules/schedule';
+import { scheduleRouter } from './modules/schedule';
 import {
-  notificationRoutes,
-  notificationPreferenceRoutes,
-  notificationTemplateRoutes,
-  notificationSSERoutes,
+  notificationRouter,
+  notificationPreferenceRouter,
+  notificationTemplateRouter,
+  notificationSSERouter,
 } from './modules/notification/interface';
 import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
 import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
-import { createEditorRoutes, EditorAggregateController } from './modules/editor';
-import editorWorkspaceRoutes from './modules/editor/interface/http/routes/editorRoutes';
-import { EditorDomainService } from '@dailyuse/domain-server';
-import { EditorApplicationService } from './modules/editor/application/services/EditorApplicationService.js';
-import { InMemoryDocumentRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryDocumentRepository.js';
-import { InMemoryWorkspaceRepository } from './modules/editor/infrastructure/repositories/memory/InMemoryWorkspaceRepository.js';
-import { RepositoryController, createRepositoryRoutes } from './modules/repository/index.js';
-import { RepositoryApplicationService } from './modules/repository/application/services/ApplicationService.js';
-import {
-  PrismaRepositoryRepository,
-  PrismaResourceRepository,
-} from './modules/repository/infrastructure/index.js';
-import { prisma } from './config/prisma.js';
-import { EventPublisher } from './modules/setting/infrastructure/events/EventPublisher';
-import { UserPreferencesApplicationService } from './modules/setting/application/services/UserPreferencesApplicationService';
-import { PrismaUserPreferencesRepository } from './modules/setting/infrastructure/repositories/PrismaUserPreferencesRepository';
-import { ThemeEventListeners } from './modules/theme/application/events/ThemeEventListeners';
-import { ThemeApplicationService } from './modules/theme/application/services/ThemeApplicationService';
-import { PrismaUserThemePreferenceRepository } from './modules/theme/infrastructure/repositories/PrismaUserThemePreferenceRepository';
+import { editorRouter } from './modules/editor/interface';
+import { repositoryRouter } from './modules/repository/interface';
+
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
-import { setupSwagger } from './config/swagger.js';
+import { setupSwagger } from './config/swagger';
 import { createLogger } from '@dailyuse/utils';
 
 const logger = createLogger('Express');
@@ -81,26 +65,37 @@ api.get('/health', (_req: Request, res: Response) => {
 });
 
 // 挂载账户路由到api路由器
-api.use('', accountRoutes);
+api.use('', accountRouter);
 
 // 挂载认证路由到 api 路由器 (登录/登出/刷新等) - 不需要认证
-api.use('', authenticationRoutes);
+api.use('', authenticationRouter);
 
 // 应用认证中间件到需要认证的路由
 // 注意：认证相关的路由（如登录、注册）应该放在认证中间件之前
-
+/**
+ * 任务模块
+ */
 // 挂载任务管理路由 - 需要认证
 api.use('/tasks', authMiddleware, taskRouter);
 
+/**
+ * 目标模块
+ */
 // 挂载目标管理路由 - 需要认证
 api.use('/goals', authMiddleware, goalRouter);
 
 // 挂载目标目录管理路由 - 需要认证
 api.use('/goal-dirs', authMiddleware, goalDirRouter);
 
+/**
+ * 提醒模块
+ */
 // 挂载提醒管理路由 - 需要认证
 api.use('/reminders', authMiddleware, reminderRouter);
 
+/**
+ * schedule 调度模块
+ */
 // 挂载任务调度管理路由 - 部分需要认证
 // SSE事件流端点不需要认证，其他端点需要认证
 api.use(
@@ -113,92 +108,51 @@ api.use(
     // 其他端点需要认证
     return authMiddleware(req, res, next);
   },
-  scheduleRoutes,
+  scheduleRouter,
 );
 
-// 挂载编辑器路由 - 需要认证
-const editorDomainService = new EditorDomainService();
-const documentRepository = new InMemoryDocumentRepository();
-const workspaceRepository = new InMemoryWorkspaceRepository();
-const editorApplicationService = new EditorApplicationService(
-  editorDomainService,
-  documentRepository,
-  workspaceRepository,
-);
-EditorAggregateController.initialize(editorApplicationService);
-const editorRoutes = createEditorRoutes();
-api.use('/editor', authMiddleware, editorRoutes);
+/**
+ * editor 编辑器模块
+ */
+// 挂载编辑器聚合根路由 - 需要认证
+api.use('/editor', authMiddleware, editorRouter);
 
-// 挂载新的 EditorWorkspace 路由（DDD 架构）- 需要认证
-api.use('/editor-workspaces', authMiddleware, editorWorkspaceRoutes);
+/**
+ * repository 仓储模块
+ */
+// 挂载仓储路由 - 需要认证
+api.use('/repositories', authMiddleware, repositoryRouter);
 
-// 挂载仓储路由
-const repositoryRepository = new PrismaRepositoryRepository(prisma);
-const resourceRepository = new PrismaResourceRepository(prisma);
-const repositoryApplicationService = new RepositoryApplicationService(
-  repositoryRepository,
-  resourceRepository,
-);
-RepositoryController.initialize(repositoryApplicationService);
-const repositoryRoutes = createRepositoryRoutes();
-api.use('/repositories', authMiddleware, repositoryRoutes);
-
+/**
+ * setting 设置模块
+ */
 // 挂载用户偏好设置路由 - 需要认证
 api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
 
+/**
+ * theme 主题模块
+ */
 // 挂载主题管理路由 - 需要认证
 api.use('/theme', authMiddleware, themeRoutes);
 
+/**
+ * notification 通知模块
+ */
 // 挂载通知 SSE 路由 - 必须在 /notifications 之前！（避免被 authMiddleware 拦截）
 // token 通过 URL 参数传递，路由内部自行验证
-api.use('/notifications/sse', notificationSSERoutes);
+api.use('/notifications/sse', notificationSSERouter);
 
 // 挂载通知管理路由 - 需要认证
-api.use('/notifications', authMiddleware, notificationRoutes);
-api.use('/notification-preferences', authMiddleware, notificationPreferenceRoutes);
-api.use('/notification-templates', authMiddleware, notificationTemplateRoutes);
+api.use('/notifications', authMiddleware, notificationRouter);
+api.use('/notification-preferences', authMiddleware, notificationPreferenceRouter);
+api.use('/notification-templates', authMiddleware, notificationTemplateRouter);
 
-// Setup Notification Module - 初始化通知模块
-// NotificationController 和 NotificationPreferenceController 使用静态服务实例
-// 需要初始化 NotificationTemplateController 使其共享同一服务实例
-import {
-  NotificationTemplateController,
-  NotificationController,
-} from './modules/notification/interface';
-import { NotificationApplicationService } from './modules/notification/application/services/NotificationApplicationService';
-import { NotificationRepository } from './modules/notification/infrastructure/repositories/NotificationRepository';
-import { NotificationTemplateRepository } from './modules/notification/infrastructure/repositories/NotificationTemplateRepository';
-import { NotificationPreferenceRepository } from './modules/notification/infrastructure/repositories/NotificationPreferenceRepository';
+// 注意：所有模块的初始化都通过 shared/initialization/initializer.ts 统一管理
+// NotificationApplicationService, UserPreferencesApplicationService, ThemeApplicationService
+// NotificationTemplateController 等所有服务和控制器
+// 都在各自模块的 initialization 层中初始化，并可通过 getInstance() 获取单例
 
-const notificationService = new NotificationApplicationService(
-  new NotificationRepository(prisma),
-  new NotificationTemplateRepository(prisma),
-  new NotificationPreferenceRepository(prisma),
-);
-
-// 初始化 NotificationTemplateController
-NotificationTemplateController.initialize(notificationService);
-
-logger.info('Notification module initialized successfully');
-
-// Setup event system - 设置事件系统
-// 初始化事件发布器
-const eventPublisher = new EventPublisher();
-
-// 初始化 UserPreferencesApplicationService 并设置事件发布器
-const userPreferencesRepository = new PrismaUserPreferencesRepository(prisma);
-const userPreferencesService = new UserPreferencesApplicationService(userPreferencesRepository);
-userPreferencesService.setEventPublisher(eventPublisher);
-
-// 初始化 ThemeApplicationService
-const themeRepository = new PrismaUserThemePreferenceRepository(prisma);
-const themeService = new ThemeApplicationService(themeRepository);
-
-// 注册 Theme 事件监听器
-const themeEventListeners = new ThemeEventListeners(themeService);
-themeEventListeners.registerListeners();
-
-logger.info('Event system initialized successfully');
+logger.info('Notification and event system initialized successfully');
 
 // Setup Swagger documentation
 setupSwagger(app);

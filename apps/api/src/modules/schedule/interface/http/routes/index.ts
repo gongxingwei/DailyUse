@@ -5,12 +5,12 @@
  * 整合所有调度相关的路由
  */
 
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { scheduleTaskRoutes } from './scheduleTaskRoutes';
 import { sseController } from '../SSEController';
 import { ScheduleDebugController } from '../debugController';
 
-const router = Router();
+const router: ExpressRouter = Router();
 const debugController = new ScheduleDebugController();
 
 // ===== SSE Event Routes =====
@@ -83,4 +83,4 @@ router.get('/debug/info', debugController.getDebugInfo);
 // ===== ScheduleTask Routes =====
 router.use('/', scheduleTaskRoutes);
 
-export { router as scheduleRoutes };
+export default router;

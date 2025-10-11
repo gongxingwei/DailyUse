@@ -16,7 +16,7 @@ export { ScheduleTaskRepository } from './infrastructure/repositories/ScheduleTa
 export { ScheduleContainer } from './infrastructure/di/ScheduleContainer';
 
 // 接口层
-export { scheduleRoutes } from './interface/http/routes';
+export { default as scheduleRouter } from './interface/http/routes';
 export { ScheduleTaskController } from './interface/http/controllers/ScheduleTaskController';
 export { ScheduleDebugController } from './interface/http/debugController';
 export { sseController } from './interface/http/SSEController';

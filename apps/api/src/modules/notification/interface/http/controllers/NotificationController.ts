@@ -31,17 +31,33 @@ import { createLogger } from '@dailyuse/utils';
 const logger = createLogger('NotificationController');
 
 export class NotificationController {
-  private static notificationService = new NotificationApplicationService(
-    new NotificationRepository(prisma),
-    new NotificationTemplateRepository(prisma),
-    new NotificationPreferenceRepository(prisma),
-  );
-  private static responseBuilder = createResponseBuilder();
+  private static instance: NotificationController;
+  private notificationService: NotificationApplicationService;
+  private responseBuilder: ReturnType<typeof createResponseBuilder>;
+
+  private constructor(notificationService?: NotificationApplicationService) {
+    this.notificationService = notificationService ?? NotificationApplicationService.getInstance();
+    this.responseBuilder = createResponseBuilder();
+  }
+
+  static createInstance(
+    notificationService?: NotificationApplicationService,
+  ): NotificationController {
+    NotificationController.instance = new NotificationController(notificationService);
+    return NotificationController.instance;
+  }
+
+  static getInstance(): NotificationController {
+    if (!NotificationController.instance) {
+      throw new Error('NotificationController not initialized. Call createInstance() first.');
+    }
+    return NotificationController.instance;
+  }
 
   /**
    * 从请求中提取用户账户UUID
    */
-  private static extractAccountUuid(req: Request): string {
+  private extractAccountUuid(req: Request): string {
     const authHeader = req.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
       logger.warn('Authentication attempt without Bearer token');
@@ -67,24 +83,21 @@ export class NotificationController {
    * 创建通知
    * POST /api/v1/notifications
    */
-  static async createNotification(req: Request, res: Response): Promise<Response> {
+  async createNotification(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const request: NotificationContracts.CreateNotificationRequest = req.body;
 
       logger.info('Creating notification', { accountUuid, type: request.type });
 
-      const notification = await NotificationController.notificationService.createNotification(
-        accountUuid,
-        request,
-      );
+      const notification = await this.notificationService.createNotification(accountUuid, request);
 
       logger.info('Notification created successfully', {
         notificationId: notification.uuid,
         accountUuid,
       });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notification,
         'Notification created successfully',
@@ -93,19 +106,19 @@ export class NotificationController {
     } catch (error) {
       if (error instanceof Error) {
         if (error.message.includes('Invalid UUID')) {
-          return NotificationController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
         }
         if (error.message.includes('Authentication')) {
-          return NotificationController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.UNAUTHORIZED,
             message: error.message,
           });
         }
         if (error.message.includes('User has disabled')) {
-          return NotificationController.responseBuilder.sendError(res, {
+          return this.responseBuilder.sendError(res, {
             code: ResponseCode.VALIDATION_ERROR,
             message: error.message,
           });
@@ -115,7 +128,7 @@ export class NotificationController {
       logger.error('Failed to create notification', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to create notification',
       });
@@ -126,14 +139,14 @@ export class NotificationController {
    * 获取通知列表
    * GET /api/v1/notifications
    */
-  static async getNotifications(req: Request, res: Response): Promise<Response> {
+  async getNotifications(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const queryParams = req.query;
 
       logger.debug('Fetching notifications list', { accountUuid, queryParams });
 
-      const listResponse = await NotificationController.notificationService.getNotifications(
+      const listResponse = await this.notificationService.getNotifications(
         accountUuid,
         queryParams,
       );
@@ -144,14 +157,14 @@ export class NotificationController {
         page: listResponse.page,
       });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         listResponse,
         'Notifications retrieved successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
@@ -160,7 +173,7 @@ export class NotificationController {
       logger.error('Failed to retrieve notifications', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve notifications',
       });
@@ -171,21 +184,18 @@ export class NotificationController {
    * 根据ID获取通知
    * GET /api/v1/notifications/:id
    */
-  static async getNotificationById(req: Request, res: Response): Promise<Response> {
+  async getNotificationById(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { id } = req.params;
 
       logger.debug('Fetching notification by ID', { accountUuid, notificationId: id });
 
-      const notification = await NotificationController.notificationService.getNotificationById(
-        accountUuid,
-        id,
-      );
+      const notification = await this.notificationService.getNotificationById(accountUuid, id);
 
       if (!notification) {
         logger.warn('Notification not found', { accountUuid, notificationId: id });
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: 'Notification not found',
         });
@@ -193,20 +203,20 @@ export class NotificationController {
 
       logger.info('Notification retrieved successfully', { accountUuid, notificationId: id });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notification,
         'Notification retrieved successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.FORBIDDEN,
           message: error.message,
         });
@@ -215,7 +225,7 @@ export class NotificationController {
       logger.error('Failed to retrieve notification', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to retrieve notification',
       });
@@ -226,37 +236,33 @@ export class NotificationController {
    * 删除通知
    * DELETE /api/v1/notifications/:id
    */
-  static async deleteNotification(req: Request, res: Response): Promise<Response> {
+  async deleteNotification(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { id } = req.params;
 
       logger.info('Deleting notification', { accountUuid, notificationId: id });
 
-      await NotificationController.notificationService.deleteNotification(accountUuid, id);
+      await this.notificationService.deleteNotification(accountUuid, id);
 
       logger.info('Notification deleted successfully', { accountUuid, notificationId: id });
 
-      return NotificationController.responseBuilder.sendSuccess(
-        res,
-        null,
-        'Notification deleted successfully',
-      );
+      return this.responseBuilder.sendSuccess(res, null, 'Notification deleted successfully');
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.FORBIDDEN,
           message: error.message,
         });
@@ -265,7 +271,7 @@ export class NotificationController {
       logger.error('Failed to delete notification', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to delete notification',
       });
@@ -285,40 +291,37 @@ export class NotificationController {
    * - 自动设置 readAt 时间戳
    * - 发布 NotificationRead 领域事件
    */
-  static async markAsRead(req: Request, res: Response): Promise<Response> {
+  async markAsRead(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { id } = req.params;
 
       logger.info('Marking notification as read', { accountUuid, notificationId: id });
 
-      const notification = await NotificationController.notificationService.markAsRead(
-        accountUuid,
-        id,
-      );
+      const notification = await this.notificationService.markAsRead(accountUuid, id);
 
       logger.info('Notification marked as read', { accountUuid, notificationId: id });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notification,
         'Notification marked as read successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Cannot mark')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.VALIDATION_ERROR,
           message: error.message,
         });
@@ -327,7 +330,7 @@ export class NotificationController {
       logger.error('Failed to mark notification as read', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to mark notification as read',
       });
@@ -343,40 +346,37 @@ export class NotificationController {
    * - 自动设置 dismissedAt 时间戳
    * - 发布 NotificationDismissed 领域事件
    */
-  static async markAsDismissed(req: Request, res: Response): Promise<Response> {
+  async markAsDismissed(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { id } = req.params;
 
       logger.info('Marking notification as dismissed', { accountUuid, notificationId: id });
 
-      const notification = await NotificationController.notificationService.markAsDismissed(
-        accountUuid,
-        id,
-      );
+      const notification = await this.notificationService.markAsDismissed(accountUuid, id);
 
       logger.info('Notification marked as dismissed', { accountUuid, notificationId: id });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notification,
         'Notification marked as dismissed successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('not found')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Cannot mark')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.VALIDATION_ERROR,
           message: error.message,
         });
@@ -385,7 +385,7 @@ export class NotificationController {
       logger.error('Failed to mark notification as dismissed', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message:
           error instanceof Error ? error.message : 'Failed to mark notification as dismissed',
@@ -406,9 +406,9 @@ export class NotificationController {
    * - 原子性批量更新
    * - 统一的业务规则验证
    */
-  static async batchMarkAsRead(req: Request, res: Response): Promise<Response> {
+  async batchMarkAsRead(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { notificationIds } = req.body as { notificationIds: string[] };
 
       logger.info('Batch marking notifications as read', {
@@ -416,7 +416,7 @@ export class NotificationController {
         count: notificationIds.length,
       });
 
-      const notifications = await NotificationController.notificationService.batchMarkAsRead(
+      const notifications = await this.notificationService.batchMarkAsRead(
         accountUuid,
         notificationIds,
       );
@@ -426,20 +426,20 @@ export class NotificationController {
         count: notifications.length,
       });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notifications,
         'Notifications batch marked as read successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.FORBIDDEN,
           message: error.message,
         });
@@ -448,7 +448,7 @@ export class NotificationController {
       logger.error('Failed to batch mark notifications as read', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message:
           error instanceof Error ? error.message : 'Failed to batch mark notifications as read',
@@ -460,9 +460,9 @@ export class NotificationController {
    * 批量标记为已忽略
    * POST /api/v1/notifications/batch-dismiss
    */
-  static async batchMarkAsDismissed(req: Request, res: Response): Promise<Response> {
+  async batchMarkAsDismissed(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { notificationIds } = req.body as { notificationIds: string[] };
 
       logger.info('Batch marking notifications as dismissed', {
@@ -470,7 +470,7 @@ export class NotificationController {
         count: notificationIds.length,
       });
 
-      const notifications = await NotificationController.notificationService.batchMarkAsDismissed(
+      const notifications = await this.notificationService.batchMarkAsDismissed(
         accountUuid,
         notificationIds,
       );
@@ -480,20 +480,20 @@ export class NotificationController {
         count: notifications.length,
       });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notifications,
         'Notifications batch marked as dismissed successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.FORBIDDEN,
           message: error.message,
         });
@@ -502,7 +502,7 @@ export class NotificationController {
       logger.error('Failed to batch mark notifications as dismissed', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message:
           error instanceof Error
@@ -521,34 +521,31 @@ export class NotificationController {
    * - 原子性操作
    * - 验证所有权
    */
-  static async batchDeleteNotifications(req: Request, res: Response): Promise<Response> {
+  async batchDeleteNotifications(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const { notificationIds } = req.body as { notificationIds: string[] };
 
       logger.info('Batch deleting notifications', { accountUuid, count: notificationIds.length });
 
-      await NotificationController.notificationService.batchDeleteNotifications(
-        accountUuid,
-        notificationIds,
-      );
+      await this.notificationService.batchDeleteNotifications(accountUuid, notificationIds);
 
       logger.info('Notifications batch deleted', { accountUuid, count: notificationIds.length });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         null,
         'Notifications batch deleted successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Access denied')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.FORBIDDEN,
           message: error.message,
         });
@@ -557,7 +554,7 @@ export class NotificationController {
       logger.error('Failed to batch delete notifications', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to batch delete notifications',
       });
@@ -572,24 +569,24 @@ export class NotificationController {
    * 获取未读通知数量
    * GET /api/v1/notifications/unread-count
    */
-  static async getUnreadCount(req: Request, res: Response): Promise<Response> {
+  async getUnreadCount(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
 
       logger.debug('Getting unread count', { accountUuid });
 
-      const count = await NotificationController.notificationService.getUnreadCount(accountUuid);
+      const count = await this.notificationService.getUnreadCount(accountUuid);
 
       logger.debug('Unread count retrieved', { accountUuid, count });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         { count },
         'Unread count retrieved successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
@@ -598,7 +595,7 @@ export class NotificationController {
       logger.error('Failed to get unread count', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to get unread count',
       });
@@ -609,25 +606,24 @@ export class NotificationController {
    * 获取通知统计信息
    * GET /api/v1/notifications/stats
    */
-  static async getNotificationStats(req: Request, res: Response): Promise<Response> {
+  async getNotificationStats(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
 
       logger.debug('Getting notification stats', { accountUuid });
 
-      const stats =
-        await NotificationController.notificationService.getNotificationStats(accountUuid);
+      const stats = await this.notificationService.getNotificationStats(accountUuid);
 
       logger.debug('Notification stats retrieved', { accountUuid, stats });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         stats,
         'Notification stats retrieved successfully',
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
@@ -636,7 +632,7 @@ export class NotificationController {
       logger.error('Failed to get notification stats', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: error instanceof Error ? error.message : 'Failed to get notification stats',
       });
@@ -656,9 +652,9 @@ export class NotificationController {
    * - 渲染模板内容
    * - 应用默认配置
    */
-  static async createFromTemplate(req: Request, res: Response): Promise<Response> {
+  async createFromTemplate(req: Request, res: Response): Promise<Response> {
     try {
-      const accountUuid = NotificationController.extractAccountUuid(req);
+      const accountUuid = this.extractAccountUuid(req);
       const request = req.body;
 
       logger.info('Creating notification from template', {
@@ -666,11 +662,10 @@ export class NotificationController {
         templateUuid: request.templateUuid,
       });
 
-      const notification =
-        await NotificationController.notificationService.createNotificationFromTemplate(
-          accountUuid,
-          request,
-        );
+      const notification = await this.notificationService.createNotificationFromTemplate(
+        accountUuid,
+        request,
+      );
 
       logger.info('Notification created from template successfully', {
         accountUuid,
@@ -678,7 +673,7 @@ export class NotificationController {
         templateUuid: request.templateUuid,
       });
 
-      return NotificationController.responseBuilder.sendSuccess(
+      return this.responseBuilder.sendSuccess(
         res,
         notification,
         'Notification created from template successfully',
@@ -686,19 +681,19 @@ export class NotificationController {
       );
     } catch (error) {
       if (error instanceof Error && error.message.includes('Authentication')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.UNAUTHORIZED,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Template not found')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.NOT_FOUND,
           message: error.message,
         });
       }
       if (error instanceof Error && error.message.includes('Template is disabled')) {
-        return NotificationController.responseBuilder.sendError(res, {
+        return this.responseBuilder.sendError(res, {
           code: ResponseCode.VALIDATION_ERROR,
           message: error.message,
         });
@@ -707,7 +702,7 @@ export class NotificationController {
       logger.error('Failed to create notification from template', {
         error: error instanceof Error ? error.message : String(error),
       });
-      return NotificationController.responseBuilder.sendError(res, {
+      return this.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message:
           error instanceof Error ? error.message : 'Failed to create notification from template',

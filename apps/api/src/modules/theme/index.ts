@@ -18,3 +18,6 @@ export { PrismaUserThemePreferenceRepository } from './infrastructure/repositori
 
 // Interface Layer
 export { ThemeController, themeRouter } from './interface';
+
+// Initialization Layer
+export { registerThemeInitializationTasks } from './initialization/themeInitialization';

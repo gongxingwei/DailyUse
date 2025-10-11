@@ -7,8 +7,8 @@ export * from './controllers/NotificationController';
 export * from './controllers/NotificationPreferenceController';
 export * from './controllers/NotificationTemplateController';
 export {
-  default as notificationRoutes,
-  notificationPreferenceRoutes,
-  notificationTemplateRoutes,
+  router as notificationRouter,
+  notificationPreferenceRouter,
+  notificationTemplateRouter,
 } from './routes/notificationRoutes';
-export { notificationSSERoutes } from './routes/notificationSSERoutes';
+export { notificationSSERouter, sseClientManager } from './routes/notificationSSERoutes';

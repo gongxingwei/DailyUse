@@ -1,30 +1,77 @@
 {
+  // 继承基础配置
   "extends": "../../tsconfig.base.json",
+
   "compilerOptions": {
+    // ============================================================
+    // 路径和输出配置
+    // ============================================================
+
+    // 基础路径：相对路径的起点
+    "baseUrl": ".",
+
+    // 输出目录：编译后的 JavaScript 和类型声明文件
     "outDir": "./dist",
-    // 移除 rootDir 限制，让 TypeScript 自动推断
-    // "rootDir": "./src",
-    "forceConsistentCasingInFileNames": true,
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "skipLibCheck": true, // 跳过第三方库的类型检查，提高性能
-    "types": ["vitest/globals"], // 添加 Vitest 全局类型支持
+
+    // 源码根目录：限制编译范围
+    "rootDir": "./src",
+
+    // 生成输出文件
+    "noEmit": false,
+
+    // ============================================================
+    // Composite 项目配置（Monorepo 库的核心）
+    // ============================================================
+
+    // 启用项目引用模式（支持类型热更新）
+    "composite": true,
+
+    // 生成类型声明文件
+    "declaration": true,
+
+    // 生成声明文件的 source map
+    "declarationMap": true,
+
+    // 生成 JavaScript 的 source map
+    "sourceMap": true,
+
+    // ============================================================
+    // 库环境配置（Domain Server 包）
+    // ============================================================
+
+    // 标准库：仅包含 ES2020（不包含 DOM）
+    "lib": ["ES2020"],
+
+    // 类型定义：包含 Node.js 和 Vitest 类型
+    "types": ["node", "vitest/globals"],
+
+    // ============================================================
+    // 本地路径别名配置
+    // ============================================================
+
+    // 路径别名：仅用于包内部导入
     "paths": {
-      "@/*": ["./src/*"],
-      "@dailyuse/contracts": ["../../packages/contracts/src/index.ts"],
-      "@dailyuse/domain-server": ["../../packages/domain-server/src/index.ts"],
-      "@dailyuse/domain-core": ["../../packages/domain-core/src/index.ts"],
-      "@dailyuse/utils": ["../../packages/utils/src/index.ts"]
+      "@/*": ["./src/*"]
+
+      // 依赖的包通过 references 引用
+      // TypeScript 会从它们的 dist 目录读取类型
     }
   },
+
+  // ============================================================
+  // 包含和排除配置
+  // ============================================================
+
+  // 包含的文件
   "include": ["src/**/*"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    // 明确排除其他包的源码，只在类型检查时使用
-    "../../packages/contracts/src/**/*",
-    "../../packages/domain-core/src/**/*",
-    "../../packages/utils/src/**/*"
-  ]
+
+  // 排除的文件
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+
+  // ============================================================
+  // 项目引用配置（依赖的包）
+  // ============================================================
+
+  // Domain Server 依赖的包
+  "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
 }

@@ -1,5 +1,5 @@
-import { Router } from 'express';
-import { GoalController } from '../controllers/GoalController.js';
+import { Router, type Router as ExpressRouter } from 'express';
+import { GoalController } from '../controllers/GoalController';
 
 /**
  * @swagger
@@ -20,7 +20,7 @@ import { GoalController } from '../controllers/GoalController.js';
  * 3. 提供聚合根完整视图
  * 4. 所有方法统一使用 responseBuilder
  */
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ============ DDD 聚合根控制路由 ============
 // 注意：聚合路由必须在通用 CRUD 路由之前注册，避免 /:id 路由冲突

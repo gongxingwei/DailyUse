@@ -1,30 +1,54 @@
 {
+  // 继承基础配置
   "extends": "./tsconfig.base.json",
+
   "compilerOptions": {
+    // ============================================================
+    // 根项目配置
+    // ============================================================
+
+    // 基础路径：所有相对路径从此处开始解析
     "baseUrl": ".",
-    "paths": {
-      "@desktop/*": ["apps/desktop/src/*"],
-      "@web/*": ["apps/web/src/*"],
-      "@api/*": ["apps/api/src/*"],
-      "@packages/*": ["packages/*/src"],
-      "@contracts/*": ["packages/contracts/src/*"],
-      "@domain-core/*": ["packages/domain-core/src/*"],
-      "@domain-client/*": ["packages/domain-client/src/*"],
-      "@domain-server/*": ["packages/domain-server/src/*"],
-      "@ui/*": ["packages/ui/src/*"],
-      "@utils/*": ["packages/utils/src/*"]
-    }
+
+    // 根项目不生成输出文件（只用于类型检查）
+    "noEmit": true,
+
+    // 根项目不是 composite 项目（不被其他项目引用）
+    "composite": false
   },
+
+  // 不包含任何文件（只用于组织项目引用）
   "files": [],
+
+  // ============================================================
+  // 项目引用配置（Monorepo 关键配置）
+  // ============================================================
+  // 通过 references 建立项目间的依赖关系，TypeScript 会：
+  // 1. 按依赖顺序构建项目
+  // 2. 启用增量编译和并行构建
+  // 3. 确保类型定义实时更新（热更新）
+  // 4. 只重新构建受影响的项目
   "references": [
-    { "path": "./apps/desktop" },
-    { "path": "./apps/web" },
+    // 应用层项目
     { "path": "./apps/api" },
-    // { "path": "./packages/contracts" },
+    { "path": "./apps/web" },
+    { "path": "./apps/desktop" },
+
+    // 基础库（无依赖，最先构建）
+    { "path": "./packages/contracts" },
+    { "path": "./packages/utils" },
+
+    // 核心领域逻辑（依赖基础库）
     { "path": "./packages/domain-core" },
+
+    // 客户端和服务端领域逻辑（依赖核心）
     { "path": "./packages/domain-client" },
     { "path": "./packages/domain-server" },
+
+    // UI 组件库
     { "path": "./packages/ui" },
-    // { "path": "./packages/utils" }
+
+    // 静态资源
+    { "path": "./packages/assets" }
   ]
 }
