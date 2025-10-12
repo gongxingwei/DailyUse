@@ -82,21 +82,25 @@
   // - dist: 构建输出（避免重复编译）
   // - *.test.ts: 测试文件（可选，根据需求决定）
   // - *.spec.ts: 规范文件（可选）
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+  // - src/**/__tests__/manual/**/*: 手动测试文件使用旧的 API
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/**/__tests__/manual/**/*"
+  ]
 
   // ============================================================
   // 项目引用配置（依赖的包）
   // ============================================================
 
-  // 声明此项目依赖的其他 TypeScript 项目
-  // TypeScript 会：
-  // 1. 确保依赖项先构建
-  // 2. 从依赖项的 dist 目录读取类型定义（而不是 src）
-  // 3. 监听依赖项的变化并触发重新编译（热更新）
-  "references": [
-    { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
-    { "path": "../../packages/domain-server" },
-    { "path": "../../packages/utils" }
-  ]
+  // References removed: domain-core, contracts, domain-server have composite:false for tsup --dts compatibility
+  // TypeScript will resolve types from node_modules/@dailyuse/* using package.json exports
+  // "references": [
+  //   { "path": "../../packages/contracts" },
+  //   { "path": "../../packages/domain-core" },
+  //   { "path": "../../packages/domain-server" },
+  //   { "path": "../../packages/utils" }
+  // ]
 }

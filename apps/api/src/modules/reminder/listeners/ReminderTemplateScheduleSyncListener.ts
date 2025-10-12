@@ -1,20 +1,26 @@
 import { createLogger, eventBus } from '@dailyuse/utils';
-import { RecurringScheduleTaskDomainService, ReminderTemplate } from '@dailyuse/domain-server';
+// TODO: Migrate to new Schedule module
+// import { RecurringScheduleTaskDomainService, ReminderTemplate } from '@dailyuse/domain-server';
+import type { ReminderTemplate } from '@dailyuse/domain-server';
 
 const logger = createLogger('ReminderTemplateScheduleSyncListener');
 
 /**
  * ReminderTemplate 与 Schedule 模块同步监听器
  * 监听提醒模板的创建、更新、删除事件，自动同步到调度系统
+ *
+ * TODO: Migrate to new Schedule module architecture
  */
 
 /**
  * 注册 Reminder 模块的事件处理器
  */
-export function registerReminderEventHandlers(
-  scheduleTaskService: RecurringScheduleTaskDomainService,
-): void {
-  logger.info('📝 [Reminder] 注册事件处理器...');
+export function registerReminderEventHandlers(): void {
+// scheduleTaskService: RecurringScheduleTaskDomainService,
+  logger.info('📝 [Reminder] 注册事件处理器... (DISABLED - TODO: Migrate to new Schedule module)');
+
+  // TODO: Re-enable when new Schedule module is ready
+  /*
 
   // ===================== 监听模板创建事件 =====================
   eventBus.on('ReminderTemplateCreated', async (event: any) => {
@@ -185,15 +191,18 @@ export function registerReminderEventHandlers(
     }
   });
 
-  logger.info('✅ [Reminder] 事件处理器注册完成');
+  logger.info('✅ [Reminder] 事件处理器注册完成 (DISABLED - TODO)');
+  */
 }
 
 /**
  * 初始化 Reminder 模块事件处理器
  * 在应用启动时调用
+ *
+ * TODO: Re-enable when new Schedule module is ready
  */
-export function initializeReminderEventHandlers(
-  scheduleTaskService: RecurringScheduleTaskDomainService,
-): void {
-  registerReminderEventHandlers(scheduleTaskService);
+export function initializeReminderEventHandlers(): void {
+// scheduleTaskService: RecurringScheduleTaskDomainService,
+  // registerReminderEventHandlers(scheduleTaskService);
+  logger.info('⏸️  [Reminder] 事件处理器初始化跳过 - 等待 Schedule 模块迁移');
 }

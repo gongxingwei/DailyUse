@@ -1,111 +1,121 @@
 /**
- * Schedule 模块枚举定义
+ * Schedule Module - Enums
+ * 调度模块 - 枚举类型定义
+ *
+ * @module @dailyuse/contracts/schedule
  */
 
 /**
  * 调度任务状态
- */
-export enum ScheduleStatus {
-  PENDING = 'PENDING',
-  RUNNING = 'RUNNING',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  FAILED = 'FAILED',
-  PAUSED = 'PAUSED',
-}
-
-/**
- * 调度任务优先级
- */
-export enum SchedulePriority {
-  LOW = 'LOW',
-  NORMAL = 'NORMAL',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
-
-/**
- * 调度任务类型
- */
-export enum ScheduleTaskType {
-  TASK_REMINDER = 'TASK_REMINDER',
-  GOAL_REMINDER = 'GOAL_REMINDER',
-  GENERAL_REMINDER = 'GENERAL_REMINDER',
-  SYSTEM_MAINTENANCE = 'SYSTEM_MAINTENANCE',
-  DATA_BACKUP = 'DATA_BACKUP',
-  CLEANUP_TASK = 'CLEANUP_TASK',
-}
-
-/**
- * 重复规则类型
- */
-export enum RecurrenceType {
-  NONE = 'NONE',
-  DAILY = 'DAILY',
-  WEEKLY = 'WEEKLY',
-  MONTHLY = 'MONTHLY',
-  YEARLY = 'YEARLY',
-  CUSTOM = 'CUSTOM',
-}
-
-/**
- * 提醒方式
- */
-export enum AlertMethod {
-  POPUP = 'POPUP',
-  SOUND = 'SOUND',
-  SYSTEM_NOTIFICATION = 'SYSTEM_NOTIFICATION',
-  EMAIL = 'EMAIL',
-  SMS = 'SMS',
-  DESKTOP_FLASH = 'DESKTOP_FLASH',
-}
-
-/**
- * 自定义操作按钮样式
- */
-export enum AlertActionStyle {
-  PRIMARY = 'primary',
-  SECONDARY = 'secondary',
-  SUCCESS = 'success',
-  WARNING = 'warning',
-  DANGER = 'danger',
-}
-
-/**
- * 批量操作类型
- */
-export enum ScheduleBatchOperationType {
-  ENABLE = 'enable',
-  DISABLE = 'disable',
-  CANCEL = 'cancel',
-  DELETE = 'delete',
-  PAUSE = 'pause',
-  RESUME = 'resume',
-}
-
-/**
- * 定时任务状态（用于 RecurringScheduleTask）
+ * Schedule Task Status Enum
+ *
+ * @description 定义调度任务的生命周期状态
  */
 export enum ScheduleTaskStatus {
-  /** 活跃 - 正在运行中 */
+  /** 活跃 - 任务正常运行中 */
   ACTIVE = 'active',
-  /** 暂停 - 临时停止 */
+
+  /** 暂停 - 任务已暂停，不会触发执行 */
   PAUSED = 'paused',
-  /** 已完成 - 仅用于一次性任务 */
+
+  /** 完成 - 任务已完成所有计划执行 */
   COMPLETED = 'completed',
-  /** 已取消 */
+
+  /** 取消 - 任务被用户或系统取消 */
   CANCELLED = 'cancelled',
+
+  /** 失败 - 任务因错误而失败 */
+  FAILED = 'failed',
 }
 
 /**
- * 任务触发器类型
- * @deprecated No longer needed - all tasks use cron expressions
- * - For single tasks: use specific date-time cron (e.g., "0 10 15 1 * 2025")
- * - For recurring tasks: use standard cron (e.g., "0 9 * * 1-5")
+ * 执行状态
+ * Execution Status Enum
+ *
+ * @description 定义单次任务执行的状态
  */
-export enum TriggerType {
-  /** @deprecated All tasks use cron expressions now */
-  CRON = 'cron',
-  /** @deprecated Use cron expression with specific date instead */
-  ONCE = 'once',
+export enum ExecutionStatus {
+  /** 成功 - 执行成功完成 */
+  SUCCESS = 'success',
+
+  /** 失败 - 执行失败 */
+  FAILED = 'failed',
+
+  /** 跳过 - 执行被跳过（如任务已暂停） */
+  SKIPPED = 'skipped',
+
+  /** 超时 - 执行超时 */
+  TIMEOUT = 'timeout',
+
+  /** 重试中 - 正在重试执行 */
+  RETRYING = 'retrying',
+}
+
+/**
+ * 任务优先级
+ * Task Priority Enum
+ *
+ * @description 定义任务的执行优先级
+ */
+export enum TaskPriority {
+  /** 低优先级 */
+  LOW = 'low',
+
+  /** 普通优先级（默认） */
+  NORMAL = 'normal',
+
+  /** 高优先级 */
+  HIGH = 'high',
+
+  /** 紧急优先级 */
+  URGENT = 'urgent',
+}
+
+/**
+ * 来源模块
+ * Source Module Enum
+ *
+ * @description 定义可以使用调度服务的模块
+ */
+export enum SourceModule {
+  /** Reminder 模块 */
+  REMINDER = 'reminder',
+
+  /** Task 模块 */
+  TASK = 'task',
+
+  /** Goal 模块 */
+  GOAL = 'goal',
+
+  /** Notification 模块 */
+  NOTIFICATION = 'notification',
+
+  /** System 系统任务 */
+  SYSTEM = 'system',
+
+  /** Custom 自定义模块 */
+  CUSTOM = 'custom',
+}
+
+/**
+ * 时区
+ * Timezone Enum
+ *
+ * @description 常用时区枚举
+ */
+export enum Timezone {
+  /** UTC 时区 */
+  UTC = 'UTC',
+
+  /** 上海时区（东八区） */
+  SHANGHAI = 'Asia/Shanghai',
+
+  /** 东京时区 */
+  TOKYO = 'Asia/Tokyo',
+
+  /** 纽约时区 */
+  NEW_YORK = 'America/New_York',
+
+  /** 伦敦时区 */
+  LONDON = 'Europe/London',
 }

@@ -1,65 +1,119 @@
 /**
- * Schedule Task Repository Interface
- * @description 调度任务仓储接口定义 - 统一 Cron 设计
- * @author DailyUse Team
- * @date 2025-01-09
- * @updated 2025-10-07 - 重构为统一 Cron 设计，移除旧的复杂方法
+ * IScheduleTaskRepository - Repository Interface
+ * ScheduleTask 仓储接口
+ *
+ * DDD Repository Pattern:
+ * - 抽象聚合根的持久化逻辑
+ * - 提供类集合的操作接口
+ * - 面向领域模型，而非数据库表
+ *
+ * @domain-server/schedule
  */
 
-import type { ScheduleTask } from '@dailyuse/domain-core';
+import type { ScheduleTask } from '../aggregates/ScheduleTask';
+import type { ScheduleContracts } from '@dailyuse/contracts';
+
+type ScheduleTaskStatus = ScheduleContracts.ScheduleTaskStatus;
+type SourceModule = ScheduleContracts.SourceModule;
 
 /**
- * 调度任务仓储接口
- * 只包含核心 CRUD 方法，所有业务逻辑在领域服务中
+ * ScheduleTask 查询选项
+ */
+export interface IScheduleTaskQueryOptions {
+  accountUuid?: string;
+  sourceModule?: SourceModule;
+  sourceEntityId?: string;
+  status?: ScheduleTaskStatus;
+  isEnabled?: boolean;
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * ScheduleTask 仓储接口
  */
 export interface IScheduleTaskRepository {
-  /**
-   * 保存任务（创建或更新）
-   */
-  save(task: ScheduleTask): Promise<ScheduleTask>;
+  // ============ 基本 CRUD ============
 
   /**
-   * 根据 UUID 查找任务
+   * 保存 ScheduleTask 聚合根
+   * - 新建: INSERT
+   * - 更新: UPDATE (基于版本号进行乐观锁)
+   */
+  save(task: ScheduleTask): Promise<void>;
+
+  /**
+   * 根据 UUID 查找 ScheduleTask
    */
   findByUuid(uuid: string): Promise<ScheduleTask | null>;
 
   /**
-   * 根据来源查找任务
+   * 根据 UUID 删除 ScheduleTask
    */
-  findBySource(sourceModule: string, sourceEntityId: string): Promise<ScheduleTask[]>;
+  deleteByUuid(uuid: string): Promise<void>;
+
+  // ============ 查询方法 ============
 
   /**
-   * 查找所有启用的任务
+   * 查询账户下的所有任务
    */
-  findAllEnabled(): Promise<ScheduleTask[]>;
+  findByAccountUuid(accountUuid: string): Promise<ScheduleTask[]>;
 
   /**
-   * 查找所有任务
+   * 查询指定来源模块的所有任务
    */
-  findAll(): Promise<ScheduleTask[]>;
+  findBySourceModule(module: SourceModule, accountUuid?: string): Promise<ScheduleTask[]>;
 
   /**
-   * 删除任务
+   * 查询指定来源实体的任务
    */
-  delete(uuid: string): Promise<void>;
+  findBySourceEntity(
+    module: SourceModule,
+    entityId: string,
+    accountUuid?: string,
+  ): Promise<ScheduleTask[]>;
 
   /**
-   * 更新任务
+   * 查询指定状态的任务
    */
-  update(task: ScheduleTask): Promise<ScheduleTask>;
+  findByStatus(status: ScheduleTaskStatus, accountUuid?: string): Promise<ScheduleTask[]>;
 
   /**
-   * 根据来源模块查找任务
+   * 查询启用的任务
    */
-  findBySourceModule(sourceModule: string): Promise<ScheduleTask[]>;
+  findEnabled(accountUuid?: string): Promise<ScheduleTask[]>;
 
   /**
-   * 查找到期需要执行的任务
+   * 查询需要执行的任务 (到时间 + 已启用 + 活跃状态)
    */
-  findDueTasks(now: Date): Promise<ScheduleTask[]>;
+  findDueTasksForExecution(beforeTime: Date, limit?: number): Promise<ScheduleTask[]>;
 
   /**
-   * 批量保存任务
+   * 高级查询
    */
-  saveMany(tasks: ScheduleTask[]): Promise<ScheduleTask[]>;
+  query(options: IScheduleTaskQueryOptions): Promise<ScheduleTask[]>;
+
+  /**
+   * 计数查询
+   */
+  count(options: IScheduleTaskQueryOptions): Promise<number>;
+
+  // ============ 批量操作 ============
+
+  /**
+   * 批量保存
+   */
+  saveBatch(tasks: ScheduleTask[]): Promise<void>;
+
+  /**
+   * 批量删除
+   */
+  deleteBatch(uuids: string[]): Promise<void>;
+
+  // ============ 事务支持 ============
+
+  /**
+   * 在事务中执行操作
+   */
+  withTransaction<T>(fn: (repo: IScheduleTaskRepository) => Promise<T>): Promise<T>;
 }

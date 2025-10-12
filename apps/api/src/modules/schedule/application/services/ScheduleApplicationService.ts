@@ -1,399 +1,308 @@
+import type {
+  IScheduleTaskRepository,
+  IScheduleStatisticsRepository,
+} from '@dailyuse/domain-server';
+import { ScheduleDomainService } from '@dailyuse/domain-server';
 import type { ScheduleContracts } from '@dailyuse/contracts';
-import {
-  ScheduleStatus,
-  ScheduleTaskType,
-  SchedulePriority,
-  AlertMethod,
-} from '@dailyuse/contracts';
-import { ScheduleDomainService } from '../../domain/services/ScheduleDomainService';
-import type { RecurringScheduleTaskDomainService } from '@dailyuse/domain-server';
+import type { SourceModule, ScheduleTaskStatus } from '@dailyuse/contracts';
+import { ScheduleContainer } from '../../infrastructure/di/ScheduleContainer';
 
 /**
- * Schedule Application Service
- * 调度模块应用服务 - 协调业务流程，处理复杂用例
+ * Schedule 应用服务
+ * 负责协调领域服务和仓储，处理调度任务业务用例
  *
- * 职责：
- * 1. 协调领域服务和仓储
- * 2. 处理应用级业务逻辑（权限验证、配额检查）
- * 3. 发布领域事件
- * 4. 数据转换和验证
+ * 架构职责：
+ * - 委托给 DomainService 处理业务逻辑
+ * - 协调多个领域服务
+ * - 事务管理
+ * - DTO 转换（Domain ↔ Contracts）
  */
 export class ScheduleApplicationService {
   private static instance: ScheduleApplicationService;
+  private domainService: ScheduleDomainService;
 
-  constructor(
-    private scheduleDomainService: ScheduleDomainService,
-    private recurringScheduleTaskDomainService?: RecurringScheduleTaskDomainService,
-  ) {}
+  private constructor(
+    scheduleTaskRepository: IScheduleTaskRepository,
+    scheduleStatisticsRepository: IScheduleStatisticsRepository,
+  ) {
+    this.domainService = new ScheduleDomainService(
+      scheduleTaskRepository,
+      scheduleStatisticsRepository,
+    );
+  }
 
   /**
-   * 创建实例时注入依赖
+   * 创建应用服务实例（支持依赖注入）
    */
   static async createInstance(
-    scheduleDomainService: ScheduleDomainService,
-    recurringScheduleTaskDomainService?: RecurringScheduleTaskDomainService,
+    scheduleTaskRepository?: IScheduleTaskRepository,
+    scheduleStatisticsRepository?: IScheduleStatisticsRepository,
   ): Promise<ScheduleApplicationService> {
-    if (!scheduleDomainService) {
-      throw new Error('ScheduleDomainService is required');
-    }
+    const container = ScheduleContainer.getInstance();
+    const taskRepo = scheduleTaskRepository || container.getScheduleTaskRepository();
+    const statsRepo = scheduleStatisticsRepository || container.getScheduleStatisticsRepository();
 
-    ScheduleApplicationService.instance = new ScheduleApplicationService(
-      scheduleDomainService,
-      recurringScheduleTaskDomainService,
-    );
+    ScheduleApplicationService.instance = new ScheduleApplicationService(taskRepo, statsRepo);
     return ScheduleApplicationService.instance;
   }
 
   /**
-   * 获取服务实例
+   * 获取应用服务单例
    */
   static async getInstance(): Promise<ScheduleApplicationService> {
     if (!ScheduleApplicationService.instance) {
-      throw new Error('ScheduleApplicationService not initialized. Call createInstance() first.');
+      ScheduleApplicationService.instance = await ScheduleApplicationService.createInstance();
     }
     return ScheduleApplicationService.instance;
   }
 
-  // ========== 调度任务管理 ==========
+  // ===== 任务创建 =====
 
   /**
-   * 创建调度任务
+   * 创建新的调度任务
    */
-  async createScheduleTask(
+  async createScheduleTask(params: {
+    accountUuid: string;
+    name: string;
+    description?: string;
+    sourceModule: SourceModule;
+    sourceEntityId: string;
+    schedule: ScheduleContracts.ScheduleConfigServerDTO;
+    retryConfig?: ScheduleContracts.RetryPolicyServerDTO;
+    payload?: Record<string, unknown>;
+    tags?: string[];
+  }): Promise<ScheduleContracts.ScheduleTaskServerDTO> {
+    // 委托给领域服务处理业务逻辑
+    const task = await this.domainService.createScheduleTask(params);
+
+    // 转换为 DTO
+    return task.toServerDTO();
+  }
+
+  /**
+   * 批量创建调度任务
+   */
+  async createScheduleTasksBatch(
+    params: Array<{
+      accountUuid: string;
+      name: string;
+      description?: string;
+      sourceModule: SourceModule;
+      sourceEntityId: string;
+      schedule: ScheduleContracts.ScheduleConfigServerDTO;
+      retryConfig?: ScheduleContracts.RetryPolicyServerDTO;
+      payload?: Record<string, unknown>;
+      tags?: string[];
+    }>,
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    // 委托给领域服务处理
+    const tasks = await this.domainService.createScheduleTasksBatch(params);
+
+    // 转换为 DTO 数组
+    return tasks.map((task) => task.toServerDTO());
+  }
+
+  // ===== 任务查询 =====
+
+  /**
+   * 获取任务详情
+   */
+  async getScheduleTask(taskUuid: string): Promise<ScheduleContracts.ScheduleTaskServerDTO | null> {
+    // 通过仓储查询
+    const container = ScheduleContainer.getInstance();
+    const repository = container.getScheduleTaskRepository();
+    const task = await repository.findByUuid(taskUuid);
+
+    return task ? task.toServerDTO() : null;
+  }
+
+  /**
+   * 获取账户的所有任务
+   */
+  async getScheduleTasksByAccount(
     accountUuid: string,
-    request: ScheduleContracts.CreateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    // 应用层可以添加额外的业务逻辑：
-    // 1. 权限验证
-    // 2. 配额检查
-    // 3. 业务规则验证
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    // 通过仓储查询
+    const container = ScheduleContainer.getInstance();
+    const repository = container.getScheduleTaskRepository();
+    const tasks = await repository.findByAccountUuid(accountUuid);
 
-    const task = await this.scheduleDomainService.createScheduleTask(accountUuid, request);
-    return task.toDTO();
+    // 转换为 DTO 数组
+    return tasks.map((task) => task.toServerDTO());
   }
 
   /**
-   * 获取调度任务
+   * 根据来源模块和实体ID查找任务
    */
-  async getScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO | null> {
-    const task = await this.scheduleDomainService.getScheduleTaskByUuid(accountUuid, uuid);
-    return task ? task.toDTO() : null;
+  async getScheduleTaskBySource(
+    sourceModule: SourceModule,
+    sourceEntityId: string,
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    // 通过仓储查询
+    const container = ScheduleContainer.getInstance();
+    const repository = container.getScheduleTaskRepository();
+    const tasks = await repository.findBySourceEntity(sourceModule, sourceEntityId);
+
+    return tasks.map((task) => task.toServerDTO());
   }
 
   /**
-   * 获取调度任务列表
+   * 查找需要执行的任务
    */
-  async getScheduleTasks(
-    accountUuid: string,
-    query: ScheduleContracts.IScheduleTaskQuery,
-  ): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
-    const result = await this.scheduleDomainService.getScheduleTasks(accountUuid, query);
-    return {
-      tasks: result.tasks.map((task) => task.toDTO()),
-      total: result.total,
-      pagination: result.pagination || {
-        offset: 0,
-        limit: result.tasks.length,
-        hasMore: false,
-      },
-    };
+  async findDueTasksForExecution(
+    beforeTime: Date,
+    limit?: number,
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    // 委托给领域服务处理
+    const tasks = await this.domainService.findDueTasksForExecution(beforeTime, limit);
+
+    // 转换为 DTO 数组
+    return tasks.map((task) => task.toServerDTO());
   }
 
-  /**
-   * 更新调度任务
-   */
-  async updateScheduleTask(
-    accountUuid: string,
-    uuid: string,
-    request: ScheduleContracts.UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const task = await this.scheduleDomainService.updateScheduleTask(accountUuid, uuid, request);
-    return task.toDTO();
-  }
-
-  /**
-   * 删除调度任务
-   */
-  async deleteScheduleTask(accountUuid: string, uuid: string): Promise<void> {
-    await this.scheduleDomainService.deleteScheduleTask(accountUuid, uuid);
-  }
-
-  // ========== 任务状态管理 ==========
-
-  /**
-   * 启用调度任务
-   */
-  async enableScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const task = await this.scheduleDomainService.enableScheduleTask(accountUuid, uuid);
-    return task.toDTO();
-  }
-
-  /**
-   * 禁用调度任务
-   */
-  async disableScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const task = await this.scheduleDomainService.disableScheduleTask(accountUuid, uuid);
-    return task.toDTO();
-  }
-
-  /**
-   * 暂停调度任务
-   */
-  async pauseScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const task = await this.scheduleDomainService.pauseScheduleTask(accountUuid, uuid);
-    return task.toDTO();
-  }
-
-  /**
-   * 恢复调度任务
-   */
-  async resumeScheduleTask(
-    accountUuid: string,
-    uuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const task = await this.scheduleDomainService.resumeScheduleTask(accountUuid, uuid);
-    return task.toDTO();
-  }
+  // ===== 任务执行 =====
 
   /**
    * 执行调度任务
    */
-  async executeScheduleTask(accountUuid: string, uuid: string, force?: boolean): Promise<any> {
-    return await this.scheduleDomainService.executeScheduleTask(accountUuid, uuid, force);
-  }
-
-  // ========== 批量操作 ==========
-
-  /**
-   * 批量操作调度任务
-   */
-  async batchOperateScheduleTasks(
-    accountUuid: string,
-    request: ScheduleContracts.BatchScheduleTaskOperationRequestDto,
-  ): Promise<ScheduleContracts.BatchScheduleTaskOperationResponseDto> {
-    const results: ScheduleContracts.BatchScheduleTaskOperationResponseDto = {
-      success: [],
-      failed: [],
-      summary: {
-        total: request.taskUuids.length,
-        success: 0,
-        failed: 0,
-      },
-    };
-
-    for (const taskUuid of request.taskUuids) {
-      try {
-        switch (request.operation) {
-          case 'enable':
-            await this.enableScheduleTask(accountUuid, taskUuid);
-            break;
-          case 'disable':
-            await this.disableScheduleTask(accountUuid, taskUuid);
-            break;
-          case 'pause':
-            await this.pauseScheduleTask(accountUuid, taskUuid);
-            break;
-          case 'resume':
-            await this.resumeScheduleTask(accountUuid, taskUuid);
-            break;
-          case 'delete':
-            await this.deleteScheduleTask(accountUuid, taskUuid);
-            break;
-          case 'cancel':
-            await this.updateScheduleTask(accountUuid, taskUuid, {
-              status: ScheduleStatus.CANCELLED,
-            });
-            break;
-          default:
-            throw new Error(`Unsupported operation: ${request.operation}`);
-        }
-
-        results.success.push(taskUuid);
-        results.summary.success++;
-      } catch (error) {
-        results.failed.push({
-          taskUuid,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        results.summary.failed++;
-      }
-    }
-
-    return results;
-  }
-
-  // ========== 快捷操作 ==========
-
-  /**
-   * 快速创建提醒任务
-   */
-  async createQuickReminder(
-    accountUuid: string,
-    request: ScheduleContracts.QuickReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const createRequest: ScheduleContracts.CreateScheduleTaskRequestDto = {
-      name: request.title,
-      description: request.message,
-      taskType: ScheduleTaskType.GENERAL_REMINDER,
-      payload: {
-        type: ScheduleTaskType.GENERAL_REMINDER,
-        data: {
-          title: request.title,
-          message: request.message,
-        },
-      },
-      scheduledTime: request.reminderTime,
-      priority: request.priority || SchedulePriority.NORMAL,
-      alertConfig: {
-        methods: request.methods || [AlertMethod.POPUP, AlertMethod.SYSTEM_NOTIFICATION],
-        allowSnooze: request.allowSnooze !== false,
-        snoozeOptions: [5, 10, 15, 30],
-      },
-      tags: request.tags || [],
-    };
-
-    return await this.createScheduleTask(accountUuid, createRequest);
-  }
-
-  /**
-   * 延后提醒
-   */
-  async snoozeReminder(
-    accountUuid: string,
-    request: ScheduleContracts.SnoozeReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskDTO> {
-    const snoozeTime = new Date(Date.now() + request.snoozeMinutes * 60 * 1000);
-
-    return await this.updateScheduleTask(accountUuid, request.taskUuid, {
-      scheduledTime: snoozeTime,
-      status: ScheduleStatus.PENDING,
+  async executeScheduleTask(
+    params: {
+      taskUuid: string;
+      actualStartedAt?: Date;
+    },
+    executeFn: (task: ScheduleContracts.ScheduleTaskServerDTO) => Promise<{
+      executionUuid: string;
+      status: ScheduleContracts.ExecutionStatus;
+      duration: number;
+      errorMessage?: string;
+    }>,
+  ): Promise<{
+    executionUuid: string;
+    status: ScheduleContracts.ExecutionStatus;
+    duration: number;
+    errorMessage?: string;
+  }> {
+    // 委托给领域服务处理，需要包装 executeFn
+    return await this.domainService.executeScheduleTask(params, async (task) => {
+      // 转换为 DTO 后调用
+      return await executeFn(task.toServerDTO());
     });
   }
 
+  // ===== 任务生命周期管理 =====
+
   /**
-   * 获取即将到来的任务
-   * 包含一次性任务(ScheduleTask)和周期性任务(RecurringScheduleTask)
+   * 暂停任务
    */
-  async getUpcomingTasks(
-    accountUuid: string,
-    withinMinutes: number = 60,
-    limit?: number,
-  ): Promise<ScheduleContracts.UpcomingTasksResponseDto> {
-    const now = new Date();
-    const endTime = new Date(Date.now() + withinMinutes * 60 * 1000);
-
-    // 1. 查询一次性任务 (ScheduleTask)
-    const query: ScheduleContracts.IScheduleTaskQuery = {
-      createdBy: accountUuid,
-      status: [ScheduleStatus.PENDING],
-      enabled: true,
-      timeRange: {
-        start: now,
-        end: endTime,
-      },
-      sorting: {
-        field: 'scheduledTime',
-        order: 'asc',
-      },
-      pagination: {
-        offset: 0,
-        limit: limit || 100,
-      },
-    };
-
-    const oneTimeTasksResult = await this.getScheduleTasks(accountUuid, query);
-
-    let allTasks: any[] = [
-      ...oneTimeTasksResult.tasks.map((task) => ({
-        uuid: task.uuid,
-        name: task.name,
-        taskType: task.taskType,
-        scheduledTime: task.scheduledTime,
-        priority: task.priority,
-        alertConfig: task.alertConfig,
-        minutesUntil: Math.floor((task.scheduledTime.getTime() - now.getTime()) / (1000 * 60)),
-      })),
-    ];
-
-    // 2. 查询周期性任务 (RecurringScheduleTask)
-    if (this.recurringScheduleTaskDomainService) {
-      try {
-        // 获取所有已启用的周期性任务（不能直接按 accountUuid 过滤，因为表中没有此字段）
-        // 需要通过 sourceModule 和对应的模板来间接查询
-        // 这里我们先获取所有启用的任务，然后根据 sourceModule 过滤
-        const allRecurringTasks = await this.recurringScheduleTaskDomainService.getAllTasks();
-
-        // 过滤出在时间范围内且已启用的周期性任务
-        // 注意：这里无法直接过滤 accountUuid，需要在应用层通过 sourceEntityId 关联查询
-        // 为了性能考虑，我们只处理 enabled 和时间范围的过滤
-        const upcomingRecurringTasks = allRecurringTasks
-          .filter((task: any) => {
-            const nextRun = task.nextRunAt;
-            return (
-              task.enabled &&
-              task.status === 'ACTIVE' &&
-              nextRun &&
-              nextRun >= now &&
-              nextRun <= endTime
-            );
-          })
-          .map((task: any) => ({
-            uuid: task.uuid,
-            name: task.name,
-            taskType: 'RECURRING' as ScheduleTaskType,
-            scheduledTime: task.nextRunAt,
-            priority: task.priority || SchedulePriority.NORMAL,
-            alertConfig: task.metadata?.alertConfig,
-            minutesUntil: Math.floor((task.nextRunAt.getTime() - now.getTime()) / (1000 * 60)),
-          }));
-
-        allTasks = [...allTasks, ...upcomingRecurringTasks];
-      } catch (error) {
-        console.error('[ScheduleApplicationService] 获取周期性任务失败:', error);
-        // 继续执行，只返回一次性任务
-      }
-    }
-
-    // 3. 按执行时间排序
-    allTasks.sort((a, b) => a.scheduledTime.getTime() - b.scheduledTime.getTime());
-
-    // 4. 限制数量
-    const limitedTasks = allTasks.slice(0, limit || 100);
-
-    return {
-      tasks: limitedTasks,
-      withinHours: withinMinutes / 60,
-      queryTime: now,
-    };
+  async pauseScheduleTask(taskUuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.pauseScheduleTask(taskUuid);
   }
 
   /**
-   * 获取统计信息
+   * 恢复任务
    */
-  async getStatistics(accountUuid: string): Promise<ScheduleContracts.IScheduleTaskStatistics> {
-    // 这个方法需要通过仓储层直接调用，因为统计逻辑比较复杂
-    // 实际实现中应该通过仓储接口获取
-    throw new Error('Statistics method not yet implemented');
+  async resumeScheduleTask(taskUuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.resumeScheduleTask(taskUuid);
   }
 
   /**
-   * 初始化模块数据
-   * 登录时调用，同步所有数据
+   * 完成任务
    */
-  async initializeModuleData(accountUuid: string): Promise<void> {
-    console.log(`Initializing schedule module data for account: ${accountUuid}`);
-    // 这里可以添加具体的初始化逻辑
+  async completeScheduleTask(taskUuid: string, reason?: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.completeScheduleTask(taskUuid, reason);
+  }
+
+  /**
+   * 取消任务
+   */
+  async cancelScheduleTask(taskUuid: string, reason?: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.cancelScheduleTask(taskUuid, reason);
+  }
+
+  /**
+   * 任务失败
+   */
+  async failScheduleTask(taskUuid: string, reason: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.failScheduleTask(taskUuid, reason);
+  }
+
+  /**
+   * 删除任务
+   */
+  async deleteScheduleTask(taskUuid: string): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.deleteScheduleTask(taskUuid);
+  }
+
+  // ===== 任务配置更新 =====
+
+  /**
+   * 更新任务调度配置
+   */
+  async updateScheduleConfig(
+    taskUuid: string,
+    newSchedule: ScheduleContracts.ScheduleConfigServerDTO,
+  ): Promise<void> {
+    // 需要转换为值对象
+    const { ScheduleConfig } = await import('@dailyuse/domain-server');
+    const scheduleVO = ScheduleConfig.fromDTO({
+      ...newSchedule,
+      startDate: newSchedule.startDate ? new Date(newSchedule.startDate).getTime() : null,
+      endDate: newSchedule.endDate ? new Date(newSchedule.endDate).getTime() : null,
+    });
+
+    // 委托给领域服务处理
+    await this.domainService.updateScheduleConfig(taskUuid, scheduleVO);
+  }
+
+  /**
+   * 更新任务元数据
+   */
+  async updateTaskMetadata(
+    taskUuid: string,
+    options: {
+      payload?: Record<string, unknown>;
+      tagsToAdd?: string[];
+      tagsToRemove?: string[];
+    },
+  ): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.updateTaskMetadata(
+      taskUuid,
+      options.payload,
+      options.tagsToAdd,
+      options.tagsToRemove,
+    );
+  }
+
+  // ===== 批量操作 =====
+
+  /**
+   * 批量删除任务
+   */
+  async deleteScheduleTasksBatch(taskUuids: string[]): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.deleteScheduleTasksBatch(taskUuids);
+  }
+
+  /**
+   * 批量暂停任务
+   */
+  async pauseScheduleTasksBatch(taskUuids: string[]): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.pauseScheduleTasksBatch(taskUuids);
+  }
+
+  /**
+   * 批量恢复任务
+   */
+  async resumeScheduleTasksBatch(taskUuids: string[]): Promise<void> {
+    // 委托给领域服务处理
+    await this.domainService.resumeScheduleTasksBatch(taskUuids);
   }
 }

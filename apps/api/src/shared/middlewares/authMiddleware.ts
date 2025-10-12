@@ -71,7 +71,7 @@ export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: N
       // 向后兼容：直接提供 accountUuid
       req.accountUuid = decoded.accountUuid;
 
-      next();
+      return next();
     } catch (jwtError) {
       console.error('JWT验证失败:', jwtError);
       return res.status(401).json({

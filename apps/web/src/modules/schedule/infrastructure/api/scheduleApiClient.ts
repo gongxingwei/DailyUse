@@ -3,177 +3,181 @@ import { type ScheduleContracts } from '@dailyuse/contracts';
 
 /**
  * Schedule API 客户端
+ * 严格参考 Repository 模块实现
  */
 export class ScheduleApiClient {
   private readonly baseUrl = '/schedules';
 
-  // ==================== Schedule Task CRUD ====================
+  // ===== Schedule Task CRUD =====
 
   /**
    * 创建调度任务
    */
-  async createScheduleTask(
-    request: ScheduleContracts.CreateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(this.baseUrl, request);
-    return data.schedule;
+  async createTask(
+    request: ScheduleContracts.CreateScheduleTaskRequestDTO,
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO> {
+    const data = await apiClient.post(`${this.baseUrl}/tasks`, request);
+    return data;
+  }
+
+  /**
+   * 批量创建调度任务
+   */
+  async createTasksBatch(
+    tasks: ScheduleContracts.CreateScheduleTaskRequestDTO[],
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    const data = await apiClient.post(`${this.baseUrl}/tasks/batch`, { tasks });
+    return data;
   }
 
   /**
    * 获取调度任务列表
    */
-  async getScheduleTasks(params?: {
-    page?: number;
-    limit?: number;
-    status?: string;
-    taskType?: string;
-    enabled?: boolean;
-    tags?: string[];
-  }): Promise<ScheduleContracts.ScheduleTaskListResponseDto> {
-    const data = await apiClient.get(this.baseUrl, { params });
-
-    // 转换后端响应格式 {schedules, total, page, limit, hasMore}
-    // 为契约格式 {tasks, total, pagination}
-    return {
-      tasks: data.schedules || [],
-      total: data.total || 0,
-      pagination: {
-        offset: ((data.page || 1) - 1) * (data.limit || 50),
-        limit: data.limit || 50,
-        hasMore: data.hasMore || false,
-      },
-    };
-  }
-
-  /**
-   * 获取单个调度任务
-   */
-  async getScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.get(`${this.baseUrl}/${uuid}`);
-    return data.schedule;
-  }
-
-  /**
-   * 更新调度任务
-   */
-  async updateScheduleTask(
-    uuid: string,
-    request: ScheduleContracts.UpdateScheduleTaskRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.put(`${this.baseUrl}/${uuid}`, request);
-    return data.schedule;
-  }
-
-  /**
-   * 删除调度任务
-   */
-  async deleteScheduleTask(uuid: string): Promise<void> {
-    await apiClient.delete(`${this.baseUrl}/${uuid}`);
-  }
-
-  // ==================== Schedule Task Operations ====================
-
-  /**
-   * 启用调度任务
-   */
-  async enableScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/enable`);
-    return data.schedule;
-  }
-
-  /**
-   * 禁用调度任务
-   */
-  async disableScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/disable`);
-    return data.schedule;
-  }
-
-  /**
-   * 暂停调度任务
-   */
-  async pauseScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/pause`);
-    return data.schedule;
-  }
-
-  /**
-   * 恢复调度任务
-   */
-  async resumeScheduleTask(uuid: string): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/resume`);
-    return data.schedule;
-  }
-
-  /**
-   * 执行调度任务
-   */
-  async executeScheduleTask(uuid: string, force?: boolean): Promise<any> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/execute`, { force });
-    return data.executionResult;
-  }
-
-  /**
-   * 延后提醒
-   */
-  async snoozeReminder(
-    uuid: string,
-    request: ScheduleContracts.SnoozeReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/${uuid}/snooze`, request);
-    return data.schedule;
-  }
-
-  // ==================== Additional Features ====================
-
-  /**
-   * 获取即将到来的任务
-   */
-  async getUpcomingTasks(params?: {
-    withinMinutes?: number;
-    limit?: number;
-  }): Promise<ScheduleContracts.UpcomingTasksResponseDto> {
-    const data = await apiClient.get(`${this.baseUrl}/upcoming`, { params });
+  async getTasks(): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    const data = await apiClient.get(`${this.baseUrl}/tasks`);
     return data;
   }
 
   /**
-   * 快速创建提醒
+   * 获取调度任务详情
    */
-  async createQuickReminder(
-    request: ScheduleContracts.QuickReminderRequestDto,
-  ): Promise<ScheduleContracts.ScheduleTaskResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/quick-reminder`, request);
-    return data.schedule;
-  }
-
-  /**
-   * 批量操作调度任务
-   */
-  async batchOperateScheduleTasks(
-    request: ScheduleContracts.BatchScheduleTaskOperationRequestDto,
-  ): Promise<ScheduleContracts.BatchScheduleTaskOperationResponseDto> {
-    const data = await apiClient.post(`${this.baseUrl}/batch`, request);
+  async getTaskById(taskUuid: string): Promise<ScheduleContracts.ScheduleTaskServerDTO> {
+    const data = await apiClient.get(`${this.baseUrl}/tasks/${taskUuid}`);
     return data;
   }
 
   /**
-   * 获取执行历史
+   * 查找待执行任务
    */
-  async getExecutionHistory(params?: {
-    page?: number;
+  async getDueTasks(params?: {
+    beforeTime?: string;
     limit?: number;
-  }): Promise<{ history: any[]; total: number }> {
-    const data = await apiClient.get(`${this.baseUrl}/execution-history`, { params });
+  }): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    const data = await apiClient.get(`${this.baseUrl}/tasks/due`, { params });
     return data;
   }
+
+  /**
+   * 根据来源模块和实体ID获取任务
+   */
+  async getTaskBySource(
+    sourceModule: ScheduleContracts.SourceModule,
+    sourceEntityId: string,
+  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+    const data = await apiClient.get(`${this.baseUrl}/tasks`, {
+      params: { sourceModule, sourceEntityId },
+    });
+    return data;
+  }
+
+  // ===== Schedule Task Status Management =====
+
+  /**
+   * 暂停任务
+   */
+  async pauseTask(taskUuid: string): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/tasks/${taskUuid}/pause`);
+  }
+
+  /**
+   * 恢复任务
+   */
+  async resumeTask(taskUuid: string): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/tasks/${taskUuid}/resume`);
+  }
+
+  /**
+   * 完成任务
+   */
+  async completeTask(taskUuid: string, reason?: string): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/tasks/${taskUuid}/complete`, { reason });
+  }
+
+  /**
+   * 取消任务
+   */
+  async cancelTask(taskUuid: string, reason?: string): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/tasks/${taskUuid}/cancel`, { reason });
+  }
+
+  /**
+   * 删除任务
+   */
+  async deleteTask(taskUuid: string): Promise<void> {
+    await apiClient.delete(`${this.baseUrl}/tasks/${taskUuid}`);
+  }
+
+  /**
+   * 批量删除任务
+   */
+  async deleteTasksBatch(taskUuids: string[]): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/tasks/batch/delete`, { taskUuids });
+  }
+
+  /**
+   * 更新任务元数据
+   */
+  async updateTaskMetadata(
+    taskUuid: string,
+    metadata: {
+      payload?: any;
+      tagsToAdd?: string[];
+      tagsToRemove?: string[];
+    },
+  ): Promise<void> {
+    await apiClient.patch(`${this.baseUrl}/tasks/${taskUuid}/metadata`, metadata);
+  }
+
+  // ===== Schedule Statistics =====
 
   /**
    * 获取统计信息
    */
-  async getStatistics(): Promise<ScheduleContracts.IScheduleTaskStatistics> {
+  async getStatistics(): Promise<ScheduleContracts.ScheduleStatisticsServerDTO> {
     const data = await apiClient.get(`${this.baseUrl}/statistics`);
     return data;
+  }
+
+  /**
+   * 获取模块级别统计
+   */
+  async getModuleStatistics(
+    module: ScheduleContracts.SourceModule,
+  ): Promise<ScheduleContracts.ModuleStatisticsServerDTO> {
+    const data = await apiClient.get(`${this.baseUrl}/statistics/module/${module}`);
+    return data;
+  }
+
+  /**
+   * 获取所有模块统计
+   */
+  async getAllModuleStatistics(): Promise<
+    Record<ScheduleContracts.SourceModule, ScheduleContracts.ModuleStatisticsServerDTO>
+  > {
+    const data = await apiClient.get(`${this.baseUrl}/statistics/modules`);
+    return data;
+  }
+
+  /**
+   * 重新计算统计信息
+   */
+  async recalculateStatistics(): Promise<ScheduleContracts.ScheduleStatisticsServerDTO> {
+    const data = await apiClient.post(`${this.baseUrl}/statistics/recalculate`);
+    return data;
+  }
+
+  /**
+   * 重置统计信息
+   */
+  async resetStatistics(): Promise<void> {
+    await apiClient.post(`${this.baseUrl}/statistics/reset`);
+  }
+
+  /**
+   * 删除统计信息
+   */
+  async deleteStatistics(): Promise<void> {
+    await apiClient.delete(`${this.baseUrl}/statistics`);
   }
 }
 

@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { ReminderApplicationService } from '../../../application/services/ReminderApplicationService';
-import { ScheduleContainer } from '../../../../schedule/infrastructure/di/ScheduleContainer';
+// import { ScheduleContainer } from '../../../../schedule/infrastructure/di/ScheduleContainer'; // DISABLED: Schedule module needs refactoring
 import { PrismaClient } from '@prisma/client';
 import type { ReminderContracts } from '@dailyuse/contracts';
 import {
@@ -535,97 +535,15 @@ export class ReminderTemplateController {
    * GET /reminders/templates/:templateUuid/schedule-status
    *
    * 返回关联的 RecurringScheduleTask 信息
+   *
+   * ⚠️ DISABLED: Schedule module needs complete refactoring
    */
   static async getScheduleStatus(req: Request, res: Response): Promise<Response> {
-    try {
-      const { templateUuid } = req.params;
-      const accountUuid = ReminderTemplateController.extractAccountUuid(req);
-
-      logger.debug('Fetching schedule status for template', { templateUuid });
-
-      // 获取 Schedule 模块的服务
-      const prismaClient = new PrismaClient();
-      const scheduleContainer = ScheduleContainer.getInstance(prismaClient);
-      const recurringScheduleTaskDomainService =
-        scheduleContainer.recurringScheduleTaskDomainService;
-
-      // 查找关联的调度任务
-      const tasks = await recurringScheduleTaskDomainService.findBySource('reminder', templateUuid);
-
-      if (tasks.length === 0) {
-        // 没有关联的调度任务
-        const scheduleStatus = {
-          hasSchedule: false,
-          enabled: false,
-          nextRunAt: null,
-          lastRunAt: null,
-          executionCount: 0,
-          recentExecutions: [],
-          cronExpression: null,
-          cronDescription: null,
-        };
-
-        logger.info('No schedule found for template', { templateUuid });
-
-        return ReminderTemplateController.responseBuilder.sendSuccess(
-          res,
-          scheduleStatus,
-          'No schedule found for this template',
-        );
-      }
-
-      // 获取第一个任务（一个模板应该只有一个调度任务）
-      const task = tasks[0];
-      const taskDTO = task.toDTO();
-
-      // 构建调度状态响应
-      const scheduleStatus = {
-        hasSchedule: true,
-        enabled: taskDTO.enabled,
-        nextRunAt: taskDTO.nextRunAt,
-        lastRunAt: taskDTO.lastRunAt,
-        executionCount: taskDTO.executionCount,
-        recentExecutions: (taskDTO.executionHistory || []).slice(0, 10), // 最近10条
-        cronExpression: taskDTO.cronExpression,
-        cronDescription: taskDTO.cronExpression
-          ? cronstrue.toString(taskDTO.cronExpression, {
-              locale: 'zh_CN',
-              use24HourTimeFormat: true,
-            })
-          : null,
-        triggerType: taskDTO.triggerType,
-        scheduledTime: taskDTO.scheduledTime,
-        status: taskDTO.status,
-      };
-
-      logger.info('Schedule status retrieved successfully', { templateUuid, hasSchedule: true });
-
-      return ReminderTemplateController.responseBuilder.sendSuccess(
-        res,
-        scheduleStatus,
-        'Schedule status retrieved successfully',
-      );
-    } catch (error: unknown) {
-      if (
-        error instanceof Error &&
-        (error.message.includes('not found') || error.message.includes('不存在'))
-      ) {
-        logger.error(error.message, error);
-        return ReminderTemplateController.responseBuilder.sendError(res, {
-          code: ResponseCode.NOT_FOUND,
-          message: error.message,
-        });
-      }
-
-      logger.error(
-        error instanceof Error ? error.message : 'Failed to retrieve schedule status',
-        error,
-      );
-      return ReminderTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Failed to retrieve schedule status',
-      });
-    }
+    return ReminderTemplateController.responseBuilder.sendError(res, {
+      code: ResponseCode.SERVICE_UNAVAILABLE,
+      message:
+        'Schedule module is temporarily unavailable - needs refactoring for new cron-based schema',
+    });
   }
 
   /**

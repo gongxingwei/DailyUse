@@ -6,7 +6,7 @@ import {
 import { registerAccountEventHandlers } from '../../modules/account';
 import { initializeAuthenticationEventHandlers } from '../../modules/authentication/application/events/EventHandler';
 import { initializeGoalEventHandlers } from '../../modules/goal';
-import { initializeScheduleEventHandlers } from '../../modules/schedule/infrastructure/events/ScheduleEventHandlers';
+// import { initializeScheduleEventHandlers } from '../../modules/schedule/infrastructure/events/ScheduleEventHandlers'; // DISABLED: Schedule module needs refactoring
 import { eventBus } from '@dailyuse/utils';
 
 /**
@@ -30,8 +30,8 @@ export async function initializeUnifiedEventHandlers(): Promise<void> {
     initializeGoalEventHandlers();
 
     // ===================== Schedule 模块 =====================
-    console.log('🗓️ [EventSystem] 注册 Schedule 模块事件处理器...');
-    initializeScheduleEventHandlers();
+    // console.log('🗓️ [EventSystem] 注册 Schedule 模块事件处理器...');
+    // initializeScheduleEventHandlers(); // DISABLED: Schedule module needs refactoring
 
     // ===================== 其他模块 =====================
     // 这里可以添加其他模块的事件处理器注册

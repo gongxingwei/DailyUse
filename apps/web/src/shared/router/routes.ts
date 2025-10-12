@@ -5,6 +5,7 @@
 
 import type { RouteRecordRaw } from 'vue-router';
 import MainLayout from '@/modules/app/MainLayout.vue';
+import { scheduleRoutes } from '@/modules/schedule';
 
 /**
  * 认证相关路由
@@ -211,30 +212,7 @@ export const appRoutes: RouteRecordRaw[] = [
         ],
       },
 
-      // 调度管理
-      {
-        path: '/schedule',
-        name: 'schedule',
-        meta: {
-          title: '调度管理',
-          showInNav: true,
-          icon: 'mdi-calendar-clock',
-          order: 4.5,
-          requiresAuth: true,
-        },
-        children: [
-          {
-            path: '',
-            name: 'schedule-management',
-            component: () =>
-              import('@/modules/schedule/presentation/views/ScheduleManagementView.vue'),
-            meta: {
-              title: '调度管理',
-              requiresAuth: true,
-            },
-          },
-        ],
-      },
+      ...scheduleRoutes,
 
       // 编辑器
       {

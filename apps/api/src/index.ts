@@ -1,9 +1,9 @@
 import app from './app';
 import { connectPrisma, disconnectPrisma, prisma } from './config/prisma';
 import { initializeApp } from './shared/initialization/initializer';
-import { ScheduleTaskScheduler } from './modules/schedule/infrastructure/scheduler/ScheduleTaskScheduler';
-import { PriorityQueueScheduler } from './modules/schedule/infrastructure/scheduler/PriorityQueueScheduler';
-import { sseController } from './modules/schedule/interface/http/SSEController';
+// import { ScheduleTaskScheduler } from './modules/schedule/infrastructure/scheduler/ScheduleTaskScheduler'; // DISABLED: Schedule module needs refactoring
+// import { PriorityQueueScheduler } from './modules/schedule/infrastructure/scheduler/PriorityQueueScheduler'; // DISABLED: Schedule module needs refactoring
+// import { sseController } from './modules/schedule/interface/http/SSEController'; // DISABLED: Schedule module needs refactoring
 import { registerEventHandlers } from './shared/events/eventHandlerRegistry';
 import { eventBus } from '@dailyuse/utils';
 import { initializeLogger, getStartupInfo } from './config/logger.config';
@@ -31,28 +31,32 @@ const PORT = process.env.PORT || 3888;
     logger.info('Application initialized successfully');
 
     // 🎯 注册事件处理器（事件驱动架构）
-    registerEventHandlers(prisma, sseController);
-    logger.info('Event handlers registered successfully');
+    // registerEventHandlers(prisma, sseController); // DISABLED: Schedule module needs refactoring
+    // logger.info('Event handlers registered successfully');
 
     // 启动调度器（优先队列 vs 轮询）
-    if (USE_PRIORITY_QUEUE_SCHEDULER) {
-      const scheduler = PriorityQueueScheduler.getInstance(prisma, eventBus);
-      await scheduler.start();
-      logger.info('✅ 优先队列调度器已启动', {
-        type: 'PriorityQueue',
-        mechanism: 'setTimeout',
-        precision: '<100ms',
-        status: scheduler.getStatus(),
-      });
-    } else {
-      const scheduler = ScheduleTaskScheduler.getInstance(prisma, eventBus);
-      scheduler.start();
-      logger.info('⚠️  传统轮询调度器已启动（不推荐）', {
-        type: 'Polling',
-        mechanism: 'cron',
-        precision: '0-60s',
-      });
-    }
+    // DISABLED: Schedule module needs complete refactoring for new cron-based schema
+    // if (USE_PRIORITY_QUEUE_SCHEDULER) {
+    //   const scheduler = PriorityQueueScheduler.getInstance(prisma, eventBus);
+    //   await scheduler.start();
+    //   logger.info('✅ 优先队列调度器已启动', {
+    //     type: 'PriorityQueue',
+    //     mechanism: 'setTimeout',
+    //     precision: '<100ms',
+    //     status: scheduler.getStatus(),
+    //   });
+    // } else {
+    //   const scheduler = ScheduleTaskScheduler.getInstance(prisma, eventBus);
+    //   scheduler.start();
+    //   logger.info('⚠️  传统轮询调度器已启动（不推荐）', {
+    //     type: 'Polling',
+    //     mechanism: 'cron',
+    //     precision: '0-60s',
+    //   });
+    // }
+    logger.warn(
+      '⚠️ Schedule module is temporarily disabled - needs refactoring for new cron-based schema',
+    );
 
     app.listen(PORT, () => {
       logger.info(`API server listening on http://localhost:${PORT}`);

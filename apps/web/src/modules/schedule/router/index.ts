@@ -8,19 +8,24 @@ export const scheduleRoutes: RouteRecordRaw[] = [
   {
     path: '/schedule',
     name: 'Schedule',
-    redirect: '/schedule/management',
+    redirect: '/schedule/dashboard',
     meta: {
       title: '调度管理',
+      showInNav: true,
+      icon: 'mdi-calendar-clock',
+      order: 4.5,
       requiresAuth: true,
     },
-  },
-  {
-    path: '/schedule/management',
-    name: 'ScheduleManagement',
-    component: () => import('../presentation/views/ScheduleManagementView.vue'),
-    meta: {
-      title: '调度管理',
-      requiresAuth: true,
-    },
+    children: [
+      {
+        path: 'dashboard',
+        name: 'ScheduleDashboard',
+        component: () => import('../presentation/views/ScheduleDashboardView.vue'),
+        meta: {
+          title: '调度控制台',
+          requiresAuth: true,
+        },
+      },
+    ],
   },
 ];

@@ -1,449 +1,284 @@
 /**
- * Schedule 业务逻辑 Composable - 新架构
- * @description 基于缓存优先的数据获取策略，整合 Store 和 ApplicationService
- * @author DailyUse Team
- * @date 2025-01-09
+ * useSchedule Composable
+ * Schedule 模块的核心组合函数 - 严格参考 Repository 模块
  */
 
-import { ref, computed, reactive } from 'vue';
-import type { ScheduleContracts } from '@dailyuse/contracts';
-import { getScheduleWebService } from '../../application/services/ScheduleWebApplicationService';
-import { getScheduleStore } from '../stores/scheduleStore';
-import { useSnackbar } from '../../../../shared/composables/useSnackbar';
+import { ref, onMounted } from 'vue';
+import { scheduleWebApplicationService } from '../../services/ScheduleWebApplicationService';
+import { ScheduleContracts } from '@dailyuse/contracts';
+import { createLogger } from '@dailyuse/utils';
+
+const logger = createLogger('useSchedule');
 
 /**
- * Schedule 业务逻辑 Composable
- * 基于缓存优先的数据获取策略
+ * Schedule 模块的核心组合函数
+ * 提供任务和统计信息的状态管理
  */
 export function useSchedule() {
-  const scheduleService = getScheduleWebService();
-  const scheduleStore = getScheduleStore();
-  const snackbar = useSnackbar();
+  // ===== 状态 =====
+  const tasks = ref<ScheduleContracts.ScheduleTaskServerDTO[]>([]);
+  const statistics = ref<ScheduleContracts.ScheduleStatisticsServerDTO | null>(null);
+  const moduleStatistics = ref<Record<
+    ScheduleContracts.SourceModule,
+    ScheduleContracts.ModuleStatisticsServerDTO
+  > | null>(null);
+  const isLoading = ref(false);
+  const isLoadingStats = ref(false);
+  const error = ref<string | null>(null);
 
-  // ===== 响应式状态 - 从 Store 获取 =====
-  const isLoading = computed(() => scheduleStore.isLoading);
-  const tasks = computed(() => scheduleStore.getAllTasks);
-  const currentTask = computed(() => scheduleStore.getSelectedTask);
-  const statistics = computed(() => scheduleStore.statistics);
+  // ===== 任务管理方法 =====
 
-  // ===== 本地 UI 状态 =====
-  const editingTask = ref<ScheduleContracts.ScheduleTaskResponseDto | null>(null);
-  const showCreateDialog = ref(false);
-  const showEditDialog = ref(false);
-  const searchQuery = ref('');
-  const filters = reactive({
-    status: '',
-    taskType: '',
-    priority: '',
+  /**
+   * 获取所有任务
+   */
+  async function fetchTasks() {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Fetching all schedule tasks');
+      tasks.value = await scheduleWebApplicationService.getAllTasks();
+      logger.info('Schedule tasks fetched successfully', { count: tasks.value.length });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch schedule tasks';
+      error.value = message;
+      logger.error('Error fetching schedule tasks', { error: err });
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * 根据模块获取任务
+   */
+  async function fetchTasksByModule(module: ScheduleContracts.SourceModule) {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Fetching tasks by module', { module });
+      tasks.value = await scheduleWebApplicationService.getTasksByModule(module);
+      logger.info('Tasks fetched by module successfully', {
+        module,
+        count: tasks.value.length,
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch tasks by module';
+      error.value = message;
+      logger.error('Error fetching tasks by module', { error: err, module });
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * 创建任务
+   */
+  async function createTask(request: ScheduleContracts.CreateScheduleTaskRequestDTO) {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Creating schedule task', { name: request.name });
+      const newTask = await scheduleWebApplicationService.createTask(request);
+      tasks.value.push(newTask);
+      logger.info('Schedule task created successfully', { taskUuid: newTask.uuid });
+      return newTask;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create schedule task';
+      error.value = message;
+      logger.error('Error creating schedule task', { error: err });
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  /**
+   * 暂停任务
+   */
+  async function pauseTask(taskUuid: string) {
+    try {
+      logger.info('Pausing task', { taskUuid });
+      await scheduleWebApplicationService.pauseTask(taskUuid);
+
+      // 更新本地状态
+      const task = tasks.value.find((t) => t.uuid === taskUuid);
+      if (task) {
+        task.status = ScheduleContracts.ScheduleTaskStatus.PAUSED;
+      }
+
+      logger.info('Task paused successfully', { taskUuid });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to pause task';
+      error.value = message;
+      logger.error('Error pausing task', { error: err, taskUuid });
+      throw err;
+    }
+  }
+
+  /**
+   * 恢复任务
+   */
+  async function resumeTask(taskUuid: string) {
+    try {
+      logger.info('Resuming task', { taskUuid });
+      await scheduleWebApplicationService.resumeTask(taskUuid);
+
+      // 更新本地状态
+      const task = tasks.value.find((t) => t.uuid === taskUuid);
+      if (task) {
+        task.status = ScheduleContracts.ScheduleTaskStatus.ACTIVE;
+      }
+
+      logger.info('Task resumed successfully', { taskUuid });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to resume task';
+      error.value = message;
+      logger.error('Error resuming task', { error: err, taskUuid });
+      throw err;
+    }
+  }
+
+  /**
+   * 删除任务
+   */
+  async function deleteTask(taskUuid: string) {
+    try {
+      logger.info('Deleting task', { taskUuid });
+      await scheduleWebApplicationService.deleteTask(taskUuid);
+
+      // 从本地列表移除
+      const index = tasks.value.findIndex((t) => t.uuid === taskUuid);
+      if (index > -1) {
+        tasks.value.splice(index, 1);
+      }
+
+      logger.info('Task deleted successfully', { taskUuid });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete task';
+      error.value = message;
+      logger.error('Error deleting task', { error: err, taskUuid });
+      throw err;
+    }
+  }
+
+  // ===== 统计信息方法 =====
+
+  /**
+   * 获取统计信息
+   */
+  async function fetchStatistics() {
+    isLoadingStats.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Fetching schedule statistics');
+      statistics.value = await scheduleWebApplicationService.getStatistics();
+      logger.info('Schedule statistics fetched successfully');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch statistics';
+      error.value = message;
+      logger.error('Error fetching statistics', { error: err });
+    } finally {
+      isLoadingStats.value = false;
+    }
+  }
+
+  /**
+   * 获取所有模块统计
+   */
+  async function fetchAllModuleStatistics() {
+    isLoadingStats.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Fetching all module statistics');
+      moduleStatistics.value = await scheduleWebApplicationService.getAllModuleStatistics();
+      logger.info('All module statistics fetched successfully');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to fetch module statistics';
+      error.value = message;
+      logger.error('Error fetching module statistics', { error: err });
+    } finally {
+      isLoadingStats.value = false;
+    }
+  }
+
+  /**
+   * 重新计算统计信息
+   */
+  async function recalculateStatistics() {
+    isLoadingStats.value = true;
+    error.value = null;
+
+    try {
+      logger.info('Recalculating statistics');
+      statistics.value = await scheduleWebApplicationService.recalculateStatistics();
+      logger.info('Statistics recalculated successfully');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to recalculate statistics';
+      error.value = message;
+      logger.error('Error recalculating statistics', { error: err });
+      throw err;
+    } finally {
+      isLoadingStats.value = false;
+    }
+  }
+
+  // ===== 初始化和刷新 =====
+
+  /**
+   * 初始化 - 加载任务和统计信息
+   */
+  async function initialize() {
+    await Promise.all([fetchTasks(), fetchStatistics(), fetchAllModuleStatistics()]);
+  }
+
+  /**
+   * 刷新所有数据
+   */
+  async function refresh() {
+    await initialize();
+  }
+
+  /**
+   * 清除错误
+   */
+  function clearError() {
+    error.value = null;
+  }
+
+  // ===== 生命周期 =====
+  onMounted(() => {
+    // 组件挂载时不自动加载，由页面控制
   });
 
-  // ===== 缓存优先的数据获取方法 =====
-
-  /**
-   * 获取调度任务列表 - 缓存优先策略
-   * @param forceRefresh 是否强制从API刷新
-   * @param params 查询参数
-   */
-  const fetchTasks = async (
-    forceRefresh = false,
-    params?: {
-      page?: number;
-      limit?: number;
-      status?: string;
-      taskType?: string;
-      priority?: string;
-      search?: string;
-    },
-  ) => {
-    try {
-      // 检查是否需要刷新数据
-      const needsRefresh =
-        forceRefresh ||
-        !scheduleStore.isInitialized ||
-        scheduleStore.tasks.length === 0 ||
-        scheduleStore.shouldRefreshCache;
-
-      if (needsRefresh) {
-        // 从 API 获取数据
-        await scheduleService.getScheduleTasks(params);
-      }
-
-      return scheduleStore.getAllTasks;
-    } catch (error) {
-      snackbar.showError('获取调度任务列表失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 获取调度任务详情 - 缓存优先策略
-   * @param uuid 任务UUID
-   * @param forceRefresh 是否强制从API刷新
-   */
-  const fetchTaskById = async (uuid: string, forceRefresh = false) => {
-    try {
-      // 先从缓存中查找
-      const cachedTask = scheduleStore.getTaskByUuid(uuid);
-
-      if (cachedTask && !forceRefresh) {
-        scheduleStore.selectedTaskUuid = uuid;
-        return cachedTask;
-      }
-
-      // 从API获取任务详情
-      const response = await scheduleService.getScheduleTask(uuid);
-
-      if (response) {
-        scheduleStore.selectedTaskUuid = uuid;
-      }
-
-      return response;
-    } catch (error) {
-      snackbar.showError('获取调度任务详情失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 获取调度统计信息
-   * @param forceRefresh 是否强制刷新
-   */
-  const fetchStatistics = async (forceRefresh = false) => {
-    try {
-      const needsRefresh =
-        forceRefresh || !scheduleStore.statistics || scheduleStore.shouldRefreshCache;
-
-      if (needsRefresh) {
-        await scheduleService.getStatistics();
-      }
-
-      return scheduleStore.statistics;
-    } catch (error) {
-      snackbar.showError('获取调度统计信息失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 初始化调度模块数据
-   */
-  const initializeData = async () => {
-    try {
-      await scheduleService.initializeModule();
-      snackbar.showSuccess(`Schedule 数据初始化完成: ${scheduleStore.tasks.length} 个调度任务`);
-    } catch (error) {
-      snackbar.showError('Schedule 数据初始化失败');
-      throw error;
-    }
-  };
-
-  // ===== Schedule Task CRUD 操作 =====
-
-  /**
-   * 创建调度任务
-   */
-  const createScheduleTask = async (data: ScheduleContracts.CreateScheduleTaskRequestDto) => {
-    try {
-      const response = await scheduleService.createScheduleTask(data);
-      showCreateDialog.value = false;
-
-      snackbar.showSuccess('调度任务创建成功');
-      return response;
-    } catch (error) {
-      snackbar.showError('创建调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 更新调度任务
-   */
-  const updateScheduleTask = async (
-    uuid: string,
-    data: ScheduleContracts.UpdateScheduleTaskRequestDto,
-  ) => {
-    try {
-      const response = await scheduleService.updateScheduleTask(uuid, data);
-      showEditDialog.value = false;
-      editingTask.value = null;
-
-      snackbar.showSuccess('调度任务更新成功');
-      return response;
-    } catch (error) {
-      snackbar.showError('更新调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 删除调度任务
-   */
-  const deleteScheduleTask = async (uuid: string) => {
-    try {
-      await scheduleService.deleteScheduleTask(uuid);
-
-      // 如果删除的是当前任务，清除选中状态
-      if (currentTask.value?.uuid === uuid) {
-        scheduleStore.selectedTaskUuid = null;
-      }
-
-      snackbar.showSuccess('调度任务删除成功');
-    } catch (error) {
-      snackbar.showError('删除调度任务失败');
-      throw error;
-    }
-  };
-
-  // ===== Schedule Task 操作 =====
-
-  /**
-   * 启用调度任务
-   */
-  const enableScheduleTask = async (uuid: string) => {
-    try {
-      const response = await scheduleService.enableScheduleTask(uuid);
-
-      // 刷新任务状态
-      await fetchTaskById(uuid, true);
-
-      snackbar.showSuccess('调度任务已启用');
-      return response;
-    } catch (error) {
-      snackbar.showError('启用调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 禁用调度任务
-   */
-  const disableScheduleTask = async (uuid: string) => {
-    try {
-      const response = await scheduleService.disableScheduleTask(uuid);
-
-      // 刷新任务状态
-      await fetchTaskById(uuid, true);
-
-      snackbar.showSuccess('调度任务已禁用');
-      return response;
-    } catch (error) {
-      snackbar.showError('禁用调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 暂停调度任务
-   */
-  const pauseScheduleTask = async (uuid: string) => {
-    try {
-      const response = await scheduleService.pauseScheduleTask(uuid);
-
-      // 刷新任务状态
-      await fetchTaskById(uuid, true);
-
-      snackbar.showSuccess('调度任务已暂停');
-      return response;
-    } catch (error) {
-      snackbar.showError('暂停调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 恢复调度任务
-   */
-  const resumeScheduleTask = async (uuid: string) => {
-    try {
-      const response = await scheduleService.resumeScheduleTask(uuid);
-
-      // 刷新任务状态
-      await fetchTaskById(uuid, true);
-
-      snackbar.showSuccess('调度任务已恢复');
-      return response;
-    } catch (error) {
-      snackbar.showError('恢复调度任务失败');
-      throw error;
-    }
-  };
-
-  /**
-   * 手动执行调度任务
-   */
-  const executeScheduleTask = async (uuid: string) => {
-    try {
-      const response = await scheduleService.executeScheduleTask(uuid);
-
-      snackbar.showSuccess('调度任务已手动执行');
-      return response;
-    } catch (error) {
-      snackbar.showError('执行调度任务失败');
-      throw error;
-    }
-  };
-
-  // ===== Reminder 操作 =====
-
-  /**
-   * 打盹提醒
-   */
-  const snoozeReminder = async (uuid: string, snoozeDuration: number) => {
-    try {
-      const response = await scheduleService.snoozeReminder(uuid, {
-        taskUuid: uuid,
-        snoozeMinutes: snoozeDuration,
-      });
-
-      snackbar.showSuccess(`提醒已推迟 ${snoozeDuration} 分钟`);
-      return response;
-    } catch (error) {
-      snackbar.showError('推迟提醒失败');
-      throw error;
-    }
-  };
-
-  // ===== 批量操作 =====
-
-  // ===== Computed Getters - 从 Store =====
-
-  /**
-   * 获取启用的任务
-   */
-  const enabledTasks = computed(() => scheduleStore.getEnabledTasks);
-
-  /**
-   * 获取禁用的任务
-   */
-  const disabledTasks = computed(() => scheduleStore.getDisabledTasks);
-
-  /**
-   * 获取待处理的任务
-   */
-  const pendingTasks = computed(() => scheduleStore.getPendingTasks);
-
-  /**
-   * 获取正在运行的任务
-   */
-  const runningTasks = computed(() => scheduleStore.getRunningTasks);
-
-  /**
-   * 获取已完成的任务
-   */
-  const completedTasks = computed(() => scheduleStore.getCompletedTasks);
-
-  // ===== 高级功能 =====
-
-  /**
-   * 切换调度任务状态 (启用/禁用)
-   */
-  const toggleTaskStatus = async (uuid: string, currentStatus: string) => {
-    if (currentStatus === 'ACTIVE') {
-      return disableScheduleTask(uuid);
-    } else {
-      return enableScheduleTask(uuid);
-    }
-  };
-
-  /**
-   * 获取调度任务概览数据
-   */
-  const getScheduleOverview = async () => {
-    try {
-      const [taskList, stats] = await Promise.all([
-        fetchTasks(false, { limit: 10 }),
-        fetchStatistics(false),
-      ]);
-
-      return {
-        tasks: taskList,
-        statistics: stats,
-      };
-    } catch (error) {
-      snackbar.showError('获取调度概览数据失败');
-      throw error;
-    }
-  };
-
-  // ===== UI Dialog 管理 =====
-
-  /**
-   * 打开创建对话框
-   */
-  const openCreateDialog = () => {
-    showCreateDialog.value = true;
-  };
-
-  /**
-   * 关闭创建对话框
-   */
-  const closeCreateDialog = () => {
-    showCreateDialog.value = false;
-  };
-
-  /**
-   * 打开编辑对话框
-   */
-  const openEditDialog = (task: ScheduleContracts.ScheduleTaskResponseDto) => {
-    editingTask.value = task;
-    showEditDialog.value = true;
-  };
-
-  /**
-   * 关闭编辑对话框
-   */
-  const closeEditDialog = () => {
-    showEditDialog.value = false;
-    editingTask.value = null;
-  };
-
-  // ===== 返回值 =====
   return {
-    // ===== 响应式状态 =====
-    isLoading,
+    // 状态
     tasks,
-    currentTask,
     statistics,
+    moduleStatistics,
+    isLoading,
+    isLoadingStats,
+    error,
 
-    // ===== 本地状态 =====
-    editingTask,
-    showCreateDialog,
-    showEditDialog,
-    searchQuery,
-    filters,
-
-    // ===== 数据获取方法 =====
+    // 任务方法
     fetchTasks,
-    fetchTaskById,
+    fetchTasksByModule,
+    createTask,
+    pauseTask,
+    resumeTask,
+    deleteTask,
+
+    // 统计方法
     fetchStatistics,
-    initializeData,
+    fetchAllModuleStatistics,
+    recalculateStatistics,
 
-    // ===== CRUD 操作 =====
-    createScheduleTask,
-    updateScheduleTask,
-    deleteScheduleTask,
-
-    // ===== Task 操作 =====
-    enableScheduleTask,
-    disableScheduleTask,
-    pauseScheduleTask,
-    resumeScheduleTask,
-    executeScheduleTask,
-
-    // ===== Reminder 操作 =====
-    snoozeReminder,
-
-    // ===== Computed Getters =====
-    enabledTasks,
-    disabledTasks,
-    pendingTasks,
-    runningTasks,
-    completedTasks,
-
-    // ===== UI Dialog 管理 =====
-    openCreateDialog,
-    closeCreateDialog,
-    openEditDialog,
-    closeEditDialog,
+    // 工具方法
+    initialize,
+    refresh,
+    clearError,
   };
 }

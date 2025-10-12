@@ -3,4 +3,4 @@
  * 编辑器基础设施层导出
  */
 
-export * from './repositories/prisma/PrismaEditorSessionRepository';
+export * from './repositories/prisma/PrismaEditorWorkspaceRepository';

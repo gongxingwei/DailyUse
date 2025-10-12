@@ -13,8 +13,8 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "tsup src/index.ts --dts --format esm --target es2020 --out-dir dist",
-    "dev": "tsup src/index.ts --watch --dts --format esm --target es2020 --out-dir dist"
+    "build": "tsup",
+    "dev": "tsup --watch"
   },
   "dependencies": {
     "date-fns": "^4.1.0",

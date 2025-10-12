@@ -14,7 +14,7 @@ import { authenticationRouter } from './modules/authentication';
 import { taskRouter } from './modules/task';
 import { goalRouter, goalDirRouter } from './modules/goal';
 import { reminderRouter } from './modules/reminder';
-import { scheduleRouter } from './modules/schedule';
+import { scheduleRouter } from './modules/schedule/interface';
 import {
   notificationRouter,
   notificationPreferenceRouter,
@@ -96,20 +96,8 @@ api.use('/reminders', authMiddleware, reminderRouter);
 /**
  * schedule 调度模块
  */
-// 挂载任务调度管理路由 - 部分需要认证
-// SSE事件流端点不需要认证，其他端点需要认证
-api.use(
-  '/schedules',
-  (req, res, next) => {
-    // SSE 事件流端点不需要认证
-    if (req.path.startsWith('/events')) {
-      return next();
-    }
-    // 其他端点需要认证
-    return authMiddleware(req, res, next);
-  },
-  scheduleRouter,
-);
+// 挂载任务调度管理路由 - 需要认证
+api.use('/schedules', authMiddleware, scheduleRouter);
 
 /**
  * editor 编辑器模块

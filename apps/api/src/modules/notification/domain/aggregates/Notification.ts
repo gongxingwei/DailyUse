@@ -99,7 +99,7 @@ export class Notification extends AggregateRoot {
 
   // ========== Getters ==========
 
-  get uuid(): string {
+  override get uuid(): string {
     return this._uuid; // 继承自 AggregateRoot
   }
 

@@ -17,71 +17,80 @@ export function createApiResponseHelper(res: Response, options?: ResponseBuilder
 /**
  * 成功响应
  */
-export const ok = <T>(res: Response, data?: T, message = 'ok') => {
+export const ok = <T>(res: Response, data?: T, message = 'ok'): void => {
   const helper = createApiResponseHelper(res);
-  return helper.success(data, message);
+  helper.success(data, message);
 };
 
 /**
  * 创建成功响应
  */
-export const created = <T>(res: Response, data?: T, message = 'created') => {
+export const created = <T>(res: Response, data?: T, message = 'created'): void => {
   const helper = createApiResponseHelper(res);
-  return helper.created(data, message);
+  helper.created(data, message);
 };
 
 /**
  * 请求参数错误响应
  */
-export const badRequest = (res: Response, message = 'bad request', errors?: any[]) => {
+export const badRequest = (res: Response, message = 'bad request', errors?: any[]): void => {
   const helper = createApiResponseHelper(res);
-  return helper.badRequest(message, errors);
+  helper.badRequest(message, errors);
 };
 
 /**
  * 未授权响应
  */
-export const unauthorized = (res: Response, message = 'unauthorized') => {
+export const unauthorized = (res: Response, message = 'unauthorized'): void => {
   const helper = createApiResponseHelper(res);
-  return helper.unauthorized(message);
+  helper.unauthorized(message);
 };
 
 /**
  * 禁止访问响应
  */
-export const forbidden = (res: Response, message = 'forbidden') => {
+export const forbidden = (res: Response, message = 'forbidden'): void => {
   const helper = createApiResponseHelper(res);
-  return helper.forbidden(message);
+  helper.forbidden(message);
 };
 
 /**
  * 资源未找到响应
  */
-export const notFound = (res: Response, message = 'not found') => {
+export const notFound = (res: Response, message = 'not found'): void => {
   const helper = createApiResponseHelper(res);
-  return helper.notFound(message);
+  helper.notFound(message);
 };
 
 /**
  * 内部错误响应
  */
-export const error = (res: Response, message = 'internal error', status = 500, debug?: any) => {
+export const error = (
+  res: Response,
+  message = 'internal error',
+  status = 500,
+  debug?: any,
+): void => {
   const helper = createApiResponseHelper(res);
-  return helper.internalError(message, debug);
+  helper.internalError(message, debug);
 };
 
 /**
  * 验证错误响应
  */
-export const validationError = (res: Response, message = 'validation failed', errors?: any[]) => {
+export const validationError = (
+  res: Response,
+  message = 'validation failed',
+  errors?: any[],
+): void => {
   const helper = createApiResponseHelper(res);
-  return helper.validationError(message, errors);
+  helper.validationError(message, errors);
 };
 
 /**
  * 业务逻辑错误响应
  */
-export const businessError = (res: Response, message: string, errorCode?: string) => {
+export const businessError = (res: Response, message: string, errorCode?: string): void => {
   const helper = createApiResponseHelper(res);
-  return helper.businessError(message, errorCode);
+  helper.businessError(message, errorCode);
 };

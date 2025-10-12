@@ -8,53 +8,57 @@ datasource db {
 }
 
 model Account {
-  uuid                   String                  @id @default(cuid())
-  username               String                  @unique
-  email                  String?                 @unique
-  phone                  String?                 @unique
-  accountType            String                  @default("local") @map("account_type")
-  status                 String                  @default("active")
-  roleIds                String                  @default("[]") @map("role_ids")
-  createdAt              DateTime                @default(now()) @map("created_at")
-  updatedAt              DateTime                @updatedAt @map("updated_at")
-  lastLoginAt            DateTime?               @map("last_login_at")
-  emailVerificationToken String?                 @map("email_verification_token")
-  phoneVerificationCode  String?                 @map("phone_verification_code")
-  emailVerified          Boolean                 @default(false) @map("email_verified")
-  phoneVerified          Boolean                 @default(false) @map("phone_verified")
-  authCredentials        AuthCredential?
-  tokens                 AuthToken[]
-  editorFileContents     EditorFileContent[]
-  editorGroups           EditorGroup[]
-  editorSessions         EditorSession[]
-  editorTabs             EditorTab[]
-  editorWorkspaces                 EditorWorkspace[]
-  editorWorkspaceSessions          EditorWorkspaceSession[]
-  editorWorkspaceSessionGroups     EditorWorkspaceSessionGroup[]
-  editorWorkspaceSessionGroupTabs  EditorWorkspaceSessionGroupTab[]
-  goalCategories         GoalCategory[]
-  goalDirs               GoalDir[]
-  goals                  Goal[]
-  mfaDevices             MFADevice[]
-  reminderTemplateGroups ReminderTemplateGroup[]
-  reminderTemplates      ReminderTemplate[]
-  repositories           Repository[]
-  repositoryStatistics   RepositoryStatistics?
-  repositoryExplorers    RepositoryExplorer[]
-  settingBackups         SettingBackup[]
-  settingChangeRecords   SettingChangeRecord[]
-  settingDefinitions     SettingDefinition[]
-  settingGroups          SettingGroup[]
-  settingValues          SettingValue[]
-  taskInstances          TaskInstance[]
-  taskMetaTemplates      TaskMetaTemplate[]
-  taskTemplates          TaskTemplate[]
-  userProfile            UserProfile?
-  sessions               UserSession[]
-  oldScheduleTasks       OldScheduleTask[]
-  scheduleExecutions     ScheduleExecution[]
-  notifications          Notification[]
-  notificationPreference NotificationPreference?
+  uuid                            String                           @id @default(cuid())
+  username                        String                           @unique
+  email                           String?                          @unique
+  phone                           String?                          @unique
+  accountType                     String                           @default("local") @map("account_type")
+  status                          String                           @default("active")
+  roleIds                         String                           @default("[]") @map("role_ids")
+  createdAt                       DateTime                         @default(now()) @map("created_at")
+  updatedAt                       DateTime                         @updatedAt @map("updated_at")
+  lastLoginAt                     DateTime?                        @map("last_login_at")
+  emailVerificationToken          String?                          @map("email_verification_token")
+  phoneVerificationCode           String?                          @map("phone_verification_code")
+  emailVerified                   Boolean                          @default(false) @map("email_verified")
+  phoneVerified                   Boolean                          @default(false) @map("phone_verified")
+  authCredentials                 AuthCredential?
+  tokens                          AuthToken[]
+  editorFileContents              EditorFileContent[]
+  editorGroups                    EditorGroup[]
+  editorSessions                  EditorSession[]
+  editorTabs                      EditorTab[]
+  editorWorkspaces                EditorWorkspace[]
+  editorWorkspaceSessions         EditorWorkspaceSession[]
+  editorWorkspaceSessionGroups    EditorWorkspaceSessionGroup[]
+  editorWorkspaceSessionGroupTabs EditorWorkspaceSessionGroupTab[]
+  goalCategories                  GoalCategory[]
+  goalDirs                        GoalDir[]
+  goals                           Goal[]
+  mfaDevices                      MFADevice[]
+  reminderTemplateGroups          ReminderTemplateGroup[]
+  reminderTemplates               ReminderTemplate[]
+  repositories                    Repository[]
+  repositoryStatistics            RepositoryStatistics?
+  repositoryExplorers             RepositoryExplorer[]
+  settingBackups                  SettingBackup[]
+  settingChangeRecords            SettingChangeRecord[]
+  settingDefinitions              SettingDefinition[]
+  settingGroups                   SettingGroup[]
+  settingValues                   SettingValue[]
+  taskInstances                   TaskInstance[]
+  taskMetaTemplates               TaskMetaTemplate[]
+  taskTemplates                   TaskTemplate[]
+  userProfile                     UserProfile?
+  sessions                        UserSession[]
+  oldScheduleTasks                OldScheduleTask[]
+  scheduleExecutions              ScheduleExecution[]
+  // Schedule Module Relations
+  scheduleTasks                   ScheduleTask[]
+  scheduleStatistics              ScheduleStatistics?
+  // End Schedule Module
+  notifications                   Notification[]
+  notificationPreference          NotificationPreference?
 
   @@map("accounts")
 }
@@ -526,32 +530,73 @@ model ReminderTemplate {
 
 /// RecurringScheduleTask - 可重复的调度任务
 /// 支持 cron 表达式和一次性任务，用于替代 ReminderInstance 和 ReminderSchedule
-// 统一的调度任务模型
-// 使用 Cron 表达式支持单次和重复任务
-// - 单次任务: "0 10 15 1 * 2025" (2025年1月15日10:00执行)
-// - 重复任务: "0 9 * * 1-5" (工作日每天9:00执行)
-model ScheduleTask {
-  uuid             String    @id @default(cuid())
-  name             String
-  description      String?
-  cronExpression   String    @map("cron_expression") // Cron 表达式（统一支持单次和重复任务）
-  status           String    @default("active") // "active" | "paused" | "completed" | "cancelled"
-  enabled          Boolean   @default(true)
-  sourceModule     String    @map("source_module") // 来源模块（如 "reminder"）
-  sourceEntityId   String    @map("source_entity_id") // 来源实体 ID（如 templateUuid）
-  metadata         String    @default("{}") // JSON 元数据
-  nextRunAt        DateTime? @map("next_run_at")
-  lastRunAt        DateTime? @map("last_run_at")
-  executionCount   Int       @default(0) @map("execution_count")
-  executionHistory String    @default("[]") @map("execution_history") // JSON 数组，存储最近 10 次执行记录
-  version          Int       @default(1)
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
+// ============================================
+// Schedule Module - DDD Design
+// 调度模块 - 领域驱动设计
+// ============================================
 
+// ScheduleTask - 调度任务表（聚合根）
+// 统一支持单次和重复任务，使用 Cron 表达式
+model ScheduleTask {
+  uuid        String  @id @default(cuid())
+  accountUuid String  @map("account_uuid")
+  account     Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  // 基础信息
+  name        String  @db.VarChar(255)
+  description String? @db.Text
+
+  // 来源信息（关联到其他模块的实体）
+  sourceModule   String @map("source_module") @db.VarChar(50) // 'reminder' | 'task' | 'goal' | 'notification' | 'system'
+  sourceEntityId String @map("source_entity_id") @db.VarChar(255)
+
+  // 状态和开关
+  status  String  @db.VarChar(20) // 'active' | 'paused' | 'completed' | 'failed' | 'cancelled'
+  enabled Boolean @default(true)
+
+  // ========== ScheduleConfig 值对象（展开存储）==========
+  cronExpression String?  @map("cron_expression") @db.VarChar(100) // Cron 表达式
+  timezone       String   @default("UTC") @db.VarChar(50) // 时区
+  startDate      DateTime? @map("start_date") // 开始时间
+  endDate        DateTime? @map("end_date") // 结束时间
+  maxExecutions  Int?     @map("max_executions") // 最大执行次数
+
+  // ========== ExecutionInfo 值对象（展开存储）==========
+  nextRunAt              DateTime? @map("next_run_at") // 下次执行时间（重要查询字段！）
+  lastRunAt              DateTime? @map("last_run_at") // 上次执行时间
+  executionCount         Int       @default(0) @map("execution_count") // 执行次数
+  lastExecutionStatus    String?   @map("last_execution_status") @db.VarChar(20) // 上次执行状态
+  lastExecutionDuration  Int?      @map("last_execution_duration") // 上次执行时长（ms）
+  consecutiveFailures    Int       @default(0) @map("consecutive_failures") // 连续失败次数
+
+  // ========== RetryPolicy 值对象（展开存储）==========
+  maxRetries         Int    @default(3) @map("max_retries") // 最大重试次数
+  initialDelayMs     Int    @default(1000) @map("initial_delay_ms") // 初始延迟
+  maxDelayMs         Int    @default(60000) @map("max_delay_ms") // 最大延迟
+  backoffMultiplier  Float  @default(2.0) @map("backoff_multiplier") // 退避倍数
+  retryableStatuses  String @default("[]") @map("retryable_statuses") // 可重试的状态（JSON数组）
+
+  // ========== TaskMetadata 值对象（展开存储）==========
+  payload  Json?   // 执行载荷（复杂数据保留 JSON）
+  tags     String  @default("[]") // 标签（JSON数组）
+  priority String  @default("normal") @db.VarChar(20) // 优先级: 'low' | 'normal' | 'high' | 'urgent'
+  timeout  Int     @default(30000) // 超时时间（ms）
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // 子实体：执行记录
+  executions ScheduleExecution[]
+
+  // 索引 - 关键查询优化
+  @@index([accountUuid])
   @@index([sourceModule, sourceEntityId])
   @@index([status])
   @@index([enabled])
-  @@index([nextRunAt])
+  @@index([nextRunAt]) // ⭐ 重要：用于查找到期任务
+  @@index([status, enabled, nextRunAt]) // ⭐ 组合索引：查找需要执行的任务
+  @@index([createdAt])
   @@map("schedule_tasks")
 }
 
@@ -829,30 +874,72 @@ model OldScheduleTask {
   @@map("old_schedule_tasks")
 }
 
+// ScheduleExecution - 执行记录表（实体）
 model ScheduleExecution {
-  uuid         String    @id @default(cuid())
-  taskUuid     String    @map("task_uuid")
-  accountUuid  String    @map("account_uuid")
-  status       String    @default("pending")
-  startedAt    DateTime? @map("started_at")
-  completedAt  DateTime? @map("completed_at")
-  duration     Int?      @map("duration_ms")
-  result       Json?
-  errorMessage String?   @map("error_message")
-  retryCount   Int       @default(0) @map("retry_count")
-  createdAt    DateTime  @default(now()) @map("created_at")
-  updatedAt    DateTime  @updatedAt @map("updated_at")
+  uuid     String       @id @default(cuid())
+  taskUuid String       @map("task_uuid")
+  task     ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
 
-  // Relations
-  task    OldScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
-  account Account         @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  // 执行信息
+  executionTime DateTime @map("execution_time") // 执行时间点
+  status        String   @db.VarChar(20) // 'success' | 'failed' | 'timeout' | 'skipped' | 'retrying'
+  duration      Int? // 执行时长（毫秒）
+  result        Json? // 执行结果（JSON）
+  error         String?  @db.Text // 错误信息
 
+  // 重试信息
+  retryCount Int @default(0) @map("retry_count")
+
+  // 时间戳
+  createdAt           DateTime         @default(now()) @map("created_at")
+  Account             Account?         @relation(fields: [accountUuid], references: [uuid])
+  accountUuid         String?
+  OldScheduleTask     OldScheduleTask? @relation(fields: [oldScheduleTaskUuid], references: [uuid])
+  oldScheduleTaskUuid String?
+
+  // 索引
   @@index([taskUuid])
-  @@index([accountUuid])
   @@index([status])
-  @@index([startedAt])
+  @@index([executionTime])
   @@index([createdAt])
   @@map("schedule_executions")
+}
+
+// ScheduleStatistics - 统计表（聚合根，每个账户一条记录）
+model ScheduleStatistics {
+  accountUuid String  @id @map("account_uuid")
+  account     Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  // 任务统计（按状态分类）
+  totalTasks     Int @default(0) @map("total_tasks")
+  activeTasks    Int @default(0) @map("active_tasks")
+  pausedTasks    Int @default(0) @map("paused_tasks")
+  completedTasks Int @default(0) @map("completed_tasks")
+  cancelledTasks Int @default(0) @map("cancelled_tasks")
+  failedTasks    Int @default(0) @map("failed_tasks")
+
+  // 执行统计（按结果分类）
+  totalExecutions      Int @default(0) @map("total_executions")
+  successfulExecutions Int @default(0) @map("successful_executions")
+  failedExecutions     Int @default(0) @map("failed_executions")
+  skippedExecutions    Int @default(0) @map("skipped_executions")
+  timeoutExecutions    Int @default(0) @map("timeout_executions")
+
+  // 性能统计（毫秒）
+  avgExecutionDuration Int @default(0) @map("avg_execution_duration")
+  minExecutionDuration Int @default(0) @map("min_execution_duration")
+  maxExecutionDuration Int @default(0) @map("max_execution_duration")
+
+  // 模块统计（JSON 存储各模块的详细统计）
+  // 格式: { "reminder": { totalTasks: 10, activeTasks: 5, ... }, "task": {...}, ... }
+  moduleStats Json @default("{}") @map("module_stats")
+
+  // 时间戳
+  lastUpdatedAt DateTime @updatedAt @map("last_updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([accountUuid])
+  @@map("schedule_statistics")
 }
 
 model UserPreferences {
@@ -1196,7 +1283,7 @@ model EditorWorkspace {
   accessedAt  DateTime @default(now()) @map("accessed_at")
 
   // Relations
-  account  Account                 @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  account  Account                  @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   sessions EditorWorkspaceSession[]
 
   @@index([accountUuid])
@@ -1218,8 +1305,8 @@ model EditorWorkspaceSession {
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   // Relations
-  account   Account                      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  workspace EditorWorkspace              @relation(fields: [workspaceUuid], references: [uuid], onDelete: Cascade)
+  account   Account                       @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  workspace EditorWorkspace               @relation(fields: [workspaceUuid], references: [uuid], onDelete: Cascade)
   groups    EditorWorkspaceSessionGroup[]
 
   @@index([workspaceUuid])
@@ -1242,9 +1329,9 @@ model EditorWorkspaceSessionGroup {
   updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
-  account   Account                        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  session   EditorWorkspaceSession         @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
-  tabs      EditorWorkspaceSessionGroupTab[]
+  account Account                          @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  session EditorWorkspaceSession           @relation(fields: [sessionUuid], references: [uuid], onDelete: Cascade)
+  tabs    EditorWorkspaceSessionGroupTab[]
 
   @@index([sessionUuid])
   @@index([workspaceUuid])

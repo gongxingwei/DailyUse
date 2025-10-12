@@ -8,10 +8,5 @@ export * from './initializationManager';
 export * from './response';
 export * from './frontend';
 
-// Schedule system exports - 跨平台兼容
-export * from './schedule/SimpleScheduleService';
-export * from './schedule/AlertHandlerSystem';
-export * from './schedule/ScheduleSystemIntegration';
-
 // Logger system exports - 跨平台日志系统
 export * from './logger';

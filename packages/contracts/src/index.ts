@@ -40,18 +40,19 @@ export {
   ReminderTemplateEnableMode,
 } from './modules/reminder/enums';
 
-// 导出 Schedule 枚举（不包含 SortOrder）
+// 导出 Schedule 枚举（新的 DDD 架构）
+// 注意：旧的枚举（ScheduleStatus, SchedulePriority 等）已废弃，使用新的枚举
 export {
-  ScheduleStatus,
-  SchedulePriority,
-  ScheduleTaskType,
-  RecurrenceType,
-  AlertMethod,
-  AlertActionStyle,
-  ScheduleBatchOperationType,
   ScheduleTaskStatus,
-  TriggerType,
+  ExecutionStatus,
+  TaskPriority,
+  SourceModule,
+  Timezone,
 } from './modules/schedule/enums';
+
+// 旧枚举的类型别名（向后兼容，待迁移）
+// TODO: 逐步迁移使用旧枚举的代码到新枚举
+export { TaskPriority as SchedulePriority } from './modules/schedule/enums';
 
 // 导出 Goal 枚举（不包含 SortOrder）
 export {

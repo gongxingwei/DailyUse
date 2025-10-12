@@ -1,32 +1,22 @@
 /**
- * Schedule 模块导出
- * @description 按照DDD架构重新组织的调度模块导出
- * @author DailyUse Team
- * @date 2025-01-09
+ * Schedule Web Module
+ * 调度Web模块导出
  */
 
-// 应用服务层
+// 导出应用层服务
 export {
+  ScheduleWebApplicationService,
   scheduleWebApplicationService,
-  getScheduleWebService,
-} from './application/services/ScheduleWebApplicationService';
+} from './services/ScheduleWebApplicationService';
 
-// 表示层 - Composables
-export { useSchedule } from './presentation/composables/useSchedule';
+// 导出基础设施层 API 客户端
+export * from './infrastructure/api/index';
 
-// 基础设施层
-export { scheduleApiClient } from './infrastructure/api/scheduleApiClient';
-
-// 表示层 - 视图组件
-export { default as ScheduleManagementView } from './presentation/views/ScheduleManagementView.vue';
-
-// 表示层 - 工具组件
-export { default as ScheduleTaskDialog } from './presentation/components/ScheduleTaskDialog.vue';
-export { default as ScheduleIntegrationPanel } from './presentation/components/ScheduleIntegrationPanel.vue';
-export { default as RealtimeNotificationPanel } from './presentation/components/RealtimeNotificationPanel.vue';
-
-// 路由
+// 导出路由
 export { scheduleRoutes } from './router';
 
-// 初始化
-export { registerScheduleInitializationTasks } from './initialization/scheduleInitialization';
+// 导出组件
+export * from './presentation/components';
+
+// 导出 composables
+export { useSchedule } from './presentation/composables/useSchedule';

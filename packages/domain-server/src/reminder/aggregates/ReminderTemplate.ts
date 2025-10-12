@@ -1,6 +1,7 @@
 import { ReminderTemplateCore } from '@dailyuse/domain-core';
 import { ReminderContracts } from '@dailyuse/contracts';
-import { timeConfigToCronExpression } from '../../schedule/services/cronHelper';
+// TODO: Migrate to new Schedule module
+// import { timeConfigToCronExpression } from '../../schedule/services/cronHelper';
 
 /**
  * 提醒模板聚合根 - 服务端实现
@@ -53,9 +54,12 @@ export class ReminderTemplate extends ReminderTemplateCore {
   /**
    * 转换为 cron 表达式
    * 用于 Schedule 模块的定时调度
+   *
+   * TODO: Migrate to new Schedule module
    */
   toCronExpression(): string | null {
-    return timeConfigToCronExpression(this.timeConfig);
+    // return timeConfigToCronExpression(this.timeConfig);
+    return null; // Temporary placeholder
   }
 
   /**

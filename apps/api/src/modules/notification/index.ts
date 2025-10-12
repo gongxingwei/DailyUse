@@ -7,7 +7,7 @@ export * from './infrastructure/mappers/NotificationMapper';
 
 // Application 层导出
 export * from './application/services/NotificationApplicationService';
-export * from './application/eventHandlers/TaskTriggeredHandler';
+// export * from './application/eventHandlers/TaskTriggeredHandler'; // DISABLED: depends on Schedule module
 
 // Interface 层导出
 export * from './interface';

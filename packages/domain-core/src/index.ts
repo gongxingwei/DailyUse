@@ -27,21 +27,12 @@ export * from './task/aggregates/TaskTemplate';
 export * from './task/entities/TaskInstance';
 export * from './task/aggregates/TaskMetaTemplate';
 
-// Task Schedule Integration
-export {
-  TaskScheduleIntegrationService,
-  type TaskReminderConfig,
-} from './task/services/TaskScheduleIntegrationService';
-
 // Reminder domain exports
 export * from './reminder';
 
 // Setting domain exports
 export * from './setting/SettingCore';
 export * from './setting/aggregates';
-
-// Schedule domain exports
-export * from './schedule';
 
 // Theme domain exports
 export * from './theme';
