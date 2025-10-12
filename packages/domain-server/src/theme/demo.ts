@@ -27,7 +27,7 @@ async function demoThemeModule() {
   const createResult = await themeService.createTheme({
     name: 'My Custom Theme',
     description: '我的自定义主题',
-    type: ThemeType.LIGHT,
+    type: ThemeType.CUSTOM, // Changed from LIGHT to CUSTOM
     author: 'User',
   });
   console.log('创建结果:', createResult);
@@ -66,7 +66,7 @@ async function demoThemeModule() {
   const customTheme = ThemeDefinition.create({
     name: 'Direct Theme',
     description: '直接创建的主题',
-    type: ThemeType.DARK,
+    type: ThemeType.SYSTEM, // Changed from DARK to SYSTEM
     author: 'Developer',
   });
 

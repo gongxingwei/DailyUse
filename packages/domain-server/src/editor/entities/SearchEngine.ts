@@ -61,7 +61,7 @@ export class SearchEngine extends Entity implements ISearchEngineServer {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get workspaceUuid(): string {

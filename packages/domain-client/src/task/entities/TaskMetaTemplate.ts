@@ -133,7 +133,7 @@ export class TaskMetaTemplate extends TaskMetaTemplateCore {
   /**
    * 是否为热门模板（使用次数 > 5）
    */
-  get isPopular(): boolean {
+  override get isPopular(): boolean {
     return this.usage.usageCount > 5;
   }
 

@@ -81,7 +81,7 @@ export class Resource extends Entity implements IResourceClient {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get repositoryUuid(): string {

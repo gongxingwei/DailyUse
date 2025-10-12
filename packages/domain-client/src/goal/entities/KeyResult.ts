@@ -28,7 +28,7 @@ export class KeyResult extends KeyResultCore {
   }
 
   // ===== 序列化方法 =====
-  toDTO(): GoalContracts.KeyResultDTO {
+  override toDTO(): GoalContracts.KeyResultDTO {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
@@ -48,7 +48,7 @@ export class KeyResult extends KeyResultCore {
     };
   }
 
-  static fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
+  static override fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
     return new KeyResult({
       uuid: dto.uuid,
       goalUuid: dto.goalUuid,
@@ -97,7 +97,7 @@ export class KeyResult extends KeyResultCore {
    * 自定义进度计算逻辑（客户端实现）
    * 重写父类方法以实现客户端特定的业务逻辑
    */
-  protected customProgressCalculation(): number {
+  protected override customProgressCalculation(): number {
     // 客户端可以实现更复杂的进度计算逻辑
     const baseProgress = this.progress;
 
@@ -155,7 +155,7 @@ export class KeyResult extends KeyResultCore {
   /**
    * 进度百分比 (0-100)
    */
-  get progress(): number {
+  override get progress(): number {
     const range = this._targetValue - this._startValue;
     if (range === 0) return 100;
 
@@ -166,14 +166,14 @@ export class KeyResult extends KeyResultCore {
   /**
    * 是否已完成
    */
-  get isCompleted(): boolean {
+  override get isCompleted(): boolean {
     return this._currentValue >= this._targetValue;
   }
 
   /**
    * 剩余数量
    */
-  get remaining(): number {
+  override get remaining(): number {
     return Math.max(0, this._targetValue - this._currentValue);
   }
 

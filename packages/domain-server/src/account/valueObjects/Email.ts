@@ -16,7 +16,7 @@ export class Email extends EmailCore implements IEmail {
    * 验证邮箱 - 服务端版本
    * 返回新的已验证Email实例
    */
-  verify(): Email {
+  override verify(): Email {
     return new Email(this.value, true, new Date());
   }
 

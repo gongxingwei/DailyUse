@@ -144,7 +144,7 @@ export class User extends UserCore implements IUserClient {
   }
 
   // ===== DTO方法 =====
-  static fromDTO(dto: UserDTO): User {
+  static override fromDTO(dto: UserDTO): User {
     return new User({
       uuid: dto.uuid,
       firstName: dto.firstName || '',
@@ -158,7 +158,7 @@ export class User extends UserCore implements IUserClient {
     });
   }
 
-  toDTO(): UserDTO {
+  override toDTO(): UserDTO {
     return {
       uuid: this.uuid,
       firstName: this.firstName || '',

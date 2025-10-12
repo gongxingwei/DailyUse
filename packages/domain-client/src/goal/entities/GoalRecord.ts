@@ -20,13 +20,13 @@ export class GoalRecord extends GoalRecordCore {
   /**
    * 更新记录值
    */
-  updateValue(value: number): void {
+  override updateValue(value: number): void {
     this.validateValue(value);
     this._value = value;
   }
 
   // ===== 序列化方法 =====
-  toDTO(): GoalContracts.GoalRecordDTO {
+  override toDTO(): GoalContracts.GoalRecordDTO {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
@@ -37,7 +37,7 @@ export class GoalRecord extends GoalRecordCore {
     };
   }
 
-  static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
+  static override fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
       goalUuid: dto.goalUuid,

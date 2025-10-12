@@ -15,7 +15,7 @@ export class PhoneNumber extends PhoneNumberCore implements IPhoneNumber {
   /**
    * 验证手机号 - 服务端版本
    */
-  verify(): PhoneNumber {
+  override verify(): PhoneNumber {
     return new PhoneNumber(this.number, this.countryCode, true, new Date());
   }
 

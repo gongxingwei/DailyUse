@@ -383,7 +383,7 @@ export class TaskTemplate extends TaskTemplateCore {
   /**
    * 更新统计信息（重写父类方法以实现自定义逻辑）
    */
-  protected updateStats(): void {
+  protected override updateStats(): void {
     const totalInstances = this.instances.length;
     const completedInstances = this.instances.filter(
       (inst) => inst.execution.status === 'completed',

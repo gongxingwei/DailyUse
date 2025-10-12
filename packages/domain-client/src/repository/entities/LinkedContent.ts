@@ -65,7 +65,7 @@ export class LinkedContent extends Entity implements ILinkedContentClient {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get resourceUuid(): string {

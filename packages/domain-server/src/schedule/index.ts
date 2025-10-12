@@ -1,8 +1,7 @@
 // Schedule aggregates
-export * from './aggregates/ScheduleTask';
+// Note: ScheduleTask aggregate doesn't exist yet, will be implemented later
 
 // Schedule repositories
-export * from './repositories/IScheduleTaskRepository';
 export * from './repositories';
 
 // Schedule services

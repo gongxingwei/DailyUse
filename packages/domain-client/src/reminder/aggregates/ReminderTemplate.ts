@@ -157,7 +157,7 @@ export class ReminderTemplate extends ReminderTemplateCore {
 
   // ===== 序列化方法 =====
 
-  static fromDTO(dto: ReminderContracts.IReminderTemplate): ReminderTemplate {
+  static override fromDTO(dto: ReminderContracts.IReminderTemplate): ReminderTemplate {
     return new ReminderTemplate({
       uuid: dto.uuid,
       groupUuid: dto.groupUuid,

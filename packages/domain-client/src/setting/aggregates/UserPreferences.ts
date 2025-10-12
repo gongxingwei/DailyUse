@@ -410,7 +410,7 @@ export class UserPreferences extends UserPreferencesCore implements IUserPrefere
   /**
    * 生成 UUID
    */
-  static generateUUID(): string {
+  static override generateUUID(): string {
     if (typeof crypto !== 'undefined' && crypto.randomUUID) {
       return crypto.randomUUID();
     }

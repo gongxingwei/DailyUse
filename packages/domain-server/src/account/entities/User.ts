@@ -108,7 +108,7 @@ export class User extends UserCore implements IUser {
   /**
    * 从DTO数据创建实例
    */
-  static fromDTO(data: any): User {
+  static override fromDTO(data: any): User {
     return UserCore.fromDTO(data) as User;
   }
 }

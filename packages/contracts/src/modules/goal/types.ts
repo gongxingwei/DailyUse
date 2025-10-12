@@ -250,6 +250,7 @@ export interface IKeyResultClient extends IKeyResult {
  * 目前与基础接口相同，预留扩展空间
  */
 export interface IGoalRecordClient extends IGoalRecord {
+  isClient: boolean;
   // 预留扩展
 }
 

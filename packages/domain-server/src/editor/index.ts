@@ -17,6 +17,3 @@ export * from './repositories';
 
 // Domain Services
 export * from './services';
-
-// Application Services
-export * from './application-services';

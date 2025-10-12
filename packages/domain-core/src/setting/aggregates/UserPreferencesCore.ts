@@ -33,7 +33,6 @@ interface ValidationResult {
  */
 export abstract class UserPreferencesCore extends AggregateRoot implements IUserPreferences {
   // ========== 基础属性 ==========
-  protected _uuid: string;
   protected _accountUuid: string;
 
   // ========== 基础偏好 ==========
@@ -63,8 +62,6 @@ export abstract class UserPreferencesCore extends AggregateRoot implements IUser
 
   constructor(data: IUserPreferences) {
     super(data.uuid);
-
-    this._uuid = data.uuid;
     this._accountUuid = data.accountUuid;
     this._language = data.language;
     this._timezone = data.timezone;

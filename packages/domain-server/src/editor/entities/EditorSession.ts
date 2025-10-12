@@ -115,6 +115,26 @@ export class EditorSession extends Entity {
     return this._updatedAt;
   }
 
+    // ===== 实例属性修改方法 =====
+  /**
+   * 重命名会话
+   */
+  public rename(newName: string): void {
+    if (!newName || newName.trim() === '') {
+      throw new Error('会话名称不能为空');
+    }
+    this._name = newName.trim();
+    this._updatedAt = Date.now();
+  }
+  /**
+   * 更新描述
+   * @param newDescription 新描述，可以为 null 清除描述
+   */
+  public updateDescription(newDescription: string | null): void {
+    this._description = newDescription ? newDescription.trim() : null;
+    this._updatedAt = Date.now();
+  }
+
   // ===== 工厂方法 =====
 
   /**
@@ -400,7 +420,9 @@ export class EditorSession extends Entity {
     });
 
     // ✅ 递归重建子实体
-    session._groups = dto.groups.map((groupDto) => EditorGroup.fromPersistenceDTO(groupDto));
+    session._groups = (dto.groups || []).map((groupDto) =>
+      EditorGroup.fromPersistenceDTO(groupDto),
+    );
 
     return session;
   }

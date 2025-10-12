@@ -35,7 +35,7 @@ export class KeyResult extends KeyResultCore {
    * 自定义进度计算逻辑（服务端实现）
    * 重写父类方法以实现服务端特定的业务逻辑
    */
-  protected customProgressCalculation(): number {
+  protected override customProgressCalculation(): number {
     // 服务端可以访问更多数据来进行复杂的进度计算
     const baseProgress = this.progress;
 
@@ -184,7 +184,7 @@ export class KeyResult extends KeyResultCore {
   /**
    * 更新进度
    */
-  updateProgress(value: number): void {
+  override updateProgress(value: number): void {
     if (this.lifecycle.status === 'archived') {
       throw new Error('已归档的关键结果不能更新进度');
     }
@@ -238,7 +238,7 @@ export class KeyResult extends KeyResultCore {
   /**
    * 更新基本信息
    */
-  updateInfo(params: {
+  override updateInfo(params: {
     name?: string;
     description?: string;
     targetValue?: number;
@@ -289,7 +289,7 @@ export class KeyResult extends KeyResultCore {
   }
 
   // ===== 验证方法 =====
-  validateName(name: string): void {
+  override validateName(name: string): void {
     if (!name || name.trim().length === 0) {
       throw new Error('关键结果名称不能为空');
     }
@@ -307,14 +307,14 @@ export class KeyResult extends KeyResultCore {
     }
   }
 
-  validateWeight(weight: number): void {
+  override validateWeight(weight: number): void {
     if (weight < 0 || weight > 100) {
       throw new Error('权重必须在0-100之间');
     }
   }
 
   // ===== 序列化方法 =====
-  static fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
+  static override fromDTO(dto: GoalContracts.KeyResultDTO): KeyResult {
     return new KeyResult({
       uuid: dto.uuid,
       goalUuid: dto.goalUuid,

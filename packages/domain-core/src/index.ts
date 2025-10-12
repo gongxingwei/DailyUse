@@ -33,13 +33,6 @@ export {
   type TaskReminderConfig,
 } from './task/services/TaskScheduleIntegrationService';
 
-// Repository domain exports
-export * from './repository/aggregates/RepositoryCore';
-export * from './repository/entities/Resource';
-
-// Editor domain exports
-export * from './editor/aggregates/EditorCore';
-
 // Reminder domain exports
 export * from './reminder';
 

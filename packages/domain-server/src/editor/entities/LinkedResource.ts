@@ -69,7 +69,7 @@ export class LinkedResource extends Entity implements ILinkedResourceServer {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get workspaceUuid(): string {

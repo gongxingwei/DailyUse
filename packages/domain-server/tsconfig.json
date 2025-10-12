@@ -23,8 +23,12 @@
     // Composite 项目配置（Monorepo 库的核心）
     // ============================================================
 
-    // 启用项目引用模式（支持类型热更新）
-    "composite": true,
+    // 禁用 composite（与 tsup --dts 不兼容）
+    // tsup 自行处理类型生成，不需要 composite 项目模式
+    "composite": false,
+
+    // 禁用增量编译（与 tsup --dts 不兼容）
+    "incremental": false,
 
     // 生成类型声明文件
     "declaration": true,
@@ -62,16 +66,17 @@
   // 包含和排除配置
   // ============================================================
 
-  // 包含的文件
-  "include": ["src/**/*"],
+  // 包含的文件 - 包含所有 TypeScript 文件
+  "include": ["src"],
 
   // 排除的文件
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
 
   // ============================================================
   // 项目引用配置（依赖的包）
   // ============================================================
 
-  // Domain Server 依赖的包
-  "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
+  // 注意：使用 tsup 时，references 会导致问题
+  // TypeScript 会通过 node_modules 自动解析依赖包的类型
+  // "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
 }

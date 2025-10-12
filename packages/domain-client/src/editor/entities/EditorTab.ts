@@ -1,482 +1,364 @@
-import { EditorTabCore } from '@dailyuse/domain-core';
-import { type EditorContracts } from '@dailyuse/contracts';
+/**
+ * EditorTab Entity - Client Implementation
+ * 编辑器标签实体 - 客户端实现
+ */
 
-// 获取类型定义
-type EditorTabDTO = EditorContracts.EditorTabDTO;
-type SupportedFileType = EditorContracts.SupportedFileType;
+import type { EditorContracts } from '@dailyuse/contracts';
+import { EditorContracts as EC } from '@dailyuse/contracts';
+import { Entity } from '@dailyuse/utils';
+import { TabViewStateClient } from '../value-objects';
+
+type IEditorTabClient = EditorContracts.EditorTabClient;
+type EditorTabClientDTO = EditorContracts.EditorTabClientDTO;
+type EditorTabServerDTO = EditorContracts.EditorTabServerDTO;
+type TabType = EditorContracts.TabType;
 
 /**
- * 客户端 EditorTab 实体
- * 继承核心 EditorTab 类，添加客户端特有功能
+ * EditorTab Entity (Client)
+ *
+ * DDD 实体职责：
+ * - 有唯一标识符（uuid）
+ * - 封装业务逻辑
+ * - 管理自身状态
  */
-export class EditorTab extends EditorTabCore {
-  private _uiState: {
-    isHighlighted: boolean;
-    isLoading: boolean;
-    hasError: boolean;
-    errorMessage?: string;
-    cursorPosition?: { line: number; column: number };
-    scrollPosition?: { top: number; left: number };
-    selection?: { start: { line: number; column: number }; end: { line: number; column: number } };
-    foldedRanges?: Array<{ start: number; end: number }>;
-    bookmarks?: number[];
-  };
-  private _localHistory: Array<{
-    timestamp: Date;
-    action: string;
-    data: any;
-  }>;
-  private _customTheme?: string;
+export class EditorTab extends Entity implements IEditorTabClient {
+  // ===== 私有字段 =====
+  private _groupUuid: string;
+  private _sessionUuid: string;
+  private _workspaceUuid: string;
+  private _accountUuid: string;
+  private _documentUuid: string | null;
+  private _tabIndex: number;
+  private _tabType: TabType;
+  private _title: string;
+  private _viewState: TabViewStateClient;
+  private _isPinned: boolean;
+  private _isDirty: boolean;
+  private _lastAccessedAt: number | null;
+  private _createdAt: number;
+  private _updatedAt: number;
 
-  constructor(params: {
+  // ===== 构造函数（私有） =====
+  private constructor(params: {
     uuid?: string;
+    groupUuid: string;
+    sessionUuid: string;
+    workspaceUuid: string;
+    accountUuid: string;
+    documentUuid?: string | null;
+    tabIndex: number;
+    tabType: TabType;
     title: string;
-    path: string;
-    active?: boolean;
-    isPreview?: boolean;
-    fileType?: SupportedFileType;
-    isDirty?: boolean;
-    content?: string;
-    lastModified?: Date;
-    createdAt?: Date;
-    updatedAt?: Date;
-    // 客户端特有字段
-    uiState?: {
-      isHighlighted?: boolean;
-      isLoading?: boolean;
-      hasError?: boolean;
-      errorMessage?: string;
-      cursorPosition?: { line: number; column: number };
-      scrollPosition?: { top: number; left: number };
-      selection?: {
-        start: { line: number; column: number };
-        end: { line: number; column: number };
-      };
-      foldedRanges?: Array<{ start: number; end: number }>;
-      bookmarks?: number[];
-    };
-    localHistory?: Array<{
-      timestamp: Date;
-      action: string;
-      data: any;
-    }>;
-    customTheme?: string;
+    viewState: TabViewStateClient;
+    isPinned: boolean;
+    isDirty: boolean;
+    lastAccessedAt?: number | null;
+    createdAt: number;
+    updatedAt: number;
   }) {
-    super(params);
+    super(params.uuid ?? Entity.generateUUID());
+    this._groupUuid = params.groupUuid;
+    this._sessionUuid = params.sessionUuid;
+    this._workspaceUuid = params.workspaceUuid;
+    this._accountUuid = params.accountUuid;
+    this._documentUuid = params.documentUuid ?? null;
+    this._tabIndex = params.tabIndex;
+    this._tabType = params.tabType;
+    this._title = params.title;
+    this._viewState = params.viewState;
+    this._isPinned = params.isPinned;
+    this._isDirty = params.isDirty;
+    this._lastAccessedAt = params.lastAccessedAt ?? null;
+    this._createdAt = params.createdAt;
+    this._updatedAt = params.updatedAt;
+  }
 
-    this._uiState = {
-      isHighlighted: params.uiState?.isHighlighted || false,
-      isLoading: params.uiState?.isLoading || false,
-      hasError: params.uiState?.hasError || false,
-      errorMessage: params.uiState?.errorMessage,
-      cursorPosition: params.uiState?.cursorPosition,
-      scrollPosition: params.uiState?.scrollPosition,
-      selection: params.uiState?.selection,
-      foldedRanges: params.uiState?.foldedRanges || [],
-      bookmarks: params.uiState?.bookmarks || [],
+  // ===== Getter 属性 =====
+  public override get uuid(): string {
+    return this._uuid;
+  }
+  public get groupUuid(): string {
+    return this._groupUuid;
+  }
+  public get sessionUuid(): string {
+    return this._sessionUuid;
+  }
+  public get workspaceUuid(): string {
+    return this._workspaceUuid;
+  }
+  public get accountUuid(): string {
+    return this._accountUuid;
+  }
+  public get documentUuid(): string | null {
+    return this._documentUuid;
+  }
+  public get tabIndex(): number {
+    return this._tabIndex;
+  }
+  public get tabType(): TabType {
+    return this._tabType;
+  }
+  public get title(): string {
+    return this._title;
+  }
+  public get viewState(): EditorContracts.TabViewStateClientDTO {
+    return this._viewState.toClientDTO();
+  }
+  public get isPinned(): boolean {
+    return this._isPinned;
+  }
+  public get isDirty(): boolean {
+    return this._isDirty;
+  }
+  public get lastAccessedAt(): number | null {
+    return this._lastAccessedAt;
+  }
+  public get createdAt(): number {
+    return this._createdAt;
+  }
+  public get updatedAt(): number {
+    return this._updatedAt;
+  }
+
+  // ===== UI 辅助属性 =====
+  public get formattedLastAccessed(): string | null {
+    return this._lastAccessedAt ? this.formatRelativeTime(this._lastAccessedAt) : null;
+  }
+
+  public get formattedCreatedAt(): string {
+    return this.formatDate(this._createdAt);
+  }
+
+  public get formattedUpdatedAt(): string {
+    return this.formatDate(this._updatedAt);
+  }
+
+  private formatDate(timestamp: number): string {
+    return new Date(timestamp).toLocaleString('zh-CN');
+  }
+
+  private formatRelativeTime(timestamp: number): string {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const seconds = Math.floor(diff / 1000);
+    const minutes = Math.floor(seconds / 60);
+    const hours = Math.floor(minutes / 60);
+    const days = Math.floor(hours / 24);
+
+    if (days > 0) return `${days}天前`;
+    if (hours > 0) return `${hours}小时前`;
+    if (minutes > 0) return `${minutes}分钟前`;
+    return '刚刚';
+  }
+
+  // ===== UI 辅助方法 =====
+
+  /**
+   * 获取显示标题（包含脏标记）
+   */
+  public getDisplayTitle(): string {
+    return this._isDirty ? `${this._title} •` : this._title;
+  }
+
+  /**
+   * 获取标签类型标签
+   */
+  public getTabTypeLabel(): string {
+    const labels: Record<TabType, string> = {
+      [EC.TabType.DOCUMENT]: '文档',
+      [EC.TabType.PREVIEW]: '预览',
+      [EC.TabType.DIFF]: '对比',
+      [EC.TabType.SETTINGS]: '设置',
+      [EC.TabType.SEARCH]: '搜索',
+      [EC.TabType.WELCOME]: '欢迎',
     };
-    this._localHistory = params.localHistory || [];
-    this._customTheme = params.customTheme;
+    return labels[this._tabType] || this._tabType;
   }
 
-  // ===== 实现抽象方法 =====
-
   /**
-   * 转换为DTO
+   * 获取标签图标名称
    */
-  toDTO(): EditorTabDTO {
-    return {
-      uuid: this.uuid,
-      title: this.title,
-      path: this.path,
-      active: this.active,
-      isPreview: this.isPreview,
-      fileType: this.fileType,
-      isDirty: this.isDirty,
-      content: this.content,
-      groupUuid: (this as any)._groupUuid || '',
-      lastModified: this.lastModified?.getTime(),
-      createdAt: this.createdAt.getTime(),
-      updatedAt: this.updatedAt.getTime(),
+  public getIconName(): string {
+    const icons: Record<TabType, string> = {
+      [EC.TabType.DOCUMENT]: 'document',
+      [EC.TabType.PREVIEW]: 'eye',
+      [EC.TabType.DIFF]: 'git-compare',
+      [EC.TabType.SETTINGS]: 'settings',
+      [EC.TabType.SEARCH]: 'search',
+      [EC.TabType.WELCOME]: 'home',
     };
-  }
-
-  // ===== Getter 方法 =====
-  get uiState() {
-    return { ...this._uiState };
-  }
-  get localHistory() {
-    return [...this._localHistory];
-  }
-  get customTheme(): string | undefined {
-    return this._customTheme;
-  }
-  get cursorPosition() {
-    return this._uiState.cursorPosition;
-  }
-  get scrollPosition() {
-    return this._uiState.scrollPosition;
-  }
-  get selection() {
-    return this._uiState.selection;
-  }
-  get isHighlighted(): boolean {
-    return this._uiState.isHighlighted;
-  }
-  get isLoading(): boolean {
-    return this._uiState.isLoading;
-  }
-  get hasError(): boolean {
-    return this._uiState.hasError;
-  }
-  get errorMessage(): string | undefined {
-    return this._uiState.errorMessage;
-  }
-
-  // ===== 客户端特有方法 =====
-
-  /**
-   * 设置光标位置
-   */
-  setCursorPosition(line: number, column: number): void {
-    this._uiState.cursorPosition = { line, column };
-    this.addToLocalHistory('cursor_move', { line, column });
+    return icons[this._tabType] || 'file';
   }
 
   /**
-   * 设置滚动位置
+   * 是否为文档标签
    */
-  setScrollPosition(top: number, left: number): void {
-    this._uiState.scrollPosition = { top, left };
+  public isDocumentTab(): boolean {
+    return this._tabType === EC.TabType.DOCUMENT;
   }
 
   /**
-   * 设置选择区域
+   * 是否可以关闭（某些特殊标签可能不允许关闭）
    */
-  setSelection(
-    start: { line: number; column: number },
-    end: { line: number; column: number },
-  ): void {
-    this._uiState.selection = { start, end };
-    this.addToLocalHistory('selection_change', { start, end });
+  public canClose(): boolean {
+    // Welcome 标签通常不允许关闭
+    return this._tabType !== EC.TabType.WELCOME;
   }
 
   /**
-   * 清除选择
+   * 是否需要确认关闭（有未保存更改时）
    */
-  clearSelection(): void {
-    this._uiState.selection = undefined;
+  public needsCloseConfirmation(): boolean {
+    return this._isDirty && this.isDocumentTab();
   }
 
   /**
-   * 设置高亮状态
+   * 获取格式化的最后访问时间
    */
-  setHighlighted(highlighted: boolean): void {
-    this._uiState.isHighlighted = highlighted;
+  public getFormattedLastAccessed(): string | null {
+    return this.formattedLastAccessed;
   }
 
   /**
-   * 设置加载状态
+   * 获取标签状态颜色（用于 UI 徽章）
    */
-  setLoading(loading: boolean): void {
-    this._uiState.isLoading = loading;
-    if (loading) {
-      this.clearError();
-    }
+  public getStatusColor(): string {
+    if (this._isDirty) return 'warning'; // 未保存
+    if (this._isPinned) return 'info'; // 已固定
+    return 'default';
   }
 
-  /**
-   * 设置错误状态
-   */
-  setError(errorMessage: string): void {
-    this._uiState.hasError = true;
-    this._uiState.errorMessage = errorMessage;
-    this._uiState.isLoading = false;
-    this.addToLocalHistory('error', { errorMessage });
-  }
+  // ===== 工厂方法 =====
 
   /**
-   * 清除错误状态
+   * 创建新的 EditorTab
    */
-  clearError(): void {
-    this._uiState.hasError = false;
-    this._uiState.errorMessage = undefined;
-  }
-
-  /**
-   * 添加书签
-   */
-  addBookmark(line: number): void {
-    if (!this._uiState.bookmarks) {
-      this._uiState.bookmarks = [];
-    }
-    if (!this._uiState.bookmarks.includes(line)) {
-      this._uiState.bookmarks.push(line);
-      this._uiState.bookmarks.sort((a, b) => a - b);
-      this.addToLocalHistory('bookmark_add', { line });
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 移除书签
-   */
-  removeBookmark(line: number): void {
-    if (this._uiState.bookmarks) {
-      const index = this._uiState.bookmarks.indexOf(line);
-      if (index !== -1) {
-        this._uiState.bookmarks.splice(index, 1);
-        this.addToLocalHistory('bookmark_remove', { line });
-        this.updateTimestamp();
-      }
-    }
-  }
-
-  /**
-   * 切换书签
-   */
-  toggleBookmark(line: number): void {
-    if (this._uiState.bookmarks?.includes(line)) {
-      this.removeBookmark(line);
-    } else {
-      this.addBookmark(line);
-    }
-  }
-
-  /**
-   * 折叠代码范围
-   */
-  foldRange(start: number, end: number): void {
-    if (!this._uiState.foldedRanges) {
-      this._uiState.foldedRanges = [];
-    }
-
-    const existingRange = this._uiState.foldedRanges.find(
-      (range) => range.start === start && range.end === end,
-    );
-
-    if (!existingRange) {
-      this._uiState.foldedRanges.push({ start, end });
-      this.addToLocalHistory('fold_range', { start, end });
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 展开代码范围
-   */
-  unfoldRange(start: number, end: number): void {
-    if (this._uiState.foldedRanges) {
-      const index = this._uiState.foldedRanges.findIndex(
-        (range) => range.start === start && range.end === end,
-      );
-
-      if (index !== -1) {
-        this._uiState.foldedRanges.splice(index, 1);
-        this.addToLocalHistory('unfold_range', { start, end });
-        this.updateTimestamp();
-      }
-    }
-  }
-
-  /**
-   * 展开所有折叠
-   */
-  unfoldAll(): void {
-    if (this._uiState.foldedRanges && this._uiState.foldedRanges.length > 0) {
-      this._uiState.foldedRanges = [];
-      this.addToLocalHistory('unfold_all', {});
-      this.updateTimestamp();
-    }
-  }
-
-  /**
-   * 设置自定义主题
-   */
-  setCustomTheme(theme: string): void {
-    this._customTheme = theme;
-    this.addToLocalHistory('theme_change', { theme });
-    this.updateTimestamp();
-  }
-
-  /**
-   * 清除自定义主题
-   */
-  clearCustomTheme(): void {
-    this._customTheme = undefined;
-    this.addToLocalHistory('theme_clear', {});
-    this.updateTimestamp();
-  }
-
-  /**
-   * 添加到本地历史
-   */
-  private addToLocalHistory(action: string, data: any): void {
-    this._localHistory.push({
-      timestamp: new Date(),
-      action,
-      data,
+  public static create(params: {
+    groupUuid: string;
+    sessionUuid: string;
+    workspaceUuid: string;
+    accountUuid: string;
+    documentUuid?: string;
+    tabIndex: number;
+    tabType: TabType;
+    title: string;
+    viewState?: TabViewStateClient;
+  }): EditorTab {
+    const now = Date.now();
+    return new EditorTab({
+      groupUuid: params.groupUuid,
+      sessionUuid: params.sessionUuid,
+      workspaceUuid: params.workspaceUuid,
+      accountUuid: params.accountUuid,
+      documentUuid: params.documentUuid,
+      tabIndex: params.tabIndex,
+      tabType: params.tabType,
+      title: params.title,
+      viewState: params.viewState ?? TabViewStateClient.createDefault(),
+      isPinned: false,
+      isDirty: false,
+      lastAccessedAt: now,
+      createdAt: now,
+      updatedAt: now,
     });
-
-    // 限制历史记录数量
-    if (this._localHistory.length > 100) {
-      this._localHistory = this._localHistory.slice(-50);
-    }
   }
 
-  /**
-   * 清除本地历史
-   */
-  clearLocalHistory(): void {
-    this._localHistory = [];
-  }
+  // ===== 转换方法 (To) =====
 
   /**
-   * 获取指定行的内容
+   * 转换为 Server DTO
    */
-  getLineContent(lineNumber: number): string {
-    if (!this.content) return '';
-
-    const lines = this.content.split('\n');
-    return lines[lineNumber - 1] || '';
-  }
-
-  /**
-   * 获取选中的文本
-   */
-  getSelectedText(): string {
-    if (!this.content || !this._uiState.selection) return '';
-
-    const lines = this.content.split('\n');
-    const { start, end } = this._uiState.selection;
-
-    if (start.line === end.line) {
-      // 单行选择
-      const line = lines[start.line - 1];
-      return line?.substring(start.column, end.column) || '';
-    } else {
-      // 多行选择
-      const selectedLines: string[] = [];
-
-      for (let i = start.line - 1; i <= end.line - 1; i++) {
-        if (i === start.line - 1) {
-          // 第一行
-          selectedLines.push(lines[i]?.substring(start.column) || '');
-        } else if (i === end.line - 1) {
-          // 最后一行
-          selectedLines.push(lines[i]?.substring(0, end.column) || '');
-        } else {
-          // 中间行
-          selectedLines.push(lines[i] || '');
-        }
-      }
-
-      return selectedLines.join('\n');
-    }
-  }
-
-  /**
-   * 跳转到指定行
-   */
-  goToLine(lineNumber: number): void {
-    this.setCursorPosition(lineNumber, 0);
-    this.setScrollPosition(lineNumber * 20, 0); // 假设行高为20px
-  }
-
-  /**
-   * 获取标签页状态摘要
-   */
-  getStateSummary(): {
-    hasUnsavedChanges: boolean;
-    hasBookmarks: boolean;
-    hasFoldedRanges: boolean;
-    hasSelection: boolean;
-    isCurrentlyActive: boolean;
-    fileSize: number;
-    lineCount: number;
-  } {
-    const lines = this.content?.split('\n') || [];
-
+  public toServerDTO(): EditorTabServerDTO {
     return {
-      hasUnsavedChanges: this.isDirty || false,
-      hasBookmarks: (this._uiState.bookmarks?.length || 0) > 0,
-      hasFoldedRanges: (this._uiState.foldedRanges?.length || 0) > 0,
-      hasSelection: !!this._uiState.selection,
-      isCurrentlyActive: this.active,
-      fileSize: this.content?.length || 0,
-      lineCount: lines.length,
+      uuid: this._uuid,
+      groupUuid: this._groupUuid,
+      sessionUuid: this._sessionUuid,
+      workspaceUuid: this._workspaceUuid,
+      accountUuid: this._accountUuid,
+      documentUuid: this._documentUuid,
+      tabIndex: this._tabIndex,
+      tabType: this._tabType,
+      title: this._title,
+      viewState: this._viewState.toServerDTO(),
+      isPinned: this._isPinned,
+      isDirty: this._isDirty,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
   /**
-   * 重置UI状态
+   * 转换为 Client DTO
    */
-  resetUiState(): void {
-    this._uiState = {
-      isHighlighted: false,
-      isLoading: false,
-      hasError: false,
-      errorMessage: undefined,
-      cursorPosition: undefined,
-      scrollPosition: undefined,
-      selection: undefined,
-      foldedRanges: [],
-      bookmarks: [],
+  public toClientDTO(): EditorTabClientDTO {
+    return {
+      uuid: this._uuid,
+      groupUuid: this._groupUuid,
+      sessionUuid: this._sessionUuid,
+      workspaceUuid: this._workspaceUuid,
+      accountUuid: this._accountUuid,
+      documentUuid: this._documentUuid,
+      tabIndex: this._tabIndex,
+      tabType: this._tabType,
+      title: this._title,
+      viewState: this._viewState.toClientDTO(),
+      isPinned: this._isPinned,
+      isDirty: this._isDirty,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      formattedLastAccessed: this.formattedLastAccessed,
+      formattedCreatedAt: this.formattedCreatedAt,
+      formattedUpdatedAt: this.formattedUpdatedAt,
     };
-    this.addToLocalHistory('ui_reset', {});
-    this.updateTimestamp();
   }
 
+  // ===== 转换方法 (From - 静态工厂) =====
+
   /**
-   * 克隆当前对象（深拷贝）
-   * 用于表单编辑时避免直接修改原数据
+   * 从 Server DTO 创建实体
    */
-  clone(): EditorTab {
-    const dto = this.toDTO();
+  public static fromServerDTO(dto: EditorTabServerDTO): EditorTab {
     return new EditorTab({
       uuid: dto.uuid,
+      groupUuid: dto.groupUuid,
+      sessionUuid: dto.sessionUuid,
+      workspaceUuid: dto.workspaceUuid,
+      accountUuid: dto.accountUuid,
+      documentUuid: dto.documentUuid,
+      tabIndex: dto.tabIndex,
+      tabType: dto.tabType,
       title: dto.title,
-      path: dto.path,
-      active: dto.active,
-      isPreview: dto.isPreview,
-      fileType: dto.fileType,
+      viewState: TabViewStateClient.fromServerDTO(dto.viewState),
+      isPinned: dto.isPinned,
       isDirty: dto.isDirty,
-      content: dto.content,
-      lastModified: dto.lastModified ? new Date(dto.lastModified) : undefined,
-      createdAt: new Date(dto.createdAt),
-      updatedAt: new Date(dto.updatedAt),
-      // 深拷贝UI状态
-      uiState: this._uiState
-        ? {
-            isHighlighted: this._uiState.isHighlighted,
-            isLoading: this._uiState.isLoading,
-            hasError: this._uiState.hasError,
-            errorMessage: this._uiState.errorMessage,
-            cursorPosition: this._uiState.cursorPosition
-              ? { ...this._uiState.cursorPosition }
-              : undefined,
-            scrollPosition: this._uiState.scrollPosition
-              ? { ...this._uiState.scrollPosition }
-              : undefined,
-            selection: this._uiState.selection
-              ? {
-                  start: { ...this._uiState.selection.start },
-                  end: { ...this._uiState.selection.end },
-                }
-              : undefined,
-            foldedRanges: this._uiState.foldedRanges
-              ? this._uiState.foldedRanges.map((range) => ({ ...range }))
-              : undefined,
-            bookmarks: this._uiState.bookmarks ? [...this._uiState.bookmarks] : undefined,
-          }
-        : undefined,
-      localHistory: this._localHistory
-        ? this._localHistory.map((entry) => ({
-            timestamp: new Date(entry.timestamp),
-            action: entry.action,
-            data: entry.data,
-          }))
-        : undefined,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+    });
+  }
+
+  /**
+   * 从 Client DTO 创建实体
+   */
+  public static fromClientDTO(dto: EditorTabClientDTO): EditorTab {
+    return new EditorTab({
+      uuid: dto.uuid,
+      groupUuid: dto.groupUuid,
+      sessionUuid: dto.sessionUuid,
+      workspaceUuid: dto.workspaceUuid,
+      accountUuid: dto.accountUuid,
+      documentUuid: dto.documentUuid,
+      tabIndex: dto.tabIndex,
+      tabType: dto.tabType,
+      title: dto.title,
+      viewState: TabViewStateClient.fromClientDTO(dto.viewState),
+      isPinned: dto.isPinned,
+      isDirty: dto.isDirty,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 }

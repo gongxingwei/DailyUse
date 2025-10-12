@@ -244,7 +244,7 @@ export class UserPreferences extends UserPreferencesCore {
    * 生成 UUID
    * 使用全局 crypto API 生成 UUID
    */
-  static generateUUID(): string {
+  static override generateUUID(): string {
     // 使用加密安全的随机UUID
     return crypto.randomUUID();
   }

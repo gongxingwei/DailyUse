@@ -13,24 +13,24 @@ type AuthTokenPersistenceDTO = AuthenticationContracts.AuthTokenPersistenceDTO;
  */
 export class Token extends TokenCore implements ITokenServer {
   // ===== ITokenCore 方法 =====
-  isValid(): boolean {
+  override isValid(): boolean {
     return !this.isExpired() && !this.isRevoked;
   }
 
-  isExpired(): boolean {
+  override isExpired(): boolean {
     return new Date() > this.expiresAt;
   }
 
-  revoke(): void {
+  override revoke(): void {
     super.revoke();
   }
 
-  isNearExpiry(): boolean {
+  override isNearExpiry(): boolean {
     const fiveMinutes = 5 * 60 * 1000;
     return this.expiresAt.getTime() - Date.now() < fiveMinutes;
   }
 
-  getRemainingTime(): number {
+  override getRemainingTime(): number {
     return Math.max(0, this.expiresAt.getTime() - Date.now());
   }
 
@@ -63,7 +63,7 @@ export class Token extends TokenCore implements ITokenServer {
   }
 
   // ===== 业务方法 =====
-  equals(other: ValueObject): boolean {
+  override equals(other: ValueObject): boolean {
     if (!(other instanceof Token)) {
       return false;
     }
@@ -146,7 +146,7 @@ export class Token extends TokenCore implements ITokenServer {
     });
   }
 
-  static createRememberToken(
+  static override createRememberToken(
     accountUuid: string,
     deviceInfo?: string,
     secret: string = 'default-secret',

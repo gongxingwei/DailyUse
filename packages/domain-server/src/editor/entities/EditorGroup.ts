@@ -57,7 +57,7 @@ export class EditorGroup extends Entity implements IEditorGroupServer {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get sessionUuid(): string {

@@ -12,8 +12,8 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm --target es2020 --out-dir dist",
-    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch --out-dir dist",
+    "build": "tsup src/index.ts --dts --format esm --target es2020 --out-dir dist --external @nestjs/common --external class-validator --external class-transformer --external reflect-metadata --external rxjs",
+    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch --out-dir dist --external @nestjs/common --external class-validator --external class-transformer --external reflect-metadata --external rxjs",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

@@ -371,14 +371,13 @@ export class ThemeConfig {
 
   /**
    * 切换到系统主题
+   * Note: 服务端无法检测系统主题，默认返回 light 主题
    */
   public async switchToSystemTheme(): Promise<any> {
-    const prefersDark =
-      typeof window !== 'undefined'
-        ? window.matchMedia('(prefers-color-scheme: dark)').matches
-        : false;
+    // 服务端无法访问 window.matchMedia
+    // 客户端应该发送用户的系统主题偏好到服务端
+    const systemThemeId = 'light'; // 默认使用 light 主题
 
-    const systemThemeId = prefersDark ? 'dark' : 'light';
     return this.applyTheme(systemThemeId);
   }
 

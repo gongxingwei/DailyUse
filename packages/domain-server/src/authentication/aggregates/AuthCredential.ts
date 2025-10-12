@@ -52,19 +52,19 @@ export class AuthCredential extends AuthCredentialCore implements IAuthCredentia
   }
 
   // 覆盖 getter 方法以返回具体类型
-  get password(): Password {
+  override get password(): Password {
     return this._serverPassword;
   }
 
-  get sessions(): Map<string, Session> {
+  override get sessions(): Map<string, Session> {
     return this._serverSessions;
   }
 
-  get mfaDevices(): Map<string, MFADevice> {
+  override get mfaDevices(): Map<string, MFADevice> {
     return this._serverMfaDevices;
   }
 
-  get tokens(): Map<string, Token> {
+  override get tokens(): Map<string, Token> {
     return this._serverTokens;
   }
 

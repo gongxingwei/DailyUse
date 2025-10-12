@@ -336,7 +336,7 @@ export class Goal extends GoalCore {
   /**
    * 获取时间进度（客户端实现）
    */
-  protected getTimeProgress(): number {
+  protected override getTimeProgress(): number {
     const now = Date.now();
     const start = this._startTime.getTime();
     const end = this._endTime.getTime();
@@ -440,7 +440,7 @@ export class Goal extends GoalCore {
    * 计算进度百分比 (0-100)
    * 与 overallProgress 相同，提供语义更明确的别名
    */
-  get calculatedProgress(): number {
+  override get calculatedProgress(): number {
     return this.overallProgress;
   }
 
@@ -448,7 +448,7 @@ export class Goal extends GoalCore {
    * 健康度评分 (0-100)
    * 综合考虑进度、时间进度的匹配度
    */
-  get healthScore(): number {
+  override get healthScore(): number {
     const progress = this.weightedProgress;
     const timeProgress = this.getTimeProgress();
     const progressDiff = Math.abs(progress - timeProgress);
@@ -470,7 +470,7 @@ export class Goal extends GoalCore {
   /**
    * 今日记录统计
    */
-  get todayRecordsStats(): {
+  override get todayRecordsStats(): {
     totalRecords: number;
     keyResultsWithRecords: number;
     averageRecordValue: number;
@@ -523,7 +523,7 @@ export class Goal extends GoalCore {
   /**
    * 关键结果完成率 (0-100)
    */
-  get keyResultCompletionRate(): number {
+  override get keyResultCompletionRate(): number {
     if (this.totalKeyResults === 0) return 0;
     return Math.round((this.completedKeyResults / this.totalKeyResults) * 100);
   }
@@ -542,7 +542,7 @@ export class Goal extends GoalCore {
   /**
    * 今日进度增量百分比
    */
-  get todayProgress(): number {
+  override get todayProgress(): number {
     // 计算今日所有记录对进度的贡献
     const stats = this.todayRecordsStats;
     if (stats.totalRecords === 0) return 0;

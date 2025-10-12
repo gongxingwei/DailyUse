@@ -8,7 +8,7 @@ import type { IEditorWorkspaceRepository } from '../repositories/IEditorWorkspac
 import type { IEditorGroupRepository } from '../repositories/IEditorGroupRepository';
 import type { IEditorTabRepository } from '../repositories/IEditorTabRepository';
 import type { EditorContracts } from '@dailyuse/contracts';
-import { EditorSession } from '../aggregates/EditorSession';
+import { EditorSession } from '../entities/EditorSession';
 import { SessionLayout } from '../value-objects/SessionLayout';
 
 type CreateSessionRequest = EditorContracts.CreateEditorSessionRequest;
@@ -169,7 +169,7 @@ export class EditorSessionApplicationService {
     }
 
     const groupCount = await this.groupRepository.countBySessionUuid(sessionUuid);
-    session.addGroup(groupCount, name ?? undefined);
+    session.addGroup({ groupIndex: groupCount, name: name ?? undefined });
 
     await this.sessionRepository.save(session);
 
@@ -179,13 +179,13 @@ export class EditorSessionApplicationService {
   /**
    * 移除分组
    */
-  async removeGroup(sessionUuid: string, groupIndex: number): Promise<SessionClientDTO> {
+  async removeGroup(sessionUuid: string, groupUuid: string): Promise<SessionClientDTO> {
     const session = await this.sessionRepository.findByUuid(sessionUuid);
     if (!session) {
       throw new Error(`会话不存在: ${sessionUuid}`);
     }
 
-    session.removeGroup(groupIndex);
+    session.removeGroup(groupUuid);
 
     await this.sessionRepository.save(session);
 

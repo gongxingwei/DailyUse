@@ -2,6 +2,8 @@ import { ReminderTemplateGroupCore } from '@dailyuse/domain-core';
 import { ReminderContracts } from '@dailyuse/contracts';
 import { ReminderTemplate } from './ReminderTemplate';
 
+type ReminderTemplateClientDTO = ReminderContracts.ReminderTemplateClientDTO;
+
 /**
  * 提醒模板分组聚合根 - 服务端实现
  * 继承核心 ReminderTemplateGroup 类，添加服务端特有功能
@@ -185,7 +187,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
 
   // ===== 序列化方法 =====
 
-  static fromDTO(dto: ReminderContracts.IReminderTemplateGroup): ReminderTemplateGroup {
+  static override fromDTO(dto: ReminderContracts.IReminderTemplateGroup): ReminderTemplateGroup {
     return new ReminderTemplateGroup({
       uuid: dto.uuid,
       name: dto.name,
@@ -258,7 +260,7 @@ export class ReminderTemplateGroup extends ReminderTemplateGroupCore {
   /**
    * 转换为客户端 DTO（包含计算属性）
    */
-  toClient() {
+  toClient(): any {
     const baseDTO = this.toDTO();
     const stats = this.getStatistics();
 

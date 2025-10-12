@@ -9,6 +9,7 @@ type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
 type AccountType = AccountContracts.AccountType;
 type AccountStatus = AccountContracts.AccountStatus;
 type IAccount = AccountContracts.IAccountServer;
+type UserProfilePersistenceDTO = AccountContracts.UserProfilePersistenceDTO;
 
 const AccountType = AccountContracts.AccountType;
 const AccountStatus = AccountContracts.AccountStatus;
@@ -450,7 +451,7 @@ export class Account extends AccountCore implements IAccount {
   /**
    * 转换为持久化数据
    */
-  toPersistence() {
+  toPersistence(): any {
     return {
       uuid: this.uuid,
       username: this._username,

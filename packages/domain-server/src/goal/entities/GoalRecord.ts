@@ -38,7 +38,7 @@ export class GoalRecord extends GoalRecordCore {
   /**
    * 更新记录备注
    */
-  updateNote(note?: string): void {
+  override updateNote(note?: string): void {
     super.updateNote(note);
 
     // 触发领域事件
@@ -76,7 +76,7 @@ export class GoalRecord extends GoalRecordCore {
   }
 
   // ===== 序列化方法 =====
-  static fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
+  static override fromDTO(dto: GoalContracts.GoalRecordDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
       goalUuid: dto.goalUuid,

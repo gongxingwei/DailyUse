@@ -24,7 +24,7 @@ export class Password extends PasswordCore implements IPasswordServer {
    * 从已有的哈希值创建密码对象（用于从数据库恢复）
    * 重写父类方法以匹配接口
    */
-  static fromHash(hashedValue: string, salt: string, algorithm?: string): Password {
+  static override fromHash(hashedValue: string, salt: string, algorithm?: string): Password {
     const parentPassword = PasswordCore.fromHash(hashedValue, salt, algorithm);
 
     // 创建新的 Password 实例并复制父类属性

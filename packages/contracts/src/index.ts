@@ -79,3 +79,6 @@ export {
   TaskTimeType,
   TaskScheduleMode,
 } from './modules/task/enums';
+
+// 导出 Theme 枚举
+export { ThemeType } from './modules/theme/enums';

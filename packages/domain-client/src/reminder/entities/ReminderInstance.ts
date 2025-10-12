@@ -130,7 +130,7 @@ export class ReminderInstance extends ReminderInstanceCore {
 
   // ===== 序列化方法 =====
 
-  static fromDTO(dto: ReminderContracts.IReminderInstance): ReminderInstance {
+  static override fromDTO(dto: ReminderContracts.IReminderInstance): ReminderInstance {
     return new ReminderInstance({
       uuid: dto.uuid,
       templateUuid: dto.templateUuid,

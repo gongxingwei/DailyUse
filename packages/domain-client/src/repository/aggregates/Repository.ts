@@ -89,7 +89,7 @@ export class Repository extends AggregateRoot implements IRepositoryClient {
   }
 
   // ===== Getter 属性 =====
-  public get uuid(): string {
+  public override get uuid(): string {
     return this._uuid;
   }
   public get accountUuid(): string {
