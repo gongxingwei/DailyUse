@@ -1,1 +1,0 @@
-export { DeliveryReceipt } from './DeliveryReceipt';
