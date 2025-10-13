@@ -1,8 +1,10 @@
 import { ref, computed, onMounted, onBeforeUnmount, readonly } from 'vue';
 import { RepositoryWebApplicationService } from '../../application/services/RepositoryWebApplicationService';
 import { useRepositoryStore } from '../stores/repositoryStore';
-import { RepositoryType, RepositoryStatus } from '@dailyuse/contracts/modules/repository';
 import { RepositoryContracts } from '@dailyuse/contracts';
+
+type RepositoryType = RepositoryContracts.RepositoryType;
+type RepositoryStatus = RepositoryContracts.RepositoryStatus;
 
 /**
  * Repository 模块组合式函数 - 新架构

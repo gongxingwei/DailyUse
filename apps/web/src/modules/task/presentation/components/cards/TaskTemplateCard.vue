@@ -12,13 +12,13 @@
                         </v-icon>
                         {{ getTemplateStatusText(template) }}
                     </v-chip>
-                    <v-chip :color="getImportanceColor(template.properties.importance)" 
-                        variant="outlined" size="small" class="importance-chip ml-2">
+                    <v-chip :color="getImportanceColor(template.properties.importance)" variant="outlined" size="small"
+                        class="importance-chip ml-2">
                         <v-icon start size="small">mdi-flag</v-icon>
                         {{ getImportanceText(template.properties.importance) }}
                     </v-chip>
-                    <v-chip :color="getUrgencyColor(template.properties.urgency)" 
-                        variant="outlined" size="small" class="urgency-chip ml-2">
+                    <v-chip :color="getUrgencyColor(template.properties.urgency)" variant="outlined" size="small"
+                        class="urgency-chip ml-2">
                         <v-icon start size="small">mdi-flag</v-icon>
                         {{ getUrgencyText(template.properties.urgency) }}
                     </v-chip>
@@ -28,13 +28,11 @@
 
             <!-- 操作按钮 -->
             <div class="template-actions">
-                <v-btn icon variant="text" size="small" @click="handleEdit"
-                    class="action-btn">
+                <v-btn icon variant="text" size="small" @click="handleEdit" class="action-btn">
                     <v-icon>mdi-pencil</v-icon>
                     <v-tooltip activator="parent" location="bottom">编辑模板</v-tooltip>
                 </v-btn>
-                <v-btn icon variant="text" size="small" color="error" @click="handleDelete"
-                    class="action-btn">
+                <v-btn icon variant="text" size="small" color="error" @click="handleDelete" class="action-btn">
                     <v-icon>mdi-delete</v-icon>
                     <v-tooltip activator="parent" location="bottom">删除模板</v-tooltip>
                 </v-btn>
@@ -88,7 +86,8 @@
                     <span class="meta-text">
                         <span v-if="template.properties.tags.length > 0" class="tags">
                             · {{ template.properties.tags.slice(0, 2).join(', ') }}
-                            <span v-if="template.properties.tags.length > 2">等{{ template.properties.tags.length }}个标签</span>
+                            <span v-if="template.properties.tags.length > 2">等{{ template.properties.tags.length
+                                }}个标签</span>
                         </span>
                     </span>
                 </div>
@@ -134,17 +133,17 @@
 
         <!-- 卡片底部操作 -->
         <v-card-actions class="template-footer">
-            <v-btn v-if="template.lifecycle.status === 'active'" color="primary" variant="outlined" size="small" 
+            <v-btn v-if="template.lifecycle.status === 'active'" color="primary" variant="outlined" size="small"
                 @click="pauseTaskTemplate(template.uuid)">
                 <v-icon start size="small">mdi-plus</v-icon>
                 暂停
             </v-btn>
-            <v-btn v-else-if="template.lifecycle.status === 'paused'" color="warning" variant="outlined" size="small" 
+            <v-btn v-else-if="template.lifecycle.status === 'paused'" color="warning" variant="outlined" size="small"
                 @click="handleResume">
                 <v-icon start size="small">mdi-play</v-icon>
                 恢复
             </v-btn>
-            <v-btn v-else-if="template.lifecycle.status === 'draft'" color="info" variant="outlined" size="small" 
+            <v-btn v-else-if="template.lifecycle.status === 'draft'" color="info" variant="outlined" size="small"
                 @click="activateTaskTemplate(template.uuid)">
                 <v-icon start size="small">mdi-play</v-icon>
                 激活
@@ -191,8 +190,11 @@ import { format } from 'date-fns';
 import { ImportanceLevel } from '@dailyuse/contracts';
 import { UrgencyLevel } from '@dailyuse/contracts';
 // types
-import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
+import type { TaskContracts } from '@dailyuse/contracts';
 import { TaskTemplate, KeyResult, Goal } from '@dailyuse/domain-client';
+
+type KeyResultLink = TaskContracts.KeyResultLink;
+
 // composables
 import { useTaskUtils } from '../../composables/useTaskUtils';
 import { useTask } from '../../composables/useTask';

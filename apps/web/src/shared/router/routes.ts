@@ -214,40 +214,6 @@ export const appRoutes: RouteRecordRaw[] = [
 
       ...scheduleRoutes,
 
-      // 编辑器
-      {
-        path: '/editor',
-        name: 'editor',
-        meta: {
-          title: '编辑器',
-          showInNav: true,
-          icon: 'mdi-file-edit',
-          order: 5,
-          requiresAuth: true,
-        },
-        children: [
-          {
-            path: '',
-            name: 'editor-main',
-            component: () => import('@/modules/editor/presentation/views/EditorView.vue'),
-            meta: {
-              title: '编辑器',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'file/:path*',
-            name: 'editor-file',
-            component: () => import('@/modules/editor/presentation/views/EditorView.vue'),
-            meta: {
-              title: '编辑文件',
-              requiresAuth: true,
-            },
-            props: true,
-          },
-        ],
-      },
-
       // 仓储管理
       {
         path: '/repositories',
@@ -383,15 +349,7 @@ export const appRoutes: RouteRecordRaw[] = [
               requiresAuth: true,
             },
           },
-          {
-            path: 'themes',
-            name: 'settings-themes',
-            component: () => import('@/views/ThemeDemo.vue'),
-            meta: {
-              title: '主题预览',
-              requiresAuth: true,
-            },
-          },
+          // Theme module has been removed - theme management is now in Setting module
         ],
       },
 

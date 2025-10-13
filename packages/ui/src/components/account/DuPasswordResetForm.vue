@@ -181,7 +181,7 @@ const emit = defineEmits<Emits>();
 const formRef = ref<InstanceType<typeof HTMLFormElement>>();
 const currentStep = ref(1);
 const resendCountdown = ref(0);
-let countdownTimer: number | null = null;
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
 
 // 表单数据
 const formData = reactive<PasswordResetData>({

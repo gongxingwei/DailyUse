@@ -162,8 +162,11 @@ import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
 import { format, startOfDay, isToday, isSameDay } from 'date-fns';
 // types
 import { TaskTemplate, TaskInstance } from '@dailyuse/domain-client';
-import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
+import type { TaskContracts } from '@dailyuse/contracts';
 import { Goal, KeyResult } from '@dailyuse/domain-client';
+
+type KeyResultLink = TaskContracts.KeyResultLink;
+
 // composables
 import { useTask } from '../composables/useTask';
 // 导入 task web service

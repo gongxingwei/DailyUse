@@ -30,8 +30,8 @@
           :class="{ 'task-completed': task.execution.status === 'completed' }" class="task-item pa-4"
           :style="{ '--task-index': index }">
           <template v-slot:prepend>
-            <v-checkbox :model-value="task.execution.status === 'completed'" @update:model-value="toggleTaskComplete(task)"
-              hide-details color="primary" class="task-checkbox" />
+            <v-checkbox :model-value="task.execution.status === 'completed'"
+              @update:model-value="toggleTaskComplete(task)" hide-details color="primary" class="task-checkbox" />
           </template>
 
           <div class="task-content-wrapper flex-grow-1">
@@ -83,7 +83,8 @@
           </template>
 
           <template v-slot:actions>
-            <v-btn color="primary" variant="outlined" prepend-icon="mdi-plus" size="small" @click="navigateToTaskManagement">
+            <v-btn color="primary" variant="outlined" prepend-icon="mdi-plus" size="small"
+              @click="navigateToTaskManagement">
               添加新任务
             </v-btn>
           </template>
@@ -97,9 +98,12 @@
 import { computed } from 'vue';
 import { useTaskStore } from '../../stores/taskStore';
 import { useGoalStore } from '@/modules/goal/presentation/stores/goalStore';
-import type { KeyResultLink } from '@dailyuse/contracts/modules/task';
+import type { TaskContracts } from '@dailyuse/contracts';
 import { useRouter } from 'vue-router';
 import { TaskInstance, Goal } from '@dailyuse/domain-client';
+
+type KeyResultLink = TaskContracts.KeyResultLink;
+
 const router = useRouter();
 const taskStore = useTaskStore();
 const goalStore = useGoalStore();

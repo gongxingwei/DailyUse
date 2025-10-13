@@ -312,7 +312,8 @@
                         </v-icon>
                       </template>
                       <v-list-item-title>{{ job.name }}</v-list-item-title>
-                      <v-list-item-subtitle>{{ job.cronExpression }} - {{ formatScheduleStatus(job.status) }}</v-list-item-subtitle>
+                      <v-list-item-subtitle>{{ job.cronExpression }} - {{ formatScheduleStatus(job.status)
+                        }}</v-list-item-subtitle>
                       <template v-slot:append>
                         <v-btn @click="toggleJob(job)" icon size="x-small" variant="text">
                           <v-icon>{{ job.status === 'ACTIVE' ? 'mdi-pause' : 'mdi-play' }}</v-icon>
@@ -981,11 +982,11 @@ import { useSnackbar } from '@/shared/composables/useSnackbar';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import ProfileAvatar from '@/modules/account/presentation/components/ProfileAvatar.vue';
 import { scheduleApiClient } from '@/modules/schedule/infrastructure/api/scheduleApiClient';
-import type {
-  CreateScheduleTaskRequestApi,
-  ScheduleTaskApi,
-  ScheduleStatisticsResponse,
-} from '@dailyuse/contracts/modules/schedule';
+import type { ScheduleContracts } from '@dailyuse/contracts';
+
+type CreateScheduleTaskRequestApi = ScheduleContracts.CreateScheduleTaskRequestApi;
+type ScheduleTaskApi = ScheduleContracts.ScheduleTaskApi;
+type ScheduleStatisticsResponse = ScheduleContracts.ScheduleStatisticsResponse;
 
 // Notification 模块导入
 import {
@@ -1189,8 +1190,8 @@ const createScheduleJob = async () => {
 
     const task = await scheduleApiClient.createScheduleTask(request);
 
-  await getScheduleJobs(); // 刷新任务列表
-  await getScheduleStats(); // 刷新统计信息
+    await getScheduleJobs(); // 刷新任务列表
+    await getScheduleStats(); // 刷新统计信息
     showSuccess(`创建调度任务成功: ${task.name}`);
   } catch (error: any) {
     console.error('创建调度任务失败:', error);
@@ -1248,8 +1249,8 @@ const toggleJob = async (job: ScheduleTaskApi) => {
       await getScheduleJobs();
     }
 
-  const statusCode = (updatedTask?.status ?? (isActive ? 'PAUSED' : 'ACTIVE')) as ScheduleTaskApi['status'];
-  showInfo(`任务 ${job.name} 状态已更新为 ${formatScheduleStatus(statusCode)}`);
+    const statusCode = (updatedTask?.status ?? (isActive ? 'PAUSED' : 'ACTIVE')) as ScheduleTaskApi['status'];
+    showInfo(`任务 ${job.name} 状态已更新为 ${formatScheduleStatus(statusCode)}`);
 
     await getScheduleStats();
   } catch (error: any) {

@@ -14,8 +14,9 @@
     }
   },
   "scripts": {
-    "build": "tsup src/index.ts --dts --format esm --target es2020 --out-dir dist",
-    "dev": "tsup src/index.ts --dts --format esm --target es2020 --watch --out-dir dist"
+    "typecheck": "tsc --build",
+    "build": "pnpm typecheck && tsup",
+    "dev": "concurrently \"pnpm typecheck --watch\" \"tsup --watch\""
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
@@ -24,6 +25,7 @@
   },
   "devDependencies": {
     "tsup": "^8.5.0",
-    "typescript": "^5.0.0"
+    "typescript": "^5.0.0",
+    "concurrently": "^8.2.0"
   }
 }

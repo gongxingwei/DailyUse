@@ -147,6 +147,10 @@
                             <v-icon start>mdi-file-multiple</v-icon>
                             资源列表
                         </v-tab>
+                        <v-tab value="editor">
+                            <v-icon start>mdi-file-document-edit</v-icon>
+                            编辑器
+                        </v-tab>
                         <v-tab value="settings">
                             <v-icon start>mdi-cog</v-icon>
                             设置
@@ -189,6 +193,14 @@
                                             </v-btn>
                                         </template>
                                     </v-empty-state>
+                                </div>
+                            </v-window-item>
+
+                            <!-- 编辑器 -->
+                            <v-window-item value="editor" class="h-100">
+                                <div class="editor-wrapper">
+                                    <EditorContainer ref="editorRef" @content-change="handleContentChange"
+                                        @save-request="handleSaveRequest" />
                                 </div>
                             </v-window-item>
 
@@ -237,10 +249,10 @@
                                             <div>
                                                 <div class="text-body-2 font-weight-medium">{{ activity.title }}</div>
                                                 <div class="text-caption text-medium-emphasis">{{ activity.description
-                                                    }}</div>
+                                                }}</div>
                                                 <div class="text-caption text-medium-emphasis">{{
                                                     formatDate(activity.timestamp)
-                                                    }}</div>
+                                                }}</div>
                                             </div>
                                         </v-timeline-item>
                                     </v-timeline>
@@ -284,6 +296,7 @@ import { Repository, Resource } from '@dailyuse/domain-client'
 import RepoDialog from '../components/dialogs/RepoDialog.vue'
 import ResourceDialog from '../components/dialogs/ResourceDialog.vue'
 import ResourceCard from '../components/cards/ResourceCard.vue'
+import { EditorContainer, useEditor, type EditorTab } from '@/modules/editor/presentation'
 // composables
 import { useRepository } from '../composables/useRepository'
 // stores
@@ -307,11 +320,15 @@ const router = useRouter()
 // 组件引用
 const repoDialogRef = ref<InstanceType<typeof RepoDialog> | null>(null)
 const resourceDialogRef = ref<InstanceType<typeof ResourceDialog> | null>(null)
+const editorRef = ref<InstanceType<typeof EditorContainer> | null>(null)
 
 // 本地状态
 const activeTab = ref('resources')
 const repository = ref<Repository | null>(null)
 const resources = ref<Resource[]>([])
+
+// Editor composable
+const { setEditorInstance } = useEditor()
 
 // 确认对话框
 const confirmDialog = reactive({
@@ -333,9 +350,8 @@ const repositorySettings = computed({
         enableVersioning: false
     },
     set: (val: any) => {
-        if (repository.value) {
-            repository.value.updateConfig(val)
-        }
+        // TODO: 实现配置更新
+        console.log('Update repository config:', val)
     }
 })
 
@@ -365,9 +381,10 @@ const activityLog = ref<ActivityItem[]>([
 ])
 
 // 方法
-const formatDate = (date?: Date) => {
+const formatDate = (date?: Date | number) => {
     if (!date) return '-'
-    return format(date, 'yyyy-MM-dd HH:mm')
+    const dateObj = typeof date === 'number' ? new Date(date) : date
+    return format(dateObj, 'yyyy-MM-dd HH:mm')
 }
 
 const getStatusColor = () => {
@@ -440,9 +457,78 @@ const startDeleteRepository = () => {
     confirmDialog.show = true
 }
 
+/**
+ * 处理编辑器内容变化
+ */
+const handleContentChange = (tab: EditorTab) => {
+    console.log('Content changed:', tab.title)
+    // TODO: 可以在这里添加自动保存逻辑
+}
+
+/**
+ * 处理保存请求
+ */
+const handleSaveRequest = async (tab: EditorTab) => {
+    console.log('Save requested for:', tab.title)
+    // TODO: 实现保存到后端的逻辑
+    try {
+        // await repositoryApiClient.updateResource({
+        //     uuid: tab.uuid,
+        //     content: tab.content,
+        // });
+        console.log('File saved successfully')
+    } catch (error) {
+        console.error('Failed to save file:', error)
+    }
+}
+
+/**
+ * 打开资源进行编辑
+ */
+const openResourceInEditor = (resource: Resource) => {
+    activeTab.value = 'editor'
+
+    // 延迟一下确保编辑器已经渲染
+    setTimeout(() => {
+        if (editorRef.value) {
+            editorRef.value.openFile({
+                uuid: resource.uuid,
+                title: resource.name,
+                fileType: getFileType(resource.type),
+                filePath: resource.path,
+                content: '', // TODO: 从后端加载内容
+            })
+        }
+    }, 100)
+}
+
+/**
+ * 根据资源类型获取文件类型
+ */
+const getFileType = (resourceType: string): 'markdown' | 'image' | 'video' | 'audio' => {
+    if (resourceType.includes('markdown') || resourceType.includes('md')) {
+        return 'markdown'
+    }
+    if (resourceType.includes('image') || resourceType.includes('img')) {
+        return 'image'
+    }
+    if (resourceType.includes('video')) {
+        return 'video'
+    }
+    if (resourceType.includes('audio')) {
+        return 'audio'
+    }
+    return 'markdown' // 默认
+}
+
 // 生命周期
 onMounted(() => {
     repository.value = repositoryStore.getRepositoryByUuid(route.params.id as string)
+
+    // 设置编辑器实例
+    if (editorRef.value) {
+        setEditorInstance(editorRef.value)
+    }
 })
 </script>
 
@@ -513,6 +599,12 @@ onMounted(() => {
 
 .v-window-item {
     height: 100%;
+}
+
+.editor-wrapper {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
 }
 
 /* 响应式设计 */

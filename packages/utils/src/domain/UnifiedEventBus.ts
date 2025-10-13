@@ -34,7 +34,7 @@ export class UnifiedEventBus extends EventEmitter {
    * @param eventType 事件类型
    * @param listener 监听器函数
    */
-  on(eventType: string, listener: (payload?: any) => void): this {
+  override on(eventType: string, listener: (payload?: any) => void): this {
     console.log(`👂 [UnifiedEventBus] 订阅事件: ${eventType}`);
     return super.on(eventType, listener);
   }
@@ -44,7 +44,7 @@ export class UnifiedEventBus extends EventEmitter {
    * @param eventType 事件类型
    * @param listener 监听器函数
    */
-  once(eventType: string, listener: (payload?: any) => void): this {
+  override once(eventType: string, listener: (payload?: any) => void): this {
     console.log(`👂 [UnifiedEventBus] 订阅一次性事件: ${eventType}`);
     return super.once(eventType, listener);
   }
@@ -54,7 +54,7 @@ export class UnifiedEventBus extends EventEmitter {
    * @param eventType 事件类型
    * @param listener 监听器函数
    */
-  off(eventType: string, listener: (payload?: any) => void): this {
+  override off(eventType: string, listener: (payload?: any) => void): this {
     console.log(`🔇 [UnifiedEventBus] 取消订阅事件: ${eventType}`);
     return super.off(eventType, listener);
   }

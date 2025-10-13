@@ -14,8 +14,9 @@
     }
   },
   "scripts": {
-    "build": "npx tsc --project tsconfig.build.json",
-    "dev": "npx tsc --project tsconfig.build.json --watch",
+    "typecheck": "tsc --build",
+    "build": "pnpm typecheck && tsup",
+    "dev": "concurrently \"pnpm typecheck --watch\" \"tsup --watch\"",
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",

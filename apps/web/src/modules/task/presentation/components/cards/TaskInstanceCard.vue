@@ -48,10 +48,12 @@
 import { computed } from 'vue';
 import { format } from 'date-fns';
 import { TaskInstance } from '@dailyuse/domain-client';
-import { type KeyResultLink } from '@dailyuse/contracts/modules/task';
+import type { TaskContracts } from '@dailyuse/contracts';
 import { Goal, KeyResult } from '@dailyuse/domain-client';
 // composables
 import { useTaskUtils } from '../../composables/useTaskUtils';
+
+type KeyResultLink = TaskContracts.KeyResultLink;
 
 const { getTaskInstanceTimeText } = useTaskUtils();
 // Props

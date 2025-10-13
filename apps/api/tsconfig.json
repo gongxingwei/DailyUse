@@ -89,18 +89,17 @@
     "**/*.test.ts",
     "**/*.spec.ts",
     "src/**/__tests__/manual/**/*"
-  ]
+  ],
 
   // ============================================================
   // 项目引用配置（依赖的包）
   // ============================================================
 
-  // References removed: domain-core, contracts, domain-server have composite:false for tsup --dts compatibility
-  // TypeScript will resolve types from node_modules/@dailyuse/* using package.json exports
-  // "references": [
-  //   { "path": "../../packages/contracts" },
-  //   { "path": "../../packages/domain-core" },
-  //   { "path": "../../packages/domain-server" },
-  //   { "path": "../../packages/utils" }
-  // ]
+  // API 应用依赖的包（启用 composite 后恢复 references）
+  "references": [
+    { "path": "../../packages/contracts" },
+    { "path": "../../packages/domain-core" },
+    { "path": "../../packages/domain-server" },
+    { "path": "../../packages/utils" }
+  ]
 }

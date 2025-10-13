@@ -61,7 +61,11 @@
 <script setup lang="ts">
 import { ref, computed, watch, reactive } from 'vue';
 
-import { User, type UserDTO } from '@dailyuse/domain-client';
+import { User } from '@dailyuse/domain-client';
+import { AccountContracts } from '@dailyuse/contracts';
+
+type UserDTO = AccountContracts.UserDTO;
+
 const props = defineProps<{
     modelValue: boolean;
     user: User

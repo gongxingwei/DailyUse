@@ -67,12 +67,12 @@
   "include": ["src/**/*"],
 
   // 排除的文件
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
 
   // ============================================================
   // 项目引用配置（依赖的包）
   // ============================================================
 
-  // References removed: domain-core and contracts have composite:false for tsup --dts compatibility
-  // "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
+  // Domain Client 依赖的包（启用 composite 后恢复 references）
+  "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
 }
