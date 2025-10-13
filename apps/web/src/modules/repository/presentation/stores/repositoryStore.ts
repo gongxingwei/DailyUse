@@ -67,7 +67,7 @@ export const useRepositoryStore = defineStore('repository', {
           return found;
         } else {
           console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Repository 实例');
-          return Repository.fromDTO(found as any);
+          return Repository.fromServerDTO(found as any);
         }
       },
 
@@ -85,7 +85,7 @@ export const useRepositoryStore = defineStore('repository', {
           return found;
         } else {
           console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Resource 实例');
-          return Resource.fromDTO(found as any);
+          return Resource.fromServerDTO(found as any);
         }
       },
 
@@ -98,7 +98,7 @@ export const useRepositoryStore = defineStore('repository', {
         const found = state.repositories.find((r) => r.name === name);
         if (!found) return null;
 
-        return found instanceof Repository ? found : Repository.fromDTO(found as any);
+        return found instanceof Repository ? found : Repository.fromServerDTO(found as any);
       },
 
     /**
@@ -110,7 +110,7 @@ export const useRepositoryStore = defineStore('repository', {
         const found = state.repositories.find((r) => r.path === path);
         if (!found) return null;
 
-        return found instanceof Repository ? found : Repository.fromDTO(found as any);
+        return found instanceof Repository ? found : Repository.fromServerDTO(found as any);
       },
 
     /**
@@ -125,7 +125,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (resource instanceof Resource) {
               return resource;
             } else {
-              return Resource.fromDTO(resource as any);
+              return Resource.fromServerDTO(resource as any);
             }
           });
       },
@@ -140,7 +140,7 @@ export const useRepositoryStore = defineStore('repository', {
       const found = state.repositories.find((r) => r.uuid === state.selectedRepository);
       if (!found) return null;
 
-      return found instanceof Repository ? found : Repository.fromDTO(found as any);
+      return found instanceof Repository ? found : Repository.fromServerDTO(found as any);
     },
 
     /**
@@ -151,7 +151,7 @@ export const useRepositoryStore = defineStore('repository', {
       const found = state.resources.find((r) => r.uuid === state.selectedResource);
       if (!found) return null;
 
-      return found instanceof Resource ? found : Resource.fromDTO(found as any);
+      return found instanceof Resource ? found : Resource.fromServerDTO(found as any);
     },
 
     /**
@@ -165,7 +165,7 @@ export const useRepositoryStore = defineStore('repository', {
         return repo;
       } else {
         console.warn('[RepositoryStore] 发现非实体对象，正在转换为 Repository 实例');
-        return Repository.fromDTO(repo as any);
+        return Repository.fromServerDTO(repo as any);
       }
     },
 
@@ -186,7 +186,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (repo instanceof Repository) {
               return repo;
             } else {
-              return Repository.fromDTO(repo as any);
+              return Repository.fromServerDTO(repo as any);
             }
           });
       },
@@ -203,7 +203,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (repo instanceof Repository) {
               return repo;
             } else {
-              return Repository.fromDTO(repo as any);
+              return Repository.fromServerDTO(repo as any);
             }
           });
       },
@@ -220,7 +220,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (repo instanceof Repository) {
               return repo;
             } else {
-              return Repository.fromDTO(repo as any);
+              return Repository.fromServerDTO(repo as any);
             }
           });
       },
@@ -235,7 +235,7 @@ export const useRepositoryStore = defineStore('repository', {
           if (repo instanceof Repository) {
             return repo;
           } else {
-            return Repository.fromDTO(repo as any);
+            return Repository.fromServerDTO(repo as any);
           }
         });
     },
@@ -250,7 +250,7 @@ export const useRepositoryStore = defineStore('repository', {
           if (repo instanceof Repository) {
             return repo;
           } else {
-            return Repository.fromDTO(repo as any);
+            return Repository.fromServerDTO(repo as any);
           }
         });
     },
@@ -267,7 +267,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (resource instanceof Resource) {
               return resource;
             } else {
-              return Resource.fromDTO(resource as any);
+              return Resource.fromServerDTO(resource as any);
             }
           });
       },
@@ -284,7 +284,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (resource instanceof Resource) {
               return resource;
             } else {
-              return Resource.fromDTO(resource as any);
+              return Resource.fromServerDTO(resource as any);
             }
           });
       },
@@ -312,7 +312,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (repo instanceof Repository) {
               return repo;
             } else {
-              return Repository.fromDTO(repo as any);
+              return Repository.fromServerDTO(repo as any);
             }
           });
       },
@@ -339,7 +339,7 @@ export const useRepositoryStore = defineStore('repository', {
             if (resource instanceof Resource) {
               return resource;
             } else {
-              return Resource.fromDTO(resource as any);
+              return Resource.fromServerDTO(resource as any);
             }
           });
       },
@@ -720,7 +720,7 @@ export const useRepositoryStore = defineStore('repository', {
       const repository = this.getRepositoryByUuid(uuid);
       if (repository) {
         // 使用 DTO 转换创建副本以避免引用问题
-        this.repositoryBeingEdited = Repository.fromDTO(repository.toDTO());
+        this.repositoryBeingEdited = Repository.fromServerDTO(repository.toServerDTO());
       }
     },
 
@@ -785,13 +785,15 @@ export const useRepositoryStore = defineStore('repository', {
             repositories:
               value.repositories?.map((repository: any) =>
                 repository && typeof repository.toDTO === 'function'
-                  ? repository.toDTO()
+                  ? repository.toServerDTO()
                   : repository,
               ) || [],
 
             resources:
               value.resources?.map((resource: any) =>
-                resource && typeof resource.toDTO === 'function' ? resource.toDTO() : resource,
+                resource && typeof resource.toDTO === 'function'
+                  ? resource.toServerDTO()
+                  : resource,
               ) || [],
           };
 
@@ -814,16 +816,16 @@ export const useRepositoryStore = defineStore('repository', {
             // 将DTO转换回Domain实体（当实体类可用时）
             repositories:
               parsed.repositories?.map((repositoryDTO: any) => {
-                if (repositoryDTO && Repository && typeof Repository.fromDTO === 'function') {
-                  return Repository.fromDTO(repositoryDTO);
+                if (repositoryDTO && Repository && typeof Repository.fromServerDTO === 'function') {
+                  return Repository.fromServerDTO(repositoryDTO);
                 }
                 return repositoryDTO;
               }) || [],
 
             resources:
               parsed.resources?.map((resourceDTO: any) => {
-                if (resourceDTO && Resource && typeof Resource.fromDTO === 'function') {
-                  return Resource.fromDTO(resourceDTO);
+                if (resourceDTO && Resource && typeof Resource.fromServerDTO === 'function') {
+                  return Resource.fromServerDTO(resourceDTO);
                 }
                 return resourceDTO;
               }) || [],

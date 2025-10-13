@@ -27,4 +27,7 @@ export * from './entities/RepositoryExplorerClient';
 // ============ 值对象 ============
 export * from './value-objects';
 
+// ============ API 请求/响应类型 ============
+export * from './api-requests';
+
 // 注意：领域事件已在聚合根文件中定义并导出

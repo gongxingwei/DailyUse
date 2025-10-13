@@ -32,7 +32,7 @@ export class RepositoryWebApplicationService {
       const repositoryDTO = await repositoryApiClient.createRepository(request);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.addRepository(repositoryEntity);
 
       return repositoryDTO;
@@ -62,7 +62,7 @@ export class RepositoryWebApplicationService {
       const response = await repositoryApiClient.getRepositories(params);
 
       // 将DTO转换为Domain实体并批量同步到 store
-      const repositoryEntities = response.repositories.map((dto) => Repository.fromDTO(dto));
+      const repositoryEntities = response.repositories.map((dto) => Repository.fromServerDTO(dto));
       this.repositoryStore.setRepositories(repositoryEntities);
 
       // 更新分页信息
@@ -93,7 +93,7 @@ export class RepositoryWebApplicationService {
       const repositoryDTO = await repositoryApiClient.getRepositoryById(uuid);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.addRepository(repositoryEntity);
 
       return repositoryDTO;
@@ -123,7 +123,7 @@ export class RepositoryWebApplicationService {
       const repositoryDTO = await repositoryApiClient.updateRepository(uuid, request);
 
       // 将DTO转换为Domain实体并更新缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
       return repositoryDTO;
@@ -170,7 +170,7 @@ export class RepositoryWebApplicationService {
       const repositoryDTO = await repositoryApiClient.activateRepository(uuid);
 
       // 将DTO转换为Domain实体并更新缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
       return repositoryDTO;
@@ -194,7 +194,7 @@ export class RepositoryWebApplicationService {
       const repositoryDTO = await repositoryApiClient.archiveRepository(uuid);
 
       // 将DTO转换为Domain实体并更新缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.updateRepository(uuid, repositoryEntity);
 
       return repositoryDTO;
@@ -226,7 +226,7 @@ export class RepositoryWebApplicationService {
       );
 
       // 将DTO转换为Domain实体并更新缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.updateRepository(repositoryUuid, repositoryEntity);
 
       return repositoryDTO;
@@ -256,7 +256,7 @@ export class RepositoryWebApplicationService {
       );
 
       // 将DTO转换为Domain实体并更新缓存
-      const repositoryEntity = Repository.fromDTO(repositoryDTO);
+      const repositoryEntity = Repository.fromServerDTO(repositoryDTO);
       this.repositoryStore.updateRepository(repositoryUuid, repositoryEntity);
 
       return repositoryDTO;
@@ -299,12 +299,14 @@ export class RepositoryWebApplicationService {
   /**
    * 获取与指定目标关联的仓库
    */
-  async getRepositoriesByGoal(goalUuid: string): Promise<RepositoryContracts.RepositoryDTO[]> {
+  async getRepositoriesByGoal(
+    goalUuid: string,
+  ): Promise<RepositoryContracts.RepositoryServerDTO[]> {
     // 优先从缓存获取
     const cachedRepositories = this.repositoryStore.getRepositoriesByGoalUuid(goalUuid);
 
     if (cachedRepositories.length > 0) {
-      return cachedRepositories;
+      return cachedRepositories.map((repo) => repo.toServerDTO());
     }
 
     // 如果缓存为空，从API获取
@@ -331,7 +333,7 @@ export class RepositoryWebApplicationService {
       const response = await repositoryApiClient.getResources(params);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const resourceEntities = response.resources.map((dto) => Resource.fromDTO(dto));
+      const resourceEntities = response.resources.map((dto) => Resource.fromServerDTO(dto));
       this.repositoryStore.addResources(resourceEntities);
 
       return response;
@@ -358,7 +360,7 @@ export class RepositoryWebApplicationService {
       const response = await repositoryApiClient.getRepositoryResources(repositoryUuid, params);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const resourceEntities = response.resources.map((dto) => Resource.fromDTO(dto));
+      const resourceEntities = response.resources.map((dto) => Resource.fromServerDTO(dto));
       this.repositoryStore.addResources(resourceEntities);
 
       return response;
@@ -384,7 +386,7 @@ export class RepositoryWebApplicationService {
       const resourceDTO = await repositoryApiClient.createResource(request);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const resourceEntity = Resource.fromDTO(resourceDTO);
+      const resourceEntity = Resource.fromServerDTO(resourceDTO);
       this.repositoryStore.addResource(resourceEntity);
 
       return resourceDTO;
@@ -408,14 +410,14 @@ export class RepositoryWebApplicationService {
       // 先从缓存获取
       const cachedResource = this.repositoryStore.getResourceByUuid(uuid);
       if (cachedResource) {
-        return cachedResource.toDTO();
+        return cachedResource.toServerDTO();
       }
 
       // 如果缓存中没有，从API获取
       const resourceDTO = await repositoryApiClient.getResourceById(uuid);
 
       // 将DTO转换为Domain实体并添加到缓存
-      const resourceEntity = Resource.fromDTO(resourceDTO);
+      const resourceEntity = Resource.fromServerDTO(resourceDTO);
       this.repositoryStore.addResource(resourceEntity);
 
       return resourceDTO;
@@ -445,7 +447,7 @@ export class RepositoryWebApplicationService {
       const resourceDTO = await repositoryApiClient.updateResource(uuid, request);
 
       // 将DTO转换为Domain实体并更新缓存
-      const resourceEntity = Resource.fromDTO(resourceDTO);
+      const resourceEntity = Resource.fromServerDTO(resourceDTO);
       this.repositoryStore.updateResource(uuid, resourceEntity);
 
       return resourceDTO;
@@ -574,8 +576,8 @@ export class RepositoryWebApplicationService {
       const resources = resourceDTOs.resources || [];
 
       // 将 DTO 转换为 Domain 实体
-      const repositoryEntities = repositories.map((dto) => Repository.fromDTO(dto));
-      const resourceEntities = resources.map((dto) => Resource.fromDTO(dto));
+      const repositoryEntities = repositories.map((dto) => Repository.fromServerDTO(dto));
+      const resourceEntities = resources.map((dto) => Resource.fromServerDTO(dto));
 
       // 批量同步到 store
       this.repositoryStore.syncAllData(repositoryEntities, resourceEntities);

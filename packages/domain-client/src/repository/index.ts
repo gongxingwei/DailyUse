@@ -4,16 +4,16 @@
  */
 
 // 聚合根
-export { Repository as RepositoryClient } from './aggregates/Repository';
+export { Repository } from './aggregates/Repository';
 
 // 实体
-export { Resource as ResourceClient } from './entities/Resource';
-export { LinkedContent as LinkedContentClient } from './entities/LinkedContent';
-export { ResourceReference as ResourceReferenceClient } from './entities/ResourceReference';
-export { RepositoryExplorer as RepositoryExplorerClient } from './entities/RepositoryExplorer';
+export { Resource } from './entities/Resource';
+export { LinkedContent } from './entities/LinkedContent';
+export { ResourceReference } from './entities/ResourceReference';
+export { RepositoryExplorer } from './entities/RepositoryExplorer';
 
 // 值对象
-export { RepositoryConfig as RepositoryConfigClient } from './value-objects/RepositoryConfig';
-export { GitInfo as GitInfoClient } from './value-objects/GitInfo';
-export { SyncStatus as SyncStatusClient } from './value-objects/SyncStatus';
-export { RepositoryStats as RepositoryStatsClient } from './value-objects/RepositoryStats';
+export { RepositoryConfig } from './value-objects/RepositoryConfig';
+export { GitInfo } from './value-objects/GitInfo';
+export { SyncStatus } from './value-objects/SyncStatus';
+export { RepositoryStats } from './value-objects/RepositoryStats';

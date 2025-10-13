@@ -9,3 +9,4 @@ import {
   type InitializationTask,
 } from '@dailyuse/utils';
 
+export function registerScheduleInitializationTasks(): void {}

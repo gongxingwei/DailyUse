@@ -20,3 +20,6 @@ export * from './presentation/components';
 
 // 导出 composables
 export { useSchedule } from './presentation/composables/useSchedule';
+
+// 导出初始化
+export { registerScheduleInitializationTasks } from './initialization/scheduleInitialization';
