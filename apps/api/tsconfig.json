@@ -98,7 +98,6 @@
   // API 应用依赖的包（启用 composite 后恢复 references）
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
     { "path": "../../packages/domain-server" },
     { "path": "../../packages/utils" }
   ]

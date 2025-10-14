@@ -74,5 +74,5 @@
   // ============================================================
 
   // Domain Client 依赖的包（启用 composite 后恢复 references）
-  "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
+  "references": [{ "path": "../contracts" }, { "path": "../utils" }]
 }

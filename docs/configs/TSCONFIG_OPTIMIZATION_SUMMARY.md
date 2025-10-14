@@ -91,7 +91,7 @@ tsconfig.base.json          # 基础配置（所有项目继承）
   },
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/domain-server" },
     { "path": "../../packages/utils" }
   ]

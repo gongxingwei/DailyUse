@@ -97,7 +97,7 @@
 
     // 应用依赖的包
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+
     { "path": "../../packages/domain-client" },
     { "path": "../../packages/utils" },
     { "path": "../../packages/ui" }

@@ -35,5 +35,5 @@
       }
     }
   },
-  "implicitDependencies": ["contracts", "domain-core"]
+  "implicitDependencies": ["contracts"]
 }

@@ -84,7 +84,7 @@
   // Web 应用依赖的包（客户端相关）
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+
     { "path": "../../packages/domain-client" },
     { "path": "../../packages/utils" },
     { "path": "../../packages/ui" }

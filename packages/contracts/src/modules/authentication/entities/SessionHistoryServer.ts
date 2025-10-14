@@ -1,0 +1,59 @@
+/**
+ * SessionHistory Entity - Server Interface
+ * 会话历史实体 - 服务端接口
+ */
+
+// ============ DTO 定义 ============
+
+/**
+ * SessionHistory Server DTO
+ */
+export interface SessionHistoryServerDTO {
+  uuid: string;
+  sessionUuid: string;
+  action: string;
+  details?: any | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: number;
+}
+
+/**
+ * SessionHistory Persistence DTO
+ */
+export interface SessionHistoryPersistenceDTO {
+  uuid: string;
+  session_uuid: string;
+  action: string;
+  details?: string | null; // JSON
+  ip_address?: string | null;
+  user_agent?: string | null;
+  created_at: number;
+}
+
+// ============ 实体接口 ============
+
+export interface SessionHistoryServer {
+  uuid: string;
+  sessionUuid: string;
+  action: string;
+  details?: any | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: number;
+
+  toServerDTO(): SessionHistoryServerDTO;
+  toPersistenceDTO(): SessionHistoryPersistenceDTO;
+}
+
+export interface SessionHistoryServerStatic {
+  create(params: {
+    sessionUuid: string;
+    action: string;
+    details?: any;
+    ipAddress?: string;
+    userAgent?: string;
+  }): SessionHistoryServer;
+  fromServerDTO(dto: SessionHistoryServerDTO): SessionHistoryServer;
+  fromPersistenceDTO(dto: SessionHistoryPersistenceDTO): SessionHistoryServer;
+}

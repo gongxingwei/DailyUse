@@ -24,11 +24,9 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"],
       "options": {
-        "lintFilePatterns": [
-          "packages/domain-client/**/*.{ts,js}"
-        ]
+        "lintFilePatterns": ["packages/domain-client/**/*.{ts,js}"]
       }
     }
   },
-  "implicitDependencies": ["contracts", "domain-core"]
+  "implicitDependencies": ["contracts"]
 }

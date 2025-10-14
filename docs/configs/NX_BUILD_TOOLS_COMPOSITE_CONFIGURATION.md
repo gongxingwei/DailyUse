@@ -252,7 +252,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
   "references": [
     { "path": "./tsconfig.node.json" },
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/domain-client" },
     { "path": "../../packages/utils" },
     { "path": "../../packages/ui" }
@@ -295,7 +295,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
   // ✅ 恢复 references（之前被注释掉了）
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/domain-server" },
     { "path": "../../packages/utils" }
   ]
@@ -335,7 +335,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 {
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/domain-server" },
     { "path": "../../packages/utils" }
   ]

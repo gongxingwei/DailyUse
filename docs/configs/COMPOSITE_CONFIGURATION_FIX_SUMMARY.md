@@ -93,7 +93,7 @@ Referenced project 'd:/myPrograms/DailyUse/packages/contracts' must have setting
 {
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/domain-server" },
     { "path": "../../packages/utils" }
   ]

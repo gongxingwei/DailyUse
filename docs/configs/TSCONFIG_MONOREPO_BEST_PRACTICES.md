@@ -225,7 +225,7 @@ import { Goal } from '@dailyuse/domain-core';
   // 声明依赖的所有包
   "references": [
     { "path": "../../packages/contracts" },
-    { "path": "../../packages/domain-core" },
+    
     { "path": "../../packages/utils" }
   ]
 }
