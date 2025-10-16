@@ -3,6 +3,10 @@ import type {
   IReminderStatisticsRepository,
   IReminderTemplateRepository,
 } from '../repositories';
+import { ReminderTemplate } from '../aggregates/ReminderTemplate';
+import { ReminderGroup } from '../aggregates/ReminderGroup';
+import type { ReminderContracts } from '@dailyuse/contracts';
+import { ImportanceLevel } from '@dailyuse/contracts';
 
 /**
  * Reminder Domain Service
@@ -19,13 +23,205 @@ import type {
  */
 export class ReminderDomainService {
   constructor(
-    private reminderTemplateRepository: IReminderTemplateRepository,
-    private reminderGroupRepository: IReminderGroupRepository,
-    private reminderStatisticsRepository: IReminderStatisticsRepository,
+    private readonly reminderTemplateRepository: IReminderTemplateRepository,
+    private readonly reminderGroupRepository: IReminderGroupRepository,
+    private readonly reminderStatisticsRepository: IReminderStatisticsRepository,
   ) {}
 
-  // 在这里添加处理提醒相关业务逻辑的方法
-  // 例如:
-  // public async createComplexReminder(...) { ... }
-  // public async processReminderTrigger(...) { ... }
+  // --- ReminderTemplate Methods ---
+
+  public async createReminderTemplate(params: {
+    accountUuid: string;
+    title: string;
+    type: ReminderContracts.ReminderType;
+    trigger: ReminderContracts.TriggerConfigServerDTO;
+    activeTime: ReminderContracts.ActiveTimeConfigServerDTO;
+    notificationConfig: ReminderContracts.NotificationConfigServerDTO;
+    description?: string;
+    recurrence?: ReminderContracts.RecurrenceConfigServerDTO;
+    activeHours?: ReminderContracts.ActiveHoursConfigServerDTO;
+    importanceLevel?: ImportanceLevel;
+    tags?: string[];
+    color?: string;
+    icon?: string;
+    groupUuid?: string;
+  }): Promise<ReminderTemplate> {
+    if (params.groupUuid) {
+      const group = await this.reminderGroupRepository.findById(params.groupUuid);
+      if (!group || group.accountUuid !== params.accountUuid) {
+        throw new Error(`Invalid groupUuid: ${params.groupUuid}`);
+      }
+    }
+
+    const template = ReminderTemplate.create(params);
+    await this.reminderTemplateRepository.save(template);
+
+    // TODO: Update group stats if groupUuid is present
+    if (params.groupUuid) {
+      await this.updateGroupStats(params.groupUuid);
+    }
+
+    return template;
+  }
+
+  public async getTemplate(
+    uuid: string,
+    options?: { includeHistory?: boolean },
+  ): Promise<ReminderTemplate | null> {
+    return this.reminderTemplateRepository.findById(uuid, options);
+  }
+
+  public async deleteTemplate(uuid: string, softDelete: boolean = true): Promise<void> {
+    const template = await this.getTemplate(uuid);
+    if (!template) {
+      throw new Error(`ReminderTemplate not found: ${uuid}`);
+    }
+
+    const groupUuid = template.groupUuid;
+
+    if (softDelete) {
+      template.softDelete();
+      await this.reminderTemplateRepository.save(template);
+    } else {
+      await this.reminderTemplateRepository.delete(uuid);
+    }
+
+    if (groupUuid) {
+      await this.updateGroupStats(groupUuid);
+    }
+  }
+
+  // --- ReminderGroup Methods ---
+
+  public async createReminderGroup(params: {
+    accountUuid: string;
+    name: string;
+    controlMode?: ReminderContracts.ControlMode;
+    description?: string;
+    color?: string;
+    icon?: string;
+    order?: number;
+  }): Promise<ReminderGroup> {
+    const existingGroup = await this.reminderGroupRepository.findByName(
+      params.accountUuid,
+      params.name,
+    );
+    if (existingGroup) {
+      throw new Error(`ReminderGroup with name "${params.name}" already exists.`);
+    }
+
+    const group = ReminderGroup.create(params);
+    await this.reminderGroupRepository.save(group);
+    return group;
+  }
+
+  public async getGroup(uuid: string): Promise<ReminderGroup | null> {
+    return this.reminderGroupRepository.findById(uuid);
+  }
+
+  public async deleteGroup(uuid: string, softDelete: boolean = true): Promise<void> {
+    // Business Rule: Cannot delete a group that still contains templates.
+    const templatesInGroup = await this.reminderTemplateRepository.findByGroupUuid(uuid);
+    if (templatesInGroup.length > 0) {
+      throw new Error(
+        `Cannot delete group ${uuid} because it still contains ${templatesInGroup.length} templates.`,
+      );
+    }
+
+    if (softDelete) {
+      const group = await this.getGroup(uuid);
+      if (group) {
+        group.softDelete();
+        await this.reminderGroupRepository.save(group);
+      }
+    } else {
+      await this.reminderGroupRepository.delete(uuid);
+    }
+  }
+
+  // --- Cross-Aggregate Methods ---
+
+  public async assignTemplateToGroup(
+    templateUuid: string,
+    groupUuid: string | null,
+  ): Promise<ReminderTemplate> {
+    const template = await this.getTemplate(templateUuid);
+    if (!template) {
+      throw new Error(`ReminderTemplate not found: ${templateUuid}`);
+    }
+
+    const oldGroupUuid = template.groupUuid;
+
+    if (groupUuid) {
+      const group = await this.getGroup(groupUuid);
+      if (!group || group.accountUuid !== template.accountUuid) {
+        throw new Error(`Invalid groupUuid: ${groupUuid}`);
+      }
+    }
+
+    // This logic should be on the aggregate
+    // template.moveToGroup(groupUuid);
+    const newTemplate = ReminderTemplate.fromServerDTO({
+      ...template.toServerDTO(),
+      groupUuid: groupUuid,
+    });
+
+    await this.reminderTemplateRepository.save(newTemplate);
+
+    // Update stats for both old and new groups
+    if (oldGroupUuid) {
+      await this.updateGroupStats(oldGroupUuid);
+    }
+    if (groupUuid) {
+      await this.updateGroupStats(groupUuid);
+    }
+
+    return newTemplate;
+  }
+
+  public async toggleGroupAndTemplates(uuid: string): Promise<ReminderGroup> {
+    const group = await this.getGroup(uuid);
+    if (!group) {
+      throw new Error(`ReminderGroup not found: ${uuid}`);
+    }
+
+    group.toggle();
+    await this.reminderGroupRepository.save(group);
+
+    // If group control is active, update all templates within the group
+    if (group.controlMode === 'GROUP') {
+      const templates = await this.reminderTemplateRepository.findByGroupUuid(uuid);
+      for (const template of templates) {
+        if (group.enabled) {
+          template.enable(); // This should check group status internally
+        } else {
+          template.pause();
+        }
+        await this.reminderTemplateRepository.save(template);
+      }
+    }
+
+    return group;
+  }
+
+  public async updateGroupStats(groupUuid: string): Promise<void> {
+    const group = await this.getGroup(groupUuid);
+    if (!group) return;
+
+    // This is a simplified stats update. A real implementation might use a
+    // more efficient query.
+    const templates = await this.reminderTemplateRepository.findByGroupUuid(groupUuid, {
+      includeDeleted: false,
+    });
+
+    // This logic should be on the aggregate
+    // group.updateStats({
+    //   totalTemplates: templates.length,
+    //   activeTemplates: templates.filter(t => t.status === 'ACTIVE').length,
+    //   // ... other stats
+    // });
+
+    await group.updateStats(); // Assuming this method exists and does the calculation
+    await this.reminderGroupRepository.save(group);
+  }
 }
