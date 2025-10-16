@@ -4,4 +4,3 @@
 
 export { TaskInstance } from './TaskInstance';
 export { TaskTemplate } from './TaskTemplate';
-export { TaskStatistics } from './TaskStatistics';

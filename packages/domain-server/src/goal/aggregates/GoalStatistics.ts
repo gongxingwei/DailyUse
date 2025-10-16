@@ -15,6 +15,7 @@ import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 // 类型别名
 type IGoalStatisticsServer = GoalContracts.GoalStatisticsServer;
 type GoalStatisticsServerDTO = GoalContracts.GoalStatisticsServerDTO;
+type GoalStatisticsClientDTO = GoalContracts.GoalStatisticsClientDTO;
 type GoalStatisticsPersistenceDTO = GoalContracts.GoalStatisticsPersistenceDTO;
 type GoalStatisticsRecalculatedEvent = GoalContracts.GoalStatisticsRecalculatedEvent;
 type GoalServerDTO = GoalContracts.GoalServerDTO;
@@ -432,6 +433,31 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
    * 转换为 Server DTO
    */
   public toServerDTO(): GoalStatisticsServerDTO {
+    return {
+      accountUuid: this._accountUuid,
+      totalGoals: this._totalGoals,
+      activeGoals: this._activeGoals,
+      completedGoals: this._completedGoals,
+      archivedGoals: this._archivedGoals,
+      overdueGoals: this._overdueGoals,
+      totalKeyResults: this._totalKeyResults,
+      completedKeyResults: this._completedKeyResults,
+      averageProgress: this._averageProgress,
+      goalsByImportance: { ...this._goalsByImportance },
+      goalsByUrgency: { ...this._goalsByUrgency },
+      goalsByCategory: { ...this._goalsByCategory },
+      goalsByStatus: { ...this._goalsByStatus },
+      goalsCreatedThisWeek: this._goalsCreatedThisWeek,
+      goalsCompletedThisWeek: this._goalsCompletedThisWeek,
+      goalsCreatedThisMonth: this._goalsCreatedThisMonth,
+      goalsCompletedThisMonth: this._goalsCompletedThisMonth,
+      totalReviews: this._totalReviews,
+      averageRating: this._averageRating,
+      lastCalculatedAt: this._lastCalculatedAt,
+    };
+  }
+
+  public toClientDTO(): GoalStatisticsClientDTO {
     return {
       accountUuid: this._accountUuid,
       totalGoals: this._totalGoals,

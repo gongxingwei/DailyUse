@@ -19,6 +19,7 @@ import type {
   ActiveHoursConfigServerDTO,
   ReminderStatsServerDTO,
 } from '../value-objects';
+import type { ReminderTemplateClientDTO } from './ReminderTemplateClient';
 
 // ============ DTO 定义 ============
 
@@ -280,6 +281,13 @@ export interface ReminderTemplateServer {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toServerDTO(includeChildren?: boolean): ReminderTemplateServerDTO;
+
+
+  /**
+   * 转换为 Client DTO
+   * @param includeChildren 是否包含子实体（默认 false）
+   */
+  toClientDTO(includeChildren?: boolean): ReminderTemplateClientDTO;
 
   /**
    * 转换为 Persistence DTO (数据库)

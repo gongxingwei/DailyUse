@@ -4,12 +4,13 @@
  */
 
 import { AggregateRoot } from '@dailyuse/utils';
-import type { SettingContracts } from '@dailyuse/contracts';
+import { SettingContracts } from '@dailyuse/contracts';
 import { ValidationRule } from '../value-objects/ValidationRule';
 import { UIConfig } from '../value-objects/UIConfig';
 import { SyncConfig } from '../value-objects/SyncConfig';
 import { SettingHistory } from '../entities/SettingHistory';
 
+const { SettingValueType } = SettingContracts;
 type ISettingServer = SettingContracts.SettingServer;
 type SettingServerDTO = SettingContracts.SettingServerDTO;
 type SettingPersistenceDTO = SettingContracts.SettingPersistenceDTO;
@@ -345,6 +346,71 @@ export class Setting extends AggregateRoot implements ISettingServer {
     if (this._deletedAt) return;
     this._deletedAt = Date.now();
     this._updatedAt = this._deletedAt;
+  }
+
+  // ========== Helper Methods for Client DTO ==========
+
+  private getIsDeleted(): boolean {
+    return !!this._deletedAt;
+  }
+
+  private getDisplayName(): string {
+    return this._name;
+  }
+
+  private getDisplayValue(): string {
+    if (this._value === null || this._value === undefined) {
+      return '未设置';
+    }
+    switch (this._valueType) {
+      case SettingValueType.BOOLEAN:
+        return this._value ? '是' : '否';
+      case SettingValueType.PASSWORD:
+        return '********';
+      case SettingValueType.OBJECT:
+      case SettingValueType.ARRAY:
+        try {
+          return JSON.stringify(this._value, null, 2);
+        } catch {
+          return '[无法显示的值]';
+        }
+      default:
+        return String(this._value);
+    }
+  }
+
+  /**
+   * 转换为 ClientDTO
+   */
+  public toClientDTO(): SettingContracts.SettingClientDTO {
+    return {
+      uuid: this.uuid,
+      key: this._key,
+      name: this._name,
+      description: this._description,
+      valueType: this._valueType,
+      value: this._value,
+      defaultValue: this._defaultValue,
+      scope: this._scope,
+      accountUuid: this._accountUuid,
+      deviceId: this._deviceId,
+      groupUuid: this._groupUuid,
+      validation: this._validation?.toClientDTO(),
+      ui: this._ui?.toClientDTO(),
+      isEncrypted: this._isEncrypted,
+      isReadOnly: this._isReadOnly,
+      isSystemSetting: this._isSystemSetting,
+      syncConfig: this._syncConfig?.toClientDTO(),
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
+      // Computed properties
+      isDeleted: this.getIsDeleted(),
+      isDefault: this.isDefault(),
+      hasChanged: this.hasChanged(),
+      displayName: this.getDisplayName(),
+      displayValue: this.getDisplayValue(),
+    };
   }
 
   /**

@@ -2,7 +2,7 @@
  * AccountHistory Entity - Server Interface
  * 账户历史实体 - 服务端接口
  */
-
+import type { AccountHistoryClientDTO } from './AccountHistoryClient';
 // ============ DTO 定义 ============
 
 /**
@@ -43,6 +43,7 @@ export interface AccountHistoryServer {
   createdAt: number;
 
   toServerDTO(): AccountHistoryServerDTO;
+  toClientDTO(): AccountHistoryClientDTO;
   toPersistenceDTO(): AccountHistoryPersistenceDTO;
 }
 

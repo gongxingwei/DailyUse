@@ -3,6 +3,8 @@
  * 验证规则值对象 - 服务端接口
  */
 
+import type { ValidationRuleClientDTO } from './ValidationRuleClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -40,6 +42,7 @@ export interface ValidationRuleServer {
   custom?: string | null;
 
   toServerDTO(): ValidationRuleServerDTO;
+  toClientDTO(): ValidationRuleClientDTO;
 }
 
 export interface ValidationRuleServerStatic {

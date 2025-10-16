@@ -3,6 +3,8 @@
  * 订阅实体 - 服务端接口
  */
 
+import type { SubscriptionClientDTO } from './SubscriptionClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -71,6 +73,7 @@ export interface SubscriptionServer {
   downgrade(plan: 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE'): void;
 
   toServerDTO(): SubscriptionServerDTO;
+  toClientDTO(): SubscriptionClientDTO;
   toPersistenceDTO(): SubscriptionPersistenceDTO;
 }
 

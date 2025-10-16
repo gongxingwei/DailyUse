@@ -4,6 +4,7 @@
  */
 
 import type { TriggerResult, NotificationChannel } from '../enums';
+import type { ReminderHistoryClientDTO } from './ReminderHistoryClient';
 
 // ============ DTO 定义 ============
 
@@ -77,6 +78,7 @@ export interface ReminderHistoryServer {
    */
   toServerDTO(): ReminderHistoryServerDTO;
 
+  toClientDTO(): ReminderHistoryClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

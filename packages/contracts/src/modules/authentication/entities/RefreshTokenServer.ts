@@ -3,6 +3,8 @@
  * 刷新令牌实体 - 服务端接口
  */
 
+import type { RefreshTokenClientDTO } from './RefreshTokenClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -43,6 +45,7 @@ export interface RefreshTokenServer {
   markAsUsed(): void;
 
   toServerDTO(): RefreshTokenServerDTO;
+  toClientDTO(): RefreshTokenClientDTO;
   toPersistenceDTO(): RefreshTokenPersistenceDTO;
 }
 

@@ -73,7 +73,7 @@ export class SettingApplicationService {
     const setting = await this.domainService.createSetting(params);
 
     // 转换为 DTO
-    return setting.toServerDTO();
+    return setting.toClientDTO();
   }
 
   /**
@@ -86,7 +86,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const setting = await this.domainService.getSetting(uuid, options);
 
-    return setting ? setting.toServerDTO(options?.includeHistory) : null;
+    return setting ? setting.toClientDTO(options?.includeHistory) : null;
   }
 
   /**
@@ -100,7 +100,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const setting = await this.domainService.getSettingByKey(key, scope, contextUuid);
 
-    return setting ? setting.toServerDTO() : null;
+    return setting ? setting.toClientDTO() : null;
   }
 
   /**
@@ -114,7 +114,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理业务逻辑
     const setting = await this.domainService.updateSettingValue(uuid, newValue, operatorUuid);
 
-    return setting.toServerDTO();
+    return setting.toClientDTO();
   }
 
   /**
@@ -124,7 +124,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const setting = await this.domainService.resetSetting(uuid);
 
-    return setting.toServerDTO();
+    return setting.toClientDTO();
   }
 
   /**
@@ -136,7 +136,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const settings = await this.domainService.updateManySettings(updates);
 
-    return settings.map((s) => s.toServerDTO());
+    return settings.map((s) => s.toClientDTO());
   }
 
   /**
@@ -150,7 +150,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const settings = await this.domainService.getSettingsByScope(scope, contextUuid, options);
 
-    return settings.map((s) => s.toServerDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO(options?.includeHistory));
   }
 
   /**
@@ -163,7 +163,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const settings = await this.domainService.getUserSettings(accountUuid, options);
 
-    return settings.map((s) => s.toServerDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO(options?.includeHistory));
   }
 
   /**
@@ -175,7 +175,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const settings = await this.domainService.getSystemSettings(options);
 
-    return settings.map((s) => s.toServerDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO(options?.includeHistory));
   }
 
   /**
@@ -188,7 +188,7 @@ export class SettingApplicationService {
     // 委托给领域服务处理
     const settings = await this.domainService.searchSettings(query, scope);
 
-    return settings.map((s) => s.toServerDTO());
+    return settings.map((s) => s.toClientDTO());
   }
 
   /**

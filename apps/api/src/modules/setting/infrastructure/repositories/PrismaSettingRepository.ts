@@ -41,10 +41,10 @@ export class PrismaSettingRepository implements ISettingRepository {
       is_read_only: data.isReadOnly,
       is_system_setting: data.isSystemSetting,
       sync_config: data.syncConfig,
-      history: data.history || '[]',
-      created_at: data.createdAt,
-      updated_at: data.updatedAt,
-      deleted_at: data.deletedAt,
+      history: data.historyData || '[]',
+      created_at: data.createdAt.getTime(),
+      updated_at: data.updatedAt.getTime(),
+      deleted_at: data.deletedAt?.getTime() ?? null,
     });
   }
 
@@ -61,36 +61,70 @@ export class PrismaSettingRepository implements ISettingRepository {
   async save(setting: Setting): Promise<void> {
     const persistence = setting.toPersistenceDTO();
 
-    // TODO: 实现 Prisma upsert
-    // await this.prisma.setting.upsert({
-    //   where: { uuid: persistence.uuid },
-    //   create: { ...persistence },
-    //   update: { ...persistence },
-    // });
-
-    throw new Error('PrismaSettingRepository.save() not implemented - Prisma schema required');
+    await this.prisma.$transaction(async (tx) => {
+      await tx.setting.upsert({
+        where: { uuid: persistence.uuid },
+        create: {
+          uuid: persistence.uuid,
+          key: persistence.key,
+          name: persistence.name,
+          description: persistence.description,
+          valueType: persistence.value_type,
+          value: persistence.value,
+          defaultValue: persistence.default_value,
+          scope: persistence.scope,
+          accountUuid: persistence.account_uuid,
+          deviceId: persistence.device_id,
+          groupUuid: persistence.group_uuid,
+          validation: persistence.validation,
+          ui: persistence.ui,
+          isEncrypted: persistence.is_encrypted,
+          isReadOnly: persistence.is_read_only,
+          isSystemSetting: persistence.is_system_setting,
+          syncConfig: persistence.sync_config,
+          historyData: persistence.history,
+          createdAt: this.toDate(persistence.created_at) ?? new Date(),
+          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+          deletedAt: this.toDate(persistence.deleted_at),
+        },
+        update: {
+          name: persistence.name,
+          description: persistence.description,
+          valueType: persistence.value_type,
+          value: persistence.value,
+          defaultValue: persistence.default_value,
+          scope: persistence.scope,
+          accountUuid: persistence.account_uuid,
+          deviceId: persistence.device_id,
+          groupUuid: persistence.group_uuid,
+          validation: persistence.validation,
+          ui: persistence.ui,
+          isEncrypted: persistence.is_encrypted,
+          isReadOnly: persistence.is_read_only,
+          isSystemSetting: persistence.is_system_setting,
+          syncConfig: persistence.sync_config,
+          historyData: persistence.history,
+          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+          deletedAt: this.toDate(persistence.deleted_at),
+        },
+      });
+    });
   }
 
   async findById(uuid: string, options?: { includeHistory?: boolean }): Promise<Setting | null> {
-    // TODO: 实现 Prisma findUnique
-    // const data = await this.prisma.setting.findUnique({
-    //   where: { uuid },
-    // });
-    // return data ? this.mapSettingToEntity(data) : null;
-
-    throw new Error('PrismaSettingRepository.findById() not implemented - Prisma schema required');
+    const data = await this.prisma.setting.findUnique({
+      where: { uuid },
+    });
+    return data ? this.mapSettingToEntity(data) : null;
   }
 
   async findByKey(key: string, scope: SettingScope, contextUuid?: string): Promise<Setting | null> {
-    // TODO: 实现 Prisma findFirst
-    // const where: any = { key, scope };
-    // if (scope === 'USER' && contextUuid) where.accountUuid = contextUuid;
-    // if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
-    //
-    // const data = await this.prisma.setting.findFirst({ where });
-    // return data ? this.mapSettingToEntity(data) : null;
+    const where: any = { key, scope, deletedAt: null };
+    if (scope === 'USER' && contextUuid) where.accountUuid = contextUuid;
+    if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
 
-    throw new Error('PrismaSettingRepository.findByKey() not implemented - Prisma schema required');
+    const data = await this.prisma.setting.findFirst({ where });
+    return data ? this.mapSettingToEntity(data) : null;
   }
 
   async findByScope(
@@ -98,17 +132,19 @@ export class PrismaSettingRepository implements ISettingRepository {
     contextUuid?: string,
     options?: { includeHistory?: boolean },
   ): Promise<Setting[]> {
-    // TODO: 实现 Prisma findMany
-    throw new Error(
-      'PrismaSettingRepository.findByScope() not implemented - Prisma schema required',
-    );
+    const where: any = { scope, deletedAt: null };
+    if (scope === 'USER' && contextUuid) where.accountUuid = contextUuid;
+    if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
+
+    const data = await this.prisma.setting.findMany({ where });
+    return data.map((item) => this.mapSettingToEntity(item));
   }
 
   async findByGroup(groupUuid: string, options?: { includeHistory?: boolean }): Promise<Setting[]> {
-    // TODO: 实现 Prisma findMany
-    throw new Error(
-      'PrismaSettingRepository.findByGroup() not implemented - Prisma schema required',
-    );
+    const data = await this.prisma.setting.findMany({
+      where: { groupUuid, deletedAt: null },
+    });
+    return data.map((item) => this.mapSettingToEntity(item));
   }
 
   async findSystemSettings(options?: { includeHistory?: boolean }): Promise<Setting[]> {
@@ -130,37 +166,95 @@ export class PrismaSettingRepository implements ISettingRepository {
   }
 
   async delete(uuid: string): Promise<void> {
-    // TODO: 实现软删除
-    // await this.prisma.setting.update({
-    //   where: { uuid },
-    //   data: { deletedAt: new Date() },
-    // });
-
-    throw new Error('PrismaSettingRepository.delete() not implemented - Prisma schema required');
+    await this.prisma.setting.update({
+      where: { uuid },
+      data: { deletedAt: new Date() },
+    });
   }
 
   async exists(uuid: string): Promise<boolean> {
-    // TODO: 实现 Prisma count
-    // const count = await this.prisma.setting.count({ where: { uuid } });
-    // return count > 0;
-
-    throw new Error('PrismaSettingRepository.exists() not implemented - Prisma schema required');
+    const count = await this.prisma.setting.count({ where: { uuid } });
+    return count > 0;
   }
 
   async existsByKey(key: string, scope: SettingScope, contextUuid?: string): Promise<boolean> {
-    // TODO: 实现 Prisma count
-    throw new Error(
-      'PrismaSettingRepository.existsByKey() not implemented - Prisma schema required',
-    );
+    const where: any = { key, scope, deletedAt: null };
+    if (scope === 'USER' && contextUuid) where.accountUuid = contextUuid;
+    if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
+
+    const count = await this.prisma.setting.count({ where });
+    return count > 0;
   }
 
   async saveMany(settings: Setting[]): Promise<void> {
-    // TODO: 实现批量保存
-    throw new Error('PrismaSettingRepository.saveMany() not implemented - Prisma schema required');
+    await this.prisma.$transaction(async (tx) => {
+      for (const setting of settings) {
+        const persistence = setting.toPersistenceDTO();
+        await tx.setting.upsert({
+          where: { uuid: persistence.uuid },
+          create: {
+            uuid: persistence.uuid,
+            key: persistence.key,
+            name: persistence.name,
+            description: persistence.description,
+            valueType: persistence.value_type,
+            value: persistence.value,
+            defaultValue: persistence.default_value,
+            scope: persistence.scope,
+            accountUuid: persistence.account_uuid,
+            deviceId: persistence.device_id,
+            groupUuid: persistence.group_uuid,
+            validation: persistence.validation,
+            ui: persistence.ui,
+            isEncrypted: persistence.is_encrypted,
+            isReadOnly: persistence.is_read_only,
+            isSystemSetting: persistence.is_system_setting,
+            syncConfig: persistence.sync_config,
+            historyData: persistence.history,
+            createdAt: this.toDate(persistence.created_at) ?? new Date(),
+            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+            deletedAt: this.toDate(persistence.deleted_at),
+          },
+          update: {
+            name: persistence.name,
+            description: persistence.description,
+            valueType: persistence.value_type,
+            value: persistence.value,
+            defaultValue: persistence.default_value,
+            scope: persistence.scope,
+            accountUuid: persistence.account_uuid,
+            deviceId: persistence.device_id,
+            groupUuid: persistence.group_uuid,
+            validation: persistence.validation,
+            ui: persistence.ui,
+            isEncrypted: persistence.is_encrypted,
+            isReadOnly: persistence.is_read_only,
+            isSystemSetting: persistence.is_system_setting,
+            syncConfig: persistence.sync_config,
+            historyData: persistence.history,
+            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+            deletedAt: this.toDate(persistence.deleted_at),
+          },
+        });
+      }
+    });
   }
 
   async search(query: string, scope?: SettingScope): Promise<Setting[]> {
-    // TODO: 实现搜索
-    throw new Error('PrismaSettingRepository.search() not implemented - Prisma schema required');
+    const where: any = {
+      deletedAt: null,
+      OR: [
+        { name: { contains: query, mode: 'insensitive' } },
+        { description: { contains: query, mode: 'insensitive' } },
+        { key: { contains: query, mode: 'insensitive' } },
+      ],
+    };
+
+    if (scope) {
+      where.scope = scope;
+    }
+
+    const data = await this.prisma.setting.findMany({ where });
+    return data.map((item) => this.mapSettingToEntity(item));
   }
 }

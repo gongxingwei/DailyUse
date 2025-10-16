@@ -4,6 +4,7 @@
  */
 
 import type { ResourceType } from '../enums';
+import type { RepositoryExplorerClientDTO } from './RepositoryExplorerClient';
 
 // ============ 值对象接口 ============
 
@@ -132,6 +133,7 @@ export interface RepositoryExplorerServer {
    */
   toServerDTO(): RepositoryExplorerServerDTO;
 
+  toClientDTO(): RepositoryExplorerClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

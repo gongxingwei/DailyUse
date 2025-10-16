@@ -13,6 +13,7 @@ import { Entity } from '@dailyuse/utils';
 
 type IResourceReferenceServer = RepositoryContracts.ResourceReferenceServer;
 type ResourceReferenceServerDTO = RepositoryContracts.ResourceReferenceServerDTO;
+type ResourceReferenceClientDTO = RepositoryContracts.ResourceReferenceClientDTO;
 type ResourceReferencePersistenceDTO = RepositoryContracts.ResourceReferencePersistenceDTO;
 type ReferenceType = RepositoryContracts.ReferenceType;
 
@@ -127,6 +128,19 @@ export class ResourceReference extends Entity implements IResourceReferenceServe
   // ===== 转换方法 =====
 
   public toServerDTO(): ResourceReferenceServerDTO {
+    return {
+      uuid: this._uuid,
+      sourceResourceUuid: this._sourceResourceUuid,
+      targetResourceUuid: this._targetResourceUuid,
+      referenceType: this._referenceType,
+      description: this._description,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      lastVerifiedAt: this._lastVerifiedAt,
+    };
+  }
+
+  public toClientDTO(): ResourceReferenceClientDTO {
     return {
       uuid: this._uuid,
       sourceResourceUuid: this._sourceResourceUuid,

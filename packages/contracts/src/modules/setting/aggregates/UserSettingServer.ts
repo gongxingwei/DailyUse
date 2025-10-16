@@ -3,6 +3,7 @@
  * 用户设置聚合根 - 服务端接口
  */
 
+import type { UserSettingClientDTO } from './UserSettingClient';
 // ============ DTO 定义 ============
 
 /**
@@ -139,6 +140,7 @@ export interface UserSettingServer {
   disableExperimentalFeature(feature: string): void;
 
   toServerDTO(): UserSettingServerDTO;
+  toClientDTO(): UserSettingClientDTO;
   toPersistenceDTO(): UserSettingPersistenceDTO;
 }
 

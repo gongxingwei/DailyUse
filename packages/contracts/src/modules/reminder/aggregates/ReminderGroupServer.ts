@@ -5,6 +5,7 @@
 
 import type { ControlMode, ReminderStatus } from '../enums';
 import type { GroupStatsServerDTO } from '../value-objects';
+import type { ReminderGroupClientDTO } from './ReminderGroupClient';
 
 // ============ DTO 定义 ============
 
@@ -199,6 +200,7 @@ export interface ReminderGroupServer {
    */
   toServerDTO(): ReminderGroupServerDTO;
 
+  toClientDTO(): ReminderGroupClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

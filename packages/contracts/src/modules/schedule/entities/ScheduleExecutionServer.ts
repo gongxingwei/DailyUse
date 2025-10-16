@@ -4,6 +4,7 @@
  */
 
 import type { ExecutionStatus } from '../enums';
+import type { ScheduleExecutionClientDTO } from './ScheduleExecutionClient';
 
 // ============ DTO 定义 ============
 
@@ -120,6 +121,7 @@ export interface ScheduleExecutionServer {
    */
   toServerDTO(): ScheduleExecutionServerDTO;
 
+  toClientDTO(): ScheduleExecutionClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

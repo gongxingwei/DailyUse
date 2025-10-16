@@ -68,7 +68,7 @@ export class ScheduleStatisticsApplicationService {
     const statistics = await this.domainService.ensureStatisticsExists(accountUuid);
 
     // 转换为 DTO
-    return statistics.toServerDTO();
+    return statistics.toClientDTO();
   }
 
   /**
@@ -80,7 +80,7 @@ export class ScheduleStatisticsApplicationService {
     // 委托给领域服务处理
     const statistics = await this.domainService.getStatistics(accountUuid);
 
-    return statistics ? statistics.toServerDTO() : null;
+    return statistics ? statistics.toClientDTO() : null;
   }
 
   /**
@@ -132,7 +132,7 @@ export class ScheduleStatisticsApplicationService {
     const statistics = await this.domainService.recalculateStatistics(accountUuid);
 
     // 转换为 DTO
-    return statistics.toServerDTO();
+    return statistics.toClientDTO();
   }
 
   /**
@@ -163,7 +163,7 @@ export class ScheduleStatisticsApplicationService {
     const statisticsList = await this.domainService.recalculateStatisticsBatch(accountUuids);
 
     // 转换为 DTO 数组
-    return statisticsList.map((stats) => stats.toServerDTO());
+    return statisticsList.map((stats) => stats.toClientDTO());
   }
 
   /**

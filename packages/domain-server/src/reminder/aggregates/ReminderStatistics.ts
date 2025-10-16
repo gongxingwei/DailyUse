@@ -8,6 +8,7 @@ import { AggregateRoot } from '@dailyuse/utils';
 
 type IReminderStatisticsServer = ReminderContracts.ReminderStatisticsServer;
 type ReminderStatisticsServerDTO = ReminderContracts.ReminderStatisticsServerDTO;
+type ReminderStatisticsClientDTO = ReminderContracts.ReminderStatisticsClientDTO;
 type ReminderStatisticsPersistenceDTO = ReminderContracts.ReminderStatisticsPersistenceDTO;
 type TemplateStatsInfo = ReminderContracts.TemplateStatsInfo;
 type GroupStatsInfo = ReminderContracts.GroupStatsInfo;
@@ -94,6 +95,14 @@ export class ReminderStatistics extends AggregateRoot implements IReminderStatis
   }
 
   public toServerDTO(): ReminderStatisticsServerDTO {
+    return {
+      uuid: this.uuid, accountUuid: this.accountUuid,
+      templateStats: this.templateStats, groupStats: this.groupStats,
+      triggerStats: this.triggerStats, calculatedAt: this.calculatedAt
+    };
+  }
+
+  public toClientDTO(): ReminderStatisticsClientDTO {
     return {
       uuid: this.uuid, accountUuid: this.accountUuid,
       templateStats: this.templateStats, groupStats: this.groupStats,

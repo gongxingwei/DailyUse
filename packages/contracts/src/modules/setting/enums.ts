@@ -12,6 +12,7 @@ export enum SettingValueType {
   STRING = 'STRING',
   NUMBER = 'NUMBER',
   BOOLEAN = 'BOOLEAN',
+  PASSWORD = 'PASSWORD',
   JSON = 'JSON',
   ARRAY = 'ARRAY',
   OBJECT = 'OBJECT',

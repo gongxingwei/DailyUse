@@ -91,6 +91,18 @@ export class SessionHistory extends Entity implements ISessionHistoryServer {
     };
   }
 
+  public toClientDTO(): SessionHistoryServerDTO {
+    return {
+      uuid: this.uuid,
+      sessionUuid: this.sessionUuid,
+      action: this.action,
+      details: this.details,
+      ipAddress: this.ipAddress,
+      userAgent: this.userAgent,
+      createdAt: this.createdAt,
+    };
+  }
+
   public toPersistenceDTO(): SessionHistoryPersistenceDTO {
     return {
       uuid: this.uuid,

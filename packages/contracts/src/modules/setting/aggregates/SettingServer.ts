@@ -3,6 +3,7 @@
  * 设置聚合根 - 服务端接口
  */
 
+import type { SettingClientDTO } from './SettingClient';
 import type {
   ValidationRuleServer,
   ValidationRuleServerDTO,
@@ -13,6 +14,7 @@ import type {
   SettingHistoryServer,
   SettingHistoryServerDTO,
 } from '../entities/SettingHistoryServer';
+import { SettingValueType } from '../enums';
 
 // ============ DTO 定义 ============
 
@@ -24,7 +26,7 @@ export interface SettingServerDTO {
   key: string;
   name: string;
   description?: string | null;
-  valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  valueType: SettingValueType;
   value: any;
   defaultValue: any;
   scope: 'SYSTEM' | 'USER' | 'DEVICE';
@@ -51,7 +53,7 @@ export interface SettingPersistenceDTO {
   key: string;
   name: string;
   description?: string | null;
-  value_type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  value_type: SettingValueType;
   value: string; // JSON
   default_value: string; // JSON
   scope: 'SYSTEM' | 'USER' | 'DEVICE';
@@ -77,7 +79,7 @@ export interface SettingServer {
   key: string;
   name: string;
   description?: string | null;
-  valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  valueType: SettingValueType;
   value: any;
   defaultValue: any;
   scope: 'SYSTEM' | 'USER' | 'DEVICE';
@@ -120,6 +122,13 @@ export interface SettingServer {
   hasChanged(): boolean;
 
   toServerDTO(includeHistory?: boolean): SettingServerDTO;
+
+  /**
+   * 转换为 Client DTO
+   * @param includeChildren 是否包含子实体（默认 false）
+   */
+  toClientDTO(includeChildren?: boolean): SettingClientDTO;
+
   toPersistenceDTO(): SettingPersistenceDTO;
 }
 
@@ -128,7 +137,7 @@ export interface SettingServerStatic {
     key: string;
     name: string;
     description?: string;
-    valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+    valueType: SettingValueType;
     value: any;
     defaultValue: any;
     scope: 'SYSTEM' | 'USER' | 'DEVICE';

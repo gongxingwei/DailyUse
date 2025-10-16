@@ -3,6 +3,8 @@
  * 同步配置值对象 - 服务端接口
  */
 
+import type { SyncConfigClientDTO } from './SyncConfigClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -31,6 +33,7 @@ export interface SyncConfigServer {
   syncToDevices: boolean;
 
   toServerDTO(): SyncConfigServerDTO;
+  toClientDTO(): SyncConfigClientDTO;
 }
 
 export interface SyncConfigServerStatic {

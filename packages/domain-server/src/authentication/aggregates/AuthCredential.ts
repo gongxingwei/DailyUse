@@ -498,6 +498,24 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
     };
   }
 
+  public toClientDTO(): AuthCredentialServerDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      type: this.type,
+      passwordCredential: this._passwordCredential as any,
+      apiKeyCredentials: this._apiKeyCredentials as any,
+      rememberMeTokens: this._rememberMeTokens as any,
+      twoFactor: this._twoFactor,
+      biometric: this._biometric,
+      status: this._status,
+      security: this._security,
+      history: this._history as any,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
   public toPersistenceDTO(): AuthCredentialPersistenceDTO {
     return {
       uuid: this.uuid,

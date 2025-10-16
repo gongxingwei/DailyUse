@@ -3,6 +3,7 @@
  * 调度任务聚合根 - 服务端接口
  */
 
+import type { ScheduleTaskClientDTO } from './ScheduleTaskClient';
 import type { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '../enums';
 import type {
   ScheduleExecutionServer,
@@ -362,6 +363,13 @@ export interface ScheduleTaskServer {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toServerDTO(includeChildren?: boolean): ScheduleTaskServerDTO;
+
+
+  /**
+   * 转换为 Client DTO
+   * @param includeChildren 是否包含子实体（默认 false）
+   */
+  toClientDTO(includeChildren?: boolean): ScheduleTaskClientDTO;
 
   /**
    * 转换为 Persistence DTO (数据库)

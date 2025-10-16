@@ -18,15 +18,3 @@ export * as ScheduleDomain from './schedule';
 
 // 任务模块
 export * as TaskDomain from './task';
-
-// 通知模块
-export * as NotificationDomain from './notification';
-
-// 提醒模块
-export * as ReminderDomain from './reminder';
-
-// 账户模块
-export * as AccountDomain from './account';
-
-// 认证模块
-export * as AuthenticationDomain from './authentication';

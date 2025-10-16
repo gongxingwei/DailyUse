@@ -50,6 +50,15 @@ export {
   ContentType,
 } from './modules/notification/enums';
 
+// 导出 Repository 枚举
+export {
+  ResourceType,
+  ResourceStatus,
+  RepositoryStatus,
+  RepositoryType,
+  ReferenceType,
+} from './modules/repository/enums';
+
 // 导出 Setting 枚举（新的 DDD 架构）
 export {
   SettingValueType,

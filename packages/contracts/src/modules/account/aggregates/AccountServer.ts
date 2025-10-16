@@ -5,6 +5,7 @@
 
 import type { SubscriptionServer } from '../entities/SubscriptionServer';
 import type { AccountHistoryServer } from '../entities/AccountHistoryServer';
+import type { AccountClientDTO } from './AccountClient';
 
 // ============ DTO 定义 ============
 
@@ -205,6 +206,7 @@ export interface AccountServer {
   recordActivity(): void;
 
   toServerDTO(): AccountServerDTO;
+  toClientDTO(): AccountClientDTO;
   toPersistenceDTO(): AccountPersistenceDTO;
 }
 

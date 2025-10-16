@@ -145,6 +145,21 @@ export class ApiKeyCredential extends Entity implements IApiKeyCredentialServer 
     };
   }
 
+  public toClientDTO(): ApiKeyCredentialServerDTO {
+    return {
+      uuid: this.uuid,
+      credentialUuid: this.credentialUuid,
+      name: this.name,
+      key: this.key,
+      keyPrefix: this.keyPrefix,
+      status: this._status,
+      lastUsedAt: this._lastUsedAt,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
   public toPersistenceDTO(): ApiKeyCredentialPersistenceDTO {
     return {
       uuid: this.uuid,

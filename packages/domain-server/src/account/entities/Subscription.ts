@@ -8,6 +8,7 @@ import { Entity } from '@dailyuse/utils';
 
 type ISubscriptionServer = AccountContracts.SubscriptionServer;
 type SubscriptionServerDTO = AccountContracts.SubscriptionServerDTO;
+type SubscriptionClientDTO = AccountContracts.SubscriptionClientDTO;
 type SubscriptionPersistenceDTO = AccountContracts.SubscriptionPersistenceDTO;
 
 export class Subscription extends Entity implements ISubscriptionServer {
@@ -196,6 +197,25 @@ export class Subscription extends Entity implements ISubscriptionServer {
 
   // DTO conversion
   public toServerDTO(): SubscriptionServerDTO {
+    return {
+      uuid: this._uuid,
+      accountUuid: this._accountUuid,
+      plan: this._plan,
+      status: this._status,
+      startDate: this._startDate,
+      endDate: this._endDate,
+      renewalDate: this._renewalDate,
+      autoRenew: this._autoRenew,
+      paymentMethod: this._paymentMethod,
+      billingCycle: this._billingCycle,
+      amount: this._amount,
+      currency: this._currency,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
+  public toClientDTO(): SubscriptionClientDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,

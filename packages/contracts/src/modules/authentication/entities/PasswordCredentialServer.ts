@@ -3,6 +3,8 @@
  * 密码凭证实体 - 服务端接口
  */
 
+import type { PasswordCredentialClientDTO } from './PasswordCredentialClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -49,6 +51,7 @@ export interface PasswordCredentialServer {
   needsRehash(): boolean;
 
   toServerDTO(): PasswordCredentialServerDTO;
+  toClientDTO(): PasswordCredentialClientDTO;
   toPersistenceDTO(): PasswordCredentialPersistenceDTO;
 }
 

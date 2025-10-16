@@ -117,6 +117,7 @@ export interface ReminderStatisticsServer {
    */
   toServerDTO(): ReminderStatisticsServerDTO;
 
+  toClientDTO(): ReminderStatisticsClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

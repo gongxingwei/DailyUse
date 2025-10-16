@@ -3,6 +3,8 @@
  * 记住我令牌实体 - 服务端接口
  */
 
+import type { RememberMeTokenClientDTO } from './RememberMeTokenClient';
+
 import type { DeviceInfoServer } from '../value-objects/DeviceInfoServer';
 
 // ============ DTO 定义 ============
@@ -74,6 +76,7 @@ export interface RememberMeTokenServer {
   revoke(): void;
 
   toServerDTO(): RememberMeTokenServerDTO;
+  toClientDTO(): RememberMeTokenClientDTO;
   toPersistenceDTO(): RememberMeTokenPersistenceDTO;
 }
 

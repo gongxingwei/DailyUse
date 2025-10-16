@@ -185,6 +185,19 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
     };
   }
 
+  public toClientDTO(): ReminderHistoryClientDTO {
+    return {
+      uuid: this.uuid,
+      templateUuid: this.templateUuid,
+      triggeredAt: this.triggeredAt,
+      result: this.result,
+      error: this.error,
+      notificationSent: this.notificationSent,
+      notificationChannels: this.notificationChannels,
+      createdAt: this.createdAt,
+    };
+  }
+
   /**
    * 转换为 Persistence DTO (数据库)
    */

@@ -64,7 +64,7 @@ export class RepositoryApplicationService {
     const repository = await this.domainService.createRepository(params);
 
     // 转换为 DTO
-    return repository.toServerDTO();
+    return repository.toClientDTO();
   }
 
   /**
@@ -77,7 +77,7 @@ export class RepositoryApplicationService {
     // 委托给领域服务处理
     const repository = await this.domainService.getRepository(uuid, options);
 
-    return repository ? repository.toServerDTO() : null;
+    return repository ? repository.toClientDTO() : null;
   }
 
   /**
@@ -91,7 +91,7 @@ export class RepositoryApplicationService {
     const repositories = await this.domainService.getRepositoriesByAccount(accountUuid, options);
 
     // 转换为 DTO 数组
-    return repositories.map((repo) => repo.toServerDTO());
+    return repositories.map((repo) => repo.toClientDTO());
   }
 
   /**
@@ -101,7 +101,7 @@ export class RepositoryApplicationService {
     // 委托给领域服务处理
     const repository = await this.domainService.getRepositoryByPath(path);
 
-    return repository ? repository.toServerDTO() : null;
+    return repository ? repository.toClientDTO() : null;
   }
 
   /**
@@ -114,7 +114,7 @@ export class RepositoryApplicationService {
     // 委托给领域服务处理业务逻辑
     const repository = await this.domainService.updateRepositoryConfig(uuid, config);
 
-    return repository.toServerDTO();
+    return repository.toClientDTO();
   }
 
   /**

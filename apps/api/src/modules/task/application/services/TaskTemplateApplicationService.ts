@@ -114,7 +114,7 @@ export class TaskTemplateApplicationService {
     // 保存到仓储
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -128,7 +128,7 @@ export class TaskTemplateApplicationService {
       ? await this.templateRepository.findByUuidWithChildren(uuid)
       : await this.templateRepository.findByUuid(uuid);
 
-    return template ? template.toServerDTO(includeChildren) : null;
+    return template ? template.toClientDTO(includeChildren) : null;
   }
 
   /**
@@ -138,7 +138,7 @@ export class TaskTemplateApplicationService {
     accountUuid: string,
   ): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findByAccount(accountUuid);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -149,7 +149,7 @@ export class TaskTemplateApplicationService {
     status: TaskContracts.TaskTemplateStatus,
   ): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findByStatus(accountUuid, status);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -159,7 +159,7 @@ export class TaskTemplateApplicationService {
     accountUuid: string,
   ): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findActiveTemplates(accountUuid);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -169,7 +169,7 @@ export class TaskTemplateApplicationService {
     folderUuid: string,
   ): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findByFolder(folderUuid);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -177,7 +177,7 @@ export class TaskTemplateApplicationService {
    */
   async getTaskTemplatesByGoal(goalUuid: string): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findByGoal(goalUuid);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -188,7 +188,7 @@ export class TaskTemplateApplicationService {
     tags: string[],
   ): Promise<TaskContracts.TaskTemplateServerDTO[]> {
     const templates = await this.templateRepository.findByTags(accountUuid, tags);
-    return templates.map((t) => t.toServerDTO());
+    return templates.map((t) => t.toClientDTO());
   }
 
   /**
@@ -219,7 +219,7 @@ export class TaskTemplateApplicationService {
     // TODO: 在 TaskTemplate 聚合根中添加 update() 方法
 
     await this.templateRepository.save(template);
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -234,7 +234,7 @@ export class TaskTemplateApplicationService {
     template.activate();
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -249,7 +249,7 @@ export class TaskTemplateApplicationService {
     template.pause();
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -264,7 +264,7 @@ export class TaskTemplateApplicationService {
     template.archive();
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -285,7 +285,7 @@ export class TaskTemplateApplicationService {
       throw new Error(`TaskTemplate ${uuid} not found after restore`);
     }
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -314,7 +314,7 @@ export class TaskTemplateApplicationService {
     template.bindToGoal(params.goalUuid, params.keyResultUuid, params.incrementValue);
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -329,7 +329,7 @@ export class TaskTemplateApplicationService {
     template.unbindFromGoal();
     await this.templateRepository.save(template);
 
-    return template.toServerDTO();
+    return template.toClientDTO();
   }
 
   /**
@@ -345,7 +345,7 @@ export class TaskTemplateApplicationService {
     }
 
     const instances = await this.generationService.generateInstancesForTemplate(template, toDate);
-    return instances.map((i) => i.toServerDTO());
+    return instances.map((i) => i.toClientDTO());
   }
 
   /**

@@ -53,6 +53,7 @@ export interface GoalRecordServer {
   updateNote(note: string): void;
 
   toServerDTO(): GoalRecordServerDTO;
+  toClientDTO(): GoalRecordClientDTO;
   toPersistenceDTO(): GoalRecordPersistenceDTO;
 }
 

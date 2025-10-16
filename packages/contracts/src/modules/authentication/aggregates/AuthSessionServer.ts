@@ -6,6 +6,7 @@
 import type { RefreshTokenServer } from '../entities/RefreshTokenServer';
 import type { DeviceInfoServer } from '../value-objects/DeviceInfoServer';
 import type { SessionHistoryServer } from '../entities/SessionHistoryServer';
+import type { AuthSessionClientDTO } from './AuthSessionClient';
 
 // ============ DTO 定义 ============
 
@@ -93,6 +94,7 @@ export interface AuthSessionServer {
   extend(hours: number): void;
 
   toServerDTO(): AuthSessionServerDTO;
+  toClientDTO(): AuthSessionClientDTO;
   toPersistenceDTO(): AuthSessionPersistenceDTO;
 }
 

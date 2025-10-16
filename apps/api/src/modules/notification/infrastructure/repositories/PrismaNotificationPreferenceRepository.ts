@@ -1,0 +1,91 @@
+import { PrismaClient } from '@prisma/client';
+import type { INotificationPreferenceRepository } from '@dailyuse/domain-server';
+import { NotificationPreference } from '@dailyuse/domain-server';
+
+/**
+ * NotificationPreference Prisma 仓储实现
+ * 简单聚合根，无子实体
+ * JSON 字段：category_preferences, do_not_disturb, rate_limits
+ */
+export class PrismaNotificationPreferenceRepository implements INotificationPreferenceRepository {
+  constructor(private prisma: PrismaClient) {}
+
+  private mapToEntity(data: any): NotificationPreference {
+    return NotificationPreference.fromPersistenceDTO({
+      uuid: data.uuid,
+      account_uuid: data.accountUuid,
+      enabled: data.enabled,
+      channels: data.channels,
+      categories: data.categories,
+      do_not_disturb: data.doNotDisturb,
+      rate_limit: data.rateLimit,
+      created_at: data.createdAt.getTime(),
+      updated_at: data.updatedAt.getTime(),
+    });
+  }
+
+  private toDate(timestamp: number | null | undefined): Date | null | undefined {
+    if (timestamp == null) return timestamp as null | undefined;
+    return new Date(timestamp);
+  }
+
+  async save(preference: NotificationPreference): Promise<void> {
+    const persistence = preference.toPersistenceDTO();
+
+    await this.prisma.notificationPreference.upsert({
+      where: { uuid: persistence.uuid },
+      create: {
+        uuid: persistence.uuid,
+        accountUuid: persistence.account_uuid,
+        enabled: persistence.enabled,
+        channels: persistence.channels,
+        categories: persistence.categories,
+        doNotDisturb: persistence.do_not_disturb,
+        rateLimit: persistence.rate_limit,
+        createdAt: this.toDate(persistence.created_at) ?? new Date(),
+        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+      },
+      update: {
+        enabled: persistence.enabled,
+        channels: persistence.channels,
+        categories: persistence.categories,
+        doNotDisturb: persistence.do_not_disturb,
+        rateLimit: persistence.rate_limit,
+        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+      },
+    });
+  }
+
+  async findById(uuid: string): Promise<NotificationPreference | null> {
+    const data = await this.prisma.notificationPreference.findUnique({ where: { uuid } });
+    return data ? this.mapToEntity(data) : null;
+  }
+
+  async findByAccountUuid(accountUuid: string): Promise<NotificationPreference | null> {
+    const data = await this.prisma.notificationPreference.findUnique({ where: { accountUuid } });
+    return data ? this.mapToEntity(data) : null;
+  }
+
+  async delete(uuid: string): Promise<void> {
+    await this.prisma.notificationPreference.delete({ where: { uuid } });
+  }
+
+  async exists(uuid: string): Promise<boolean> {
+    const count = await this.prisma.notificationPreference.count({ where: { uuid } });
+    return count > 0;
+  }
+
+  async existsForAccount(accountUuid: string): Promise<boolean> {
+    const count = await this.prisma.notificationPreference.count({ where: { accountUuid } });
+    return count > 0;
+  }
+
+  async getOrCreate(accountUuid: string): Promise<NotificationPreference> {
+    const existing = await this.findByAccountUuid(accountUuid);
+    if (existing) return existing;
+
+    const preference = NotificationPreference.create({ accountUuid });
+    await this.save(preference);
+    return preference;
+  }
+}

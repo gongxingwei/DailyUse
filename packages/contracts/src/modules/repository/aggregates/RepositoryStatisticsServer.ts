@@ -252,6 +252,7 @@ export interface RepositoryStatisticsServer {
    */
   toServerDTO(): RepositoryStatisticsServerDTO;
 
+  toClientDTO(): RepositoryStatisticsClientDTO;
   /**
    * 转换为持久化 DTO
    */

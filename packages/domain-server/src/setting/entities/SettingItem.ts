@@ -4,13 +4,13 @@
  */
 
 import { Entity } from '@dailyuse/utils';
-import type { SettingContracts } from '@dailyuse/contracts';
+import { SettingContracts, SettingValueType } from '@dailyuse/contracts';
 import { UIConfig } from '../value-objects/UIConfig';
 
 type SettingItemServerDTO = SettingContracts.SettingItemServerDTO;
+type SettingItemClientDTO = SettingContracts.SettingItemClientDTO;
 type SettingItemPersistenceDTO = SettingContracts.SettingItemPersistenceDTO;
 type SettingItemServer = SettingContracts.SettingItemServer;
-type SettingValueType = SettingContracts.SettingValueType;
 
 /**
  * 设置项实体
@@ -150,6 +150,33 @@ export class SettingItem extends Entity implements SettingItemServer {
     return JSON.stringify(this._value) === JSON.stringify(this._defaultValue);
   }
 
+  // ============ Helper Methods for Client DTO ============
+
+  private getDisplayValue(): string {
+    if (this._value === null || this._value === undefined) {
+      return '未设置';
+    }
+    switch (this._valueType) {
+      case SettingContracts.SettingValueType.BOOLEAN:
+        return this._value ? '是' : '否';
+      case SettingContracts.SettingValueType.PASSWORD:
+        return '********';
+      case SettingContracts.SettingValueType.OBJECT:
+      case SettingContracts.SettingValueType.ARRAY:
+        try {
+          return JSON.stringify(this._value, null, 2);
+        } catch {
+          return '[无法显示的值]';
+        }
+      default:
+        return String(this._value);
+    }
+  }
+
+  private getCanEdit(): boolean {
+    return !this._isReadOnly;
+  }
+
   // ============ DTO 转换 ============
 
   /**
@@ -171,6 +198,29 @@ export class SettingItem extends Entity implements SettingItemServer {
       isVisible: this._isVisible,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
+    };
+  }
+
+  public toClientDTO(): SettingItemClientDTO {
+    return {
+      uuid: this.uuid,
+      groupUuid: this._groupUuid,
+      key: this._key,
+      name: this._name,
+      description: this._description,
+      value: this._value,
+      defaultValue: this._defaultValue,
+      valueType: this._valueType,
+      ui: this._ui.toClientDTO(),
+      sortOrder: this._sortOrder,
+      isReadOnly: this._isReadOnly,
+      isVisible: this._isVisible,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      // Computed properties
+      isDefault: this.isDefault(),
+      displayValue: this.getDisplayValue(),
+      canEdit: this.getCanEdit(),
     };
   }
 

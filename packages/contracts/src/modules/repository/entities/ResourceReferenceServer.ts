@@ -4,6 +4,7 @@
  */
 
 import type { ReferenceType } from '../enums';
+import type { ResourceReferenceClientDTO } from './ResourceReferenceClient';
 
 // ============ DTO 定义 ============
 
@@ -70,6 +71,7 @@ export interface ResourceReferenceServer {
    */
   toServerDTO(): ResourceReferenceServerDTO;
 
+  toClientDTO(): ResourceReferenceClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

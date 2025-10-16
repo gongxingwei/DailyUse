@@ -65,7 +65,7 @@ export class EditorWorkspaceApplicationService {
     const workspace = await this.domainService.createWorkspace(params);
 
     // 转换为 DTO
-    return workspace.toServerDTO();
+    return workspace.toClientDTO();
   }
 
   /**
@@ -78,7 +78,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const workspace = await this.domainService.getWorkspace(uuid, options);
 
-    return workspace ? workspace.toServerDTO() : null;
+    return workspace ? workspace.toClientDTO() : null;
   }
 
   /**
@@ -92,7 +92,7 @@ export class EditorWorkspaceApplicationService {
     const workspaces = await this.domainService.getWorkspacesByAccount(accountUuid, options);
 
     // 转换为 DTO 数组
-    return workspaces.map((workspace) => workspace.toServerDTO());
+    return workspaces.map((workspace) => workspace.toClientDTO());
   }
 
   /**
@@ -107,7 +107,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const workspace = await this.domainService.updateWorkspace(params);
 
-    return workspace.toServerDTO();
+    return workspace.toClientDTO();
   }
 
   /**
@@ -131,7 +131,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const session = await this.domainService.addSession(params);
 
-    return session.toServerDTO();
+    return session.toClientDTO();
   }
 
   /**
@@ -141,7 +141,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const sessions = await this.domainService.getSessions(workspaceUuid);
 
-    return sessions.map((session) => session.toServerDTO());
+    return sessions.map((session) => session.toClientDTO());
   }
 
   /**
@@ -157,7 +157,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const session = await this.domainService.updateSession(params);
 
-    return session.toServerDTO();
+    return session.toClientDTO();
   }
 
   /**
@@ -182,7 +182,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const group = await this.domainService.addGroup(params);
 
-    return group.toServerDTO();
+    return group.toClientDTO();
   }
 
   /**
@@ -199,7 +199,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const group = await this.domainService.updateGroup(params);
 
-    return group.toServerDTO();
+    return group.toClientDTO();
   }
 
   /**
@@ -233,7 +233,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const tab = await this.domainService.addTab(params);
 
-    return tab.toServerDTO();
+    return tab.toClientDTO();
   }
 
   /**
@@ -252,7 +252,7 @@ export class EditorWorkspaceApplicationService {
     // 委托给领域服务处理
     const tab = await this.domainService.updateTab(params);
 
-    return tab.toServerDTO();
+    return tab.toClientDTO();
   }
 
   /**

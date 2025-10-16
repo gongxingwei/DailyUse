@@ -7,6 +7,7 @@ import type { SettingContracts } from '@dailyuse/contracts';
 
 type IValidationRuleServer = SettingContracts.ValidationRuleServer;
 type ValidationRuleServerDTO = SettingContracts.ValidationRuleServerDTO;
+type ValidationRuleClientDTO = SettingContracts.ValidationRuleClientDTO;
 
 /**
  * ValidationRule 值对象
@@ -139,6 +140,17 @@ export class ValidationRule implements IValidationRuleServer {
    * 转换为 ServerDTO
    */
   public toServerDTO(): ValidationRuleServerDTO {
+    return {
+      required: this.required,
+      min: this.min,
+      max: this.max,
+      pattern: this.pattern,
+      enum: this.enum,
+      custom: this.custom,
+    };
+  }
+
+  public toClientDTO(): ValidationRuleClientDTO {
     return {
       required: this.required,
       min: this.min,

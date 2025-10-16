@@ -76,7 +76,7 @@ export class ScheduleApplicationService {
     const task = await this.domainService.createScheduleTask(params);
 
     // 转换为 DTO
-    return task.toServerDTO();
+    return task.toClientDTO();
   }
 
   /**
@@ -99,7 +99,7 @@ export class ScheduleApplicationService {
     const tasks = await this.domainService.createScheduleTasksBatch(params);
 
     // 转换为 DTO 数组
-    return tasks.map((task) => task.toServerDTO());
+    return tasks.map((task) => task.toClientDTO());
   }
 
   // ===== 任务查询 =====
@@ -113,7 +113,7 @@ export class ScheduleApplicationService {
     const repository = container.getScheduleTaskRepository();
     const task = await repository.findByUuid(taskUuid);
 
-    return task ? task.toServerDTO() : null;
+    return task ? task.toClientDTO() : null;
   }
 
   /**
@@ -128,7 +128,7 @@ export class ScheduleApplicationService {
     const tasks = await repository.findByAccountUuid(accountUuid);
 
     // 转换为 DTO 数组
-    return tasks.map((task) => task.toServerDTO());
+    return tasks.map((task) => task.toClientDTO());
   }
 
   /**
@@ -143,7 +143,7 @@ export class ScheduleApplicationService {
     const repository = container.getScheduleTaskRepository();
     const tasks = await repository.findBySourceEntity(sourceModule, sourceEntityId);
 
-    return tasks.map((task) => task.toServerDTO());
+    return tasks.map((task) => task.toClientDTO());
   }
 
   /**
@@ -157,7 +157,7 @@ export class ScheduleApplicationService {
     const tasks = await this.domainService.findDueTasksForExecution(beforeTime, limit);
 
     // 转换为 DTO 数组
-    return tasks.map((task) => task.toServerDTO());
+    return tasks.map((task) => task.toClientDTO());
   }
 
   // ===== 任务执行 =====
@@ -185,7 +185,7 @@ export class ScheduleApplicationService {
     // 委托给领域服务处理，需要包装 executeFn
     return await this.domainService.executeScheduleTask(params, async (task) => {
       // 转换为 DTO 后调用
-      return await executeFn(task.toServerDTO());
+      return await executeFn(task.toClientDTO());
     });
   }
 

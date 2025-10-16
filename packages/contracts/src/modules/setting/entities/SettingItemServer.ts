@@ -3,7 +3,9 @@
  * 设置项实体 - 服务端接口
  */
 
+import type { SettingItemClientDTO } from './SettingItemClient';
 import type { UIConfigServer, UIConfigServerDTO } from '../value-objects/UIConfigServer';
+import { SettingValueType } from '../enums';
 
 // ============ DTO 定义 ============
 
@@ -18,7 +20,7 @@ export interface SettingItemServerDTO {
   description?: string | null;
   value: any;
   defaultValue: any;
-  valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  valueType: SettingValueType;
   ui: UIConfigServerDTO;
   sortOrder: number;
   isReadOnly: boolean;
@@ -38,7 +40,7 @@ export interface SettingItemPersistenceDTO {
   description?: string | null;
   value: string; // JSON
   default_value: string; // JSON
-  value_type: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  value_type: SettingValueType;
   ui: string; // JSON
   sort_order: number;
   is_read_only: boolean;
@@ -57,7 +59,7 @@ export interface SettingItemServer {
   description?: string | null;
   value: any;
   defaultValue: any;
-  valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+  valueType: SettingValueType;
   ui: UIConfigServer;
   sortOrder: number;
   isReadOnly: boolean;
@@ -71,6 +73,7 @@ export interface SettingItemServer {
   isDefault(): boolean;
 
   toServerDTO(): SettingItemServerDTO;
+  toClientDTO(): SettingItemClientDTO;
   toPersistenceDTO(): SettingItemPersistenceDTO;
 }
 
@@ -82,7 +85,7 @@ export interface SettingItemServerStatic {
     description?: string;
     value: any;
     defaultValue: any;
-    valueType: 'STRING' | 'NUMBER' | 'BOOLEAN' | 'JSON' | 'ARRAY' | 'OBJECT';
+    valueType: SettingValueType;
     ui: UIConfigServer;
     sortOrder?: number;
     isReadOnly?: boolean;

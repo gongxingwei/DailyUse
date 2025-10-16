@@ -48,7 +48,7 @@ import { ImportanceLevel,UrgencyLevel } from '../../shared/index';
 export { ImportanceLevel,UrgencyLevel };
 ```
 
-在 domain-client、domain-server 包中导入 contracts 包的类型时，应该使用命名空间的方式从 `xxxContracts` 中导入，而不是直接导入具体的类型，比如：
+在 domain-client、domain-server 包中导入 contracts 包的类型时，应该**使用命名空间的方式**从 `xxxContracts` 中导入，而不是直接导入具体的类型，并且**直接在顶部使用别名**比如：
 ```ts
 import { goalContracts } from '@dailyuse/contracts';
 type ImportanceLevel = goalContracts.ImportanceLevel;
@@ -87,6 +87,8 @@ const UrgencyLevel = goalContracts.UrgencyLevel;
 
 **注意文件结构**：
 - 每个模块放在 `modules/模块名/` 目录下，具体参考 repository 模块
+- api 服务返回给客户端的数据应该是 contracts 包中的 ClientDTO 类型，所以在return 是应该调用 toClientDTO() 方法，而非 toServerDTO() 方法
+- 仓储层中的 prisma 应该直接使用 prisma client 进行操作，不需要 new PrismaClient()，映射应该利用 toPersistenceDTO() 方法 和 fromPersistenceDTO() 方法
 
 ### web 项目
 

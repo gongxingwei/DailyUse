@@ -8,6 +8,7 @@ import { Entity } from '@dailyuse/utils';
 
 type IAccountHistoryServer = AccountContracts.AccountHistoryServer;
 type AccountHistoryServerDTO = AccountContracts.AccountHistoryServerDTO;
+type AccountHistoryClientDTO = AccountContracts.AccountHistoryClientDTO;
 type AccountHistoryPersistenceDTO = AccountContracts.AccountHistoryPersistenceDTO;
 
 export class AccountHistory extends Entity implements IAccountHistoryServer {
@@ -103,6 +104,18 @@ export class AccountHistory extends Entity implements IAccountHistoryServer {
 
   // DTO conversion
   public toServerDTO(): AccountHistoryServerDTO {
+    return {
+      uuid: this._uuid,
+      accountUuid: this._accountUuid,
+      action: this._action,
+      details: this._details,
+      ipAddress: this._ipAddress,
+      userAgent: this._userAgent,
+      createdAt: this._createdAt,
+    };
+  }
+
+  public toClientDTO(): AccountHistoryClientDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,

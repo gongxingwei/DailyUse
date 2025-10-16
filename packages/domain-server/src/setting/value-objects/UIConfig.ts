@@ -7,6 +7,7 @@ import type { SettingContracts } from '@dailyuse/contracts';
 
 type IUIConfigServer = SettingContracts.UIConfigServer;
 type UIConfigServerDTO = SettingContracts.UIConfigServerDTO;
+type UIConfigClientDTO = SettingContracts.UIConfigClientDTO;
 type UIInputType = SettingContracts.UIInputType;
 
 /**
@@ -135,6 +136,23 @@ export class UIConfig implements IUIConfigServer {
    * 转换为 ServerDTO
    */
   public toServerDTO(): UIConfigServerDTO {
+    return {
+      inputType: this.inputType,
+      label: this.label,
+      placeholder: this.placeholder,
+      helpText: this.helpText,
+      icon: this.icon,
+      order: this.order,
+      visible: this.visible,
+      disabled: this.disabled,
+      options: this.options,
+      min: this.min,
+      max: this.max,
+      step: this.step,
+    };
+  }
+
+  public toClientDTO(): UIConfigClientDTO {
     return {
       inputType: this.inputType,
       label: this.label,

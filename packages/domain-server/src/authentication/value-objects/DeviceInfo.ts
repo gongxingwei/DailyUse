@@ -185,6 +185,22 @@ export class DeviceInfo extends ValueObject implements IDeviceInfoServer {
     };
   }
 
+  public toClientDTO(): DeviceInfoServerDTO {
+    return {
+      deviceId: this.deviceId,
+      deviceFingerprint: this.deviceFingerprint,
+      deviceType: this.deviceType,
+      deviceName: this.deviceName,
+      os: this.os,
+      browser: this.browser,
+      ipAddress: this.ipAddress,
+      userAgent: this.userAgent,
+      location: this.location,
+      firstSeenAt: this.firstSeenAt,
+      lastSeenAt: this.lastSeenAt,
+    };
+  }
+
   // Helper method
   private static generateFingerprint(params: {
     deviceType: string;

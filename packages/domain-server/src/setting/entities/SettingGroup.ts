@@ -8,6 +8,7 @@ import type { SettingContracts } from '@dailyuse/contracts';
 import { SettingItem } from './SettingItem';
 
 type SettingGroupServerDTO = SettingContracts.SettingGroupServerDTO;
+type SettingGroupClientDTO = SettingContracts.SettingGroupClientDTO;
 type SettingGroupPersistenceDTO = SettingContracts.SettingGroupPersistenceDTO;
 type SettingGroupServer = SettingContracts.SettingGroupServer;
 
@@ -215,6 +216,20 @@ export class SettingGroup extends Entity implements SettingGroupServer {
     this._updatedAt = Date.now();
   }
 
+  // ============ Helper Methods for Client DTO ============
+
+  private getIsDeleted(): boolean {
+    return !!this._deletedAt;
+  }
+
+  private getSettingCount(): number {
+    return this._settings.length;
+  }
+
+  private getDisplayName(): string {
+    return this._name;
+  }
+
   // ============ DTO 转换 ============
 
   /**
@@ -236,6 +251,29 @@ export class SettingGroup extends Entity implements SettingGroupServer {
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
       deletedAt: this._deletedAt,
+    };
+  }
+
+  public toClientDTO(): SettingGroupClientDTO {
+    return {
+      uuid: this.uuid,
+      name: this._name,
+      description: this._description,
+      icon: this._icon,
+      parentGroupUuid: this._parentGroupUuid,
+      path: this._path,
+      level: this._level,
+      sortOrder: this._sortOrder,
+      settings: this._settings.length > 0 ? this._settings.map((s) => s.toClientDTO()) : null,
+      isSystemGroup: this._isSystemGroup,
+      isCollapsed: this._isCollapsed,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
+      // Computed properties
+      isDeleted: this.getIsDeleted(),
+      settingCount: this.getSettingCount(),
+      displayName: this.getDisplayName(),
     };
   }
 

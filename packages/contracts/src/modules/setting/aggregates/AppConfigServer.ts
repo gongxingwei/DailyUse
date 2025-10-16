@@ -3,6 +3,8 @@
  * 应用配置聚合根 - 服务端接口
  */
 
+import type { AppConfigClientDTO } from './AppConfigClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -166,6 +168,7 @@ export interface AppConfigServer {
   updateSecurityConfig(config: Partial<AppConfigServer['security']>): void;
 
   toServerDTO(): AppConfigServerDTO;
+  toClientDTO(): AppConfigClientDTO;
   toPersistenceDTO(): AppConfigPersistenceDTO;
 }
 

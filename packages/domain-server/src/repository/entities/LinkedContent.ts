@@ -13,6 +13,7 @@ import { Entity } from '@dailyuse/utils';
 
 type ILinkedContentServer = RepositoryContracts.LinkedContentServer;
 type LinkedContentServerDTO = RepositoryContracts.LinkedContentServerDTO;
+type LinkedContentClientDTO = RepositoryContracts.LinkedContentClientDTO;
 type LinkedContentPersistenceDTO = RepositoryContracts.LinkedContentPersistenceDTO;
 type ContentType = RepositoryContracts.ContentType;
 
@@ -207,6 +208,25 @@ export class LinkedContent extends Entity implements ILinkedContentServer {
   // ===== 转换方法 =====
 
   public toServerDTO(): LinkedContentServerDTO {
+    return {
+      uuid: this._uuid,
+      resourceUuid: this._resourceUuid,
+      title: this._title,
+      url: this._url,
+      contentType: this._contentType,
+      description: this._description,
+      thumbnail: this._thumbnail,
+      author: this._author,
+      publishedAt: this._publishedAt,
+      isAccessible: this._isAccessible,
+      lastCheckedAt: this._lastCheckedAt,
+      cachedAt: this._cachedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
+  public toClientDTO(): LinkedContentClientDTO {
     return {
       uuid: this._uuid,
       resourceUuid: this._resourceUuid,

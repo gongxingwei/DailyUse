@@ -3,6 +3,8 @@
  * 会话历史实体 - 服务端接口
  */
 
+import type { SessionHistoryClientDTO } from './SessionHistoryClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -43,6 +45,7 @@ export interface SessionHistoryServer {
   createdAt: number;
 
   toServerDTO(): SessionHistoryServerDTO;
+  toClientDTO(): SessionHistoryClientDTO;
   toPersistenceDTO(): SessionHistoryPersistenceDTO;
 }
 

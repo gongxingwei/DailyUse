@@ -10,6 +10,7 @@ import { AccountHistory } from '../entities/AccountHistory';
 
 type IAccountServer = AccountContracts.AccountServer;
 type AccountServerDTO = AccountContracts.AccountServerDTO;
+type AccountClientDTO = AccountContracts.AccountClientDTO;
 type AccountPersistenceDTO = AccountContracts.AccountPersistenceDTO;
 
 export class Account extends AggregateRoot implements IAccountServer {
@@ -477,6 +478,29 @@ export class Account extends AggregateRoot implements IAccountServer {
       storage: this._storage,
       security: this._security,
       history: this._history as any, // 实体本身实现了接口
+      stats: this._stats,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      lastActiveAt: this._lastActiveAt,
+      deletedAt: this._deletedAt,
+    };
+  }
+
+  public toClientDTO(): AccountClientDTO {
+    return {
+      uuid: this._uuid,
+      username: this._username,
+      email: this._email,
+      emailVerified: this._emailVerified,
+      phoneNumber: this._phoneNumber,
+      phoneVerified: this._phoneVerified,
+      status: this._status,
+      profile: this._profile,
+      preferences: this._preferences,
+      subscription: this._subscription ?? null,
+      storage: this._storage,
+      security: this._security,
+      history: this._history,
       stats: this._stats,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,

@@ -5,9 +5,12 @@
 
 import { Entity, generateUUID } from '@dailyuse/utils';
 import type { SettingContracts } from '@dailyuse/contracts';
+import { formatDistanceToNow } from 'date-fns';
+import { zhCN } from 'date-fns/locale';
 
 type ISettingHistoryServer = SettingContracts.SettingHistoryServer;
 type SettingHistoryServerDTO = SettingContracts.SettingHistoryServerDTO;
+type SettingHistoryClientDTO = SettingContracts.SettingHistoryClientDTO;
 type SettingHistoryPersistenceDTO = SettingContracts.SettingHistoryPersistenceDTO;
 
 /**
@@ -41,6 +44,29 @@ export class SettingHistory extends Entity implements ISettingHistoryServer {
     this.operatorUuid = params.operatorUuid ?? null;
     this.operatorType = params.operatorType;
     this.createdAt = params.createdAt;
+  }
+
+  // ============ Helper Methods for Client DTO ============
+
+  private getTimeAgo(): string {
+    return formatDistanceToNow(new Date(this.createdAt), {
+      addSuffix: true,
+      locale: zhCN,
+    });
+  }
+
+  private getChangeText(): string {
+    const formatValue = (value: any): string => {
+      if (value === null || value === undefined) return '空';
+      if (typeof value === 'boolean') return value ? '是' : '否';
+      if (typeof value === 'object') return JSON.stringify(value);
+      return String(value);
+    };
+
+    const oldStr = formatValue(this.oldValue);
+    const newStr = formatValue(this.newValue);
+
+    return `从 "${oldStr}" 变更为 "${newStr}"`;
   }
 
   /**
@@ -117,6 +143,22 @@ export class SettingHistory extends Entity implements ISettingHistoryServer {
       operatorUuid: this.operatorUuid,
       operatorType: this.operatorType,
       createdAt: this.createdAt,
+    };
+  }
+
+  public toClientDTO(): SettingHistoryClientDTO {
+    return {
+      uuid: this.uuid,
+      settingUuid: this.settingUuid,
+      settingKey: this.settingKey,
+      oldValue: this.oldValue,
+      newValue: this.newValue,
+      operatorUuid: this.operatorUuid,
+      operatorType: this.operatorType,
+      createdAt: this.createdAt,
+      // Computed properties
+      timeAgo: this.getTimeAgo(),
+      changeText: this.getChangeText(),
     };
   }
 

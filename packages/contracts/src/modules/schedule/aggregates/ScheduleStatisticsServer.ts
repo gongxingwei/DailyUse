@@ -5,6 +5,7 @@
 
 import type { ScheduleTaskStatus, SourceModule, ExecutionStatus } from '../enums';
 import type { ModuleStatisticsServerDTO } from '../value-objects';
+import type { ScheduleStatisticsClientDTO } from './ScheduleStatisticsClient';
 
 // ============ DTO 定义 ============
 
@@ -235,6 +236,7 @@ export interface ScheduleStatisticsServer {
    */
   toServerDTO(): ScheduleStatisticsServerDTO;
 
+  toClientDTO(): ScheduleStatisticsClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

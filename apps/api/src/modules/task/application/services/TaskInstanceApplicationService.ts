@@ -68,7 +68,7 @@ export class TaskInstanceApplicationService {
    */
   async getTaskInstance(uuid: string): Promise<TaskContracts.TaskInstanceServerDTO | null> {
     const instance = await this.instanceRepository.findByUuid(uuid);
-    return instance ? instance.toServerDTO() : null;
+    return instance ? instance.toClientDTO() : null;
   }
 
   /**
@@ -78,7 +78,7 @@ export class TaskInstanceApplicationService {
     accountUuid: string,
   ): Promise<TaskContracts.TaskInstanceServerDTO[]> {
     const instances = await this.instanceRepository.findByAccount(accountUuid);
-    return instances.map((i) => i.toServerDTO());
+    return instances.map((i) => i.toClientDTO());
   }
 
   /**
@@ -88,7 +88,7 @@ export class TaskInstanceApplicationService {
     templateUuid: string,
   ): Promise<TaskContracts.TaskInstanceServerDTO[]> {
     const instances = await this.instanceRepository.findByTemplate(templateUuid);
-    return instances.map((i) => i.toServerDTO());
+    return instances.map((i) => i.toClientDTO());
   }
 
   /**
@@ -104,7 +104,7 @@ export class TaskInstanceApplicationService {
       startDate,
       endDate,
     );
-    return instances.map((i) => i.toServerDTO());
+    return instances.map((i) => i.toClientDTO());
   }
 
   /**
@@ -115,7 +115,7 @@ export class TaskInstanceApplicationService {
     status: TaskContracts.TaskInstanceStatus,
   ): Promise<TaskContracts.TaskInstanceServerDTO[]> {
     const instances = await this.instanceRepository.findByStatus(accountUuid, status);
-    return instances.map((i) => i.toServerDTO());
+    return instances.map((i) => i.toClientDTO());
   }
 
   /**
@@ -134,7 +134,7 @@ export class TaskInstanceApplicationService {
     instance.start();
     await this.instanceRepository.save(instance);
 
-    return instance.toServerDTO();
+    return instance.toClientDTO();
   }
 
   /**
@@ -160,7 +160,7 @@ export class TaskInstanceApplicationService {
     instance.complete(params.duration, params.note, params.rating);
     await this.instanceRepository.save(instance);
 
-    return instance.toServerDTO();
+    return instance.toClientDTO();
   }
 
   /**
@@ -182,7 +182,7 @@ export class TaskInstanceApplicationService {
     instance.skip(reason);
     await this.instanceRepository.save(instance);
 
-    return instance.toServerDTO();
+    return instance.toClientDTO();
   }
 
   /**
@@ -190,7 +190,7 @@ export class TaskInstanceApplicationService {
    */
   async checkExpiredInstances(accountUuid: string): Promise<TaskContracts.TaskInstanceServerDTO[]> {
     const expiredInstances = await this.expirationService.checkAndMarkExpiredInstances(accountUuid);
-    return expiredInstances.map((i) => i.toServerDTO());
+    return expiredInstances.map((i) => i.toClientDTO());
   }
 
   /**

@@ -4,6 +4,7 @@
  */
 
 import type { ContentType } from '../enums';
+import type { LinkedContentClientDTO } from './LinkedContentClient';
 
 // ============ DTO 定义 ============
 
@@ -100,6 +101,7 @@ export interface LinkedContentServer {
    */
   toServerDTO(): LinkedContentServerDTO;
 
+  toClientDTO(): LinkedContentClientDTO;
   /**
    * 转换为 Persistence DTO (数据库)
    */

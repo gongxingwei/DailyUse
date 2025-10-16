@@ -7,6 +7,7 @@ import type { SettingContracts } from '@dailyuse/contracts';
 
 type ISyncConfigServer = SettingContracts.SyncConfigServer;
 type SyncConfigServerDTO = SettingContracts.SyncConfigServerDTO;
+type SyncConfigClientDTO = SettingContracts.SyncConfigClientDTO;
 
 /**
  * SyncConfig 值对象
@@ -56,6 +57,14 @@ export class SyncConfig implements ISyncConfigServer {
    * 转换为 ServerDTO
    */
   public toServerDTO(): SyncConfigServerDTO {
+    return {
+      enabled: this.enabled,
+      syncToCloud: this.syncToCloud,
+      syncToDevices: this.syncToDevices,
+    };
+  }
+
+  public toClientDTO(): SyncConfigClientDTO {
     return {
       enabled: this.enabled,
       syncToCloud: this.syncToCloud,

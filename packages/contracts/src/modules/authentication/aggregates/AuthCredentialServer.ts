@@ -7,6 +7,7 @@ import type { PasswordCredentialServer } from '../entities/PasswordCredentialSer
 import type { ApiKeyCredentialServer } from '../entities/ApiKeyCredentialServer';
 import type { RememberMeTokenServer } from '../entities/RememberMeTokenServer';
 import type { CredentialHistoryServer } from '../entities/CredentialHistoryServer';
+import type { AuthCredentialClientDTO } from './AuthCredentialClient';
 
 // ============ DTO 定义 ============
 
@@ -139,6 +140,7 @@ export interface AuthCredentialServer {
   revoke(): void;
 
   toServerDTO(): AuthCredentialServerDTO;
+  toClientDTO(): AuthCredentialClientDTO;
   toPersistenceDTO(): AuthCredentialPersistenceDTO;
 }
 

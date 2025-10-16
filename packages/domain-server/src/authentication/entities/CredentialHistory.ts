@@ -91,6 +91,18 @@ export class CredentialHistory extends Entity implements ICredentialHistoryServe
     };
   }
 
+  public toClientDTO(): CredentialHistoryServerDTO {
+    return {
+      uuid: this.uuid,
+      credentialUuid: this.credentialUuid,
+      action: this.action,
+      details: this.details,
+      ipAddress: this.ipAddress,
+      userAgent: this.userAgent,
+      createdAt: this.createdAt,
+    };
+  }
+
   public toPersistenceDTO(): CredentialHistoryPersistenceDTO {
     return {
       uuid: this.uuid,

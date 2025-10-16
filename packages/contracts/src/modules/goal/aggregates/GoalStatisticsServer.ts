@@ -137,6 +137,7 @@ export interface GoalStatisticsServer {
    */
   toServerDTO(): GoalStatisticsServerDTO;
 
+  toClientDTO(): GoalStatisticsClientDTO;
   /**
    * 转换为 Persistence DTO
    */

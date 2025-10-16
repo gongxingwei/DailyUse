@@ -13,6 +13,7 @@ import type { GoalContracts } from '@dailyuse/contracts';
 
 type IGoalReviewServer = GoalContracts.GoalReviewServer;
 type GoalReviewServerDTO = GoalContracts.GoalReviewServerDTO;
+type GoalReviewClientDTO = GoalContracts.GoalReviewClientDTO;
 type GoalReviewPersistenceDTO = GoalContracts.GoalReviewPersistenceDTO;
 type ReviewType = GoalContracts.ReviewType;
 type KeyResultSnapshotServerDTO = GoalContracts.KeyResultSnapshotServerDTO;
@@ -257,6 +258,22 @@ export class GoalReview extends Entity implements IGoalReviewServer {
    * 转换为 Server DTO
    */
   public toServerDTO(): GoalReviewServerDTO {
+    return {
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      type: this._type,
+      rating: this._rating,
+      summary: this._summary,
+      achievements: this._achievements,
+      challenges: this._challenges,
+      improvements: this._improvements,
+      keyResultSnapshots: this._keyResultSnapshots,
+      reviewedAt: this._reviewedAt,
+      createdAt: this._createdAt,
+    };
+  }
+
+  public toClientDTO(): GoalReviewClientDTO {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,

@@ -108,6 +108,19 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
     };
   }
 
+  public toClientDTO(): PasswordCredentialServerDTO {
+    return {
+      uuid: this.uuid,
+      credentialUuid: this.credentialUuid,
+      hashedPassword: this.hashedPassword,
+      salt: this.salt,
+      algorithm: this.algorithm,
+      iterations: this.iterations,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
+  }
+
   public toPersistenceDTO(): PasswordCredentialPersistenceDTO {
     return {
       uuid: this.uuid,

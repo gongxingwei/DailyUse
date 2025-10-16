@@ -9,6 +9,7 @@ import type {
   ResourceReferenceServerDTO,
 } from './ResourceReferenceServer';
 import type { LinkedContentServer, LinkedContentServerDTO } from './LinkedContentServer';
+import type { ResourceClientDTO } from './ResourceClient';
 
 // ============ 值对象接口 ============
 

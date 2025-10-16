@@ -3,6 +3,8 @@
  * UI配置值对象 - 服务端接口
  */
 
+import type { UIConfigClientDTO } from './UIConfigClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -76,6 +78,7 @@ export interface UIConfigServer {
   step?: number | null;
 
   toServerDTO(): UIConfigServerDTO;
+  toClientDTO(): UIConfigClientDTO;
 }
 
 export interface UIConfigServerStatic {

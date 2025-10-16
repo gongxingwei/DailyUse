@@ -97,6 +97,17 @@ export class RefreshToken extends Entity implements IRefreshTokenServer {
     };
   }
 
+  public toClientDTO(): RefreshTokenServerDTO {
+    return {
+      uuid: this.uuid,
+      sessionUuid: this.sessionUuid,
+      token: this.token,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      usedAt: this._usedAt,
+    };
+  }
+
   public toPersistenceDTO(): RefreshTokenPersistenceDTO {
     return {
       uuid: this.uuid,

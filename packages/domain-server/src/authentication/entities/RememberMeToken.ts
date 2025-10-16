@@ -201,6 +201,25 @@ export class RememberMeToken extends Entity implements IRememberMeTokenServer {
     };
   }
 
+  public toClientDTO(): RememberMeTokenServerDTO {
+    return {
+      uuid: this.uuid,
+      credentialUuid: this.credentialUuid,
+      accountUuid: this.accountUuid,
+      token: this.token,
+      tokenSeries: this.tokenSeries,
+      device: this.device as any,
+      status: this._status,
+      usageCount: this._usageCount,
+      lastUsedAt: this._lastUsedAt,
+      lastUsedIp: this._lastUsedIp,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
+      revokedAt: this._revokedAt,
+    };
+  }
+
   public toPersistenceDTO(): RememberMeTokenPersistenceDTO {
     return {
       uuid: this.uuid,

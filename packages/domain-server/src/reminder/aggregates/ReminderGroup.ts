@@ -9,6 +9,7 @@ import { GroupStats } from '../value-objects';
 
 type IReminderGroupServer = ReminderContracts.ReminderGroupServer;
 type ReminderGroupServerDTO = ReminderContracts.ReminderGroupServerDTO;
+type ReminderGroupClientDTO = ReminderContracts.ReminderGroupClientDTO;
 type ReminderGroupPersistenceDTO = ReminderContracts.ReminderGroupPersistenceDTO;
 type ControlMode = ReminderContracts.ControlMode;
 type ReminderStatus = ReminderContracts.ReminderStatus;
@@ -328,6 +329,25 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
   }
 
   public toServerDTO(): ReminderGroupServerDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      name: this.name,
+      description: this.description,
+      controlMode: this.controlMode,
+      enabled: this.enabled,
+      status: this.status,
+      order: this.order,
+      color: this.color,
+      icon: this.icon,
+      stats: this.stats,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      deletedAt: this.deletedAt,
+    };
+  }
+
+  public toClientDTO(): ReminderGroupClientDTO {
     return {
       uuid: this.uuid,
       accountUuid: this.accountUuid,

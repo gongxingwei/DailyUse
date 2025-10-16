@@ -12,6 +12,7 @@ import type { GoalContracts } from '@dailyuse/contracts';
 
 type IGoalRecordServer = GoalContracts.GoalRecordServer;
 type GoalRecordServerDTO = GoalContracts.GoalRecordServerDTO;
+type GoalRecordClientDTO = GoalContracts.GoalRecordClientDTO;
 type GoalRecordPersistenceDTO = GoalContracts.GoalRecordPersistenceDTO;
 
 /**
@@ -182,6 +183,20 @@ export class GoalRecord extends Entity implements IGoalRecordServer {
    * 转换为 Server DTO
    */
   public toServerDTO(): GoalRecordServerDTO {
+    return {
+      uuid: this.uuid,
+      keyResultUuid: this._keyResultUuid,
+      goalUuid: this._goalUuid,
+      previousValue: this._previousValue,
+      newValue: this._newValue,
+      changeAmount: this._changeAmount,
+      note: this._note,
+      recordedAt: this._recordedAt,
+      createdAt: this._createdAt,
+    };
+  }
+
+  public toClientDTO(): GoalRecordClientDTO {
     return {
       uuid: this.uuid,
       keyResultUuid: this._keyResultUuid,

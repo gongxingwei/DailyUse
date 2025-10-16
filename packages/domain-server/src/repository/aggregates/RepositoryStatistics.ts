@@ -11,6 +11,7 @@ import { AggregateRoot } from '@dailyuse/utils';
 
 type IRepositoryStatisticsServer = RepositoryContracts.RepositoryStatisticsServer;
 type RepositoryStatisticsServerDTO = RepositoryContracts.RepositoryStatisticsServerDTO;
+type RepositoryStatisticsClientDTO = RepositoryContracts.RepositoryStatisticsClientDTO;
 type RepositoryStatisticsPersistenceDTO = RepositoryContracts.RepositoryStatisticsPersistenceDTO;
 type StatisticsUpdateEvent = RepositoryContracts.StatisticsUpdateEvent;
 
@@ -599,6 +600,25 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
    * 转换为服务端 DTO
    */
   public toServerDTO(): RepositoryStatisticsServerDTO {
+    return {
+      accountUuid: this._accountUuid,
+      totalRepositories: this._totalRepositories,
+      activeRepositories: this._activeRepositories,
+      archivedRepositories: this._archivedRepositories,
+      totalResources: this._totalResources,
+      totalFiles: this._totalFiles,
+      totalFolders: this._totalFolders,
+      gitEnabledRepos: this._gitEnabledRepos,
+      totalCommits: this._totalCommits,
+      totalReferences: this._totalReferences,
+      totalLinkedContents: this._totalLinkedContents,
+      totalSizeBytes: this._totalSizeBytes.toString(),
+      lastUpdatedAt: this._lastUpdatedAt,
+      createdAt: this._createdAt,
+    };
+  }
+
+  public toClientDTO(): RepositoryStatisticsClientDTO {
     return {
       accountUuid: this._accountUuid,
       totalRepositories: this._totalRepositories,

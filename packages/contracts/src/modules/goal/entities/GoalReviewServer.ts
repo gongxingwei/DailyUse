@@ -54,6 +54,7 @@ export interface GoalReviewServer {
   isHighQuality(): boolean;
 
   toServerDTO(): GoalReviewServerDTO;
+  toClientDTO(): GoalReviewClientDTO;
   toPersistenceDTO(): GoalReviewPersistenceDTO;
 }
 

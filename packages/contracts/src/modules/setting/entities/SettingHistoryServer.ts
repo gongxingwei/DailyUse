@@ -3,6 +3,7 @@
  * 设置历史实体 - 服务端接口
  */
 
+import type { SettingHistoryClientDTO } from './SettingHistoryClient';
 // ============ DTO 定义 ============
 
 /**
@@ -46,6 +47,7 @@ export interface SettingHistoryServer {
   createdAt: number;
 
   toServerDTO(): SettingHistoryServerDTO;
+  toClientDTO(): SettingHistoryClientDTO;
   toPersistenceDTO(): SettingHistoryPersistenceDTO;
 }
 

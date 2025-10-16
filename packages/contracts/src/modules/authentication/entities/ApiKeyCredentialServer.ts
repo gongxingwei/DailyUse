@@ -3,6 +3,8 @@
  * API密钥凭证实体 - 服务端接口
  */
 
+import type { ApiKeyCredentialClientDTO } from './ApiKeyCredentialClient';
+
 // ============ DTO 定义 ============
 
 /**
@@ -57,6 +59,7 @@ export interface ApiKeyCredentialServer {
   recordUsage(): void;
 
   toServerDTO(): ApiKeyCredentialServerDTO;
+  toClientDTO(): ApiKeyCredentialClientDTO;
   toPersistenceDTO(): ApiKeyCredentialPersistenceDTO;
 }
 

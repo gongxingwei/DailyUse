@@ -13,6 +13,7 @@ import type { GoalContracts } from '@dailyuse/contracts';
 
 type IKeyResultServer = GoalContracts.KeyResultServer;
 type KeyResultServerDTO = GoalContracts.KeyResultServerDTO;
+type KeyResultClientDTO = GoalContracts.KeyResultClientDTO;
 type KeyResultPersistenceDTO = GoalContracts.KeyResultPersistenceDTO;
 type KeyResultProgressServerDTO = GoalContracts.KeyResultProgressServerDTO;
 type GoalRecordServerDTO = GoalContracts.GoalRecordServerDTO;
@@ -305,6 +306,20 @@ export class KeyResult extends Entity implements IKeyResultServer {
    * 转换为 Server DTO
    */
   public toServerDTO(): KeyResultServerDTO {
+    return {
+      uuid: this.uuid,
+      goalUuid: this._goalUuid,
+      title: this._title,
+      description: this._description,
+      progress: this._progress,
+      order: this._order,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      records: this._records.length > 0 ? this._records : null,
+    };
+  }
+
+  public toClientDTO(): KeyResultClientDTO {
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,

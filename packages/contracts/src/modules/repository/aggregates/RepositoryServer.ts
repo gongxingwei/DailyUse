@@ -11,6 +11,7 @@ import type {
 } from '../entities/RepositoryExplorerServer';
 
 // 从值对象导入类型
+import type { RepositoryClientDTO } from './RepositoryClient';
 import type {
   RepositoryConfigServerDTO,
   RepositoryStatsServerDTO,
@@ -361,6 +362,12 @@ export interface RepositoryServer {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toServerDTO(includeChildren?: boolean): RepositoryServerDTO;
+
+  /**
+   * 转换为 Client DTO
+   * @param includeChildren 是否包含子实体（默认 false）
+   */
+  toClientDTO(includeChildren?: boolean): RepositoryClientDTO;
 
   /**
    * 转换为 Persistence DTO (数据库)

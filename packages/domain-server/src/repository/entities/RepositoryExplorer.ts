@@ -13,6 +13,7 @@ import { Entity } from '@dailyuse/utils';
 
 type IRepositoryExplorerServer = RepositoryContracts.RepositoryExplorerServer;
 type RepositoryExplorerServerDTO = RepositoryContracts.RepositoryExplorerServerDTO;
+type RepositoryExplorerClientDTO = RepositoryContracts.RepositoryExplorerClientDTO;
 type RepositoryExplorerPersistenceDTO = RepositoryContracts.RepositoryExplorerPersistenceDTO;
 type ResourceFilters = RepositoryContracts.ResourceFilters;
 type ExplorerViewConfig = RepositoryContracts.ExplorerViewConfig;
@@ -271,6 +272,24 @@ export class RepositoryExplorerEntity extends Entity implements IRepositoryExplo
   // ===== 转换方法 =====
 
   public toServerDTO(): RepositoryExplorerServerDTO {
+    return {
+      uuid: this._uuid,
+      repositoryUuid: this._repositoryUuid,
+      accountUuid: this._accountUuid,
+      name: this._name,
+      description: this._description,
+      currentPath: this._currentPath,
+      filters: { ...this._filters },
+      viewConfig: { ...this._viewConfig },
+      pinnedPaths: [...this._pinnedPaths],
+      recentPaths: [...this._recentPaths],
+      lastScanAt: this._lastScanAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+    };
+  }
+
+  public toClientDTO(): RepositoryExplorerClientDTO {
     return {
       uuid: this._uuid,
       repositoryUuid: this._repositoryUuid,

@@ -303,6 +303,26 @@ export class AuthSession extends AggregateRoot implements IAuthSessionServer {
     };
   }
 
+  public toClientDTO(): AuthSessionServerDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      accessToken: this._accessToken,
+      accessTokenExpiresAt: this._accessTokenExpiresAt,
+      refreshToken: this._refreshToken as any,
+      device: this._device as any,
+      status: this._status,
+      ipAddress: this._ipAddress,
+      location: this._location,
+      lastActivityAt: this._lastActivityAt,
+      lastActivityType: this._lastActivityType,
+      history: this._history as any,
+      createdAt: this.createdAt,
+      expiresAt: this.expiresAt,
+      revokedAt: this._revokedAt,
+    };
+  }
+
   public toPersistenceDTO(): AuthSessionPersistenceDTO {
     return {
       uuid: this.uuid,

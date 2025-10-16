@@ -50,6 +50,7 @@ export interface KeyResultServer {
   getRecordValues(): number[]; // 获取所有记录的值
 
   toServerDTO(): KeyResultServerDTO;
+  toClientDTO(): KeyResultClientDTO;
   toPersistenceDTO(): KeyResultPersistenceDTO;
 }
 

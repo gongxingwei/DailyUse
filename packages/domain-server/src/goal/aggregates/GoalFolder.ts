@@ -15,6 +15,7 @@ import type { GoalContracts } from '@dailyuse/contracts';
 // 类型别名
 type IGoalFolderServer = GoalContracts.GoalFolderServer;
 type GoalFolderServerDTO = GoalContracts.GoalFolderServerDTO;
+type GoalFolderClientDTO = GoalContracts.GoalFolderClientDTO;
 type GoalFolderPersistenceDTO = GoalContracts.GoalFolderPersistenceDTO;
 type FolderType = GoalContracts.FolderType;
 type GoalFolderCreatedEvent = GoalContracts.GoalFolderCreatedEvent;
@@ -420,6 +421,26 @@ export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
    * 转换为 Server DTO
    */
   public toServerDTO(): GoalFolderServerDTO {
+    return {
+      uuid: this.uuid,
+      accountUuid: this._accountUuid,
+      name: this._name,
+      description: this._description,
+      icon: this._icon,
+      color: this._color,
+      parentFolderUuid: this._parentFolderUuid,
+      sortOrder: this._sortOrder,
+      isSystemFolder: this._isSystemFolder,
+      folderType: this._folderType,
+      goalCount: this._goalCount,
+      completedGoalCount: this._completedGoalCount,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
+    };
+  }
+
+  public toClientDTO(): GoalFolderClientDTO {
     return {
       uuid: this.uuid,
       accountUuid: this._accountUuid,

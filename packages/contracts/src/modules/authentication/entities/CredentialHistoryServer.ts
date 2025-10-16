@@ -3,6 +3,7 @@
  * 凭证历史实体 - 服务端接口
  */
 
+import type { CredentialHistoryClientDTO } from './CredentialHistoryClient';
 // ============ DTO 定义 ============
 
 /**
@@ -43,6 +44,7 @@ export interface CredentialHistoryServer {
   createdAt: number;
 
   toServerDTO(): CredentialHistoryServerDTO;
+  toClientDTO(): CredentialHistoryClientDTO;
   toPersistenceDTO(): CredentialHistoryPersistenceDTO;
 }
 

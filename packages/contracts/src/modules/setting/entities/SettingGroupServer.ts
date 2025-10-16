@@ -2,7 +2,7 @@
  * SettingGroup Entity - Server Interface
  * 设置分组实体 - 服务端接口
  */
-
+import type { SettingGroupClientDTO } from './SettingGroupClient';
 import type { SettingItemServer, SettingItemServerDTO } from './SettingItemServer';
 
 // ============ DTO 定义 ============
@@ -77,6 +77,7 @@ export interface SettingGroupServer {
   restore(): void;
 
   toServerDTO(): SettingGroupServerDTO;
+  toClientDTO(): SettingGroupClientDTO;
   toPersistenceDTO(): SettingGroupPersistenceDTO;
 }
 
