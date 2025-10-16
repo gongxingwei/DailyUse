@@ -1,7 +1,7 @@
 /**
  * GoalReview Entity - Server Interface
  */
-import type { GoalReviewClientDTO } from "./GoalReviewClient";
+import type { GoalReviewClientDTO } from './GoalReviewClient';
 import type { ReviewType } from '../enums';
 import type { KeyResultSnapshotServerDTO } from '../value-objects';
 
@@ -19,18 +19,22 @@ export interface GoalReviewServerDTO {
   createdAt: number;
 }
 
+/**
+ * GoalReview Persistence DTO
+ * 注意：使用 camelCase 命名
+ */
 export interface GoalReviewPersistenceDTO {
   uuid: string;
-  goal_uuid: string;
+  goalUuid: string;
   type: ReviewType;
   rating: number;
   summary: string;
   achievements?: string | null;
   challenges?: string | null;
   improvements?: string | null;
-  key_result_snapshots: string;
-  reviewed_at: number;
-  created_at: number;
+  keyResultSnapshots: string; // JSON string
+  reviewedAt: number;
+  createdAt: number;
 }
 
 export interface GoalReviewServer {

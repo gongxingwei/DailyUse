@@ -56,29 +56,30 @@ export interface GoalStatisticsServerDTO {
 }
 
 /**
- * GoalStatistics Persistence DTO (数据库映射)
+ * GoalStatistics Persistence DTO
+ * 注意：使用 camelCase 命名
  */
 export interface GoalStatisticsPersistenceDTO {
-  account_uuid: string;
-  total_goals: number;
-  active_goals: number;
-  completed_goals: number;
-  archived_goals: number;
-  overdue_goals: number;
-  total_key_results: number;
-  completed_key_results: number;
-  average_progress: number;
-  goals_by_importance: string; // JSON string
-  goals_by_urgency: string; // JSON string
-  goals_by_category: string; // JSON string
-  goals_by_status: string; // JSON string
-  goals_created_this_week: number;
-  goals_completed_this_week: number;
-  goals_created_this_month: number;
-  goals_completed_this_month: number;
-  total_reviews: number;
-  average_rating?: number | null;
-  last_calculated_at: number;
+  accountUuid: string;
+  totalGoals: number;
+  activeGoals: number;
+  completedGoals: number;
+  archivedGoals: number;
+  overdueGoals: number;
+  totalKeyResults: number;
+  completedKeyResults: number;
+  averageProgress: number;
+  goalsByImportance: string; // JSON string
+  goalsByUrgency: string; // JSON string
+  goalsByCategory: string; // JSON string
+  goalsByStatus: string; // JSON string
+  goalsCreatedThisWeek: number;
+  goalsCompletedThisWeek: number;
+  goalsCreatedThisMonth: number;
+  goalsCompletedThisMonth: number;
+  totalReviews: number;
+  averageRating?: number | null;
+  lastCalculatedAt: number;
 }
 
 // ============ 领域事件 ============

@@ -3,66 +3,83 @@ import type { IGoalRepository } from '@dailyuse/domain-server';
 import { GoalAggregate as Goal } from '@dailyuse/domain-server';
 import { GoalContracts } from '@dailyuse/contracts';
 
+// 类型别名（从命名空间导入）
+type GoalStatus = GoalContracts.GoalStatus;
+type ImportanceLevel = GoalContracts.ImportanceLevel;
+type UrgencyLevel = GoalContracts.UrgencyLevel;
+
+// 枚举值别名
+const ImportanceLevel = GoalContracts.ImportanceLevel;
+const UrgencyLevel = GoalContracts.UrgencyLevel;
+
 export class PrismaGoalRepository implements IGoalRepository {
   constructor(private prisma: PrismaClient) {}
 
-  private importanceMap: Record<GoalContracts.ImportanceLevel, number> = {
-    [GoalContracts.ImportanceLevel.Vital]: 4,
-    [GoalContracts.ImportanceLevel.Important]: 3,
-    [GoalContracts.ImportanceLevel.Moderate]: 2,
-    [GoalContracts.ImportanceLevel.Minor]: 1,
-    [GoalContracts.ImportanceLevel.Trivial]: 0,
+  private importanceMap: Record<ImportanceLevel, number> = {
+    [ImportanceLevel.Vital]: 4,
+    [ImportanceLevel.Important]: 3,
+    [ImportanceLevel.Moderate]: 2,
+    [ImportanceLevel.Minor]: 1,
+    [ImportanceLevel.Trivial]: 0,
   };
 
-  private reverseImportanceMap: Record<number, GoalContracts.ImportanceLevel> = {
-    4: GoalContracts.ImportanceLevel.Vital,
-    3: GoalContracts.ImportanceLevel.Important,
-    2: GoalContracts.ImportanceLevel.Moderate,
-    1: GoalContracts.ImportanceLevel.Minor,
-    0: GoalContracts.ImportanceLevel.Trivial,
+  private reverseImportanceMap: Record<number, ImportanceLevel> = {
+    4: ImportanceLevel.Vital,
+    3: ImportanceLevel.Important,
+    2: ImportanceLevel.Moderate,
+    1: ImportanceLevel.Minor,
+    0: ImportanceLevel.Trivial,
   };
 
-  private urgencyMap: Record<GoalContracts.UrgencyLevel, number> = {
-    [GoalContracts.UrgencyLevel.Critical]: 4,
-    [GoalContracts.UrgencyLevel.High]: 3,
-    [GoalContracts.UrgencyLevel.Medium]: 2,
-    [GoalContracts.UrgencyLevel.Low]: 1,
-    [GoalContracts.UrgencyLevel.None]: 0,
+  private urgencyMap: Record<UrgencyLevel, number> = {
+    [UrgencyLevel.Critical]: 4,
+    [UrgencyLevel.High]: 3,
+    [UrgencyLevel.Medium]: 2,
+    [UrgencyLevel.Low]: 1,
+    [UrgencyLevel.None]: 0,
   };
 
-  private reverseUrgencyMap: Record<number, GoalContracts.UrgencyLevel> = {
-    4: GoalContracts.UrgencyLevel.Critical,
-    3: GoalContracts.UrgencyLevel.High,
-    2: GoalContracts.UrgencyLevel.Medium,
-    1: GoalContracts.UrgencyLevel.Low,
-    0: GoalContracts.UrgencyLevel.None,
+  private reverseUrgencyMap: Record<number, UrgencyLevel> = {
+    4: UrgencyLevel.Critical,
+    3: UrgencyLevel.High,
+    2: UrgencyLevel.Medium,
+    1: UrgencyLevel.Low,
+    0: UrgencyLevel.None,
   };
 
+  /**
+   * 将 Prisma 模型映射为领域实体
+   * 注意：这里处理 snake_case (数据库) → camelCase (PersistenceDTO) 的映射
+   */
   private mapToEntity(data: PrismaGoal): Goal {
     return Goal.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.account_uuid,
+      accountUuid: data.account_uuid,
       title: data.title,
       description: data.description,
-      status: data.status as GoalContracts.GoalStatus,
+      status: data.status as GoalStatus,
       importance: this.reverseImportanceMap[data.importance],
       urgency: this.reverseUrgencyMap[data.urgency],
       category: data.category,
       tags: data.tags ?? '[]',
-      start_date: data.start_date ? data.start_date.getTime() : null,
-      target_date: data.target_date ? data.target_date.getTime() : null,
-      completed_at: data.completed_at ? data.completed_at.getTime() : null,
-      archived_at: data.archived_at ? data.archived_at.getTime() : null,
-      folder_uuid: data.folder_uuid,
-      parent_goal_uuid: data.parent_goal_uuid,
-      sort_order: data.sort_order,
-      reminder_config: data.reminder_config,
-      created_at: data.created_at.getTime(),
-      updated_at: data.updated_at.getTime(),
-      deleted_at: data.deleted_at ? data.deleted_at.getTime() : null,
+      startDate: data.start_date ? data.start_date.getTime() : null,
+      targetDate: data.target_date ? data.target_date.getTime() : null,
+      completedAt: data.completed_at ? data.completed_at.getTime() : null,
+      archivedAt: data.archived_at ? data.archived_at.getTime() : null,
+      folderUuid: data.folder_uuid,
+      parentGoalUuid: data.parent_goal_uuid,
+      sortOrder: data.sort_order,
+      reminderConfig: data.reminder_config,
+      createdAt: data.created_at.getTime(),
+      updatedAt: data.updated_at.getTime(),
+      deletedAt: data.deleted_at ? data.deleted_at.getTime() : null,
     });
   }
 
+  /**
+   * 保存领域实体到数据库
+   * 注意：这里处理 camelCase (PersistenceDTO) → snake_case (数据库) 的映射
+   */
   async save(goal: Goal): Promise<void> {
     const persistence = goal.toPersistenceDTO();
     const data = {
@@ -73,24 +90,24 @@ export class PrismaGoalRepository implements IGoalRepository {
       urgency: this.urgencyMap[persistence.urgency],
       category: persistence.category,
       tags: persistence.tags,
-      start_date: persistence.start_date ? new Date(persistence.start_date) : null,
-      target_date: persistence.target_date ? new Date(persistence.target_date) : null,
-      completed_at: persistence.completed_at ? new Date(persistence.completed_at) : null,
-      archived_at: persistence.archived_at ? new Date(persistence.archived_at) : null,
-      folder_uuid: persistence.folder_uuid,
-      parent_goal_uuid: persistence.parent_goal_uuid,
-      sort_order: persistence.sort_order,
-      reminder_config: persistence.reminder_config,
-      updated_at: new Date(persistence.updated_at),
-      deleted_at: persistence.deleted_at ? new Date(persistence.deleted_at) : null,
+      start_date: persistence.startDate ? new Date(persistence.startDate) : null,
+      target_date: persistence.targetDate ? new Date(persistence.targetDate) : null,
+      completed_at: persistence.completedAt ? new Date(persistence.completedAt) : null,
+      archived_at: persistence.archivedAt ? new Date(persistence.archivedAt) : null,
+      folder_uuid: persistence.folderUuid,
+      parent_goal_uuid: persistence.parentGoalUuid,
+      sort_order: persistence.sortOrder,
+      reminder_config: persistence.reminderConfig,
+      updated_at: new Date(persistence.updatedAt),
+      deleted_at: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
     await this.prisma.goal.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        account_uuid: persistence.account_uuid,
-        created_at: new Date(persistence.created_at),
+        account_uuid: persistence.accountUuid,
+        created_at: new Date(persistence.createdAt),
         ...data,
       },
       update: data,

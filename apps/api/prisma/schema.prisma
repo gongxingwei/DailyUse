@@ -706,16 +706,16 @@ model TaskTemplate {
   color                         String?
   tags                          String    @db.Text // JSON array of strings
   folderUuid                    String?   @map("folder_uuid")
-  lastGeneratedDate             BigInt?   @map("last_generated_date")
+  lastGeneratedDate             DateTime? @map("last_generated_date")
   generateAheadDays             Int       @map("generate_ahead_days")
-  createdAt                     BigInt    @map("created_at")
-  updatedAt                     BigInt    @map("updated_at")
-  deletedAt                     BigInt?   @map("deleted_at")
+  createdAt                     DateTime  @default(now()) @map("created_at")
+  updatedAt                     DateTime  @updatedAt @map("updated_at")
+  deletedAt                     DateTime? @map("deleted_at")
 
   // Flattened time_config
   timeConfigType                String    @map("time_config_type") // 'POINT', 'RANGE', 'ALL_DAY'
-  timeConfigStartTime           BigInt?   @map("time_config_start_time")
-  timeConfigEndTime             BigInt?   @map("time_config_end_time")
+  timeConfigStartTime           DateTime? @map("time_config_start_time")
+  timeConfigEndTime             DateTime? @map("time_config_end_time")
   timeConfigDurationMinutes     Int?      @map("time_config_duration_minutes")
 
   // Flattened recurrence_rule
@@ -724,7 +724,7 @@ model TaskTemplate {
   recurrenceRuleDaysOfWeek      String?   @map("recurrence_rule_days_of_week") @db.Text // JSON array
   recurrenceRuleDayOfMonth      Int?      @map("recurrence_rule_day_of_month")
   recurrenceRuleMonthOfYear     Int?      @map("recurrence_rule_month_of_year")
-  recurrenceRuleEndDate         BigInt?   @map("recurrence_rule_end_date")
+  recurrenceRuleEndDate         DateTime? @map("recurrence_rule_end_date")
   recurrenceRuleCount           Int?      @map("recurrence_rule_count")
 
   // Flattened reminder_config
@@ -755,13 +755,13 @@ model TaskInstance {
   uuid            String    @id @default(cuid())
   templateUuid    String    @map("template_uuid")
   accountUuid     String    @map("account_uuid")
-  instanceDate    BigInt    @map("instance_date")
+  instanceDate    DateTime  @map("instance_date")
   status          String // TaskInstanceStatus: 'PENDING', 'IN_PROGRESS', 'COMPLETED', 'SKIPPED', 'EXPIRED'
   note            String?   @db.Text
-  actualStartTime BigInt?   @map("actual_start_time")
-  actualEndTime   BigInt?   @map("actual_end_time")
-  createdAt       BigInt    @map("created_at")
-  updatedAt       BigInt    @map("updated_at")
+  actualStartTime DateTime? @map("actual_start_time")
+  actualEndTime   DateTime? @map("actual_end_time")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // JSON value objects
   timeConfig        String    @map("time_config") @db.Text // JSON: TaskTimeConfigPersistenceDTO
@@ -782,11 +782,11 @@ model TaskInstance {
 /// TaskTemplateHistory 实体
 /// 任务模板的历史记录
 model TaskTemplateHistory {
-  uuid         String  @id @default(cuid())
-  templateUuid String  @map("template_uuid")
+  uuid         String   @id @default(cuid())
+  templateUuid String   @map("template_uuid")
   action       String
-  changes      String? @db.Text // JSON string
-  createdAt    BigInt  @map("created_at")
+  changes      String?  @db.Text // JSON string
+  createdAt    DateTime @default(now()) @map("created_at")
 
   // Relations
   template TaskTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
@@ -800,7 +800,7 @@ model TaskTemplateHistory {
 model TaskStatistics {
   uuid                     String   @id @default(cuid())
   accountUuid              String   @unique @map("account_uuid")
-  calculatedAt             BigInt   @map("calculated_at")
+  calculatedAt             DateTime @map("calculated_at")
 
   // Flattened template_stats
   templateTotal            Int      @map("template_total")
@@ -864,10 +864,10 @@ model ReminderTemplate {
   tags                String    @db.Text // JSON string
   color               String?
   icon                String?
-  nextTriggerAt       BigInt?   @map("next_trigger_at")
-  createdAt           BigInt    @map("created_at")
-  updatedAt           BigInt    @map("updated_at")
-  deletedAt           BigInt?   @map("deleted_at")
+  nextTriggerAt       DateTime? @map("next_trigger_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
 
   // JSON value objects
   trigger             String    @db.Text // JSON: TriggerConfigPersistenceDTO
@@ -902,9 +902,9 @@ model ReminderGroup {
   status      String // ReminderStatus
   order       Int
   stats       String    @db.Text // JSON: GroupStatsPersistenceDTO
-  createdAt   BigInt    @map("created_at")
-  updatedAt   BigInt    @map("updated_at")
-  deletedAt   BigInt?   @map("deleted_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
 
   // Relations
   account   Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
@@ -917,12 +917,12 @@ model ReminderGroup {
 model ReminderHistory {
   uuid                 String   @id @default(cuid())
   templateUuid         String   @map("template_uuid")
-  triggeredAt          BigInt   @map("triggered_at")
+  triggeredAt          DateTime @map("triggered_at")
   result               String // TriggerResult
   error                String?  @db.Text
   notificationSent     Boolean  @map("notification_sent")
   notificationChannels String?  @map("notification_channels") @db.Text // JSON string
-  createdAt            BigInt   @map("created_at")
+  createdAt            DateTime @default(now()) @map("created_at")
 
   // Relations
   template ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
@@ -935,14 +935,14 @@ model ReminderInstance {
   uuid                String    @id @default(cuid())
   templateUuid        String    @map("template_uuid")
   accountUuid         String    @map("account_uuid")
-  triggerAt           BigInt    @map("trigger_at")
+  triggerAt           DateTime  @map("trigger_at")
   status              String // ReminderInstanceStatus
   result              String? // ReminderInstanceResult
-  processedAt         BigInt?   @map("processed_at")
+  processedAt         DateTime? @map("processed_at")
   note                String?   @db.Text
   payload             String?   @db.Text // JSON
-  createdAt           BigInt    @map("created_at")
-  updatedAt           BigInt    @map("updated_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   // Relations
   template ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)

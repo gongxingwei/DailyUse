@@ -42,10 +42,11 @@ export interface GoalServerDTO {
 
 /**
  * Goal Persistence DTO (数据库映射)
+ * 注意：使用 camelCase 命名，与数据库 snake_case 的映射在仓储层处理
  */
 export interface GoalPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   title: string;
   description?: string | null;
   status: GoalStatus;
@@ -53,17 +54,17 @@ export interface GoalPersistenceDTO {
   urgency: UrgencyLevel;
   category?: string | null;
   tags: string; // JSON string
-  start_date?: number | null;
-  target_date?: number | null;
-  completed_at?: number | null;
-  archived_at?: number | null;
-  folder_uuid?: string | null;
-  parent_goal_uuid?: string | null;
-  sort_order: number;
-  reminder_config?: string | null; // JSON string
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  startDate?: number | null;
+  targetDate?: number | null;
+  completedAt?: number | null;
+  archivedAt?: number | null;
+  folderUuid?: string | null;
+  parentGoalUuid?: string | null;
+  sortOrder: number;
+  reminderConfig?: string | null; // JSON string
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 
   // 注意：子实体在数据库中是独立表，通过外键关联
   // Persistence 层不包含子实体数据

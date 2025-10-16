@@ -18,15 +18,19 @@ export interface KeyResultServerDTO {
   records?: GoalRecordServerDTO[] | null;
 }
 
+/**
+ * KeyResult Persistence DTO
+ * 注意：使用 camelCase 命名
+ */
 export interface KeyResultPersistenceDTO {
   uuid: string;
-  goal_uuid: string;
+  goalUuid: string;
   title: string;
   description?: string | null;
-  progress: string;
+  progress: string; // JSON string
   order: number;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 export interface KeyResultServer {

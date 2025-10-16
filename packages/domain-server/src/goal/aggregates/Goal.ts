@@ -11,11 +11,10 @@
 
 import { AggregateRoot } from '@dailyuse/utils';
 import { GoalContracts } from '@dailyuse/contracts';
-import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalReview } from '../entities/GoalReview';
 
-// 类型别名
+// 类型别名（从命名空间导入）
 type IGoalServer = GoalContracts.GoalServer;
 type GoalServerDTO = GoalContracts.GoalServerDTO;
 type GoalPersistenceDTO = GoalContracts.GoalPersistenceDTO;
@@ -35,8 +34,13 @@ type GoalDeletedEvent = GoalContracts.GoalDeletedEvent;
 type KeyResultAddedEvent = GoalContracts.KeyResultAddedEvent;
 type KeyResultUpdatedEvent = GoalContracts.KeyResultUpdatedEvent;
 type GoalReviewAddedEvent = GoalContracts.GoalReviewAddedEvent;
+type ImportanceLevel = GoalContracts.ImportanceLevel;
+type UrgencyLevel = GoalContracts.UrgencyLevel;
 
+// 枚举值别名
 const GoalStatus = GoalContracts.GoalStatus;
+const ImportanceLevel = GoalContracts.ImportanceLevel;
+const UrgencyLevel = GoalContracts.UrgencyLevel;
 /**
  * Goal 聚合根
  */
@@ -289,13 +293,13 @@ export class Goal extends AggregateRoot implements IGoalServer {
    */
   public static fromPersistenceDTO(dto: GoalPersistenceDTO): Goal {
     const tags = JSON.parse(dto.tags) as string[];
-    const reminderConfig = dto.reminder_config
-      ? (JSON.parse(dto.reminder_config) as GoalReminderConfigServerDTO)
+    const reminderConfig = dto.reminderConfig
+      ? (JSON.parse(dto.reminderConfig) as GoalReminderConfigServerDTO)
       : null;
 
     return new Goal({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description ?? null,
       status: dto.status,
@@ -303,17 +307,17 @@ export class Goal extends AggregateRoot implements IGoalServer {
       urgency: dto.urgency,
       category: dto.category ?? null,
       tags,
-      startDate: dto.start_date ?? null,
-      targetDate: dto.target_date ?? null,
-      completedAt: dto.completed_at ?? null,
-      archivedAt: dto.archived_at ?? null,
-      folderUuid: dto.folder_uuid ?? null,
-      parentGoalUuid: dto.parent_goal_uuid ?? null,
-      sortOrder: dto.sort_order,
+      startDate: dto.startDate ?? null,
+      targetDate: dto.targetDate ?? null,
+      completedAt: dto.completedAt ?? null,
+      archivedAt: dto.archivedAt ?? null,
+      folderUuid: dto.folderUuid ?? null,
+      parentGoalUuid: dto.parentGoalUuid ?? null,
+      sortOrder: dto.sortOrder,
       reminderConfig,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at ?? null,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt ?? null,
     });
   }
 
@@ -1042,7 +1046,7 @@ export class Goal extends AggregateRoot implements IGoalServer {
   public toPersistenceDTO(): GoalPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       title: this._title,
       description: this._description,
       status: this._status,
@@ -1050,17 +1054,17 @@ export class Goal extends AggregateRoot implements IGoalServer {
       urgency: this._urgency,
       category: this._category,
       tags: JSON.stringify(this._tags),
-      start_date: this._startDate,
-      target_date: this._targetDate,
-      completed_at: this._completedAt,
-      archived_at: this._archivedAt,
-      folder_uuid: this._folderUuid,
-      parent_goal_uuid: this._parentGoalUuid,
-      sort_order: this._sortOrder,
-      reminder_config: this._reminderConfig ? JSON.stringify(this._reminderConfig) : null,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      deleted_at: this._deletedAt,
+      startDate: this._startDate,
+      targetDate: this._targetDate,
+      completedAt: this._completedAt,
+      archivedAt: this._archivedAt,
+      folderUuid: this._folderUuid,
+      parentGoalUuid: this._parentGoalUuid,
+      sortOrder: this._sortOrder,
+      reminderConfig: this._reminderConfig ? JSON.stringify(this._reminderConfig) : null,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
     };
   }
 }

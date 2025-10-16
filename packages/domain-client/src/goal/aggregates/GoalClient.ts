@@ -2,7 +2,7 @@
  * Goal 聚合根实现 (Client)
  */
 
-import { GoalContracts, sharedContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { AggregateRoot } from '@dailyuse/utils';
 import {
   GoalMetadataClient,
@@ -11,15 +11,18 @@ import {
 } from '../value-objects';
 import { KeyResultClient, GoalReviewClient } from '../entities';
 
+// 类型别名（从命名空间导入）
 type IGoalClient = GoalContracts.GoalClient;
 type GoalClientDTO = GoalContracts.GoalClientDTO;
 type GoalServerDTO = GoalContracts.GoalServerDTO;
 type GoalStatus = GoalContracts.GoalStatus;
-type ImportanceLevel = sharedContracts.ImportanceLevel;
-type UrgencyLevel = sharedContracts.UrgencyLevel;
+type ImportanceLevel = GoalContracts.ImportanceLevel;
+type UrgencyLevel = GoalContracts.UrgencyLevel;
+
+// 枚举值别名
 const GoalStatus = GoalContracts.GoalStatus;
-const ImportanceLevel = sharedContracts.ImportanceLevel;
-const UrgencyLevel = sharedContracts.UrgencyLevel;
+const ImportanceLevel = GoalContracts.ImportanceLevel;
+const UrgencyLevel = GoalContracts.UrgencyLevel;
 
 export class GoalClient extends AggregateRoot implements IGoalClient {
   private _accountUuid: string;
@@ -205,7 +208,6 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
   }
 
   public get importanceText(): string {
-
     return this._importance || '未知';
   }
 

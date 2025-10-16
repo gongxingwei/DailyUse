@@ -2,7 +2,7 @@
  * GoalRecord Entity - Server Interface
  * 目标记录实体 - 服务端接口
  */
-import type { GoalRecordClientDTO } from "./GoalRecordClient";
+import type { GoalRecordClientDTO } from './GoalRecordClient';
 // ============ DTO 定义 ============
 
 /**
@@ -22,17 +22,18 @@ export interface GoalRecordServerDTO {
 
 /**
  * GoalRecord Persistence DTO
+ * 注意：使用 camelCase 命名
  */
 export interface GoalRecordPersistenceDTO {
   uuid: string;
-  key_result_uuid: string;
-  goal_uuid: string;
-  previous_value: number;
-  new_value: number;
-  change_amount: number;
+  keyResultUuid: string;
+  goalUuid: string;
+  previousValue: number;
+  newValue: number;
+  changeAmount: number;
   note?: string | null;
-  recorded_at: number;
-  created_at: number;
+  recordedAt: number;
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

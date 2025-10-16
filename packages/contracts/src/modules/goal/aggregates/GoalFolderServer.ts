@@ -29,24 +29,25 @@ export interface GoalFolderServerDTO {
 }
 
 /**
- * GoalFolder Persistence DTO (数据库映射)
+ * GoalFolder Persistence DTO
+ * 注意：使用 camelCase 命名
  */
 export interface GoalFolderPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   description?: string | null;
   icon?: string | null;
   color?: string | null;
-  parent_folder_uuid?: string | null;
-  sort_order: number;
-  is_system_folder: boolean;
-  folder_type?: FolderType | null;
-  goal_count: number;
-  completed_goal_count: number;
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  parentFolderUuid?: string | null;
+  sortOrder: number;
+  isSystemFolder: boolean;
+  folderType?: FolderType | null;
+  goalCount: number;
+  completedGoalCount: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 领域事件 ============
