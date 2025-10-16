@@ -19,8 +19,6 @@ import type { IReminderStatisticsRepository } from '../repositories/IReminderSta
 import type { ReminderTriggerService, ITriggerReminderResult } from './ReminderTriggerService';
 import { ReminderContracts } from '@dailyuse/contracts';
 
-type TriggerResult = ReminderContracts.TriggerResult;
-
 /**
  * 调度结果
  */
@@ -70,18 +68,10 @@ export class ReminderSchedulerService {
    */
   async schedule(options: IScheduleOptions = {}): Promise<IScheduleResult> {
     const startTime = Date.now();
-    const {
-      accountUuid,
-      beforeTime = Date.now(),
-      maxCount = 100,
-      concurrency = 10,
-    } = options;
+    const { accountUuid, beforeTime = Date.now(), maxCount = 100, concurrency = 10 } = options;
 
     // 获取待触发的提醒
-    const pendingReminders = await this.triggerService.getPendingReminders(
-      beforeTime,
-      accountUuid,
-    );
+    const pendingReminders = await this.triggerService.getPendingReminders(beforeTime, accountUuid);
 
     // 限制数量
     const remindersToProcess = pendingReminders.slice(0, maxCount);
@@ -102,7 +92,7 @@ export class ReminderSchedulerService {
     const results: ITriggerReminderResult[] = [];
     for (let i = 0; i < remindersToProcess.length; i += concurrency) {
       const batch = remindersToProcess.slice(i, i + concurrency);
-      const batchParams = batch.map(template => ({
+      const batchParams = batch.map((template) => ({
         template,
         triggerTime: beforeTime,
       }));
@@ -111,9 +101,15 @@ export class ReminderSchedulerService {
     }
 
     // 统计结果
-    const successCount = results.filter(r => r.result === TriggerResult.SUCCESS).length;
-    const failedCount = results.filter(r => r.result === TriggerResult.FAILED).length;
-    const skippedCount = results.filter(r => r.result === TriggerResult.SKIPPED).length;
+    const successCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.SUCCESS,
+    ).length;
+    const failedCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.FAILED,
+    ).length;
+    const skippedCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.SKIPPED,
+    ).length;
 
     return {
       successCount,
@@ -137,9 +133,10 @@ export class ReminderSchedulerService {
 
     let updatedCount = 0;
     for (const template of templates) {
-      const nextTriggerTime = template.calculateNextTriggerTime();
-      if (template.nextTriggerTime !== nextTriggerTime) {
-        template.updateNextTriggerTime(nextTriggerTime);
+      const nextTriggerTime = template.calculateNextTrigger();
+      if (template.getNextTriggerTime() !== nextTriggerTime) {
+        // The internal state of `template` is updated by `calculateNextTrigger`.
+        // We just need to save it.
         await this.templateRepository.save(template);
         updatedCount++;
       }
@@ -158,8 +155,8 @@ export class ReminderSchedulerService {
     });
 
     // 调用聚合根的 calculate 方法重新计算
-    statistics.calculate(templates);
-    
+    statistics.calculate();
+
     await this.statisticsRepository.save(statistics);
   }
 
@@ -186,9 +183,12 @@ export class ReminderSchedulerService {
     const future = now + withinMinutes * 60 * 1000;
 
     const templates = await this.templateRepository.findByNextTriggerBefore(future, accountUuid);
-    
+
     // 过滤出真正在未来时间范围内的（排除已过期的）
-    return templates.filter(t => t.nextTriggerTime && t.nextTriggerTime > now);
+    return templates.filter((t) => {
+      const nextTime = t.getNextTriggerTime();
+      return nextTime && nextTime > now;
+    });
   }
 
   /**
@@ -236,7 +236,7 @@ export class ReminderSchedulerService {
     switch (action) {
       case 'trigger':
         // 立即触发
-        const triggerParams = overdueReminders.map(template => ({
+        const triggerParams = overdueReminders.map((template) => ({
           template,
           reason: '过期补触发',
         }));
@@ -250,18 +250,17 @@ export class ReminderSchedulerService {
           await this.triggerService.recordTriggerSkipped(
             template,
             '过期跳过',
-            template.nextTriggerTime || Date.now(),
+            template.getNextTriggerTime() || Date.now(),
           );
-          
+
           // 计算下次触发时间
-          const nextTriggerTime = template.calculateNextTriggerTime();
-          template.updateNextTriggerTime(nextTriggerTime);
+          const nextTriggerTime = template.calculateNextTrigger();
           await this.templateRepository.save(template);
 
           results.push({
             success: true,
-            result: TriggerResult.SKIPPED,
-            triggerTime: template.nextTriggerTime || Date.now(),
+            result: ReminderContracts.TriggerResult.SKIPPED,
+            triggerTime: template.getNextTriggerTime() || Date.now(),
             nextTriggerTime,
             message: '过期跳过',
           });
@@ -271,13 +270,12 @@ export class ReminderSchedulerService {
       case 'reschedule':
         // 重新调度到下一个时间点
         for (const template of overdueReminders) {
-          const nextTriggerTime = template.calculateNextTriggerTime();
-          template.updateNextTriggerTime(nextTriggerTime);
+          const nextTriggerTime = template.calculateNextTrigger();
           await this.templateRepository.save(template);
 
           results.push({
             success: true,
-            result: TriggerResult.SKIPPED,
+            result: ReminderContracts.TriggerResult.SKIPPED,
             triggerTime: Date.now(),
             nextTriggerTime,
             message: '重新调度',
@@ -286,9 +284,15 @@ export class ReminderSchedulerService {
         break;
     }
 
-    const successCount = results.filter(r => r.result === TriggerResult.SUCCESS).length;
-    const failedCount = results.filter(r => r.result === TriggerResult.FAILED).length;
-    const skippedCount = results.filter(r => r.result === TriggerResult.SKIPPED).length;
+    const successCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.SUCCESS,
+    ).length;
+    const failedCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.FAILED,
+    ).length;
+    const skippedCount = results.filter(
+      (r) => r.result === ReminderContracts.TriggerResult.SKIPPED,
+    ).length;
 
     return {
       successCount,

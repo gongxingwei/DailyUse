@@ -79,21 +79,59 @@ export interface AccountPersistenceDTO {
   uuid: string;
   username: string;
   email: string;
-  email_verified: boolean;
-  phone_number?: string | null;
-  phone_verified: boolean;
+  emailVerified: boolean;
+  phoneNumber?: string | null;
+  phoneVerified: boolean;
   status: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
-  profile: string; // JSON
+
+  // Flattened profile
+  displayName: string;
+  avatar?: string | null;
+  bio?: string | null;
+  location?: string | null;
+  timezone: string;
+  language: string;
+  dateOfBirth?: number | null;
+  gender?: 'MALE' | 'FEMALE' | 'OTHER' | 'PREFER_NOT_TO_SAY' | null;
+
+  // Preferences can remain as JSON for now
   preferences: string; // JSON
-  subscription?: string | null; // JSON
-  storage: string; // JSON
-  security: string; // JSON
+
+  // Flattened subscription
+  subscriptionId?: string | null;
+  subscriptionPlan?: 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE' | null;
+  subscriptionStatus?: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'SUSPENDED' | null;
+  subscriptionStartDate?: number | null;
+  subscriptionEndDate?: number | null;
+  subscriptionRenewalDate?: number | null;
+  subscriptionAutoRenew?: boolean | null;
+
+  // Flattened storage
+  storageUsed: number;
+  storageQuota: number;
+  storageQuotaType: 'FREE' | 'BASIC' | 'PRO' | 'UNLIMITED';
+
+  // Flattened security
+  twoFactorEnabled: boolean;
+  lastPasswordChange?: number | null;
+  loginAttempts: number;
+  lockedUntil?: number | null;
+
+  // History remains as JSON
   history: string; // JSON
-  stats: string; // JSON
-  created_at: number;
-  updated_at: number;
-  last_active_at?: number | null;
-  deleted_at?: number | null;
+
+  // Flattened stats
+  statsTotalGoals: number;
+  statsTotalTasks: number;
+  statsTotalSchedules: number;
+  statsTotalReminders: number;
+  statsLastLoginAt?: number | null;
+  statsLoginCount: number;
+
+  createdAt: number;
+  updatedAt: number;
+  lastActiveAt?: number | null;
+  deletedAt?: number | null;
 }
 
 // ============ 实体接口 ============

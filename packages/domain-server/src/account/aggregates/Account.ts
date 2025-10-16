@@ -232,24 +232,70 @@ export class Account extends AggregateRoot implements IAccountServer {
       uuid: dto.uuid,
       username: dto.username,
       email: dto.email,
-      emailVerified: dto.email_verified,
-      phoneNumber: dto.phone_number,
-      phoneVerified: dto.phone_verified,
+      emailVerified: dto.emailVerified,
+      phoneNumber: dto.phoneNumber,
+      phoneVerified: dto.phoneVerified,
       status: dto.status,
-      profile: JSON.parse(dto.profile),
+      profile: {
+        displayName: dto.displayName,
+        avatar: dto.avatar,
+        bio: dto.bio,
+        location: dto.location,
+        timezone: dto.timezone,
+        language: dto.language,
+        dateOfBirth: dto.dateOfBirth,
+        gender: dto.gender,
+      },
       preferences: JSON.parse(dto.preferences),
-      storage: JSON.parse(dto.storage),
-      security: JSON.parse(dto.security),
-      stats: JSON.parse(dto.stats),
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      lastActiveAt: dto.last_active_at,
-      deletedAt: dto.deleted_at,
+      storage: {
+        used: dto.storageUsed,
+        quota: dto.storageQuota,
+        quotaType: dto.storageQuotaType,
+      },
+      security: {
+        twoFactorEnabled: dto.twoFactorEnabled,
+        lastPasswordChange: dto.lastPasswordChange,
+        loginAttempts: dto.loginAttempts,
+        lockedUntil: dto.lockedUntil,
+      },
+      stats: {
+        totalGoals: dto.statsTotalGoals,
+        totalTasks: dto.statsTotalTasks,
+        totalSchedules: dto.statsTotalSchedules,
+        totalReminders: dto.statsTotalReminders,
+        lastLoginAt: dto.statsLastLoginAt,
+        loginCount: dto.statsLoginCount,
+      },
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      lastActiveAt: dto.lastActiveAt,
+      deletedAt: dto.deletedAt,
     });
-    if (dto.subscription) {
-      const subDTO = JSON.parse(dto.subscription);
-      account._subscription = Subscription.fromServerDTO(subDTO);
+
+    if (
+      dto.subscriptionId &&
+      dto.subscriptionPlan &&
+      dto.subscriptionStatus &&
+      dto.subscriptionStartDate
+    ) {
+      account._subscription = Subscription.fromPersistenceDTO({
+        uuid: dto.subscriptionId,
+        accountUuid: dto.uuid,
+        plan: dto.subscriptionPlan,
+        status: dto.subscriptionStatus,
+        startDate: dto.subscriptionStartDate,
+        endDate: dto.subscriptionEndDate,
+        renewalDate: dto.subscriptionRenewalDate,
+        autoRenew: dto.subscriptionAutoRenew ?? true,
+        paymentMethod: null,
+        billingCycle: 'MONTHLY',
+        amount: null,
+        currency: null,
+        createdAt: dto.subscriptionStartDate,
+        updatedAt: dto.subscriptionStartDate,
+      });
     }
+
     const historyArray = JSON.parse(dto.history);
     account._history = historyArray.map((h: any) => AccountHistory.fromServerDTO(h));
     return account;
@@ -514,21 +560,57 @@ export class Account extends AggregateRoot implements IAccountServer {
       uuid: this._uuid,
       username: this._username,
       email: this._email,
-      email_verified: this._emailVerified,
-      phone_number: this._phoneNumber,
-      phone_verified: this._phoneVerified,
+      emailVerified: this._emailVerified,
+      phoneNumber: this._phoneNumber,
+      phoneVerified: this._phoneVerified,
       status: this._status,
-      profile: JSON.stringify(this._profile),
+
+      // Flattened profile
+      displayName: this._profile.displayName,
+      avatar: this._profile.avatar,
+      bio: this._profile.bio,
+      location: this._profile.location,
+      timezone: this._profile.timezone,
+      language: this._profile.language,
+      dateOfBirth: this._profile.dateOfBirth,
+      gender: this._profile.gender,
+
       preferences: JSON.stringify(this._preferences),
-      subscription: this._subscription ? JSON.stringify(this._subscription.toServerDTO()) : null,
-      storage: JSON.stringify(this._storage),
-      security: JSON.stringify(this._security),
+
+      // Flattened subscription
+      subscriptionId: this._subscription?.uuid,
+      subscriptionPlan: this._subscription?.plan,
+      subscriptionStatus: this._subscription?.status,
+      subscriptionStartDate: this._subscription?.startDate,
+      subscriptionEndDate: this._subscription?.endDate,
+      subscriptionRenewalDate: this._subscription?.renewalDate,
+      subscriptionAutoRenew: this._subscription?.autoRenew,
+
+      // Flattened storage
+      storageUsed: this._storage.used,
+      storageQuota: this._storage.quota,
+      storageQuotaType: this._storage.quotaType,
+
+      // Flattened security
+      twoFactorEnabled: this._security.twoFactorEnabled,
+      lastPasswordChange: this._security.lastPasswordChange,
+      loginAttempts: this._security.loginAttempts,
+      lockedUntil: this._security.lockedUntil,
+
       history: JSON.stringify(this._history.map((h) => h.toServerDTO())),
-      stats: JSON.stringify(this._stats),
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      last_active_at: this._lastActiveAt,
-      deleted_at: this._deletedAt,
+
+      // Flattened stats
+      statsTotalGoals: this._stats.totalGoals,
+      statsTotalTasks: this._stats.totalTasks,
+      statsTotalSchedules: this._stats.totalSchedules,
+      statsTotalReminders: this._stats.totalReminders,
+      statsLastLoginAt: this._stats.lastLoginAt,
+      statsLoginCount: this._stats.loginCount,
+
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      lastActiveAt: this._lastActiveAt,
+      deletedAt: this._deletedAt,
     };
   }
 }

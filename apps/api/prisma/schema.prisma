@@ -35,6 +35,7 @@ model Account {
   deletedAt      DateTime? @map("deleted_at")
 
   // Relations
+  goals                 Goal[]
   repositories          Repository[]
   repositoryExplorers   RepositoryExplorer[]
   repositoryStatistics  RepositoryStatistics[]
@@ -46,6 +47,7 @@ model Account {
   userSettings          UserSetting[]
   authCredentials       AuthCredential[]
   authSessions          AuthSession[]
+  reminderStatistics    ReminderStatistics?
 
   @@index([username])
   @@index([email])
@@ -304,7 +306,7 @@ model EditorWorkspace {
   settings    Json
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   accessedAt  DateTime @default(now()) @map("accessed_at")
 
   // Relations
@@ -521,4 +523,169 @@ model UserSetting {
 
   @@index([accountUuid])
   @@map("user_settings")
+}
+
+// ============================================================
+// Reminder Module - DDD Design
+// 提醒模块 - DDD 设计
+// ============================================================
+
+model ReminderStatistics {
+  uuid          String   @id @default(cuid())
+  accountUuid   String   @unique @map("account_uuid")
+  templateStats String   @db.Text @map("template_stats") // JSON: TemplateStatsInfo
+  groupStats    String   @db.Text @map("group_stats")    // JSON: GroupStatsInfo
+  triggerStats  String   @db.Text @map("trigger_stats")  // JSON: TriggerStatsInfo
+  calculatedAt  DateTime @map("calculated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@map("reminder_statistics")
+}
+
+// ============================================================
+// Goal Module - DDD Design
+// 目标模块 - DDD 设计
+// ============================================================
+
+model Goal {
+  uuid             String    @id @default(cuid())
+  account_uuid     String
+  title            String
+  description      String?   @db.Text
+  status           String    @default("pending") // e.g., 'pending', 'in_progress', 'completed', 'archived'
+  importance       Int       @default(2) // 0-4 scale
+  urgency          Int       @default(2) // 0-4 scale
+  category         String?
+  tags             String?   @db.Text // JSON array of strings
+  start_date       DateTime?
+  target_date      DateTime?
+  completed_at     DateTime?
+  archived_at      DateTime?
+  folder_uuid      String?
+  parent_goal_uuid String?
+  sort_order       Int       @default(0)
+  reminder_config  String?   @db.Text // JSON for reminder configuration
+  created_at       DateTime  @default(now())
+  updated_at       DateTime  @updatedAt
+  deleted_at       DateTime?
+
+  // Relations
+  account    Account @relation(fields: [account_uuid], references: [uuid], onDelete: Cascade)
+  parentGoal Goal?   @relation("GoalHierarchy", fields: [parent_goal_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  childGoals Goal[]  @relation("GoalHierarchy")
+
+  @@index([account_uuid])
+  @@index([status])
+  @@index([folder_uuid])
+  @@index([parent_goal_uuid])
+  @@map("goals")
+}
+
+// ============================================================
+// Notification Module - DDD Design
+// 通知模块 - DDD 设计
+// ============================================================
+
+model Notification {
+  uuid               String    @id @default(cuid())
+  accountUuid        String    @map("account_uuid")
+  type               String
+  category           String
+  status             String
+  title              String
+  content            String    @db.Text
+  importance         String
+  urgency            String
+  relatedEntityType  String?   @map("related_entity_type")
+  relatedEntityUuid  String?   @map("related_entity_uuid")
+  metadata           String?   @db.Text // JSON
+  actions            String?   @db.Text // JSON
+  isRead             Boolean   @default(false) @map("is_read")
+  readAt             DateTime? @map("read_at")
+  sentAt             DateTime? @map("sent_at")
+  expiresAt          DateTime? @map("expires_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+  deletedAt          DateTime? @map("deleted_at")
+
+  channels NotificationChannel[]
+  history  NotificationHistory[]
+
+  @@index([accountUuid])
+  @@index([category])
+  @@index([status])
+  @@map("notifications")
+}
+
+model NotificationChannel {
+  uuid             String    @id @default(cuid())
+  notificationUuid String    @map("notification_uuid")
+  channelType      String    @map("channel_type")
+  status           String
+  recipient        String?
+  retryCount       Int       @default(0) @map("retry_count")
+  maxRetries       Int       @default(3) @map("max_retries")
+  error            String?   @db.Text // JSON
+  response         String?   @db.Text // JSON
+  createdAt        DateTime  @default(now()) @map("created_at")
+  sentAt           DateTime? @map("sent_at")
+  deliveredAt      DateTime? @map("delivered_at")
+  failedAt         DateTime? @map("failed_at")
+
+  notification Notification @relation(fields: [notificationUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([notificationUuid])
+  @@map("notification_channels")
+}
+
+model NotificationHistory {
+  uuid             String   @id @default(cuid())
+  notificationUuid String   @map("notification_uuid")
+  action           String
+  details          String?  @db.Text // JSON
+  actorUuid        String?  @map("actor_uuid")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  notification Notification @relation(fields: [notificationUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([notificationUuid])
+  @@map("notification_history")
+}
+
+model NotificationPreference {
+  uuid        String   @id @default(cuid())
+  accountUuid String   @unique @map("account_uuid")
+  enabled     Boolean  @default(true)
+  channels    String   @db.Text // JSON
+  categories  String   @db.Text // JSON
+  doNotDisturb String?  @map("do_not_disturb") @db.Text // JSON
+  rateLimit   String?  @map("rate_limit") @db.Text // JSON
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([accountUuid])
+  @@map("notification_preferences")
+}
+
+model NotificationTemplate {
+  uuid            String   @id @default(cuid())
+  name            String   @unique
+  displayName     String   @map("display_name")
+  description     String?
+  type            String
+  category        String
+  titleTemplate   String   @map("title_template")
+  contentTemplate String   @map("content_template") @db.Text
+  variables       String?  @db.Text // JSON
+  defaultActions  String?  @map("default_actions") @db.Text // JSON
+  isSystem        Boolean  @default(false) @map("is_system")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([name])
+  @@map("notification_templates")
 }

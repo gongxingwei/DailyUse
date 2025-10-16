@@ -458,6 +458,21 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
   }
 
   public toClientDTO(): GoalStatisticsClientDTO {
+    const completionRate =
+      this._totalGoals > 0 ? (this._completedGoals / this._totalGoals) * 100 : 0;
+    const keyResultCompletionRate =
+      this._totalKeyResults > 0 ? (this._completedKeyResults / this._totalKeyResults) * 100 : 0;
+    const overdueRate = this._totalGoals > 0 ? (this._overdueGoals / this._totalGoals) * 100 : 0;
+
+    const getTrend = (created: number, completed: number): GoalContracts.TrendType => {
+      if (completed > created) return 'UP';
+      if (completed < created) return 'DOWN';
+      return 'STABLE';
+    };
+
+    const weeklyTrend = getTrend(this._goalsCreatedThisWeek, this._goalsCompletedThisWeek);
+    const monthlyTrend = getTrend(this._goalsCreatedThisMonth, this._goalsCompletedThisMonth);
+
     return {
       accountUuid: this._accountUuid,
       totalGoals: this._totalGoals,
@@ -479,6 +494,13 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
       totalReviews: this._totalReviews,
       averageRating: this._averageRating,
       lastCalculatedAt: this._lastCalculatedAt,
+
+      // UI 计算字段
+      completionRate,
+      keyResultCompletionRate,
+      overdueRate,
+      weeklyTrend,
+      monthlyTrend,
     };
   }
 

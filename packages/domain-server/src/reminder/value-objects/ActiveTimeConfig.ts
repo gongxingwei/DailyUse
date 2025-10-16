@@ -3,7 +3,10 @@
  * 生效时间配置 - 不可变值对象
  */
 
-import type { ActiveTimeConfigServerDTO } from '@dailyuse/contracts/src/modules/reminder';
+import type {
+  ActiveTimeConfigServerDTO,
+  ActiveTimeConfigClientDTO,
+} from '@dailyuse/contracts/src/modules/reminder';
 import { ValueObject } from '@dailyuse/utils';
 
 /**
@@ -61,6 +64,27 @@ export class ActiveTimeConfig extends ValueObject implements ActiveTimeConfigSer
     return {
       startDate: this.startDate,
       endDate: this.endDate,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): ActiveTimeConfigClientDTO {
+    const formatDate = (ts: number) => new Date(ts).toLocaleDateString();
+    let displayText = `从 ${formatDate(this.startDate)} 开始`;
+    if (this.endDate) {
+      displayText = `${formatDate(this.startDate)} 至 ${formatDate(this.endDate)}`;
+    }
+
+    const now = Date.now();
+    const isActive = now >= this.startDate && (!this.endDate || now <= this.endDate);
+
+    return {
+      startDate: this.startDate,
+      endDate: this.endDate,
+      displayText,
+      isActive,
     };
   }
 

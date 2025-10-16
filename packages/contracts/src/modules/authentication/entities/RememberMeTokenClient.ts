@@ -3,7 +3,7 @@
  * 记住我令牌实体 - 客户端接口
  */
 
-import type { DeviceInfoClient } from '../value-objects/DeviceInfoClient';
+import type { DeviceInfoClient, DeviceInfoClientDTO } from '../value-objects/DeviceInfoClient';
 
 // ============ DTO 定义 ============
 
@@ -15,7 +15,7 @@ export interface RememberMeTokenClientDTO {
   credentialUuid: string;
   accountUuid: string;
   tokenSeries: string;
-  device: DeviceInfoClient;
+  device: DeviceInfoClientDTO;
   status: 'ACTIVE' | 'USED' | 'REVOKED' | 'EXPIRED';
   usageCount: number;
   lastUsedAt?: number | null;

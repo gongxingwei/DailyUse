@@ -348,6 +348,14 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
   }
 
   public toClientDTO(): ReminderGroupClientDTO {
+    const controlModeText =
+      this.controlMode === ReminderContracts.ControlMode.GROUP ? '组控制' : '个体控制';
+    const statusText = this.status === ReminderContracts.ReminderStatus.ACTIVE ? '活跃' : '暂停';
+    const controlDescription =
+      this.controlMode === ReminderContracts.ControlMode.GROUP
+        ? '所有提醒统一启用'
+        : '提醒独立控制';
+
     return {
       uuid: this.uuid,
       accountUuid: this.accountUuid,
@@ -359,10 +367,18 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
       order: this.order,
       color: this.color,
       icon: this.icon,
-      stats: this.stats,
+      stats: this._stats.toClientDTO(),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       deletedAt: this.deletedAt,
+
+      // UI 扩展
+      displayName: this.name,
+      controlModeText,
+      statusText,
+      templateCountText: `${this._stats.totalTemplates} 个提醒`,
+      activeStatusText: `${this._stats.activeTemplates} 个活跃`,
+      controlDescription,
     };
   }
 

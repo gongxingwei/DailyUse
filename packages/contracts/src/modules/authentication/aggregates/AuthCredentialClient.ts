@@ -3,10 +3,22 @@
  * 认证凭证实体 - 客户端接口
  */
 
-import type { PasswordCredentialClient } from '../entities/PasswordCredentialClient';
-import type { ApiKeyCredentialClient } from '../entities/ApiKeyCredentialClient';
-import type { RememberMeTokenClient } from '../entities/RememberMeTokenClient';
-import type { CredentialHistoryClient } from '../entities/CredentialHistoryClient';
+import type {
+  PasswordCredentialClient,
+  PasswordCredentialClientDTO,
+} from '../entities/PasswordCredentialClient';
+import type {
+  ApiKeyCredentialClient,
+  ApiKeyCredentialClientDTO,
+} from '../entities/ApiKeyCredentialClient';
+import type {
+  RememberMeTokenClient,
+  RememberMeTokenClientDTO,
+} from '../entities/RememberMeTokenClient';
+import type {
+  CredentialHistoryClient,
+  CredentialHistoryClientDTO,
+} from '../entities/CredentialHistoryClient';
 
 // ============ DTO 定义 ============
 
@@ -17,9 +29,9 @@ export interface AuthCredentialClientDTO {
   uuid: string;
   accountUuid: string;
   type: 'PASSWORD' | 'API_KEY' | 'BIOMETRIC' | 'MAGIC_LINK' | 'HARDWARE_KEY';
-  passwordCredential?: PasswordCredentialClient | null;
-  apiKeyCredentials: ApiKeyCredentialClient[];
-  rememberMeTokens: RememberMeTokenClient[];
+  passwordCredential?: PasswordCredentialClientDTO | null;
+  apiKeyCredentials: ApiKeyCredentialClientDTO[];
+  rememberMeTokens: RememberMeTokenClientDTO[];
   twoFactor?: {
     enabled: boolean;
     method: 'TOTP' | 'SMS' | 'EMAIL' | 'AUTHENTICATOR_APP';
@@ -40,7 +52,7 @@ export interface AuthCredentialClientDTO {
     lockedUntil?: number | null;
     lastPasswordChangeAt?: number | null;
   };
-  history: CredentialHistoryClient[];
+  history: CredentialHistoryClientDTO[];
   createdAt: number;
   updatedAt: number;
 }

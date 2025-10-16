@@ -14,6 +14,7 @@ import crypto from 'crypto';
 
 type IAuthCredentialServer = AuthenticationContracts.AuthCredentialServer;
 type AuthCredentialServerDTO = AuthenticationContracts.AuthCredentialServerDTO;
+type AuthCredentialClientDTO = AuthenticationContracts.AuthCredentialClientDTO;
 type AuthCredentialPersistenceDTO = AuthenticationContracts.AuthCredentialPersistenceDTO;
 type PasswordCredentialServer = AuthenticationContracts.PasswordCredentialServer;
 type ApiKeyCredentialServer = AuthenticationContracts.ApiKeyCredentialServer;
@@ -485,32 +486,38 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
       uuid: this.uuid,
       accountUuid: this.accountUuid,
       type: this.type,
-      passwordCredential: this._passwordCredential as any,
-      apiKeyCredentials: this._apiKeyCredentials as any,
-      rememberMeTokens: this._rememberMeTokens as any,
+      passwordCredential: this._passwordCredential,
+      apiKeyCredentials: this._apiKeyCredentials,
+      rememberMeTokens: this._rememberMeTokens,
       twoFactor: this._twoFactor,
       biometric: this._biometric,
       status: this._status,
       security: this._security,
-      history: this._history as any,
+      history: this._history,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
     };
   }
 
-  public toClientDTO(): AuthCredentialServerDTO {
+  public toClientDTO(): AuthCredentialClientDTO {
     return {
       uuid: this.uuid,
       accountUuid: this.accountUuid,
       type: this.type,
-      passwordCredential: this._passwordCredential as any,
-      apiKeyCredentials: this._apiKeyCredentials as any,
-      rememberMeTokens: this._rememberMeTokens as any,
-      twoFactor: this._twoFactor,
+      passwordCredential: this._passwordCredential ? this._passwordCredential.toClientDTO() : null,
+      apiKeyCredentials: this._apiKeyCredentials.map((k) => k.toClientDTO()),
+      rememberMeTokens: this._rememberMeTokens.map((t) => t.toClientDTO()),
+      twoFactor: this._twoFactor
+        ? {
+            enabled: this._twoFactor.enabled,
+            method: this._twoFactor.method,
+            verifiedAt: this._twoFactor.verifiedAt,
+          }
+        : null,
       biometric: this._biometric,
       status: this._status,
       security: this._security,
-      history: this._history as any,
+      history: this._history.map((h) => h.toClientDTO()),
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
     };

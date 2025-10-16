@@ -441,6 +441,9 @@ export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
   }
 
   public toClientDTO(): GoalFolderClientDTO {
+    const completionRate = this.getCompletionRate();
+    const activeGoalCount = this._goalCount - this._completedGoalCount;
+
     return {
       uuid: this.uuid,
       accountUuid: this._accountUuid,
@@ -457,6 +460,13 @@ export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
       deletedAt: this._deletedAt,
+
+      // UI 计算字段
+      displayName: this._name,
+      displayIcon: this._icon ?? 'default-folder-icon', // 提供一个默认图标
+      completionRate: completionRate,
+      isDeleted: this._deletedAt !== null,
+      activeGoalCount: activeGoalCount < 0 ? 0 : activeGoalCount,
     };
   }
 

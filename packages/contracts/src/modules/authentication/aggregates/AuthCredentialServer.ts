@@ -65,6 +65,9 @@ export interface AuthCredentialPersistenceDTO {
   history: string; // JSON
   created_at: number;
   updated_at: number;
+  expires_at?: number | null;
+  last_used_at?: number | null;
+  revoked_at?: number | null;
 }
 
 // ============ 实体接口 ============

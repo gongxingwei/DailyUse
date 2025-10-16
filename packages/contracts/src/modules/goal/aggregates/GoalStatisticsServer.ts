@@ -3,18 +3,15 @@
  * 目标统计聚合根 - 服务端接口
  */
 
-import type { GoalStatisticsClientDTO } from "./GoalStatisticsClient";
+import type { GoalStatisticsClientDTO } from './GoalStatisticsClient';
+import type { ChartDataDTO } from '../../../shared/dtos';
 
 // ============ 辅助类型 ============
 
 /**
  * 图表数据
  */
-export interface ChartData {
-  labels: string[];
-  values: number[];
-  colors: string[];
-}
+export type ChartData = ChartDataDTO;
 
 /**
  * 时间线数据

@@ -1,5 +1,6 @@
 import type { IAccountRepository } from '@dailyuse/domain-server';
-import { PrismaAccountRepository } from '../persistence/prisma/PrismaAccountRepository';
+import { PrismaAccountRepository } from '../repositories/PrismaAccountRepository';
+import prisma from '../../../../shared/db/prisma';
 
 /**
  * Account 模块依赖注入容器
@@ -30,7 +31,7 @@ export class AccountContainer {
    */
   getAccountRepository(): IAccountRepository {
     if (!this.accountRepository) {
-      this.accountRepository = new PrismaAccountRepository();
+      this.accountRepository = new PrismaAccountRepository(prisma);
     }
     return this.accountRepository;
   }

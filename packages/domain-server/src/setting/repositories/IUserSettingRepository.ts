@@ -7,7 +7,7 @@
  * - 由基础设施层实现
  */
 
-import type { UserSettingServer } from '../aggregates/UserSettingServer';
+// import type { UserSettingServer } from '../aggregates/UserSettingServer';
 
 /**
  * IUserSettingRepository 仓储接口
@@ -19,7 +19,7 @@ export interface IUserSettingRepository {
   /**
    * 保存用户设置（创建或更新）
    */
-  save(userSetting: UserSettingServer): Promise<void>;
+  save(userSetting: any): Promise<void>;
 
   /**
    * 通过 UUID 查找用户设置
@@ -27,7 +27,7 @@ export interface IUserSettingRepository {
    * @param uuid 设置 UUID
    * @returns 聚合根实例，不存在则返回 null
    */
-  findById(uuid: string): Promise<UserSettingServer | null>;
+  findById(uuid: string): Promise<any | null>;
 
   /**
    * 通过账户 UUID 查找用户设置
@@ -35,14 +35,14 @@ export interface IUserSettingRepository {
    * @param accountUuid 账户 UUID
    * @returns 聚合根实例，不存在则返回 null
    */
-  findByAccountUuid(accountUuid: string): Promise<UserSettingServer | null>;
+  findByAccountUuid(accountUuid: string): Promise<any | null>;
 
   /**
    * 查找所有用户设置
    *
    * @returns 用户设置列表
    */
-  findAll(): Promise<UserSettingServer[]>;
+  findAll(): Promise<any[]>;
 
   /**
    * 删除用户设置
@@ -70,5 +70,5 @@ export interface IUserSettingRepository {
    *
    * @param userSettings 用户设置列表
    */
-  saveMany(userSettings: UserSettingServer[]): Promise<void>;
+  saveMany(userSettings: any[]): Promise<void>;
 }

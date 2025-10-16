@@ -9,6 +9,7 @@ import crypto from 'crypto';
 
 type IDeviceInfoServer = AuthenticationContracts.DeviceInfoServer;
 type DeviceInfoServerDTO = AuthenticationContracts.DeviceInfoServerDTO;
+type DeviceInfoClientDTO = AuthenticationContracts.DeviceInfoClientDTO;
 
 export class DeviceInfo extends ValueObject implements IDeviceInfoServer {
   public readonly deviceId: string;
@@ -185,7 +186,7 @@ export class DeviceInfo extends ValueObject implements IDeviceInfoServer {
     };
   }
 
-  public toClientDTO(): DeviceInfoServerDTO {
+  public toClientDTO(): DeviceInfoClientDTO {
     return {
       deviceId: this.deviceId,
       deviceFingerprint: this.deviceFingerprint,
@@ -194,7 +195,6 @@ export class DeviceInfo extends ValueObject implements IDeviceInfoServer {
       os: this.os,
       browser: this.browser,
       ipAddress: this.ipAddress,
-      userAgent: this.userAgent,
       location: this.location,
       firstSeenAt: this.firstSeenAt,
       lastSeenAt: this.lastSeenAt,

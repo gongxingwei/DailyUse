@@ -3,7 +3,10 @@
  * 凭证历史实体 - 服务端接口
  */
 
-import type { CredentialHistoryClientDTO } from './CredentialHistoryClient';
+import type {
+  CredentialHistoryClient,
+  CredentialHistoryClientDTO,
+} from './CredentialHistoryClient';
 // ============ DTO 定义 ============
 
 /**

@@ -204,17 +204,37 @@ export class NotificationTemplate extends AggregateRoot implements INotification
   }
 
   public toPersistenceDTO(): NotificationTemplatePersistenceDTO {
+    const templateDTO = this._template.toContract();
     return {
       uuid: this.uuid,
       name: this.name,
       description: this.description,
       type: this.type,
       category: this.category,
-      template: JSON.stringify(this.template),
-      is_active: this.isActive,
-      is_system_template: this.isSystemTemplate,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
+      isActive: this.isActive,
+      isSystemTemplate: this.isSystemTemplate,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+
+      // Flattened template config
+      templateTitle: templateDTO.template.title,
+      templateContent: templateDTO.template.content,
+      templateVariables: templateDTO.template.variables
+        ? JSON.stringify(templateDTO.template.variables)
+        : undefined,
+      templateLayout: undefined, // layout/style are not in the source DTO
+      templateStyle: undefined,
+
+      // Email specific
+      templateEmailSubject: templateDTO.emailTemplate?.subject,
+      templateEmailHtmlBody: templateDTO.emailTemplate?.htmlBody,
+      templateEmailTextBody: templateDTO.emailTemplate?.textBody ?? undefined,
+
+      // Push specific
+      templatePushTitle: templateDTO.pushTemplate?.title,
+      templatePushBody: templateDTO.pushTemplate?.body,
+      templatePushIcon: templateDTO.pushTemplate?.icon ?? undefined,
+      templatePushSound: templateDTO.pushTemplate?.sound ?? undefined,
     };
   }
 
@@ -258,17 +278,49 @@ export class NotificationTemplate extends AggregateRoot implements INotification
   }
 
   public static fromPersistenceDTO(dto: NotificationTemplatePersistenceDTO): NotificationTemplate {
+    const template: NotificationContracts.TemplateContent = {
+      title: dto.templateTitle,
+      content: dto.templateContent,
+      variables: dto.templateVariables ? JSON.parse(dto.templateVariables) : [],
+    };
+
+    const emailTemplate: NotificationContracts.EmailTemplateContent | null =
+      dto.templateEmailSubject && dto.templateEmailHtmlBody
+        ? {
+            subject: dto.templateEmailSubject,
+            htmlBody: dto.templateEmailHtmlBody,
+            textBody: dto.templateEmailTextBody,
+          }
+        : null;
+
+    const pushTemplate: NotificationContracts.PushTemplateContent | null =
+      dto.templatePushTitle && dto.templatePushBody
+        ? {
+            title: dto.templatePushTitle,
+            body: dto.templatePushBody,
+            icon: dto.templatePushIcon,
+            sound: dto.templatePushSound,
+          }
+        : null;
+
+    const templateConfigDTO: NotificationTemplateConfigDTO = {
+      template,
+      channels: { inApp: true, email: !!emailTemplate, push: !!pushTemplate, sms: false }, // Infer channels
+      emailTemplate,
+      pushTemplate,
+    };
+
     return new NotificationTemplate({
       uuid: dto.uuid,
       name: dto.name,
       description: dto.description ?? null,
       type: dto.type,
       category: dto.category,
-      template: NotificationTemplateConfig.fromContract(JSON.parse(dto.template)),
-      isActive: dto.is_active,
-      isSystemTemplate: dto.is_system_template,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      template: NotificationTemplateConfig.fromContract(templateConfigDTO),
+      isActive: dto.isActive,
+      isSystemTemplate: dto.isSystemTemplate,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 }

@@ -227,6 +227,28 @@ export class LinkedContent extends Entity implements ILinkedContentServer {
   }
 
   public toClientDTO(): LinkedContentClientDTO {
+    const formatDate = (ts: number | null | undefined) => {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
+    };
+
+    const getContentTypeLabel = (type: ContentType): string => {
+      // This could be mapped to a more user-friendly string
+      return type;
+    };
+
+    const getAccessibilityStatusIcon = (isAccessible: boolean): string => {
+      return isAccessible ? '✅' : '❌';
+    };
+
+    const getDomain = (url: string): string => {
+      try {
+        return new URL(url).hostname;
+      } catch (e) {
+        return '';
+      }
+    };
+
     return {
       uuid: this._uuid,
       resourceUuid: this._resourceUuid,
@@ -242,6 +264,14 @@ export class LinkedContent extends Entity implements ILinkedContentServer {
       cachedAt: this._cachedAt,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
+
+      // UI 格式化属性
+      contentTypeLabel: getContentTypeLabel(this._contentType),
+      formattedPublishedAt: formatDate(this._publishedAt),
+      formattedLastChecked: formatDate(this._lastCheckedAt),
+      formattedCreatedAt: formatDate(this._createdAt),
+      accessibilityStatusIcon: getAccessibilityStatusIcon(this._isAccessible),
+      domain: getDomain(this._url),
     };
   }
 

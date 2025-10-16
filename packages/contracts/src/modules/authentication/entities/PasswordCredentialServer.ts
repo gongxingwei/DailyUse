@@ -3,7 +3,10 @@
  * 密码凭证实体 - 服务端接口
  */
 
-import type { PasswordCredentialClientDTO } from './PasswordCredentialClient';
+import type {
+  PasswordCredentialClient,
+  PasswordCredentialClientDTO,
+} from './PasswordCredentialClient';
 
 // ============ DTO 定义 ============
 
@@ -17,6 +20,9 @@ export interface PasswordCredentialServerDTO {
   salt: string;
   algorithm: 'BCRYPT' | 'ARGON2' | 'SCRYPT';
   iterations?: number | null;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  failedAttempts: number;
+  lastChangedAt: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -31,6 +37,9 @@ export interface PasswordCredentialPersistenceDTO {
   salt: string;
   algorithm: 'BCRYPT' | 'ARGON2' | 'SCRYPT';
   iterations?: number | null;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  failed_attempts: number;
+  last_changed_at: number;
   created_at: number;
   updated_at: number;
 }
@@ -44,6 +53,9 @@ export interface PasswordCredentialServer {
   salt: string;
   algorithm: 'BCRYPT' | 'ARGON2' | 'SCRYPT';
   iterations?: number | null;
+  status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  failedAttempts: number;
+  lastChangedAt: number;
   createdAt: number;
   updatedAt: number;
 

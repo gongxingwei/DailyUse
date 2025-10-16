@@ -24,11 +24,11 @@ export interface RefreshTokenServerDTO {
  */
 export interface RefreshTokenPersistenceDTO {
   uuid: string;
-  session_uuid: string;
+  sessionUuid: string;
   token: string;
-  expires_at: number;
-  created_at: number;
-  used_at?: number | null;
+  expiresAt: number;
+  createdAt: number;
+  usedAt?: number | null;
 }
 
 // ============ 实体接口 ============

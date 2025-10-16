@@ -619,6 +619,29 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
   }
 
   public toClientDTO(): RepositoryStatisticsClientDTO {
+    const formatBytes = (bytes: bigint): string => {
+      if (bytes === BigInt(0)) return '0 B';
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let size = Number(bytes);
+      let unitIndex = 0;
+      while (size >= 1024 && unitIndex < units.length - 1) {
+        size /= 1024;
+        unitIndex++;
+      }
+      return `${size.toFixed(2)} ${units[unitIndex]}`;
+    };
+
+    const formatTimestamp = (timestamp: number): string => {
+      return new Date(timestamp).toLocaleString();
+    };
+
+    const totalRepos = this._totalRepositories || 1;
+    const sizeBytes = this._totalSizeBytes;
+    const activePercentage = Math.round((this._activeRepositories / totalRepos) * 100);
+    const archivedPercentage = Math.round((this._archivedRepositories / totalRepos) * 100);
+    const averageRepositorySize = (sizeBytes / BigInt(totalRepos)).toString();
+    const averageResourcesPerRepository = Math.round(this._totalResources / totalRepos);
+
     return {
       accountUuid: this._accountUuid,
       totalRepositories: this._totalRepositories,
@@ -634,6 +657,16 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
       totalSizeBytes: this._totalSizeBytes.toString(),
       lastUpdatedAt: this._lastUpdatedAt,
       createdAt: this._createdAt,
+
+      // UI-specific fields
+      formattedSize: formatBytes(this._totalSizeBytes),
+      formattedLastUpdated: formatTimestamp(this._lastUpdatedAt),
+      formattedCreatedAt: formatTimestamp(this._createdAt),
+      activePercentage,
+      archivedPercentage,
+      averageRepositorySize,
+      formattedAverageSize: formatBytes(BigInt(averageRepositorySize)),
+      averageResourcesPerRepository,
     };
   }
 

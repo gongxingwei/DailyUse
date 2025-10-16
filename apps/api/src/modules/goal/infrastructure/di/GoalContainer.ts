@@ -1,5 +1,6 @@
 import type { IGoalRepository } from '@dailyuse/domain-server';
-import { PrismaGoalRepository } from '../persistence/prisma/PrismaGoalRepository';
+import { PrismaGoalRepository } from '../repositories/PrismaGoalRepository';
+import prisma from '../../../../shared/db/prisma';
 
 /**
  * Goal 模块依赖注入容器
@@ -30,7 +31,7 @@ export class GoalContainer {
    */
   getGoalRepository(): IGoalRepository {
     if (!this.goalRepository) {
-      this.goalRepository = new PrismaGoalRepository();
+      this.goalRepository = new PrismaGoalRepository(prisma);
     }
     return this.goalRepository;
   }

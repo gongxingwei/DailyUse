@@ -8,6 +8,7 @@ import { Entity, generateUUID } from '@dailyuse/utils';
 
 type ICredentialHistoryServer = AuthenticationContracts.CredentialHistoryServer;
 type CredentialHistoryServerDTO = AuthenticationContracts.CredentialHistoryServerDTO;
+type CredentialHistoryClientDTO = AuthenticationContracts.CredentialHistoryClientDTO;
 type CredentialHistoryPersistenceDTO = AuthenticationContracts.CredentialHistoryPersistenceDTO;
 
 export class CredentialHistory extends Entity implements ICredentialHistoryServer {
@@ -91,7 +92,7 @@ export class CredentialHistory extends Entity implements ICredentialHistoryServe
     };
   }
 
-  public toClientDTO(): CredentialHistoryServerDTO {
+  public toClientDTO(): CredentialHistoryClientDTO {
     return {
       uuid: this.uuid,
       credentialUuid: this.credentialUuid,

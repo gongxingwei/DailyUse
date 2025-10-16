@@ -141,6 +141,16 @@ export class ResourceReference extends Entity implements IResourceReferenceServe
   }
 
   public toClientDTO(): ResourceReferenceClientDTO {
+    const formatDate = (ts: number | null | undefined) => {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
+    };
+
+    const getReferenceTypeLabel = (type: ReferenceType): string => {
+      // This could be mapped to a more user-friendly string
+      return type;
+    };
+
     return {
       uuid: this._uuid,
       sourceResourceUuid: this._sourceResourceUuid,
@@ -150,6 +160,12 @@ export class ResourceReference extends Entity implements IResourceReferenceServe
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
       lastVerifiedAt: this._lastVerifiedAt,
+
+      // UI 格式化属性
+      referenceTypeLabel: getReferenceTypeLabel(this._referenceType),
+      formattedCreatedAt: formatDate(this._createdAt),
+      formattedLastVerified: formatDate(this._lastVerifiedAt),
+      isVerified: !!this._lastVerifiedAt,
     };
   }
 

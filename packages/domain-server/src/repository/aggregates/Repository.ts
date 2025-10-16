@@ -612,4 +612,49 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
       updatedAt: dto.updated_at,
     });
   }
+
+  public toClientDTO(includeChildren = false): RepositoryContracts.RepositoryClientDTO {
+    const formatDate = (ts: number | null | undefined) => {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
+    };
+
+    const clientDTO: RepositoryContracts.RepositoryClientDTO = {
+      uuid: this._uuid,
+      accountUuid: this._accountUuid,
+      name: this._name,
+      type: this._type,
+      path: this._path,
+      description: this._description,
+      // @ts-expect-error: toClientDTO will be added to value objects
+      config: this._config.toClientDTO(),
+      relatedGoals: this._relatedGoals,
+      status: this._status,
+      // @ts-expect-error: toClientDTO will be added to value objects
+      git: this._git?.toClientDTO() ?? null,
+      // @ts-expect-error: toClientDTO will be added to value objects
+      syncStatus: this._syncStatus?.toClientDTO() ?? null,
+      // @ts-expect-error: toClientDTO will be added to value objects
+      stats: this._stats.toClientDTO(),
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+
+      // UI 格式化属性
+      formattedLastAccessed: formatDate(this._lastAccessedAt),
+      formattedCreatedAt: formatDate(this._createdAt),
+      formattedUpdatedAt: formatDate(this._updatedAt),
+      displayPath: this._path, // 可根据需要简化
+      statusLabel: this._status === RepositoryContracts.RepositoryStatus.ACTIVE ? '活跃' : '归档',
+      typeLabel: this._type === RepositoryContracts.RepositoryType.LOCAL ? '本地' : '远程',
+    };
+
+    if (includeChildren) {
+      clientDTO.resources =
+        this._resources.length > 0 ? this._resources.map((r) => r.toClientDTO(true)) : null;
+      clientDTO.explorer = this._explorer?.toClientDTO() ?? null;
+    }
+
+    return clientDTO;
+  }
 }

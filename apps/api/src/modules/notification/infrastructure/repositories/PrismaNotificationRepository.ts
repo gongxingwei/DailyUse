@@ -1,4 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import type { PrismaClient } from '@prisma/client';
+import prisma from '../../../../shared/db/prisma';
 import type { INotificationRepository } from '@dailyuse/domain-server';
 import { Notification, NotificationChannel, NotificationHistory } from '@dailyuse/domain-server';
 import type { NotificationContracts } from '@dailyuse/contracts';
@@ -60,11 +61,10 @@ export class PrismaNotificationRepository implements INotificationRepository {
           delivered_at: channel.deliveredAt?.getTime() ?? null,
           failed_at: channel.failedAt?.getTime() ?? null,
           error: channel.error,
-          retry_count: channel.retryCount,
+          send_attempts: channel.retryCount,
           max_retries: channel.maxRetries,
           response: channel.response,
           created_at: channel.createdAt.getTime(),
-          updated_at: channel.updatedAt.getTime(),
         });
         notification.addChannel(channelEntity);
       });
@@ -114,7 +114,6 @@ export class PrismaNotificationRepository implements INotificationRepository {
           createdAt: this.toDate(persistence.created_at) ?? new Date(),
           updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
           sentAt: this.toDate(persistence.sent_at),
-          deliveredAt: this.toDate(persistence.delivered_at),
           deletedAt: this.toDate(persistence.deleted_at),
         },
         update: {
@@ -134,7 +133,6 @@ export class PrismaNotificationRepository implements INotificationRepository {
           expiresAt: this.toDate(persistence.expires_at),
           updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
           sentAt: this.toDate(persistence.sent_at),
-          deliveredAt: this.toDate(persistence.delivered_at),
           deletedAt: this.toDate(persistence.deleted_at),
         },
       });
@@ -155,11 +153,10 @@ export class PrismaNotificationRepository implements INotificationRepository {
             deliveredAt: this.toDate(channelPersistence.delivered_at),
             failedAt: this.toDate(channelPersistence.failed_at),
             error: channelPersistence.error,
-            retryCount: channelPersistence.retry_count,
+            retryCount: channelPersistence.send_attempts,
             maxRetries: channelPersistence.max_retries,
             response: channelPersistence.response,
             createdAt: this.toDate(channelPersistence.created_at) ?? new Date(),
-            updatedAt: this.toDate(channelPersistence.updated_at) ?? new Date(),
           },
           update: {
             status: channelPersistence.status,
@@ -167,9 +164,8 @@ export class PrismaNotificationRepository implements INotificationRepository {
             deliveredAt: this.toDate(channelPersistence.delivered_at),
             failedAt: this.toDate(channelPersistence.failed_at),
             error: channelPersistence.error,
-            retryCount: channelPersistence.retry_count,
+            retryCount: channelPersistence.send_attempts,
             response: channelPersistence.response,
-            updatedAt: this.toDate(channelPersistence.updated_at) ?? new Date(),
           },
         });
       }

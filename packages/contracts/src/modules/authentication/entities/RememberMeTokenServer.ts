@@ -5,7 +5,7 @@
 
 import type { RememberMeTokenClientDTO } from './RememberMeTokenClient';
 
-import type { DeviceInfoServer } from '../value-objects/DeviceInfoServer';
+import type { DeviceInfoServer, DeviceInfoServerDTO } from '../value-objects/DeviceInfoServer';
 
 // ============ DTO 定义 ============
 
@@ -18,7 +18,7 @@ export interface RememberMeTokenServerDTO {
   accountUuid: string;
   token: string; // hashed
   tokenSeries: string;
-  device: DeviceInfoServer;
+  device: DeviceInfoServerDTO;
   status: 'ACTIVE' | 'USED' | 'REVOKED' | 'EXPIRED';
   usageCount: number;
   lastUsedAt?: number | null;

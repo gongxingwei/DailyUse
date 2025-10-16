@@ -15,6 +15,7 @@ import {
 } from '../value-objects';
 import { ReminderHistory } from '../entities';
 
+type ReminderTemplateClientDTO = ReminderContracts.ReminderTemplateClientDTO;
 type IReminderTemplateServer = ReminderContracts.ReminderTemplateServer;
 type ReminderTemplateServerDTO = ReminderContracts.ReminderTemplateServerDTO;
 type ReminderTemplatePersistenceDTO = ReminderContracts.ReminderTemplatePersistenceDTO;
@@ -670,6 +671,78 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
     return dto;
   }
 
+  public toClientDTO(includeChildren = false): ReminderTemplateClientDTO {
+    // Note: effectiveEnabled and controlledByGroup should ideally be passed in
+    // from an application service that has the context of the group.
+    // Here we default to the template's own state.
+    const effectiveEnabled = this.selfEnabled;
+    const controlledByGroup = !!this.groupUuid;
+
+    const typeText = this.type === 'ONE_TIME' ? '一次性' : '循环';
+    const statusText = this.status === 'ACTIVE' ? '活跃' : '暂停';
+    const importanceMap: Record<ImportanceLevel, string> = {
+      [ImportanceLevel.Vital]: '关键',
+      [ImportanceLevel.Important]: '重要',
+      [ImportanceLevel.Moderate]: '中等',
+      [ImportanceLevel.Minor]: '次要',
+      [ImportanceLevel.Trivial]: '琐碎',
+    };
+    const importanceText = importanceMap[this.importanceLevel];
+
+    // 简单的相对时间文本
+    const formatRelativeTime = (timestamp: number | null): string | undefined => {
+      if (!timestamp) return undefined;
+      const diff = timestamp - Date.now();
+      if (diff < 0) return `${Math.round(-diff / 3600000)} 小时前`;
+      return `${Math.round(diff / 3600000)} 小时后`;
+    };
+
+    const clientDTO: ReminderTemplateClientDTO = {
+      uuid: this.uuid,
+      accountUuid: this.accountUuid,
+      title: this.title,
+      description: this.description,
+      type: this.type,
+      trigger: this._trigger.toClientDTO(),
+      recurrence: this._recurrence ? this._recurrence.toClientDTO() : null,
+      activeTime: this._activeTime.toClientDTO(),
+      activeHours: this._activeHours ? this._activeHours.toClientDTO() : null,
+      notificationConfig: this._notificationConfig.toClientDTO(),
+      selfEnabled: this.selfEnabled,
+      status: this.status,
+      effectiveEnabled: effectiveEnabled,
+      groupUuid: this.groupUuid,
+      importanceLevel: this.importanceLevel,
+      tags: this.tags,
+      color: this.color,
+      icon: this.icon,
+      nextTriggerAt: this.nextTriggerAt,
+      stats: this._stats.toClientDTO(),
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      deletedAt: this.deletedAt,
+
+      // UI 扩展
+      displayTitle: this.title,
+      typeText,
+      triggerText: this._trigger.toClientDTO().displayText,
+      recurrenceText: this._recurrence?.toClientDTO().displayText,
+      statusText,
+      importanceText,
+      nextTriggerText: formatRelativeTime(this.nextTriggerAt),
+      isActive: this.status === 'ACTIVE',
+      isPaused: this.status === 'PAUSED',
+      lastTriggeredText: formatRelativeTime(this.stats.lastTriggeredAt ?? null),
+      controlledByGroup: controlledByGroup,
+    };
+
+    if (includeChildren && this.history) {
+      clientDTO.history = this.history.map((h) => h.toClientDTO());
+    }
+
+    return clientDTO;
+  }
+
   /**
    * 转换为 Persistence DTO
    */
@@ -680,11 +753,11 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       title: this.title,
       description: this.description,
       type: this.type,
-      trigger: JSON.stringify(this.trigger),
-      recurrence: this.recurrence ? JSON.stringify(this.recurrence) : null,
-      active_time: JSON.stringify(this.activeTime),
-      active_hours: this.activeHours ? JSON.stringify(this.activeHours) : null,
-      notification_config: JSON.stringify(this.notificationConfig),
+      trigger: JSON.stringify(this._trigger.toServerDTO()),
+      recurrence: this._recurrence ? JSON.stringify(this._recurrence.toServerDTO()) : null,
+      active_time: JSON.stringify(this._activeTime.toServerDTO()),
+      active_hours: this._activeHours ? JSON.stringify(this._activeHours.toServerDTO()) : null,
+      notification_config: JSON.stringify(this._notificationConfig.toServerDTO()),
       self_enabled: this.selfEnabled,
       status: this.status,
       group_uuid: this.groupUuid,
@@ -693,7 +766,7 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       color: this.color,
       icon: this.icon,
       next_trigger_at: this.nextTriggerAt,
-      stats: JSON.stringify(this.stats),
+      stats: JSON.stringify(this._stats.toServerDTO()),
       created_at: this.createdAt,
       updated_at: this.updatedAt,
       deleted_at: this.deletedAt,

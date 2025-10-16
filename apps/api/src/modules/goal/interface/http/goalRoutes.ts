@@ -11,7 +11,7 @@ import { GoalController } from './GoalController';
  * 4. 路由分组：基本CRUD、关键结果、搜索统计
  */
 
-const router = Router();
+const router: Router = Router();
 
 // ===== 基本 CRUD =====
 

@@ -14,23 +14,40 @@ type NotificationType = NotificationContracts.NotificationType;
 export class PrismaNotificationTemplateRepository implements INotificationTemplateRepository {
   constructor(private prisma: PrismaClient) {}
 
-  private mapToEntity(data: any): NotificationTemplate {
-    return NotificationTemplate.fromPersistenceDTO({
+  private mapToEntity(data: any): NotificationTemplate | null {
+    if (!data) return null;
+
+    // The 'data' object is from Prisma, map it to the Persistence DTO
+    const dto: NotificationContracts.NotificationTemplateAggregatePersistenceDTO = {
       uuid: data.uuid,
       name: data.name,
-      display_name: data.displayName,
       description: data.description,
-      category: data.category,
       type: data.type,
-      title_template: data.titleTemplate,
-      content_template: data.contentTemplate,
-      variables: data.variables,
-      default_actions: data.defaultActions,
-      is_system: data.isSystem,
-      is_active: data.isActive,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-    });
+      category: data.category,
+      isActive: data.isActive,
+      isSystemTemplate: data.isSystem,
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
+
+      // Core template fields
+      templateTitle: data.titleTemplate,
+      templateContent: data.contentTemplate,
+      templateVariables: data.variables,
+
+      // These fields do not exist on the base Prisma model, so they are undefined.
+      // The domain entity's fromPersistenceDTO should handle this.
+      templateLayout: undefined,
+      templateStyle: undefined,
+      templateEmailSubject: undefined,
+      templateEmailHtmlBody: undefined,
+      templateEmailTextBody: undefined,
+      templatePushTitle: undefined,
+      templatePushBody: undefined,
+      templatePushIcon: undefined,
+      templatePushSound: undefined,
+    };
+
+    return NotificationTemplate.fromPersistenceDTO(dto);
   }
 
   private toDate(timestamp: number | null | undefined): Date | null | undefined {
@@ -40,36 +57,35 @@ export class PrismaNotificationTemplateRepository implements INotificationTempla
 
   async save(template: NotificationTemplate): Promise<void> {
     const persistence = template.toPersistenceDTO();
-
+    // Only map fields that exist in the Prisma model
     await this.prisma.notificationTemplate.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
         name: persistence.name,
-        displayName: persistence.display_name,
+        displayName: persistence.name, // Assuming name is used for displayName
         description: persistence.description,
-        category: persistence.category,
         type: persistence.type,
-        titleTemplate: persistence.title_template,
-        contentTemplate: persistence.content_template,
-        variables: persistence.variables,
-        defaultActions: persistence.default_actions,
-        isSystem: persistence.is_system,
-        isActive: persistence.is_active,
-        createdAt: this.toDate(persistence.created_at) ?? new Date(),
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        category: persistence.category,
+        isActive: persistence.isActive,
+        isSystem: persistence.isSystemTemplate,
+        titleTemplate: persistence.templateTitle,
+        contentTemplate: persistence.templateContent,
+        variables: persistence.templateVariables,
+        defaultActions: persistence.templatePushBody, // Example mapping, adjust as needed
       },
       update: {
-        displayName: persistence.display_name,
+        name: persistence.name,
+        displayName: persistence.name,
         description: persistence.description,
-        category: persistence.category,
         type: persistence.type,
-        titleTemplate: persistence.title_template,
-        contentTemplate: persistence.content_template,
-        variables: persistence.variables,
-        defaultActions: persistence.default_actions,
-        isActive: persistence.is_active,
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        category: persistence.category,
+        isActive: persistence.isActive,
+        isSystem: persistence.isSystemTemplate,
+        titleTemplate: persistence.templateTitle,
+        contentTemplate: persistence.templateContent,
+        variables: persistence.templateVariables,
+        defaultActions: persistence.templatePushBody, // Example mapping, adjust as needed
       },
     });
   }
@@ -79,54 +95,54 @@ export class PrismaNotificationTemplateRepository implements INotificationTempla
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findAll(options?: { includeInactive?: boolean }): Promise<NotificationTemplate[]> {
-    const where = options?.includeInactive ? {} : { isActive: true };
+  async findAll(): Promise<NotificationTemplate[]> {
+    const templates = await this.prisma.notificationTemplate.findMany();
+    return templates
+      .map((t) => this.mapToEntity(t))
+      .filter((t): t is NotificationTemplate => t !== null);
+  }
+
+  async findActives(): Promise<NotificationTemplate[]> {
     const templates = await this.prisma.notificationTemplate.findMany({
-      where,
-      orderBy: { name: 'asc' },
+      where: { isActive: true },
     });
-    return templates.map((t) => this.mapToEntity(t));
+    return templates
+      .map((t) => this.mapToEntity(t))
+      .filter((t): t is NotificationTemplate => t !== null);
+  }
+
+  async findByType(type: NotificationType): Promise<NotificationTemplate[]> {
+    const templates = await this.prisma.notificationTemplate.findMany({
+      where: { type },
+    });
+    return templates
+      .map((t) => this.mapToEntity(t))
+      .filter((t): t is NotificationTemplate => t !== null);
+  }
+
+  async findByCategory(category: NotificationCategory): Promise<NotificationTemplate[]> {
+    const templates = await this.prisma.notificationTemplate.findMany({
+      where: { category },
+    });
+    return templates
+      .map((t) => this.mapToEntity(t))
+      .filter((t): t is NotificationTemplate => t !== null);
   }
 
   async findByName(name: string): Promise<NotificationTemplate | null> {
-    const data = await this.prisma.notificationTemplate.findUnique({ where: { name } });
-    return data ? this.mapToEntity(data) : null;
-  }
-
-  async findByCategory(
-    category: NotificationCategory,
-    options?: { activeOnly?: boolean },
-  ): Promise<NotificationTemplate[]> {
-    const where: any = { category };
-    if (options?.activeOnly) where.isActive = true;
-
-    const templates = await this.prisma.notificationTemplate.findMany({
-      where,
-      orderBy: { name: 'asc' },
+    const template = await this.prisma.notificationTemplate.findUnique({
+      where: { name },
     });
-    return templates.map((t) => this.mapToEntity(t));
-  }
-
-  async findByType(
-    type: NotificationType,
-    options?: { activeOnly?: boolean },
-  ): Promise<NotificationTemplate[]> {
-    const where: any = { type };
-    if (options?.activeOnly) where.isActive = true;
-
-    const templates = await this.prisma.notificationTemplate.findMany({
-      where,
-      orderBy: { name: 'asc' },
-    });
-    return templates.map((t) => this.mapToEntity(t));
+    return this.mapToEntity(template);
   }
 
   async findSystemTemplates(): Promise<NotificationTemplate[]> {
     const templates = await this.prisma.notificationTemplate.findMany({
-      where: { isSystem: true, isActive: true },
-      orderBy: { name: 'asc' },
+      where: { isSystem: true },
     });
-    return templates.map((t) => this.mapToEntity(t));
+    return templates
+      .map((t) => this.mapToEntity(t))
+      .filter((t): t is NotificationTemplate => t !== null);
   }
 
   async delete(uuid: string): Promise<void> {

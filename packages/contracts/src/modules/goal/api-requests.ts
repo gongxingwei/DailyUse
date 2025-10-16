@@ -13,6 +13,7 @@ import type {
 } from './aggregates';
 import type { KeyResultServerDTO, GoalReviewServerDTO } from './entities';
 import type { GoalStatus, ImportanceLevel, UrgencyLevel, FolderType } from './enums';
+import type { BatchOperationResponseDTO } from '../../shared/dtos';
 
 // ============ Goal 请求/响应 ============
 
@@ -279,14 +280,7 @@ export interface BatchDeleteGoalsRequest {
 /**
  * 批量操作响应
  */
-export interface BatchOperationResponse {
-  successCount: number;
-  failedCount: number;
-  errors?: Array<{
-    goalUuid: string;
-    error: string;
-  }>;
-}
+export type BatchOperationResponse = BatchOperationResponseDTO;
 
 // ============ 导出/导入 ============
 

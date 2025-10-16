@@ -5,6 +5,7 @@
 
 import type {
   RecurrenceConfigServerDTO,
+  RecurrenceConfigClientDTO,
   RecurrenceType,
   WeekDay,
   DailyRecurrence,
@@ -131,6 +132,46 @@ export class RecurrenceConfig extends ValueObject implements RecurrenceConfigSer
       daily: this.daily,
       weekly: this.weekly,
       customDays: this.customDays,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): RecurrenceConfigClientDTO {
+    let displayText = '未配置';
+    const weekDayMap: Record<WeekDay, string> = {
+      MONDAY: '一',
+      TUESDAY: '二',
+      WEDNESDAY: '三',
+      THURSDAY: '四',
+      FRIDAY: '五',
+      SATURDAY: '六',
+      SUNDAY: '日',
+    };
+
+    switch (this.type) {
+      case 'DAILY':
+        displayText = this.daily?.interval === 1 ? '每天' : `每 ${this.daily?.interval} 天`;
+        break;
+      case 'WEEKLY':
+        if (this.weekly) {
+          const days = this.weekly.weekDays.map((d) => weekDayMap[d]).join('、');
+          displayText =
+            this.weekly.interval === 1 ? `每周 ${days}` : `每 ${this.weekly.interval} 周的 ${days}`;
+        }
+        break;
+      case 'CUSTOM_DAYS':
+        displayText = `在 ${this.customDays?.dates.length} 个指定日期`;
+        break;
+    }
+
+    return {
+      type: this.type,
+      daily: this.daily,
+      weekly: this.weekly,
+      customDays: this.customDays,
+      displayText,
     };
   }
 

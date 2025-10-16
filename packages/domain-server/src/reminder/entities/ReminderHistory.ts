@@ -6,6 +6,7 @@
 import type {
   ReminderHistoryServer,
   ReminderHistoryServerDTO,
+  ReminderHistoryClientDTO,
   ReminderHistoryPersistenceDTO,
   TriggerResult,
   NotificationChannel,
@@ -186,6 +187,22 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
   }
 
   public toClientDTO(): ReminderHistoryClientDTO {
+    const resultTextMap: Record<TriggerResult, string> = {
+      SUCCESS: '成功',
+      FAILED: '失败',
+      SKIPPED: '跳过',
+    };
+
+    const formatTimeAgo = (timestamp: number): string => {
+      const diff = Date.now() - timestamp;
+      const hours = Math.floor(diff / 3600000);
+      if (hours > 0) return `${hours} 小时前`;
+      const minutes = Math.floor(diff / 60000);
+      return `${minutes} 分钟前`;
+    };
+
+    const channelsText = this.notificationChannels?.join(' + ');
+
     return {
       uuid: this.uuid,
       templateUuid: this.templateUuid,
@@ -195,6 +212,11 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
       notificationSent: this.notificationSent,
       notificationChannels: this.notificationChannels,
       createdAt: this.createdAt,
+
+      // UI 扩展
+      resultText: resultTextMap[this.result],
+      timeAgo: formatTimeAgo(this.triggeredAt),
+      channelsText: channelsText,
     };
   }
 

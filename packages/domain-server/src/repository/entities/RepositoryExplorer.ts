@@ -290,6 +290,23 @@ export class RepositoryExplorerEntity extends Entity implements IRepositoryExplo
   }
 
   public toClientDTO(): RepositoryExplorerClientDTO {
+    const formatDate = (ts: number | null | undefined) => {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
+    };
+
+    const getPathBreadcrumbs = (path: string): string[] => {
+      if (path === '/') return ['/'];
+      const parts = path.split('/').filter(Boolean);
+      return ['/', ...parts];
+    };
+
+    const getActiveFiltersCount = (filters: ResourceFilters): number => {
+      return Object.values(filters).filter(
+        (value) => value !== undefined && value !== null && value !== '',
+      ).length;
+    };
+
     return {
       uuid: this._uuid,
       repositoryUuid: this._repositoryUuid,
@@ -304,6 +321,14 @@ export class RepositoryExplorerEntity extends Entity implements IRepositoryExplo
       lastScanAt: this._lastScanAt,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
+
+      // UI 格式化属性
+      displayPath: this._currentPath,
+      pathBreadcrumbs: getPathBreadcrumbs(this._currentPath),
+      formattedLastScan: formatDate(this._lastScanAt),
+      activeFiltersCount: getActiveFiltersCount(this._filters),
+      canNavigateBack: this._navigationIndex > 0,
+      canNavigateForward: this._navigationIndex < this._navigationHistory.length - 1,
     };
   }
 

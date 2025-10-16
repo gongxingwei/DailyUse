@@ -60,54 +60,42 @@ export class PrismaSettingRepository implements ISettingRepository {
 
   async save(setting: Setting): Promise<void> {
     const persistence = setting.toPersistenceDTO();
+    const createData = {
+      uuid: persistence.uuid,
+      key: persistence.key,
+      name: persistence.name,
+      description: persistence.description,
+      valueType: persistence.value_type,
+      value: persistence.value,
+      defaultValue: persistence.default_value,
+      scope: persistence.scope,
+      accountUuid: persistence.account_uuid,
+      deviceId: persistence.device_id,
+      groupUuid: persistence.group_uuid,
+      validation: persistence.validation,
+      ui: persistence.ui,
+      isEncrypted: persistence.is_encrypted,
+      isReadOnly: persistence.is_read_only,
+      isSystemSetting: persistence.is_system_setting,
+      syncConfig: persistence.sync_config,
+      historyData: persistence.history,
+      createdAt: this.toDate(persistence.created_at) ?? new Date(),
+      updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+      deletedAt: this.toDate(persistence.deleted_at),
+    };
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.setting.upsert({
-        where: { uuid: persistence.uuid },
-        create: {
-          uuid: persistence.uuid,
-          key: persistence.key,
-          name: persistence.name,
-          description: persistence.description,
-          valueType: persistence.value_type,
-          value: persistence.value,
-          defaultValue: persistence.default_value,
-          scope: persistence.scope,
-          accountUuid: persistence.account_uuid,
-          deviceId: persistence.device_id,
-          groupUuid: persistence.group_uuid,
-          validation: persistence.validation,
-          ui: persistence.ui,
-          isEncrypted: persistence.is_encrypted,
-          isReadOnly: persistence.is_read_only,
-          isSystemSetting: persistence.is_system_setting,
-          syncConfig: persistence.sync_config,
-          historyData: persistence.history,
-          createdAt: this.toDate(persistence.created_at) ?? new Date(),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
-        },
-        update: {
-          name: persistence.name,
-          description: persistence.description,
-          valueType: persistence.value_type,
-          value: persistence.value,
-          defaultValue: persistence.default_value,
-          scope: persistence.scope,
-          accountUuid: persistence.account_uuid,
-          deviceId: persistence.device_id,
-          groupUuid: persistence.group_uuid,
-          validation: persistence.validation,
-          ui: persistence.ui,
-          isEncrypted: persistence.is_encrypted,
-          isReadOnly: persistence.is_read_only,
-          isSystemSetting: persistence.is_system_setting,
-          syncConfig: persistence.sync_config,
-          historyData: persistence.history,
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
-        },
-      });
+    const updateData = {
+      description: persistence.description,
+      value: persistence.value,
+      historyData: persistence.history,
+      updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+      deletedAt: this.toDate(persistence.deleted_at),
+    };
+
+    await this.prisma.setting.upsert({
+      where: { uuid: persistence.uuid },
+      create: createData,
+      update: updateData,
     });
   }
 
@@ -190,51 +178,42 @@ export class PrismaSettingRepository implements ISettingRepository {
     await this.prisma.$transaction(async (tx) => {
       for (const setting of settings) {
         const persistence = setting.toPersistenceDTO();
+        const createData = {
+          uuid: persistence.uuid,
+          key: persistence.key,
+          name: persistence.name,
+          description: persistence.description,
+          valueType: persistence.value_type,
+          value: persistence.value,
+          defaultValue: persistence.default_value,
+          scope: persistence.scope,
+          accountUuid: persistence.account_uuid,
+          deviceId: persistence.device_id,
+          groupUuid: persistence.group_uuid,
+          validation: persistence.validation,
+          ui: persistence.ui,
+          isEncrypted: persistence.is_encrypted,
+          isReadOnly: persistence.is_read_only,
+          isSystemSetting: persistence.is_system_setting,
+          syncConfig: persistence.sync_config,
+          historyData: persistence.history,
+          createdAt: this.toDate(persistence.created_at) ?? new Date(),
+          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+          deletedAt: this.toDate(persistence.deleted_at),
+        };
+
+        const updateData = {
+          description: persistence.description,
+          value: persistence.value,
+          historyData: persistence.history,
+          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+          deletedAt: this.toDate(persistence.deleted_at),
+        };
+
         await tx.setting.upsert({
           where: { uuid: persistence.uuid },
-          create: {
-            uuid: persistence.uuid,
-            key: persistence.key,
-            name: persistence.name,
-            description: persistence.description,
-            valueType: persistence.value_type,
-            value: persistence.value,
-            defaultValue: persistence.default_value,
-            scope: persistence.scope,
-            accountUuid: persistence.account_uuid,
-            deviceId: persistence.device_id,
-            groupUuid: persistence.group_uuid,
-            validation: persistence.validation,
-            ui: persistence.ui,
-            isEncrypted: persistence.is_encrypted,
-            isReadOnly: persistence.is_read_only,
-            isSystemSetting: persistence.is_system_setting,
-            syncConfig: persistence.sync_config,
-            historyData: persistence.history,
-            createdAt: this.toDate(persistence.created_at) ?? new Date(),
-            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-            deletedAt: this.toDate(persistence.deleted_at),
-          },
-          update: {
-            name: persistence.name,
-            description: persistence.description,
-            valueType: persistence.value_type,
-            value: persistence.value,
-            defaultValue: persistence.default_value,
-            scope: persistence.scope,
-            accountUuid: persistence.account_uuid,
-            deviceId: persistence.device_id,
-            groupUuid: persistence.group_uuid,
-            validation: persistence.validation,
-            ui: persistence.ui,
-            isEncrypted: persistence.is_encrypted,
-            isReadOnly: persistence.is_read_only,
-            isSystemSetting: persistence.is_system_setting,
-            syncConfig: persistence.sync_config,
-            historyData: persistence.history,
-            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-            deletedAt: this.toDate(persistence.deleted_at),
-          },
+          create: createData,
+          update: updateData,
         });
       }
     });

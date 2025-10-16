@@ -3,19 +3,14 @@
  * 任务统计聚合根 - 服务端接口
  */
 
+import type { TemplateStatsInfoDTO } from '../../../shared/dtos';
+
 // ============ 子统计信息接口 ============
 
 /**
  * 模板统计信息
  */
-export interface TemplateStatsInfo {
-  totalTemplates: number;
-  activeTemplates: number;
-  pausedTemplates: number;
-  archivedTemplates: number;
-  oneTimeTemplates: number;
-  recurringTemplates: number;
-}
+export type TemplateStatsInfo = TemplateStatsInfoDTO;
 
 /**
  * 实例统计信息
@@ -86,13 +81,49 @@ export interface TaskStatisticsServerDTO {
  */
 export interface TaskStatisticsPersistenceDTO {
   uuid: string;
-  account_uuid: string;
-  template_stats: string; // JSON string
-  instance_stats: string; // JSON string
-  completion_stats: string; // JSON string
-  time_stats: string; // JSON string
-  distribution_stats: string; // JSON string
-  calculated_at: number;
+  accountUuid: string;
+
+  // Flattened template_stats
+  templateTotal: number;
+  templateActive: number;
+  templatePaused: number;
+  templateArchived: number;
+  templateOneTime: number;
+  templateRecurring: number;
+
+  // Flattened instance_stats
+  instanceTotal: number;
+  instanceToday: number;
+  instanceWeek: number;
+  instanceMonth: number;
+  instancePending: number;
+  instanceInProgress: number;
+  instanceCompleted: number;
+  instanceSkipped: number;
+  instanceExpired: number;
+
+  // Flattened completion_stats
+  completionToday: number;
+  completionWeek: number;
+  completionMonth: number;
+  completionTotal: number;
+  completionAvgTime?: number | null;
+  completionRate: number;
+
+  // Flattened time_stats
+  timeAllDay: number;
+  timePoint: number;
+  timeRange: number;
+  timeOverdue: number;
+  timeUpcoming: number;
+
+  // Distribution stats can remain as JSON
+  distributionByImportance: string; // JSON
+  distributionByUrgency: string; // JSON
+  distributionByFolder: string; // JSON
+  distributionByTag: string; // JSON
+
+  calculatedAt: number;
 }
 
 // ============ 领域事件 ============

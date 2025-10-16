@@ -10,6 +10,7 @@ import { SessionHistory } from '../entities/SessionHistory';
 import { DeviceInfo } from '../value-objects/DeviceInfo';
 import crypto from 'crypto';
 
+type AuthSessionClientDTO = AuthenticationContracts.AuthSessionClientDTO;
 type IAuthSessionServer = AuthenticationContracts.AuthSessionServer;
 type AuthSessionServerDTO = AuthenticationContracts.AuthSessionServerDTO;
 type AuthSessionPersistenceDTO = AuthenticationContracts.AuthSessionPersistenceDTO;
@@ -188,27 +189,50 @@ export class AuthSession extends AggregateRoot implements IAuthSessionServer {
   }
 
   public static fromPersistenceDTO(dto: AuthSessionPersistenceDTO): AuthSession {
-    const refreshToken = JSON.parse(dto.refresh_token);
-    const device = JSON.parse(dto.device);
-    const location = dto.location ? JSON.parse(dto.location) : null;
+    const refreshToken = RefreshToken.fromPersistenceDTO({
+      uuid: '', // Assuming not stored directly, can be generated or omitted
+      sessionUuid: dto.uuid,
+      token: dto.refreshToken,
+      expiresAt: dto.refreshTokenExpiresAt,
+      createdAt: 0, // Assuming not stored, default value
+      usedAt: null, // Assuming not stored, default value
+    });
+
+    const device = DeviceInfo.fromServerDTO({
+      deviceId: dto.deviceId,
+      deviceType: dto.deviceType === 'DESKTOP' ? 'DESKTOP' : 'UNKNOWN',
+      os: dto.deviceOs,
+      browser: dto.deviceBrowser,
+      deviceFingerprint: '', // Assuming not stored
+      firstSeenAt: 0, // Assuming not stored
+      lastSeenAt: 0, // Assuming not stored
+    });
+
+    const location = {
+      country: dto.locationCountry,
+      region: dto.locationRegion,
+      city: dto.locationCity,
+      timezone: dto.locationTimezone,
+    };
+
     const history = JSON.parse(dto.history);
 
     return new AuthSession({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
-      accessToken: dto.access_token,
-      accessTokenExpiresAt: dto.access_token_expires_at,
-      refreshToken: RefreshToken.fromPersistenceDTO(refreshToken),
-      device: DeviceInfo.fromServerDTO(device),
+      accountUuid: dto.accountUuid,
+      accessToken: dto.accessToken,
+      accessTokenExpiresAt: dto.accessTokenExpiresAt,
+      refreshToken,
+      device,
       status: dto.status,
-      ipAddress: dto.ip_address,
+      ipAddress: dto.ipAddress,
       location,
-      lastActivityAt: dto.last_activity_at,
-      lastActivityType: dto.last_activity_type,
+      lastActivityAt: dto.lastActivityAt,
+      lastActivityType: dto.lastActivityType,
       history: history.map((h: any) => SessionHistory.fromPersistenceDTO(h)),
-      createdAt: dto.created_at,
-      expiresAt: dto.expires_at,
-      revokedAt: dto.revoked_at,
+      createdAt: dto.createdAt,
+      expiresAt: dto.expiresAt,
+      revokedAt: dto.revokedAt,
     });
   }
 
@@ -303,7 +327,7 @@ export class AuthSession extends AggregateRoot implements IAuthSessionServer {
     };
   }
 
-  public toClientDTO(): AuthSessionServerDTO {
+  public toClientDTO(): AuthSessionClientDTO {
     return {
       uuid: this.uuid,
       accountUuid: this.accountUuid,
@@ -324,22 +348,40 @@ export class AuthSession extends AggregateRoot implements IAuthSessionServer {
   }
 
   public toPersistenceDTO(): AuthSessionPersistenceDTO {
+    const refreshTokenDTO = this._refreshToken.toPersistenceDTO();
+    const deviceDTO = this._device.toServerDTO();
+
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
-      access_token: this._accessToken,
-      access_token_expires_at: this._accessTokenExpiresAt,
-      refresh_token: JSON.stringify(this._refreshToken.toPersistenceDTO()),
-      device: JSON.stringify(this._device.toServerDTO()),
+      accountUuid: this.accountUuid,
+      accessToken: this._accessToken,
+      accessTokenExpiresAt: this._accessTokenExpiresAt,
+
+      // Flattened refresh token
+      refreshToken: refreshTokenDTO.token,
+      refreshTokenExpiresAt: refreshTokenDTO.expiresAt,
+
+      // Flattened device info
+      deviceId: deviceDTO.deviceId,
+      deviceType: deviceDTO.deviceType,
+      deviceOs: deviceDTO.os,
+      deviceBrowser: deviceDTO.browser,
+
       status: this._status,
-      ip_address: this._ipAddress,
-      location: this._location ? JSON.stringify(this._location) : null,
-      last_activity_at: this._lastActivityAt,
-      last_activity_type: this._lastActivityType,
+      ipAddress: this._ipAddress,
+
+      // Flattened location
+      locationCountry: this._location?.country,
+      locationRegion: this._location?.region,
+      locationCity: this._location?.city,
+      locationTimezone: this._location?.timezone,
+
+      lastActivityAt: this._lastActivityAt,
+      lastActivityType: this._lastActivityType,
       history: JSON.stringify(this._history.map((h) => h.toPersistenceDTO())),
-      created_at: this.createdAt,
-      expires_at: this.expiresAt,
-      revoked_at: this._revokedAt,
+      createdAt: this.createdAt,
+      expiresAt: this.expiresAt,
+      revokedAt: this._revokedAt,
     };
   }
 

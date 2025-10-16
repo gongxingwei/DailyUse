@@ -53,6 +53,7 @@ export interface DeviceInfoServer {
   matchesFingerprint(fingerprint: string): boolean;
 
   toServerDTO(): DeviceInfoServerDTO;
+  toClientDTO(): DeviceInfoClientDTO;
 }
 
 export interface DeviceInfoServerStatic {
@@ -71,3 +72,5 @@ export interface DeviceInfoServerStatic {
   }): DeviceInfoServer;
   fromServerDTO(dto: DeviceInfoServerDTO): DeviceInfoServer;
 }
+
+import type { DeviceInfoClient, DeviceInfoClientDTO } from './DeviceInfoClient';

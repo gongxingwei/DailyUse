@@ -18,6 +18,7 @@ import type {
   ActiveHoursConfigServerDTO,
   NotificationConfigServerDTO,
 } from './value-objects';
+import type { BatchOperationResponseDTO as SharedBatchOperationResponseDTO } from '../../shared/dtos';
 
 // ============ Reminder Template 请求 ============
 
@@ -191,7 +192,6 @@ export interface ReminderTriggerResponseDTO {
  * 批量操作响应
  */
 export interface BatchOperationResponseDTO {
-  success: boolean;
   successCount: number;
   failedCount: number;
   errors?: Array<{

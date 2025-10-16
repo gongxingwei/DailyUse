@@ -10,42 +10,56 @@ import { ReminderStatistics } from '@dailyuse/domain-server';
 export class PrismaReminderStatisticsRepository implements IReminderStatisticsRepository {
   constructor(private prisma: PrismaClient) {}
 
-  async upsert(statistics: ReminderStatistics): Promise<void> {
+  private toDate(timestamp: number): Date {
+    return new Date(timestamp);
+  }
+
+  private mapToEntity(data: any): ReminderStatistics {
+    return ReminderStatistics.fromPersistenceDTO({
+      uuid: data.uuid,
+      account_uuid: data.accountUuid,
+      template_stats: data.templateStats,
+      group_stats: data.groupStats,
+      trigger_stats: data.triggerStats,
+      calculated_at: data.calculatedAt.getTime(),
+    });
+  }
+
+  async save(statistics: ReminderStatistics): Promise<void> {
     const persistence = statistics.toPersistenceDTO();
+    const data = {
+      uuid: persistence.uuid,
+      accountUuid: persistence.account_uuid,
+      templateStats: persistence.template_stats,
+      groupStats: persistence.group_stats,
+      triggerStats: persistence.trigger_stats,
+      calculatedAt: this.toDate(persistence.calculated_at),
+    };
 
     await this.prisma.reminderStatistics.upsert({
       where: { accountUuid: persistence.account_uuid },
-      create: {
-        accountUuid: persistence.account_uuid,
-        totalTemplates: persistence.total_templates,
-        activeTemplates: persistence.active_templates,
-        pausedTemplates: persistence.paused_templates,
-        totalGroups: persistence.total_groups,
-        totalTriggeredToday: persistence.total_triggered_today,
-        totalTriggeredThisWeek: persistence.total_triggered_this_week,
-        totalTriggeredThisMonth: persistence.total_triggered_this_month,
-        totalTriggeredAllTime: persistence.total_triggered_all_time,
-        successRate: persistence.success_rate,
-        averageResponseTime: persistence.average_response_time,
-        lastTriggeredAt: persistence.last_triggered_at,
-        lastUpdatedAt: persistence.last_updated_at,
-        createdAt: persistence.created_at,
-      },
+      create: data,
       update: {
-        totalTemplates: persistence.total_templates,
-        activeTemplates: persistence.active_templates,
-        pausedTemplates: persistence.paused_templates,
-        totalGroups: persistence.total_groups,
-        totalTriggeredToday: persistence.total_triggered_today,
-        totalTriggeredThisWeek: persistence.total_triggered_this_week,
-        totalTriggeredThisMonth: persistence.total_triggered_this_month,
-        totalTriggeredAllTime: persistence.total_triggered_all_time,
-        successRate: persistence.success_rate,
-        averageResponseTime: persistence.average_response_time,
-        lastTriggeredAt: persistence.last_triggered_at,
-        lastUpdatedAt: persistence.last_updated_at,
+        templateStats: data.templateStats,
+        groupStats: data.groupStats,
+        triggerStats: data.triggerStats,
+        calculatedAt: data.calculatedAt,
       },
     });
+  }
+
+  async findOrCreate(accountUuid: string): Promise<ReminderStatistics> {
+    const existing = await this.prisma.reminderStatistics.findUnique({
+      where: { accountUuid },
+    });
+
+    if (existing) {
+      return this.mapToEntity(existing);
+    }
+
+    const newStats = ReminderStatistics.create({ accountUuid });
+    await this.save(newStats);
+    return newStats;
   }
 
   async findByAccountUuid(accountUuid: string): Promise<ReminderStatistics | null> {
@@ -53,27 +67,7 @@ export class PrismaReminderStatisticsRepository implements IReminderStatisticsRe
       where: { accountUuid },
     });
 
-    if (!record) {
-      return null;
-    }
-
-    return ReminderStatistics.fromPersistenceDTO({
-      id: record.id,
-      account_uuid: record.accountUuid,
-      total_templates: record.totalTemplates,
-      active_templates: record.activeTemplates,
-      paused_templates: record.pausedTemplates,
-      total_groups: record.totalGroups,
-      total_triggered_today: record.totalTriggeredToday,
-      total_triggered_this_week: record.totalTriggeredThisWeek,
-      total_triggered_this_month: record.totalTriggeredThisMonth,
-      total_triggered_all_time: record.totalTriggeredAllTime,
-      success_rate: record.successRate,
-      average_response_time: record.averageResponseTime,
-      last_triggered_at: record.lastTriggeredAt,
-      last_updated_at: record.lastUpdatedAt,
-      created_at: record.createdAt,
-    });
+    return record ? this.mapToEntity(record) : null;
   }
 
   async delete(accountUuid: string): Promise<void> {

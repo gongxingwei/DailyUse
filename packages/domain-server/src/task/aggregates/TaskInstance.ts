@@ -155,6 +155,8 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
         actualDuration ?? (this._actualStartTime ? now - this._actualStartTime : null),
       note: note ?? null,
       rating: rating ?? null,
+      taskUuid: this.uuid,
+      completionStatus: 'completed',
     });
 
     if (note) {
@@ -337,7 +339,7 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       timeConfig: TaskTimeConfig.fromServerDTO(dto.timeConfig),
       status: dto.status,
       completionRecord: dto.completionRecord
-        ? CompletionRecord.fromServerDTO(dto.completionRecord)
+        ? CompletionRecord.fromServerDTO(dto.completionRecord, dto.uuid)
         : null,
       skipRecord: dto.skipRecord ? SkipRecord.fromServerDTO(dto.skipRecord) : null,
       actualStartTime: dto.actualStartTime,
@@ -357,13 +359,13 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
       templateUuid: dto.template_uuid,
       accountUuid: dto.account_uuid,
       instanceDate: dto.instance_date,
-      timeConfig: TaskTimeConfig.fromPersistenceDTO(JSON.parse(dto.time_config)),
+      timeConfig: TaskTimeConfig.fromPersistenceDTO(JSON.parse(dto.time_config as string)),
       status: dto.status as TaskInstanceStatus,
       completionRecord: dto.completion_record
-        ? CompletionRecord.fromPersistenceDTO(JSON.parse(dto.completion_record))
+        ? CompletionRecord.fromPersistenceDTO(JSON.parse(dto.completion_record as string))
         : null,
       skipRecord: dto.skip_record
-        ? SkipRecord.fromPersistenceDTO(JSON.parse(dto.skip_record))
+        ? SkipRecord.fromPersistenceDTO(JSON.parse(dto.skip_record as string))
         : null,
       actualStartTime: dto.actual_start_time,
       actualEndTime: dto.actual_end_time,

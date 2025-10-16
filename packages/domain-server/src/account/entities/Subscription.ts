@@ -143,19 +143,19 @@ export class Subscription extends Entity implements ISubscriptionServer {
   public static fromPersistenceDTO(dto: SubscriptionPersistenceDTO): Subscription {
     return new Subscription({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       plan: dto.plan,
       status: dto.status,
-      startDate: dto.start_date,
-      endDate: dto.end_date,
-      renewalDate: dto.renewal_date,
-      autoRenew: dto.auto_renew,
-      paymentMethod: dto.payment_method,
-      billingCycle: dto.billing_cycle,
+      startDate: dto.startDate,
+      endDate: dto.endDate,
+      renewalDate: dto.renewalDate,
+      autoRenew: dto.autoRenew,
+      paymentMethod: dto.paymentMethod,
+      billingCycle: dto.billingCycle,
       amount: dto.amount,
       currency: dto.currency,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -237,19 +237,19 @@ export class Subscription extends Entity implements ISubscriptionServer {
   public toPersistenceDTO(): SubscriptionPersistenceDTO {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       plan: this._plan,
       status: this._status,
-      start_date: this._startDate,
-      end_date: this._endDate,
-      renewal_date: this._renewalDate,
-      auto_renew: this._autoRenew,
-      payment_method: this._paymentMethod,
-      billing_cycle: this._billingCycle,
+      startDate: this._startDate,
+      endDate: this._endDate,
+      renewalDate: this._renewalDate,
+      autoRenew: this._autoRenew,
+      paymentMethod: this._paymentMethod,
+      billingCycle: this._billingCycle,
       amount: this._amount,
       currency: this._currency,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

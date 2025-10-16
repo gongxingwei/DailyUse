@@ -7,6 +7,7 @@ import type { TaskContracts } from '@dailyuse/contracts';
 import { ValueObject } from '@dailyuse/utils';
 
 type ICompletionRecord = TaskContracts.CompletionRecordServerDTO;
+type CompletionRecordPersistenceDTO = TaskContracts.CompletionRecordPersistenceDTO;
 
 /**
  * CompletionRecord 值对象
@@ -22,12 +23,16 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
   public readonly note: string | null;
   public readonly rating: number | null;
   public readonly actualDuration: number | null;
+  public readonly taskUuid: string;
+  public readonly completionStatus: string; // e.g., 'completed', 'skipped'
 
   constructor(params: {
     completedAt: number;
     note?: string | null;
     rating?: number | null;
     actualDuration?: number | null;
+    taskUuid: string;
+    completionStatus: string;
   }) {
     super();
 
@@ -50,6 +55,8 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
     this.note = params.note ?? null;
     this.rating = params.rating ?? null;
     this.actualDuration = params.actualDuration ?? null;
+    this.taskUuid = params.taskUuid;
+    this.completionStatus = params.completionStatus;
 
     // 确保不可变
     Object.freeze(this);
@@ -64,6 +71,7 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
       note: string | null;
       rating: number | null;
       actualDuration: number | null;
+      completionStatus: string;
     }>,
   ): CompletionRecord {
     return new CompletionRecord({
@@ -71,6 +79,8 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
       note: changes.note ?? this.note,
       rating: changes.rating ?? this.rating,
       actualDuration: changes.actualDuration ?? this.actualDuration,
+      taskUuid: this.taskUuid, // taskUuid should not be changed with this method
+      completionStatus: changes.completionStatus ?? this.completionStatus,
     });
   }
 
@@ -86,7 +96,9 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
       this.completedAt === other.completedAt &&
       this.note === other.note &&
       this.rating === other.rating &&
-      this.actualDuration === other.actualDuration
+      this.actualDuration === other.actualDuration &&
+      this.taskUuid === other.taskUuid &&
+      this.completionStatus === other.completionStatus
     );
   }
 
@@ -116,35 +128,43 @@ export class CompletionRecord extends ValueObject implements ICompletionRecord {
     };
   }
 
-  public toPersistenceDTO(): TaskContracts.CompletionRecordPersistenceDTO {
+  public toPersistenceDTO(): CompletionRecordPersistenceDTO {
     return {
-      completed_at: this.completedAt,
+      taskUuid: this.taskUuid,
+      completedAt: this.completedAt,
+      completionStatus: this.completionStatus,
       note: this.note,
       rating: this.rating,
-      actual_duration: this.actualDuration,
+      actualDuration: this.actualDuration,
     };
   }
 
   /**
    * 静态工厂方法
    */
-  public static fromServerDTO(dto: TaskContracts.CompletionRecordServerDTO): CompletionRecord {
+  public static fromServerDTO(
+    dto: TaskContracts.CompletionRecordServerDTO,
+    taskUuid: string,
+    completionStatus = 'completed',
+  ): CompletionRecord {
     return new CompletionRecord({
       completedAt: dto.completedAt,
       note: dto.note,
       rating: dto.rating,
       actualDuration: dto.actualDuration,
+      taskUuid,
+      completionStatus,
     });
   }
 
-  public static fromPersistenceDTO(
-    dto: TaskContracts.CompletionRecordPersistenceDTO,
-  ): CompletionRecord {
+  public static fromPersistenceDTO(dto: CompletionRecordPersistenceDTO): CompletionRecord {
     return new CompletionRecord({
-      completedAt: dto.completed_at,
+      taskUuid: dto.taskUuid,
+      completedAt: dto.completedAt,
+      completionStatus: dto.completionStatus,
       note: dto.note,
       rating: dto.rating,
-      actualDuration: dto.actual_duration,
+      actualDuration: dto.actualDuration,
     });
   }
 

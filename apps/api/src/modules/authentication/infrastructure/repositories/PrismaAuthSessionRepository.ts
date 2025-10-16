@@ -1,40 +1,40 @@
 import { PrismaClient } from '@prisma/client';
+import type { AuthSession as PrismaAuthSession } from '@prisma/client';
 import type { IAuthSessionRepository } from '@dailyuse/domain-server';
 import { AuthSession } from '@dailyuse/domain-server';
+import type { AuthenticationContracts } from '@dailyuse/contracts';
 
-/**
- * AuthSession 聚合根 Prisma 仓储实现
- * 负责 AuthSession 及其所有子实体的完整持久化
- *
- * 聚合根包含：
- * - AuthSession (主实体)
- * - RefreshToken[] (子实体集合，JSON存储)
- * - SessionHistory[] (子实体集合，JSON存储)
- * - DeviceInfo (值对象，JSON存储)
- */
 export class PrismaAuthSessionRepository implements IAuthSessionRepository {
   constructor(private prisma: PrismaClient) {}
 
-  // ===== 数据映射方法 =====
+  private mapToEntity(data: PrismaAuthSession): AuthSession {
+    const device = JSON.parse(data.device);
+    const location = data.userAgent ? JSON.parse(data.userAgent) : null;
 
-  private mapToEntity(data: any): AuthSession {
-    return AuthSession.fromPersistenceDTO({
+    const persistenceDTO: AuthenticationContracts.AuthSessionPersistenceDTO = {
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
-      access_token: data.accessToken,
-      refresh_token: data.refreshTokens,
-      device_info: data.deviceInfo,
-      status: data.status,
-      ip_address: data.ipAddress,
-      user_agent: data.userAgent,
-      session_metadata: data.sessionMetadata,
-      last_activity_at: data.lastActivityAt?.getTime() ?? null,
-      expires_at: data.expiresAt?.getTime() ?? null,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      revoked_at: data.revokedAt?.getTime() ?? null,
+      accountUuid: data.accountUuid,
+      accessToken: data.accessToken,
+      accessTokenExpiresAt: data.accessTokenExpiresAt.getTime(),
+      refreshToken: data.refreshToken,
+      refreshTokenExpiresAt: data.refreshTokenExpiresAt.getTime(),
+      deviceId: device.deviceId,
+      deviceType: device.deviceType,
+      deviceOs: device.os,
+      deviceBrowser: device.browser,
+      status: data.status as AuthenticationContracts.SessionStatus,
+      ipAddress: data.ipAddress ?? '',
+      locationCountry: location?.country,
+      locationRegion: location?.region,
+      locationCity: location?.city,
+      locationTimezone: location?.timezone,
+      lastActivityAt: data.lastAccessedAt.getTime(),
       history: data.history,
-    });
+      createdAt: data.createdAt.getTime(),
+      expiresAt: data.accessTokenExpiresAt.getTime(), // Using accessTokenExpiresAt as the session expiry
+      revokedAt: data.revokedAt?.getTime(),
+    };
+    return AuthSession.fromPersistenceDTO(persistenceDTO);
   }
 
   private toDate(timestamp: number | null | undefined): Date | null | undefined {
@@ -42,46 +42,63 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
     return new Date(timestamp);
   }
 
-  // ===== IAuthSessionRepository 接口实现 =====
-
   async save(session: AuthSession): Promise<void> {
     const persistence = session.toPersistenceDTO();
+    const {
+      uuid,
+      accountUuid,
+      accessToken,
+      accessTokenExpiresAt,
+      refreshToken,
+      refreshTokenExpiresAt,
+      status,
+      ipAddress,
+      history,
+      lastActivityAt,
+      revokedAt,
+    } = persistence;
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.authSession.upsert({
-        where: { uuid: persistence.uuid },
-        create: {
-          uuid: persistence.uuid,
-          accountUuid: persistence.account_uuid,
-          accessToken: persistence.access_token,
-          refreshTokens: persistence.refresh_tokens,
-          deviceInfo: persistence.device_info,
-          status: persistence.status,
-          ipAddress: persistence.ip_address,
-          userAgent: persistence.user_agent,
-          sessionMetadata: persistence.session_metadata,
-          lastActivityAt: this.toDate(persistence.last_activity_at),
-          expiresAt: this.toDate(persistence.expires_at),
-          createdAt: this.toDate(persistence.created_at) ?? new Date(),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          revokedAt: this.toDate(persistence.revoked_at),
-          history: persistence.history,
-        },
-        update: {
-          accessToken: persistence.access_token,
-          refreshTokens: persistence.refresh_tokens,
-          deviceInfo: persistence.device_info,
-          status: persistence.status,
-          ipAddress: persistence.ip_address,
-          userAgent: persistence.user_agent,
-          sessionMetadata: persistence.session_metadata,
-          lastActivityAt: this.toDate(persistence.last_activity_at),
-          expiresAt: this.toDate(persistence.expires_at),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          revokedAt: this.toDate(persistence.revoked_at),
-          history: persistence.history,
-        },
-      });
+    const device = JSON.stringify({
+      deviceId: persistence.deviceId,
+      deviceType: persistence.deviceType,
+      os: persistence.deviceOs,
+      browser: persistence.deviceBrowser,
+    });
+
+    const userAgent = JSON.stringify({
+      country: persistence.locationCountry,
+      region: persistence.locationRegion,
+      city: persistence.locationCity,
+      timezone: persistence.locationTimezone,
+    });
+
+    const dataForPrisma = {
+      uuid,
+      accountUuid,
+      status,
+      accessToken,
+      accessTokenExpiresAt: new Date(accessTokenExpiresAt),
+      refreshToken,
+      refreshTokenExpiresAt: new Date(refreshTokenExpiresAt),
+      device,
+      ipAddress,
+      userAgent,
+      history,
+      lastAccessedAt: new Date(lastActivityAt),
+      revokedAt: this.toDate(revokedAt),
+    };
+
+    await this.prisma.authSession.upsert({
+      where: { uuid },
+      create: {
+        ...dataForPrisma,
+        createdAt: new Date(persistence.createdAt),
+        updatedAt: new Date(),
+      },
+      update: {
+        ...dataForPrisma,
+        updatedAt: new Date(),
+      },
     });
   }
 
@@ -104,24 +121,15 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
   }
 
   async findByRefreshToken(refreshToken: string): Promise<AuthSession | null> {
-    // 需要在 JSON 字段中查找，这可能需要特殊处理
-    // 简化版本：查找所有会话，然后在应用层过滤
-    const sessions = await this.prisma.authSession.findMany();
-    const found = sessions.find((s) => {
-      const tokens = s.refreshTokens ? JSON.parse(s.refreshTokens as string) : [];
-      return tokens.some((t: any) => t.token === refreshToken);
-    });
-    return found ? this.mapToEntity(found) : null;
+    const data = await this.prisma.authSession.findUnique({ where: { refreshToken } });
+    return data ? this.mapToEntity(data) : null;
   }
 
   async findByDeviceId(deviceId: string): Promise<AuthSession[]> {
-    // 需要在 JSON 字段中查找，简化版本
-    const sessions = await this.prisma.authSession.findMany();
-    const filtered = sessions.filter((s) => {
-      const deviceInfo = s.deviceInfo ? JSON.parse(s.deviceInfo as string) : null;
-      return deviceInfo?.deviceId === deviceId;
+    const sessions = await this.prisma.authSession.findMany({
+      where: { device: { contains: `"deviceId":"${deviceId}"` } },
     });
-    return filtered.map((s) => this.mapToEntity(s));
+    return sessions.map((s) => this.mapToEntity(s));
   }
 
   async findActiveSessions(accountUuid: string): Promise<AuthSession[]> {
@@ -129,9 +137,9 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
       where: {
         accountUuid,
         status: 'ACTIVE',
-        expiresAt: { gt: new Date() },
+        accessTokenExpiresAt: { gt: new Date() },
       },
-      orderBy: { lastActivityAt: 'desc' },
+      orderBy: { lastAccessedAt: 'desc' },
     });
     return sessions.map((s) => this.mapToEntity(s));
   }
@@ -170,7 +178,7 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
   async deleteExpired(): Promise<number> {
     const result = await this.prisma.authSession.deleteMany({
       where: {
-        OR: [{ status: 'EXPIRED' }, { expiresAt: { lt: new Date() } }],
+        OR: [{ status: 'EXPIRED' }, { accessTokenExpiresAt: { lt: new Date() } }],
       },
     });
     return result.count;

@@ -8,6 +8,7 @@ import { Entity, generateUUID } from '@dailyuse/utils';
 
 type IPasswordCredentialServer = AuthenticationContracts.PasswordCredentialServer;
 type PasswordCredentialServerDTO = AuthenticationContracts.PasswordCredentialServerDTO;
+type PasswordCredentialClientDTO = AuthenticationContracts.PasswordCredentialClientDTO;
 type PasswordCredentialPersistenceDTO = AuthenticationContracts.PasswordCredentialPersistenceDTO;
 
 export class PasswordCredential extends Entity implements IPasswordCredentialServer {
@@ -18,6 +19,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
   public readonly iterations?: number | null;
   public readonly createdAt: number;
   public readonly updatedAt: number;
+  public readonly status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+  public readonly failedAttempts: number;
+  public readonly lastChangedAt: number;
 
   constructor(params: {
     uuid?: string;
@@ -28,6 +32,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
     iterations?: number | null;
     createdAt?: number;
     updatedAt?: number;
+    status?: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
+    failedAttempts?: number;
+    lastChangedAt?: number;
   }) {
     super(params.uuid ?? generateUUID());
     this.credentialUuid = params.credentialUuid;
@@ -37,6 +44,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
     this.iterations = params.iterations ?? null;
     this.createdAt = params.createdAt ?? Date.now();
     this.updatedAt = params.updatedAt ?? Date.now();
+    this.status = params.status ?? 'ACTIVE';
+    this.failedAttempts = params.failedAttempts ?? 0;
+    this.lastChangedAt = params.lastChangedAt ?? Date.now();
   }
 
   // Factory methods
@@ -65,6 +75,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       iterations: dto.iterations,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
+      status: dto.status,
+      failedAttempts: dto.failedAttempts,
+      lastChangedAt: dto.lastChangedAt,
     });
   }
 
@@ -78,6 +91,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       iterations: dto.iterations,
       createdAt: dto.created_at,
       updatedAt: dto.updated_at,
+      status: dto.status,
+      failedAttempts: dto.failed_attempts,
+      lastChangedAt: dto.last_changed_at,
     });
   }
 
@@ -103,19 +119,22 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       salt: this.salt,
       algorithm: this.algorithm,
       iterations: this.iterations,
+      status: this.status,
+      failedAttempts: this.failedAttempts,
+      lastChangedAt: this.lastChangedAt,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
   }
 
-  public toClientDTO(): PasswordCredentialServerDTO {
+  public toClientDTO(): PasswordCredentialClientDTO {
     return {
       uuid: this.uuid,
       credentialUuid: this.credentialUuid,
-      hashedPassword: this.hashedPassword,
-      salt: this.salt,
       algorithm: this.algorithm,
-      iterations: this.iterations,
+      status: this.status,
+      failedAttempts: this.failedAttempts,
+      lastChangedAt: this.lastChangedAt,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
@@ -129,6 +148,9 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       salt: this.salt,
       algorithm: this.algorithm,
       iterations: this.iterations,
+      status: this.status,
+      failed_attempts: this.failedAttempts,
+      last_changed_at: this.lastChangedAt,
       created_at: this.createdAt,
       updated_at: this.updatedAt,
     };

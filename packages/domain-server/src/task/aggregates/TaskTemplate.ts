@@ -59,48 +59,27 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   private _instances: TaskInstance[];
 
   // ===== 构造函数（私有，通过工厂方法创建） =====
-  private constructor(params: {
-    uuid?: string;
-    accountUuid: string;
-    title: string;
-    description?: string | null;
-    taskType: TaskType;
-    timeConfig: TaskTimeConfig;
-    recurrenceRule?: RecurrenceRule | null;
-    reminderConfig?: TaskReminderConfig | null;
-    importance: ImportanceLevel;
-    urgency: UrgencyLevel;
-    goalBinding?: TaskGoalBinding | null;
-    folderUuid?: string | null;
-    tags?: string[];
-    color?: string | null;
-    status: TaskTemplateStatus;
-    lastGeneratedDate?: number | null;
-    generateAheadDays?: number;
-    createdAt: number;
-    updatedAt: number;
-    deletedAt?: number | null;
-  }) {
-    super(params.uuid || AggregateRoot.generateUUID());
-    this._accountUuid = params.accountUuid;
-    this._title = params.title;
-    this._description = params.description ?? null;
-    this._taskType = params.taskType;
-    this._timeConfig = params.timeConfig;
-    this._recurrenceRule = params.recurrenceRule ?? null;
-    this._reminderConfig = params.reminderConfig ?? null;
-    this._importance = params.importance;
-    this._urgency = params.urgency;
-    this._goalBinding = params.goalBinding ?? null;
-    this._folderUuid = params.folderUuid ?? null;
-    this._tags = params.tags ?? [];
-    this._color = params.color ?? null;
-    this._status = params.status;
-    this._lastGeneratedDate = params.lastGeneratedDate ?? null;
-    this._generateAheadDays = params.generateAheadDays ?? 7;
-    this._createdAt = params.createdAt;
-    this._updatedAt = params.updatedAt;
-    this._deletedAt = params.deletedAt ?? null;
+  private constructor(props: TaskTemplateProps, uuid?: string) {
+    super(uuid || AggregateRoot.generateUUID());
+    this._accountUuid = props.accountUuid;
+    this._title = props.title;
+    this._description = props.description ?? null;
+    this._taskType = props.taskType;
+    this._timeConfig = props.timeConfig;
+    this._recurrenceRule = props.recurrenceRule ?? null;
+    this._reminderConfig = props.reminderConfig ?? null;
+    this._importance = props.importance;
+    this._urgency = props.urgency;
+    this._goalBinding = props.goalBinding ?? null;
+    this._folderUuid = props.folderUuid ?? null;
+    this._tags = props.tags;
+    this._color = props.color ?? null;
+    this._status = props.status;
+    this._lastGeneratedDate = props.lastGeneratedDate ?? null;
+    this._generateAheadDays = props.generateAheadDays;
+    this._createdAt = props.createdAt;
+    this._updatedAt = props.updatedAt;
+    this._deletedAt = props.deletedAt ?? null;
     this._history = [];
     this._instances = [];
   }
@@ -187,7 +166,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   }
 
   public get history(): TaskTemplateHistory[] {
-    return [...this._history];
+    return this._history;
   }
 
   public get instances(): TaskInstance[] {
@@ -481,9 +460,10 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     const history = TaskTemplateHistory.create({
       templateUuid: this.uuid,
       action,
-      changes,
+      changes: changes ? JSON.stringify(changes) : null,
     });
     this._history.push(history);
+    this._updatedAt = Date.now();
   }
 
   // ===== 子实体管理方法 =====
@@ -617,29 +597,56 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
   public toPersistenceDTO(): TaskTemplatePersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       title: this._title,
       description: this._description,
-      task_type: this._taskType,
-      time_config: JSON.stringify(this._timeConfig.toPersistenceDTO()),
-      recurrence_rule: this._recurrenceRule
-        ? JSON.stringify(this._recurrenceRule.toPersistenceDTO())
-        : null,
-      reminder_config: this._reminderConfig
-        ? JSON.stringify(this._reminderConfig.toPersistenceDTO())
-        : null,
-      importance: this._importance as any,
-      urgency: this._urgency as any,
-      goal_binding: this._goalBinding ? JSON.stringify(this._goalBinding.toPersistenceDTO()) : null,
-      folder_uuid: this._folderUuid,
+      taskType: this._taskType,
+
+      // Flattened time_config
+      timeConfigType: this._timeConfig.timeType as 'POINT' | 'RANGE' | 'ALL_DAY',
+      timeConfigStartTime: this._timeConfig.startDate,
+      timeConfigEndTime: this._timeConfig.endDate,
+      timeConfigDurationMinutes:
+        this._timeConfig.timeRange &&
+        this._timeConfig.timeRange.end &&
+        this._timeConfig.timeRange.start
+          ? (this._timeConfig.timeRange.end - this._timeConfig.timeRange.start) / 60000
+          : undefined,
+
+      // Flattened recurrence_rule
+      recurrenceRuleType: this._recurrenceRule?.frequency,
+      recurrenceRuleInterval: this._recurrenceRule?.interval,
+      recurrenceRuleDaysOfWeek: this._recurrenceRule?.daysOfWeek
+        ? JSON.stringify(this._recurrenceRule.daysOfWeek)
+        : undefined,
+      recurrenceRuleDayOfMonth: undefined, // Not implemented in VO
+      recurrenceRuleMonthOfYear: undefined, // Not implemented in VO
+      recurrenceRuleEndDate: this._recurrenceRule?.endDate,
+      recurrenceRuleCount: this._recurrenceRule?.occurrences,
+
+      // Flattened reminder_config
+      reminderConfigEnabled: this._reminderConfig?.enabled,
+      reminderConfigTimeOffsetMinutes: this._reminderConfig?.triggers[0]?.relativeValue,
+      reminderConfigUnit: this._reminderConfig?.triggers[0]?.relativeUnit,
+      reminderConfigChannel: this._reminderConfig ? 'PUSH' : undefined,
+
+      importance: this._importance,
+      urgency: this._urgency,
+
+      // Flattened goal_binding
+      goalBindingGoalUuid: this._goalBinding?.goalUuid,
+      goalBindingKeyResultUuid: this._goalBinding?.keyResultUuid,
+      goalBindingIncrementValue: this._goalBinding?.incrementValue,
+
+      folderUuid: this._folderUuid,
       tags: JSON.stringify(this._tags),
       color: this._color,
       status: this._status,
-      last_generated_date: this._lastGeneratedDate,
-      generate_ahead_days: this._generateAheadDays,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      deleted_at: this._deletedAt,
+      lastGeneratedDate: this._lastGeneratedDate,
+      generateAheadDays: this._generateAheadDays,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
     };
   }
 
@@ -661,6 +668,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     folderUuid?: string;
     tags?: string[];
     color?: string;
+    generateAheadDays?: number;
   }): TaskTemplate {
     const now = Date.now();
     const template = new TaskTemplate({
@@ -673,12 +681,14 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       reminderConfig: params.reminderConfig,
       importance: params.importance ?? ImportanceLevel.Moderate,
       urgency: params.urgency ?? UrgencyLevel.Medium,
+      goalBinding: null, // Initialize as null
       folderUuid: params.folderUuid,
-      tags: params.tags,
+      tags: params.tags ?? [],
       color: params.color,
       status: 'ACTIVE' as TaskTemplateStatus,
       createdAt: now,
       updatedAt: now,
+      generateAheadDays: params.generateAheadDays ?? 30, // Default value
     });
 
     template.addHistory('created');
@@ -689,30 +699,34 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 从 ServerDTO 恢复
    */
   public static fromServerDTO(dto: TaskTemplateServerDTO): TaskTemplate {
-    const template = new TaskTemplate({
-      uuid: dto.uuid,
-      accountUuid: dto.accountUuid,
-      title: dto.title,
-      description: dto.description,
-      taskType: dto.taskType,
-      timeConfig: TaskTimeConfig.fromServerDTO(dto.timeConfig),
-      recurrenceRule: dto.recurrenceRule ? RecurrenceRule.fromServerDTO(dto.recurrenceRule) : null,
-      reminderConfig: dto.reminderConfig
-        ? TaskReminderConfig.fromServerDTO(dto.reminderConfig)
-        : null,
-      importance: dto.importance,
-      urgency: dto.urgency,
-      goalBinding: dto.goalBinding ? TaskGoalBinding.fromServerDTO(dto.goalBinding) : null,
-      folderUuid: dto.folderUuid,
-      tags: dto.tags,
-      color: dto.color,
-      status: dto.status,
-      lastGeneratedDate: dto.lastGeneratedDate,
-      generateAheadDays: dto.generateAheadDays,
-      createdAt: dto.createdAt,
-      updatedAt: dto.updatedAt,
-      deletedAt: dto.deletedAt,
-    });
+    const template = new TaskTemplate(
+      {
+        accountUuid: dto.accountUuid,
+        title: dto.title,
+        description: dto.description,
+        taskType: dto.taskType,
+        timeConfig: TaskTimeConfig.fromServerDTO(dto.timeConfig),
+        recurrenceRule: dto.recurrenceRule
+          ? RecurrenceRule.fromServerDTO(dto.recurrenceRule)
+          : null,
+        reminderConfig: dto.reminderConfig
+          ? TaskReminderConfig.fromServerDTO(dto.reminderConfig)
+          : null,
+        importance: dto.importance,
+        urgency: dto.urgency,
+        goalBinding: dto.goalBinding ? TaskGoalBinding.fromServerDTO(dto.goalBinding) : null,
+        folderUuid: dto.folderUuid,
+        tags: dto.tags,
+        color: dto.color,
+        status: dto.status,
+        lastGeneratedDate: dto.lastGeneratedDate,
+        generateAheadDays: dto.generateAheadDays,
+        createdAt: dto.createdAt,
+        updatedAt: dto.updatedAt,
+        deletedAt: dto.deletedAt,
+      },
+      dto.uuid,
+    );
 
     // 恢复历史记录
     if (dto.history) {
@@ -731,34 +745,71 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 从 PersistenceDTO 恢复
    */
   public static fromPersistenceDTO(dto: TaskTemplatePersistenceDTO): TaskTemplate {
-    return new TaskTemplate({
-      uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+    const timeConfig = new TaskTimeConfig({
+      timeType: dto.timeConfigType as TaskContracts.TimeType,
+      startDate: dto.timeConfigStartTime,
+      endDate: dto.timeConfigEndTime,
+    });
+
+    let recurrenceRule = null;
+    if (dto.recurrenceRuleType) {
+      recurrenceRule = new RecurrenceRule({
+        frequency: dto.recurrenceRuleType as TaskContracts.RecurrenceFrequency,
+        interval: dto.recurrenceRuleInterval ?? 1,
+        daysOfWeek: dto.recurrenceRuleDaysOfWeek ? JSON.parse(dto.recurrenceRuleDaysOfWeek) : [],
+        endDate: dto.recurrenceRuleEndDate,
+        occurrences: dto.recurrenceRuleCount,
+      });
+    }
+
+    let reminderConfig = null;
+    if (dto.reminderConfigEnabled) {
+      const triggers = [
+        {
+          type: 'RELATIVE',
+          relativeValue: dto.reminderConfigTimeOffsetMinutes,
+          relativeUnit: dto.reminderConfigUnit,
+        },
+      ];
+      reminderConfig = new TaskReminderConfig({
+        enabled: dto.reminderConfigEnabled,
+        triggers: triggers as any, // Cast to any to avoid type issues
+      });
+    }
+
+    let goalBinding = null;
+    if (dto.goalBindingGoalUuid) {
+      goalBinding = new TaskGoalBinding({
+        goalUuid: dto.goalBindingGoalUuid,
+        keyResultUuid: dto.goalBindingKeyResultUuid ?? '',
+        incrementValue: dto.goalBindingIncrementValue ?? 0,
+      });
+    }
+
+    const tags = dto.tags ? JSON.parse(dto.tags) : [];
+
+    const props: TaskTemplateProps = {
+      accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description,
-      taskType: dto.task_type as TaskType,
-      timeConfig: TaskTimeConfig.fromPersistenceDTO(JSON.parse(dto.time_config)),
-      recurrenceRule: dto.recurrence_rule
-        ? RecurrenceRule.fromPersistenceDTO(JSON.parse(dto.recurrence_rule))
-        : null,
-      reminderConfig: dto.reminder_config
-        ? TaskReminderConfig.fromPersistenceDTO(JSON.parse(dto.reminder_config))
-        : null,
-      importance: dto.importance as any as ImportanceLevel,
-      urgency: dto.urgency as any as UrgencyLevel,
-      goalBinding: dto.goal_binding
-        ? TaskGoalBinding.fromPersistenceDTO(JSON.parse(dto.goal_binding))
-        : null,
-      folderUuid: dto.folder_uuid,
-      tags: JSON.parse(dto.tags),
+      taskType: dto.taskType as TaskType,
+      timeConfig,
+      recurrenceRule,
+      reminderConfig,
+      importance: dto.importance as ImportanceLevel,
+      urgency: dto.urgency as UrgencyLevel,
+      goalBinding,
+      folderUuid: dto.folderUuid,
+      tags,
       color: dto.color,
       status: dto.status as TaskTemplateStatus,
-      lastGeneratedDate: dto.last_generated_date,
-      generateAheadDays: dto.generate_ahead_days,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at,
-    });
+      lastGeneratedDate: dto.lastGeneratedDate,
+      generateAheadDays: dto.generateAheadDays,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt,
+    };
+    return new TaskTemplate(props, dto.uuid);
   }
 
   // ===== 辅助方法 =====
@@ -802,4 +853,26 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     };
     return map[this._status];
   }
+}
+
+interface TaskTemplateProps {
+  accountUuid: string;
+  title: string;
+  description?: string | null;
+  taskType: TaskType;
+  timeConfig: TaskTimeConfig;
+  recurrenceRule?: RecurrenceRule | null;
+  reminderConfig?: TaskReminderConfig | null;
+  importance: ImportanceLevel;
+  urgency: UrgencyLevel;
+  goalBinding?: TaskGoalBinding | null;
+  folderUuid?: string | null;
+  tags: string[];
+  color?: string | null;
+  status: TaskTemplateStatus;
+  lastGeneratedDate?: number | null;
+  generateAheadDays: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }

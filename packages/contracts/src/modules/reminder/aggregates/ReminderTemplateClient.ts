@@ -22,6 +22,7 @@ import type {
   ReminderStatsServerDTO,
   ReminderStatsClientDTO,
 } from '../value-objects';
+import type { ReminderHistoryClientDTO } from '../entities/ReminderHistoryClient';
 
 // ============ DTO 定义 ============
 
@@ -52,6 +53,9 @@ export interface ReminderTemplateClientDTO {
   createdAt: number;
   updatedAt: number;
   deletedAt?: number | null;
+
+  // ===== 子实体 DTO =====
+  history?: ReminderHistoryClientDTO[] | null; // 提醒历史列表（可选加载）
 
   // UI 扩展
   displayTitle: string;

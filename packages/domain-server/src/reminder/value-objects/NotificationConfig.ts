@@ -5,6 +5,7 @@
 
 import type {
   NotificationConfigServerDTO,
+  NotificationConfigClientDTO,
   NotificationChannel,
   SoundConfig,
   VibrationConfig,
@@ -117,6 +118,31 @@ export class NotificationConfig extends ValueObject implements NotificationConfi
       sound: this.sound,
       vibration: this.vibration,
       actions: this.actions,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): NotificationConfigClientDTO {
+    const channelMap: Record<NotificationChannel, string> = {
+      IN_APP: '应用内',
+      PUSH: '推送',
+      EMAIL: '邮件',
+      SMS: '短信',
+    };
+    const channelsText = this.channels.map((c) => channelMap[c]).join(' + ');
+
+    return {
+      channels: this.channels,
+      title: this.title,
+      body: this.body,
+      sound: this.sound,
+      vibration: this.vibration,
+      actions: this.actions,
+      channelsText,
+      hasSoundEnabled: this.sound?.enabled ?? false,
+      hasVibrationEnabled: this.vibration?.enabled ?? false,
     };
   }
 

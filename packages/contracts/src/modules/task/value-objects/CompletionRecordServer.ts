@@ -29,8 +29,10 @@ export interface CompletionRecordServerDTO {
 }
 
 export interface CompletionRecordPersistenceDTO {
-  completed_at: number;
-  actual_duration?: number | null;
+  taskUuid: string;
+  completedAt: number;
+  completionStatus: string;
+  actualDuration?: number | null;
   note?: string | null;
   rating?: number | null;
 }

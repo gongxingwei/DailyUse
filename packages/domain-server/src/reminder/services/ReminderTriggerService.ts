@@ -92,15 +92,16 @@ export class ReminderTriggerService {
     }
 
     // 记录触发历史（成功）
-    const history = template.recordTrigger({
-      triggerTime,
+    const history = template.createHistory({
+      triggeredAt: triggerTime,
       result: TriggerResult.SUCCESS,
-      message: reason || '正常触发',
     });
+    template.addHistory(history);
 
     // 计算下次触发时间
-    const nextTriggerTime = this.calculateNextTriggerTime(template, triggerTime);
-    template.updateNextTriggerTime(nextTriggerTime);
+    const nextTriggerTime = template.calculateNextTrigger();
+    // The `calculateNextTrigger` method should update the internal state.
+    // template.updateNextTriggerTime(nextTriggerTime);
 
     // 保存模板（包括历史记录）
     await this.templateRepository.save(template);
@@ -126,11 +127,12 @@ export class ReminderTriggerService {
     error: string,
     triggerTime: number = Date.now(),
   ): Promise<void> {
-    template.recordTrigger({
-      triggerTime,
+    const history = template.createHistory({
+      triggeredAt: triggerTime,
       result: TriggerResult.FAILED,
-      message: error,
+      error: error,
     });
+    template.addHistory(history);
 
     await this.templateRepository.save(template);
     await this.updateStatistics(template.accountUuid, TriggerResult.FAILED);
@@ -144,11 +146,12 @@ export class ReminderTriggerService {
     reason: string,
     triggerTime: number = Date.now(),
   ): Promise<void> {
-    template.recordTrigger({
-      triggerTime,
+    const history = template.createHistory({
+      triggeredAt: triggerTime,
       result: TriggerResult.SKIPPED,
-      message: reason,
+      error: reason,
     });
+    template.addHistory(history);
 
     await this.templateRepository.save(template);
     await this.updateStatistics(template.accountUuid, TriggerResult.SKIPPED);
@@ -157,11 +160,9 @@ export class ReminderTriggerService {
   /**
    * 批量触发提醒
    */
-  async triggerRemindersBatch(
-    params: ITriggerReminderParams[],
-  ): Promise<ITriggerReminderResult[]> {
+  async triggerRemindersBatch(params: ITriggerReminderParams[]): Promise<ITriggerReminderResult[]> {
     const results: ITriggerReminderResult[] = [];
-    
+
     for (const param of params) {
       try {
         const result = await this.triggerReminder(param);
@@ -176,7 +177,7 @@ export class ReminderTriggerService {
         });
       }
     }
-    
+
     return results;
   }
 
@@ -185,16 +186,9 @@ export class ReminderTriggerService {
    *
    * 基于当前触发时间和重复配置计算
    */
-  calculateNextTriggerTime(
-    template: ReminderTemplate,
-    currentTriggerTime: number,
-  ): number | null {
-    const recurrence = template.recurrenceConfig;
-    if (!recurrence || !recurrence.isEnabled) {
-      return null; // 不重复
-    }
-
-    return template.calculateNextTriggerTime(currentTriggerTime);
+  calculateNextTriggerTime(template: ReminderTemplate, currentTriggerTime: number): number | null {
+    // Recurrence logic is now handled within the ReminderTemplate aggregate
+    return template.calculateNextTrigger();
   }
 
   /**
@@ -229,10 +223,10 @@ export class ReminderTriggerService {
    */
   private async updateStatistics(accountUuid: string, result: TriggerResult): Promise<void> {
     const statistics = await this.statisticsRepository.findOrCreate(accountUuid);
-    
+
     // 这里只是简单更新，实际的统计计算由 ReminderStatistics 聚合根的 calculate() 方法完成
     // 在实际使用时，应该定期调用 statistics.calculate() 来重新计算完整统计
-    
+
     await this.statisticsRepository.save(statistics);
   }
 }

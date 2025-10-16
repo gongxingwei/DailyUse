@@ -22,8 +22,8 @@ export { SettingGroup } from './entities/SettingGroup';
 
 // ============ 聚合根 ============
 export { Setting } from './aggregates/Setting';
-export { AppConfigServer } from './aggregates/AppConfigServer';
-export { UserSettingServer } from './aggregates/UserSettingServer';
+// export { AppConfigServer } from './aggregates/AppConfigServer';
+// export { UserSettingServer } from './aggregates/UserSettingServer';
 
 // ============ 仓储接口 ============
 export type { ISettingRepository } from './repositories/ISettingRepository';

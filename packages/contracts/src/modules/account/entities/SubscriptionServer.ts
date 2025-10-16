@@ -32,19 +32,19 @@ export interface SubscriptionServerDTO {
  */
 export interface SubscriptionPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   plan: 'FREE' | 'BASIC' | 'PRO' | 'ENTERPRISE';
   status: 'ACTIVE' | 'CANCELLED' | 'EXPIRED' | 'SUSPENDED';
-  start_date: number;
-  end_date?: number | null;
-  renewal_date?: number | null;
-  auto_renew: boolean;
-  payment_method?: string | null;
-  billing_cycle: 'MONTHLY' | 'YEARLY' | 'LIFETIME';
+  startDate: number;
+  endDate?: number | null;
+  renewalDate?: number | null;
+  autoRenew: boolean;
+  paymentMethod?: string | null;
+  billingCycle: 'MONTHLY' | 'YEARLY' | 'LIFETIME';
   amount?: number | null;
   currency?: string | null;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 实体接口 ============

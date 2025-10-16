@@ -33,11 +33,29 @@ export interface NotificationTemplateAggregatePersistenceDTO {
   description?: string | null;
   type: NotificationType;
   category: NotificationCategory;
-  template: string; // JSON string
-  is_active: boolean;
-  is_system_template: boolean;
-  created_at: number;
-  updated_at: number;
+  isActive: boolean;
+  isSystemTemplate: boolean;
+
+  // Flattened template config
+  templateTitle: string;
+  templateContent: string;
+  templateVariables?: string; // JSON array of strings
+  templateLayout?: string; // e.g., 'default', 'compact'
+  templateStyle?: string; // JSON for CSS styles
+
+  // Email specific
+  templateEmailSubject?: string;
+  templateEmailHtmlBody?: string;
+  templateEmailTextBody?: string;
+
+  // Push specific
+  templatePushTitle?: string;
+  templatePushBody?: string;
+  templatePushIcon?: string;
+  templatePushSound?: string;
+
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 领域事件 ============

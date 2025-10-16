@@ -41,20 +41,35 @@ export interface AuthSessionServerDTO {
  */
 export interface AuthSessionPersistenceDTO {
   uuid: string;
-  account_uuid: string;
-  access_token: string;
-  access_token_expires_at: number;
-  refresh_token: string; // JSON
-  device: string; // JSON
+  accountUuid: string;
+  accessToken: string;
+  accessTokenExpiresAt: number;
+
+  // Flattened refresh token
+  refreshToken: string;
+  refreshTokenExpiresAt: number;
+
+  // Flattened device info
+  deviceId: string;
+  deviceType: 'DESKTOP' | 'MOBILE' | 'WEB' | 'TABLET' | 'API' | 'BROWSER' | 'UNKNOWN';
+  deviceOs?: string | null;
+  deviceBrowser?: string | null;
+
   status: 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'LOCKED';
-  ip_address: string;
-  location?: string | null; // JSON
-  last_activity_at: number;
-  last_activity_type?: string | null;
+  ipAddress: string;
+
+  // Flattened location
+  locationCountry?: string | null;
+  locationRegion?: string | null;
+  locationCity?: string | null;
+  locationTimezone?: string | null;
+
+  lastActivityAt: number;
+  lastActivityType?: string | null;
   history: string; // JSON
-  created_at: number;
-  expires_at: number;
-  revoked_at?: number | null;
+  createdAt: number;
+  expiresAt: number;
+  revokedAt?: number | null;
 }
 
 // ============ 实体接口 ============

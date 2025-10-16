@@ -1,6 +1,7 @@
 import type { IAuthCredentialRepository, IAuthSessionRepository } from '@dailyuse/domain-server';
 import { PrismaAuthCredentialRepository } from '../repositories/PrismaAuthCredentialRepository';
 import { PrismaAuthSessionRepository } from '../repositories/PrismaAuthSessionRepository';
+import prisma from '../../../../shared/db/prisma';
 
 /**
  * Authentication 依赖注入容器
@@ -11,14 +12,14 @@ export class AuthenticationContainer {
 
   static getAuthCredentialRepository(): IAuthCredentialRepository {
     if (!AuthenticationContainer.credentialRepository) {
-      AuthenticationContainer.credentialRepository = new PrismaAuthCredentialRepository();
+      AuthenticationContainer.credentialRepository = new PrismaAuthCredentialRepository(prisma);
     }
     return AuthenticationContainer.credentialRepository;
   }
 
   static getAuthSessionRepository(): IAuthSessionRepository {
     if (!AuthenticationContainer.sessionRepository) {
-      AuthenticationContainer.sessionRepository = new PrismaAuthSessionRepository();
+      AuthenticationContainer.sessionRepository = new PrismaAuthSessionRepository(prisma);
     }
     return AuthenticationContainer.sessionRepository;
   }

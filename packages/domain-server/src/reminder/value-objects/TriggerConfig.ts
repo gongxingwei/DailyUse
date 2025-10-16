@@ -5,6 +5,7 @@
 
 import type {
   TriggerConfigServerDTO,
+  TriggerConfigClientDTO,
   TriggerType,
   FixedTimeTrigger,
   IntervalTrigger,
@@ -81,6 +82,25 @@ export class TriggerConfig extends ValueObject implements TriggerConfigServerDTO
       type: this.type,
       fixedTime: this.fixedTime,
       interval: this.interval,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): TriggerConfigClientDTO {
+    let displayText = '未配置';
+    if (this.type === 'FIXED_TIME' && this.fixedTime) {
+      displayText = `固定时间: ${this.fixedTime.time}`;
+    } else if (this.type === 'INTERVAL' && this.interval) {
+      displayText = `每隔 ${this.interval.minutes} 分钟`;
+    }
+
+    return {
+      type: this.type,
+      fixedTime: this.fixedTime,
+      interval: this.interval,
+      displayText,
     };
   }
 

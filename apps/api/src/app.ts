@@ -9,22 +9,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import { accountRouter } from './modules/account/interface';
-import { authenticationRouter } from './modules/authentication';
-import { taskRouter } from './modules/task';
-import { goalRouter, goalDirRouter } from './modules/goal';
-import { reminderRouter } from './modules/reminder';
-import { scheduleRouter } from './modules/schedule/interface';
-import {
-  notificationRouter,
-  notificationPreferenceRouter,
-  notificationTemplateRouter,
-  notificationSSERouter,
-} from './modules/notification/interface';
-import userPreferencesRoutes from './modules/setting/interface/http/routes/userPreferencesRoutes';
-import themeRoutes from './modules/theme/interface/http/routes/themeRoutes';
-import { editorRouter } from './modules/editor/interface';
-import { repositoryRouter } from './modules/repository/interface';
+import accountRouter from './modules/account/interface/http/accountRoutes';
+import authenticationRouter from './modules/authentication/interface/http/authenticationRoutes';
+import taskRouter from './modules/task/interface/http/routes/taskTemplateRoutes';
+import goalRouter from './modules/goal/interface/http/goalRoutes';
+import reminderRouter from './modules/reminder/interface/http/reminderRoutes';
+import scheduleRouter from './modules/schedule/interface/http/routes/scheduleRoutes';
+import notificationRouter from './modules/notification/interface/http/notificationRoutes';
+import userPreferencesRoutes from './modules/setting/interface/http/routes/settingRoutes';
+// import themeRoutes from './modules/theme/interface/http/themeRoutes';
+import editorRouter from './modules/editor/interface/http/routes/editorRoutes';
+import repositoryRouter from './modules/repository/interface/http/routes/repositoryRoutes';
 
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 import { setupSwagger } from './config/swagger';
@@ -85,7 +80,7 @@ api.use('/tasks', authMiddleware, taskRouter);
 api.use('/goals', authMiddleware, goalRouter);
 
 // 挂载目标目录管理路由 - 需要认证
-api.use('/goal-dirs', authMiddleware, goalDirRouter);
+// api.use('/goal-dirs', authMiddleware, goalDirRouter);
 
 /**
  * 提醒模块
@@ -121,19 +116,19 @@ api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
  * theme 主题模块
  */
 // 挂载主题管理路由 - 需要认证
-api.use('/theme', authMiddleware, themeRoutes);
+// api.use('/theme', authMiddleware, themeRoutes);
 
 /**
  * notification 通知模块
  */
 // 挂载通知 SSE 路由 - 必须在 /notifications 之前！（避免被 authMiddleware 拦截）
 // token 通过 URL 参数传递，路由内部自行验证
-api.use('/notifications/sse', notificationSSERouter);
+// api.use('/notifications/sse', notificationSSERouter);
 
 // 挂载通知管理路由 - 需要认证
 api.use('/notifications', authMiddleware, notificationRouter);
-api.use('/notification-preferences', authMiddleware, notificationPreferenceRouter);
-api.use('/notification-templates', authMiddleware, notificationTemplateRouter);
+// api.use('/notification-preferences', authMiddleware, notificationPreferenceRouter);
+// api.use('/notification-templates', authMiddleware, notificationTemplateRouter);
 
 // 注意：所有模块的初始化都通过 shared/initialization/initializer.ts 统一管理
 // NotificationApplicationService, UserPreferencesApplicationService, ThemeApplicationService

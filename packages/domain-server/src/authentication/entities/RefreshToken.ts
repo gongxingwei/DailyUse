@@ -68,11 +68,11 @@ export class RefreshToken extends Entity implements IRefreshTokenServer {
   public static fromPersistenceDTO(dto: RefreshTokenPersistenceDTO): RefreshToken {
     return new RefreshToken({
       uuid: dto.uuid,
-      sessionUuid: dto.session_uuid,
+      sessionUuid: dto.sessionUuid,
       token: dto.token,
-      expiresAt: dto.expires_at,
-      createdAt: dto.created_at,
-      usedAt: dto.used_at,
+      expiresAt: dto.expiresAt,
+      createdAt: dto.createdAt,
+      usedAt: dto.usedAt,
     });
   }
 
@@ -111,11 +111,11 @@ export class RefreshToken extends Entity implements IRefreshTokenServer {
   public toPersistenceDTO(): RefreshTokenPersistenceDTO {
     return {
       uuid: this.uuid,
-      session_uuid: this.sessionUuid,
+      sessionUuid: this.sessionUuid,
       token: this.token,
-      expires_at: this.expiresAt,
-      created_at: this.createdAt,
-      used_at: this._usedAt,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      usedAt: this._usedAt,
     };
   }
 }

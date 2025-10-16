@@ -8,6 +8,7 @@ import { Entity, generateUUID } from '@dailyuse/utils';
 
 type IApiKeyCredentialServer = AuthenticationContracts.ApiKeyCredentialServer;
 type ApiKeyCredentialServerDTO = AuthenticationContracts.ApiKeyCredentialServerDTO;
+type ApiKeyCredentialClientDTO = AuthenticationContracts.ApiKeyCredentialClientDTO;
 type ApiKeyCredentialPersistenceDTO = AuthenticationContracts.ApiKeyCredentialPersistenceDTO;
 
 export class ApiKeyCredential extends Entity implements IApiKeyCredentialServer {
@@ -145,12 +146,11 @@ export class ApiKeyCredential extends Entity implements IApiKeyCredentialServer 
     };
   }
 
-  public toClientDTO(): ApiKeyCredentialServerDTO {
+  public toClientDTO(): ApiKeyCredentialClientDTO {
     return {
       uuid: this.uuid,
       credentialUuid: this.credentialUuid,
       name: this.name,
-      key: this.key,
       keyPrefix: this.keyPrefix,
       status: this._status,
       lastUsedAt: this._lastUsedAt,

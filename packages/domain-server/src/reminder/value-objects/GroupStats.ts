@@ -3,7 +3,10 @@
  * 分组统计信息 - 不可变值对象
  */
 
-import type { GroupStatsServerDTO } from '@dailyuse/contracts/src/modules/reminder';
+import type {
+  GroupStatsServerDTO,
+  GroupStatsClientDTO,
+} from '@dailyuse/contracts/src/modules/reminder';
 import { ValueObject } from '@dailyuse/utils';
 
 /**
@@ -88,6 +91,21 @@ export class GroupStats extends ValueObject implements GroupStatsServerDTO {
       pausedTemplates: this.pausedTemplates,
       selfEnabledTemplates: this.selfEnabledTemplates,
       selfPausedTemplates: this.selfPausedTemplates,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): GroupStatsClientDTO {
+    return {
+      totalTemplates: this.totalTemplates,
+      activeTemplates: this.activeTemplates,
+      pausedTemplates: this.pausedTemplates,
+      selfEnabledTemplates: this.selfEnabledTemplates,
+      selfPausedTemplates: this.selfPausedTemplates,
+      templateCountText: `${this.totalTemplates} 个提醒`,
+      activeStatusText: `${this.activeTemplates} 个活跃`,
     };
   }
 

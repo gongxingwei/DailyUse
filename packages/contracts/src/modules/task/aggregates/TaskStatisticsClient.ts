@@ -11,6 +11,7 @@ import type {
   TimeStatsInfo,
   DistributionStatsInfo,
 } from './TaskStatisticsServer';
+import type { ChartDataDTO } from '../../../shared/dtos';
 
 // ============ DTO 定义 ============
 
@@ -155,11 +156,7 @@ export interface TaskStatisticsClientStatic {
 /**
  * 图表数据
  */
-export interface ChartData {
-  labels: string[];
-  values: number[];
-  colors: string[];
-}
+export type ChartData = ChartDataDTO;
 
 /**
  * 趋势数据

@@ -101,25 +101,49 @@ export interface TaskTemplateServerDTO {
  */
 export interface TaskTemplatePersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   title: string;
   description?: string | null;
-  task_type: string;
-  time_config: string; // JSON
-  recurrence_rule?: string | null; // JSON
-  reminder_config?: string | null; // JSON
+  taskType: string;
+
+  // Flattened time_config
+  timeConfigType: 'POINT' | 'RANGE' | 'ALL_DAY';
+  timeConfigStartTime?: number | null;
+  timeConfigEndTime?: number | null;
+  timeConfigDurationMinutes?: number | null;
+
+  // Flattened recurrence_rule
+  recurrenceRuleType?: 'DAILY' | 'WEEKLY' | 'MONTHLY' | 'YEARLY' | null;
+  recurrenceRuleInterval?: number | null;
+  recurrenceRuleDaysOfWeek?: string | null; // JSON array
+  recurrenceRuleDayOfMonth?: number | null;
+  recurrenceRuleMonthOfYear?: number | null;
+  recurrenceRuleEndDate?: number | null;
+  recurrenceRuleCount?: number | null;
+
+  // Flattened reminder_config
+  reminderConfigEnabled?: boolean | null;
+  reminderConfigTimeOffsetMinutes?: number | null;
+  reminderConfigUnit?: 'MINUTES' | 'HOURS' | 'DAYS' | null;
+  reminderConfigChannel?: 'PUSH' | 'EMAIL' | 'SMS' | null;
+
   importance: string;
   urgency: string;
-  goal_binding?: string | null; // JSON
-  folder_uuid?: string | null;
+
+  // Flattened goal_binding
+  goalBindingGoalUuid?: string | null;
+  goalBindingKeyResultUuid?: string | null;
+  goalBindingIncrementValue?: number | null;
+
+  folderUuid?: string | null;
   tags: string; // JSON array
   color?: string | null;
   status: string;
-  last_generated_date?: number | null;
-  generate_ahead_days: number;
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  lastGeneratedDate?: number | null;
+  generateAheadDays: number;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 聚合根接口 ============

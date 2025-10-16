@@ -197,6 +197,9 @@ export class GoalRecord extends Entity implements IGoalRecordServer {
   }
 
   public toClientDTO(): GoalRecordClientDTO {
+    const isPositive = this.isPositiveChange();
+    const changePercentage = this.getChangePercentage();
+
     return {
       uuid: this.uuid,
       keyResultUuid: this._keyResultUuid,
@@ -207,6 +210,15 @@ export class GoalRecord extends Entity implements IGoalRecordServer {
       note: this._note,
       recordedAt: this._recordedAt,
       createdAt: this._createdAt,
+
+      // UI 计算字段
+      changePercentage: changePercentage,
+      isPositiveChange: isPositive,
+      changeText: `${isPositive ? '+' : ''}${this._changeAmount}`,
+      formattedRecordedAt: new Date(this._recordedAt).toLocaleString(),
+      formattedCreatedAt: new Date(this._createdAt).toLocaleString(),
+      changeIcon: isPositive ? 'arrow-up' : 'arrow-down',
+      changeColor: isPositive ? 'green' : 'red',
     };
   }
 

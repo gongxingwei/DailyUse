@@ -5,12 +5,14 @@
 
 import { AuthenticationContracts } from '@dailyuse/contracts';
 import { Entity, generateUUID } from '@dailyuse/utils';
-import { DeviceInfo } from '../value-objects/DeviceInfo';
 import crypto from 'crypto';
+import { DeviceInfo } from '../value-objects/DeviceInfo';
 
 type IRememberMeTokenServer = AuthenticationContracts.RememberMeTokenServer;
 type RememberMeTokenServerDTO = AuthenticationContracts.RememberMeTokenServerDTO;
+type RememberMeTokenClientDTO = AuthenticationContracts.RememberMeTokenClientDTO;
 type RememberMeTokenPersistenceDTO = AuthenticationContracts.RememberMeTokenPersistenceDTO;
+type DeviceInfoServer = AuthenticationContracts.DeviceInfoServer;
 
 export class RememberMeToken extends Entity implements IRememberMeTokenServer {
   public readonly credentialUuid: string;
@@ -189,7 +191,7 @@ export class RememberMeToken extends Entity implements IRememberMeTokenServer {
       accountUuid: this.accountUuid,
       token: this.token,
       tokenSeries: this.tokenSeries,
-      device: this.device as any,
+      device: this.device.toServerDTO(),
       status: this._status,
       usageCount: this._usageCount,
       lastUsedAt: this._lastUsedAt,
@@ -201,14 +203,13 @@ export class RememberMeToken extends Entity implements IRememberMeTokenServer {
     };
   }
 
-  public toClientDTO(): RememberMeTokenServerDTO {
+  public toClientDTO(): RememberMeTokenClientDTO {
     return {
       uuid: this.uuid,
       credentialUuid: this.credentialUuid,
       accountUuid: this.accountUuid,
-      token: this.token,
       tokenSeries: this.tokenSeries,
-      device: this.device as any,
+      device: this.device.toClientDTO(),
       status: this._status,
       usageCount: this._usageCount,
       lastUsedAt: this._lastUsedAt,

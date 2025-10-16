@@ -3,7 +3,10 @@
  * 提醒统计信息 - 不可变值对象
  */
 
-import type { ReminderStatsServerDTO } from '@dailyuse/contracts/src/modules/reminder';
+import type {
+  ReminderStatsServerDTO,
+  ReminderStatsClientDTO,
+} from '@dailyuse/contracts/src/modules/reminder';
 import { ValueObject } from '@dailyuse/utils';
 
 /**
@@ -64,6 +67,31 @@ export class ReminderStats extends ValueObject implements ReminderStatsServerDTO
     return {
       totalTriggers: this.totalTriggers,
       lastTriggeredAt: this.lastTriggeredAt,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): ReminderStatsClientDTO {
+    const totalTriggersText = `已触发 ${this.totalTriggers} 次`;
+    let lastTriggeredText: string | undefined = undefined;
+
+    if (this.lastTriggeredAt) {
+      const diff = Date.now() - this.lastTriggeredAt;
+      const hours = Math.round(diff / 3600000);
+      if (hours < 24) {
+        lastTriggeredText = `${hours} 小时前`;
+      } else {
+        lastTriggeredText = `${Math.round(hours / 24)} 天前`;
+      }
+    }
+
+    return {
+      totalTriggers: this.totalTriggers,
+      lastTriggeredAt: this.lastTriggeredAt,
+      totalTriggersText,
+      lastTriggeredText,
     };
   }
 

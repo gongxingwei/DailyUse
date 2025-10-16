@@ -94,5 +94,14 @@ export {
   ReminderTimeUnit,
 } from './modules/task/enums';
 
-// 导出 Theme 枚举
-// export { ThemeType } from './modules/theme/enums';
+// 导出所有模块的类型定义（向后兼容，待迁移）
+export * from './modules/account';
+export * from './modules/authentication';
+export * from './modules/editor';
+// export * from './modules/goal'; // Conflicting exports
+// export * from './modules/notification';
+// export * from './modules/reminder'; // Conflicting exports
+export * from './modules/repository';
+export * from './modules/schedule';
+export * from './modules/setting';
+// export * from './modules/task'; // Conflicting exports

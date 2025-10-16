@@ -3,7 +3,10 @@
  * 活跃时间段配置 - 不可变值对象
  */
 
-import type { ActiveHoursConfigServerDTO } from '@dailyuse/contracts/src/modules/reminder';
+import type {
+  ActiveHoursConfigServerDTO,
+  ActiveHoursConfigClientDTO,
+} from '@dailyuse/contracts/src/modules/reminder';
 import { ValueObject } from '@dailyuse/utils';
 
 /**
@@ -70,6 +73,22 @@ export class ActiveHoursConfig extends ValueObject implements ActiveHoursConfigS
       enabled: this.enabled,
       startHour: this.startHour,
       endHour: this.endHour,
+    };
+  }
+
+  /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(): ActiveHoursConfigClientDTO {
+    const displayText = this.enabled
+      ? `${String(this.startHour).padStart(2, '0')}:00 - ${String(this.endHour).padStart(2, '0')}:00`
+      : '全天';
+
+    return {
+      enabled: this.enabled,
+      startHour: this.startHour,
+      endHour: this.endHour,
+      displayText,
     };
   }
 

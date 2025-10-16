@@ -8,6 +8,7 @@
  * - 执行进度计算和更新逻辑
  */
 
+import { GoalRecord } from './GoalRecord';
 import { Entity } from '@dailyuse/utils';
 import type { GoalContracts } from '@dailyuse/contracts';
 
@@ -16,6 +17,7 @@ type KeyResultServerDTO = GoalContracts.KeyResultServerDTO;
 type KeyResultClientDTO = GoalContracts.KeyResultClientDTO;
 type KeyResultPersistenceDTO = GoalContracts.KeyResultPersistenceDTO;
 type KeyResultProgressServerDTO = GoalContracts.KeyResultProgressServerDTO;
+type KeyResultProgressClientDTO = GoalContracts.KeyResultProgressClientDTO;
 type GoalRecordServerDTO = GoalContracts.GoalRecordServerDTO;
 type AggregationMethod = GoalContracts.AggregationMethod;
 
@@ -320,16 +322,73 @@ export class KeyResult extends Entity implements IKeyResultServer {
   }
 
   public toClientDTO(): KeyResultClientDTO {
+    const progressPercentage = this.calculatePercentage();
+    const isCompleted = this.isCompleted();
+    const unit = this._progress.unit ? ` ${this._progress.unit}` : '';
+    const progressText = `${this._progress.currentValue}${unit} / ${this._progress.targetValue}${unit}`;
+
+    let progressColor = 'gray';
+    if (isCompleted) {
+      progressColor = 'green';
+    } else if (progressPercentage > 70) {
+      progressColor = 'blue';
+    } else if (progressPercentage > 30) {
+      progressColor = 'yellow';
+    }
+
+    const valueTypeTextMap: Record<GoalContracts.KeyResultValueType, string> = {
+      INCREMENTAL: '累计值',
+      ABSOLUTE: '绝对值',
+      PERCENTAGE: '百分比',
+      BINARY: '二元',
+    };
+
+    const aggregationMethodTextMap: Record<GoalContracts.AggregationMethod, string> = {
+      SUM: '求和',
+      AVERAGE: '求平均',
+      MAX: '求最大值',
+      MIN: '求最小值',
+      LAST: '取最后一次',
+    };
+
+    const progressClientDTO: KeyResultProgressClientDTO = {
+      ...this._progress,
+      progressPercentage,
+      isCompleted,
+      progressText,
+      progressBarColor: progressColor,
+      valueTypeText: valueTypeTextMap[this._progress.valueType],
+      aggregationMethodText: aggregationMethodTextMap[this._progress.aggregationMethod],
+    };
+
+    const recordsClientDTO = this._records.map((recordDTO) => {
+      return GoalRecord.fromServerDTO(recordDTO).toClientDTO();
+    });
+
+    const aggregationMethodText = aggregationMethodTextMap[this._progress.aggregationMethod];
+    const calculationExplanation = `当前进度由 ${this._records.length} 条记录${aggregationMethodText}计算得出`;
+
     return {
       uuid: this.uuid,
       goalUuid: this._goalUuid,
       title: this._title,
       description: this._description,
-      progress: this._progress,
+      progress: progressClientDTO,
       order: this._order,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
-      records: this._records.length > 0 ? this._records : null,
+      records: recordsClientDTO.length > 0 ? recordsClientDTO : null,
+
+      // UI calculated fields
+      progressPercentage,
+      progressText,
+      progressColor,
+      isCompleted,
+      formattedCreatedAt: new Date(this._createdAt).toLocaleString(),
+      formattedUpdatedAt: new Date(this._updatedAt).toLocaleString(),
+      displayTitle: this._title.length > 50 ? this._title.substring(0, 47) + '...' : this._title,
+      aggregationMethodText,
+      calculationExplanation,
     };
   }
 

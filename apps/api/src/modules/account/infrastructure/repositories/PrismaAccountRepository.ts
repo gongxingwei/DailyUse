@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import type { IAccountRepository } from '@dailyuse/domain-server';
-import { Account, Subscription, AccountHistory } from '@dailyuse/domain-server';
+import { Account } from '@dailyuse/domain-server';
+import type { AccountContracts } from '@dailyuse/contracts';
 
 /**
  * Account 聚合根 Prisma 仓储实现
@@ -15,29 +16,66 @@ export class PrismaAccountRepository implements IAccountRepository {
    * 将 Prisma 数据映射为 Account 聚合根实体
    */
   private mapAccountToEntity(data: any): Account {
-    // 使用领域实体的 fromPersistenceDTO 方法创建实体
-    const account = Account.fromPersistenceDTO({
+    const profile = JSON.parse(data.profile);
+    const preferences = JSON.parse(data.preferences);
+    const subscriptionData = data.subscription ? JSON.parse(data.subscription) : null;
+    const storage = JSON.parse(data.storage);
+    const security = JSON.parse(data.security);
+    const stats = JSON.parse(data.stats);
+
+    const persistenceDTO: AccountContracts.AccountPersistenceDTO = {
       uuid: data.uuid,
       username: data.username,
       email: data.email,
-      email_verified: data.emailVerified,
-      phone_number: data.phoneNumber,
-      phone_verified: data.phoneVerified,
+      emailVerified: data.emailVerified,
+      phoneNumber: data.phoneNumber,
+      phoneVerified: data.phoneVerified,
       status: data.status,
-      profile: data.profile,
-      preferences: data.preferences,
-      subscription: data.subscription,
-      storage: data.storage,
-      security: data.security,
-      history: data.history,
-      stats: data.stats,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      last_active_at: data.lastActiveAt?.getTime() ?? null,
-      deleted_at: data.deletedAt?.getTime() ?? null,
-    });
 
-    return account;
+      displayName: profile.displayName,
+      avatar: profile.avatar,
+      bio: profile.bio,
+      location: profile.location,
+      timezone: profile.timezone,
+      language: profile.language,
+      dateOfBirth: profile.dateOfBirth,
+      gender: profile.gender,
+
+      preferences: data.preferences,
+
+      subscriptionId: subscriptionData?.uuid,
+      subscriptionPlan: subscriptionData?.plan,
+      subscriptionStatus: subscriptionData?.status,
+      subscriptionStartDate: subscriptionData?.startDate,
+      subscriptionEndDate: subscriptionData?.endDate,
+      subscriptionRenewalDate: subscriptionData?.renewalDate,
+      subscriptionAutoRenew: subscriptionData?.autoRenew,
+
+      storageUsed: storage.used,
+      storageQuota: storage.quota,
+      storageQuotaType: storage.quotaType,
+
+      twoFactorEnabled: security.twoFactorEnabled,
+      lastPasswordChange: security.lastPasswordChange,
+      loginAttempts: security.loginAttempts,
+      lockedUntil: security.lockedUntil,
+
+      history: data.history,
+
+      statsTotalGoals: stats.totalGoals,
+      statsTotalTasks: stats.totalTasks,
+      statsTotalSchedules: stats.totalSchedules,
+      statsTotalReminders: stats.totalReminders,
+      statsLastLoginAt: stats.lastLoginAt,
+      statsLoginCount: stats.loginCount,
+
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
+      lastActiveAt: data.lastActiveAt?.getTime() ?? null,
+      deletedAt: data.deletedAt?.getTime() ?? null,
+    };
+
+    return Account.fromPersistenceDTO(persistenceDTO);
   }
 
   /**
@@ -53,49 +91,67 @@ export class PrismaAccountRepository implements IAccountRepository {
   async save(account: Account): Promise<void> {
     const persistence = account.toPersistenceDTO();
 
-    await this.prisma.$transaction(async (tx) => {
-      // Upsert Account 主实体
-      await tx.account.upsert({
-        where: { uuid: persistence.uuid },
-        create: {
-          uuid: persistence.uuid,
-          username: persistence.username,
-          email: persistence.email,
-          emailVerified: persistence.email_verified,
-          phoneNumber: persistence.phone_number,
-          phoneVerified: persistence.phone_verified,
-          status: persistence.status,
-          profile: persistence.profile,
-          preferences: persistence.preferences,
-          subscription: persistence.subscription,
-          storage: persistence.storage,
-          security: persistence.security,
-          history: persistence.history,
-          stats: persistence.stats,
-          createdAt: this.toDate(persistence.created_at) ?? new Date(),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          lastActiveAt: this.toDate(persistence.last_active_at),
-          deletedAt: this.toDate(persistence.deleted_at),
-        },
-        update: {
-          username: persistence.username,
-          email: persistence.email,
-          emailVerified: persistence.email_verified,
-          phoneNumber: persistence.phone_number,
-          phoneVerified: persistence.phone_verified,
-          status: persistence.status,
-          profile: persistence.profile,
-          preferences: persistence.preferences,
-          subscription: persistence.subscription,
-          storage: persistence.storage,
-          security: persistence.security,
-          history: persistence.history,
-          stats: persistence.stats,
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          lastActiveAt: this.toDate(persistence.last_active_at),
-          deletedAt: this.toDate(persistence.deleted_at),
-        },
-      });
+    const data = {
+      uuid: persistence.uuid,
+      username: persistence.username,
+      email: persistence.email,
+      emailVerified: persistence.emailVerified,
+      phoneNumber: persistence.phoneNumber,
+      phoneVerified: persistence.phoneVerified,
+      status: persistence.status,
+      profile: JSON.stringify({
+        displayName: persistence.displayName,
+        avatar: persistence.avatar,
+        bio: persistence.bio,
+        location: persistence.location,
+        timezone: persistence.timezone,
+        language: persistence.language,
+        dateOfBirth: persistence.dateOfBirth,
+        gender: persistence.gender,
+      }),
+      preferences: persistence.preferences,
+      subscription:
+        persistence.subscriptionId || persistence.subscriptionPlan || persistence.subscriptionStatus
+          ? JSON.stringify({
+              uuid: persistence.subscriptionId,
+              plan: persistence.subscriptionPlan,
+              status: persistence.subscriptionStatus,
+              startDate: persistence.subscriptionStartDate,
+              endDate: persistence.subscriptionEndDate,
+              renewalDate: persistence.subscriptionRenewalDate,
+              autoRenew: persistence.subscriptionAutoRenew,
+            })
+          : null,
+      storage: JSON.stringify({
+        used: persistence.storageUsed,
+        quota: persistence.storageQuota,
+        quotaType: persistence.storageQuotaType,
+      }),
+      security: JSON.stringify({
+        twoFactorEnabled: persistence.twoFactorEnabled,
+        lastPasswordChange: persistence.lastPasswordChange,
+        loginAttempts: persistence.loginAttempts,
+        lockedUntil: persistence.lockedUntil,
+      }),
+      history: persistence.history,
+      stats: JSON.stringify({
+        totalGoals: persistence.statsTotalGoals,
+        totalTasks: persistence.statsTotalTasks,
+        totalSchedules: persistence.statsTotalSchedules,
+        totalReminders: persistence.statsTotalReminders,
+        lastLoginAt: persistence.statsLastLoginAt,
+        loginCount: persistence.statsLoginCount,
+      }),
+      createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+      updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
+      lastActiveAt: this.toDate(persistence.lastActiveAt),
+      deletedAt: this.toDate(persistence.deletedAt),
+    };
+
+    await this.prisma.account.upsert({
+      where: { uuid: persistence.uuid },
+      create: data,
+      update: data,
     });
   }
 

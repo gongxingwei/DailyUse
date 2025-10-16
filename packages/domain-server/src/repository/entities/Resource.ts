@@ -8,7 +8,7 @@
  * - 执行资源相关的业务逻辑
  */
 
-import type { RepositoryContracts } from '@dailyuse/contracts';
+import { RepositoryContracts } from '@dailyuse/contracts';
 import { Entity } from '@dailyuse/utils';
 import { ResourceReference } from './ResourceReference';
 import { LinkedContent } from './LinkedContent';
@@ -414,6 +414,83 @@ export class Resource extends Entity implements IResourceServer {
       updated_at: this._updatedAt,
       modified_at: this._modifiedAt,
     };
+  }
+
+  public toClientDTO(includeChildren = false): RepositoryContracts.ResourceClientDTO {
+    const formatSize = (bytes: number): string => {
+      if (bytes === 0) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    };
+
+    const formatDate = (ts: number | null | undefined) => {
+      if (!ts) return '';
+      return new Date(ts).toLocaleString();
+    };
+
+    const getFileExtension = (name: string): string => {
+      const lastDot = name.lastIndexOf('.');
+      if (lastDot === -1 || lastDot === 0) return '';
+      return name.substring(lastDot + 1);
+    };
+
+    const getTypeLabel = (type: ResourceType): string => {
+      // This could be mapped to a more user-friendly string, maybe from a config or i18n
+      return type;
+    };
+
+    const getStatusLabel = (status: ResourceStatus): string => {
+      switch (status) {
+        case RepositoryContracts.ResourceStatus.ACTIVE:
+          return '活跃';
+        case RepositoryContracts.ResourceStatus.ARCHIVED:
+          return '已归档';
+        case RepositoryContracts.ResourceStatus.DELETED:
+          return '已删除';
+        default:
+          return status;
+      }
+    };
+
+    const clientDTO: RepositoryContracts.ResourceClientDTO = {
+      uuid: this._uuid,
+      repositoryUuid: this._repositoryUuid,
+      name: this._name,
+      type: this._type,
+      path: this._path,
+      size: this._size,
+      description: this._description,
+      author: this._author,
+      version: this._version,
+      tags: [...this._tags],
+      category: this._category,
+      status: this._status,
+      metadata: { ...this._metadata },
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      modifiedAt: this._modifiedAt,
+
+      // UI 格式化属性
+      formattedSize: formatSize(this._size),
+      formattedCreatedAt: formatDate(this._createdAt),
+      formattedUpdatedAt: formatDate(this._updatedAt),
+      formattedModifiedAt: formatDate(this._modifiedAt),
+      fileExtension: getFileExtension(this._name),
+      typeLabel: getTypeLabel(this._type),
+      statusLabel: getStatusLabel(this._status),
+      isFavorite: this._metadata.isFavorite ?? false,
+    };
+
+    if (includeChildren) {
+      clientDTO.references =
+        this._references.length > 0 ? this._references.map((r) => r.toClientDTO()) : null;
+      clientDTO.linkedContents =
+        this._linkedContents.length > 0 ? this._linkedContents.map((c) => c.toClientDTO()) : null;
+    }
+
+    return clientDTO;
   }
 
   public static fromServerDTO(dto: ResourceServerDTO): Resource {
