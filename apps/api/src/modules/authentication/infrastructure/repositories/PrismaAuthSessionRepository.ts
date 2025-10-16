@@ -22,7 +22,7 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
       uuid: data.uuid,
       account_uuid: data.accountUuid,
       access_token: data.accessToken,
-      refresh_tokens: data.refreshTokens,
+      refresh_token: data.refreshTokens,
       device_info: data.deviceInfo,
       status: data.status,
       ip_address: data.ipAddress,
