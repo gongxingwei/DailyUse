@@ -1,6 +1,6 @@
 import type { IGoalRepository } from '@dailyuse/domain-server';
 import { PrismaGoalRepository } from '../repositories/PrismaGoalRepository';
-import prisma from '../../../../shared/db/prisma';
+import { prisma } from '@/config/prisma';
 
 /**
  * Goal 模块依赖注入容器

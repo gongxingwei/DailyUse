@@ -1,3 +1,4 @@
+import { ReminderDomainService } from '@dailyuse/domain-server';
 import type {
   IReminderTemplateRepository,
   IReminderGroupRepository,
@@ -27,12 +28,24 @@ type TriggerType = ReminderContracts.TriggerType;
  */
 export class ReminderApplicationService {
   private static instance: ReminderApplicationService;
-  // private domainService: ReminderDomainService; // TODO: 待实现
+  private domainService: ReminderDomainService;
   private reminderTemplateRepository: IReminderTemplateRepository;
+  private reminderGroupRepository: IReminderGroupRepository;
+  private reminderStatisticsRepository: IReminderStatisticsRepository;
 
-  private constructor(reminderTemplateRepository: IReminderTemplateRepository) {
-    // this.domainService = new ReminderDomainService(reminderTemplateRepository); // TODO: 待实现
+  private constructor(
+    reminderTemplateRepository: IReminderTemplateRepository,
+    reminderGroupRepository: IReminderGroupRepository,
+    reminderStatisticsRepository: IReminderStatisticsRepository,
+  ) {
     this.reminderTemplateRepository = reminderTemplateRepository;
+    this.reminderGroupRepository = reminderGroupRepository;
+    this.reminderStatisticsRepository = reminderStatisticsRepository;
+    this.domainService = new ReminderDomainService(
+      reminderTemplateRepository,
+      reminderGroupRepository,
+      reminderStatisticsRepository,
+    );
   }
 
   /**
@@ -40,11 +53,19 @@ export class ReminderApplicationService {
    */
   static async createInstance(
     reminderTemplateRepository?: IReminderTemplateRepository,
+    reminderGroupRepository?: IReminderGroupRepository,
+    reminderStatisticsRepository?: IReminderStatisticsRepository,
   ): Promise<ReminderApplicationService> {
     const container = ReminderContainer.getInstance();
-    const repo = reminderTemplateRepository || container.getReminderTemplateRepository();
+    const templateRepo = reminderTemplateRepository || container.getReminderTemplateRepository();
+    const groupRepo = reminderGroupRepository || container.getReminderGroupRepository();
+    const statsRepo = reminderStatisticsRepository || container.getReminderStatisticsRepository();
 
-    ReminderApplicationService.instance = new ReminderApplicationService(repo);
+    ReminderApplicationService.instance = new ReminderApplicationService(
+      templateRepo,
+      groupRepo,
+      statsRepo,
+    );
     return ReminderApplicationService.instance;
   }
 

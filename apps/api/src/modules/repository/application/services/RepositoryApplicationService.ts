@@ -59,7 +59,7 @@ export class RepositoryApplicationService {
     description?: string;
     config?: Partial<RepositoryContracts.RepositoryConfig>;
     initializeGit?: boolean;
-  }): Promise<RepositoryContracts.RepositoryServerDTO> {
+  }): Promise<RepositoryContracts.RepositoryClientDTO> {
     // 委托给领域服务处理业务逻辑
     const repository = await this.domainService.createRepository(params);
 
@@ -73,7 +73,7 @@ export class RepositoryApplicationService {
   async getRepository(
     uuid: string,
     options?: { includeChildren?: boolean },
-  ): Promise<RepositoryContracts.RepositoryServerDTO | null> {
+  ): Promise<RepositoryContracts.RepositoryClientDTO | null> {
     // 委托给领域服务处理
     const repository = await this.domainService.getRepository(uuid, options);
 
@@ -86,7 +86,7 @@ export class RepositoryApplicationService {
   async getRepositoriesByAccount(
     accountUuid: string,
     options?: { includeChildren?: boolean },
-  ): Promise<RepositoryContracts.RepositoryServerDTO[]> {
+  ): Promise<RepositoryContracts.RepositoryClientDTO[]> {
     // 委托给领域服务处理
     const repositories = await this.domainService.getRepositoriesByAccount(accountUuid, options);
 
@@ -97,7 +97,7 @@ export class RepositoryApplicationService {
   /**
    * 通过路径查找仓库
    */
-  async getRepositoryByPath(path: string): Promise<RepositoryContracts.RepositoryServerDTO | null> {
+  async getRepositoryByPath(path: string): Promise<RepositoryContracts.RepositoryClientDTO | null> {
     // 委托给领域服务处理
     const repository = await this.domainService.getRepositoryByPath(path);
 
@@ -110,7 +110,7 @@ export class RepositoryApplicationService {
   async updateRepositoryConfig(
     uuid: string,
     config: Partial<RepositoryContracts.RepositoryConfig>,
-  ): Promise<RepositoryContracts.RepositoryServerDTO> {
+  ): Promise<RepositoryContracts.RepositoryClientDTO> {
     // 委托给领域服务处理业务逻辑
     const repository = await this.domainService.updateRepositoryConfig(uuid, config);
 

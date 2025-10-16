@@ -6,55 +6,63 @@ import type {
 import { PrismaNotificationRepository } from '../repositories/PrismaNotificationRepository';
 import { PrismaNotificationTemplateRepository } from '../repositories/PrismaNotificationTemplateRepository';
 import { PrismaNotificationPreferenceRepository } from '../repositories/PrismaNotificationPreferenceRepository';
-import prisma from '../../../../shared/db/prisma';
+import { prisma } from '@/config/prisma';
 
 /**
  * Notification 依赖注入容器
  */
 export class NotificationContainer {
-  private static notificationRepository: INotificationRepository | null = null;
-  private static templateRepository: INotificationTemplateRepository | null = null;
-  private static preferenceRepository: INotificationPreferenceRepository | null = null;
+  private static instance: NotificationContainer;
+  private notificationRepository: INotificationRepository | null = null;
+  private templateRepository: INotificationTemplateRepository | null = null;
+  private preferenceRepository: INotificationPreferenceRepository | null = null;
 
-  static getNotificationRepository(): INotificationRepository {
-    if (!NotificationContainer.notificationRepository) {
-      NotificationContainer.notificationRepository = new PrismaNotificationRepository(prisma);
+  private constructor() {}
+
+  static getInstance(): NotificationContainer {
+    if (!NotificationContainer.instance) {
+      NotificationContainer.instance = new NotificationContainer();
     }
-    return NotificationContainer.notificationRepository;
+    return NotificationContainer.instance;
   }
 
-  static getNotificationTemplateRepository(): INotificationTemplateRepository {
-    if (!NotificationContainer.templateRepository) {
-      NotificationContainer.templateRepository = new PrismaNotificationTemplateRepository(prisma);
+  getNotificationRepository(): INotificationRepository {
+    if (!this.notificationRepository) {
+      this.notificationRepository = new PrismaNotificationRepository(prisma);
     }
-    return NotificationContainer.templateRepository;
+    return this.notificationRepository;
   }
 
-  static getNotificationPreferenceRepository(): INotificationPreferenceRepository {
-    if (!NotificationContainer.preferenceRepository) {
-      NotificationContainer.preferenceRepository = new PrismaNotificationPreferenceRepository(
-        prisma,
-      );
+  getNotificationTemplateRepository(): INotificationTemplateRepository {
+    if (!this.templateRepository) {
+      this.templateRepository = new PrismaNotificationTemplateRepository(prisma);
     }
-    return NotificationContainer.preferenceRepository;
+    return this.templateRepository;
+  }
+
+  getNotificationPreferenceRepository(): INotificationPreferenceRepository {
+    if (!this.preferenceRepository) {
+      this.preferenceRepository = new PrismaNotificationPreferenceRepository(prisma);
+    }
+    return this.preferenceRepository;
   }
 
   // For testing purposes
-  static setNotificationRepository(repository: INotificationRepository): void {
-    NotificationContainer.notificationRepository = repository;
+  setNotificationRepository(repository: INotificationRepository): void {
+    this.notificationRepository = repository;
   }
 
-  static setNotificationTemplateRepository(repository: INotificationTemplateRepository): void {
-    NotificationContainer.templateRepository = repository;
+  setNotificationTemplateRepository(repository: INotificationTemplateRepository): void {
+    this.templateRepository = repository;
   }
 
-  static setNotificationPreferenceRepository(repository: INotificationPreferenceRepository): void {
-    NotificationContainer.preferenceRepository = repository;
+  setNotificationPreferenceRepository(repository: INotificationPreferenceRepository): void {
+    this.preferenceRepository = repository;
   }
 
-  static reset(): void {
-    NotificationContainer.notificationRepository = null;
-    NotificationContainer.templateRepository = null;
-    NotificationContainer.preferenceRepository = null;
+  reset(): void {
+    this.notificationRepository = null;
+    this.templateRepository = null;
+    this.preferenceRepository = null;
   }
 }

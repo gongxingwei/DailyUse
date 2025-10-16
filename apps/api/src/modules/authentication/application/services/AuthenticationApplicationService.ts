@@ -16,24 +16,47 @@ const logger = createLogger('AuthenticationApplicationService');
  * 处理认证相关业务逻辑
  */
 export class AuthenticationApplicationService {
-  private static instance: AuthenticationApplicationService | null = null;
-  private authService!: AuthenticationDomainService;
+  private static instance: AuthenticationApplicationService;
+  private authService: AuthenticationDomainService;
+  private credentialRepository: IAuthCredentialRepository;
+  private sessionRepository: IAuthSessionRepository;
 
-  private constructor() {}
+  private constructor(
+    credentialRepository: IAuthCredentialRepository,
+    sessionRepository: IAuthSessionRepository,
+  ) {
+    this.credentialRepository = credentialRepository;
+    this.sessionRepository = sessionRepository;
+    this.authService = new AuthenticationDomainService(credentialRepository, sessionRepository);
+  }
 
-  static async getInstance(): Promise<AuthenticationApplicationService> {
-    if (!AuthenticationApplicationService.instance) {
-      const service = new AuthenticationApplicationService();
-      await service.initialize();
-      AuthenticationApplicationService.instance = service;
-    }
+  /**
+   * 创建应用服务实例（支持依赖注入）
+   */
+  static async createInstance(
+    credentialRepository?: IAuthCredentialRepository,
+    sessionRepository?: IAuthSessionRepository,
+  ): Promise<AuthenticationApplicationService> {
+    const container = AuthenticationContainer.getInstance();
+    const credRepo = credentialRepository || container.getAuthCredentialRepository();
+    const sessRepo = sessionRepository || container.getAuthSessionRepository();
+
+    AuthenticationApplicationService.instance = new AuthenticationApplicationService(
+      credRepo,
+      sessRepo,
+    );
     return AuthenticationApplicationService.instance;
   }
 
-  private async initialize(): Promise<void> {
-    const credentialRepository = AuthenticationContainer.getAuthCredentialRepository();
-    const sessionRepository = AuthenticationContainer.getAuthSessionRepository();
-    this.authService = new AuthenticationDomainService(credentialRepository, sessionRepository);
+  /**
+   * 获取应用服务单例
+   */
+  static async getInstance(): Promise<AuthenticationApplicationService> {
+    if (!AuthenticationApplicationService.instance) {
+      AuthenticationApplicationService.instance =
+        await AuthenticationApplicationService.createInstance();
+    }
+    return AuthenticationApplicationService.instance;
   }
 
   /**

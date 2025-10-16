@@ -1,40 +1,50 @@
 import type { IAuthCredentialRepository, IAuthSessionRepository } from '@dailyuse/domain-server';
 import { PrismaAuthCredentialRepository } from '../repositories/PrismaAuthCredentialRepository';
 import { PrismaAuthSessionRepository } from '../repositories/PrismaAuthSessionRepository';
-import prisma from '../../../../shared/db/prisma';
+import { prisma } from '@/config/prisma';
 
 /**
  * Authentication 依赖注入容器
  */
 export class AuthenticationContainer {
-  private static credentialRepository: IAuthCredentialRepository | null = null;
-  private static sessionRepository: IAuthSessionRepository | null = null;
+  private static instance: AuthenticationContainer;
+  private credentialRepository: IAuthCredentialRepository | null = null;
+  private sessionRepository: IAuthSessionRepository | null = null;
 
-  static getAuthCredentialRepository(): IAuthCredentialRepository {
-    if (!AuthenticationContainer.credentialRepository) {
-      AuthenticationContainer.credentialRepository = new PrismaAuthCredentialRepository(prisma);
+  private constructor() {}
+
+  static getInstance(): AuthenticationContainer {
+    if (!AuthenticationContainer.instance) {
+      AuthenticationContainer.instance = new AuthenticationContainer();
     }
-    return AuthenticationContainer.credentialRepository;
+    return AuthenticationContainer.instance;
   }
 
-  static getAuthSessionRepository(): IAuthSessionRepository {
-    if (!AuthenticationContainer.sessionRepository) {
-      AuthenticationContainer.sessionRepository = new PrismaAuthSessionRepository(prisma);
+  getAuthCredentialRepository(): IAuthCredentialRepository {
+    if (!this.credentialRepository) {
+      this.credentialRepository = new PrismaAuthCredentialRepository(prisma);
     }
-    return AuthenticationContainer.sessionRepository;
+    return this.credentialRepository;
+  }
+
+  getAuthSessionRepository(): IAuthSessionRepository {
+    if (!this.sessionRepository) {
+      this.sessionRepository = new PrismaAuthSessionRepository(prisma);
+    }
+    return this.sessionRepository;
   }
 
   // For testing purposes
-  static setAuthCredentialRepository(repository: IAuthCredentialRepository): void {
-    AuthenticationContainer.credentialRepository = repository;
+  setAuthCredentialRepository(repository: IAuthCredentialRepository): void {
+    this.credentialRepository = repository;
   }
 
-  static setAuthSessionRepository(repository: IAuthSessionRepository): void {
-    AuthenticationContainer.sessionRepository = repository;
+  setAuthSessionRepository(repository: IAuthSessionRepository): void {
+    this.sessionRepository = repository;
   }
 
-  static reset(): void {
-    AuthenticationContainer.credentialRepository = null;
-    AuthenticationContainer.sessionRepository = null;
+  reset(): void {
+    this.credentialRepository = null;
+    this.sessionRepository = null;
   }
 }

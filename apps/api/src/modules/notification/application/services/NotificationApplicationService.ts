@@ -5,6 +5,11 @@ import {
 import { NotificationContainer } from '../../infrastructure/di/NotificationContainer';
 import { createLogger } from '@dailyuse/utils';
 import { NotificationContracts } from '@dailyuse/contracts';
+import type {
+  INotificationPreferenceRepository,
+  INotificationRepository,
+  INotificationTemplateRepository,
+} from '@dailyuse/domain-server';
 
 // =================================================================
 // Contract Type Aliases
@@ -244,32 +249,59 @@ const logger = createLogger('NotificationApplicationService');
  * Notification 应用服务
  */
 export class NotificationApplicationService {
-  private static instance: NotificationApplicationService | null = null;
-  private domainService!: NotificationDomainService;
-  private preferenceService!: NotificationPreferenceDomainService;
+  private static instance: NotificationApplicationService;
+  private domainService: NotificationDomainService;
+  private preferenceService: NotificationPreferenceDomainService;
+  private notificationRepository: INotificationRepository;
+  private templateRepository: INotificationTemplateRepository;
+  private preferenceRepository: INotificationPreferenceRepository;
 
-  private constructor() {}
-
-  static async getInstance(): Promise<NotificationApplicationService> {
-    if (!NotificationApplicationService.instance) {
-      const service = new NotificationApplicationService();
-      await service.initialize();
-      NotificationApplicationService.instance = service;
-    }
-    return NotificationApplicationService.instance;
+  private constructor(
+    notificationRepository: INotificationRepository,
+    templateRepository: INotificationTemplateRepository,
+    preferenceRepository: INotificationPreferenceRepository,
+  ) {
+    this.notificationRepository = notificationRepository;
+    this.templateRepository = templateRepository;
+    this.preferenceRepository = preferenceRepository;
+    this.preferenceService = new NotificationPreferenceDomainService(preferenceRepository);
+    this.domainService = new NotificationDomainService(
+      notificationRepository,
+      templateRepository,
+      preferenceRepository,
+    );
   }
 
-  private async initialize(): Promise<void> {
-    const notificationRepo = NotificationContainer.getNotificationRepository();
-    const templateRepo = NotificationContainer.getNotificationTemplateRepository();
-    const preferenceRepo = NotificationContainer.getNotificationPreferenceRepository();
+  /**
+   * 创建应用服务实例（支持依赖注入）
+   */
+  static async createInstance(
+    notificationRepository?: INotificationRepository,
+    templateRepository?: INotificationTemplateRepository,
+    preferenceRepository?: INotificationPreferenceRepository,
+  ): Promise<NotificationApplicationService> {
+    const container = NotificationContainer.getInstance();
+    const notificationRepo = notificationRepository || container.getNotificationRepository();
+    const templateRepo = templateRepository || container.getNotificationTemplateRepository();
+    const preferenceRepo = preferenceRepository || container.getNotificationPreferenceRepository();
 
-    this.preferenceService = new NotificationPreferenceDomainService(preferenceRepo);
-    this.domainService = new NotificationDomainService(
+    NotificationApplicationService.instance = new NotificationApplicationService(
       notificationRepo,
       templateRepo,
       preferenceRepo,
     );
+    return NotificationApplicationService.instance;
+  }
+
+  /**
+   * 获取应用服务单例
+   */
+  static async getInstance(): Promise<NotificationApplicationService> {
+    if (!NotificationApplicationService.instance) {
+      NotificationApplicationService.instance =
+        await NotificationApplicationService.createInstance();
+    }
+    return NotificationApplicationService.instance;
   }
 
   async createNotification(params: {

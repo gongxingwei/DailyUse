@@ -10,3 +10,5 @@ export type { ITriggerReminderParams, ITriggerReminderResult } from './ReminderT
 
 export { ReminderSchedulerService } from './ReminderSchedulerService';
 export type { IScheduleResult, IScheduleOptions } from './ReminderSchedulerService';
+
+export * from './ReminderDomainService';

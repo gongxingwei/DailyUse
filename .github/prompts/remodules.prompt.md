@@ -90,6 +90,47 @@ const UrgencyLevel = goalContracts.UrgencyLevel;
 - api 服务返回给客户端的数据应该是 contracts 包中的 ClientDTO 类型，所以在return 是应该调用 toClientDTO() 方法，而非 toServerDTO() 方法
 - 仓储层中的 prisma 应该直接使用 prisma client 进行操作，不需要 new PrismaClient()，映射应该利用 toPersistenceDTO() 方法 和 fromPersistenceDTO() 方法
 
+#### application 层
+
+```ts
+// applicationService 类要有 getInstance() 静态方法，返回单例
+// applicationService 类要有 createInstance() 静态方法，支持依赖注入
+
+export class RepositoryApplicationService {
+  private static instance: RepositoryApplicationService;
+  private domainService: RepositoryDomainService;
+  private repositoryRepository: IRepositoryRepository;
+
+  private constructor(repositoryRepository: IRepositoryRepository) {
+    this.domainService = new RepositoryDomainService(repositoryRepository);
+    this.repositoryRepository = repositoryRepository;
+  }
+
+  /**
+   * 创建应用服务实例（支持依赖注入）
+   */
+  static async createInstance(
+    repositoryRepository?: IRepositoryRepository,
+  ): Promise<RepositoryApplicationService> {
+    const container = RepositoryContainer.getInstance();
+    const repo = repositoryRepository || container.getRepositoryAggregateRepository();
+
+    RepositoryApplicationService.instance = new RepositoryApplicationService(repo);
+    return RepositoryApplicationService.instance;
+  }
+
+  /**
+   * 获取应用服务单例
+   */
+  static async getInstance(): Promise<RepositoryApplicationService> {
+    if (!RepositoryApplicationService.instance) {
+      RepositoryApplicationService.instance = await RepositoryApplicationService.createInstance();
+    }
+    return RepositoryApplicationService.instance;
+  }
+}
+```
+
 ### web 项目
 
 **注意文件结构**：

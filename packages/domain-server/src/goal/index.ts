@@ -22,9 +22,7 @@ export { KeyResultSnapshot } from './value-objects/KeyResultSnapshot';
 // export { GoalReminderConfig } from './value-objects/GoalReminderConfig';
 
 // ===== 领域服务 =====
-// export { GoalDomainService } from './services/GoalDomainService';
-// export { GoalFolderDomainService } from './services/GoalFolderDomainService';
-// export { GoalStatisticsDomainService } from './services/GoalStatisticsDomainService';
+export * from './services';
 
 // ===== 仓储接口 =====
 export type { IGoalRepository } from './repositories/IGoalRepository';

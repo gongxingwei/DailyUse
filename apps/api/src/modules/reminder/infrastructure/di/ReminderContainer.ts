@@ -1,3 +1,4 @@
+import { prisma } from '@/config/prisma';
 import type {
   IReminderTemplateRepository,
   IReminderGroupRepository,
@@ -7,7 +8,7 @@ import {
   PrismaReminderTemplateRepository,
   PrismaReminderGroupRepository,
   PrismaReminderStatisticsRepository,
-} from '../persistence/prisma';
+} from '../repositories';
 
 /**
  * Reminder 模块依赖注入容器
@@ -40,7 +41,7 @@ export class ReminderContainer {
    */
   getReminderTemplateRepository(): IReminderTemplateRepository {
     if (!this.reminderTemplateRepository) {
-      this.reminderTemplateRepository = new PrismaReminderTemplateRepository();
+      this.reminderTemplateRepository = new PrismaReminderTemplateRepository(prisma);
     }
     return this.reminderTemplateRepository;
   }
@@ -50,7 +51,7 @@ export class ReminderContainer {
    */
   getReminderGroupRepository(): IReminderGroupRepository {
     if (!this.reminderGroupRepository) {
-      this.reminderGroupRepository = new PrismaReminderGroupRepository();
+      this.reminderGroupRepository = new PrismaReminderGroupRepository(prisma);
     }
     return this.reminderGroupRepository;
   }
@@ -60,7 +61,7 @@ export class ReminderContainer {
    */
   getReminderStatisticsRepository(): IReminderStatisticsRepository {
     if (!this.reminderStatisticsRepository) {
-      this.reminderStatisticsRepository = new PrismaReminderStatisticsRepository();
+      this.reminderStatisticsRepository = new PrismaReminderStatisticsRepository(prisma);
     }
     return this.reminderStatisticsRepository;
   }
