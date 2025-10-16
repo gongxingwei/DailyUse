@@ -1,14 +1,16 @@
 /**
  * NotificationAction Value Object (Server)
- * åÍ\<ùa - ¡ï
+ * ï¿½ï¿½\<ï¿½a - 
+ï¿½ï¿½
  */
 
+import type { NotificationActionClientDTO } from './NotificationActionClient';
 import type { NotificationActionType } from '../enums';
 
-// ============ ¥ãšI ============
+// ============ ï¿½ï¿½I ============
 
 /**
- * åÍ\ - Server ¥ã
+ * NotificationAction Server Interface
  */
 export interface INotificationActionServer {
   id: string;
@@ -16,7 +18,7 @@ export interface INotificationActionServer {
   type: NotificationActionType;
   payload?: any;
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: INotificationActionServer): boolean;
   with(
     updates: Partial<
@@ -27,13 +29,13 @@ export interface INotificationActionServer {
     >,
   ): INotificationActionServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): NotificationActionServerDTO;
   toClientDTO(): NotificationActionClientDTO;
   toPersistenceDTO(): NotificationActionPersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * NotificationAction Server DTO
@@ -45,17 +47,6 @@ export interface NotificationActionServerDTO {
   payload?: any;
 }
 
-/**
- * NotificationAction Client DTO ((Ž Server -> Client lb)
- */
-export interface NotificationActionClientDTO {
-  id: string;
-  label: string;
-  type: NotificationActionType;
-  payload?: any;
-  typeText: string;
-  icon: string;
-}
 
 /**
  * NotificationAction Persistence DTO
@@ -67,6 +58,6 @@ export interface NotificationActionPersistenceDTO {
   payload?: string | null; // JSON string
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type NotificationActionServer = INotificationActionServer;

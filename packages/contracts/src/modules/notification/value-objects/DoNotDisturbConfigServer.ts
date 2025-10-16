@@ -1,12 +1,14 @@
 /**
  * DoNotDisturbConfig Value Object (Server)
- * MSpMn<ùa - ¡ï
+ * MSpMn<ï¿½a - 
+ï¿½ï¿½
  */
+import type { DoNotDisturbConfigClientDTO } from './DoNotDisturbConfigClient';
 
-// ============ ¥ãšI ============
+// ============ ï¿½ï¿½I ============
 
 /**
- * MSpMn - Server ¥ã
+ * MSpMn - Server ï¿½ï¿½
  */
 export interface IDoNotDisturbConfigServer {
   enabled: boolean;
@@ -14,7 +16,7 @@ export interface IDoNotDisturbConfigServer {
   endTime: string; // 'HH:mm' format
   daysOfWeek: number[]; // 0-6 (0=Sunday)
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: IDoNotDisturbConfigServer): boolean;
   with(
     updates: Partial<
@@ -25,16 +27,16 @@ export interface IDoNotDisturbConfigServer {
     >,
   ): IDoNotDisturbConfigServer;
 
-  // ¡¹Õ
+  // ï¿½ï¿½ï¿½
   isInPeriod(timestamp: number): boolean;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): DoNotDisturbConfigServerDTO;
   toClientDTO(): DoNotDisturbConfigClientDTO;
   toPersistenceDTO(): DoNotDisturbConfigPersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * DoNotDisturbConfig Server DTO
@@ -46,18 +48,6 @@ export interface DoNotDisturbConfigServerDTO {
   daysOfWeek: number[];
 }
 
-/**
- * DoNotDisturbConfig Client DTO ((Ž Server -> Client lb)
- */
-export interface DoNotDisturbConfigClientDTO {
-  enabled: boolean;
-  startTime: string;
-  endTime: string;
-  daysOfWeek: number[];
-  timeRangeText: string;
-  daysOfWeekText: string;
-  isActive: boolean;
-}
 
 /**
  * DoNotDisturbConfig Persistence DTO
@@ -69,6 +59,6 @@ export interface DoNotDisturbConfigPersistenceDTO {
   days_of_week: string; // JSON.stringify(number[])
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type DoNotDisturbConfigServer = IDoNotDisturbConfigServer;

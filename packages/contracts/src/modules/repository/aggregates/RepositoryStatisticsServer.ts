@@ -5,6 +5,7 @@
  * 用于快速查询仓储模块的统计数据，避免每次都遍历计算
  */
 
+import type { RepositoryStatisticsClientDTO } from "./RepositoryStatisticsClient";
 // ============ DTO 定义 ============
 
 /**

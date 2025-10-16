@@ -1,19 +1,21 @@
 /**
  * RateLimit Value Object (Server)
- * ‘‡P6<ùa - ¡ï
+ * ï¿½ï¿½P6<ï¿½a - 
+ï¿½ï¿½
  */
 
-// ============ ¥ãšI ============
+import type { RateLimitClientDTO } from './RateLimitClient.ts';
+// ============ ï¿½ï¿½I ============
 
 /**
- * ‘‡P6 - Server ¥ã
+ * ï¿½ï¿½P6 - Server ï¿½ï¿½
  */
 export interface IRateLimitServer {
   enabled: boolean;
   maxPerHour: number;
   maxPerDay: number;
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: IRateLimitServer): boolean;
   with(
     updates: Partial<
@@ -21,13 +23,13 @@ export interface IRateLimitServer {
     >,
   ): IRateLimitServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): RateLimitServerDTO;
   toClientDTO(): RateLimitClientDTO;
   toPersistenceDTO(): RateLimitPersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * RateLimit Server DTO
@@ -39,16 +41,6 @@ export interface RateLimitServerDTO {
 }
 
 /**
- * RateLimit Client DTO ((Ž Server -> Client lb)
- */
-export interface RateLimitClientDTO {
-  enabled: boolean;
-  maxPerHour: number;
-  maxPerDay: number;
-  limitText: string;
-}
-
-/**
  * RateLimit Persistence DTO
  */
 export interface RateLimitPersistenceDTO {
@@ -57,6 +49,6 @@ export interface RateLimitPersistenceDTO {
   max_per_day: number;
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type RateLimitServer = IRateLimitServer;

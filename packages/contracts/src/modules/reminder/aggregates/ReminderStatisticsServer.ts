@@ -3,6 +3,8 @@
  * 提醒统计聚合根 - 服务端接口
  */
 
+import type { ReminderStatisticsClientDTO } from './ReminderStatisticsClient';
+
 // ============ 子统计信息接口 ============
 
 /**

@@ -7,10 +7,6 @@ export * as sharedContracts from './shared/index';
 export { ImportanceLevel } from './shared/importance';
 export { UrgencyLevel } from './shared/urgency';
 
-// 导出所有事件相关的定义 (临时注释，待实现)
-// export * from './events/index';
-// export * as EventContracts from './events/index';
-
 // 导出模块相关的类型定义（定义命名空间防止冲突）
 export * as TaskContracts from './modules/task';
 export * as GoalContracts from './modules/goal';

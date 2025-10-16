@@ -1,21 +1,23 @@
 /**
  * NotificationTemplate Value Object (Server)
- * å!<ùa - ¡ï
+ * ï¿½!<ï¿½a - 
+ï¿½ï¿½
  */
 
-// ============ q«{‹šI ============
+import type { NotificationTemplateConfigClientDTO } from './NotificationTemplateClient';
+// ============ qï¿½{ï¿½ï¿½I ============
 
 /**
- * !…¹
+ * !ï¿½ï¿½
  */
 export interface TemplateContent {
-  title: string; // /ØÏ: {{variable}}
-  content: string; // /ØÏŒ Markdown
+  title: string; // /ï¿½ï¿½: {{variable}}
+  content: string; // /ï¿½ÏŒ Markdown
   variables: string[]; // ['taskName', 'dueDate', etc.]
 }
 
 /**
- * ®ö!…¹
+ * ï¿½ï¿½!ï¿½ï¿½
  */
 export interface EmailTemplateContent {
   subject: string;
@@ -24,7 +26,7 @@ export interface EmailTemplateContent {
 }
 
 /**
- * ¨!…¹
+ * ï¿½!ï¿½ï¿½
  */
 export interface PushTemplateContent {
   title: string;
@@ -43,10 +45,10 @@ export interface ChannelConfig {
   sms: boolean;
 }
 
-// ============ ¥ãšI ============
+// ============ ï¿½ï¿½I ============
 
 /**
- * å!Mn - Server ¥ã
+ * ï¿½!Mn - Server ï¿½ï¿½
  */
 export interface INotificationTemplateConfigServer {
   template: TemplateContent;
@@ -54,7 +56,7 @@ export interface INotificationTemplateConfigServer {
   emailTemplate?: EmailTemplateContent | null;
   pushTemplate?: PushTemplateContent | null;
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: INotificationTemplateConfigServer): boolean;
   with(
     updates: Partial<
@@ -65,13 +67,13 @@ export interface INotificationTemplateConfigServer {
     >,
   ): INotificationTemplateConfigServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): NotificationTemplateConfigServerDTO;
   toClientDTO(): NotificationTemplateConfigClientDTO;
   toPersistenceDTO(): NotificationTemplateConfigPersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * NotificationTemplateConfig Server DTO
@@ -84,20 +86,6 @@ export interface NotificationTemplateConfigServerDTO {
 }
 
 /**
- * NotificationTemplateConfig Client DTO ((Ž Server -> Client lb)
- */
-export interface NotificationTemplateConfigClientDTO {
-  template: TemplateContent;
-  channels: ChannelConfig;
-  emailTemplate?: EmailTemplateContent | null;
-  pushTemplate?: PushTemplateContent | null;
-  enabledChannelsCount: number;
-  enabledChannelsList: string[];
-  hasEmailTemplate: boolean;
-  hasPushTemplate: boolean;
-}
-
-/**
  * NotificationTemplateConfig Persistence DTO
  */
 export interface NotificationTemplateConfigPersistenceDTO {
@@ -107,6 +95,6 @@ export interface NotificationTemplateConfigPersistenceDTO {
   push_template?: string | null; // JSON.stringify(PushTemplateContent)
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type NotificationTemplateConfigServer = INotificationTemplateConfigServer;

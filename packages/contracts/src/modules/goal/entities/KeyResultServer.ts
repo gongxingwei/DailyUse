@@ -2,6 +2,7 @@
  * KeyResult Entity - Server Interface
  */
 
+import type { KeyResultClientDTO } from './KeyResultClient';
 import type { KeyResultProgressServerDTO } from '../value-objects';
 import type { GoalRecordServerDTO } from './GoalRecordServer';
 

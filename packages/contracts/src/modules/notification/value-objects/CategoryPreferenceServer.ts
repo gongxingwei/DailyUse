@@ -1,14 +1,15 @@
 /**
  * CategoryPreference Value Object (Server)
- * {O}<ùa - ¡ï
+ * {O}<ï¿½a - 
+ï¿½ï¿½
  */
-
+import type { CategoryPreferenceClientDTO } from './CategoryPreferenceClient';
 import type { ImportanceLevel } from '../enums';
 
-// ============ q«{‹šI ============
+// ============ qï¿½{ï¿½ï¿½I ============
 
 /**
- *  SO}¾n
+ *  SO}ï¿½n
  */
 export interface ChannelPreference {
   inApp: boolean;
@@ -17,17 +18,17 @@ export interface ChannelPreference {
   sms: boolean;
 }
 
-// ============ ¥ãšI ============
+// ============ ï¿½ï¿½I ============
 
 /**
- * {O} - Server ¥ã
+ * {O} - Server ï¿½ï¿½
  */
 export interface ICategoryPreferenceServer {
   enabled: boolean;
   channels: ChannelPreference;
-  importance: ImportanceLevel[]; // ê¥6šÍ'§+„å
+  importance: ImportanceLevel[]; // ï¿½6ï¿½Í'ï¿½+ï¿½ï¿½
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: ICategoryPreferenceServer): boolean;
   with(
     updates: Partial<
@@ -38,13 +39,13 @@ export interface ICategoryPreferenceServer {
     >,
   ): ICategoryPreferenceServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): CategoryPreferenceServerDTO;
   toClientDTO(): CategoryPreferenceClientDTO;
   toPersistenceDTO(): CategoryPreferencePersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * CategoryPreference Server DTO
@@ -56,18 +57,6 @@ export interface CategoryPreferenceServerDTO {
 }
 
 /**
- * CategoryPreference Client DTO ((Ž Server -> Client lb)
- */
-export interface CategoryPreferenceClientDTO {
-  enabled: boolean;
-  channels: ChannelPreference;
-  importance: ImportanceLevel[];
-  enabledChannelsCount: number;
-  enabledChannelsList: string[];
-  importanceText: string;
-}
-
-/**
  * CategoryPreference Persistence DTO
  */
 export interface CategoryPreferencePersistenceDTO {
@@ -76,6 +65,6 @@ export interface CategoryPreferencePersistenceDTO {
   importance: string; // JSON.stringify(ImportanceLevel[])
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type CategoryPreferenceServer = ICategoryPreferenceServer;

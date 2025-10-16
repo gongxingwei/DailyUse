@@ -108,8 +108,8 @@ export interface TaskTemplatePersistenceDTO {
   time_config: string; // JSON
   recurrence_rule?: string | null; // JSON
   reminder_config?: string | null; // JSON
-  importance: number;
-  urgency: number;
+  importance: string;
+  urgency: string;
   goal_binding?: string | null; // JSON
   folder_uuid?: string | null;
   tags: string; // JSON array

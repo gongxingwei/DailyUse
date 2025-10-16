@@ -3,6 +3,8 @@
  * 目标统计聚合根 - 服务端接口
  */
 
+import type { GoalStatisticsClientDTO } from "./GoalStatisticsClient";
+
 // ============ 辅助类型 ============
 
 /**

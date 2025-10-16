@@ -1,12 +1,15 @@
 /**
  * NotificationMetadata Value Object (Server)
- * åCpn<ùa - ¡ï
+ * ï¿½Cpn<ï¿½a - 
+ï¿½ï¿½
  */
 
-// ============ ¥ãšI ============
+import type { NotificationMetadataClientDTO } from './NotificationMetadataClient';
+
+// ============ ï¿½ï¿½I ============
 
 /**
- * åCpn - Server ¥ã
+ * ï¿½Cpn - Server ï¿½ï¿½
  */
 export interface INotificationMetadataServer {
   icon?: string | null;
@@ -14,9 +17,9 @@ export interface INotificationMetadataServer {
   color?: string | null;
   sound?: string | null;
   badge?: number | null;
-  data?: any; // êšIpn
+  data?: any; // ï¿½Ipn
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: INotificationMetadataServer): boolean;
   with(
     updates: Partial<
@@ -27,13 +30,13 @@ export interface INotificationMetadataServer {
     >,
   ): INotificationMetadataServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): NotificationMetadataServerDTO;
   toClientDTO(): NotificationMetadataClientDTO;
   toPersistenceDTO(): NotificationMetadataPersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * NotificationMetadata Server DTO
@@ -47,20 +50,6 @@ export interface NotificationMetadataServerDTO {
   data?: any;
 }
 
-/**
- * NotificationMetadata Client DTO ((Ž Server -> Client lb)
- */
-export interface NotificationMetadataClientDTO {
-  icon?: string | null;
-  image?: string | null;
-  color?: string | null;
-  sound?: string | null;
-  badge?: number | null;
-  data?: any;
-  hasIcon: boolean;
-  hasImage: boolean;
-  hasBadge: boolean;
-}
 
 /**
  * NotificationMetadata Persistence DTO
@@ -74,6 +63,6 @@ export interface NotificationMetadataPersistenceDTO {
   data?: string | null; // JSON string
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type NotificationMetadataServer = INotificationMetadataServer;

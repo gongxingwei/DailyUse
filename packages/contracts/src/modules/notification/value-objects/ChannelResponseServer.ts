@@ -1,19 +1,21 @@
 /**
  * ChannelResponse Value Object (Server)
- *  SÍ”<ùa - ¡ï
+ *  SÍ”<ï¿½a - 
+ï¿½ï¿½
  */
 
-// ============ ¥ãšI ============
+import type { ChannelResponseClientDTO } from './ChannelResponseClient';
+// ============ ï¿½ï¿½I ============
 
 /**
- *  SÍ” - Server ¥ã
+ *  SÍ” - Server ï¿½ï¿½
  */
 export interface IChannelResponseServer {
   messageId?: string | null;
   statusCode?: number | null;
   data?: any;
 
-  // <ùa¹Õ
+  // <ï¿½aï¿½ï¿½
   equals(other: IChannelResponseServer): boolean;
   with(
     updates: Partial<
@@ -24,13 +26,13 @@ export interface IChannelResponseServer {
     >,
   ): IChannelResponseServer;
 
-  // DTO lb¹Õ
+  // DTO lbï¿½ï¿½
   toServerDTO(): ChannelResponseServerDTO;
   toClientDTO(): ChannelResponseClientDTO;
   toPersistenceDTO(): ChannelResponsePersistenceDTO;
 }
 
-// ============ DTO šI ============
+// ============ DTO ï¿½I ============
 
 /**
  * ChannelResponse Server DTO
@@ -42,17 +44,6 @@ export interface ChannelResponseServerDTO {
 }
 
 /**
- * ChannelResponse Client DTO ((Ž Server -> Client lb)
- */
-export interface ChannelResponseClientDTO {
-  messageId?: string | null;
-  statusCode?: number | null;
-  data?: any;
-  isSuccess: boolean;
-  statusText: string;
-}
-
-/**
  * ChannelResponse Persistence DTO
  */
 export interface ChannelResponsePersistenceDTO {
@@ -61,6 +52,6 @@ export interface ChannelResponsePersistenceDTO {
   data?: string | null; // JSON string
 }
 
-// ============ {‹üú ============
+// ============ {ï¿½ï¿½ï¿½ ============
 
 export type ChannelResponseServer = IChannelResponseServer;

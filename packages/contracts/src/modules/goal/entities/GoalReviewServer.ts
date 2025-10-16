@@ -1,7 +1,7 @@
 /**
  * GoalReview Entity - Server Interface
  */
-
+import type { GoalReviewClientDTO } from "./GoalReviewClient";
 import type { ReviewType } from '../enums';
 import type { KeyResultSnapshotServerDTO } from '../value-objects';
 

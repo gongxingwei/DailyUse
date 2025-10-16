@@ -2,7 +2,7 @@
  * GoalRecord Entity - Server Interface
  * 目标记录实体 - 服务端接口
  */
-
+import type { GoalRecordClientDTO } from "./GoalRecordClient";
 // ============ DTO 定义 ============
 
 /**
