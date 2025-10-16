@@ -3,11 +3,22 @@
  * 通知值对象导出
  */
 
-export * from './NotificationAction';
-export * from './NotificationMetadata';
-export * from './CategoryPreference';
-export * from './DoNotDisturbConfig';
-export * from './RateLimit';
-export * from './ChannelError';
-export * from './ChannelResponse';
-export * from './NotificationTemplate';
+// ============ Server 端值对象 ============
+export * from './NotificationActionServer';
+export * from './NotificationMetadataServer';
+export * from './CategoryPreferenceServer';
+export * from './DoNotDisturbConfigServer';
+export * from './RateLimitServer';
+export * from './ChannelErrorServer';
+export * from './ChannelResponseServer';
+export * from './NotificationTemplateServer';
+
+// ============ Client 端值对象 ============
+export * from './NotificationActionClient';
+export * from './NotificationMetadataClient';
+export * from './CategoryPreferenceClient';
+export * from './DoNotDisturbConfigClient';
+export * from './RateLimitClient';
+export * from './ChannelErrorClient';
+export * from './ChannelResponseClient';
+export * from './NotificationTemplateClient';
