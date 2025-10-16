@@ -31,3 +31,9 @@ export * from './editor';
 
 // Schedule 模块
 export * from './schedule';
+
+// Export the domain modules for importable aggregates
+export * from './account';
+export * from './goal';
+export * from './reminder';
+export * from './task';

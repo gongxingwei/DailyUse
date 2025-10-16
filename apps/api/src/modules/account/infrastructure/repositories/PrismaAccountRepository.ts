@@ -16,14 +16,7 @@ export class PrismaAccountRepository implements IAccountRepository {
    * 将 Prisma 数据映射为 Account 聚合根实体
    */
   private mapAccountToEntity(data: any): Account {
-    const profile = JSON.parse(data.profile);
-    const preferences = JSON.parse(data.preferences);
-    const subscriptionData = data.subscription ? JSON.parse(data.subscription) : null;
-    const storage = JSON.parse(data.storage);
-    const security = JSON.parse(data.security);
-    const stats = JSON.parse(data.stats);
-
-    const persistenceDTO: AccountContracts.AccountPersistenceDTO = {
+    return Account.fromPersistenceDTO({
       uuid: data.uuid,
       username: data.username,
       email: data.email,
@@ -31,66 +24,40 @@ export class PrismaAccountRepository implements IAccountRepository {
       phoneNumber: data.phoneNumber,
       phoneVerified: data.phoneVerified,
       status: data.status,
-
-      displayName: profile.displayName,
-      avatar: profile.avatar,
-      bio: profile.bio,
-      location: profile.location,
-      timezone: profile.timezone,
-      language: profile.language,
-      dateOfBirth: profile.dateOfBirth,
-      gender: profile.gender,
-
+      displayName: JSON.parse(data.profile).displayName,
+      avatar: JSON.parse(data.profile).avatar,
+      bio: JSON.parse(data.profile).bio,
+      location: JSON.parse(data.profile).location,
+      timezone: JSON.parse(data.profile).timezone,
+      language: JSON.parse(data.profile).language,
+      dateOfBirth: JSON.parse(data.profile).dateOfBirth,
+      gender: JSON.parse(data.profile).gender,
       preferences: data.preferences,
-
-      subscriptionId: subscriptionData?.uuid,
-      subscriptionPlan: subscriptionData?.plan,
-      subscriptionStatus: subscriptionData?.status,
-      subscriptionStartDate: subscriptionData?.startDate,
-      subscriptionEndDate: subscriptionData?.endDate,
-      subscriptionRenewalDate: subscriptionData?.renewalDate,
-      subscriptionAutoRenew: subscriptionData?.autoRenew,
-
-      storageUsed: storage.used,
-      storageQuota: storage.quota,
-      storageQuotaType: storage.quotaType,
-
-      twoFactorEnabled: security.twoFactorEnabled,
-      lastPasswordChange: security.lastPasswordChange,
-      loginAttempts: security.loginAttempts,
-      lockedUntil: security.lockedUntil,
-
+      storageUsed: JSON.parse(data.storage).used,
+      storageQuota: JSON.parse(data.storage).quota,
+      storageQuotaType: JSON.parse(data.storage).quotaType,
+      twoFactorEnabled: JSON.parse(data.security).twoFactorEnabled,
+      lastPasswordChange: JSON.parse(data.security).lastPasswordChange,
+      loginAttempts: JSON.parse(data.security).loginAttempts,
+      lockedUntil: JSON.parse(data.security).lockedUntil,
       history: data.history,
-
-      statsTotalGoals: stats.totalGoals,
-      statsTotalTasks: stats.totalTasks,
-      statsTotalSchedules: stats.totalSchedules,
-      statsTotalReminders: stats.totalReminders,
-      statsLastLoginAt: stats.lastLoginAt,
-      statsLoginCount: stats.loginCount,
-
+      statsTotalGoals: JSON.parse(data.stats).totalGoals,
+      statsTotalTasks: JSON.parse(data.stats).totalTasks,
+      statsTotalSchedules: JSON.parse(data.stats).totalSchedules,
+      statsTotalReminders: JSON.parse(data.stats).totalReminders,
+      statsLastLoginAt: JSON.parse(data.stats).lastLoginAt,
+      statsLoginCount: JSON.parse(data.stats).loginCount,
       createdAt: data.createdAt.getTime(),
       updatedAt: data.updatedAt.getTime(),
-      lastActiveAt: data.lastActiveAt?.getTime() ?? null,
-      deletedAt: data.deletedAt?.getTime() ?? null,
-    };
-
-    return Account.fromPersistenceDTO(persistenceDTO);
-  }
-
-  /**
-   * 转换时间戳为 Date 对象
-   */
-  private toDate(timestamp: number | null | undefined): Date | null | undefined {
-    if (timestamp == null) return timestamp as null | undefined;
-    return new Date(timestamp);
+      lastActiveAt: data.lastActiveAt ? data.lastActiveAt.getTime() : null,
+      deletedAt: data.deletedAt ? data.deletedAt.getTime() : null,
+    });
   }
 
   // ===== IAccountRepository 接口实现 =====
 
   async save(account: Account): Promise<void> {
     const persistence = account.toPersistenceDTO();
-
     const data = {
       uuid: persistence.uuid,
       username: persistence.username,
@@ -99,59 +66,26 @@ export class PrismaAccountRepository implements IAccountRepository {
       phoneNumber: persistence.phoneNumber,
       phoneVerified: persistence.phoneVerified,
       status: persistence.status,
-      profile: JSON.stringify({
-        displayName: persistence.displayName,
-        avatar: persistence.avatar,
-        bio: persistence.bio,
-        location: persistence.location,
-        timezone: persistence.timezone,
-        language: persistence.language,
-        dateOfBirth: persistence.dateOfBirth,
-        gender: persistence.gender,
-      }),
+      profile: JSON.stringify(account.profile),
       preferences: persistence.preferences,
-      subscription:
-        persistence.subscriptionId || persistence.subscriptionPlan || persistence.subscriptionStatus
-          ? JSON.stringify({
-              uuid: persistence.subscriptionId,
-              plan: persistence.subscriptionPlan,
-              status: persistence.subscriptionStatus,
-              startDate: persistence.subscriptionStartDate,
-              endDate: persistence.subscriptionEndDate,
-              renewalDate: persistence.subscriptionRenewalDate,
-              autoRenew: persistence.subscriptionAutoRenew,
-            })
-          : null,
-      storage: JSON.stringify({
-        used: persistence.storageUsed,
-        quota: persistence.storageQuota,
-        quotaType: persistence.storageQuotaType,
-      }),
-      security: JSON.stringify({
-        twoFactorEnabled: persistence.twoFactorEnabled,
-        lastPasswordChange: persistence.lastPasswordChange,
-        loginAttempts: persistence.loginAttempts,
-        lockedUntil: persistence.lockedUntil,
-      }),
+      storage: JSON.stringify(account.storage),
+      security: JSON.stringify(account.security),
       history: persistence.history,
-      stats: JSON.stringify({
-        totalGoals: persistence.statsTotalGoals,
-        totalTasks: persistence.statsTotalTasks,
-        totalSchedules: persistence.statsTotalSchedules,
-        totalReminders: persistence.statsTotalReminders,
-        lastLoginAt: persistence.statsLastLoginAt,
-        loginCount: persistence.statsLoginCount,
-      }),
-      createdAt: this.toDate(persistence.createdAt) ?? new Date(),
-      updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
-      lastActiveAt: this.toDate(persistence.lastActiveAt),
-      deletedAt: this.toDate(persistence.deletedAt),
+      stats: JSON.stringify(account.stats),
+      createdAt: new Date(persistence.createdAt),
+      updatedAt: new Date(persistence.updatedAt),
+      lastActiveAt: persistence.lastActiveAt ? new Date(persistence.lastActiveAt) : null,
+      deletedAt: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
     await this.prisma.account.upsert({
       where: { uuid: persistence.uuid },
       create: data,
-      update: data,
+      update: {
+        ...data,
+        uuid: undefined,
+        createdAt: undefined,
+      },
     });
   }
 

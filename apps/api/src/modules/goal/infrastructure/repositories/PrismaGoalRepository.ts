@@ -39,7 +39,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   };
 
   private mapToEntity(data: PrismaGoal): Goal {
-    const persistenceDTO: GoalContracts.GoalPersistenceDTO = {
+    return Goal.fromPersistenceDTO({
       uuid: data.uuid,
       account_uuid: data.account_uuid,
       title: data.title,
@@ -48,57 +48,51 @@ export class PrismaGoalRepository implements IGoalRepository {
       importance: this.reverseImportanceMap[data.importance],
       urgency: this.reverseUrgencyMap[data.urgency],
       category: data.category,
-      tags: data.tags ? JSON.parse(data.tags) : [],
-      start_date: data.start_date?.getTime(),
-      target_date: data.target_date?.getTime(),
-      completed_at: data.completed_at?.getTime(),
-      archived_at: data.archived_at?.getTime(),
+      tags: data.tags ?? '[]',
+      start_date: data.start_date ? data.start_date.getTime() : null,
+      target_date: data.target_date ? data.target_date.getTime() : null,
+      completed_at: data.completed_at ? data.completed_at.getTime() : null,
+      archived_at: data.archived_at ? data.archived_at.getTime() : null,
       folder_uuid: data.folder_uuid,
       parent_goal_uuid: data.parent_goal_uuid,
       sort_order: data.sort_order,
-      reminder_config: data.reminder_config ? JSON.parse(data.reminder_config) : undefined,
+      reminder_config: data.reminder_config,
       created_at: data.created_at.getTime(),
       updated_at: data.updated_at.getTime(),
-      deleted_at: data.deleted_at?.getTime(),
-    };
-    return Goal.fromPersistenceDTO(persistenceDTO);
-  }
-
-  private toDate(timestamp: number | null | undefined): Date | null | undefined {
-    if (timestamp === null || timestamp === undefined) return timestamp;
-    return new Date(timestamp);
+      deleted_at: data.deleted_at ? data.deleted_at.getTime() : null,
+    });
   }
 
   async save(goal: Goal): Promise<void> {
     const persistence = goal.toPersistenceDTO();
     const data = {
-      uuid: persistence.uuid,
-      account_uuid: persistence.account_uuid,
       title: persistence.title,
       description: persistence.description,
       status: persistence.status,
       importance: this.importanceMap[persistence.importance],
       urgency: this.urgencyMap[persistence.urgency],
       category: persistence.category,
-      tags: persistence.tags ? JSON.stringify(persistence.tags) : null,
-      start_date: this.toDate(persistence.start_date),
-      target_date: this.toDate(persistence.target_date),
-      completed_at: this.toDate(persistence.completed_at),
-      archived_at: this.toDate(persistence.archived_at),
+      tags: persistence.tags,
+      start_date: persistence.start_date ? new Date(persistence.start_date) : null,
+      target_date: persistence.target_date ? new Date(persistence.target_date) : null,
+      completed_at: persistence.completed_at ? new Date(persistence.completed_at) : null,
+      archived_at: persistence.archived_at ? new Date(persistence.archived_at) : null,
       folder_uuid: persistence.folder_uuid,
       parent_goal_uuid: persistence.parent_goal_uuid,
       sort_order: persistence.sort_order,
-      reminder_config: persistence.reminder_config
-        ? JSON.stringify(persistence.reminder_config)
-        : null,
-      created_at: this.toDate(persistence.created_at) ?? new Date(),
-      updated_at: this.toDate(persistence.updated_at) ?? new Date(),
-      deleted_at: this.toDate(persistence.deleted_at),
+      reminder_config: persistence.reminder_config,
+      updated_at: new Date(persistence.updated_at),
+      deleted_at: persistence.deleted_at ? new Date(persistence.deleted_at) : null,
     };
 
     await this.prisma.goal.upsert({
       where: { uuid: persistence.uuid },
-      create: data,
+      create: {
+        uuid: persistence.uuid,
+        account_uuid: persistence.account_uuid,
+        created_at: new Date(persistence.created_at),
+        ...data,
+      },
       update: data,
     });
   }

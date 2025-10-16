@@ -22,29 +22,19 @@ export class PrismaSettingRepository implements ISettingRepository {
   /**
    * 将 Prisma 数据映射为 Setting 聚合根
    */
-  private mapSettingToEntity(data: any): Setting {
+  private mapToEntity(data: any): Setting {
     return Setting.fromPersistenceDTO({
       uuid: data.uuid,
+      account_uuid: data.account_uuid,
+      category: data.category,
       key: data.key,
-      name: data.name,
-      description: data.description,
-      value_type: data.valueType,
       value: data.value,
-      default_value: data.defaultValue,
-      scope: data.scope,
-      account_uuid: data.accountUuid,
-      device_id: data.deviceId,
-      group_uuid: data.groupUuid,
-      validation: data.validation,
-      ui: data.ui,
-      is_encrypted: data.isEncrypted,
-      is_read_only: data.isReadOnly,
-      is_system_setting: data.isSystemSetting,
-      sync_config: data.syncConfig,
-      history: data.historyData || '[]',
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      deleted_at: data.deletedAt?.getTime() ?? null,
+      metadata: data.metadata,
+      is_public: data.is_public,
+      is_synced: data.is_synced,
+      created_at: Number(data.createdAt),
+      updated_at: Number(data.updatedAt),
+      deleted_at: data.deletedAt ? Number(data.deletedAt) : null,
     });
   }
 
@@ -60,50 +50,39 @@ export class PrismaSettingRepository implements ISettingRepository {
 
   async save(setting: Setting): Promise<void> {
     const persistence = setting.toPersistenceDTO();
-    const createData = {
+    const data = {
       uuid: persistence.uuid,
+      account_uuid: persistence.account_uuid,
+      category: persistence.category,
       key: persistence.key,
-      name: persistence.name,
-      description: persistence.description,
-      valueType: persistence.value_type,
       value: persistence.value,
-      defaultValue: persistence.default_value,
-      scope: persistence.scope,
-      accountUuid: persistence.account_uuid,
-      deviceId: persistence.device_id,
-      groupUuid: persistence.group_uuid,
-      validation: persistence.validation,
-      ui: persistence.ui,
-      isEncrypted: persistence.is_encrypted,
-      isReadOnly: persistence.is_read_only,
-      isSystemSetting: persistence.is_system_setting,
-      syncConfig: persistence.sync_config,
-      historyData: persistence.history,
-      createdAt: this.toDate(persistence.created_at) ?? new Date(),
-      updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-      deletedAt: this.toDate(persistence.deleted_at),
-    };
-
-    const updateData = {
-      description: persistence.description,
-      value: persistence.value,
-      historyData: persistence.history,
-      updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-      deletedAt: this.toDate(persistence.deleted_at),
+      metadata: persistence.metadata,
+      is_public: persistence.is_public,
+      is_synced: persistence.is_synced,
+      createdAt: BigInt(persistence.created_at),
+      updatedAt: BigInt(persistence.updated_at),
+      deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
     };
 
     await this.prisma.setting.upsert({
       where: { uuid: persistence.uuid },
-      create: createData,
-      update: updateData,
+      create: data,
+      update: {
+        ...data,
+        uuid: undefined,
+        account_uuid: undefined,
+        category: undefined,
+        key: undefined,
+        createdAt: undefined,
+      },
     });
   }
 
-  async findById(uuid: string, options?: { includeHistory?: boolean }): Promise<Setting | null> {
+  async findByUuid(uuid: string): Promise<Setting | null> {
     const data = await this.prisma.setting.findUnique({
       where: { uuid },
     });
-    return data ? this.mapSettingToEntity(data) : null;
+    return data ? this.mapToEntity(data) : null;
   }
 
   async findByKey(key: string, scope: SettingScope, contextUuid?: string): Promise<Setting | null> {
@@ -112,7 +91,7 @@ export class PrismaSettingRepository implements ISettingRepository {
     if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
 
     const data = await this.prisma.setting.findFirst({ where });
-    return data ? this.mapSettingToEntity(data) : null;
+    return data ? this.mapToEntity(data) : null;
   }
 
   async findByScope(
@@ -125,14 +104,14 @@ export class PrismaSettingRepository implements ISettingRepository {
     if (scope === 'DEVICE' && contextUuid) where.deviceId = contextUuid;
 
     const data = await this.prisma.setting.findMany({ where });
-    return data.map((item) => this.mapSettingToEntity(item));
+    return data.map((item) => this.mapToEntity(item));
   }
 
   async findByGroup(groupUuid: string, options?: { includeHistory?: boolean }): Promise<Setting[]> {
     const data = await this.prisma.setting.findMany({
       where: { groupUuid, deletedAt: null },
     });
-    return data.map((item) => this.mapSettingToEntity(item));
+    return data.map((item) => this.mapToEntity(item));
   }
 
   async findSystemSettings(options?: { includeHistory?: boolean }): Promise<Setting[]> {
@@ -153,11 +132,15 @@ export class PrismaSettingRepository implements ISettingRepository {
     return this.findByScope(SettingScope.DEVICE, deviceId, options);
   }
 
-  async delete(uuid: string): Promise<void> {
+  async softDelete(uuid: string): Promise<void> {
     await this.prisma.setting.update({
       where: { uuid },
-      data: { deletedAt: new Date() },
+      data: { deletedAt: BigInt(Date.now()) },
     });
+  }
+
+  async delete(uuid: string): Promise<void> {
+    await this.prisma.setting.delete({ where: { uuid } });
   }
 
   async exists(uuid: string): Promise<boolean> {
@@ -175,45 +158,34 @@ export class PrismaSettingRepository implements ISettingRepository {
   }
 
   async saveMany(settings: Setting[]): Promise<void> {
+    // Using a transaction to ensure all or nothing
     await this.prisma.$transaction(async (tx) => {
       for (const setting of settings) {
         const persistence = setting.toPersistenceDTO();
-        const createData = {
+        const data = {
           uuid: persistence.uuid,
+          account_uuid: persistence.account_uuid,
+          category: persistence.category,
           key: persistence.key,
-          name: persistence.name,
-          description: persistence.description,
-          valueType: persistence.value_type,
           value: persistence.value,
-          defaultValue: persistence.default_value,
-          scope: persistence.scope,
-          accountUuid: persistence.account_uuid,
-          deviceId: persistence.device_id,
-          groupUuid: persistence.group_uuid,
-          validation: persistence.validation,
-          ui: persistence.ui,
-          isEncrypted: persistence.is_encrypted,
-          isReadOnly: persistence.is_read_only,
-          isSystemSetting: persistence.is_system_setting,
-          syncConfig: persistence.sync_config,
-          historyData: persistence.history,
-          createdAt: this.toDate(persistence.created_at) ?? new Date(),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
+          metadata: persistence.metadata,
+          is_public: persistence.is_public,
+          is_synced: persistence.is_synced,
+          createdAt: BigInt(persistence.created_at),
+          updatedAt: BigInt(persistence.updated_at),
+          deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
         };
-
-        const updateData = {
-          description: persistence.description,
-          value: persistence.value,
-          historyData: persistence.history,
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
-        };
-
         await tx.setting.upsert({
           where: { uuid: persistence.uuid },
-          create: createData,
-          update: updateData,
+          create: data,
+          update: {
+            ...data,
+            uuid: undefined,
+            account_uuid: undefined,
+            category: undefined,
+            key: undefined,
+            createdAt: undefined,
+          },
         });
       }
     });
@@ -234,6 +206,6 @@ export class PrismaSettingRepository implements ISettingRepository {
     }
 
     const data = await this.prisma.setting.findMany({ where });
-    return data.map((item) => this.mapSettingToEntity(item));
+    return data.map((item) => this.mapToEntity(item));
   }
 }

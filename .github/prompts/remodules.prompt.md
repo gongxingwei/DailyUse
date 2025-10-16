@@ -57,6 +57,10 @@ const ImportanceLevel = goalContracts.ImportanceLevel;
 const UrgencyLevel = goalContracts.UrgencyLevel;
 ```
 
+### 时间字段问题
+
+在 persistenceDTO 和 仓储层 和 其他DTO 数据中，时间字段都使用时间戳（timestamp）格式，number 类型！！！
+
 ### contracts 包
 
 **注意文件结构**：

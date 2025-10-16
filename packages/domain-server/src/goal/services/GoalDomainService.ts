@@ -110,7 +110,7 @@ export class GoalDomainService {
     return goal;
   }
 
-  public async archiveGoal(uuid: string): Promise<void> {
+  public async archiveGoal(uuid: string): Promise<Goal> {
     const goal = await this.getGoal(uuid);
     if (!goal) {
       throw new Error(`Goal not found: ${uuid}`);
@@ -118,6 +118,7 @@ export class GoalDomainService {
 
     goal.archive();
     await this.goalRepository.save(goal);
+    return goal;
   }
 
   public async deleteGoal(uuid: string, softDelete: boolean = true): Promise<void> {
@@ -152,6 +153,21 @@ export class GoalDomainService {
     const keyResult = goal.createKeyResult(params);
     goal.addKeyResult(keyResult);
 
+    await this.goalRepository.save(goal);
+    return goal;
+  }
+
+  public async updateKeyResultProgress(
+    goalUuid: string,
+    keyResultUuid: string,
+    currentValue: number,
+    note?: string,
+  ): Promise<Goal> {
+    const goal = await this.getGoal(goalUuid, { includeChildren: true });
+    if (!goal) {
+      throw new Error(`Goal not found: ${goalUuid}`);
+    }
+    goal.updateKeyResultProgress(keyResultUuid, currentValue, note);
     await this.goalRepository.save(goal);
     return goal;
   }

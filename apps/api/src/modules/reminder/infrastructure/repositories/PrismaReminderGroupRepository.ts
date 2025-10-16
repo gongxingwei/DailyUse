@@ -1,11 +1,12 @@
 import { PrismaClient } from '@prisma/client';
-import type { IReminderGroupRepository } from '@dailyuse/domain-server';
 import { ReminderGroup } from '@dailyuse/domain-server';
+import type { IReminderGroupRepository } from '@dailyuse/domain-server';
+import type { ReminderContracts } from '@dailyuse/contracts';
 
 /**
  * ReminderGroup Prisma 仓储实现
  * 简单聚合根，无子实体
- * JSON 字段：stats, tags, color_config
+ * JSON 字段：stats
  */
 export class PrismaReminderGroupRepository implements IReminderGroupRepository {
   constructor(private prisma: PrismaClient) {}
@@ -16,49 +17,44 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
       account_uuid: data.accountUuid,
       name: data.name,
       description: data.description,
+      control_mode: data.controlMode,
+      enabled: data.enabled,
+      status: data.status,
+      order: data.order,
       color: data.color,
       icon: data.icon,
-      sort_order: data.sortOrder,
-      stats: data.stats,
+      stats: data.stats, // stats is a JSON string
       created_at: data.createdAt.getTime(),
       updated_at: data.updatedAt.getTime(),
-      deleted_at: data.deletedAt?.getTime() ?? null,
+      deleted_at: data.deletedAt ? data.deletedAt.getTime() : null,
     });
-  }
-
-  private toDate(timestamp: number | null | undefined): Date | null | undefined {
-    if (timestamp == null) return timestamp as null | undefined;
-    return new Date(timestamp);
   }
 
   async save(group: ReminderGroup): Promise<void> {
     const persistence = group.toPersistenceDTO();
+    const data = {
+      name: persistence.name,
+      description: persistence.description,
+      controlMode: persistence.control_mode,
+      enabled: persistence.enabled,
+      status: persistence.status,
+      order: persistence.order,
+      color: persistence.color,
+      icon: persistence.icon,
+      stats: persistence.stats, // stats is already a JSON string from toPersistenceDTO
+      updatedAt: new Date(persistence.updated_at),
+      deletedAt: persistence.deleted_at ? new Date(persistence.deleted_at) : null,
+    };
 
     await this.prisma.reminderGroup.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        accountUuid: persistence.account_uuid,
-        name: persistence.name,
-        description: persistence.description,
-        color: persistence.color,
-        icon: persistence.icon,
-        sortOrder: persistence.sort_order,
-        stats: persistence.stats,
-        createdAt: this.toDate(persistence.created_at) ?? new Date(),
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-        deletedAt: this.toDate(persistence.deleted_at),
+        account: { connect: { uuid: persistence.account_uuid } },
+        createdAt: new Date(persistence.created_at),
+        ...data,
       },
-      update: {
-        name: persistence.name,
-        description: persistence.description,
-        color: persistence.color,
-        icon: persistence.icon,
-        sortOrder: persistence.sort_order,
-        stats: persistence.stats,
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-        deletedAt: this.toDate(persistence.deleted_at),
-      },
+      update: data,
     });
   }
 
@@ -67,17 +63,66 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<ReminderGroup[]> {
+  async findByAccountUuid(
+    accountUuid: string,
+    options?: { includeDeleted?: boolean },
+  ): Promise<ReminderGroup[]> {
     const groups = await this.prisma.reminderGroup.findMany({
-      where: { accountUuid, deletedAt: null },
-      orderBy: { sortOrder: 'asc' },
+      where: {
+        accountUuid,
+        deletedAt: options?.includeDeleted ? undefined : null,
+      },
+      orderBy: { order: 'asc' },
     });
-    return groups.map((g) => this.mapToEntity(g));
+    return groups.map(this.mapToEntity);
   }
 
-  async findByName(accountUuid: string, name: string): Promise<ReminderGroup | null> {
+  async findByControlMode(
+    accountUuid: string,
+    controlMode: ReminderContracts.ControlMode,
+    options?: { includeDeleted?: boolean },
+  ): Promise<ReminderGroup[]> {
+    const groups = await this.prisma.reminderGroup.findMany({
+      where: {
+        accountUuid,
+        controlMode: controlMode,
+        deletedAt: options?.includeDeleted ? undefined : null,
+      },
+      orderBy: { order: 'asc' },
+    });
+    return groups.map(this.mapToEntity);
+  }
+
+  async findActive(accountUuid?: string): Promise<ReminderGroup[]> {
+    const groups = await this.prisma.reminderGroup.findMany({
+      where: {
+        accountUuid,
+        status: 'ACTIVE',
+        deletedAt: null,
+      },
+      orderBy: { order: 'asc' },
+    });
+    return groups.map(this.mapToEntity);
+  }
+
+  async findByIds(uuids: string[]): Promise<ReminderGroup[]> {
+    const groups = await this.prisma.reminderGroup.findMany({
+      where: { uuid: { in: uuids } },
+    });
+    return groups.map(this.mapToEntity);
+  }
+
+  async findByName(
+    accountUuid: string,
+    name: string,
+    excludeUuid?: string,
+  ): Promise<ReminderGroup | null> {
     const data = await this.prisma.reminderGroup.findFirst({
-      where: { accountUuid, name, deletedAt: null },
+      where: {
+        accountUuid,
+        name,
+        uuid: excludeUuid ? { not: excludeUuid } : undefined,
+      },
     });
     return data ? this.mapToEntity(data) : null;
   }
@@ -98,21 +143,16 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
     return count > 0;
   }
 
-  async isNameUsed(accountUuid: string, name: string, excludeUuid?: string): Promise<boolean> {
-    const count = await this.prisma.reminderGroup.count({
+  async count(
+    accountUuid: string,
+    options?: { status?: ReminderContracts.ReminderStatus; includeDeleted?: boolean },
+  ): Promise<number> {
+    return this.prisma.reminderGroup.count({
       where: {
         accountUuid,
-        name,
-        deletedAt: null,
-        ...(excludeUuid ? { uuid: { not: excludeUuid } } : {}),
+        status: options?.status,
+        deletedAt: options?.includeDeleted ? undefined : null,
       },
-    });
-    return count > 0;
-  }
-
-  async count(accountUuid: string): Promise<number> {
-    return await this.prisma.reminderGroup.count({
-      where: { accountUuid, deletedAt: null },
     });
   }
 }

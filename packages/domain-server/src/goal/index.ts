@@ -57,3 +57,11 @@ export type { IGoalStatisticsRepository } from './repositories/IGoalStatisticsRe
 // export type AggregationMethod = GoalContracts.AggregationMethod;
 // export type ReviewType = GoalContracts.ReviewType;
 // export type FolderType = GoalContracts.FolderType;
+
+// ===== 导出所有聚合根和实体 =====
+export * from './aggregates/Goal';
+export * from './aggregates/GoalStatistics';
+export * from './entities/KeyResult';
+export * from './entities/GoalReview';
+export * from './repositories/IGoalRepository';
+export * from './services/GoalDomainService';

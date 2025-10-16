@@ -14,207 +14,193 @@ import { ReminderTemplate, ReminderHistory } from '@dailyuse/domain-server';
 export class PrismaReminderTemplateRepository implements IReminderTemplateRepository {
   constructor(private prisma: PrismaClient) {}
 
-  private mapToEntity(data: any): ReminderTemplate {
+  private mapToEntity(data: any, includeHistory: boolean = false): ReminderTemplate {
     const template = ReminderTemplate.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      account_uuid: data.account_uuid,
       title: data.title,
       description: data.description,
       type: data.type,
       trigger: data.trigger,
       recurrence: data.recurrence,
-      active_time: data.activeTime,
-      active_hours: data.activeHours,
-      notification_config: data.notificationConfig,
-      self_enabled: data.selfEnabled,
+      active_time: data.active_time,
+      active_hours: data.active_hours,
+      notification_config: data.notification_config,
+      self_enabled: data.self_enabled,
       status: data.status,
-      group_uuid: data.groupUuid,
-      importance_level: data.importanceLevel,
+      group_uuid: data.group_uuid,
+      importance_level: data.importance_level,
       tags: data.tags,
       color: data.color,
       icon: data.icon,
-      next_trigger_at: data.nextTriggerAt?.getTime() ?? null,
+      next_trigger_at: data.nextTriggerAt ? Number(data.nextTriggerAt) : null,
       stats: data.stats,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      deleted_at: data.deletedAt?.getTime() ?? null,
+      created_at: Number(data.createdAt),
+      updated_at: Number(data.updatedAt),
+      deleted_at: data.deletedAt ? Number(data.deletedAt) : null,
     });
 
-    // 加载 ReminderHistory 子实体
-    if (data.history) {
+    if (includeHistory && data.history) {
       data.history.forEach((hist: any) => {
-        const histEntity = ReminderHistory.fromPersistenceDTO({
-          uuid: hist.uuid,
-          template_uuid: hist.templateUuid,
-          trigger_time: hist.triggerTime.getTime(),
-          result: hist.result,
-          error_message: hist.errorMessage,
-          metadata: hist.metadata,
-          created_at: hist.createdAt.getTime(),
-        });
-        template.addHistory(histEntity);
+        template.addHistory(
+          ReminderHistory.fromPersistenceDTO({
+            uuid: hist.uuid,
+            template_uuid: hist.template_uuid,
+            trigger_time: Number(hist.triggerTime),
+            result: hist.result,
+            error: hist.error,
+            notification_sent: hist.notificationSent,
+            notification_channels: hist.notificationChannels,
+            created_at: Number(hist.createdAt),
+          }),
+        );
       });
     }
-
     return template;
-  }
-
-  private toDate(timestamp: number | null | undefined): Date | null | undefined {
-    if (timestamp == null) return timestamp as null | undefined;
-    return new Date(timestamp);
   }
 
   async save(template: ReminderTemplate): Promise<void> {
     const persistence = template.toPersistenceDTO();
+    const data = {
+      uuid: persistence.uuid,
+      account_uuid: persistence.account_uuid,
+      title: persistence.title,
+      description: persistence.description,
+      type: persistence.type,
+      trigger: persistence.trigger,
+      recurrence: persistence.recurrence,
+      active_time: persistence.active_time,
+      active_hours: persistence.active_hours,
+      notification_config: persistence.notification_config,
+      self_enabled: persistence.self_enabled,
+      status: persistence.status,
+      group_uuid: persistence.group_uuid,
+      importance_level: persistence.importance_level,
+      tags: persistence.tags,
+      color: persistence.color,
+      icon: persistence.icon,
+      nextTriggerAt: persistence.next_trigger_at ? BigInt(persistence.next_trigger_at) : null,
+      stats: persistence.stats,
+      createdAt: BigInt(persistence.created_at),
+      updatedAt: BigInt(persistence.updated_at),
+      deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
+    };
+
+    const historyData =
+      template.history?.map((h) => {
+        const histPersistence = h.toPersistenceDTO();
+        return {
+          uuid: histPersistence.uuid,
+          template_uuid: histPersistence.template_uuid,
+          triggerTime: BigInt(histPersistence.trigger_time),
+          result: histPersistence.result,
+          error: histPersistence.error,
+          notificationSent: histPersistence.notification_sent,
+          notificationChannels: histPersistence.notification_channels,
+          createdAt: BigInt(histPersistence.created_at),
+        };
+      }) ?? [];
 
     await this.prisma.$transaction(async (tx) => {
-      // 1. Upsert ReminderTemplate 主实体
       await tx.reminderTemplate.upsert({
-        where: { uuid: persistence.uuid },
-        create: {
-          uuid: persistence.uuid,
-          accountUuid: persistence.account_uuid,
-          title: persistence.title,
-          description: persistence.description,
-          type: persistence.type,
-          trigger: persistence.trigger,
-          recurrence: persistence.recurrence,
-          activeTime: persistence.active_time,
-          activeHours: persistence.active_hours,
-          notificationConfig: persistence.notification_config,
-          selfEnabled: persistence.self_enabled,
-          status: persistence.status,
-          groupUuid: persistence.group_uuid,
-          importanceLevel: persistence.importance_level,
-          tags: persistence.tags,
-          color: persistence.color,
-          icon: persistence.icon,
-          nextTriggerAt: this.toDate(persistence.next_trigger_at),
-          stats: persistence.stats,
-          createdAt: this.toDate(persistence.created_at) ?? new Date(),
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
-        },
+        where: { uuid: data.uuid },
+        create: data,
         update: {
-          title: persistence.title,
-          description: persistence.description,
-          type: persistence.type,
-          trigger: persistence.trigger,
-          recurrence: persistence.recurrence,
-          activeTime: persistence.active_time,
-          activeHours: persistence.active_hours,
-          notificationConfig: persistence.notification_config,
-          selfEnabled: persistence.self_enabled,
-          status: persistence.status,
-          groupUuid: persistence.group_uuid,
-          importanceLevel: persistence.importance_level,
-          tags: persistence.tags,
-          color: persistence.color,
-          icon: persistence.icon,
-          nextTriggerAt: this.toDate(persistence.next_trigger_at),
-          stats: persistence.stats,
-          updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-          deletedAt: this.toDate(persistence.deleted_at),
+          ...data,
+          uuid: undefined,
+          account_uuid: undefined,
+          createdAt: undefined,
         },
       });
 
-      // 2. Upsert ReminderHistory 子实体
-      const history = template.getHistory();
-      for (const hist of history) {
-        const histPersistence = hist.toPersistenceDTO();
-        await tx.reminderHistory.upsert({
-          where: { uuid: histPersistence.uuid },
-          create: {
-            uuid: histPersistence.uuid,
-            templateUuid: persistence.uuid,
-            triggerTime: this.toDate(histPersistence.trigger_time) ?? new Date(),
-            result: histPersistence.result,
-            errorMessage: histPersistence.error_message,
-            metadata: histPersistence.metadata,
-            createdAt: this.toDate(histPersistence.created_at) ?? new Date(),
-          },
-          update: {
-            result: histPersistence.result,
-            errorMessage: histPersistence.error_message,
-            metadata: histPersistence.metadata,
-          },
+      if (historyData.length > 0) {
+        await tx.reminderHistory.createMany({
+          data: historyData,
+          skipDuplicates: true,
         });
       }
     });
   }
 
-  async findById(uuid: string, options?: { includeChildren?: boolean }): Promise<ReminderTemplate | null> {
+  async findById(
+    uuid: string,
+    options?: { includeHistory?: boolean },
+  ): Promise<ReminderTemplate | null> {
     const data = await this.prisma.reminderTemplate.findUnique({
       where: { uuid },
-      include: options?.includeChildren ? { history: true } : undefined,
+      include: { history: options?.includeHistory ?? false },
     });
-    return data ? this.mapToEntity(data) : null;
+    return data ? this.mapToEntity(data, options?.includeHistory) : null;
   }
 
-  async findByAccountUuid(accountUuid: string, options?: { includeChildren?: boolean }): Promise<ReminderTemplate[]> {
-    const templates = await this.prisma.reminderTemplate.findMany({
-      where: { accountUuid, deletedAt: null },
-      include: options?.includeChildren ? { history: true } : undefined,
-      orderBy: { createdAt: 'desc' },
-    });
-    return templates.map((t) => this.mapToEntity(t));
-  }
-
-  async findByGroupUuid(groupUuid: string): Promise<ReminderTemplate[]> {
-    const templates = await this.prisma.reminderTemplate.findMany({
-      where: { groupUuid, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-    });
-    return templates.map((t) => this.mapToEntity(t));
-  }
-
-  async findDueReminders(beforeTime: Date, limit?: number): Promise<ReminderTemplate[]> {
-    const templates = await this.prisma.reminderTemplate.findMany({
+  async findByAccountUuid(
+    accountUuid: string,
+    options?: { includeHistory?: boolean; includeDeleted?: boolean },
+  ): Promise<ReminderTemplate[]> {
+    const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        selfEnabled: true,
-        status: 'ACTIVE',
-        nextTriggerAt: { lte: beforeTime },
-        deletedAt: null,
+        account_uuid: accountUuid,
+        deletedAt: options?.includeDeleted ? undefined : null,
       },
-      take: limit,
-      orderBy: { nextTriggerAt: 'asc' },
+      include: { history: options?.includeHistory ?? false },
     });
-    return templates.map((t) => this.mapToEntity(t));
+    return data.map((d) => this.mapToEntity(d, options?.includeHistory));
   }
 
-  async findByStatus(accountUuid: string, status: string): Promise<ReminderTemplate[]> {
-    const templates = await this.prisma.reminderTemplate.findMany({
-      where: { accountUuid, status, deletedAt: null },
-      orderBy: { createdAt: 'desc' },
-    });
-    return templates.map((t) => this.mapToEntity(t));
-  }
-
-  async findEnabled(accountUuid: string): Promise<ReminderTemplate[]> {
-    const templates = await this.prisma.reminderTemplate.findMany({
+  async findByGroupUuid(
+    groupUuid: string | null,
+    options?: { includeHistory?: boolean; includeDeleted?: boolean },
+  ): Promise<ReminderTemplate[]> {
+    const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        accountUuid,
-        selfEnabled: true,
+        group_uuid: groupUuid,
+        deletedAt: options?.includeDeleted ? undefined : null,
+      },
+      include: { history: options?.includeHistory ?? false },
+    });
+    return data.map((d) => this.mapToEntity(d, options?.includeHistory));
+  }
+
+  async findActive(accountUuid?: string): Promise<ReminderTemplate[]> {
+    const data = await this.prisma.reminderTemplate.findMany({
+      where: {
+        account_uuid: accountUuid,
         status: 'ACTIVE',
         deletedAt: null,
       },
-      orderBy: { nextTriggerAt: 'asc' },
     });
-    return templates.map((t) => this.mapToEntity(t));
+    return data.map((d) => this.mapToEntity(d));
+  }
+
+  async findByNextTriggerBefore(
+    beforeTime: number,
+    accountUuid?: string,
+  ): Promise<ReminderTemplate[]> {
+    const data = await this.prisma.reminderTemplate.findMany({
+      where: {
+        account_uuid: accountUuid,
+        status: 'ACTIVE',
+        deletedAt: null,
+        nextTriggerAt: { lte: BigInt(beforeTime) },
+      },
+    });
+    return data.map((d) => this.mapToEntity(d));
+  }
+
+  async findByIds(
+    uuids: string[],
+    options?: { includeHistory?: boolean },
+  ): Promise<ReminderTemplate[]> {
+    const data = await this.prisma.reminderTemplate.findMany({
+      where: { uuid: { in: uuids } },
+      include: { history: options?.includeHistory ?? false },
+    });
+    return data.map((d) => this.mapToEntity(d, options?.includeHistory));
   }
 
   async delete(uuid: string): Promise<void> {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.reminderHistory.deleteMany({ where: { templateUuid: uuid } });
-      await tx.reminderTemplate.delete({ where: { uuid } });
-    });
-  }
-
-  async softDelete(uuid: string): Promise<void> {
-    await this.prisma.reminderTemplate.update({
-      where: { uuid },
-      data: { deletedAt: new Date() },
-    });
+    await this.prisma.reminderHistory.deleteMany({ where: { template_uuid: uuid } });
+    await this.prisma.reminderTemplate.delete({ where: { uuid } });
   }
 
   async exists(uuid: string): Promise<boolean> {
@@ -222,15 +208,16 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
     return count > 0;
   }
 
-  async count(accountUuid: string): Promise<number> {
-    return await this.prisma.reminderTemplate.count({
-      where: { accountUuid, deletedAt: null },
+  async count(
+    accountUuid: string,
+    options?: { status?: ReminderContracts.ReminderStatus; includeDeleted?: boolean },
+  ): Promise<number> {
+    return this.prisma.reminderTemplate.count({
+      where: {
+        account_uuid: accountUuid,
+        status: options?.status,
+        deletedAt: options?.includeDeleted ? undefined : null,
+      },
     });
-  }
-
-  async saveMany(templates: ReminderTemplate[]): Promise<void> {
-    for (const template of templates) {
-      await this.save(template);
-    }
   }
 }

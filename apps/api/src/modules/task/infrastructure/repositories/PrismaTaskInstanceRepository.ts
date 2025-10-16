@@ -6,9 +6,9 @@ import type { TaskContracts } from '@dailyuse/contracts';
 type TaskInstanceStatus = TaskContracts.TaskInstanceStatus;
 
 /**
- * TaskInstance Prisma Ó¨ž°
- * €UZ9àPžS
- * JSON Wµtime_config, completion_record, skip_record
+ * TaskInstance Prisma Ó¨ï¿½ï¿½
+ * ï¿½UZ9ï¿½Pï¿½S
+ * JSON Wï¿½time_config, completion_record, skip_record
  */
 export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
   constructor(private prisma: PrismaClient) {}
@@ -18,58 +18,54 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       uuid: data.uuid,
       template_uuid: data.templateUuid,
       account_uuid: data.accountUuid,
-      instance_date: data.instanceDate.getTime(),
+      instance_date: Number(data.instanceDate),
       time_config: data.timeConfig,
       status: data.status,
       completion_record: data.completionRecord,
       skip_record: data.skipRecord,
-      actual_start_time: data.actualStartTime?.getTime() ?? null,
-      actual_end_time: data.actualEndTime?.getTime() ?? null,
+      actual_start_time: data.actualStartTime ? Number(data.actualStartTime) : null,
+      actual_end_time: data.actualEndTime ? Number(data.actualEndTime) : null,
       note: data.note,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
+      created_at: Number(data.createdAt),
+      updated_at: Number(data.updatedAt),
     });
-  }
-
-  private toDate(timestamp: number | null | undefined): Date | null | undefined {
-    if (timestamp == null) return timestamp as null | undefined;
-    return new Date(timestamp);
   }
 
   async save(instance: TaskInstance): Promise<void> {
     const persistence = instance.toPersistenceDTO();
 
+    const data = {
+      uuid: persistence.uuid,
+      templateUuid: persistence.template_uuid,
+      accountUuid: persistence.account_uuid,
+      instanceDate: BigInt(persistence.instance_date),
+      timeConfig: persistence.time_config,
+      status: persistence.status,
+      completionRecord: persistence.completion_record,
+      skipRecord: persistence.skip_record,
+      actualStartTime: persistence.actual_start_time ? BigInt(persistence.actual_start_time) : null,
+      actualEndTime: persistence.actual_end_time ? BigInt(persistence.actual_end_time) : null,
+      note: persistence.note,
+      createdAt: BigInt(persistence.created_at),
+      updatedAt: BigInt(persistence.updated_at),
+    };
+
     await this.prisma.taskInstance.upsert({
       where: { uuid: persistence.uuid },
-      create: {
-        uuid: persistence.uuid,
-        templateUuid: persistence.template_uuid,
-        accountUuid: persistence.account_uuid,
-        instanceDate: this.toDate(persistence.instance_date) ?? new Date(),
-        timeConfig: persistence.time_config,
-        status: persistence.status,
-        completionRecord: persistence.completion_record,
-        skipRecord: persistence.skip_record,
-        actualStartTime: this.toDate(persistence.actual_start_time),
-        actualEndTime: this.toDate(persistence.actual_end_time),
-        note: persistence.note,
-        createdAt: this.toDate(persistence.created_at) ?? new Date(),
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
-      },
+      create: data,
       update: {
-        timeConfig: persistence.time_config,
-        status: persistence.status,
-        completionRecord: persistence.completion_record,
-        skipRecord: persistence.skip_record,
-        actualStartTime: this.toDate(persistence.actual_start_time),
-        actualEndTime: this.toDate(persistence.actual_end_time),
-        note: persistence.note,
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        ...data,
+        uuid: undefined, // Cannot update uuid
+        templateUuid: undefined,
+        accountUuid: undefined,
+        createdAt: undefined,
       },
     });
   }
 
   async saveMany(instances: TaskInstance[]): Promise<void> {
+    // Use Prisma's createMany for efficiency if possible, but upsert logic requires looping.
+    // For now, keeping the loop to respect the save logic.
     for (const instance of instances) {
       await this.save(instance);
     }
@@ -85,7 +81,7 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       where: { templateUuid },
       orderBy: { instanceDate: 'desc' },
     });
-    return instances.map((i) => this.mapToEntity(i));
+    return instances.map(this.mapToEntity);
   }
 
   async findByAccount(accountUuid: string): Promise<TaskInstance[]> {
@@ -93,21 +89,25 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       where: { accountUuid },
       orderBy: { instanceDate: 'desc' },
     });
-    return instances.map((i) => this.mapToEntity(i));
+    return instances.map(this.mapToEntity);
   }
 
-  async findByDateRange(accountUuid: string, startDate: number, endDate: number): Promise<TaskInstance[]> {
+  async findByDateRange(
+    accountUuid: string,
+    startDate: number,
+    endDate: number,
+  ): Promise<TaskInstance[]> {
     const instances = await this.prisma.taskInstance.findMany({
       where: {
         accountUuid,
         instanceDate: {
-          gte: new Date(startDate),
-          lte: new Date(endDate),
+          gte: BigInt(startDate),
+          lte: BigInt(endDate),
         },
       },
       orderBy: { instanceDate: 'asc' },
     });
-    return instances.map((i) => this.mapToEntity(i));
+    return instances.map(this.mapToEntity);
   }
 
   async findByStatus(accountUuid: string, status: TaskInstanceStatus): Promise<TaskInstance[]> {
@@ -115,11 +115,11 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       where: { accountUuid, status },
       orderBy: { instanceDate: 'desc' },
     });
-    return instances.map((i) => this.mapToEntity(i));
+    return instances.map(this.mapToEntity);
   }
 
   async findOverdueInstances(accountUuid: string): Promise<TaskInstance[]> {
-    const oneDayAgo = new Date(Date.now() - 86400000);
+    const oneDayAgo = BigInt(Date.now() - 86400000);
     const instances = await this.prisma.taskInstance.findMany({
       where: {
         accountUuid,
@@ -128,7 +128,7 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       },
       orderBy: { instanceDate: 'asc' },
     });
-    return instances.map((i) => this.mapToEntity(i));
+    return instances.map(this.mapToEntity);
   }
 
   async delete(uuid: string): Promise<void> {

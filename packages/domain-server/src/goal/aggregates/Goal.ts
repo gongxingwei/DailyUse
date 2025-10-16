@@ -947,6 +947,59 @@ export class Goal extends AggregateRoot implements IGoalServer {
   // ===== DTO 转换 =====
 
   /**
+   * 转换为 Client DTO
+   */
+  public toClientDTO(includeChildren: boolean = false): GoalContracts.GoalClientDTO {
+    const progress = this.calculateProgress();
+    return {
+      uuid: this.uuid,
+      accountUuid: this._accountUuid,
+      title: this._title,
+      description: this._description,
+      status: this._status,
+      importance: this._importance,
+      urgency: this._urgency,
+      category: this._category,
+      tags: [...this._tags],
+      startDate: this._startDate,
+      targetDate: this._targetDate,
+      completedAt: this._completedAt,
+      archivedAt: this._archivedAt,
+      folderUuid: this._folderUuid,
+      parentGoalUuid: this._parentGoalUuid,
+      sortOrder: this._sortOrder,
+      reminderConfig: this._reminderConfig as any, // TODO: Fix this mapping
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
+      keyResults:
+        includeChildren && this._keyResults.length > 0
+          ? this._keyResults.map((kr) => kr.toClientDTO())
+          : [],
+      reviews:
+        includeChildren && this._reviews.length > 0
+          ? this._reviews.map((r) => r.toClientDTO())
+          : [],
+      overallProgress: progress,
+      isCompleted: this._status === GoalStatus.COMPLETED,
+      isArchived: !!this._archivedAt,
+      isDeleted: !!this._deletedAt,
+      isOverdue: this.isOverdue(),
+      daysRemaining: this.getDaysRemaining(),
+      priorityScore: this.getPriorityScore(),
+      keyResultCount: this._keyResults.length,
+      completedKeyResultCount: this._keyResults.filter((kr) => kr.isCompleted()).length,
+      reviewCount: this._reviews.length,
+      // Add missing properties
+      statusText: this._status, // Placeholder
+      importanceText: this._importance, // Placeholder
+      urgencyText: this._urgency, // Placeholder
+      hasActiveReminders: !!this._reminderConfig?.enabled,
+      reminderSummary: null, // Placeholder
+    };
+  }
+
+  /**
    * 转换为 Server DTO
    * @param includeChildren 是否包含子实体（默认 false）
    */
@@ -975,11 +1028,11 @@ export class Goal extends AggregateRoot implements IGoalServer {
       keyResults:
         includeChildren && this._keyResults.length > 0
           ? this._keyResults.map((kr) => kr.toServerDTO())
-          : null,
+          : [],
       reviews:
         includeChildren && this._reviews.length > 0
           ? this._reviews.map((r) => r.toServerDTO())
-          : null,
+          : [],
     };
   }
 
