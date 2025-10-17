@@ -4,7 +4,6 @@ import { initializeApp } from './shared/initialization/initializer';
 // import { ScheduleTaskScheduler } from './modules/schedule/infrastructure/scheduler/ScheduleTaskScheduler'; // DISABLED: Schedule module needs refactoring
 // import { PriorityQueueScheduler } from './modules/schedule/infrastructure/scheduler/PriorityQueueScheduler'; // DISABLED: Schedule module needs refactoring
 // import { sseController } from './modules/schedule/interface/http/SSEController'; // DISABLED: Schedule module needs refactoring
-import { registerEventHandlers } from './shared/events/eventHandlerRegistry';
 import { eventBus } from '@dailyuse/utils';
 import { initializeLogger, getStartupInfo } from './config/logger.config';
 import { createLogger } from '@dailyuse/utils';

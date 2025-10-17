@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, type Router as ExpressRouter } from 'express';
 import { ReminderController } from './ReminderController';
 
 /**
@@ -11,7 +11,7 @@ import { ReminderController } from './ReminderController';
  * 4. 路由分组：模板管理、搜索统计
  */
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // ===== 提醒模板管理 =====
 

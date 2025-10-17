@@ -6,13 +6,13 @@ import {
 
 // 每个模块的初始化任务
 
-import { registerAccountInitializationTasks } from '../../modules/account';
-import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
-import { registerGoalInitializationTasks } from '../../modules/goal';
-import { registerNotificationInitializationTasks } from '../../modules/notification/initialization/notificationInitialization';
-import { registerSettingInitializationTasks } from '../../modules/setting/initialization/settingInitialization';
-import { registerThemeInitializationTasks } from '../../modules/theme/initialization/themeInitialization';
-import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem';
+// TODO: 以下模块尚未实现，待实现后取消注释
+// import { registerAccountInitializationTasks } from '../../modules/account';
+// import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
+// import { registerGoalInitializationTasks } from '../../modules/goal';
+// import { registerNotificationInitializationTasks } from '../../modules/notification/initialization/notificationInitialization';
+// import { registerSettingInitializationTasks } from '../../modules/setting/initialization/settingInitialization';
+// import { registerThemeInitializationTasks } from '../../modules/theme/initialization/themeInitialization';
 // import { registerTaskInitializationTasks } from '../../modules/Task/initialization/taskInitialization';
 // import { registerGoalInitializationTasks } from '../../modules/goal/initialization/goalInitialization';
 // import { registerSessionLoggingInitializationTasks } from '../../modules/SessionLogging/initialization/sessionLoggingInitialization';
@@ -34,30 +34,30 @@ import { initializeUnifiedEventHandlers } from '../events/unifiedEventSystem';
 //   }
 // };
 
-const eventSystemInitTask: InitializationTask = {
-  name: 'eventSystem',
-  phase: InitializationPhase.APP_STARTUP,
-  priority: 10,
-  initialize: async () => {
-    await initializeUnifiedEventHandlers();
-    console.log('✓ Event system initialized');
-  },
-};
+// const eventSystemInitTask: InitializationTask = {
+//   name: 'eventSystem',
+//   phase: InitializationPhase.APP_STARTUP,
+//   priority: 10,
+//   initialize: async () => {
+//     await initializeUnifiedEventHandlers();
+//     console.log('✓ Event system initialized');
+//   },
+// };
 
 /**
  * 注册所有模块的初始化任务
  */
 export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
-  manager.registerTask(eventSystemInitTask);
 
   // 注册各模块的任务
-  registerAccountInitializationTasks();
-  registerAuthenticationInitializationTasks();
-  registerGoalInitializationTasks();
-  registerNotificationInitializationTasks();
-  registerSettingInitializationTasks();
-  registerThemeInitializationTasks();
+  // TODO: 待相应模块实现后取消注释
+  // registerAccountInitializationTasks();
+  // registerAuthenticationInitializationTasks();
+  // registerGoalInitializationTasks();
+  // registerNotificationInitializationTasks();
+  // registerSettingInitializationTasks();
+  // registerThemeInitializationTasks();
 
   console.log('All initialization tasks registered');
 }
