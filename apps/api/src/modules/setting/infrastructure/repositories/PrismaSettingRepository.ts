@@ -25,16 +25,16 @@ export class PrismaSettingRepository implements ISettingRepository {
   private mapToEntity(data: any): Setting {
     return Setting.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.account_uuid,
+      accountUuid: data.account_uuid,
       category: data.category,
       key: data.key,
       value: data.value,
       metadata: data.metadata,
       is_public: data.is_public,
       is_synced: data.is_synced,
-      created_at: Number(data.createdAt),
-      updated_at: Number(data.updatedAt),
-      deleted_at: data.deletedAt ? Number(data.deletedAt) : null,
+      createdAt: Number(data.createdAt),
+      updatedAt: Number(data.updatedAt),
+      deletedAt: data.deletedAt ? Number(data.deletedAt) : null,
     });
   }
 
@@ -52,7 +52,7 @@ export class PrismaSettingRepository implements ISettingRepository {
     const persistence = setting.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      account_uuid: persistence.account_uuid,
+      accountUuid: persistence.account_uuid,
       category: persistence.category,
       key: persistence.key,
       value: persistence.value,
@@ -70,7 +70,7 @@ export class PrismaSettingRepository implements ISettingRepository {
       update: {
         ...data,
         uuid: undefined,
-        account_uuid: undefined,
+        accountUuid: undefined,
         category: undefined,
         key: undefined,
         createdAt: undefined,
@@ -164,7 +164,7 @@ export class PrismaSettingRepository implements ISettingRepository {
         const persistence = setting.toPersistenceDTO();
         const data = {
           uuid: persistence.uuid,
-          account_uuid: persistence.account_uuid,
+          accountUuid: persistence.account_uuid,
           category: persistence.category,
           key: persistence.key,
           value: persistence.value,
@@ -181,7 +181,7 @@ export class PrismaSettingRepository implements ISettingRepository {
           update: {
             ...data,
             uuid: undefined,
-            account_uuid: undefined,
+            accountUuid: undefined,
             category: undefined,
             key: undefined,
             createdAt: undefined,

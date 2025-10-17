@@ -248,7 +248,7 @@ export class EditorWorkspace extends AggregateRoot implements IEditorWorkspaceSe
   public static fromPersistenceDTO(dto: EditorWorkspacePersistenceDTO): EditorWorkspace {
     return new EditorWorkspace({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       projectPath: dto.project_path,
@@ -257,9 +257,9 @@ export class EditorWorkspace extends AggregateRoot implements IEditorWorkspaceSe
       settings: WorkspaceSettings.fromPersistenceDTO(JSON.parse(dto.settings)),
       isActive: dto.is_active,
       lastActiveSessionUuid: dto.last_active_session_uuid,
-      lastAccessedAt: dto.last_accessed_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
       sessions: [], // 从持久化层重建时，子实体需要单独加载
     });
   }
@@ -518,7 +518,7 @@ export class EditorWorkspace extends AggregateRoot implements IEditorWorkspaceSe
   public toPersistenceDTO(): EditorWorkspacePersistenceDTO {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
       project_path: this._projectPath,
@@ -527,9 +527,9 @@ export class EditorWorkspace extends AggregateRoot implements IEditorWorkspaceSe
       settings: JSON.stringify(this._settings.toPersistenceDTO()),
       is_active: this._isActive,
       last_active_session_uuid: this._lastActiveSessionUuid,
-      last_accessed_at: this._lastAccessedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

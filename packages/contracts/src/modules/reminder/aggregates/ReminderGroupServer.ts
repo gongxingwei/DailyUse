@@ -34,7 +34,7 @@ export interface ReminderGroupServerDTO {
  */
 export interface ReminderGroupPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   description?: string | null;
   color?: string | null;
@@ -44,9 +44,9 @@ export interface ReminderGroupPersistenceDTO {
   status: ReminderStatus;
   order: number;
   stats: string; // JSON string
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 领域事件 ============

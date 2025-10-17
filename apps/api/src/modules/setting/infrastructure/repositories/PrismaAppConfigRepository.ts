@@ -21,8 +21,8 @@ export class PrismaAppConfigRepository implements IAppConfigRepository {
       config: data.config,
       description: data.description,
       is_current: data.isCurrent,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
     });
   }
 

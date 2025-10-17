@@ -144,11 +144,11 @@ export interface ModuleStatisticsClientDTO {
  */
 export interface ModuleStatisticsPersistenceDTO {
   module_name: string;
-  total_tasks: number;
-  active_tasks: number;
-  total_executions: number;
-  successful_executions: number;
-  failed_executions: number;
+  totalTasks: number;
+  activeTasks: number;
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
   avg_duration: number;
 }
 

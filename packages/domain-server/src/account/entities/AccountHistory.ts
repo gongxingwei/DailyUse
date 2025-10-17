@@ -93,12 +93,12 @@ export class AccountHistory extends Entity implements IAccountHistoryServer {
   public static fromPersistenceDTO(dto: AccountHistoryPersistenceDTO): AccountHistory {
     return new AccountHistory({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       action: dto.action,
       details: dto.details ? JSON.parse(dto.details) : null,
       ipAddress: dto.ip_address,
       userAgent: dto.user_agent,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -130,12 +130,12 @@ export class AccountHistory extends Entity implements IAccountHistoryServer {
   public toPersistenceDTO(): AccountHistoryPersistenceDTO {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       action: this._action,
       details: this._details ? JSON.stringify(this._details) : null,
       ip_address: this._ipAddress,
       user_agent: this._userAgent,
-      created_at: this._createdAt,
+      createdAt: this._createdAt,
     };
   }
 }

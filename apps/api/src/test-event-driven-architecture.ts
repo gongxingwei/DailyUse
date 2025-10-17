@@ -11,7 +11,7 @@
  * 1. 准备工作：
  *    - 确保 API 服务器正在运行 (pnpm run dev:api)
  *    - 确保你已登录并获取了 token
- *    - 替换下方的 TOKEN 和 ACCOUNT_UUID
+ *    - 替换下方的 TOKEN 和 accountUuid
  *
  * 2. 打开浏览器 SSE 监听：
  *    打开新的浏览器标签页，访问：
@@ -47,7 +47,7 @@
 
 // 1️⃣ 替换这些值
 const TOKEN = 'YOUR_JWT_TOKEN_HERE';
-const ACCOUNT_UUID = 'YOUR_ACCOUNT_UUID_HERE';
+const accountUuid = 'YOUR_ACCOUNT_UUID_HERE';
 const REMINDER_TEMPLATE_UUID = 'YOUR_REMINDER_TEMPLATE_UUID'; // 从数据库或 API 获取
 
 // 2️⃣ 计算1分钟后的时间

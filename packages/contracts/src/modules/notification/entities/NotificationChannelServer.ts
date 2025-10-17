@@ -32,18 +32,18 @@ export interface NotificationChannelServerDTO {
  */
 export interface NotificationChannelPersistenceDTO {
   uuid: string;
-  notification_uuid: string;
-  channel_type: NotificationChannelType;
+  notificationUuid: string;
+  channelType: NotificationChannelType;
   status: ChannelStatus;
   recipient?: string | null;
-  send_attempts: number;
-  max_retries: number;
+  sendAttempts: number;
+  maxRetries: number;
   error?: string | null; // JSON string
   response?: string | null; // JSON string
-  created_at: number;
-  sent_at?: number | null;
-  delivered_at?: number | null;
-  failed_at?: number | null;
+  createdAt: number;
+  sentAt?: number | null;
+  deliveredAt?: number | null;
+  failedAt?: number | null;
 }
 
 // ============ 实体接口 ============

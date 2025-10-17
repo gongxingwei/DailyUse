@@ -25,7 +25,7 @@ type AggregationMethod = GoalContracts.AggregationMethod;
 interface ProgressPersistence {
   current_value: number;
   target_value: number;
-  value_type: string;
+  valueType: string;
   aggregation_method: string;
 }
 
@@ -156,19 +156,19 @@ export class KeyResult extends Entity implements IKeyResultServer {
     const progress: KeyResultProgressServerDTO = {
       currentValue: progressData.current_value,
       targetValue: progressData.target_value,
-      valueType: progressData.value_type as any,
+      valueType: progressData.valueType as any,
       aggregationMethod: progressData.aggregation_method as any,
     };
 
     return new KeyResult({
       uuid: dto.uuid,
-      goalUuid: dto.goal_uuid,
+      goalUuid: dto.goalUuid,
       title: dto.title,
       description: dto.description ?? null,
       progress,
       order: dto.order,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
       records: [],
     });
   }
@@ -399,19 +399,19 @@ export class KeyResult extends Entity implements IKeyResultServer {
     const progressPersistence: ProgressPersistence = {
       current_value: this._progress.currentValue,
       target_value: this._progress.targetValue,
-      value_type: this._progress.valueType,
+      valueType: this._progress.valueType,
       aggregation_method: this._progress.aggregationMethod,
     };
 
     return {
       uuid: this.uuid,
-      goal_uuid: this._goalUuid,
+      goalUuid: this._goalUuid,
       title: this._title,
       description: this._description,
       progress: JSON.stringify(progressPersistence),
       order: this._order,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

@@ -171,7 +171,7 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
     const stats = GroupStats.fromServerDTO(JSON.parse(dto.stats));
     return new ReminderGroup({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       controlMode: dto.control_mode,
@@ -181,9 +181,9 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
       color: dto.color,
       icon: dto.icon,
       stats,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt,
     });
   }
 
@@ -385,7 +385,7 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
   public toPersistenceDTO(): ReminderGroupPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       name: this.name,
       description: this.description,
       control_mode: this.controlMode,
@@ -395,9 +395,9 @@ export class ReminderGroup extends AggregateRoot implements IReminderGroupServer
       color: this.color,
       icon: this.icon,
       stats: JSON.stringify(this.stats),
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
-      deleted_at: this.deletedAt,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      deletedAt: this.deletedAt,
     };
   }
 }

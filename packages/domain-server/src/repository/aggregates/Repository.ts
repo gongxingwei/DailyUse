@@ -545,20 +545,20 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
   public toPersistenceDTO(): RepositoryPersistenceDTO {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       type: this._type,
       path: this._path,
       description: this._description,
       config: JSON.stringify(this._config.toContract()),
-      related_goals: this._relatedGoals ? JSON.stringify(this._relatedGoals) : null,
+      relatedGoals: this._relatedGoals ? JSON.stringify(this._relatedGoals) : null,
       status: this._status,
       git: this._git ? JSON.stringify(this._git.toContract()) : null,
-      sync_status: this._syncStatus ? JSON.stringify(this._syncStatus.toContract()) : null,
+      syncStatus: this._syncStatus ? JSON.stringify(this._syncStatus.toContract()) : null,
       stats: JSON.stringify(this._stats.toContract()),
-      last_accessed_at: this._lastAccessedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -596,20 +596,20 @@ export class Repository extends AggregateRoot implements IRepositoryServer {
   public static fromPersistenceDTO(dto: RepositoryPersistenceDTO): Repository {
     return new Repository({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       type: dto.type,
       path: dto.path,
       description: dto.description ?? null,
       config: RepositoryConfig.fromContract(JSON.parse(dto.config)),
-      relatedGoals: dto.related_goals ? JSON.parse(dto.related_goals) : null,
+      relatedGoals: dto.relatedGoals ? JSON.parse(dto.relatedGoals) : null,
       status: dto.status,
       git: dto.git ? GitInfo.fromContract(JSON.parse(dto.git)) : null,
-      syncStatus: dto.sync_status ? SyncStatus.fromContract(JSON.parse(dto.sync_status)) : null,
+      syncStatus: dto.syncStatus ? SyncStatus.fromContract(JSON.parse(dto.syncStatus)) : null,
       stats: RepositoryStats.fromContract(JSON.parse(dto.stats)),
-      lastAccessedAt: dto.last_accessed_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 

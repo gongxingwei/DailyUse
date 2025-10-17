@@ -82,10 +82,10 @@ export class NotificationHistory extends Entity implements INotificationHistoryS
   public toPersistenceDTO(): NotificationHistoryPersistenceDTO {
     return {
       uuid: this.uuid,
-      notification_uuid: this.notificationUuid,
+      notificationUuid: this.notificationUuid,
       action: this.action,
       details: this.details ? JSON.stringify(this.details) : null,
-      created_at: this.createdAt,
+      createdAt: this.createdAt,
     };
   }
 
@@ -126,10 +126,10 @@ export class NotificationHistory extends Entity implements INotificationHistoryS
   public static fromPersistenceDTO(dto: NotificationHistoryPersistenceDTO): NotificationHistory {
     return new NotificationHistory({
       uuid: dto.uuid,
-      notificationUuid: dto.notification_uuid,
+      notificationUuid: dto.notificationUuid,
       action: dto.action,
       details: dto.details ? JSON.parse(dto.details) : null,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 }

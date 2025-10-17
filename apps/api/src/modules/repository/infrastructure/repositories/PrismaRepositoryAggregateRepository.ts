@@ -24,20 +24,20 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
     // 使用领域实体的 fromPersistenceDTO 方法创建实体
     const repositoryEntity = Repository.fromPersistenceDTO({
       uuid: repo.uuid,
-      account_uuid: repo.accountUuid,
+      accountUuid: repo.accountUuid,
       name: repo.name,
       type: repo.type,
       path: repo.path,
       description: repo.description,
       config: repo.config,
-      related_goals: repo.relatedGoals,
+      relatedGoals: repo.relatedGoals,
       status: repo.status,
       git: repo.git,
-      sync_status: repo.syncStatus,
+      syncStatus: repo.syncStatus,
       stats: repo.stats,
-      last_accessed_at: repo.lastAccessedAt,
-      created_at: repo.createdAt,
-      updated_at: repo.updatedAt,
+      lastAccessedAt: repo.lastAccessedAt,
+      createdAt: repo.createdAt,
+      updatedAt: repo.updatedAt,
     });
 
     // 加载 Resource 子实体
@@ -45,7 +45,7 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
       repo.resources.forEach((res: any) => {
         const resourceEntity = Resource.fromPersistenceDTO({
           uuid: res.uuid,
-          repository_uuid: res.repositoryUuid,
+          repositoryUuid: res.repositoryUuid,
           name: res.name,
           type: res.type,
           path: res.path,
@@ -57,9 +57,9 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
           category: res.category,
           status: res.status,
           metadata: res.metadata,
-          created_at: res.createdAt,
-          updated_at: res.updatedAt,
-          modified_at: res.modifiedAt,
+          createdAt: res.createdAt,
+          updatedAt: res.updatedAt,
+          modifiedAt: res.modifiedAt,
         });
 
         // 加载 ResourceReference
@@ -67,13 +67,13 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
           res.sourceReferences.forEach((ref: any) => {
             const refEntity = ResourceReferenceEntity.fromPersistenceDTO({
               uuid: ref.uuid,
-              source_resource_uuid: ref.sourceResourceUuid,
-              target_resource_uuid: ref.targetResourceUuid,
-              reference_type: ref.referenceType,
+              sourceResourceUuid: ref.sourceResourceUuid,
+              targetResourceUuid: ref.targetResourceUuid,
+              referenceType: ref.referenceType,
               description: ref.description,
-              created_at: ref.createdAt,
-              updated_at: ref.updatedAt,
-              last_verified_at: ref.lastVerifiedAt,
+              createdAt: ref.createdAt,
+              updatedAt: ref.updatedAt,
+              lastVerifiedAt: ref.lastVerifiedAt,
             });
             resourceEntity.addReference(refEntity);
           });
@@ -84,19 +84,19 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
           res.linkedContents.forEach((content: any) => {
             const contentEntity = LinkedContentEntity.fromPersistenceDTO({
               uuid: content.uuid,
-              resource_uuid: content.resourceUuid,
+              resourceUuid: content.resourceUuid,
               title: content.title,
               url: content.url,
-              content_type: content.contentType,
+              contentType: content.contentType,
               description: content.description,
               thumbnail: content.thumbnail,
               author: content.author,
-              published_at: content.publishedAt,
-              is_accessible: content.isAccessible,
-              last_checked_at: content.lastCheckedAt,
-              cached_at: content.cachedAt,
-              created_at: content.createdAt,
-              updated_at: content.updatedAt,
+              publishedAt: content.publishedAt,
+              isAccessible: content.isAccessible,
+              lastCheckedAt: content.lastCheckedAt,
+              cachedAt: content.cachedAt,
+              createdAt: content.createdAt,
+              updatedAt: content.updatedAt,
             });
             resourceEntity.addLinkedContent(contentEntity);
           });
@@ -112,18 +112,18 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
       const explorer = repo.explorers[0];
       const explorerEntity = RepositoryExplorerEntity.fromPersistenceDTO({
         uuid: explorer.uuid,
-        repository_uuid: explorer.repositoryUuid,
-        account_uuid: explorer.accountUuid,
+        repositoryUuid: explorer.repositoryUuid,
+        accountUuid: explorer.accountUuid,
         name: explorer.name,
         description: explorer.description,
-        current_path: explorer.currentPath,
+        currentPath: explorer.currentPath,
         filters: explorer.filters,
-        view_config: explorer.viewConfig,
-        pinned_paths: explorer.pinnedPaths,
-        recent_paths: explorer.recentPaths,
-        last_scan_at: explorer.lastScanAt,
-        created_at: explorer.createdAt,
-        updated_at: explorer.updatedAt,
+        viewConfig: explorer.viewConfig,
+        pinnedPaths: explorer.pinnedPaths,
+        recentPaths: explorer.recentPaths,
+        lastScanAt: explorer.lastScanAt,
+        createdAt: explorer.createdAt,
+        updatedAt: explorer.updatedAt,
       });
       repositoryEntity.setExplorer(explorerEntity);
     }

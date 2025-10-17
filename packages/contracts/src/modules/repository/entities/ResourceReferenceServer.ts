@@ -27,13 +27,13 @@ export interface ResourceReferenceServerDTO {
  */
 export interface ResourceReferencePersistenceDTO {
   uuid: string;
-  source_resource_uuid: string;
-  target_resource_uuid: string;
-  reference_type: ReferenceType;
+  sourceResourceUuid: string;
+  targetResourceUuid: string;
+  referenceType: ReferenceType;
   description?: string | null;
-  created_at: number;
-  updated_at?: number | null;
-  last_verified_at?: number | null;
+  createdAt: number;
+  updatedAt?: number | null;
+  lastVerifiedAt?: number | null;
 }
 
 // ============ 实体接口 ============

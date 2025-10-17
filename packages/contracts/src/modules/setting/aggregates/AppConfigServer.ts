@@ -85,8 +85,8 @@ export interface AppConfigPersistenceDTO {
   api: string; // JSON
   security: string; // JSON
   notifications: string; // JSON
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 聚合根接口 ============

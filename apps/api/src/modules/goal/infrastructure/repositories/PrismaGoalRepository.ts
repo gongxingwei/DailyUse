@@ -90,24 +90,24 @@ export class PrismaGoalRepository implements IGoalRepository {
       urgency: this.urgencyMap[persistence.urgency],
       category: persistence.category,
       tags: persistence.tags,
-      start_date: persistence.startDate ? new Date(persistence.startDate) : null,
-      target_date: persistence.targetDate ? new Date(persistence.targetDate) : null,
-      completed_at: persistence.completedAt ? new Date(persistence.completedAt) : null,
-      archived_at: persistence.archivedAt ? new Date(persistence.archivedAt) : null,
-      folder_uuid: persistence.folderUuid,
-      parent_goal_uuid: persistence.parentGoalUuid,
-      sort_order: persistence.sortOrder,
-      reminder_config: persistence.reminderConfig,
-      updated_at: new Date(persistence.updatedAt),
-      deleted_at: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
+      startDate: persistence.startDate ? new Date(persistence.startDate) : null,
+      targetDate: persistence.targetDate ? new Date(persistence.targetDate) : null,
+      completedAt: persistence.completedAt ? new Date(persistence.completedAt) : null,
+      archivedAt: persistence.archivedAt ? new Date(persistence.archivedAt) : null,
+      folderUuid: persistence.folderUuid,
+      parentGoalUuid: persistence.parentGoalUuid,
+      sortOrder: persistence.sortOrder,
+      reminderConfig: persistence.reminderConfig,
+      updatedAt: new Date(persistence.updatedAt),
+      deletedAt: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
     await this.prisma.goal.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        account_uuid: persistence.accountUuid,
-        created_at: new Date(persistence.createdAt),
+        accountUuid: persistence.accountUuid,
+        createdAt: new Date(persistence.createdAt),
         ...data,
       },
       update: data,
@@ -129,7 +129,7 @@ export class PrismaGoalRepository implements IGoalRepository {
       folderUuid?: string;
     },
   ): Promise<Goal[]> {
-    const where: any = { account_uuid: accountUuid, deleted_at: null };
+    const where: any = { accountUuid: accountUuid, deletedAt: null };
     if (options?.status) {
       where.status = options.status;
     }
@@ -142,7 +142,7 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   async findByFolderUuid(folderUuid: string): Promise<Goal[]> {
     const data = await this.prisma.goal.findMany({
-      where: { folder_uuid: folderUuid, deleted_at: null },
+      where: { folderUuid: folderUuid, deletedAt: null },
     });
     return data.map((d) => this.mapToEntity(d));
   }
@@ -154,7 +154,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async softDelete(uuid: string): Promise<void> {
     await this.prisma.goal.update({
       where: { uuid },
-      data: { deleted_at: new Date() },
+      data: { deletedAt: new Date() },
     });
   }
 
@@ -173,7 +173,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async batchMoveToFolder(uuids: string[], folderUuid: string | null): Promise<void> {
     await this.prisma.goal.updateMany({
       where: { uuid: { in: uuids } },
-      data: { folder_uuid: folderUuid },
+      data: { folderUuid: folderUuid },
     });
   }
 }

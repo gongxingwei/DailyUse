@@ -91,8 +91,8 @@ export interface NotificationTemplateConfigServerDTO {
 export interface NotificationTemplateConfigPersistenceDTO {
   template: string; // JSON.stringify(TemplateContent)
   channels: string; // JSON.stringify(ChannelConfig)
-  email_template?: string | null; // JSON.stringify(EmailTemplateContent)
-  push_template?: string | null; // JSON.stringify(PushTemplateContent)
+  emailTemplate?: string | null; // JSON.stringify(EmailTemplateContent)
+  pushTemplate?: string | null; // JSON.stringify(PushTemplateContent)
 }
 
 // ============ {��� ============

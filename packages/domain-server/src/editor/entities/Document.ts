@@ -180,7 +180,7 @@ export class Document extends Entity implements IDocumentServer {
     return new Document({
       uuid: dto.uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       path: dto.path,
       name: dto.name,
       language: dto.language,
@@ -190,8 +190,8 @@ export class Document extends Entity implements IDocumentServer {
       indexStatus: dto.index_status,
       lastIndexedAt: dto.last_indexed_at,
       lastModifiedAt: dto.last_modified_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -331,7 +331,7 @@ export class Document extends Entity implements IDocumentServer {
     return {
       uuid: this._uuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       path: this._path,
       name: this._name,
       language: this._language,
@@ -341,8 +341,8 @@ export class Document extends Entity implements IDocumentServer {
       index_status: this._indexStatus,
       last_indexed_at: this._lastIndexedAt,
       last_modified_at: this._lastModifiedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 

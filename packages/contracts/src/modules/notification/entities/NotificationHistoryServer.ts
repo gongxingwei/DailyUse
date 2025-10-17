@@ -21,10 +21,10 @@ export interface NotificationHistoryServerDTO {
  */
 export interface NotificationHistoryPersistenceDTO {
   uuid: string;
-  notification_uuid: string;
+  notificationUuid: string;
   action: string;
   details?: string | null; // JSON string
-  created_at: number;
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

@@ -25,6 +25,6 @@ export interface SkipRecordServerDTO {
 }
 
 export interface SkipRecordPersistenceDTO {
-  skipped_at: number;
+  skippedAt: number;
   reason?: string | null;
 }

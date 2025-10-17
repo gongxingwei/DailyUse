@@ -75,7 +75,7 @@ export class CredentialHistory extends Entity implements ICredentialHistoryServe
       details: dto.details ? JSON.parse(dto.details) : null,
       ipAddress: dto.ip_address,
       userAgent: dto.user_agent,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -112,7 +112,7 @@ export class CredentialHistory extends Entity implements ICredentialHistoryServe
       details: this.details ? JSON.stringify(this.details) : null,
       ip_address: this.ipAddress,
       user_agent: this.userAgent,
-      created_at: this.createdAt,
+      createdAt: this.createdAt,
     };
   }
 }

@@ -52,31 +52,31 @@ export interface ScheduleTaskServerDTO {
  */
 export interface ScheduleTaskPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   description: string | null;
-  source_module: SourceModule;
-  source_entity_id: string;
+  sourceModule: SourceModule;
+  sourceEntityId: string;
   status: ScheduleTaskStatus;
   enabled: boolean;
 
   // ========== ScheduleConfig 值对象（展开字段）==========
-  cron_expression: string | null;
+  cronExpression: string | null;
   timezone: string;
-  start_date: number | null; // epoch ms
-  end_date: number | null; // epoch ms
-  max_executions: number | null;
+  startDate: number | null; // epoch ms
+  endDate: number | null; // epoch ms
+  maxExecutions: number | null;
 
   // ========== ExecutionInfo 值对象（展开字段）==========
-  next_run_at: number | null; // epoch ms - ⭐ 关键字段！
-  last_run_at: number | null; // epoch ms
-  execution_count: number;
-  last_execution_status: string | null;
+  nextRunAt: number | null; // epoch ms - ⭐ 关键字段！
+  lastRunAt: number | null; // epoch ms
+  executionCount: number;
+  lastExecutionStatus: string | null;
   last_execution_duration: number | null; // ms
   consecutive_failures: number;
 
   // ========== RetryPolicy 值对象（展开字段）==========
-  max_retries: number;
+  maxRetries: number;
   initial_delay_ms: number;
   max_delay_ms: number;
   backoff_multiplier: number;
@@ -89,8 +89,8 @@ export interface ScheduleTaskPersistenceDTO {
   timeout: number;
 
   // 时间戳
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 
   // 注意：子实体在数据库中是独立表，通过外键关联
 }

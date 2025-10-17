@@ -69,7 +69,7 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
 
     return RepositoryStatistics.fromPersistenceDTO({
       id: record.id,
-      account_uuid: record.accountUuid,
+      accountUuid: record.accountUuid,
       total_repositories: record.totalRepositories,
       active_repositories: record.activeRepositories,
       archived_repositories: record.archivedRepositories,
@@ -81,8 +81,8 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
       total_references: record.totalReferences,
       total_linked_contents: record.totalLinkedContents,
       total_size_bytes: record.totalSizeBytes,
-      last_updated_at: record.lastUpdatedAt,
-      created_at: record.createdAt,
+      lastUpdatedAt: record.lastUpdatedAt,
+      createdAt: record.createdAt,
     });
   }
 
@@ -120,7 +120,7 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
     return records.map((record) =>
       RepositoryStatistics.fromPersistenceDTO({
         id: record.id,
-        account_uuid: record.accountUuid,
+        accountUuid: record.accountUuid,
         total_repositories: record.totalRepositories,
         active_repositories: record.activeRepositories,
         archived_repositories: record.archivedRepositories,
@@ -132,8 +132,8 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
         total_references: record.totalReferences,
         total_linked_contents: record.totalLinkedContents,
         total_size_bytes: record.totalSizeBytes,
-        last_updated_at: record.lastUpdatedAt,
-        created_at: record.createdAt,
+        lastUpdatedAt: record.lastUpdatedAt,
+        createdAt: record.createdAt,
       }),
     );
   }
@@ -153,7 +153,7 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
     return records.map((record) =>
       RepositoryStatistics.fromPersistenceDTO({
         id: record.id,
-        account_uuid: record.accountUuid,
+        accountUuid: record.accountUuid,
         total_repositories: record.totalRepositories,
         active_repositories: record.activeRepositories,
         archived_repositories: record.archivedRepositories,
@@ -165,8 +165,8 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
         total_references: record.totalReferences,
         total_linked_contents: record.totalLinkedContents,
         total_size_bytes: record.totalSizeBytes,
-        last_updated_at: record.lastUpdatedAt,
-        created_at: record.createdAt,
+        lastUpdatedAt: record.lastUpdatedAt,
+        createdAt: record.createdAt,
       }),
     );
   }

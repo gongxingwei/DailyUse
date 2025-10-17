@@ -32,7 +32,7 @@ export interface CredentialHistoryPersistenceDTO {
   details?: string | null; // JSON
   ip_address?: string | null;
   user_agent?: string | null;
-  created_at: number;
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

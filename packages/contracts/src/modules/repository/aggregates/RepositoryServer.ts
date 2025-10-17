@@ -90,22 +90,26 @@ export interface RepositoryServerDTO {
 /**
  * Repository Persistence DTO (数据库映射)
  */
+/**
+ * Repository Persistence DTO
+ * 注意：使用 camelCase 命名
+ */
 export interface RepositoryPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   type: RepositoryType;
   path: string;
   description?: string | null;
   config: string; // JSON string
-  related_goals?: string | null; // JSON string
+  relatedGoals?: string | null; // JSON string
   status: RepositoryStatus;
   git?: string | null; // JSON string
-  sync_status?: string | null; // JSON string
+  syncStatus?: string | null; // JSON string
   stats: string; // JSON string
-  last_accessed_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  lastAccessedAt?: number | null;
+  createdAt: number;
+  updatedAt: number;
 
   // 注意：子实体在数据库中是独立表，通过外键关联
   // Persistence 层不包含子实体数据

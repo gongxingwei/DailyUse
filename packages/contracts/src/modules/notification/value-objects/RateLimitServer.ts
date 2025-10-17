@@ -45,8 +45,8 @@ export interface RateLimitServerDTO {
  */
 export interface RateLimitPersistenceDTO {
   enabled: boolean;
-  max_per_hour: number;
-  max_per_day: number;
+  maxPerHour: number;
+  maxPerDay: number;
 }
 
 // ============ {��� ============

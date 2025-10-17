@@ -26,7 +26,7 @@ export class PrismaNotificationRepository implements INotificationRepository {
   private mapToEntity(data: any): Notification {
     const notification = Notification.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       title: data.title,
       content: data.content,
       type: data.type,
@@ -34,18 +34,18 @@ export class PrismaNotificationRepository implements INotificationRepository {
       importance: data.importance,
       urgency: data.urgency,
       status: data.status,
-      is_read: data.isRead,
-      read_at: data.readAt?.getTime() ?? null,
-      related_entity_type: data.relatedEntityType,
-      related_entity_uuid: data.relatedEntityUuid,
+      isRead: data.isRead,
+      readAt: data.readAt?.getTime() ?? null,
+      relatedEntityType: data.relatedEntityType,
+      relatedEntityUuid: data.relatedEntityUuid,
       actions: data.actions,
       metadata: data.metadata,
-      expires_at: data.expiresAt?.getTime() ?? null,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      sent_at: data.sentAt?.getTime() ?? null,
-      delivered_at: data.deliveredAt?.getTime() ?? null,
-      deleted_at: data.deletedAt?.getTime() ?? null,
+      expiresAt: data.expiresAt?.getTime() ?? null,
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
+      sentAt: data.sentAt?.getTime() ?? null,
+      deliveredAt: data.deliveredAt?.getTime() ?? null,
+      deletedAt: data.deletedAt?.getTime() ?? null,
     });
 
     // 加载 NotificationChannel 子实体
@@ -53,18 +53,18 @@ export class PrismaNotificationRepository implements INotificationRepository {
       data.channels.forEach((channel: any) => {
         const channelEntity = NotificationChannel.fromPersistenceDTO({
           uuid: channel.uuid,
-          notification_uuid: channel.notificationUuid,
-          channel_type: channel.channelType,
+          notificationUuid: channel.notificationUuid,
+          channelType: channel.channelType,
           recipient: channel.recipient,
           status: channel.status,
-          sent_at: channel.sentAt?.getTime() ?? null,
-          delivered_at: channel.deliveredAt?.getTime() ?? null,
-          failed_at: channel.failedAt?.getTime() ?? null,
+          sentAt: channel.sentAt?.getTime() ?? null,
+          deliveredAt: channel.deliveredAt?.getTime() ?? null,
+          failedAt: channel.failedAt?.getTime() ?? null,
           error: channel.error,
-          send_attempts: channel.retryCount,
-          max_retries: channel.maxRetries,
+          sendAttempts: channel.retryCount,
+          maxRetries: channel.maxRetries,
           response: channel.response,
-          created_at: channel.createdAt.getTime(),
+          createdAt: channel.createdAt.getTime(),
         });
         notification.addChannel(channelEntity);
       });

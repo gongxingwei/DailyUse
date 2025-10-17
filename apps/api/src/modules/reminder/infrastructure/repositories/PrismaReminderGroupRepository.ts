@@ -14,7 +14,7 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
   private mapToEntity(data: any): ReminderGroup {
     return ReminderGroup.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       name: data.name,
       description: data.description,
       control_mode: data.controlMode,
@@ -24,9 +24,9 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
       color: data.color,
       icon: data.icon,
       stats: data.stats, // stats is a JSON string
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      deleted_at: data.deletedAt ? data.deletedAt.getTime() : null,
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
+      deletedAt: data.deletedAt ? data.deletedAt.getTime() : null,
     });
   }
 

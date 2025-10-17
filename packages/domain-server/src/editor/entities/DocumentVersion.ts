@@ -160,7 +160,7 @@ export class DocumentVersion extends Entity implements IDocumentVersionServer {
       uuid: dto.uuid,
       documentUuid: dto.document_uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       versionNumber: dto.version_number,
       changeType: dto.change_type,
       contentHash: dto.content_hash,
@@ -168,7 +168,7 @@ export class DocumentVersion extends Entity implements IDocumentVersionServer {
       changeDescription: dto.change_description,
       previousVersionUuid: dto.previous_version_uuid,
       createdBy: dto.created_by,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -244,7 +244,7 @@ export class DocumentVersion extends Entity implements IDocumentVersionServer {
       uuid: this._uuid,
       document_uuid: this._documentUuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       version_number: this._versionNumber,
       change_type: this._changeType,
       content_hash: this._contentHash,
@@ -252,7 +252,7 @@ export class DocumentVersion extends Entity implements IDocumentVersionServer {
       change_description: this._changeDescription,
       previous_version_uuid: this._previousVersionUuid,
       created_by: this._createdBy,
-      created_at: this._createdAt,
+      createdAt: this._createdAt,
     };
   }
 }

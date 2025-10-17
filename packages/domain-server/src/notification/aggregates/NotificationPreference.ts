@@ -243,14 +243,14 @@ export class NotificationPreference extends AggregateRoot implements INotificati
   public toPersistenceDTO(): NotificationPreferencePersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       enabled: this.enabled,
       channels: JSON.stringify(this.channels),
       categories: JSON.stringify(this.categories),
-      do_not_disturb: this.doNotDisturb ? JSON.stringify(this.doNotDisturb) : null,
-      rate_limit: this.rateLimit ? JSON.stringify(this.rateLimit) : null,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
+      doNotDisturb: this.doNotDisturb ? JSON.stringify(this.doNotDisturb) : null,
+      rateLimit: this.rateLimit ? JSON.stringify(this.rateLimit) : null,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
   }
 
@@ -329,16 +329,16 @@ export class NotificationPreference extends AggregateRoot implements INotificati
   ): NotificationPreference {
     return new NotificationPreference({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       enabled: dto.enabled,
       channels: JSON.parse(dto.channels),
       categories: JSON.parse(dto.categories),
-      doNotDisturb: dto.do_not_disturb
-        ? DoNotDisturbConfig.fromContract(JSON.parse(dto.do_not_disturb))
+      doNotDisturb: dto.doNotDisturb
+        ? DoNotDisturbConfig.fromContract(JSON.parse(dto.doNotDisturb))
         : null,
-      rateLimit: dto.rate_limit ? RateLimit.fromContract(JSON.parse(dto.rate_limit)) : null,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      rateLimit: dto.rateLimit ? RateLimit.fromContract(JSON.parse(dto.rateLimit)) : null,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 }

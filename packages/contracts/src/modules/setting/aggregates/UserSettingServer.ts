@@ -59,15 +59,15 @@ export interface UserSettingServerDTO {
  */
 export interface UserSettingPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   appearance: string; // JSON
   locale: string; // JSON
   workflow: string; // JSON
   shortcuts: string; // JSON
   privacy: string; // JSON
   experimental: string; // JSON
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 聚合根接口 ============

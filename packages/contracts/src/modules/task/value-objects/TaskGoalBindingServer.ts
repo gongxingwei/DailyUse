@@ -27,7 +27,7 @@ export interface TaskGoalBindingServerDTO {
 }
 
 export interface TaskGoalBindingPersistenceDTO {
-  goal_uuid: string;
-  key_result_uuid: string;
-  increment_value: number;
+  goalUuid: string;
+  keyResultUuid: string;
+  incrementValue: number;
 }

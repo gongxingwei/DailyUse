@@ -62,18 +62,18 @@ export interface RepositoryExplorerServerDTO {
  */
 export interface RepositoryExplorerPersistenceDTO {
   uuid: string;
-  repository_uuid: string;
-  account_uuid: string;
+  repositoryUuid: string;
+  accountUuid: string;
   name: string;
   description?: string | null;
-  current_path: string;
+  currentPath: string;
   filters: string; // JSON string
-  view_config: string; // JSON string
-  pinned_paths: string; // JSON string
-  recent_paths: string; // JSON string
-  last_scan_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  viewConfig: string; // JSON string
+  pinnedPaths: string; // JSON string
+  recentPaths: string; // JSON string
+  lastScanAt?: number | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 实体接口 ============

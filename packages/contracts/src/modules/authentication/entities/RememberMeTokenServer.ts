@@ -35,18 +35,18 @@ export interface RememberMeTokenServerDTO {
 export interface RememberMeTokenPersistenceDTO {
   uuid: string;
   credential_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   token: string;
   token_series: string;
   device: string; // JSON
   status: 'ACTIVE' | 'USED' | 'REVOKED' | 'EXPIRED';
   usage_count: number;
-  last_used_at?: number | null;
+  lastUsedAt?: number | null;
   last_used_ip?: string | null;
-  expires_at: number;
-  created_at: number;
-  updated_at: number;
-  revoked_at?: number | null;
+  expiresAt: number;
+  createdAt: number;
+  updatedAt: number;
+  revokedAt?: number | null;
 }
 
 // ============ 实体接口 ============

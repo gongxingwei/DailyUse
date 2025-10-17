@@ -56,14 +56,14 @@ export interface NotificationPreferenceServerDTO {
  */
 export interface NotificationPreferencePersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   enabled: boolean;
   channels: string; // JSON string
   categories: string; // JSON string
-  do_not_disturb?: string | null; // JSON string
-  rate_limit?: string | null; // JSON string
-  created_at: number;
-  updated_at: number;
+  doNotDisturb?: string | null; // JSON string
+  rateLimit?: string | null; // JSON string
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 领域事件 ============

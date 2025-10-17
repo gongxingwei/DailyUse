@@ -35,16 +35,16 @@ export interface SettingGroupPersistenceDTO {
   name: string;
   description?: string | null;
   icon?: string | null;
-  parent_group_uuid?: string | null;
+  parentGroupUuid?: string | null;
   path: string;
   level: number;
-  sort_order: number;
+  sortOrder: number;
   settings: string; // JSON
-  is_system_group: boolean;
-  is_collapsed: boolean;
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  isSystemGroup: boolean;
+  isCollapsed: boolean;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 实体接口 ============

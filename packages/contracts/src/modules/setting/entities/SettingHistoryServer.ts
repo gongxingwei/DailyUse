@@ -25,13 +25,13 @@ export interface SettingHistoryServerDTO {
  */
 export interface SettingHistoryPersistenceDTO {
   uuid: string;
-  setting_uuid: string;
-  setting_key: string;
-  old_value: string; // JSON
-  new_value: string; // JSON
-  operator_uuid?: string | null;
-  operator_type: 'USER' | 'SYSTEM' | 'API';
-  created_at: number;
+  settingUuid: string;
+  settingKey: string;
+  oldValue: string; // JSON
+  newValue: string; // JSON
+  operatorUuid?: string | null;
+  operatorType: 'USER' | 'SYSTEM' | 'API';
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

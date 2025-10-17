@@ -352,7 +352,7 @@ export class Notification extends AggregateRoot implements INotificationServer {
   public toPersistenceDTO(): NotificationPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       title: this.title,
       content: this.content,
       type: this.type,
@@ -360,18 +360,18 @@ export class Notification extends AggregateRoot implements INotificationServer {
       importance: this.importance,
       urgency: this.urgency,
       status: this.status,
-      is_read: this.isRead,
-      read_at: this.readAt,
-      related_entity_type: this.relatedEntityType,
-      related_entity_uuid: this.relatedEntityUuid,
+      isRead: this.isRead,
+      readAt: this.readAt,
+      relatedEntityType: this.relatedEntityType,
+      relatedEntityUuid: this.relatedEntityUuid,
       actions: this.actions ? JSON.stringify(this.actions) : null,
       metadata: this.metadata ? JSON.stringify(this.metadata) : null,
-      expires_at: this.expiresAt,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
-      sent_at: this.sentAt,
-      delivered_at: this.deliveredAt,
-      deleted_at: this.deletedAt,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      sentAt: this.sentAt,
+      deliveredAt: this.deliveredAt,
+      deletedAt: this.deletedAt,
     };
   }
 
@@ -453,7 +453,7 @@ export class Notification extends AggregateRoot implements INotificationServer {
   public static fromPersistenceDTO(dto: NotificationPersistenceDTO): Notification {
     return new Notification({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       title: dto.title,
       content: dto.content,
       type: dto.type,
@@ -461,20 +461,20 @@ export class Notification extends AggregateRoot implements INotificationServer {
       importance: dto.importance,
       urgency: dto.urgency,
       status: dto.status,
-      isRead: dto.is_read,
-      readAt: dto.read_at,
-      relatedEntityType: dto.related_entity_type,
-      relatedEntityUuid: dto.related_entity_uuid,
+      isRead: dto.isRead,
+      readAt: dto.readAt,
+      relatedEntityType: dto.relatedEntityType,
+      relatedEntityUuid: dto.relatedEntityUuid,
       actions: dto.actions
         ? JSON.parse(dto.actions).map((a: any) => NotificationAction.fromContract(a))
         : null,
       metadata: dto.metadata ? NotificationMetadata.fromContract(JSON.parse(dto.metadata)) : null,
-      expiresAt: dto.expires_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      sentAt: dto.sent_at,
-      deliveredAt: dto.delivered_at,
-      deletedAt: dto.deleted_at,
+      expiresAt: dto.expiresAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      sentAt: dto.sentAt,
+      deliveredAt: dto.deliveredAt,
+      deletedAt: dto.deletedAt,
     });
   }
 }

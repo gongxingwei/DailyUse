@@ -37,7 +37,7 @@ export interface DocumentServerDTO {
 export interface DocumentPersistenceDTO {
   uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   path: string;
   name: string;
   language: DocumentLanguage;
@@ -47,8 +47,8 @@ export interface DocumentPersistenceDTO {
   index_status: IndexStatus;
   last_indexed_at?: number | null;
   last_modified_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

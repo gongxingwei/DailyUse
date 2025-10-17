@@ -32,9 +32,9 @@ export interface TaskTimeConfigServerDTO {
 }
 
 export interface TaskTimeConfigPersistenceDTO {
-  time_type: string;
-  start_date?: number | null;
-  end_date?: number | null;
-  time_point?: number | null;
-  time_range?: string | null; // JSON
+  timeType: string;
+  startDate?: number | null;
+  endDate?: number | null;
+  timePoint?: number | null;
+  timeRange?: string | null; // JSON
 }

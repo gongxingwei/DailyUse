@@ -650,61 +650,61 @@ export class ScheduleStatistics extends AggregateRoot {
     const moduleStatsObject = {
       reminder: {
         module_name: 'reminder',
-        total_tasks: this._reminderTotalTasks,
-        active_tasks: this._reminderActiveTasks,
-        total_executions: this._reminderExecutions,
-        successful_executions: this._reminderSuccessfulExecutions,
-        failed_executions: this._reminderFailedExecutions,
+        totalTasks: this._reminderTotalTasks,
+        activeTasks: this._reminderActiveTasks,
+        totalExecutions: this._reminderExecutions,
+        successfulExecutions: this._reminderSuccessfulExecutions,
+        failedExecutions: this._reminderFailedExecutions,
         avg_duration: 0,
       },
       task: {
         module_name: 'task',
-        total_tasks: this._taskTotalTasks,
-        active_tasks: this._taskActiveTasks,
-        total_executions: this._taskExecutions,
-        successful_executions: this._taskSuccessfulExecutions,
-        failed_executions: this._taskFailedExecutions,
+        totalTasks: this._taskTotalTasks,
+        activeTasks: this._taskActiveTasks,
+        totalExecutions: this._taskExecutions,
+        successfulExecutions: this._taskSuccessfulExecutions,
+        failedExecutions: this._taskFailedExecutions,
         avg_duration: 0,
       },
       goal: {
         module_name: 'goal',
-        total_tasks: this._goalTotalTasks,
-        active_tasks: this._goalActiveTasks,
-        total_executions: this._goalExecutions,
-        successful_executions: this._goalSuccessfulExecutions,
-        failed_executions: this._goalFailedExecutions,
+        totalTasks: this._goalTotalTasks,
+        activeTasks: this._goalActiveTasks,
+        totalExecutions: this._goalExecutions,
+        successfulExecutions: this._goalSuccessfulExecutions,
+        failedExecutions: this._goalFailedExecutions,
         avg_duration: 0,
       },
       notification: {
         module_name: 'notification',
-        total_tasks: this._notificationTotalTasks,
-        active_tasks: this._notificationActiveTasks,
-        total_executions: this._notificationExecutions,
-        successful_executions: this._notificationSuccessfulExecutions,
-        failed_executions: this._notificationFailedExecutions,
+        totalTasks: this._notificationTotalTasks,
+        activeTasks: this._notificationActiveTasks,
+        totalExecutions: this._notificationExecutions,
+        successfulExecutions: this._notificationSuccessfulExecutions,
+        failedExecutions: this._notificationFailedExecutions,
         avg_duration: 0,
       },
     };
 
     return {
-      account_uuid: this._accountUuid,
-      total_tasks: this._totalTasks,
-      active_tasks: this._activeTasks,
-      paused_tasks: this._pausedTasks,
-      completed_tasks: this._completedTasks,
-      cancelled_tasks: 0, // TODO: 添加字段
-      failed_tasks: this._failedTasks,
-      total_executions: this._totalExecutions,
-      successful_executions: this._successfulExecutions,
-      failed_executions: this._failedExecutions,
-      skipped_executions: this._skippedExecutions,
-      timeout_executions: this._timeoutExecutions,
-      avg_execution_duration: 0, // TODO: 添加执行时长追踪
-      min_execution_duration: 0,
-      max_execution_duration: 0,
-      module_statistics: JSON.stringify(moduleStatsObject),
-      last_updated_at: this._lastUpdatedAt,
-      created_at: this._createdAt,
+      accountUuid: this._accountUuid,
+      totalTasks: this._totalTasks,
+      activeTasks: this._activeTasks,
+      pausedTasks: this._pausedTasks,
+      completedTasks: this._completedTasks,
+      cancelledTasks: 0, // TODO: 添加字段
+      failedTasks: this._failedTasks,
+      totalExecutions: this._totalExecutions,
+      successfulExecutions: this._successfulExecutions,
+      failedExecutions: this._failedExecutions,
+      skippedExecutions: this._skippedExecutions,
+      timeoutExecutions: this._timeoutExecutions,
+      avgExecutionDuration: 0, // TODO: 添加执行时长追踪
+      minExecutionDuration: 0,
+      maxExecutionDuration: 0,
+      moduleStatistics: JSON.stringify(moduleStatsObject),
+      lastUpdatedAt: this._lastUpdatedAt,
+      createdAt: this._createdAt,
     };
   }
 
@@ -849,83 +849,83 @@ export class ScheduleStatistics extends AggregateRoot {
    * TODO: 完善实现以支持从 PersistenceDTO 重建聚合根
    */
   public static fromPersistenceDTO(dto: ScheduleStatisticsPersistenceDTO): ScheduleStatistics {
-    // 从 module_statistics JSON string 解析模块级别数据
-    const moduleStatsObject = JSON.parse(dto.module_statistics) as Record<
+    // 从 moduleStatistics JSON string 解析模块级别数据
+    const moduleStatsObject = JSON.parse(dto.moduleStatistics) as Record<
       string,
       {
         module_name: string;
-        total_tasks: number;
-        active_tasks: number;
-        total_executions: number;
-        successful_executions: number;
-        failed_executions: number;
+        totalTasks: number;
+        activeTasks: number;
+        totalExecutions: number;
+        successfulExecutions: number;
+        failedExecutions: number;
         avg_duration: number;
       }
     >;
 
     const reminderStats = moduleStatsObject.reminder ?? {
-      total_tasks: 0,
-      active_tasks: 0,
-      total_executions: 0,
-      successful_executions: 0,
-      failed_executions: 0,
+      totalTasks: 0,
+      activeTasks: 0,
+      totalExecutions: 0,
+      successfulExecutions: 0,
+      failedExecutions: 0,
     };
     const taskStats = moduleStatsObject.task ?? {
-      total_tasks: 0,
-      active_tasks: 0,
-      total_executions: 0,
-      successful_executions: 0,
-      failed_executions: 0,
+      totalTasks: 0,
+      activeTasks: 0,
+      totalExecutions: 0,
+      successfulExecutions: 0,
+      failedExecutions: 0,
     };
     const goalStats = moduleStatsObject.goal ?? {
-      total_tasks: 0,
-      active_tasks: 0,
-      total_executions: 0,
-      successful_executions: 0,
-      failed_executions: 0,
+      totalTasks: 0,
+      activeTasks: 0,
+      totalExecutions: 0,
+      successfulExecutions: 0,
+      failedExecutions: 0,
     };
     const notificationStats = moduleStatsObject.notification ?? {
-      total_tasks: 0,
-      active_tasks: 0,
-      total_executions: 0,
-      successful_executions: 0,
-      failed_executions: 0,
+      totalTasks: 0,
+      activeTasks: 0,
+      totalExecutions: 0,
+      successfulExecutions: 0,
+      failedExecutions: 0,
     };
 
     return new ScheduleStatistics({
-      accountUuid: dto.account_uuid,
-      totalTasks: dto.total_tasks,
-      activeTasks: dto.active_tasks,
-      pausedTasks: dto.paused_tasks,
-      completedTasks: dto.completed_tasks,
-      failedTasks: dto.failed_tasks,
-      totalExecutions: dto.total_executions,
-      successfulExecutions: dto.successful_executions,
-      failedExecutions: dto.failed_executions,
-      timeoutExecutions: dto.timeout_executions,
-      skippedExecutions: dto.skipped_executions,
-      reminderTotalTasks: reminderStats.total_tasks,
-      reminderActiveTasks: reminderStats.active_tasks,
-      reminderExecutions: reminderStats.total_executions,
-      reminderSuccessfulExecutions: reminderStats.successful_executions,
-      reminderFailedExecutions: reminderStats.failed_executions,
-      taskTotalTasks: taskStats.total_tasks,
-      taskActiveTasks: taskStats.active_tasks,
-      taskExecutions: taskStats.total_executions,
-      taskSuccessfulExecutions: taskStats.successful_executions,
-      taskFailedExecutions: taskStats.failed_executions,
-      goalTotalTasks: goalStats.total_tasks,
-      goalActiveTasks: goalStats.active_tasks,
-      goalExecutions: goalStats.total_executions,
-      goalSuccessfulExecutions: goalStats.successful_executions,
-      goalFailedExecutions: goalStats.failed_executions,
-      notificationTotalTasks: notificationStats.total_tasks,
-      notificationActiveTasks: notificationStats.active_tasks,
-      notificationExecutions: notificationStats.total_executions,
-      notificationSuccessfulExecutions: notificationStats.successful_executions,
-      notificationFailedExecutions: notificationStats.failed_executions,
-      lastUpdatedAt: dto.last_updated_at,
-      createdAt: dto.created_at,
+      accountUuid: dto.accountUuid,
+      totalTasks: dto.totalTasks,
+      activeTasks: dto.activeTasks,
+      pausedTasks: dto.pausedTasks,
+      completedTasks: dto.completedTasks,
+      failedTasks: dto.failedTasks,
+      totalExecutions: dto.totalExecutions,
+      successfulExecutions: dto.successfulExecutions,
+      failedExecutions: dto.failedExecutions,
+      timeoutExecutions: dto.timeoutExecutions,
+      skippedExecutions: dto.skippedExecutions,
+      reminderTotalTasks: reminderStats.totalTasks,
+      reminderActiveTasks: reminderStats.activeTasks,
+      reminderExecutions: reminderStats.totalExecutions,
+      reminderSuccessfulExecutions: reminderStats.successfulExecutions,
+      reminderFailedExecutions: reminderStats.failedExecutions,
+      taskTotalTasks: taskStats.totalTasks,
+      taskActiveTasks: taskStats.activeTasks,
+      taskExecutions: taskStats.totalExecutions,
+      taskSuccessfulExecutions: taskStats.successfulExecutions,
+      taskFailedExecutions: taskStats.failedExecutions,
+      goalTotalTasks: goalStats.totalTasks,
+      goalActiveTasks: goalStats.activeTasks,
+      goalExecutions: goalStats.totalExecutions,
+      goalSuccessfulExecutions: goalStats.successfulExecutions,
+      goalFailedExecutions: goalStats.failedExecutions,
+      notificationTotalTasks: notificationStats.totalTasks,
+      notificationActiveTasks: notificationStats.activeTasks,
+      notificationExecutions: notificationStats.totalExecutions,
+      notificationSuccessfulExecutions: notificationStats.successfulExecutions,
+      notificationFailedExecutions: notificationStats.failedExecutions,
+      lastUpdatedAt: dto.lastUpdatedAt,
+      createdAt: dto.createdAt,
     });
   }
 }

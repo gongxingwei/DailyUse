@@ -53,7 +53,7 @@ export interface AuthCredentialServerDTO {
  */
 export interface AuthCredentialPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   type: 'PASSWORD' | 'API_KEY' | 'BIOMETRIC' | 'MAGIC_LINK' | 'HARDWARE_KEY';
   password_credential?: string | null; // JSON
   api_key_credentials: string; // JSON
@@ -63,11 +63,11 @@ export interface AuthCredentialPersistenceDTO {
   status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'REVOKED';
   security: string; // JSON
   history: string; // JSON
-  created_at: number;
-  updated_at: number;
-  expires_at?: number | null;
-  last_used_at?: number | null;
-  revoked_at?: number | null;
+  createdAt: number;
+  updatedAt: number;
+  expiresAt?: number | null;
+  lastUsedAt?: number | null;
+  revokedAt?: number | null;
 }
 
 // ============ 实体接口 ============

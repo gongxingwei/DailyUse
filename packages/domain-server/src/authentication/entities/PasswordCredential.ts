@@ -89,10 +89,10 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       salt: dto.salt,
       algorithm: dto.algorithm,
       iterations: dto.iterations,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
       status: dto.status,
-      failedAttempts: dto.failed_attempts,
+      failedAttempts: dto.failedAttempts,
       lastChangedAt: dto.last_changed_at,
     });
   }
@@ -149,10 +149,10 @@ export class PasswordCredential extends Entity implements IPasswordCredentialSer
       algorithm: this.algorithm,
       iterations: this.iterations,
       status: this.status,
-      failed_attempts: this.failedAttempts,
+      failedAttempts: this.failedAttempts,
       last_changed_at: this.lastChangedAt,
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
     };
   }
 }

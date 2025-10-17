@@ -99,7 +99,7 @@ export interface KeyResultProgressClientDTO {
  * Key Result Progress Persistence DTO
  */
 export interface KeyResultProgressPersistenceDTO {
-  value_type: KeyResultValueType;
+  valueType: KeyResultValueType;
   aggregation_method: AggregationMethod;
   target_value: number;
   current_value: number;

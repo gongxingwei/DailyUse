@@ -199,7 +199,7 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
    */
   public static fromPersistenceDTO(dto: RepositoryStatisticsPersistenceDTO): RepositoryStatistics {
     return new RepositoryStatistics({
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       totalRepositories: dto.total_repositories,
       activeRepositories: dto.active_repositories,
       archivedRepositories: dto.archived_repositories,
@@ -211,8 +211,8 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
       totalReferences: dto.total_references,
       totalLinkedContents: dto.total_linked_contents,
       totalSizeBytes: dto.total_size_bytes,
-      lastUpdatedAt: dto.last_updated_at.getTime(),
-      createdAt: dto.created_at.getTime(),
+      lastUpdatedAt: dto.lastUpdatedAt.getTime(),
+      createdAt: dto.createdAt.getTime(),
     });
   }
 
@@ -675,7 +675,7 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
    */
   public toPersistenceDTO(): RepositoryStatisticsPersistenceDTO {
     return {
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       total_repositories: this._totalRepositories,
       active_repositories: this._activeRepositories,
       archived_repositories: this._archivedRepositories,
@@ -687,8 +687,8 @@ export class RepositoryStatistics extends AggregateRoot implements IRepositorySt
       total_references: this._totalReferences,
       total_linked_contents: this._totalLinkedContents,
       total_size_bytes: this._totalSizeBytes,
-      last_updated_at: new Date(this._lastUpdatedAt),
-      created_at: new Date(this._createdAt),
+      lastUpdatedAt: new Date(this._lastUpdatedAt),
+      createdAt: new Date(this._createdAt),
     };
   }
 }

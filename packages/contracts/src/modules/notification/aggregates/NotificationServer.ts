@@ -59,7 +59,7 @@ export interface NotificationServerDTO {
  */
 export interface NotificationPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   title: string;
   content: string;
   type: NotificationType;
@@ -67,18 +67,18 @@ export interface NotificationPersistenceDTO {
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
   status: NotificationStatus;
-  is_read: boolean;
-  read_at?: number | null;
-  related_entity_type?: RelatedEntityType | null;
-  related_entity_uuid?: string | null;
+  isRead: boolean;
+  readAt?: number | null;
+  relatedEntityType?: RelatedEntityType | null;
+  relatedEntityUuid?: string | null;
   actions?: string | null; // JSON string
   metadata?: string | null; // JSON string
-  expires_at?: number | null;
-  created_at: number;
-  updated_at: number;
-  sent_at?: number | null;
-  delivered_at?: number | null;
-  deleted_at?: number | null;
+  expiresAt?: number | null;
+  createdAt: number;
+  updatedAt: number;
+  sentAt?: number | null;
+  deliveredAt?: number | null;
+  deletedAt?: number | null;
 }
 
 // ============ 领域事件 ============

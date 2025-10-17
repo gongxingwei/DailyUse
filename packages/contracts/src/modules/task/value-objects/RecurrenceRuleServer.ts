@@ -54,7 +54,7 @@ export interface RecurrenceRuleServerDTO {
 export interface RecurrenceRulePersistenceDTO {
   frequency: string;
   interval: number;
-  days_of_week: string; // JSON array
-  end_date?: number | null;
+  daysOfWeek: string; // JSON array
+  endDate?: number | null;
   occurrences?: number | null;
 }

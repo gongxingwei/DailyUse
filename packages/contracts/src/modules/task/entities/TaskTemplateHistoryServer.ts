@@ -41,8 +41,8 @@ export interface TaskTemplateHistoryServerDTO {
  */
 export interface TaskTemplateHistoryPersistenceDTO {
   uuid: string;
-  template_uuid: string;
+  templateUuid: string;
   action: string;
   changes?: string | null; // JSON string
-  created_at: number;
+  createdAt: number;
 }

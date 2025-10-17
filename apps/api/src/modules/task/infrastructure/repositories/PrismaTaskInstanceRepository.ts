@@ -8,7 +8,7 @@ type TaskInstanceStatus = TaskContracts.TaskInstanceStatus;
 /**
  * TaskInstance Prisma Ө��
  * �UZ9�P�S
- * JSON W�time_config, completion_record, skip_record
+ * JSON W�time_config, completionRecord, skipRecord
  */
 export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
   constructor(private prisma: PrismaClient) {}
@@ -16,18 +16,18 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
   private mapToEntity(data: any): TaskInstance {
     return TaskInstance.fromPersistenceDTO({
       uuid: data.uuid,
-      template_uuid: data.templateUuid,
-      account_uuid: data.accountUuid,
-      instance_date: Number(data.instanceDate),
-      time_config: data.timeConfig,
+      templateUuid: data.templateUuid,
+      accountUuid: data.accountUuid,
+      instanceDate: Number(data.instanceDate),
+      timeConfig: data.timeConfig,
       status: data.status,
-      completion_record: data.completionRecord,
-      skip_record: data.skipRecord,
-      actual_start_time: data.actualStartTime ? Number(data.actualStartTime) : null,
-      actual_end_time: data.actualEndTime ? Number(data.actualEndTime) : null,
+      completionRecord: data.completionRecord,
+      skipRecord: data.skipRecord,
+      actualStartTime: data.actualStartTime ? Number(data.actualStartTime) : null,
+      actualEndTime: data.actualEndTime ? Number(data.actualEndTime) : null,
       note: data.note,
-      created_at: Number(data.createdAt),
-      updated_at: Number(data.updatedAt),
+      createdAt: Number(data.createdAt),
+      updatedAt: Number(data.updatedAt),
     });
   }
 

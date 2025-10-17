@@ -47,8 +47,8 @@ export interface ChannelResponseServerDTO {
  * ChannelResponse Persistence DTO
  */
 export interface ChannelResponsePersistenceDTO {
-  message_id?: string | null;
-  status_code?: number | null;
+  messageId?: string | null;
+  statusCode?: number | null;
   data?: string | null; // JSON string
 }
 

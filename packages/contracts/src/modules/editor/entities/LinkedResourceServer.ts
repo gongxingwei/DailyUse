@@ -35,7 +35,7 @@ export interface LinkedResourceServerDTO {
 export interface LinkedResourcePersistenceDTO {
   uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   source_document_uuid: string;
   source_type: LinkedSourceType;
   source_line?: number | null;
@@ -46,8 +46,8 @@ export interface LinkedResourcePersistenceDTO {
   target_anchor?: string | null;
   is_valid: boolean;
   last_validated_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

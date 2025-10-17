@@ -33,7 +33,7 @@ export interface DocumentVersionPersistenceDTO {
   uuid: string;
   document_uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   version_number: number;
   change_type: VersionChangeType;
   content_hash: string;
@@ -41,7 +41,7 @@ export interface DocumentVersionPersistenceDTO {
   change_description?: string | null;
   previous_version_uuid?: string | null;
   created_by?: string | null;
-  created_at: number;
+  createdAt: number;
 }
 
 /**

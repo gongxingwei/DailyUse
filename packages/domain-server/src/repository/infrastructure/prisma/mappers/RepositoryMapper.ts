@@ -55,20 +55,20 @@ export class RepositoryMapper {
     // 将 Prisma 模型转换为 PersistenceDTO
     const dto: RepositoryContracts.RepositoryPersistenceDTO = {
       uuid: prisma.uuid,
-      account_uuid: prisma.accountUuid,
+      accountUuid: prisma.accountUuid,
       name: prisma.name,
       type: prisma.type as RepositoryContracts.RepositoryType,
       path: prisma.path,
       description: prisma.description ?? undefined,
       config: prisma.config, // JSON string
-      related_goals: prisma.relatedGoals ?? undefined, // JSON string
+      relatedGoals: prisma.relatedGoals ?? undefined, // JSON string
       status: prisma.status as RepositoryContracts.RepositoryStatus,
       git: prisma.git ?? undefined, // JSON string
-      sync_status: prisma.syncStatus ?? undefined, // JSON string
+      syncStatus: prisma.syncStatus ?? undefined, // JSON string
       stats: prisma.stats, // JSON string
-      last_accessed_at: prisma.lastAccessedAt?.getTime() ?? undefined,
-      created_at: prisma.createdAt.getTime(),
-      updated_at: prisma.updatedAt.getTime(),
+      lastAccessedAt: prisma.lastAccessedAt?.getTime() ?? undefined,
+      createdAt: prisma.createdAt.getTime(),
+      updatedAt: prisma.updatedAt.getTime(),
     };
 
     // 使用静态工厂方法创建领域对象
@@ -93,20 +93,20 @@ export class RepositoryMapper {
 
     return {
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       type: dto.type,
       path: dto.path,
       description: dto.description ?? null,
       config: dto.config, // 已经是 JSON string
-      relatedGoals: dto.related_goals ?? null, // JSON string 或 null
+      relatedGoals: dto.relatedGoals ?? null, // JSON string 或 null
       status: dto.status,
       git: dto.git ?? null, // JSON string 或 null
-      syncStatus: dto.sync_status ?? null, // JSON string 或 null
+      syncStatus: dto.syncStatus ?? null, // JSON string 或 null
       stats: dto.stats, // JSON string
-      lastAccessedAt: dto.last_accessed_at ? new Date(dto.last_accessed_at) : null,
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      lastAccessedAt: dto.lastAccessedAt ? new Date(dto.lastAccessedAt) : null,
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
     };
   }
 }

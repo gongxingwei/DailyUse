@@ -227,18 +227,18 @@ export class NotificationChannel extends Entity implements INotificationChannelS
   public toPersistenceDTO(): NotificationChannelPersistenceDTO {
     return {
       uuid: this.uuid,
-      notification_uuid: this.notificationUuid,
-      channel_type: this.channelType,
+      notificationUuid: this.notificationUuid,
+      channelType: this.channelType,
       status: this.status,
       recipient: this.recipient,
-      send_attempts: this.sendAttempts,
-      max_retries: this.maxRetries,
+      sendAttempts: this.sendAttempts,
+      maxRetries: this.maxRetries,
       error: this.error ? JSON.stringify(this.error) : null,
       response: this.response ? JSON.stringify(this.response) : null,
-      created_at: this.createdAt,
-      sent_at: this.sentAt,
-      delivered_at: this.deliveredAt,
-      failed_at: this.failedAt,
+      createdAt: this.createdAt,
+      sentAt: this.sentAt,
+      deliveredAt: this.deliveredAt,
+      failedAt: this.failedAt,
     };
   }
 
@@ -291,18 +291,18 @@ export class NotificationChannel extends Entity implements INotificationChannelS
   public static fromPersistenceDTO(dto: NotificationChannelPersistenceDTO): NotificationChannel {
     return new NotificationChannel({
       uuid: dto.uuid,
-      notificationUuid: dto.notification_uuid,
-      channelType: dto.channel_type,
+      notificationUuid: dto.notificationUuid,
+      channelType: dto.channelType,
       status: dto.status,
       recipient: dto.recipient,
-      sendAttempts: dto.send_attempts,
-      maxRetries: dto.max_retries,
+      sendAttempts: dto.sendAttempts,
+      maxRetries: dto.maxRetries,
       error: dto.error ? ChannelError.fromContract(JSON.parse(dto.error)) : null,
       response: dto.response ? ChannelResponse.fromContract(JSON.parse(dto.response)) : null,
-      createdAt: dto.created_at,
-      sentAt: dto.sent_at,
-      deliveredAt: dto.delivered_at,
-      failedAt: dto.failed_at,
+      createdAt: dto.createdAt,
+      sentAt: dto.sentAt,
+      deliveredAt: dto.deliveredAt,
+      failedAt: dto.failedAt,
     });
   }
 }

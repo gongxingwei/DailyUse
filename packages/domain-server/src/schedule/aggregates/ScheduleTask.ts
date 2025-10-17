@@ -592,28 +592,28 @@ export class ScheduleTask extends AggregateRoot {
   public toPersistenceDTO(): any {
     return {
       uuid: this._uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
-      source_module: this._sourceModule,
-      source_entity_id: this._sourceEntityId,
+      sourceModule: this._sourceModule,
+      sourceEntityId: this._sourceEntityId,
       status: this._status,
       enabled: this._enabled,
       // ScheduleConfig (flattened)
-      cron_expression: this._schedule.cronExpression ?? null,
+      cronExpression: this._schedule.cronExpression ?? null,
       timezone: this._schedule.timezone,
-      start_date: this._schedule.startDate ?? null,
-      end_date: this._schedule.endDate ?? null,
-      max_executions: this._schedule.maxExecutions ?? null,
+      startDate: this._schedule.startDate ?? null,
+      endDate: this._schedule.endDate ?? null,
+      maxExecutions: this._schedule.maxExecutions ?? null,
       // ExecutionInfo (flattened)
-      next_run_at: this._execution.nextRunAt ?? null,
-      last_run_at: this._execution.lastRunAt ?? null,
-      execution_count: this._execution.executionCount,
-      last_execution_status: this._execution.lastExecutionStatus ?? null,
+      nextRunAt: this._execution.nextRunAt ?? null,
+      lastRunAt: this._execution.lastRunAt ?? null,
+      executionCount: this._execution.executionCount,
+      lastExecutionStatus: this._execution.lastExecutionStatus ?? null,
       last_execution_duration: this._execution.lastExecutionDuration ?? null,
       consecutive_failures: this._execution.consecutiveFailures,
       // RetryPolicy (flattened)
-      max_retries: this._retryPolicy.maxRetries,
+      maxRetries: this._retryPolicy.maxRetries,
       retry_delay: this._retryPolicy.retryDelay,
       backoff_multiplier: this._retryPolicy.backoffMultiplier,
       max_retry_delay: this._retryPolicy.maxRetryDelay,
@@ -623,8 +623,8 @@ export class ScheduleTask extends AggregateRoot {
       priority: this._metadata.priority,
       timeout: this._metadata.timeout,
       // Timestamps
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -717,31 +717,31 @@ export class ScheduleTask extends AggregateRoot {
   public static fromPersistenceDTO(dto: any): ScheduleTask {
     return new ScheduleTask({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
-      sourceModule: dto.source_module,
-      sourceEntityId: dto.source_entity_id,
+      sourceModule: dto.sourceModule,
+      sourceEntityId: dto.sourceEntityId,
       status: dto.status,
       enabled: dto.enabled,
       schedule: new ScheduleConfig({
-        cronExpression: dto.cron_expression ?? null,
+        cronExpression: dto.cronExpression ?? null,
         timezone: dto.timezone,
-        startDate: dto.start_date ?? null,
-        endDate: dto.end_date ?? null,
-        maxExecutions: dto.max_executions ?? null,
+        startDate: dto.startDate ?? null,
+        endDate: dto.endDate ?? null,
+        maxExecutions: dto.maxExecutions ?? null,
       }),
       execution: new ExecutionInfo({
-        nextRunAt: dto.next_run_at ?? null,
-        lastRunAt: dto.last_run_at ?? null,
-        executionCount: dto.execution_count,
-        lastExecutionStatus: dto.last_execution_status ?? null,
+        nextRunAt: dto.nextRunAt ?? null,
+        lastRunAt: dto.lastRunAt ?? null,
+        executionCount: dto.executionCount,
+        lastExecutionStatus: dto.lastExecutionStatus ?? null,
         lastExecutionDuration: dto.last_execution_duration ?? null,
         consecutiveFailures: dto.consecutive_failures,
       }),
       retryPolicy: new RetryPolicy({
         enabled: dto.enabled,
-        maxRetries: dto.max_retries,
+        maxRetries: dto.maxRetries,
         retryDelay: dto.retry_delay,
         backoffMultiplier: dto.backoff_multiplier,
         maxRetryDelay: dto.max_retry_delay,
@@ -752,8 +752,8 @@ export class ScheduleTask extends AggregateRoot {
         priority: dto.priority,
         timeout: dto.timeout,
       }),
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 }

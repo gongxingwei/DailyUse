@@ -33,19 +33,19 @@ export interface LinkedContentServerDTO {
  */
 export interface LinkedContentPersistenceDTO {
   uuid: string;
-  resource_uuid: string;
+  resourceUuid: string;
   title: string;
   url: string;
-  content_type: ContentType;
+  contentType: ContentType;
   description?: string | null;
   thumbnail?: string | null;
   author?: string | null;
-  published_at?: number | null;
-  is_accessible: number; // 0 or 1
-  last_checked_at?: number | null;
-  cached_at?: number | null;
-  created_at: number;
-  updated_at?: number | null;
+  publishedAt?: number | null;
+  isAccessible: number; // 0 or 1
+  lastCheckedAt?: number | null;
+  cachedAt?: number | null;
+  createdAt: number;
+  updatedAt?: number | null;
 }
 
 // ============ 实体接口 ============

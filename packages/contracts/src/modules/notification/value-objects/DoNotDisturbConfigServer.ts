@@ -54,9 +54,9 @@ export interface DoNotDisturbConfigServerDTO {
  */
 export interface DoNotDisturbConfigPersistenceDTO {
   enabled: boolean;
-  start_time: string;
-  end_time: string;
-  days_of_week: string; // JSON.stringify(number[])
+  startTime: string;
+  endTime: string;
+  daysOfWeek: string; // JSON.stringify(number[])
 }
 
 // ============ {��� ============

@@ -73,8 +73,8 @@ export interface ActiveTimeConfigClientDTO {
  * Active Time Config Persistence DTO
  */
 export interface ActiveTimeConfigPersistenceDTO {
-  start_date: number;
-  end_date?: number | null;
+  startDate: number;
+  endDate?: number | null;
 }
 
 // ============ 类型导出 ============

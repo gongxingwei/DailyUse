@@ -129,8 +129,8 @@ export class RecurrenceRule extends ValueObject implements IRecurrenceRule {
     return {
       frequency: this.frequency,
       interval: this.interval,
-      days_of_week: JSON.stringify(this.daysOfWeek),
-      end_date: this.endDate,
+      daysOfWeek: JSON.stringify(this.daysOfWeek),
+      endDate: this.endDate,
       occurrences: this.occurrences,
     };
   }
@@ -154,8 +154,8 @@ export class RecurrenceRule extends ValueObject implements IRecurrenceRule {
     return new RecurrenceRule({
       frequency: dto.frequency as RecurrenceFrequency,
       interval: dto.interval,
-      daysOfWeek: JSON.parse(dto.days_of_week) as DayOfWeek[],
-      endDate: dto.end_date,
+      daysOfWeek: JSON.parse(dto.daysOfWeek) as DayOfWeek[],
+      endDate: dto.endDate,
       occurrences: dto.occurrences,
     });
   }

@@ -90,10 +90,10 @@ export class TaskTemplateHistory extends Entity implements ITaskTemplateHistory 
   public toPersistenceDTO(): TaskTemplateHistoryPersistenceDTO {
     return {
       uuid: this.uuid,
-      template_uuid: this._templateUuid,
+      templateUuid: this._templateUuid,
       action: this._action,
       changes: this._changes ? JSON.stringify(this._changes) : null,
-      created_at: this._createdAt,
+      createdAt: this._createdAt,
     };
   }
 
@@ -126,10 +126,10 @@ export class TaskTemplateHistory extends Entity implements ITaskTemplateHistory 
   public static fromPersistenceDTO(dto: TaskTemplateHistoryPersistenceDTO): TaskTemplateHistory {
     return new TaskTemplateHistory({
       uuid: dto.uuid,
-      templateUuid: dto.template_uuid,
+      templateUuid: dto.templateUuid,
       action: dto.action,
       changes: dto.changes ? JSON.parse(dto.changes) : null,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 

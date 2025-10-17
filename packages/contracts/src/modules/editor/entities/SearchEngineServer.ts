@@ -32,7 +32,7 @@ export interface SearchEngineServerDTO {
 export interface SearchEnginePersistenceDTO {
   uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   description?: string | null;
   index_path: string;
@@ -41,8 +41,8 @@ export interface SearchEnginePersistenceDTO {
   last_indexed_at?: number | null;
   is_indexing: boolean;
   index_progress?: number | null;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

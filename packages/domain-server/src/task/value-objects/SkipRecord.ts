@@ -79,7 +79,7 @@ export class SkipRecord extends ValueObject implements ISkipRecord {
 
   public toPersistenceDTO(): TaskContracts.SkipRecordPersistenceDTO {
     return {
-      skipped_at: this.skippedAt,
+      skippedAt: this.skippedAt,
       reason: this.reason,
     };
   }
@@ -96,7 +96,7 @@ export class SkipRecord extends ValueObject implements ISkipRecord {
 
   public static fromPersistenceDTO(dto: TaskContracts.SkipRecordPersistenceDTO): SkipRecord {
     return new SkipRecord({
-      skippedAt: dto.skipped_at,
+      skippedAt: dto.skippedAt,
       reason: dto.reason,
     });
   }

@@ -121,7 +121,7 @@ export interface RetryPolicyClientDTO {
  */
 export interface RetryPolicyPersistenceDTO {
   enabled: boolean;
-  max_retries: number;
+  maxRetries: number;
   retry_delay: number;
   backoff_multiplier: number;
   max_retry_delay: number;

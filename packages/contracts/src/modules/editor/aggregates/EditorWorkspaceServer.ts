@@ -63,7 +63,7 @@ export interface EditorWorkspaceServerDTO {
  */
 export interface EditorWorkspacePersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   name: string;
   description?: string | null;
 
@@ -76,9 +76,9 @@ export interface EditorWorkspacePersistenceDTO {
   is_active: boolean;
   last_active_session_uuid?: string | null;
 
-  last_accessed_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  lastAccessedAt?: number | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 领域事件 ============

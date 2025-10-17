@@ -132,18 +132,18 @@ export class RememberMeToken extends Entity implements IRememberMeTokenServer {
     return new RememberMeToken({
       uuid: dto.uuid,
       credentialUuid: dto.credential_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       token: dto.token,
       tokenSeries: dto.token_series,
       device: DeviceInfo.fromServerDTO(deviceData),
       status: dto.status,
       usageCount: dto.usage_count,
-      lastUsedAt: dto.last_used_at,
+      lastUsedAt: dto.lastUsedAt,
       lastUsedIp: dto.last_used_ip,
-      expiresAt: dto.expires_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      revokedAt: dto.revoked_at,
+      expiresAt: dto.expiresAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      revokedAt: dto.revokedAt,
     });
   }
 
@@ -225,18 +225,18 @@ export class RememberMeToken extends Entity implements IRememberMeTokenServer {
     return {
       uuid: this.uuid,
       credential_uuid: this.credentialUuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       token: this.token,
       token_series: this.tokenSeries,
       device: JSON.stringify(this.device.toServerDTO()),
       status: this._status,
       usage_count: this._usageCount,
-      last_used_at: this._lastUsedAt,
+      lastUsedAt: this._lastUsedAt,
       last_used_ip: this._lastUsedIp,
-      expires_at: this.expiresAt,
-      created_at: this.createdAt,
-      updated_at: this._updatedAt,
-      revoked_at: this._revokedAt,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
+      revokedAt: this._revokedAt,
     };
   }
 }

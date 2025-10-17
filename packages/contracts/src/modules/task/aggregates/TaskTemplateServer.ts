@@ -106,7 +106,7 @@ export interface TaskTemplatePersistenceDTO {
   description?: string | null;
   taskType: string;
 
-  // Flattened time_config
+  // Flattened timeConfig
   timeConfigType: 'POINT' | 'RANGE' | 'ALL_DAY';
   timeConfigStartTime?: number | null;
   timeConfigEndTime?: number | null;
@@ -121,7 +121,7 @@ export interface TaskTemplatePersistenceDTO {
   recurrenceRuleEndDate?: number | null;
   recurrenceRuleCount?: number | null;
 
-  // Flattened reminder_config
+  // Flattened reminderConfig
   reminderConfigEnabled?: boolean | null;
   reminderConfigTimeOffsetMinutes?: number | null;
   reminderConfigUnit?: 'MINUTES' | 'HOURS' | 'DAYS' | null;

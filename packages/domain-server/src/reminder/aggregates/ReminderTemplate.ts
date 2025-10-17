@@ -327,7 +327,7 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
 
     return new ReminderTemplate({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description,
       type: dto.type,
@@ -338,16 +338,16 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       notificationConfig,
       selfEnabled: dto.self_enabled,
       status: dto.status,
-      groupUuid: dto.group_uuid,
+      groupUuid: dto.groupUuid,
       importanceLevel: dto.importance_level,
       tags,
       color: dto.color,
       icon: dto.icon,
       nextTriggerAt: dto.next_trigger_at,
       stats,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt,
     });
   }
 
@@ -749,7 +749,7 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
   public toPersistenceDTO(): ReminderTemplatePersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       title: this.title,
       description: this.description,
       type: this.type,
@@ -760,16 +760,16 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       notification_config: JSON.stringify(this._notificationConfig.toServerDTO()),
       self_enabled: this.selfEnabled,
       status: this.status,
-      group_uuid: this.groupUuid,
+      groupUuid: this.groupUuid,
       importance_level: this.importanceLevel,
       tags: JSON.stringify(this.tags),
       color: this.color,
       icon: this.icon,
       next_trigger_at: this.nextTriggerAt,
       stats: JSON.stringify(this._stats.toServerDTO()),
-      created_at: this.createdAt,
-      updated_at: this.updatedAt,
-      deleted_at: this.deletedAt,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+      deletedAt: this.deletedAt,
     };
   }
 }

@@ -23,12 +23,12 @@ export interface AccountHistoryServerDTO {
  */
 export interface AccountHistoryPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   action: string;
   details?: string | null; // JSON
   ip_address?: string | null;
   user_agent?: string | null;
-  created_at: number;
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

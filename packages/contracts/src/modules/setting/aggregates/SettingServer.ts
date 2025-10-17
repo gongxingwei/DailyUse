@@ -53,23 +53,23 @@ export interface SettingPersistenceDTO {
   key: string;
   name: string;
   description?: string | null;
-  value_type: SettingValueType;
+  valueType: SettingValueType;
   value: string; // JSON
-  default_value: string; // JSON
+  defaultValue: string; // JSON
   scope: 'SYSTEM' | 'USER' | 'DEVICE';
-  account_uuid?: string | null;
-  device_id?: string | null;
-  group_uuid?: string | null;
+  accountUuid?: string | null;
+  deviceId?: string | null;
+  groupUuid?: string | null;
   validation?: string | null; // JSON
   ui?: string | null; // JSON
-  is_encrypted: boolean;
-  is_read_only: boolean;
-  is_system_setting: boolean;
-  sync_config?: string | null; // JSON
+  isEncrypted: boolean;
+  isReadOnly: boolean;
+  isSystemSetting: boolean;
+  syncConfig?: string | null; // JSON
   history: string; // JSON
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 聚合根接口 ============

@@ -70,18 +70,18 @@ export interface TaskInstanceServerDTO {
  */
 export interface TaskInstancePersistenceDTO {
   uuid: string;
-  template_uuid: string;
-  account_uuid: string;
-  instance_date: number;
-  time_config: string; // JSON
+  templateUuid: string;
+  accountUuid: string;
+  instanceDate: number;
+  timeConfig: string; // JSON
   status: string;
-  completion_record?: string | null; // JSON
-  skip_record?: string | null; // JSON
-  actual_start_time?: number | null;
-  actual_end_time?: number | null;
+  completionRecord?: string | null; // JSON
+  skipRecord?: string | null; // JSON
+  actualStartTime?: number | null;
+  actualEndTime?: number | null;
   note?: string | null;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 聚合根接口 ============

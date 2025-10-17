@@ -163,11 +163,11 @@ export class GoalReview extends Entity implements IGoalReviewServer {
    */
   public static fromPersistenceDTO(dto: GoalReviewPersistenceDTO): GoalReview {
     // 解析 JSON 字符串
-    const snapshots = JSON.parse(dto.key_result_snapshots) as KeyResultSnapshotServerDTO[];
+    const snapshots = JSON.parse(dto.keyResultSnapshots) as KeyResultSnapshotServerDTO[];
 
     return new GoalReview({
       uuid: dto.uuid,
-      goalUuid: dto.goal_uuid,
+      goalUuid: dto.goalUuid,
       type: dto.type,
       rating: dto.rating,
       summary: dto.summary,
@@ -175,8 +175,8 @@ export class GoalReview extends Entity implements IGoalReviewServer {
       challenges: dto.challenges ?? null,
       improvements: dto.improvements ?? null,
       keyResultSnapshots: snapshots,
-      reviewedAt: dto.reviewed_at,
-      createdAt: dto.created_at,
+      reviewedAt: dto.reviewedAt,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -337,16 +337,16 @@ export class GoalReview extends Entity implements IGoalReviewServer {
   public toPersistenceDTO(): GoalReviewPersistenceDTO {
     return {
       uuid: this.uuid,
-      goal_uuid: this._goalUuid,
+      goalUuid: this._goalUuid,
       type: this._type,
       rating: this._rating,
       summary: this._summary,
       achievements: this._achievements,
       challenges: this._challenges,
       improvements: this._improvements,
-      key_result_snapshots: JSON.stringify(this._keyResultSnapshots),
-      reviewed_at: this._reviewedAt,
-      created_at: this._createdAt,
+      keyResultSnapshots: JSON.stringify(this._keyResultSnapshots),
+      reviewedAt: this._reviewedAt,
+      createdAt: this._createdAt,
     };
   }
 }

@@ -338,16 +338,16 @@ export class EditorSession extends Entity {
     return {
       uuid: this.uuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
       groups: this._groups.map((group) => group.toPersistenceDTO()), // ✅ 递归转换
       is_active: this._isActive,
       active_group_index: this._activeGroupIndex,
       layout: this._layout.toPersistenceDTO(),
-      last_accessed_at: this._lastAccessedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -408,15 +408,15 @@ export class EditorSession extends Entity {
     const session = new EditorSession({
       uuid: dto.uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       layout: SessionLayout.fromPersistenceDTO(dto.layout),
       isActive: dto.is_active,
       activeGroupIndex: dto.active_group_index,
-      lastAccessedAt: dto.last_accessed_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
 
     // ✅ 递归重建子实体

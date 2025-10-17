@@ -15,7 +15,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     const persistenceDTO: AuthenticationContracts.AuthCredentialPersistenceDTO = {
       ...rest,
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       type: data.type as AuthenticationContracts.CredentialType,
       password_credential: parsedData.password_credential,
       api_key_credentials: parsedData.api_key_credentials,
@@ -25,11 +25,11 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       status: parsedMetadata.status,
       security: parsedMetadata.security,
       history: history,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
-      expires_at: data.expiresAt?.getTime(),
-      last_used_at: data.lastUsedAt?.getTime(),
-      revoked_at: data.revokedAt?.getTime(),
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
+      expiresAt: data.expiresAt?.getTime(),
+      lastUsedAt: data.lastUsedAt?.getTime(),
+      revokedAt: data.revokedAt?.getTime(),
     };
 
     return AuthCredential.fromPersistenceDTO(persistenceDTO);
@@ -44,7 +44,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     const persistence = credential.toPersistenceDTO();
     const {
       uuid,
-      account_uuid,
+      accountUuid,
       type,
       password_credential,
       api_key_credentials,
@@ -54,11 +54,11 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       status,
       security,
       history,
-      created_at,
-      updated_at,
-      expires_at,
-      last_used_at,
-      revoked_at,
+      createdAt,
+      updatedAt,
+      expiresAt,
+      lastUsedAt,
+      revokedAt,
     } = persistence;
 
     const jsonData = JSON.stringify({
@@ -76,7 +76,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
 
     const dataForPrisma = {
       uuid,
-      accountUuid: account_uuid,
+      accountUuid: accountUuid,
       type,
       data: jsonData,
       metadata,

@@ -286,16 +286,16 @@ export class SettingGroup extends Entity implements SettingGroupServer {
       name: this._name,
       description: this._description,
       icon: this._icon,
-      parent_group_uuid: this._parentGroupUuid,
+      parentGroupUuid: this._parentGroupUuid,
       path: this._path,
       level: this._level,
-      sort_order: this._sortOrder,
+      sortOrder: this._sortOrder,
       settings: JSON.stringify(this._settings.map((s) => s.toServerDTO())),
-      is_system_group: this._isSystemGroup,
-      is_collapsed: this._isCollapsed,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      deleted_at: this._deletedAt,
+      isSystemGroup: this._isSystemGroup,
+      isCollapsed: this._isCollapsed,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
     };
   }
 
@@ -365,18 +365,18 @@ export class SettingGroup extends Entity implements SettingGroupServer {
       name: dto.name,
       description: dto.description,
       icon: dto.icon,
-      parentGroupUuid: dto.parent_group_uuid,
+      parentGroupUuid: dto.parentGroupUuid,
       path: dto.path,
       level: dto.level,
-      sortOrder: dto.sort_order,
+      sortOrder: dto.sortOrder,
       settings: Array.isArray(settingsData)
         ? settingsData.map((s) => SettingItem.fromServerDTO(s))
         : [],
-      isSystemGroup: dto.is_system_group,
-      isCollapsed: dto.is_collapsed,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at,
+      isSystemGroup: dto.isSystemGroup,
+      isCollapsed: dto.isCollapsed,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt,
     });
   }
 }

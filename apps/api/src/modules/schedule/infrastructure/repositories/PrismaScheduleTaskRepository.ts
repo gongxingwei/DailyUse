@@ -72,11 +72,11 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
     // 使用领域实体的 fromPersistenceDTO 方法创建实体
     const task = ScheduleTask.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       name: data.name,
       description: data.description,
-      source_module: data.sourceModule,
-      source_entity_id: data.sourceEntityId,
+      sourceModule: data.sourceModule,
+      sourceEntityId: data.sourceEntityId,
       status: data.status,
       enabled: data.enabled,
       // 值对象（已组装）
@@ -85,8 +85,8 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       retry_policy: retryPolicy,
       metadata,
       // 时间戳
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
     });
 
     // 加载执行记录子实体
@@ -94,14 +94,14 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       data.executions.forEach((exec: any) => {
         const execution = ScheduleExecution.fromPersistenceDTO({
           uuid: exec.uuid,
-          task_uuid: exec.taskUuid,
-          execution_time: exec.executionTime?.getTime() || Date.now(),
+          taskUuid: exec.taskUuid,
+          executionTime: exec.executionTime?.getTime() || Date.now(),
           status: exec.status,
           duration: exec.duration,
           result: exec.result || null,
           error: exec.error,
-          retry_count: exec.retryCount || 0,
-          created_at: exec.createdAt?.getTime() || Date.now(),
+          retryCount: exec.retryCount || 0,
+          createdAt: exec.createdAt?.getTime() || Date.now(),
         });
         task.addExecution(execution);
       });

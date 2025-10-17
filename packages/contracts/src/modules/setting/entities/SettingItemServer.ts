@@ -34,19 +34,19 @@ export interface SettingItemServerDTO {
  */
 export interface SettingItemPersistenceDTO {
   uuid: string;
-  group_uuid: string;
+  groupUuid: string;
   key: string;
   name: string;
   description?: string | null;
   value: string; // JSON
-  default_value: string; // JSON
-  value_type: SettingValueType;
+  defaultValue: string; // JSON
+  valueType: SettingValueType;
   ui: string; // JSON
-  sort_order: number;
-  is_read_only: boolean;
-  is_visible: boolean;
-  created_at: number;
-  updated_at: number;
+  sortOrder: number;
+  isReadOnly: boolean;
+  isVisible: boolean;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 实体接口 ============

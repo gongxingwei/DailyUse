@@ -133,7 +133,7 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
   public static fromPersistenceDTO(dto: ReminderHistoryPersistenceDTO): ReminderHistory {
     return new ReminderHistory({
       uuid: dto.uuid,
-      templateUuid: dto.template_uuid,
+      templateUuid: dto.templateUuid,
       triggeredAt: dto.triggered_at,
       result: dto.result,
       error: dto.error,
@@ -141,7 +141,7 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
       notificationChannels: dto.notification_channels
         ? JSON.parse(dto.notification_channels)
         : null,
-      createdAt: dto.created_at,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -226,7 +226,7 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
   public toPersistenceDTO(): ReminderHistoryPersistenceDTO {
     return {
       uuid: this.uuid,
-      template_uuid: this.templateUuid,
+      templateUuid: this.templateUuid,
       triggered_at: this.triggeredAt,
       result: this.result,
       error: this.error,
@@ -234,7 +234,7 @@ export class ReminderHistory extends Entity implements ReminderHistoryServer {
       notification_channels: this.notificationChannels
         ? JSON.stringify(this.notificationChannels)
         : null,
-      created_at: this.createdAt,
+      createdAt: this.createdAt,
     };
   }
 }

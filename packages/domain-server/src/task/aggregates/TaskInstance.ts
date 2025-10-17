@@ -287,20 +287,20 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   public toPersistenceDTO(): TaskInstancePersistenceDTO {
     return {
       uuid: this.uuid,
-      template_uuid: this._templateUuid,
-      account_uuid: this._accountUuid,
-      instance_date: this._instanceDate,
-      time_config: JSON.stringify(this._timeConfig.toPersistenceDTO()),
+      templateUuid: this._templateUuid,
+      accountUuid: this._accountUuid,
+      instanceDate: this._instanceDate,
+      timeConfig: JSON.stringify(this._timeConfig.toPersistenceDTO()),
       status: this._status,
-      completion_record: this._completionRecord
+      completionRecord: this._completionRecord
         ? JSON.stringify(this._completionRecord.toPersistenceDTO())
         : null,
-      skip_record: this._skipRecord ? JSON.stringify(this._skipRecord.toPersistenceDTO()) : null,
-      actual_start_time: this._actualStartTime,
-      actual_end_time: this._actualEndTime,
+      skipRecord: this._skipRecord ? JSON.stringify(this._skipRecord.toPersistenceDTO()) : null,
+      actualStartTime: this._actualStartTime,
+      actualEndTime: this._actualEndTime,
       note: this._note,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -356,22 +356,22 @@ export class TaskInstance extends AggregateRoot implements ITaskInstance {
   public static fromPersistenceDTO(dto: TaskInstancePersistenceDTO): TaskInstance {
     return new TaskInstance({
       uuid: dto.uuid,
-      templateUuid: dto.template_uuid,
-      accountUuid: dto.account_uuid,
-      instanceDate: dto.instance_date,
-      timeConfig: TaskTimeConfig.fromPersistenceDTO(JSON.parse(dto.time_config as string)),
+      templateUuid: dto.templateUuid,
+      accountUuid: dto.accountUuid,
+      instanceDate: dto.instanceDate,
+      timeConfig: TaskTimeConfig.fromPersistenceDTO(JSON.parse(dto.timeConfig as string)),
       status: dto.status as TaskInstanceStatus,
-      completionRecord: dto.completion_record
-        ? CompletionRecord.fromPersistenceDTO(JSON.parse(dto.completion_record as string))
+      completionRecord: dto.completionRecord
+        ? CompletionRecord.fromPersistenceDTO(JSON.parse(dto.completionRecord as string))
         : null,
-      skipRecord: dto.skip_record
-        ? SkipRecord.fromPersistenceDTO(JSON.parse(dto.skip_record as string))
+      skipRecord: dto.skipRecord
+        ? SkipRecord.fromPersistenceDTO(JSON.parse(dto.skipRecord as string))
         : null,
-      actualStartTime: dto.actual_start_time,
-      actualEndTime: dto.actual_end_time,
+      actualStartTime: dto.actualStartTime,
+      actualEndTime: dto.actualEndTime,
       note: dto.note,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 

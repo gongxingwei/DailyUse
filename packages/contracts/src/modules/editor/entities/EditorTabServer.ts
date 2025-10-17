@@ -37,10 +37,10 @@ export interface EditorTabServerDTO {
  */
 export interface EditorTabPersistenceDTO {
   uuid: string;
-  group_uuid: string;
+  groupUuid: string;
   session_uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   document_uuid?: string | null;
   tab_index: number;
   tab_type: TabType;
@@ -48,9 +48,9 @@ export interface EditorTabPersistenceDTO {
   view_state: string; // JSON 字符串
   is_pinned: boolean;
   is_dirty: boolean;
-  last_accessed_at?: number | null;
-  created_at: number;
-  updated_at: number;
+  lastAccessedAt?: number | null;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

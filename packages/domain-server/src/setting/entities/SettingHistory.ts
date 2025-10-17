@@ -120,13 +120,13 @@ export class SettingHistory extends Entity implements ISettingHistoryServer {
   public static fromPersistenceDTO(dto: SettingHistoryPersistenceDTO): SettingHistory {
     return new SettingHistory({
       uuid: dto.uuid,
-      settingUuid: dto.setting_uuid,
-      settingKey: dto.setting_key,
-      oldValue: JSON.parse(dto.old_value),
-      newValue: JSON.parse(dto.new_value),
-      operatorUuid: dto.operator_uuid,
-      operatorType: dto.operator_type,
-      createdAt: dto.created_at,
+      settingUuid: dto.settingUuid,
+      settingKey: dto.settingKey,
+      oldValue: JSON.parse(dto.oldValue),
+      newValue: JSON.parse(dto.newValue),
+      operatorUuid: dto.operatorUuid,
+      operatorType: dto.operatorType,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -168,13 +168,13 @@ export class SettingHistory extends Entity implements ISettingHistoryServer {
   public toPersistenceDTO(): SettingHistoryPersistenceDTO {
     return {
       uuid: this.uuid,
-      setting_uuid: this.settingUuid,
-      setting_key: this.settingKey,
-      old_value: JSON.stringify(this.oldValue),
-      new_value: JSON.stringify(this.newValue),
-      operator_uuid: this.operatorUuid,
-      operator_type: this.operatorType,
-      created_at: this.createdAt,
+      settingUuid: this.settingUuid,
+      settingKey: this.settingKey,
+      oldValue: JSON.stringify(this.oldValue),
+      newValue: JSON.stringify(this.newValue),
+      operatorUuid: this.operatorUuid,
+      operatorType: this.operatorType,
+      createdAt: this.createdAt,
     };
   }
 }

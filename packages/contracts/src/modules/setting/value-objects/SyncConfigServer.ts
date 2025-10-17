@@ -21,8 +21,8 @@ export interface SyncConfigServerDTO {
  */
 export interface SyncConfigPersistenceDTO {
   enabled: boolean;
-  sync_to_cloud: boolean;
-  sync_to_devices: boolean;
+  syncToCloud: boolean;
+  syncToDevices: boolean;
 }
 
 // ============ 值对象接口 ============

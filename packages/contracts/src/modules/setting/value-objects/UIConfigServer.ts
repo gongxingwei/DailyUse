@@ -38,10 +38,10 @@ export interface UIConfigServerDTO {
  * UIConfig Persistence DTO
  */
 export interface UIConfigPersistenceDTO {
-  input_type: string;
+  inputType: string;
   label?: string | null;
   placeholder?: string | null;
-  help_text?: string | null;
+  helpText?: string | null;
   icon?: string | null;
   order: number;
   visible: boolean;

@@ -278,19 +278,19 @@ export class LinkedContent extends Entity implements ILinkedContentServer {
   public toPersistenceDTO(): LinkedContentPersistenceDTO {
     return {
       uuid: this._uuid,
-      resource_uuid: this._resourceUuid,
+      resourceUuid: this._resourceUuid,
       title: this._title,
       url: this._url,
-      content_type: this._contentType,
+      contentType: this._contentType,
       description: this._description,
       thumbnail: this._thumbnail,
       author: this._author,
-      published_at: this._publishedAt,
-      is_accessible: this._isAccessible ? 1 : 0,
-      last_checked_at: this._lastCheckedAt,
-      cached_at: this._cachedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      publishedAt: this._publishedAt,
+      isAccessible: this._isAccessible ? 1 : 0,
+      lastCheckedAt: this._lastCheckedAt,
+      cachedAt: this._cachedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -316,19 +316,19 @@ export class LinkedContent extends Entity implements ILinkedContentServer {
   public static fromPersistenceDTO(dto: LinkedContentPersistenceDTO): LinkedContent {
     return new LinkedContent({
       uuid: dto.uuid,
-      resourceUuid: dto.resource_uuid,
+      resourceUuid: dto.resourceUuid,
       title: dto.title,
       url: dto.url,
-      contentType: dto.content_type,
+      contentType: dto.contentType,
       description: dto.description,
       thumbnail: dto.thumbnail,
       author: dto.author,
-      publishedAt: dto.published_at,
-      isAccessible: dto.is_accessible === 1,
-      lastCheckedAt: dto.last_checked_at,
-      cachedAt: dto.cached_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      publishedAt: dto.publishedAt,
+      isAccessible: dto.isAccessible === 1,
+      lastCheckedAt: dto.lastCheckedAt,
+      cachedAt: dto.cachedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 

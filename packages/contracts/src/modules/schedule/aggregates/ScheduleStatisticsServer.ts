@@ -48,34 +48,34 @@ export interface ScheduleStatisticsServerDTO {
  */
 export interface ScheduleStatisticsPersistenceDTO {
   id?: number; // 自增主键（可选）
-  account_uuid: string;
+  accountUuid: string;
 
   // 任务统计
-  total_tasks: number;
-  active_tasks: number;
-  paused_tasks: number;
-  completed_tasks: number;
-  cancelled_tasks: number;
-  failed_tasks: number;
+  totalTasks: number;
+  activeTasks: number;
+  pausedTasks: number;
+  completedTasks: number;
+  cancelledTasks: number;
+  failedTasks: number;
 
   // 执行统计
-  total_executions: number;
-  successful_executions: number;
-  failed_executions: number;
-  skipped_executions: number;
-  timeout_executions: number;
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  skippedExecutions: number;
+  timeoutExecutions: number;
 
   // 性能统计
-  avg_execution_duration: number;
-  min_execution_duration: number;
-  max_execution_duration: number;
+  avgExecutionDuration: number;
+  minExecutionDuration: number;
+  maxExecutionDuration: number;
 
   // 模块统计（JSON string）
-  module_statistics: string;
+  moduleStatistics: string;
 
   // 时间戳
-  last_updated_at: number;
-  created_at: number;
+  lastUpdatedAt: number;
+  createdAt: number;
 }
 
 // ============ 领域事件 ============

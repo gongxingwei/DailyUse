@@ -103,10 +103,10 @@ export class ApiKeyCredential extends Entity implements IApiKeyCredentialServer 
       key: dto.key,
       keyPrefix: dto.key_prefix,
       status: dto.status,
-      lastUsedAt: dto.last_used_at,
-      expiresAt: dto.expires_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      lastUsedAt: dto.lastUsedAt,
+      expiresAt: dto.expiresAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -168,10 +168,10 @@ export class ApiKeyCredential extends Entity implements IApiKeyCredentialServer 
       key: this.key,
       key_prefix: this.keyPrefix,
       status: this._status,
-      last_used_at: this._lastUsedAt,
-      expires_at: this.expiresAt,
-      created_at: this.createdAt,
-      updated_at: this._updatedAt,
+      lastUsedAt: this._lastUsedAt,
+      expiresAt: this.expiresAt,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

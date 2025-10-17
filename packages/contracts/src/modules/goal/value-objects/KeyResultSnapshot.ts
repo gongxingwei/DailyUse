@@ -85,7 +85,7 @@ export interface KeyResultSnapshotClientDTO {
  * Key Result Snapshot Persistence DTO
  */
 export interface KeyResultSnapshotPersistenceDTO {
-  key_result_uuid: string;
+  keyResultUuid: string;
   title: string;
   target_value: number;
   current_value: number;

@@ -207,14 +207,14 @@ export class ScheduleExecution extends Entity {
   public toPersistenceDTO(): any {
     return {
       uuid: this._uuid,
-      task_uuid: this._taskUuid,
-      execution_time: this._executionTime,
+      taskUuid: this._taskUuid,
+      executionTime: this._executionTime,
       status: this._status,
       duration: this._duration,
       result: this._result ? JSON.stringify(this._result) : null,
       error: this._error,
-      retry_count: this._retryCount,
-      created_at: this._createdAt,
+      retryCount: this._retryCount,
+      createdAt: this._createdAt,
     };
   }
 
@@ -249,14 +249,14 @@ export class ScheduleExecution extends Entity {
   public static fromPersistenceDTO(dto: any): ScheduleExecution {
     return new ScheduleExecution({
       uuid: dto.uuid,
-      taskUuid: dto.task_uuid,
-      executionTime: dto.execution_time,
+      taskUuid: dto.taskUuid,
+      executionTime: dto.executionTime,
       status: dto.status,
       duration: dto.duration,
       result: dto.result ? JSON.parse(dto.result) : null,
       error: dto.error,
-      retryCount: dto.retry_count,
-      createdAt: dto.created_at,
+      retryCount: dto.retryCount,
+      createdAt: dto.createdAt,
     });
   }
 }

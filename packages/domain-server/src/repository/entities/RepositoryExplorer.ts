@@ -335,18 +335,18 @@ export class RepositoryExplorerEntity extends Entity implements IRepositoryExplo
   public toPersistenceDTO(): RepositoryExplorerPersistenceDTO {
     return {
       uuid: this._uuid,
-      repository_uuid: this._repositoryUuid,
-      account_uuid: this._accountUuid,
+      repositoryUuid: this._repositoryUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
-      current_path: this._currentPath,
+      currentPath: this._currentPath,
       filters: JSON.stringify(this._filters),
-      view_config: JSON.stringify(this._viewConfig),
-      pinned_paths: JSON.stringify(this._pinnedPaths),
-      recent_paths: JSON.stringify(this._recentPaths),
-      last_scan_at: this._lastScanAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      viewConfig: JSON.stringify(this._viewConfig),
+      pinnedPaths: JSON.stringify(this._pinnedPaths),
+      recentPaths: JSON.stringify(this._recentPaths),
+      lastScanAt: this._lastScanAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -373,18 +373,18 @@ export class RepositoryExplorerEntity extends Entity implements IRepositoryExplo
   ): RepositoryExplorerEntity {
     return new RepositoryExplorerEntity({
       uuid: dto.uuid,
-      repositoryUuid: dto.repository_uuid,
-      accountUuid: dto.account_uuid,
+      repositoryUuid: dto.repositoryUuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
-      currentPath: dto.current_path,
+      currentPath: dto.currentPath,
       filters: JSON.parse(dto.filters),
-      viewConfig: JSON.parse(dto.view_config),
-      pinnedPaths: JSON.parse(dto.pinned_paths),
-      recentPaths: JSON.parse(dto.recent_paths),
-      lastScanAt: dto.last_scan_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      viewConfig: JSON.parse(dto.viewConfig),
+      pinnedPaths: JSON.parse(dto.pinnedPaths),
+      recentPaths: JSON.parse(dto.recentPaths),
+      lastScanAt: dto.lastScanAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 

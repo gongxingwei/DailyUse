@@ -17,7 +17,7 @@ export class PrismaReminderStatisticsRepository implements IReminderStatisticsRe
   private mapToEntity(data: any): ReminderStatistics {
     return ReminderStatistics.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       template_stats: data.templateStats,
       group_stats: data.groupStats,
       trigger_stats: data.triggerStats,

@@ -128,11 +128,11 @@ export interface ScheduleConfigClientDTO {
  * Schedule Config Persistence DTO
  */
 export interface ScheduleConfigPersistenceDTO {
-  cron_expression: string;
+  cronExpression: string;
   timezone: string;
-  start_date: string | null;
-  end_date: string | null;
-  max_executions: number | null;
+  startDate: string | null;
+  endDate: string | null;
+  maxExecutions: number | null;
 }
 
 // ============ 类型导出 ============

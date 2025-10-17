@@ -183,7 +183,7 @@ export class LinkedResource extends Entity implements ILinkedResourceServer {
     return new LinkedResource({
       uuid: dto.uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       sourceDocumentUuid: dto.source_document_uuid,
       sourceType: dto.source_type,
       sourceLine: dto.source_line,
@@ -194,8 +194,8 @@ export class LinkedResource extends Entity implements ILinkedResourceServer {
       targetAnchor: dto.target_anchor,
       isValid: dto.is_valid,
       lastValidatedAt: dto.last_validated_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -325,7 +325,7 @@ export class LinkedResource extends Entity implements ILinkedResourceServer {
     return {
       uuid: this._uuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       source_document_uuid: this._sourceDocumentUuid,
       source_type: this._sourceType,
       source_line: this._sourceLine,
@@ -336,8 +336,8 @@ export class LinkedResource extends Entity implements ILinkedResourceServer {
       target_anchor: this._targetAnchor,
       is_valid: this._isValid,
       last_validated_at: this._lastValidatedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

@@ -99,10 +99,10 @@ export interface GoalTimeRangeClientDTO {
  * Goal Time Range Persistence DTO
  */
 export interface GoalTimeRangePersistenceDTO {
-  start_date?: number | null;
-  target_date?: number | null;
-  completed_at?: number | null;
-  archived_at?: number | null;
+  startDate?: number | null;
+  targetDate?: number | null;
+  completedAt?: number | null;
+  archivedAt?: number | null;
 }
 
 // ============ 类型导出 ============

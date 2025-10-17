@@ -60,7 +60,7 @@ export interface ReminderStatisticsServerDTO {
  */
 export interface ReminderStatisticsPersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   template_stats: string; // JSON string
   group_stats: string; // JSON string
   trigger_stats: string; // JSON string

@@ -134,10 +134,10 @@ export interface ExecutionInfoClientDTO {
  * Execution Info Persistence DTO
  */
 export interface ExecutionInfoPersistenceDTO {
-  next_run_at: string | null;
-  last_run_at: string | null;
-  execution_count: number;
-  last_execution_status: string | null;
+  nextRunAt: string | null;
+  lastRunAt: string | null;
+  executionCount: number;
+  lastExecutionStatus: string | null;
   last_execution_duration: number | null;
   consecutive_failures: number;
 }

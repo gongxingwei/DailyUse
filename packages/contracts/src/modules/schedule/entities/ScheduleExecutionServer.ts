@@ -28,14 +28,14 @@ export interface ScheduleExecutionServerDTO {
  */
 export interface ScheduleExecutionPersistenceDTO {
   uuid: string;
-  task_uuid: string;
-  execution_time: number;
+  taskUuid: string;
+  executionTime: number;
   status: ExecutionStatus;
   duration: number | null;
   result: string | null; // JSON string
   error: string | null;
-  retry_count: number;
-  created_at: number;
+  retryCount: number;
+  createdAt: number;
 }
 
 // ============ 实体接口 ============

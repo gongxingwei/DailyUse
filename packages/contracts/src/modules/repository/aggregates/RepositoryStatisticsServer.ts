@@ -61,7 +61,7 @@ export interface RepositoryStatisticsServerDTO {
  */
 export interface RepositoryStatisticsPersistenceDTO {
   id?: number; // 自增主键
-  account_uuid: string;
+  accountUuid: string;
 
   // 仓库统计
   total_repositories: number;
@@ -85,8 +85,8 @@ export interface RepositoryStatisticsPersistenceDTO {
   total_size_bytes: bigint; // PostgreSQL BigInt
 
   // 时间戳
-  last_updated_at: Date;
-  created_at: Date;
+  lastUpdatedAt: Date;
+  createdAt: Date;
 }
 
 // ============ Request/Response 定义 ============

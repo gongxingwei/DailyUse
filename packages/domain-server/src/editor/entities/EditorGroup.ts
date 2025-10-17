@@ -272,12 +272,12 @@ export class EditorGroup extends Entity implements IEditorGroupServer {
       uuid: this._uuid,
       session_uuid: this._sessionUuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       group_index: this._groupIndex,
       active_tab_index: this._activeTabIndex,
       name: this._name,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -335,12 +335,12 @@ export class EditorGroup extends Entity implements IEditorGroupServer {
       uuid: dto.uuid,
       sessionUuid: dto.session_uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       groupIndex: dto.group_index,
       activeTabIndex: dto.active_tab_index,
       name: dto.name,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
 
     // ✅ 递归重建子实体 (如果 DTO 包含tabs数据)

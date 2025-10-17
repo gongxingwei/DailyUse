@@ -17,15 +17,15 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
   private mapToEntity(data: any): UserSettingServer {
     return UserSettingServer.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       preferences: data.preferences,
       theme: data.theme,
       language: data.language,
       timezone: data.timezone,
       notifications: data.notifications,
       privacy: data.privacy,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
     });
   }
 

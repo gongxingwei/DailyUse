@@ -102,7 +102,7 @@ export class ReminderStatistics extends AggregateRoot implements IReminderStatis
   public static fromPersistenceDTO(dto: ReminderStatisticsPersistenceDTO): ReminderStatistics {
     return new ReminderStatistics({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       templateStats: JSON.parse(dto.template_stats),
       groupStats: JSON.parse(dto.group_stats),
       triggerStats: JSON.parse(dto.trigger_stats),
@@ -171,7 +171,7 @@ export class ReminderStatistics extends AggregateRoot implements IReminderStatis
   public toPersistenceDTO(): ReminderStatisticsPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       template_stats: JSON.stringify(this.templateStats),
       group_stats: JSON.stringify(this.groupStats),
       trigger_stats: JSON.stringify(this.triggerStats),

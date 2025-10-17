@@ -230,19 +230,19 @@ export class SettingItem extends Entity implements SettingItemServer {
   public toPersistenceDTO(): SettingItemPersistenceDTO {
     return {
       uuid: this.uuid,
-      group_uuid: this._groupUuid,
+      groupUuid: this._groupUuid,
       key: this._key,
       name: this._name,
       description: this._description,
       value: JSON.stringify(this._value),
-      default_value: JSON.stringify(this._defaultValue),
-      value_type: this._valueType,
+      defaultValue: JSON.stringify(this._defaultValue),
+      valueType: this._valueType,
       ui: JSON.stringify(this._ui.toServerDTO()),
-      sort_order: this._sortOrder,
-      is_read_only: this._isReadOnly,
-      is_visible: this._isVisible,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      sortOrder: this._sortOrder,
+      isReadOnly: this._isReadOnly,
+      isVisible: this._isVisible,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 
@@ -311,19 +311,19 @@ export class SettingItem extends Entity implements SettingItemServer {
   public static fromPersistenceDTO(dto: SettingItemPersistenceDTO): SettingItem {
     return new SettingItem({
       uuid: dto.uuid,
-      groupUuid: dto.group_uuid,
+      groupUuid: dto.groupUuid,
       key: dto.key,
       name: dto.name,
       description: dto.description,
       value: JSON.parse(dto.value),
-      defaultValue: JSON.parse(dto.default_value),
-      valueType: dto.value_type as SettingValueType,
+      defaultValue: JSON.parse(dto.defaultValue),
+      valueType: dto.valueType as SettingValueType,
       ui: UIConfig.fromServerDTO(JSON.parse(dto.ui)),
-      sortOrder: dto.sort_order,
-      isReadOnly: dto.is_read_only,
-      isVisible: dto.is_visible,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      sortOrder: dto.sortOrder,
+      isReadOnly: dto.isReadOnly,
+      isVisible: dto.isVisible,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 }

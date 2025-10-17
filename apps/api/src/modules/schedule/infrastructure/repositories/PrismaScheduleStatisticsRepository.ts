@@ -20,29 +20,29 @@ export class PrismaScheduleStatisticsRepository implements IScheduleStatisticsRe
     const moduleStats = data.moduleStats || '{}';
 
     return ScheduleStatistics.fromPersistenceDTO({
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       // 任务统计
-      total_tasks: data.totalTasks,
-      active_tasks: data.activeTasks,
-      paused_tasks: data.pausedTasks,
-      completed_tasks: data.completedTasks,
-      failed_tasks: data.failedTasks,
-      cancelled_tasks: data.cancelledTasks,
+      totalTasks: data.totalTasks,
+      activeTasks: data.activeTasks,
+      pausedTasks: data.pausedTasks,
+      completedTasks: data.completedTasks,
+      failedTasks: data.failedTasks,
+      cancelledTasks: data.cancelledTasks,
       // 执行统计
-      total_executions: data.totalExecutions,
-      successful_executions: data.successfulExecutions,
-      failed_executions: data.failedExecutions,
-      skipped_executions: data.skippedExecutions,
-      timeout_executions: data.timeoutExecutions || 0,
+      totalExecutions: data.totalExecutions,
+      successfulExecutions: data.successfulExecutions,
+      failedExecutions: data.failedExecutions,
+      skippedExecutions: data.skippedExecutions,
+      timeoutExecutions: data.timeoutExecutions || 0,
       // 性能指标
-      avg_execution_duration: data.avgExecutionDuration,
-      min_execution_duration: data.minExecutionDuration,
-      max_execution_duration: data.maxExecutionDuration,
+      avgExecutionDuration: data.avgExecutionDuration,
+      minExecutionDuration: data.minExecutionDuration,
+      maxExecutionDuration: data.maxExecutionDuration,
       // 模块统计（JSON string）
-      module_statistics: moduleStats,
+      moduleStatistics: moduleStats,
       // 时间戳
-      last_updated_at: data.lastUpdatedAt?.getTime() || Date.now(),
-      created_at: data.createdAt?.getTime() || Date.now(),
+      lastUpdatedAt: data.lastUpdatedAt?.getTime() || Date.now(),
+      createdAt: data.createdAt?.getTime() || Date.now(),
     });
   }
 

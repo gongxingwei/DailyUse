@@ -124,11 +124,11 @@ export class TaskTimeConfig extends ValueObject implements ITaskTimeConfig {
 
   public toPersistenceDTO(): TaskContracts.TaskTimeConfigPersistenceDTO {
     return {
-      time_type: this.timeType,
-      start_date: this.startDate,
-      end_date: this.endDate,
-      time_point: this.timePoint,
-      time_range: this.timeRange ? JSON.stringify(this.timeRange) : null,
+      timeType: this.timeType,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      timePoint: this.timePoint,
+      timeRange: this.timeRange ? JSON.stringify(this.timeRange) : null,
     };
   }
 
@@ -149,11 +149,11 @@ export class TaskTimeConfig extends ValueObject implements ITaskTimeConfig {
     dto: TaskContracts.TaskTimeConfigPersistenceDTO,
   ): TaskTimeConfig {
     return new TaskTimeConfig({
-      timeType: dto.time_type as TimeType,
-      startDate: dto.start_date,
-      endDate: dto.end_date,
-      timePoint: dto.time_point,
-      timeRange: dto.time_range ? JSON.parse(dto.time_range) : null,
+      timeType: dto.timeType as TimeType,
+      startDate: dto.startDate,
+      endDate: dto.endDate,
+      timePoint: dto.timePoint,
+      timeRange: dto.timeRange ? JSON.parse(dto.timeRange) : null,
     });
   }
 

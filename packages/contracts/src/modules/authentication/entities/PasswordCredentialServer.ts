@@ -38,10 +38,10 @@ export interface PasswordCredentialPersistenceDTO {
   algorithm: 'BCRYPT' | 'ARGON2' | 'SCRYPT';
   iterations?: number | null;
   status: 'ACTIVE' | 'INACTIVE' | 'LOCKED';
-  failed_attempts: number;
+  failedAttempts: number;
   last_changed_at: number;
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 // ============ 实体接口 ============

@@ -602,7 +602,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       description: this._description,
       taskType: this._taskType,
 
-      // Flattened time_config
+      // Flattened timeConfig
       timeConfigType: this._timeConfig.timeType as 'POINT' | 'RANGE' | 'ALL_DAY',
       timeConfigStartTime: this._timeConfig.startDate,
       timeConfigEndTime: this._timeConfig.endDate,
@@ -624,7 +624,7 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
       recurrenceRuleEndDate: this._recurrenceRule?.endDate,
       recurrenceRuleCount: this._recurrenceRule?.occurrences,
 
-      // Flattened reminder_config
+      // Flattened reminderConfig
       reminderConfigEnabled: this._reminderConfig?.enabled,
       reminderConfigTimeOffsetMinutes: this._reminderConfig?.triggers[0]?.relativeValue,
       reminderConfigUnit: this._reminderConfig?.triggers[0]?.relativeUnit,

@@ -159,7 +159,7 @@ export class SearchEngine extends Entity implements ISearchEngineServer {
     return new SearchEngine({
       uuid: dto.uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       indexPath: dto.index_path,
@@ -168,8 +168,8 @@ export class SearchEngine extends Entity implements ISearchEngineServer {
       lastIndexedAt: dto.last_indexed_at,
       isIndexing: dto.is_indexing,
       indexProgress: dto.index_progress,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -323,7 +323,7 @@ export class SearchEngine extends Entity implements ISearchEngineServer {
     return {
       uuid: this._uuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
       index_path: this._indexPath,
@@ -332,8 +332,8 @@ export class SearchEngine extends Entity implements ISearchEngineServer {
       last_indexed_at: this._lastIndexedAt,
       is_indexing: this._isIndexing,
       index_progress: this._indexProgress,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

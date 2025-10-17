@@ -195,7 +195,7 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
 
     return new AuthCredential({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       type: dto.type,
       passwordCredential: passwordCred ? PasswordCredential.fromPersistenceDTO(passwordCred) : null,
       apiKeyCredentials: apiKeys.map((k: any) => ApiKeyCredential.fromPersistenceDTO(k)),
@@ -205,8 +205,8 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
       status: dto.status,
       security,
       history: history.map((h: any) => CredentialHistory.fromPersistenceDTO(h)),
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -526,7 +526,7 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
   public toPersistenceDTO(): AuthCredentialPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this.accountUuid,
+      accountUuid: this.accountUuid,
       type: this.type,
       password_credential: this._passwordCredential
         ? JSON.stringify(this._passwordCredential.toPersistenceDTO())
@@ -538,8 +538,8 @@ export class AuthCredential extends AggregateRoot implements IAuthCredentialServ
       status: this._status,
       security: JSON.stringify(this._security),
       history: JSON.stringify(this._history.map((h) => h.toPersistenceDTO())),
-      created_at: this.createdAt,
-      updated_at: this._updatedAt,
+      createdAt: this.createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 

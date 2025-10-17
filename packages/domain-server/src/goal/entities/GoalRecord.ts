@@ -140,14 +140,14 @@ export class GoalRecord extends Entity implements IGoalRecordServer {
   public static fromPersistenceDTO(dto: GoalRecordPersistenceDTO): GoalRecord {
     return new GoalRecord({
       uuid: dto.uuid,
-      keyResultUuid: dto.key_result_uuid,
-      goalUuid: dto.goal_uuid,
-      previousValue: dto.previous_value,
-      newValue: dto.new_value,
-      changeAmount: dto.change_amount,
+      keyResultUuid: dto.keyResultUuid,
+      goalUuid: dto.goalUuid,
+      previousValue: dto.previousValue,
+      newValue: dto.newValue,
+      changeAmount: dto.changeAmount,
       note: dto.note ?? null,
-      recordedAt: dto.recorded_at,
-      createdAt: dto.created_at,
+      recordedAt: dto.recordedAt,
+      createdAt: dto.createdAt,
     });
   }
 
@@ -228,14 +228,14 @@ export class GoalRecord extends Entity implements IGoalRecordServer {
   public toPersistenceDTO(): GoalRecordPersistenceDTO {
     return {
       uuid: this.uuid,
-      key_result_uuid: this._keyResultUuid,
-      goal_uuid: this._goalUuid,
-      previous_value: this._previousValue,
-      new_value: this._newValue,
-      change_amount: this._changeAmount,
+      keyResultUuid: this._keyResultUuid,
+      goalUuid: this._goalUuid,
+      previousValue: this._previousValue,
+      newValue: this._newValue,
+      changeAmount: this._changeAmount,
       note: this._note,
-      recorded_at: this._recordedAt,
-      created_at: this._createdAt,
+      recordedAt: this._recordedAt,
+      createdAt: this._createdAt,
     };
   }
 }

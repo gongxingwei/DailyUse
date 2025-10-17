@@ -5,7 +5,7 @@ import { NotificationPreference } from '@dailyuse/domain-server';
 /**
  * NotificationPreference Prisma 仓储实现
  * 简单聚合根，无子实体
- * JSON 字段：category_preferences, do_not_disturb, rate_limits
+ * JSON 字段：category_preferences, doNotDisturb, rateLimits
  */
 export class PrismaNotificationPreferenceRepository implements INotificationPreferenceRepository {
   constructor(private prisma: PrismaClient) {}
@@ -13,14 +13,14 @@ export class PrismaNotificationPreferenceRepository implements INotificationPref
   private mapToEntity(data: any): NotificationPreference {
     return NotificationPreference.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.accountUuid,
+      accountUuid: data.accountUuid,
       enabled: data.enabled,
       channels: data.channels,
       categories: data.categories,
-      do_not_disturb: data.doNotDisturb,
-      rate_limit: data.rateLimit,
-      created_at: data.createdAt.getTime(),
-      updated_at: data.updatedAt.getTime(),
+      doNotDisturb: data.doNotDisturb,
+      rateLimit: data.rateLimit,
+      createdAt: data.createdAt.getTime(),
+      updatedAt: data.updatedAt.getTime(),
     });
   }
 

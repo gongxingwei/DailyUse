@@ -398,7 +398,7 @@ export class Resource extends Entity implements IResourceServer {
   public toPersistenceDTO(): ResourcePersistenceDTO {
     return {
       uuid: this._uuid,
-      repository_uuid: this._repositoryUuid,
+      repositoryUuid: this._repositoryUuid,
       name: this._name,
       type: this._type,
       path: this._path,
@@ -410,9 +410,9 @@ export class Resource extends Entity implements IResourceServer {
       category: this._category,
       status: this._status,
       metadata: JSON.stringify(this._metadata),
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      modified_at: this._modifiedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      modifiedAt: this._modifiedAt,
     };
   }
 
@@ -532,7 +532,7 @@ export class Resource extends Entity implements IResourceServer {
   public static fromPersistenceDTO(dto: ResourcePersistenceDTO): Resource {
     return new Resource({
       uuid: dto.uuid,
-      repositoryUuid: dto.repository_uuid,
+      repositoryUuid: dto.repositoryUuid,
       name: dto.name,
       type: dto.type,
       path: dto.path,
@@ -544,9 +544,9 @@ export class Resource extends Entity implements IResourceServer {
       category: dto.category,
       status: dto.status,
       metadata: JSON.parse(dto.metadata),
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      modifiedAt: dto.modified_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      modifiedAt: dto.modifiedAt,
     });
   }
 

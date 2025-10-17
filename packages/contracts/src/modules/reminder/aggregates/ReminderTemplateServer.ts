@@ -59,7 +59,7 @@ export interface ReminderTemplateServerDTO {
  */
 export interface ReminderTemplatePersistenceDTO {
   uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   title: string;
   description?: string | null;
   type: ReminderType;
@@ -70,16 +70,16 @@ export interface ReminderTemplatePersistenceDTO {
   notification_config: string; // JSON string
   self_enabled: boolean;
   status: ReminderStatus;
-  group_uuid?: string | null;
+  groupUuid?: string | null;
   importance_level: ImportanceLevel;
   tags: string; // JSON string
   color?: string | null;
   icon?: string | null;
   next_trigger_at?: number | null;
   stats: string; // JSON string
-  created_at: number;
-  updated_at: number;
-  deleted_at?: number | null;
+  createdAt: number;
+  updatedAt: number;
+  deletedAt?: number | null;
 }
 
 // ============ 领域事件 ============

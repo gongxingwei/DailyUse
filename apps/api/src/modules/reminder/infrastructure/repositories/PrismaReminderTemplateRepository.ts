@@ -17,7 +17,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   private mapToEntity(data: any, includeHistory: boolean = false): ReminderTemplate {
     const template = ReminderTemplate.fromPersistenceDTO({
       uuid: data.uuid,
-      account_uuid: data.account_uuid,
+      accountUuid: data.account_uuid,
       title: data.title,
       description: data.description,
       type: data.type,
@@ -28,16 +28,16 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
       notification_config: data.notification_config,
       self_enabled: data.self_enabled,
       status: data.status,
-      group_uuid: data.group_uuid,
+      groupUuid: data.group_uuid,
       importance_level: data.importance_level,
       tags: data.tags,
       color: data.color,
       icon: data.icon,
       next_trigger_at: data.nextTriggerAt ? Number(data.nextTriggerAt) : null,
       stats: data.stats,
-      created_at: Number(data.createdAt),
-      updated_at: Number(data.updatedAt),
-      deleted_at: data.deletedAt ? Number(data.deletedAt) : null,
+      createdAt: Number(data.createdAt),
+      updatedAt: Number(data.updatedAt),
+      deletedAt: data.deletedAt ? Number(data.deletedAt) : null,
     });
 
     if (includeHistory && data.history) {
@@ -45,13 +45,13 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         template.addHistory(
           ReminderHistory.fromPersistenceDTO({
             uuid: hist.uuid,
-            template_uuid: hist.template_uuid,
+            templateUuid: hist.template_uuid,
             trigger_time: Number(hist.triggerTime),
             result: hist.result,
             error: hist.error,
             notification_sent: hist.notificationSent,
             notification_channels: hist.notificationChannels,
-            created_at: Number(hist.createdAt),
+            createdAt: Number(hist.createdAt),
           }),
         );
       });
@@ -63,7 +63,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
     const persistence = template.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      account_uuid: persistence.account_uuid,
+      accountUuid: persistence.account_uuid,
       title: persistence.title,
       description: persistence.description,
       type: persistence.type,
@@ -74,7 +74,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
       notification_config: persistence.notification_config,
       self_enabled: persistence.self_enabled,
       status: persistence.status,
-      group_uuid: persistence.group_uuid,
+      groupUuid: persistence.group_uuid,
       importance_level: persistence.importance_level,
       tags: persistence.tags,
       color: persistence.color,
@@ -91,7 +91,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         const histPersistence = h.toPersistenceDTO();
         return {
           uuid: histPersistence.uuid,
-          template_uuid: histPersistence.template_uuid,
+          templateUuid: histPersistence.template_uuid,
           triggerTime: BigInt(histPersistence.trigger_time),
           result: histPersistence.result,
           error: histPersistence.error,
@@ -108,7 +108,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         update: {
           ...data,
           uuid: undefined,
-          account_uuid: undefined,
+          accountUuid: undefined,
           createdAt: undefined,
         },
       });
@@ -139,7 +139,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   ): Promise<ReminderTemplate[]> {
     const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        account_uuid: accountUuid,
+        accountUuid: accountUuid,
         deletedAt: options?.includeDeleted ? undefined : null,
       },
       include: { history: options?.includeHistory ?? false },
@@ -153,7 +153,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   ): Promise<ReminderTemplate[]> {
     const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        group_uuid: groupUuid,
+        groupUuid: groupUuid,
         deletedAt: options?.includeDeleted ? undefined : null,
       },
       include: { history: options?.includeHistory ?? false },
@@ -164,7 +164,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   async findActive(accountUuid?: string): Promise<ReminderTemplate[]> {
     const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        account_uuid: accountUuid,
+        accountUuid: accountUuid,
         status: 'ACTIVE',
         deletedAt: null,
       },
@@ -178,7 +178,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   ): Promise<ReminderTemplate[]> {
     const data = await this.prisma.reminderTemplate.findMany({
       where: {
-        account_uuid: accountUuid,
+        accountUuid: accountUuid,
         status: 'ACTIVE',
         deletedAt: null,
         nextTriggerAt: { lte: BigInt(beforeTime) },
@@ -199,7 +199,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   }
 
   async delete(uuid: string): Promise<void> {
-    await this.prisma.reminderHistory.deleteMany({ where: { template_uuid: uuid } });
+    await this.prisma.reminderHistory.deleteMany({ where: { templateUuid: uuid } });
     await this.prisma.reminderTemplate.delete({ where: { uuid } });
   }
 
@@ -214,7 +214,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   ): Promise<number> {
     return this.prisma.reminderTemplate.count({
       where: {
-        account_uuid: accountUuid,
+        accountUuid: accountUuid,
         status: options?.status,
         deletedAt: options?.includeDeleted ? undefined : null,
       },

@@ -172,13 +172,13 @@ export class ResourceReference extends Entity implements IResourceReferenceServe
   public toPersistenceDTO(): ResourceReferencePersistenceDTO {
     return {
       uuid: this._uuid,
-      source_resource_uuid: this._sourceResourceUuid,
-      target_resource_uuid: this._targetResourceUuid,
-      reference_type: this._referenceType,
+      sourceResourceUuid: this._sourceResourceUuid,
+      targetResourceUuid: this._targetResourceUuid,
+      referenceType: this._referenceType,
       description: this._description,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      last_verified_at: this._lastVerifiedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      lastVerifiedAt: this._lastVerifiedAt,
     };
   }
 
@@ -198,13 +198,13 @@ export class ResourceReference extends Entity implements IResourceReferenceServe
   public static fromPersistenceDTO(dto: ResourceReferencePersistenceDTO): ResourceReference {
     return new ResourceReference({
       uuid: dto.uuid,
-      sourceResourceUuid: dto.source_resource_uuid,
-      targetResourceUuid: dto.target_resource_uuid,
-      referenceType: dto.reference_type,
+      sourceResourceUuid: dto.sourceResourceUuid,
+      targetResourceUuid: dto.targetResourceUuid,
+      referenceType: dto.referenceType,
       description: dto.description,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      lastVerifiedAt: dto.last_verified_at,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      lastVerifiedAt: dto.lastVerifiedAt,
     });
   }
 

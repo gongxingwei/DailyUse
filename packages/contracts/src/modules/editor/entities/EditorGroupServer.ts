@@ -36,7 +36,7 @@ export interface EditorGroupPersistenceDTO {
   uuid: string;
   session_uuid: string;
   workspace_uuid: string;
-  account_uuid: string;
+  accountUuid: string;
   group_index: number;
   active_tab_index: number;
   name?: string | null;
@@ -44,8 +44,8 @@ export interface EditorGroupPersistenceDTO {
   // 子实体：标签列表 (JSON 存储)
   tabs?: EditorTabPersistenceDTO[]; // ✅ 使用 PersistenceDTO 类型
 
-  created_at: number;
-  updated_at: number;
+  createdAt: number;
+  updatedAt: number;
 }
 
 /**

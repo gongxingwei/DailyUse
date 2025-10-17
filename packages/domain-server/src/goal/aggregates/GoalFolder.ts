@@ -210,20 +210,20 @@ export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
   public static fromPersistenceDTO(dto: GoalFolderPersistenceDTO): GoalFolder {
     return new GoalFolder({
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description ?? null,
       icon: dto.icon ?? null,
       color: dto.color ?? null,
-      parentFolderUuid: dto.parent_folder_uuid ?? null,
-      sortOrder: dto.sort_order,
-      isSystemFolder: dto.is_system_folder,
-      folderType: dto.folder_type ?? null,
-      goalCount: dto.goal_count,
-      completedGoalCount: dto.completed_goal_count,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
-      deletedAt: dto.deleted_at ?? null,
+      parentFolderUuid: dto.parentFolderUuid ?? null,
+      sortOrder: dto.sortOrder,
+      isSystemFolder: dto.isSystemFolder,
+      folderType: dto.folderType ?? null,
+      goalCount: dto.goalCount,
+      completedGoalCount: dto.completedGoalCount,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
+      deletedAt: dto.deletedAt ?? null,
     });
   }
 
@@ -476,20 +476,20 @@ export class GoalFolder extends AggregateRoot implements IGoalFolderServer {
   public toPersistenceDTO(): GoalFolderPersistenceDTO {
     return {
       uuid: this.uuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       name: this._name,
       description: this._description,
       icon: this._icon,
       color: this._color,
-      parent_folder_uuid: this._parentFolderUuid,
-      sort_order: this._sortOrder,
-      is_system_folder: this._isSystemFolder,
-      folder_type: this._folderType,
-      goal_count: this._goalCount,
-      completed_goal_count: this._completedGoalCount,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
-      deleted_at: this._deletedAt,
+      parentFolderUuid: this._parentFolderUuid,
+      sortOrder: this._sortOrder,
+      isSystemFolder: this._isSystemFolder,
+      folderType: this._folderType,
+      goalCount: this._goalCount,
+      completedGoalCount: this._completedGoalCount,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
+      deletedAt: this._deletedAt,
     };
   }
 }

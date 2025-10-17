@@ -219,10 +219,10 @@ export class EditorTab extends Entity implements IEditorTabServer {
   public static fromPersistenceDTO(dto: EditorTabPersistenceDTO): EditorTab {
     return new EditorTab({
       uuid: dto.uuid,
-      groupUuid: dto.group_uuid,
+      groupUuid: dto.groupUuid,
       sessionUuid: dto.session_uuid,
       workspaceUuid: dto.workspace_uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       documentUuid: dto.document_uuid,
       tabIndex: dto.tab_index,
       tabType: dto.tab_type,
@@ -230,9 +230,9 @@ export class EditorTab extends Entity implements IEditorTabServer {
       viewState: TabViewState.fromPersistenceDTO(JSON.parse(dto.view_state)),
       isPinned: dto.is_pinned,
       isDirty: dto.is_dirty,
-      lastAccessedAt: dto.last_accessed_at,
-      createdAt: dto.created_at,
-      updatedAt: dto.updated_at,
+      lastAccessedAt: dto.lastAccessedAt,
+      createdAt: dto.createdAt,
+      updatedAt: dto.updatedAt,
     });
   }
 
@@ -351,10 +351,10 @@ export class EditorTab extends Entity implements IEditorTabServer {
   public toPersistenceDTO(): EditorTabPersistenceDTO {
     return {
       uuid: this._uuid,
-      group_uuid: this._groupUuid,
+      groupUuid: this._groupUuid,
       session_uuid: this._sessionUuid,
       workspace_uuid: this._workspaceUuid,
-      account_uuid: this._accountUuid,
+      accountUuid: this._accountUuid,
       document_uuid: this._documentUuid,
       tab_index: this._tabIndex,
       tab_type: this._tabType,
@@ -362,9 +362,9 @@ export class EditorTab extends Entity implements IEditorTabServer {
       view_state: JSON.stringify(this._viewState.toPersistenceDTO()),
       is_pinned: this._isPinned,
       is_dirty: this._isDirty,
-      last_accessed_at: this._lastAccessedAt,
-      created_at: this._createdAt,
-      updated_at: this._updatedAt,
+      lastAccessedAt: this._lastAccessedAt,
+      createdAt: this._createdAt,
+      updatedAt: this._updatedAt,
     };
   }
 }

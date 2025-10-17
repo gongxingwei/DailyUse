@@ -93,9 +93,9 @@ export class TaskGoalBinding extends ValueObject implements ITaskGoalBinding {
 
   public toPersistenceDTO(): TaskContracts.TaskGoalBindingPersistenceDTO {
     return {
-      goal_uuid: this.goalUuid,
-      key_result_uuid: this.keyResultUuid,
-      increment_value: this.incrementValue,
+      goalUuid: this.goalUuid,
+      keyResultUuid: this.keyResultUuid,
+      incrementValue: this.incrementValue,
     };
   }
 
@@ -114,9 +114,9 @@ export class TaskGoalBinding extends ValueObject implements ITaskGoalBinding {
     dto: TaskContracts.TaskGoalBindingPersistenceDTO,
   ): TaskGoalBinding {
     return new TaskGoalBinding({
-      goalUuid: dto.goal_uuid,
-      keyResultUuid: dto.key_result_uuid,
-      incrementValue: dto.increment_value,
+      goalUuid: dto.goalUuid,
+      keyResultUuid: dto.keyResultUuid,
+      incrementValue: dto.incrementValue,
     });
   }
 

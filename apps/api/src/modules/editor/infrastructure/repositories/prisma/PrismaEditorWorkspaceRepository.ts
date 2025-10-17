@@ -8,7 +8,7 @@ export class PrismaEditorWorkspaceRepository implements IEditorWorkspaceReposito
   private mapToEntity(w: any): EditorWorkspace {
     return EditorWorkspace.fromPersistenceDTO({
       uuid: w.uuid,
-      account_uuid: w.accountUuid,
+      accountUuid: w.accountUuid,
       name: w.name,
       description: w.description,
       project_path: w.projectPath,
@@ -16,9 +16,9 @@ export class PrismaEditorWorkspaceRepository implements IEditorWorkspaceReposito
       layout: JSON.stringify(w.layout),
       settings: JSON.stringify(w.settings),
       is_active: w.isActive,
-      created_at: w.createdAt.getTime(),
-      updated_at: w.updatedAt.getTime(),
-      last_accessed_at: w.accessedAt?.getTime(),
+      createdAt: w.createdAt.getTime(),
+      updatedAt: w.updatedAt.getTime(),
+      lastAccessedAt: w.accessedAt?.getTime(),
     });
   }
 
