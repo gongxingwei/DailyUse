@@ -5,6 +5,9 @@ import { AppConfigServer } from '@dailyuse/domain-server';
 /**
  * AppConfig Prisma 仓储实现
  * 负责 AppConfig 聚合根的持久化
+ *
+ * 注意：Prisma schema 使用单个 config JSON 字段存储所有配置，
+ * 需要在映射时进行转换
  */
 export class PrismaAppConfigRepository implements IAppConfigRepository {
   constructor(private prisma: PrismaClient) {}
@@ -15,12 +18,18 @@ export class PrismaAppConfigRepository implements IAppConfigRepository {
    * 将 Prisma 数据映射为 AppConfig 聚合根
    */
   private mapToEntity(data: any): AppConfigServer {
+    // Prisma schema 使用单个 config JSON 字段
+    const config = typeof data.config === 'string' ? JSON.parse(data.config) : data.config;
+
     return AppConfigServer.fromPersistenceDTO({
       uuid: data.uuid,
       version: data.version,
-      config: data.config,
-      description: data.description,
-      is_current: data.isCurrent,
+      app: JSON.stringify(config.app || {}),
+      features: JSON.stringify(config.features || {}),
+      limits: JSON.stringify(config.limits || {}),
+      api: JSON.stringify(config.api || {}),
+      security: JSON.stringify(config.security || {}),
+      notifications: JSON.stringify(config.notifications || {}),
       createdAt: data.createdAt.getTime(),
       updatedAt: data.updatedAt.getTime(),
     });
@@ -39,22 +48,30 @@ export class PrismaAppConfigRepository implements IAppConfigRepository {
   async save(config: AppConfigServer): Promise<void> {
     const persistence = config.toPersistenceDTO();
 
+    // 将分散的 JSON 字段合并为单个 config 对象
+    const configData = {
+      app: JSON.parse(persistence.app),
+      features: JSON.parse(persistence.features),
+      limits: JSON.parse(persistence.limits),
+      api: JSON.parse(persistence.api),
+      security: JSON.parse(persistence.security),
+      notifications: JSON.parse(persistence.notifications),
+    };
+
     await this.prisma.appConfig.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
         version: persistence.version,
-        config: persistence.config,
-        description: persistence.description,
-        isCurrent: persistence.is_current,
+        config: JSON.stringify(configData),
+        description: undefined, // Prisma schema 有 description 但 PersistenceDTO 没有
+        isCurrent: false, // 默认不是当前配置
         createdAt: this.toDate(persistence.createdAt) ?? new Date(),
         updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
       update: {
         version: persistence.version,
-        config: persistence.config,
-        description: persistence.description,
-        isCurrent: persistence.is_current,
+        config: JSON.stringify(configData),
         updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
     });

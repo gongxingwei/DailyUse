@@ -22,13 +22,13 @@ export { SettingGroup } from './entities/SettingGroup';
 
 // ============ 聚合根 ============
 export { Setting } from './aggregates/Setting';
-// export { AppConfigServer } from './aggregates/AppConfigServer';
-// export { UserSettingServer } from './aggregates/UserSettingServer';
+export { AppConfigServer } from './aggregates/AppConfigServer';
+export { UserSettingServer } from './aggregates/UserSettingServer';
 
 // ============ 仓储接口 ============
 export type { ISettingRepository } from './repositories/ISettingRepository';
-// export type { IAppConfigRepository } from './repositories/IAppConfigRepository'; // TODO: 实现 AppConfig 后导出
-// export type { IUserSettingRepository } from './repositories/IUserSettingRepository'; // TODO: 实现 UserSetting 后导出
+export type { IAppConfigRepository } from './repositories/IAppConfigRepository';
+export type { IUserSettingRepository } from './repositories/IUserSettingRepository';
 
 // ============ 领域服务 ============
 export { SettingDomainService } from './services/SettingDomainService';

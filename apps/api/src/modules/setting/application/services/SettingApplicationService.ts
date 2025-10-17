@@ -68,11 +68,11 @@ export class SettingApplicationService {
     isReadOnly?: boolean;
     isSystemSetting?: boolean;
     syncConfig?: SettingContracts.SyncConfigServer;
-  }): Promise<SettingContracts.SettingServerDTO> {
+  }): Promise<SettingContracts.SettingClientDTO> {
     // 委托给领域服务处理业务逻辑
     const setting = await this.domainService.createSetting(params);
 
-    // 转换为 DTO
+    // 转换为 ClientDTO (API 返回给客户端)
     return setting.toClientDTO();
   }
 
@@ -82,11 +82,11 @@ export class SettingApplicationService {
   async getSetting(
     uuid: string,
     options?: { includeHistory?: boolean },
-  ): Promise<SettingContracts.SettingServerDTO | null> {
+  ): Promise<SettingContracts.SettingClientDTO | null> {
     // 委托给领域服务处理
     const setting = await this.domainService.getSetting(uuid, options);
 
-    return setting ? setting.toClientDTO(options?.includeHistory) : null;
+    return setting ? setting.toClientDTO() : null;
   }
 
   /**
@@ -96,7 +96,7 @@ export class SettingApplicationService {
     key: string,
     scope: SettingContracts.SettingScope,
     contextUuid?: string,
-  ): Promise<SettingContracts.SettingServerDTO | null> {
+  ): Promise<SettingContracts.SettingClientDTO | null> {
     // 委托给领域服务处理
     const setting = await this.domainService.getSettingByKey(key, scope, contextUuid);
 
@@ -110,7 +110,7 @@ export class SettingApplicationService {
     uuid: string,
     newValue: any,
     operatorUuid?: string,
-  ): Promise<SettingContracts.SettingServerDTO> {
+  ): Promise<SettingContracts.SettingClientDTO> {
     // 委托给领域服务处理业务逻辑
     const setting = await this.domainService.updateSettingValue(uuid, newValue, operatorUuid);
 
@@ -120,7 +120,7 @@ export class SettingApplicationService {
   /**
    * 重置设置为默认值
    */
-  async resetSetting(uuid: string): Promise<SettingContracts.SettingServerDTO> {
+  async resetSetting(uuid: string): Promise<SettingContracts.SettingClientDTO> {
     // 委托给领域服务处理
     const setting = await this.domainService.resetSetting(uuid);
 
@@ -132,7 +132,7 @@ export class SettingApplicationService {
    */
   async updateManySettings(
     updates: Array<{ uuid: string; value: any; operatorUuid?: string }>,
-  ): Promise<SettingContracts.SettingServerDTO[]> {
+  ): Promise<SettingContracts.SettingClientDTO[]> {
     // 委托给领域服务处理
     const settings = await this.domainService.updateManySettings(updates);
 
@@ -146,11 +146,11 @@ export class SettingApplicationService {
     scope: SettingContracts.SettingScope,
     contextUuid?: string,
     options?: { includeHistory?: boolean },
-  ): Promise<SettingContracts.SettingServerDTO[]> {
+  ): Promise<SettingContracts.SettingClientDTO[]> {
     // 委托给领域服务处理
     const settings = await this.domainService.getSettingsByScope(scope, contextUuid, options);
 
-    return settings.map((s) => s.toClientDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO());
   }
 
   /**
@@ -159,11 +159,11 @@ export class SettingApplicationService {
   async getUserSettings(
     accountUuid: string,
     options?: { includeHistory?: boolean },
-  ): Promise<SettingContracts.SettingServerDTO[]> {
+  ): Promise<SettingContracts.SettingClientDTO[]> {
     // 委托给领域服务处理
     const settings = await this.domainService.getUserSettings(accountUuid, options);
 
-    return settings.map((s) => s.toClientDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO());
   }
 
   /**
@@ -171,11 +171,11 @@ export class SettingApplicationService {
    */
   async getSystemSettings(options?: {
     includeHistory?: boolean;
-  }): Promise<SettingContracts.SettingServerDTO[]> {
+  }): Promise<SettingContracts.SettingClientDTO[]> {
     // 委托给领域服务处理
     const settings = await this.domainService.getSystemSettings(options);
 
-    return settings.map((s) => s.toClientDTO(options?.includeHistory));
+    return settings.map((s) => s.toClientDTO());
   }
 
   /**
@@ -184,7 +184,7 @@ export class SettingApplicationService {
   async searchSettings(
     query: string,
     scope?: SettingContracts.SettingScope,
-  ): Promise<SettingContracts.SettingServerDTO[]> {
+  ): Promise<SettingContracts.SettingClientDTO[]> {
     // 委托给领域服务处理
     const settings = await this.domainService.searchSettings(query, scope);
 

@@ -25,13 +25,23 @@ export class PrismaSettingRepository implements ISettingRepository {
   private mapToEntity(data: any): Setting {
     return Setting.fromPersistenceDTO({
       uuid: data.uuid,
-      accountUuid: data.accountUuid,
-      category: data.category,
       key: data.key,
+      name: data.name,
+      description: data.description,
+      valueType: data.valueType,
       value: data.value,
-      metadata: data.metadata,
-      is_public: data.is_public,
-      is_synced: data.is_synced,
+      defaultValue: data.defaultValue,
+      scope: data.scope,
+      accountUuid: data.accountUuid,
+      deviceId: data.deviceId,
+      groupUuid: data.groupUuid,
+      validation: data.validation,
+      ui: data.ui,
+      isEncrypted: data.isEncrypted,
+      isReadOnly: data.isReadOnly,
+      isSystemSetting: data.isSystemSetting,
+      syncConfig: data.syncConfig,
+      history: data.historyData, // Prisma field is historyData
       createdAt: Number(data.createdAt),
       updatedAt: Number(data.updatedAt),
       deletedAt: data.deletedAt ? Number(data.deletedAt) : null,
@@ -52,16 +62,26 @@ export class PrismaSettingRepository implements ISettingRepository {
     const persistence = setting.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      accountUuid: persistence.accountUuid,
-      category: persistence.category,
       key: persistence.key,
+      name: persistence.name,
+      description: persistence.description,
+      valueType: persistence.valueType,
       value: persistence.value,
-      metadata: persistence.metadata,
-      is_public: persistence.is_public,
-      is_synced: persistence.is_synced,
-      createdAt: BigInt(persistence.createdAt),
-      updatedAt: BigInt(persistence.updatedAt),
-      deletedAt: persistence.deletedAt ? BigInt(persistence.deletedAt) : null,
+      defaultValue: persistence.defaultValue,
+      scope: persistence.scope,
+      accountUuid: persistence.accountUuid,
+      deviceId: persistence.deviceId,
+      groupUuid: persistence.groupUuid,
+      validation: persistence.validation,
+      ui: persistence.ui,
+      isEncrypted: persistence.isEncrypted,
+      isReadOnly: persistence.isReadOnly,
+      isSystemSetting: persistence.isSystemSetting,
+      syncConfig: persistence.syncConfig,
+      historyData: persistence.history, // Map to Prisma field historyData
+      createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+      updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
+      deletedAt: this.toDate(persistence.deletedAt),
     };
 
     await this.prisma.setting.upsert({
@@ -70,8 +90,6 @@ export class PrismaSettingRepository implements ISettingRepository {
       update: {
         ...data,
         uuid: undefined,
-        accountUuid: undefined,
-        category: undefined,
         key: undefined,
         createdAt: undefined,
       },
@@ -83,6 +101,12 @@ export class PrismaSettingRepository implements ISettingRepository {
       where: { uuid },
     });
     return data ? this.mapToEntity(data) : null;
+  }
+
+  async findById(uuid: string, options?: { includeHistory?: boolean }): Promise<Setting | null> {
+    // Note: includeHistory option is not used since history is already included in the entity
+    // The history field is stored as JSON in the database and mapped to the entity
+    return this.findByUuid(uuid);
   }
 
   async findByKey(key: string, scope: SettingScope, contextUuid?: string): Promise<Setting | null> {
@@ -135,7 +159,7 @@ export class PrismaSettingRepository implements ISettingRepository {
   async softDelete(uuid: string): Promise<void> {
     await this.prisma.setting.update({
       where: { uuid },
-      data: { deletedAt: BigInt(Date.now()) },
+      data: { deletedAt: new Date() }, // Use Date instead of BigInt
     });
   }
 
@@ -164,16 +188,26 @@ export class PrismaSettingRepository implements ISettingRepository {
         const persistence = setting.toPersistenceDTO();
         const data = {
           uuid: persistence.uuid,
-          accountUuid: persistence.accountUuid,
-          category: persistence.category,
           key: persistence.key,
+          name: persistence.name,
+          description: persistence.description,
+          valueType: persistence.valueType,
           value: persistence.value,
-          metadata: persistence.metadata,
-          is_public: persistence.is_public,
-          is_synced: persistence.is_synced,
-          createdAt: BigInt(persistence.createdAt),
-          updatedAt: BigInt(persistence.updatedAt),
-          deletedAt: persistence.deletedAt ? BigInt(persistence.deletedAt) : null,
+          defaultValue: persistence.defaultValue,
+          scope: persistence.scope,
+          accountUuid: persistence.accountUuid,
+          deviceId: persistence.deviceId,
+          groupUuid: persistence.groupUuid,
+          validation: persistence.validation,
+          ui: persistence.ui,
+          isEncrypted: persistence.isEncrypted,
+          isReadOnly: persistence.isReadOnly,
+          isSystemSetting: persistence.isSystemSetting,
+          syncConfig: persistence.syncConfig,
+          historyData: persistence.history,
+          createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+          updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
+          deletedAt: this.toDate(persistence.deletedAt),
         };
         await tx.setting.upsert({
           where: { uuid: persistence.uuid },
@@ -181,8 +215,6 @@ export class PrismaSettingRepository implements ISettingRepository {
           update: {
             ...data,
             uuid: undefined,
-            accountUuid: undefined,
-            category: undefined,
             key: undefined,
             createdAt: undefined,
           },
