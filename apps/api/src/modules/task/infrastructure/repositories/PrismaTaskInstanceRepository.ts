@@ -38,16 +38,16 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       uuid: persistence.uuid,
       templateUuid: persistence.templateUuid,
       accountUuid: persistence.accountUuid,
-      instanceDate: BigInt(persistence.instanceDate),
+      instanceDate: new Date(persistence.instanceDate), // Convert timestamp to Date
       timeConfig: persistence.timeConfig,
       status: persistence.status,
       completionRecord: persistence.completionRecord,
       skipRecord: persistence.skipRecord,
-      actualStartTime: persistence.actualStartTime ? BigInt(persistence.actualStartTime) : null,
-      actualEndTime: persistence.actualEndTime ? BigInt(persistence.actualEndTime) : null,
+      actualStartTime: persistence.actualStartTime ? new Date(persistence.actualStartTime) : null,
+      actualEndTime: persistence.actualEndTime ? new Date(persistence.actualEndTime) : null,
       note: persistence.note,
-      createdAt: BigInt(persistence.createdAt),
-      updatedAt: BigInt(persistence.updatedAt),
+      createdAt: new Date(persistence.createdAt),
+      updatedAt: new Date(persistence.updatedAt),
     };
 
     await this.prisma.taskInstance.upsert({
@@ -101,8 +101,8 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
       where: {
         accountUuid,
         instanceDate: {
-          gte: BigInt(startDate),
-          lte: BigInt(endDate),
+          gte: new Date(startDate), // Convert timestamp to Date
+          lte: new Date(endDate), // Convert timestamp to Date
         },
       },
       orderBy: { instanceDate: 'asc' },
@@ -119,7 +119,7 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
   }
 
   async findOverdueInstances(accountUuid: string): Promise<TaskInstance[]> {
-    const oneDayAgo = BigInt(Date.now() - 86400000);
+    const oneDayAgo = new Date(Date.now() - 86400000); // Convert to Date
     const instances = await this.prisma.taskInstance.findMany({
       where: {
         accountUuid,
