@@ -112,52 +112,44 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
 
   /**
    * 将 ScheduleTask 实体映射为 Prisma 数据
+   * 注意：PersistenceDTO 已经是扁平化的，直接使用字段
    */
   private mapToPrisma(task: ScheduleTask): any {
     const dto = task.toPersistenceDTO();
-
-    // 展开 schedule 值对象
-    const schedule = dto.schedule || {};
-    // 展开 execution 值对象
-    const execution = dto.execution || {};
-    // 展开 retry_policy 值对象
-    const retryPolicy = dto.retry_policy || {};
-    // 展开 metadata 值对象
-    const metadata = dto.metadata || {};
 
     return {
       uuid: dto.uuid,
       accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
-      sourceModule: dto.source_module,
-      sourceEntityId: dto.source_entity_id,
+      sourceModule: dto.sourceModule,
+      sourceEntityId: dto.sourceEntityId,
       status: dto.status,
       enabled: dto.enabled,
-      // ScheduleConfig 展开字段
-      cronExpression: schedule.cronExpression || null,
-      timezone: schedule.timezone || 'UTC',
-      startDate: schedule.startDate ? new Date(schedule.startDate) : null,
-      endDate: schedule.endDate ? new Date(schedule.endDate) : null,
-      maxExecutions: schedule.maxExecutions || null,
-      // ExecutionInfo 展开字段
-      nextRunAt: execution.nextRunAt ? new Date(execution.nextRunAt) : null,
-      lastRunAt: execution.lastRunAt ? new Date(execution.lastRunAt) : null,
-      executionCount: execution.executionCount || 0,
-      lastExecutionStatus: execution.lastExecutionStatus || null,
-      lastExecutionDuration: execution.lastExecutionDuration || null,
-      consecutiveFailures: execution.consecutiveFailures || 0,
-      // RetryPolicy 展开字段
-      maxRetries: retryPolicy.maxRetries || 3,
-      initialDelayMs: retryPolicy.initialDelayMs || 1000,
-      maxDelayMs: retryPolicy.maxDelayMs || 60000,
-      backoffMultiplier: retryPolicy.backoffMultiplier || 2.0,
-      retryableStatuses: JSON.stringify(retryPolicy.retryableStatuses || []),
-      // TaskMetadata 展开字段
-      payload: metadata.payload || null,
-      tags: JSON.stringify(metadata.tags || []),
-      priority: metadata.priority || 'normal',
-      timeout: metadata.timeout || 30000,
+      // ScheduleConfig 字段（已扁平化）
+      cronExpression: dto.cronExpression || null,
+      timezone: dto.timezone || 'UTC',
+      startDate: dto.startDate ? new Date(dto.startDate) : null,
+      endDate: dto.endDate ? new Date(dto.endDate) : null,
+      maxExecutions: dto.maxExecutions || null,
+      // ExecutionInfo 字段（已扁平化）
+      nextRunAt: dto.nextRunAt ? new Date(dto.nextRunAt) : null,
+      lastRunAt: dto.lastRunAt ? new Date(dto.lastRunAt) : null,
+      executionCount: dto.executionCount || 0,
+      lastExecutionStatus: dto.lastExecutionStatus || null,
+      lastExecutionDuration: dto.lastExecutionDuration || null,
+      consecutiveFailures: dto.consecutiveFailures || 0,
+      // RetryPolicy 字段（已扁平化）
+      maxRetries: dto.maxRetries || 3,
+      initialDelayMs: dto.initialDelayMs || 1000,
+      maxDelayMs: dto.maxDelayMs || 60000,
+      backoffMultiplier: dto.backoffMultiplier || 2.0,
+      retryableStatuses: dto.retryableStatuses || '[]',
+      // TaskMetadata 字段（已扁平化）
+      payload: dto.payload ? JSON.stringify(dto.payload) : null,
+      tags: dto.tags || '[]',
+      priority: dto.priority || 'NORMAL',
+      timeout: dto.timeout || 30000,
       // 时间戳
       createdAt: new Date(dto.createdAt),
       updatedAt: new Date(dto.updatedAt),

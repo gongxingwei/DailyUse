@@ -54,28 +54,28 @@ export class PrismaScheduleStatisticsRepository implements IScheduleStatisticsRe
 
     return {
       accountUuid: dto.accountUuid,
-      // 任务统计
-      totalTasks: dto.total_tasks,
-      activeTasks: dto.active_tasks,
-      pausedTasks: dto.paused_tasks,
-      completedTasks: dto.completed_tasks,
-      failedTasks: dto.failed_tasks,
-      cancelledTasks: dto.cancelled_tasks,
+      // 任务统计（PersistenceDTO 使用 camelCase）
+      totalTasks: dto.totalTasks,
+      activeTasks: dto.activeTasks,
+      pausedTasks: dto.pausedTasks,
+      completedTasks: dto.completedTasks,
+      failedTasks: dto.failedTasks,
+      cancelledTasks: dto.cancelledTasks,
       // 执行统计
-      totalExecutions: dto.total_executions,
-      successfulExecutions: dto.successful_executions,
-      failedExecutions: dto.failed_executions,
-      skippedExecutions: dto.skipped_executions,
-      timeoutExecutions: dto.timeout_executions,
+      totalExecutions: dto.totalExecutions,
+      successfulExecutions: dto.successfulExecutions,
+      failedExecutions: dto.failedExecutions,
+      skippedExecutions: dto.skippedExecutions,
+      timeoutExecutions: dto.timeoutExecutions,
       // 性能指标
-      avgExecutionDuration: dto.avg_execution_duration,
-      minExecutionDuration: dto.min_execution_duration,
-      maxExecutionDuration: dto.max_execution_duration,
+      avgExecutionDuration: dto.avgExecutionDuration,
+      minExecutionDuration: dto.minExecutionDuration,
+      maxExecutionDuration: dto.maxExecutionDuration,
       // 时间戳
       lastUpdatedAt: new Date(dto.lastUpdatedAt),
       createdAt: new Date(dto.createdAt),
       // 模块统计（JSON string）
-      moduleStats: dto.module_statistics,
+      moduleStatistics: dto.moduleStatistics,
     };
   }
 

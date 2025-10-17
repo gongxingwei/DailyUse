@@ -2,6 +2,7 @@ import { AggregateRoot } from '@dailyuse/utils';
 import { ScheduleContracts, SourceModule, ExecutionStatus } from '@dailyuse/contracts';
 
 type ScheduleStatisticsServerDTO = ScheduleContracts.ScheduleStatisticsServerDTO;
+type ScheduleStatisticsClientDTO = ScheduleContracts.ScheduleStatisticsClientDTO;
 type ScheduleStatisticsPersistenceDTO = ScheduleContracts.ScheduleStatisticsPersistenceDTO;
 
 /**
@@ -640,6 +641,14 @@ export class ScheduleStatistics extends AggregateRoot {
   public toServerDTO(): ScheduleStatisticsServerDTO {
     // ServerDTO 和 DTO 结构相同
     return this.toDTO();
+  }
+
+  /**
+   * 转换为 Client DTO (用于客户端)
+   */
+  public toClientDTO(): ScheduleStatisticsClientDTO {
+    // ClientDTO 和 DTO 结构相同
+    return this.toDTO() as unknown as ScheduleStatisticsClientDTO;
   }
 
   /**

@@ -71,11 +71,11 @@ export class ScheduleApplicationService {
     retryConfig?: ScheduleContracts.RetryPolicyServerDTO;
     payload?: Record<string, unknown>;
     tags?: string[];
-  }): Promise<ScheduleContracts.ScheduleTaskServerDTO> {
+  }): Promise<ScheduleContracts.ScheduleTaskClientDTO> {
     // 委托给领域服务处理业务逻辑
     const task = await this.domainService.createScheduleTask(params);
 
-    // 转换为 DTO
+    // 转换为 ClientDTO（API 返回给客户端）
     return task.toClientDTO();
   }
 
@@ -94,11 +94,11 @@ export class ScheduleApplicationService {
       payload?: Record<string, unknown>;
       tags?: string[];
     }>,
-  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+  ): Promise<ScheduleContracts.ScheduleTaskClientDTO[]> {
     // 委托给领域服务处理
     const tasks = await this.domainService.createScheduleTasksBatch(params);
 
-    // 转换为 DTO 数组
+    // 转换为 ClientDTO 数组
     return tasks.map((task) => task.toClientDTO());
   }
 
@@ -107,7 +107,7 @@ export class ScheduleApplicationService {
   /**
    * 获取任务详情
    */
-  async getScheduleTask(taskUuid: string): Promise<ScheduleContracts.ScheduleTaskServerDTO | null> {
+  async getScheduleTask(taskUuid: string): Promise<ScheduleContracts.ScheduleTaskClientDTO | null> {
     // 通过仓储查询
     const container = ScheduleContainer.getInstance();
     const repository = container.getScheduleTaskRepository();
@@ -121,13 +121,13 @@ export class ScheduleApplicationService {
    */
   async getScheduleTasksByAccount(
     accountUuid: string,
-  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+  ): Promise<ScheduleContracts.ScheduleTaskClientDTO[]> {
     // 通过仓储查询
     const container = ScheduleContainer.getInstance();
     const repository = container.getScheduleTaskRepository();
     const tasks = await repository.findByAccountUuid(accountUuid);
 
-    // 转换为 DTO 数组
+    // 转换为 ClientDTO 数组
     return tasks.map((task) => task.toClientDTO());
   }
 
@@ -137,7 +137,7 @@ export class ScheduleApplicationService {
   async getScheduleTaskBySource(
     sourceModule: SourceModule,
     sourceEntityId: string,
-  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+  ): Promise<ScheduleContracts.ScheduleTaskClientDTO[]> {
     // 通过仓储查询
     const container = ScheduleContainer.getInstance();
     const repository = container.getScheduleTaskRepository();
@@ -152,11 +152,11 @@ export class ScheduleApplicationService {
   async findDueTasksForExecution(
     beforeTime: Date,
     limit?: number,
-  ): Promise<ScheduleContracts.ScheduleTaskServerDTO[]> {
+  ): Promise<ScheduleContracts.ScheduleTaskClientDTO[]> {
     // 委托给领域服务处理
     const tasks = await this.domainService.findDueTasksForExecution(beforeTime, limit);
 
-    // 转换为 DTO 数组
+    // 转换为 ClientDTO 数组
     return tasks.map((task) => task.toClientDTO());
   }
 
@@ -170,7 +170,7 @@ export class ScheduleApplicationService {
       taskUuid: string;
       actualStartedAt?: Date;
     },
-    executeFn: (task: ScheduleContracts.ScheduleTaskServerDTO) => Promise<{
+    executeFn: (task: ScheduleContracts.ScheduleTaskClientDTO) => Promise<{
       executionUuid: string;
       status: ScheduleContracts.ExecutionStatus;
       duration: number;
@@ -184,7 +184,7 @@ export class ScheduleApplicationService {
   }> {
     // 委托给领域服务处理，需要包装 executeFn
     return await this.domainService.executeScheduleTask(params, async (task) => {
-      // 转换为 DTO 后调用
+      // 转换为 ClientDTO 后调用
       return await executeFn(task.toClientDTO());
     });
   }

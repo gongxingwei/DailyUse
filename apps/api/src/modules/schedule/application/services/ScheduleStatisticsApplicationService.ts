@@ -63,11 +63,11 @@ export class ScheduleStatisticsApplicationService {
    */
   async getOrCreateStatistics(
     accountUuid: string,
-  ): Promise<ScheduleContracts.ScheduleStatisticsServerDTO> {
+  ): Promise<ScheduleContracts.ScheduleStatisticsClientDTO> {
     // 委托给领域服务处理
     const statistics = await this.domainService.ensureStatisticsExists(accountUuid);
 
-    // 转换为 DTO
+    // 转换为 ClientDTO（API 返回给客户端）
     return statistics.toClientDTO();
   }
 
@@ -76,7 +76,7 @@ export class ScheduleStatisticsApplicationService {
    */
   async getStatistics(
     accountUuid: string,
-  ): Promise<ScheduleContracts.ScheduleStatisticsServerDTO | null> {
+  ): Promise<ScheduleContracts.ScheduleStatisticsClientDTO | null> {
     // 委托给领域服务处理
     const statistics = await this.domainService.getStatistics(accountUuid);
 
@@ -127,11 +127,11 @@ export class ScheduleStatisticsApplicationService {
    */
   async recalculateStatistics(
     accountUuid: string,
-  ): Promise<ScheduleContracts.ScheduleStatisticsServerDTO> {
+  ): Promise<ScheduleContracts.ScheduleStatisticsClientDTO> {
     // 委托给领域服务处理
     const statistics = await this.domainService.recalculateStatistics(accountUuid);
 
-    // 转换为 DTO
+    // 转换为 ClientDTO
     return statistics.toClientDTO();
   }
 
@@ -158,11 +158,11 @@ export class ScheduleStatisticsApplicationService {
    */
   async recalculateStatisticsBatch(
     accountUuids: string[],
-  ): Promise<ScheduleContracts.ScheduleStatisticsServerDTO[]> {
+  ): Promise<ScheduleContracts.ScheduleStatisticsClientDTO[]> {
     // 委托给领域服务处理
     const statisticsList = await this.domainService.recalculateStatisticsBatch(accountUuids);
 
-    // 转换为 DTO 数组
+    // 转换为 ClientDTO 数组
     return statisticsList.map((stats) => stats.toClientDTO());
   }
 

@@ -72,15 +72,15 @@ export interface ScheduleTaskPersistenceDTO {
   lastRunAt: number | null; // epoch ms
   executionCount: number;
   lastExecutionStatus: string | null;
-  last_execution_duration: number | null; // ms
-  consecutive_failures: number;
+  lastExecutionDuration: number | null; // ms
+  consecutiveFailures: number;
 
   // ========== RetryPolicy 值对象（展开字段）==========
   maxRetries: number;
-  initial_delay_ms: number;
-  max_delay_ms: number;
-  backoff_multiplier: number;
-  retryable_statuses: string; // JSON array string
+  initialDelayMs: number;
+  maxDelayMs: number;
+  backoffMultiplier: number;
+  retryableStatuses: string; // JSON array string
 
   // ========== TaskMetadata 值对象（展开字段）==========
   payload: any | null; // JSON (复杂数据保留)
@@ -363,7 +363,6 @@ export interface ScheduleTaskServer {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toServerDTO(includeChildren?: boolean): ScheduleTaskServerDTO;
-
 
   /**
    * 转换为 Client DTO

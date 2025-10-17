@@ -15,45 +15,47 @@ datasource db {
 /// Account 聚合根
 /// 代表一个完整的用户账户，包含订阅和历史记录
 model Account {
-  uuid           String    @id @default(cuid())
-  username       String    @unique
-  email          String    @unique
-  emailVerified  Boolean   @default(false) @map("email_verified")
-  phoneNumber    String?   @map("phone_number")
-  phoneVerified  Boolean   @default(false) @map("phone_verified")
-  status         String    @default("ACTIVE") // AccountStatus: 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED'
-  profile        String    @db.Text // JSON: profile data
-  preferences    String    @db.Text // JSON: user preferences
-  subscription   String?   @db.Text // JSON: subscription data (optional)
-  storage        String    @db.Text // JSON: storage info
-  security       String    @db.Text // JSON: security settings
-  history        String    @default("[]") @db.Text // JSON array of AccountHistory
-  stats          String    @db.Text // JSON: account statistics
-  createdAt      DateTime  @default(now()) @map("created_at")
-  updatedAt      DateTime  @updatedAt @map("updated_at")
-  lastActiveAt   DateTime? @map("last_active_at")
-  deletedAt      DateTime? @map("deleted_at")
+  uuid          String    @id @default(cuid())
+  username      String    @unique
+  email         String    @unique
+  emailVerified Boolean   @default(false) @map("email_verified")
+  phoneNumber   String?   @map("phone_number")
+  phoneVerified Boolean   @default(false) @map("phone_verified")
+  status        String    @default("ACTIVE") // AccountStatus: 'ACTIVE', 'INACTIVE', 'SUSPENDED', 'DELETED'
+  profile       String    @db.Text // JSON: profile data
+  preferences   String    @db.Text // JSON: user preferences
+  subscription  String?   @db.Text // JSON: subscription data (optional)
+  storage       String    @db.Text // JSON: storage info
+  security      String    @db.Text // JSON: security settings
+  history       String    @default("[]") @db.Text // JSON array of AccountHistory
+  stats         String    @db.Text // JSON: account statistics
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+  lastActiveAt  DateTime? @map("last_active_at")
+  deletedAt     DateTime? @map("deleted_at")
 
   // Relations
-  goals                 Goal[]
-  repositories          Repository[]
-  repositoryExplorers   RepositoryExplorer[]
-  repositoryStatistics  RepositoryStatistics[]
-  editorWorkspaces      EditorWorkspace[]
-  editorSessions        EditorWorkspaceSession[]
-  editorGroups          EditorWorkspaceSessionGroup[]
-  editorTabs            EditorWorkspaceSessionGroupTab[]
-  settings              Setting[]
-  userSettings          UserSetting[]
-  authCredentials       AuthCredential[]
-  authSessions          AuthSession[]
-  reminderStatistics    ReminderStatistics?
-  taskTemplates         TaskTemplate[]
-  taskInstances         TaskInstance[]
-  taskStatistics        TaskStatistics?
-  reminderTemplates     ReminderTemplate[]
-  reminderGroups        ReminderGroup[]
-  reminderInstances     ReminderInstance[]
+  goals                Goal[]
+  repositories         Repository[]
+  repositoryExplorers  RepositoryExplorer[]
+  repositoryStatistics RepositoryStatistics[]
+  editorWorkspaces     EditorWorkspace[]
+  editorSessions       EditorWorkspaceSession[]
+  editorGroups         EditorWorkspaceSessionGroup[]
+  editorTabs           EditorWorkspaceSessionGroupTab[]
+  settings             Setting[]
+  userSettings         UserSetting[]
+  authCredentials      AuthCredential[]
+  authSessions         AuthSession[]
+  reminderStatistics   ReminderStatistics?
+  taskTemplates        TaskTemplate[]
+  taskInstances        TaskInstance[]
+  taskStatistics       TaskStatistics?
+  reminderTemplates    ReminderTemplate[]
+  reminderGroups       ReminderGroup[]
+  reminderInstances    ReminderInstance[]
+  scheduleTasks        ScheduleTask[]
+  scheduleStatistics   ScheduleStatistics?
 
   @@index([username])
   @@index([email])
@@ -66,14 +68,14 @@ model Account {
 /// AuthCredential 聚合根
 /// 代表用户的认证凭据（密码/API密钥）
 model AuthCredential {
-  uuid        String   @id @default(cuid())
-  accountUuid String   @map("account_uuid")
+  uuid        String    @id @default(cuid())
+  accountUuid String    @map("account_uuid")
   type        String // CredentialType: 'PASSWORD', 'API_KEY'
-  data        String   @db.Text // JSON: credential data (encrypted)
-  metadata    String   @db.Text // JSON: credential metadata
-  history     String   @default("[]") @db.Text // JSON array of CredentialHistory
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  data        String    @db.Text // JSON: credential data (encrypted)
+  metadata    String    @db.Text // JSON: credential metadata
+  history     String    @default("[]") @db.Text // JSON array of CredentialHistory
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
   expiresAt   DateTime? @map("expires_at")
   lastUsedAt  DateTime? @map("last_used_at")
   revokedAt   DateTime? @map("revoked_at")
@@ -90,20 +92,20 @@ model AuthCredential {
 /// AuthSession 聚合根
 /// 代表用户的认证会话
 model AuthSession {
-  uuid                  String   @id @default(cuid())
-  accountUuid           String   @map("account_uuid")
-  status                String   @default("ACTIVE") // SessionStatus: 'ACTIVE', 'EXPIRED', 'REVOKED'
-  accessToken           String   @unique @map("access_token")
-  accessTokenExpiresAt  DateTime @map("access_token_expires_at")
-  refreshToken          String   @unique @map("refresh_token")
-  refreshTokenExpiresAt DateTime @map("refresh_token_expires_at")
-  device                String   @db.Text // JSON: DeviceInfo
-  ipAddress             String?  @map("ip_address")
-  userAgent             String?  @map("user_agent")
-  history               String   @default("[]") @db.Text // JSON array of SessionHistory
-  createdAt             DateTime @default(now()) @map("created_at")
-  updatedAt             DateTime @updatedAt @map("updated_at")
-  lastAccessedAt        DateTime @map("last_accessed_at")
+  uuid                  String    @id @default(cuid())
+  accountUuid           String    @map("account_uuid")
+  status                String    @default("ACTIVE") // SessionStatus: 'ACTIVE', 'EXPIRED', 'REVOKED'
+  accessToken           String    @unique @map("access_token")
+  accessTokenExpiresAt  DateTime  @map("access_token_expires_at")
+  refreshToken          String    @unique @map("refresh_token")
+  refreshTokenExpiresAt DateTime  @map("refresh_token_expires_at")
+  device                String    @db.Text // JSON: DeviceInfo
+  ipAddress             String?   @map("ip_address")
+  userAgent             String?   @map("user_agent")
+  history               String    @default("[]") @db.Text // JSON array of SessionHistory
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+  lastAccessedAt        DateTime  @map("last_accessed_at")
   revokedAt             DateTime? @map("revoked_at")
 
   // Relations
@@ -312,7 +314,7 @@ model EditorWorkspace {
   settings    Json
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
   accessedAt  DateTime @default(now()) @map("accessed_at")
 
   // Relations
@@ -410,30 +412,30 @@ model EditorWorkspaceSessionGroupTab {
 /// Setting 聚合根
 /// 代表一个完整的设置项，包含验证规则、UI配置等
 model Setting {
-  uuid             String    @id @default(cuid())
-  key              String
-  name             String
-  description      String?
-  valueType        String    @map("value_type") // SettingValueType: 'string', 'number', 'boolean', 'array', 'object', 'password', 'email', 'url', 'color', 'date', 'time', 'datetime'
-  value            String    @db.Text // JSON encoded value
-  defaultValue     String    @map("default_value") @db.Text // JSON encoded default value
-  scope            String // SettingScope: 'SYSTEM', 'USER', 'DEVICE'
-  accountUuid      String?   @map("account_uuid")
-  deviceId         String?   @map("device_id")
-  groupUuid        String?   @map("group_uuid")
-  validation       String?   @db.Text // JSON: ValidationRule (optional)
-  ui               String?   @db.Text // JSON: UIConfig (optional)
-  isEncrypted      Boolean   @default(false) @map("is_encrypted")
-  isReadOnly       Boolean   @default(false) @map("is_read_only")
-  isSystemSetting  Boolean   @default(false) @map("is_system_setting")
-  syncConfig       String?   @map("sync_config") @db.Text // JSON: SyncConfig (optional)
-  historyData      String    @default("[]") @map("history_data") @db.Text // JSON array of SettingHistory
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-  deletedAt        DateTime? @map("deleted_at")
+  uuid            String    @id @default(cuid())
+  key             String
+  name            String
+  description     String?
+  valueType       String    @map("value_type") // SettingValueType: 'string', 'number', 'boolean', 'array', 'object', 'password', 'email', 'url', 'color', 'date', 'time', 'datetime'
+  value           String    @db.Text // JSON encoded value
+  defaultValue    String    @map("default_value") @db.Text // JSON encoded default value
+  scope           String // SettingScope: 'SYSTEM', 'USER', 'DEVICE'
+  accountUuid     String?   @map("account_uuid")
+  deviceId        String?   @map("device_id")
+  groupUuid       String?   @map("group_uuid")
+  validation      String?   @db.Text // JSON: ValidationRule (optional)
+  ui              String?   @db.Text // JSON: UIConfig (optional)
+  isEncrypted     Boolean   @default(false) @map("is_encrypted")
+  isReadOnly      Boolean   @default(false) @map("is_read_only")
+  isSystemSetting Boolean   @default(false) @map("is_system_setting")
+  syncConfig      String?   @map("sync_config") @db.Text // JSON: SyncConfig (optional)
+  historyData     String    @default("[]") @map("history_data") @db.Text // JSON array of SettingHistory
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   // Relations
-  account Account? @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  account Account?      @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   group   SettingGroup? @relation(fields: [groupUuid], references: [uuid], onDelete: SetNull)
 
   @@unique([key, scope, accountUuid, deviceId])
@@ -450,16 +452,16 @@ model Setting {
 /// SettingGroup - Entity
 /// 设置分组，用于组织相关设置
 model SettingGroup {
-  uuid        String    @id @default(cuid())
-  key         String    @unique
+  uuid        String   @id @default(cuid())
+  key         String   @unique
   name        String
   description String?
-  parentUuid  String?   @map("parent_uuid")
-  order       Int       @default(0)
+  parentUuid  String?  @map("parent_uuid")
+  order       Int      @default(0)
   icon        String?
-  isCollapsed Boolean   @default(false) @map("is_collapsed")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  isCollapsed Boolean  @default(false) @map("is_collapsed")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   parent   SettingGroup?  @relation("GroupHierarchy", fields: [parentUuid], references: [uuid], onDelete: Cascade)
@@ -475,14 +477,14 @@ model SettingGroup {
 /// SettingItem - Entity
 /// 设置项，关联到具体的设置
 model SettingItem {
-  uuid        String    @id @default(cuid())
-  groupUuid   String    @map("group_uuid")
-  settingKey  String    @map("setting_key")
-  order       Int       @default(0)
-  isVisible   Boolean   @default(true) @map("is_visible")
-  customLabel String?   @map("custom_label")
-  createdAt   DateTime  @default(now()) @map("created_at")
-  updatedAt   DateTime  @updatedAt @map("updated_at")
+  uuid        String   @id @default(cuid())
+  groupUuid   String   @map("group_uuid")
+  settingKey  String   @map("setting_key")
+  order       Int      @default(0)
+  isVisible   Boolean  @default(true) @map("is_visible")
+  customLabel String?  @map("custom_label")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   // Relations
   group SettingGroup @relation(fields: [groupUuid], references: [uuid], onDelete: Cascade)
@@ -539,9 +541,9 @@ model UserSetting {
 model ReminderStatistics {
   uuid          String   @id @default(cuid())
   accountUuid   String   @unique @map("account_uuid")
-  templateStats String   @db.Text @map("template_stats") // JSON: TemplateStatsInfo
-  groupStats    String   @db.Text @map("group_stats")    // JSON: GroupStatsInfo
-  triggerStats  String   @db.Text @map("trigger_stats")  // JSON: TriggerStatsInfo
+  templateStats String   @map("template_stats") @db.Text // JSON: TemplateStatsInfo
+  groupStats    String   @map("group_stats") @db.Text // JSON: GroupStatsInfo
+  triggerStats  String   @map("trigger_stats") @db.Text // JSON: TriggerStatsInfo
   calculatedAt  DateTime @map("calculated_at")
 
   // Relations
@@ -596,26 +598,26 @@ model Goal {
 // ============================================================
 
 model Notification {
-  uuid               String    @id @default(cuid())
-  accountUuid        String    @map("account_uuid")
-  type               String
-  category           String
-  status             String
-  title              String
-  content            String    @db.Text
-  importance         String
-  urgency            String
-  relatedEntityType  String?   @map("related_entity_type")
-  relatedEntityUuid  String?   @map("related_entity_uuid")
-  metadata           String?   @db.Text // JSON
-  actions            String?   @db.Text // JSON
-  isRead             Boolean   @default(false) @map("is_read")
-  readAt             DateTime? @map("read_at")
-  sentAt             DateTime? @map("sent_at")
-  expiresAt          DateTime? @map("expires_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
-  deletedAt          DateTime? @map("deleted_at")
+  uuid              String    @id @default(cuid())
+  accountUuid       String    @map("account_uuid")
+  type              String
+  category          String
+  status            String
+  title             String
+  content           String    @db.Text
+  importance        String
+  urgency           String
+  relatedEntityType String?   @map("related_entity_type")
+  relatedEntityUuid String?   @map("related_entity_uuid")
+  metadata          String?   @db.Text // JSON
+  actions           String?   @db.Text // JSON
+  isRead            Boolean   @default(false) @map("is_read")
+  readAt            DateTime? @map("read_at")
+  sentAt            DateTime? @map("sent_at")
+  expiresAt         DateTime? @map("expires_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
 
   channels NotificationChannel[]
   history  NotificationHistory[]
@@ -627,15 +629,15 @@ model Notification {
 }
 
 model NotificationChannel {
-  uuid             String    @id @default(cuid())
-  notificationUuid String    @map("notification_uuid")
-  channelType      String    @map("channel_type")
+  uuid             String  @id @default(cuid())
+  notificationUuid String  @map("notification_uuid")
+  channelType      String  @map("channel_type")
   status           String
   recipient        String?
-  retryCount       Int       @default(0) @map("retry_count")
-  maxRetries       Int       @default(3) @map("max_retries")
-  error            String?   @db.Text // JSON
-  response         String?   @db.Text // JSON
+  retryCount       Int     @default(0) @map("retry_count")
+  maxRetries       Int     @default(3) @map("max_retries")
+  error            String? @db.Text // JSON
+  response         String? @db.Text // JSON
 
   notification Notification @relation(fields: [notificationUuid], references: [uuid], onDelete: Cascade)
 
@@ -658,15 +660,15 @@ model NotificationHistory {
 }
 
 model NotificationPreference {
-  uuid        String   @id @default(cuid())
-  accountUuid String   @unique @map("account_uuid")
-  enabled     Boolean  @default(true)
-  channels    String   @db.Text // JSON
-  categories  String   @db.Text // JSON
+  uuid         String   @id @default(cuid())
+  accountUuid  String   @unique @map("account_uuid")
+  enabled      Boolean  @default(true)
+  channels     String   @db.Text // JSON
+  categories   String   @db.Text // JSON
   doNotDisturb String?  @map("do_not_disturb") @db.Text // JSON
-  rateLimit   String?  @map("rate_limit") @db.Text // JSON
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  rateLimit    String?  @map("rate_limit") @db.Text // JSON
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@index([accountUuid])
   @@map("notification_preferences")
@@ -695,48 +697,48 @@ model NotificationTemplate {
 /// TaskTemplate 聚合根
 /// 代表一个可复用的任务模板
 model TaskTemplate {
-  uuid                          String    @id @default(cuid())
-  accountUuid                   String    @map("account_uuid")
-  title                         String
-  description                   String?   @db.Text
-  taskType                      String    @map("task_type") // TaskType: 'ONE_TIME', 'RECURRING'
-  status                        String // TaskTemplateStatus: 'ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED'
-  importance                    String
-  urgency                       String
-  color                         String?
-  tags                          String    @db.Text // JSON array of strings
-  folderUuid                    String?   @map("folder_uuid")
-  lastGeneratedDate             DateTime? @map("last_generated_date")
-  generateAheadDays             Int       @map("generate_ahead_days")
-  createdAt                     DateTime  @default(now()) @map("created_at")
-  updatedAt                     DateTime  @updatedAt @map("updated_at")
-  deletedAt                     DateTime? @map("deleted_at")
+  uuid              String    @id @default(cuid())
+  accountUuid       String    @map("account_uuid")
+  title             String
+  description       String?   @db.Text
+  taskType          String    @map("task_type") // TaskType: 'ONE_TIME', 'RECURRING'
+  status            String // TaskTemplateStatus: 'ACTIVE', 'PAUSED', 'ARCHIVED', 'DELETED'
+  importance        String
+  urgency           String
+  color             String?
+  tags              String    @db.Text // JSON array of strings
+  folderUuid        String?   @map("folder_uuid")
+  lastGeneratedDate DateTime? @map("last_generated_date")
+  generateAheadDays Int       @map("generate_ahead_days")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  deletedAt         DateTime? @map("deleted_at")
 
   // Flattened time_config
-  timeConfigType                String    @map("time_config_type") // 'POINT', 'RANGE', 'ALL_DAY'
-  timeConfigStartTime           DateTime? @map("time_config_start_time")
-  timeConfigEndTime             DateTime? @map("time_config_end_time")
-  timeConfigDurationMinutes     Int?      @map("time_config_duration_minutes")
+  timeConfigType            String    @map("time_config_type") // 'POINT', 'RANGE', 'ALL_DAY'
+  timeConfigStartTime       DateTime? @map("time_config_start_time")
+  timeConfigEndTime         DateTime? @map("time_config_end_time")
+  timeConfigDurationMinutes Int?      @map("time_config_duration_minutes")
 
   // Flattened recurrence_rule
-  recurrenceRuleType            String?   @map("recurrence_rule_type") // 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'
-  recurrenceRuleInterval        Int?      @map("recurrence_rule_interval")
-  recurrenceRuleDaysOfWeek      String?   @map("recurrence_rule_days_of_week") @db.Text // JSON array
-  recurrenceRuleDayOfMonth      Int?      @map("recurrence_rule_day_of_month")
-  recurrenceRuleMonthOfYear     Int?      @map("recurrence_rule_month_of_year")
-  recurrenceRuleEndDate         DateTime? @map("recurrence_rule_end_date")
-  recurrenceRuleCount           Int?      @map("recurrence_rule_count")
+  recurrenceRuleType        String?   @map("recurrence_rule_type") // 'DAILY', 'WEEKLY', 'MONTHLY', 'YEARLY'
+  recurrenceRuleInterval    Int?      @map("recurrence_rule_interval")
+  recurrenceRuleDaysOfWeek  String?   @map("recurrence_rule_days_of_week") @db.Text // JSON array
+  recurrenceRuleDayOfMonth  Int?      @map("recurrence_rule_day_of_month")
+  recurrenceRuleMonthOfYear Int?      @map("recurrence_rule_month_of_year")
+  recurrenceRuleEndDate     DateTime? @map("recurrence_rule_end_date")
+  recurrenceRuleCount       Int?      @map("recurrence_rule_count")
 
   // Flattened reminder_config
-  reminderConfigEnabled         Boolean?  @map("reminder_config_enabled")
-  reminderConfigTimeOffsetMinutes Int?    @map("reminder_config_time_offset_minutes")
-  reminderConfigUnit            String?   @map("reminder_config_unit") // 'MINUTES', 'HOURS', 'DAYS'
-  reminderConfigChannel         String?   @map("reminder_config_channel") // 'PUSH', 'EMAIL', 'SMS'
+  reminderConfigEnabled           Boolean? @map("reminder_config_enabled")
+  reminderConfigTimeOffsetMinutes Int?     @map("reminder_config_time_offset_minutes")
+  reminderConfigUnit              String?  @map("reminder_config_unit") // 'MINUTES', 'HOURS', 'DAYS'
+  reminderConfigChannel           String?  @map("reminder_config_channel") // 'PUSH', 'EMAIL', 'SMS'
 
   // Flattened goal_binding
-  goalBindingGoalUuid           String?   @map("goal_binding_goal_uuid")
-  goalBindingKeyResultUuid      String?   @map("goal_binding_key_result_uuid")
-  goalBindingIncrementValue     Float?    @map("goal_binding_increment_value")
+  goalBindingGoalUuid       String? @map("goal_binding_goal_uuid")
+  goalBindingKeyResultUuid  String? @map("goal_binding_key_result_uuid")
+  goalBindingIncrementValue Float?  @map("goal_binding_increment_value")
 
   // Relations
   account   Account               @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
@@ -764,9 +766,9 @@ model TaskInstance {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // JSON value objects
-  timeConfig        String    @map("time_config") @db.Text // JSON: TaskTimeConfigPersistenceDTO
-  completionRecord  String?   @map("completion_record") @db.Text // JSON: CompletionRecordPersistenceDTO
-  skipRecord        String?   @map("skip_record") @db.Text // JSON: SkipRecordPersistenceDTO
+  timeConfig       String  @map("time_config") @db.Text // JSON: TaskTimeConfigPersistenceDTO
+  completionRecord String? @map("completion_record") @db.Text // JSON: CompletionRecordPersistenceDTO
+  skipRecord       String? @map("skip_record") @db.Text // JSON: SkipRecordPersistenceDTO
 
   // Relations
   template TaskTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
@@ -798,49 +800,49 @@ model TaskTemplateHistory {
 /// TaskStatistics 聚合根
 /// 任务统计信息
 model TaskStatistics {
-  uuid                     String   @id @default(cuid())
-  accountUuid              String   @unique @map("account_uuid")
-  calculatedAt             DateTime @map("calculated_at")
+  uuid         String   @id @default(cuid())
+  accountUuid  String   @unique @map("account_uuid")
+  calculatedAt DateTime @map("calculated_at")
 
   // Flattened template_stats
-  templateTotal            Int      @map("template_total")
-  templateActive           Int      @map("template_active")
-  templatePaused           Int      @map("template_paused")
-  templateArchived         Int      @map("template_archived")
-  templateOneTime          Int      @map("template_one_time")
-  templateRecurring        Int      @map("template_recurring")
+  templateTotal     Int @map("template_total")
+  templateActive    Int @map("template_active")
+  templatePaused    Int @map("template_paused")
+  templateArchived  Int @map("template_archived")
+  templateOneTime   Int @map("template_one_time")
+  templateRecurring Int @map("template_recurring")
 
   // Flattened instance_stats
-  instanceTotal            Int      @map("instance_total")
-  instanceToday            Int      @map("instance_today")
-  instanceWeek             Int      @map("instance_week")
-  instanceMonth            Int      @map("instance_month")
-  instancePending          Int      @map("instance_pending")
-  instanceInProgress       Int      @map("instance_in_progress")
-  instanceCompleted        Int      @map("instance_completed")
-  instanceSkipped          Int      @map("instance_skipped")
-  instanceExpired          Int      @map("instance_expired")
+  instanceTotal      Int @map("instance_total")
+  instanceToday      Int @map("instance_today")
+  instanceWeek       Int @map("instance_week")
+  instanceMonth      Int @map("instance_month")
+  instancePending    Int @map("instance_pending")
+  instanceInProgress Int @map("instance_in_progress")
+  instanceCompleted  Int @map("instance_completed")
+  instanceSkipped    Int @map("instance_skipped")
+  instanceExpired    Int @map("instance_expired")
 
   // Flattened completion_stats
-  completionToday          Int      @map("completion_today")
-  completionWeek           Int      @map("completion_week")
-  completionMonth          Int      @map("completion_month")
-  completionTotal          Int      @map("completion_total")
-  completionAvgTime        Float?   @map("completion_avg_time")
-  completionRate           Float    @map("completion_rate")
+  completionToday   Int    @map("completion_today")
+  completionWeek    Int    @map("completion_week")
+  completionMonth   Int    @map("completion_month")
+  completionTotal   Int    @map("completion_total")
+  completionAvgTime Float? @map("completion_avg_time")
+  completionRate    Float  @map("completion_rate")
 
   // Flattened time_stats
-  timeAllDay               Int      @map("time_all_day")
-  timePoint                Int      @map("time_point")
-  timeRange                Int      @map("time_range")
-  timeOverdue              Int      @map("time_overdue")
-  timeUpcoming             Int      @map("time_upcoming")
+  timeAllDay   Int @map("time_all_day")
+  timePoint    Int @map("time_point")
+  timeRange    Int @map("time_range")
+  timeOverdue  Int @map("time_overdue")
+  timeUpcoming Int @map("time_upcoming")
 
   // Distribution stats as JSON
-  distributionByImportance String   @map("distribution_by_importance") @db.Text // JSON
-  distributionByUrgency    String   @map("distribution_by_urgency") @db.Text // JSON
-  distributionByFolder     String   @map("distribution_by_folder") @db.Text // JSON
-  distributionByTag        String   @map("distribution_by_tag") @db.Text // JSON
+  distributionByImportance String @map("distribution_by_importance") @db.Text // JSON
+  distributionByUrgency    String @map("distribution_by_urgency") @db.Text // JSON
+  distributionByFolder     String @map("distribution_by_folder") @db.Text // JSON
+  distributionByTag        String @map("distribution_by_tag") @db.Text // JSON
 
   // Relations
   account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
@@ -852,35 +854,35 @@ model TaskStatistics {
 /// ReminderTemplate 实体
 /// 提醒模板
 model ReminderTemplate {
-  uuid                String    @id @default(cuid())
-  accountUuid         String    @map("account_uuid")
-  title               String
-  description         String?   @db.Text
-  type                String // ReminderType
-  selfEnabled         Boolean   @map("self_enabled")
-  status              String // ReminderStatus
-  groupUuid           String?   @map("group_uuid")
-  importanceLevel     String    @map("importance_level") // ImportanceLevel
-  tags                String    @db.Text // JSON string
-  color               String?
-  icon                String?
-  nextTriggerAt       DateTime? @map("next_trigger_at")
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
-  deletedAt           DateTime? @map("deleted_at")
+  uuid            String    @id @default(cuid())
+  accountUuid     String    @map("account_uuid")
+  title           String
+  description     String?   @db.Text
+  type            String // ReminderType
+  selfEnabled     Boolean   @map("self_enabled")
+  status          String // ReminderStatus
+  groupUuid       String?   @map("group_uuid")
+  importanceLevel String    @map("importance_level") // ImportanceLevel
+  tags            String    @db.Text // JSON string
+  color           String?
+  icon            String?
+  nextTriggerAt   DateTime? @map("next_trigger_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  deletedAt       DateTime? @map("deleted_at")
 
   // JSON value objects
-  trigger             String    @db.Text // JSON: TriggerConfigPersistenceDTO
-  recurrence          String?   @db.Text // JSON: RecurrenceConfigPersistenceDTO
-  activeTime          String    @map("active_time") @db.Text // JSON: ActiveTimeConfigPersistenceDTO
-  activeHours         String?   @map("active_hours") @db.Text // JSON: ActiveHoursConfigPersistenceDTO
-  notificationConfig  String    @map("notification_config") @db.Text // JSON: NotificationConfigPersistenceDTO
-  stats               String    @db.Text // JSON: ReminderStatsPersistenceDTO
+  trigger            String  @db.Text // JSON: TriggerConfigPersistenceDTO
+  recurrence         String? @db.Text // JSON: RecurrenceConfigPersistenceDTO
+  activeTime         String  @map("active_time") @db.Text // JSON: ActiveTimeConfigPersistenceDTO
+  activeHours        String? @map("active_hours") @db.Text // JSON: ActiveHoursConfigPersistenceDTO
+  notificationConfig String  @map("notification_config") @db.Text // JSON: NotificationConfigPersistenceDTO
+  stats              String  @db.Text // JSON: ReminderStatsPersistenceDTO
 
   // Relations
-  account  Account         @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  group    ReminderGroup?  @relation(fields: [groupUuid], references: [uuid], onDelete: SetNull)
-  history  ReminderHistory[]
+  account   Account            @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  group     ReminderGroup?     @relation(fields: [groupUuid], references: [uuid], onDelete: SetNull)
+  history   ReminderHistory[]
   instances ReminderInstance[]
 
   @@index([accountUuid])
@@ -932,17 +934,17 @@ model ReminderHistory {
 }
 
 model ReminderInstance {
-  uuid                String    @id @default(cuid())
-  templateUuid        String    @map("template_uuid")
-  accountUuid         String    @map("account_uuid")
-  triggerAt           DateTime  @map("trigger_at")
-  status              String // ReminderInstanceStatus
-  result              String? // ReminderInstanceResult
-  processedAt         DateTime? @map("processed_at")
-  note                String?   @db.Text
-  payload             String?   @db.Text // JSON
-  createdAt           DateTime  @default(now()) @map("created_at")
-  updatedAt           DateTime  @updatedAt @map("updated_at")
+  uuid         String    @id @default(cuid())
+  templateUuid String    @map("template_uuid")
+  accountUuid  String    @map("account_uuid")
+  triggerAt    DateTime  @map("trigger_at")
+  status       String // ReminderInstanceStatus
+  result       String? // ReminderInstanceResult
+  processedAt  DateTime? @map("processed_at")
+  note         String?   @db.Text
+  payload      String?   @db.Text // JSON
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
 
   // Relations
   template ReminderTemplate @relation(fields: [templateUuid], references: [uuid], onDelete: Cascade)
@@ -953,4 +955,128 @@ model ReminderInstance {
   @@index([triggerAt])
   @@index([status])
   @@map("reminder_instances")
+}
+
+// ============================================================
+// Schedule Module - DDD Design
+// 定时任务调度模块 - DDD 设计
+// ============================================================
+
+/// ScheduleTask 聚合根
+/// 定时任务调度配置
+model ScheduleTask {
+  uuid           String  @id @default(cuid())
+  accountUuid    String  @map("account_uuid")
+  name           String
+  description    String? @db.Text
+  sourceModule   String  @map("source_module") // SourceModule enum
+  sourceEntityId String  @map("source_entity_id")
+  status         String // ScheduleTaskStatus
+  enabled        Boolean
+
+  // ScheduleConfig 值对象（扁平化字段）
+  cronExpression String?   @map("cron_expression")
+  timezone       String
+  startDate      DateTime? @map("start_date")
+  endDate        DateTime? @map("end_date")
+  maxExecutions  Int?      @map("max_executions")
+
+  // ExecutionInfo 值对象（扁平化字段）
+  nextRunAt             DateTime? @map("next_run_at")
+  lastRunAt             DateTime? @map("last_run_at")
+  executionCount        Int       @default(0) @map("execution_count")
+  lastExecutionStatus   String?   @map("last_execution_status")
+  lastExecutionDuration Int?      @map("last_execution_duration") // ms
+  consecutiveFailures   Int       @default(0) @map("consecutive_failures")
+
+  // RetryPolicy 值对象（扁平化字段）
+  maxRetries        Int    @map("max_retries")
+  initialDelayMs    Int    @map("initial_delay_ms")
+  maxDelayMs        Int    @map("max_delay_ms")
+  backoffMultiplier Float  @map("backoff_multiplier")
+  retryableStatuses String @default("[]") @map("retryable_statuses") @db.Text // JSON array
+
+  // TaskMetadata 值对象（扁平化字段）
+  payload  String? @db.Text // JSON
+  tags     String  @default("[]") @db.Text // JSON array
+  priority String
+  timeout  Int // ms
+
+  // 时间戳
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account    Account             @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  executions ScheduleExecution[]
+
+  @@index([accountUuid])
+  @@index([sourceModule])
+  @@index([sourceEntityId])
+  @@index([status])
+  @@index([enabled])
+  @@index([nextRunAt])
+  @@map("schedule_tasks")
+}
+
+/// ScheduleExecution 实体
+/// 任务执行记录
+model ScheduleExecution {
+  uuid          String   @id @default(cuid())
+  taskUuid      String   @map("task_uuid")
+  executionTime DateTime @map("execution_time")
+  status        String // ExecutionStatus
+  duration      Int? // ms
+  result        String?  @db.Text // JSON
+  error         String?  @db.Text
+  retryCount    Int      @default(0) @map("retry_count")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  task ScheduleTask @relation(fields: [taskUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([taskUuid])
+  @@index([executionTime])
+  @@index([status])
+  @@map("schedule_executions")
+}
+
+/// ScheduleStatistics 聚合根
+/// 调度系统统计信息
+model ScheduleStatistics {
+  id          Int    @id @default(autoincrement())
+  accountUuid String @unique @map("account_uuid")
+
+  // 任务统计
+  totalTasks     Int @map("total_tasks")
+  activeTasks    Int @map("active_tasks")
+  pausedTasks    Int @map("paused_tasks")
+  completedTasks Int @map("completed_tasks")
+  cancelledTasks Int @map("cancelled_tasks")
+  failedTasks    Int @map("failed_tasks")
+
+  // 执行统计
+  totalExecutions      Int @map("total_executions")
+  successfulExecutions Int @map("successful_executions")
+  failedExecutions     Int @map("failed_executions")
+  skippedExecutions    Int @map("skipped_executions")
+  timeoutExecutions    Int @map("timeout_executions")
+
+  // 性能统计
+  avgExecutionDuration Float @map("avg_execution_duration")
+  minExecutionDuration Float @map("min_execution_duration")
+  maxExecutionDuration Float @map("max_execution_duration")
+
+  // 模块统计（JSON）
+  moduleStatistics String @default("{}") @map("module_statistics") @db.Text
+
+  // 时间戳
+  lastUpdatedAt DateTime @map("last_updated_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@map("schedule_statistics")
 }

@@ -25,6 +25,7 @@ import { ScheduleExecution } from '../entities/ScheduleExecution';
 // 使用 Contracts 中的 DTO 类型
 type IScheduleTaskServer = ScheduleContracts.ScheduleTaskServer;
 type ScheduleTaskServerDTO = ScheduleContracts.ScheduleTaskServerDTO;
+type ScheduleTaskClientDTO = ScheduleContracts.ScheduleTaskClientDTO;
 type ScheduleTaskPersistenceDTO = ScheduleContracts.ScheduleTaskPersistenceDTO;
 
 interface ScheduleTaskDTO {
@@ -587,9 +588,17 @@ export class ScheduleTask extends AggregateRoot {
   }
 
   /**
-   * 转换为持久化 DTO
+   * 转换为 Client DTO (用于客户端)
    */
-  public toPersistenceDTO(): any {
+  public toClientDTO(includeChildren: boolean = false): ScheduleTaskClientDTO {
+    // ClientDTO 和 DTO 结构相同
+    return this.toDTO(includeChildren) as unknown as ScheduleTaskClientDTO;
+  }
+
+  /**
+   * 转换为持久化 DTO（全部使用 camelCase）
+   */
+  public toPersistenceDTO(): ScheduleTaskPersistenceDTO {
     return {
       uuid: this._uuid,
       accountUuid: this._accountUuid,
@@ -605,23 +614,24 @@ export class ScheduleTask extends AggregateRoot {
       startDate: this._schedule.startDate ?? null,
       endDate: this._schedule.endDate ?? null,
       maxExecutions: this._schedule.maxExecutions ?? null,
-      // ExecutionInfo (flattened)
+      // ExecutionInfo (flattened，使用 camelCase)
       nextRunAt: this._execution.nextRunAt ?? null,
       lastRunAt: this._execution.lastRunAt ?? null,
       executionCount: this._execution.executionCount,
       lastExecutionStatus: this._execution.lastExecutionStatus ?? null,
-      last_execution_duration: this._execution.lastExecutionDuration ?? null,
-      consecutive_failures: this._execution.consecutiveFailures,
-      // RetryPolicy (flattened)
+      lastExecutionDuration: this._execution.lastExecutionDuration ?? null,
+      consecutiveFailures: this._execution.consecutiveFailures,
+      // RetryPolicy (flattened，使用 camelCase)
       maxRetries: this._retryPolicy.maxRetries,
-      retry_delay: this._retryPolicy.retryDelay,
-      backoff_multiplier: this._retryPolicy.backoffMultiplier,
-      max_retry_delay: this._retryPolicy.maxRetryDelay,
+      initialDelayMs: this._retryPolicy.retryDelay,
+      maxDelayMs: this._retryPolicy.maxRetryDelay,
+      backoffMultiplier: this._retryPolicy.backoffMultiplier,
+      retryableStatuses: '[]', // TODO: RetryPolicy 需要添加 retryableStatuses 字段
       // TaskMetadata (flattened)
       payload: this._metadata.payload ?? null,
       tags: JSON.stringify(this._metadata.tags),
       priority: this._metadata.priority,
-      timeout: this._metadata.timeout,
+      timeout: this._metadata.timeout ?? 0,
       // Timestamps
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
