@@ -47,15 +47,15 @@ export class PrismaAppConfigRepository implements IAppConfigRepository {
         config: persistence.config,
         description: persistence.description,
         isCurrent: persistence.is_current,
-        createdAt: this.toDate(persistence.created_at) ?? new Date(),
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+        updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
       update: {
         version: persistence.version,
         config: persistence.config,
         description: persistence.description,
         isCurrent: persistence.is_current,
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
     });
   }

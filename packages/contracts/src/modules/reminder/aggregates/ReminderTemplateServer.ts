@@ -65,17 +65,17 @@ export interface ReminderTemplatePersistenceDTO {
   type: ReminderType;
   trigger: string; // JSON string
   recurrence?: string | null; // JSON string
-  active_time: string; // JSON string
-  active_hours?: string | null; // JSON string
-  notification_config: string; // JSON string
-  self_enabled: boolean;
+  activeTime: string; // JSON string
+  activeHours?: string | null; // JSON string
+  notificationConfig: string; // JSON string
+  selfEnabled: boolean;
   status: ReminderStatus;
   groupUuid?: string | null;
-  importance_level: ImportanceLevel;
+  importanceLevel: ImportanceLevel;
   tags: string; // JSON string
   color?: string | null;
   icon?: string | null;
-  next_trigger_at?: number | null;
+  nextTriggerAt?: number | null;
   stats: string; // JSON string
   createdAt: number;
   updatedAt: number;
@@ -281,7 +281,6 @@ export interface ReminderTemplateServer {
    * @param includeChildren 是否包含子实体（默认 false）
    */
   toServerDTO(includeChildren?: boolean): ReminderTemplateServerDTO;
-
 
   /**
    * 转换为 Client DTO

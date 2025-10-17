@@ -29,7 +29,7 @@ export class PrismaReminderStatisticsRepository implements IReminderStatisticsRe
     const persistence = statistics.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      accountUuid: persistence.account_uuid,
+      accountUuid: persistence.accountUuid,
       templateStats: persistence.template_stats,
       groupStats: persistence.group_stats,
       triggerStats: persistence.trigger_stats,
@@ -37,7 +37,7 @@ export class PrismaReminderStatisticsRepository implements IReminderStatisticsRe
     };
 
     await this.prisma.reminderStatistics.upsert({
-      where: { accountUuid: persistence.account_uuid },
+      where: { accountUuid: persistence.accountUuid },
       create: data,
       update: {
         templateStats: data.templateStats,

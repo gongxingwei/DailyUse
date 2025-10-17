@@ -30,7 +30,7 @@ export class PrismaEditorWorkspaceRepository implements IEditorWorkspaceReposito
       where: { uuid: wp.uuid },
       create: {
         uuid: wp.uuid,
-        accountUuid: wp.account_uuid,
+        accountUuid: wp.accountUuid,
         name: wp.name,
         description: wp.description,
         projectPath: wp.project_path,
@@ -38,17 +38,17 @@ export class PrismaEditorWorkspaceRepository implements IEditorWorkspaceReposito
         layout: wp.layout as any,
         settings: wp.settings as any,
         isActive: wp.is_active,
-        createdAt: toDate(wp.created_at) as Date,
-        updatedAt: toDate(wp.updated_at) as Date,
-        accessedAt: toDate(wp.last_accessed_at) as Date,
+        createdAt: toDate(wp.createdAt) as Date,
+        updatedAt: toDate(wp.updatedAt) as Date,
+        accessedAt: toDate(wp.lastAccessedAt) as Date,
       },
       update: {
         name: wp.name,
         layout: wp.layout as any,
         settings: wp.settings as any,
         isActive: wp.is_active,
-        updatedAt: toDate(wp.updated_at) as Date,
-        accessedAt: toDate(wp.last_accessed_at) as Date,
+        updatedAt: toDate(wp.updatedAt) as Date,
+        accessedAt: toDate(wp.lastAccessedAt) as Date,
       },
     });
   }

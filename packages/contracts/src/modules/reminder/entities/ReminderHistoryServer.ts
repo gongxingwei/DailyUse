@@ -28,11 +28,11 @@ export interface ReminderHistoryServerDTO {
 export interface ReminderHistoryPersistenceDTO {
   uuid: string;
   templateUuid: string;
-  triggered_at: number;
+  triggeredAt: number;
   result: TriggerResult;
   error?: string | null;
-  notification_sent: boolean;
-  notification_channels?: string | null; // JSON string
+  notificationSent: boolean;
+  notificationChannels?: string | null; // JSON string
   createdAt: number;
 }
 

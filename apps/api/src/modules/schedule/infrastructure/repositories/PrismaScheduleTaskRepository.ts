@@ -127,7 +127,7 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
 
     return {
       uuid: dto.uuid,
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       name: dto.name,
       description: dto.description,
       sourceModule: dto.source_module,
@@ -159,8 +159,8 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
       priority: metadata.priority || 'normal',
       timeout: metadata.timeout || 30000,
       // 时间戳
-      createdAt: new Date(dto.created_at),
-      updatedAt: new Date(dto.updated_at),
+      createdAt: new Date(dto.createdAt),
+      updatedAt: new Date(dto.updatedAt),
     };
   }
 
@@ -184,20 +184,20 @@ export class PrismaScheduleTaskRepository implements IScheduleTaskRepository {
           where: { uuid: execDto.uuid },
           create: {
             uuid: execDto.uuid,
-            taskUuid: execDto.task_uuid,
-            executionTime: new Date(execDto.execution_time),
+            taskUuid: execDto.taskUuid,
+            executionTime: new Date(execDto.executionTime),
             status: execDto.status,
             duration: execDto.duration,
             result: execDto.result || null,
             error: execDto.error,
-            retryCount: execDto.retry_count || 0,
+            retryCount: execDto.retryCount || 0,
           },
           update: {
             status: execDto.status,
             duration: execDto.duration,
             result: execDto.result || null,
             error: execDto.error,
-            retryCount: execDto.retry_count || 0,
+            retryCount: execDto.retryCount || 0,
           },
         });
       }

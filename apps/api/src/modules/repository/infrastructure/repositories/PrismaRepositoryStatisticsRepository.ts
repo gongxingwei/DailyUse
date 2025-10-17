@@ -20,9 +20,9 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
     const persistence = statistics.toPersistenceDTO();
 
     await this.prisma.repositoryStatistics.upsert({
-      where: { accountUuid: persistence.account_uuid },
+      where: { accountUuid: persistence.accountUuid },
       create: {
-        accountUuid: persistence.account_uuid,
+        accountUuid: persistence.accountUuid,
         totalRepositories: persistence.total_repositories,
         activeRepositories: persistence.active_repositories,
         archivedRepositories: persistence.archived_repositories,
@@ -34,8 +34,8 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
         totalReferences: persistence.total_references,
         totalLinkedContents: persistence.total_linked_contents,
         totalSizeBytes: persistence.total_size_bytes,
-        lastUpdatedAt: persistence.last_updated_at,
-        createdAt: persistence.created_at,
+        lastUpdatedAt: persistence.lastUpdatedAt,
+        createdAt: persistence.createdAt,
       },
       update: {
         totalRepositories: persistence.total_repositories,
@@ -49,7 +49,7 @@ export class PrismaRepositoryStatisticsRepository implements IRepositoryStatisti
         totalReferences: persistence.total_references,
         totalLinkedContents: persistence.total_linked_contents,
         totalSizeBytes: persistence.total_size_bytes,
-        lastUpdatedAt: persistence.last_updated_at,
+        lastUpdatedAt: persistence.lastUpdatedAt,
         // createdAt 不更新
       },
     });

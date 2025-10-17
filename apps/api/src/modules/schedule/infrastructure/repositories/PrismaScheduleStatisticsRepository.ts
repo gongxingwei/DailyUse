@@ -53,7 +53,7 @@ export class PrismaScheduleStatisticsRepository implements IScheduleStatisticsRe
     const dto = stats.toPersistenceDTO();
 
     return {
-      accountUuid: dto.account_uuid,
+      accountUuid: dto.accountUuid,
       // 任务统计
       totalTasks: dto.total_tasks,
       activeTasks: dto.active_tasks,
@@ -72,8 +72,8 @@ export class PrismaScheduleStatisticsRepository implements IScheduleStatisticsRe
       minExecutionDuration: dto.min_execution_duration,
       maxExecutionDuration: dto.max_execution_duration,
       // 时间戳
-      lastUpdatedAt: new Date(dto.last_updated_at),
-      createdAt: new Date(dto.created_at),
+      lastUpdatedAt: new Date(dto.lastUpdatedAt),
+      createdAt: new Date(dto.createdAt),
       // 模块统计（JSON string）
       moduleStats: dto.module_statistics,
     };

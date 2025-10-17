@@ -25,7 +25,7 @@ export class PrismaSettingRepository implements ISettingRepository {
   private mapToEntity(data: any): Setting {
     return Setting.fromPersistenceDTO({
       uuid: data.uuid,
-      accountUuid: data.account_uuid,
+      accountUuid: data.accountUuid,
       category: data.category,
       key: data.key,
       value: data.value,
@@ -52,16 +52,16 @@ export class PrismaSettingRepository implements ISettingRepository {
     const persistence = setting.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      accountUuid: persistence.account_uuid,
+      accountUuid: persistence.accountUuid,
       category: persistence.category,
       key: persistence.key,
       value: persistence.value,
       metadata: persistence.metadata,
       is_public: persistence.is_public,
       is_synced: persistence.is_synced,
-      createdAt: BigInt(persistence.created_at),
-      updatedAt: BigInt(persistence.updated_at),
-      deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
+      createdAt: BigInt(persistence.createdAt),
+      updatedAt: BigInt(persistence.updatedAt),
+      deletedAt: persistence.deletedAt ? BigInt(persistence.deletedAt) : null,
     };
 
     await this.prisma.setting.upsert({
@@ -164,16 +164,16 @@ export class PrismaSettingRepository implements ISettingRepository {
         const persistence = setting.toPersistenceDTO();
         const data = {
           uuid: persistence.uuid,
-          accountUuid: persistence.account_uuid,
+          accountUuid: persistence.accountUuid,
           category: persistence.category,
           key: persistence.key,
           value: persistence.value,
           metadata: persistence.metadata,
           is_public: persistence.is_public,
           is_synced: persistence.is_synced,
-          createdAt: BigInt(persistence.created_at),
-          updatedAt: BigInt(persistence.updated_at),
-          deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
+          createdAt: BigInt(persistence.createdAt),
+          updatedAt: BigInt(persistence.updatedAt),
+          deletedAt: persistence.deletedAt ? BigInt(persistence.deletedAt) : null,
         };
         await tx.setting.upsert({
           where: { uuid: persistence.uuid },

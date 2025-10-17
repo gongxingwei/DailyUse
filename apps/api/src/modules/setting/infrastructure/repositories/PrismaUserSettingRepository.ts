@@ -46,15 +46,15 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        accountUuid: persistence.account_uuid,
+        accountUuid: persistence.accountUuid,
         preferences: persistence.preferences,
         theme: persistence.theme,
         language: persistence.language,
         timezone: persistence.timezone,
         notifications: persistence.notifications,
         privacy: persistence.privacy,
-        createdAt: this.toDate(persistence.created_at) ?? new Date(),
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+        updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
       update: {
         preferences: persistence.preferences,
@@ -63,7 +63,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
         timezone: persistence.timezone,
         notifications: persistence.notifications,
         privacy: persistence.privacy,
-        updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+        updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
       },
     });
   }
@@ -113,15 +113,15 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
           where: { uuid: persistence.uuid },
           create: {
             uuid: persistence.uuid,
-            accountUuid: persistence.account_uuid,
+            accountUuid: persistence.accountUuid,
             preferences: persistence.preferences,
             theme: persistence.theme,
             language: persistence.language,
             timezone: persistence.timezone,
             notifications: persistence.notifications,
             privacy: persistence.privacy,
-            createdAt: this.toDate(persistence.created_at) ?? new Date(),
-            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+            createdAt: this.toDate(persistence.createdAt) ?? new Date(),
+            updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
           },
           update: {
             preferences: persistence.preferences,
@@ -130,7 +130,7 @@ export class PrismaUserSettingRepository implements IUserSettingRepository {
             timezone: persistence.timezone,
             notifications: persistence.notifications,
             privacy: persistence.privacy,
-            updatedAt: this.toDate(persistence.updated_at) ?? new Date(),
+            updatedAt: this.toDate(persistence.updatedAt) ?? new Date(),
           },
         });
       }

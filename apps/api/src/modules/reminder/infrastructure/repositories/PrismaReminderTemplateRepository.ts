@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import type { IReminderTemplateRepository } from '@dailyuse/domain-server';
 import { ReminderTemplate, ReminderHistory } from '@dailyuse/domain-server';
+import { ReminderContracts } from '@dailyuse/contracts';
 
 /**
  * ReminderTemplate 聚合根 Prisma 仓储实现
@@ -17,23 +18,23 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
   private mapToEntity(data: any, includeHistory: boolean = false): ReminderTemplate {
     const template = ReminderTemplate.fromPersistenceDTO({
       uuid: data.uuid,
-      accountUuid: data.account_uuid,
+      accountUuid: data.accountUuid,
       title: data.title,
       description: data.description,
       type: data.type,
       trigger: data.trigger,
       recurrence: data.recurrence,
-      active_time: data.active_time,
-      active_hours: data.active_hours,
-      notification_config: data.notification_config,
-      self_enabled: data.self_enabled,
+      activeTime: data.activeTime, // database field: active_time
+      activeHours: data.activeHours, // database field: active_hours
+      notificationConfig: data.notificationConfig, // database field: notification_config
+      selfEnabled: data.selfEnabled, // database field: self_enabled
       status: data.status,
-      groupUuid: data.group_uuid,
-      importance_level: data.importance_level,
+      groupUuid: data.groupUuid,
+      importanceLevel: data.importanceLevel, // database field: importance_level
       tags: data.tags,
       color: data.color,
       icon: data.icon,
-      next_trigger_at: data.nextTriggerAt ? Number(data.nextTriggerAt) : null,
+      nextTriggerAt: data.nextTriggerAt ? Number(data.nextTriggerAt) : null, // database field: next_trigger_at
       stats: data.stats,
       createdAt: Number(data.createdAt),
       updatedAt: Number(data.updatedAt),
@@ -45,12 +46,12 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         template.addHistory(
           ReminderHistory.fromPersistenceDTO({
             uuid: hist.uuid,
-            templateUuid: hist.template_uuid,
-            trigger_time: Number(hist.triggerTime),
+            templateUuid: hist.templateUuid,
+            triggeredAt: Number(hist.triggeredAt), // database field mapped from triggered_at
             result: hist.result,
             error: hist.error,
-            notification_sent: hist.notificationSent,
-            notification_channels: hist.notificationChannels,
+            notificationSent: hist.notificationSent,
+            notificationChannels: hist.notificationChannels,
             createdAt: Number(hist.createdAt),
           }),
         );
@@ -63,27 +64,27 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
     const persistence = template.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
-      accountUuid: persistence.account_uuid,
+      accountUuid: persistence.accountUuid,
       title: persistence.title,
       description: persistence.description,
       type: persistence.type,
       trigger: persistence.trigger,
       recurrence: persistence.recurrence,
-      active_time: persistence.active_time,
-      active_hours: persistence.active_hours,
-      notification_config: persistence.notification_config,
-      self_enabled: persistence.self_enabled,
+      activeTime: persistence.activeTime, // database field: active_time
+      activeHours: persistence.activeHours, // database field: active_hours
+      notificationConfig: persistence.notificationConfig, // database field: notification_config
+      selfEnabled: persistence.selfEnabled, // database field: self_enabled
       status: persistence.status,
-      groupUuid: persistence.group_uuid,
-      importance_level: persistence.importance_level,
+      groupUuid: persistence.groupUuid,
+      importanceLevel: persistence.importanceLevel, // database field: importance_level
       tags: persistence.tags,
       color: persistence.color,
       icon: persistence.icon,
-      nextTriggerAt: persistence.next_trigger_at ? BigInt(persistence.next_trigger_at) : null,
+      nextTriggerAt: persistence.nextTriggerAt ? new Date(persistence.nextTriggerAt) : null, // database field: next_trigger_at
       stats: persistence.stats,
-      createdAt: BigInt(persistence.created_at),
-      updatedAt: BigInt(persistence.updated_at),
-      deletedAt: persistence.deleted_at ? BigInt(persistence.deleted_at) : null,
+      createdAt: new Date(persistence.createdAt),
+      updatedAt: new Date(persistence.updatedAt),
+      deletedAt: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
     const historyData =
@@ -91,13 +92,13 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         const histPersistence = h.toPersistenceDTO();
         return {
           uuid: histPersistence.uuid,
-          templateUuid: histPersistence.template_uuid,
-          triggerTime: BigInt(histPersistence.trigger_time),
+          templateUuid: histPersistence.templateUuid,
+          triggeredAt: new Date(histPersistence.triggeredAt), // database field: triggered_at
           result: histPersistence.result,
           error: histPersistence.error,
-          notificationSent: histPersistence.notification_sent,
-          notificationChannels: histPersistence.notification_channels,
-          createdAt: BigInt(histPersistence.created_at),
+          notificationSent: histPersistence.notificationSent,
+          notificationChannels: histPersistence.notificationChannels,
+          createdAt: new Date(histPersistence.createdAt),
         };
       }) ?? [];
 
@@ -181,7 +182,7 @@ export class PrismaReminderTemplateRepository implements IReminderTemplateReposi
         accountUuid: accountUuid,
         status: 'ACTIVE',
         deletedAt: null,
-        nextTriggerAt: { lte: BigInt(beforeTime) },
+        nextTriggerAt: { lte: new Date(beforeTime) }, // database field: next_trigger_at
       },
     });
     return data.map((d) => this.mapToEntity(d));

@@ -312,15 +312,13 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
    */
   public static fromPersistenceDTO(dto: ReminderTemplatePersistenceDTO): ReminderTemplate {
     const trigger = TriggerConfig.fromServerDTO(JSON.parse(dto.trigger));
-    const activeTime = ActiveTimeConfig.fromServerDTO(JSON.parse(dto.active_time));
-    const notificationConfig = NotificationConfig.fromServerDTO(
-      JSON.parse(dto.notification_config),
-    );
+    const activeTime = ActiveTimeConfig.fromServerDTO(JSON.parse(dto.activeTime));
+    const notificationConfig = NotificationConfig.fromServerDTO(JSON.parse(dto.notificationConfig));
     const recurrence = dto.recurrence
       ? RecurrenceConfig.fromServerDTO(JSON.parse(dto.recurrence))
       : null;
-    const activeHours = dto.active_hours
-      ? ActiveHoursConfig.fromServerDTO(JSON.parse(dto.active_hours))
+    const activeHours = dto.activeHours
+      ? ActiveHoursConfig.fromServerDTO(JSON.parse(dto.activeHours))
       : null;
     const stats = ReminderStats.fromServerDTO(JSON.parse(dto.stats));
     const tags = JSON.parse(dto.tags);
@@ -336,14 +334,14 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       activeTime,
       activeHours,
       notificationConfig,
-      selfEnabled: dto.self_enabled,
+      selfEnabled: dto.selfEnabled,
       status: dto.status,
       groupUuid: dto.groupUuid,
-      importanceLevel: dto.importance_level,
+      importanceLevel: dto.importanceLevel,
       tags,
       color: dto.color,
       icon: dto.icon,
-      nextTriggerAt: dto.next_trigger_at,
+      nextTriggerAt: dto.nextTriggerAt,
       stats,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
@@ -755,17 +753,17 @@ export class ReminderTemplate extends AggregateRoot implements IReminderTemplate
       type: this.type,
       trigger: JSON.stringify(this._trigger.toServerDTO()),
       recurrence: this._recurrence ? JSON.stringify(this._recurrence.toServerDTO()) : null,
-      active_time: JSON.stringify(this._activeTime.toServerDTO()),
-      active_hours: this._activeHours ? JSON.stringify(this._activeHours.toServerDTO()) : null,
-      notification_config: JSON.stringify(this._notificationConfig.toServerDTO()),
-      self_enabled: this.selfEnabled,
+      activeTime: JSON.stringify(this._activeTime.toServerDTO()),
+      activeHours: this._activeHours ? JSON.stringify(this._activeHours.toServerDTO()) : null,
+      notificationConfig: JSON.stringify(this._notificationConfig.toServerDTO()),
+      selfEnabled: this.selfEnabled,
       status: this.status,
       groupUuid: this.groupUuid,
-      importance_level: this.importanceLevel,
+      importanceLevel: this.importanceLevel,
       tags: JSON.stringify(this.tags),
       color: this.color,
       icon: this.icon,
-      next_trigger_at: this.nextTriggerAt,
+      nextTriggerAt: this.nextTriggerAt,
       stats: JSON.stringify(this._stats.toServerDTO()),
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,

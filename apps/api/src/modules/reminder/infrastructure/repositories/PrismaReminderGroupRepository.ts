@@ -42,16 +42,16 @@ export class PrismaReminderGroupRepository implements IReminderGroupRepository {
       color: persistence.color,
       icon: persistence.icon,
       stats: persistence.stats, // stats is already a JSON string from toPersistenceDTO
-      updatedAt: new Date(persistence.updated_at),
-      deletedAt: persistence.deleted_at ? new Date(persistence.deleted_at) : null,
+      updatedAt: new Date(persistence.updatedAt),
+      deletedAt: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
     await this.prisma.reminderGroup.upsert({
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        account: { connect: { uuid: persistence.account_uuid } },
-        createdAt: new Date(persistence.created_at),
+        account: { connect: { uuid: persistence.accountUuid } },
+        createdAt: new Date(persistence.createdAt),
         ...data,
       },
       update: data,

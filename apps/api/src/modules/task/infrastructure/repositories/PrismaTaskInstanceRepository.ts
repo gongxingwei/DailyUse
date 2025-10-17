@@ -36,18 +36,18 @@ export class PrismaTaskInstanceRepository implements ITaskInstanceRepository {
 
     const data = {
       uuid: persistence.uuid,
-      templateUuid: persistence.template_uuid,
-      accountUuid: persistence.account_uuid,
-      instanceDate: BigInt(persistence.instance_date),
-      timeConfig: persistence.time_config,
+      templateUuid: persistence.templateUuid,
+      accountUuid: persistence.accountUuid,
+      instanceDate: BigInt(persistence.instanceDate),
+      timeConfig: persistence.timeConfig,
       status: persistence.status,
-      completionRecord: persistence.completion_record,
-      skipRecord: persistence.skip_record,
-      actualStartTime: persistence.actual_start_time ? BigInt(persistence.actual_start_time) : null,
-      actualEndTime: persistence.actual_end_time ? BigInt(persistence.actual_end_time) : null,
+      completionRecord: persistence.completionRecord,
+      skipRecord: persistence.skipRecord,
+      actualStartTime: persistence.actualStartTime ? BigInt(persistence.actualStartTime) : null,
+      actualEndTime: persistence.actualEndTime ? BigInt(persistence.actualEndTime) : null,
       note: persistence.note,
-      createdAt: BigInt(persistence.created_at),
-      updatedAt: BigInt(persistence.updated_at),
+      createdAt: BigInt(persistence.createdAt),
+      updatedAt: BigInt(persistence.updatedAt),
     };
 
     await this.prisma.taskInstance.upsert({

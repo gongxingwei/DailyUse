@@ -81,11 +81,11 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       data: jsonData,
       metadata,
       history: history,
-      createdAt: this.toDate(created_at) ?? new Date(),
-      updatedAt: this.toDate(updated_at) ?? new Date(),
-      expiresAt: this.toDate(expires_at),
-      lastUsedAt: this.toDate(last_used_at),
-      revokedAt: this.toDate(revoked_at),
+      createdAt: this.toDate(createdAt) ?? new Date(),
+      updatedAt: this.toDate(updatedAt) ?? new Date(),
+      expiresAt: this.toDate(expiresAt),
+      lastUsedAt: this.toDate(lastUsedAt),
+      revokedAt: this.toDate(revokedAt),
     };
 
     await this.prisma.authCredential.upsert({

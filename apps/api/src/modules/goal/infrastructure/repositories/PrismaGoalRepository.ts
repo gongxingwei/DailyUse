@@ -54,7 +54,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   private mapToEntity(data: PrismaGoal): Goal {
     return Goal.fromPersistenceDTO({
       uuid: data.uuid,
-      accountUuid: data.account_uuid,
+      accountUuid: data.account_uuid, // database field
       title: data.title,
       description: data.description,
       status: data.status as GoalStatus,
@@ -62,17 +62,17 @@ export class PrismaGoalRepository implements IGoalRepository {
       urgency: this.reverseUrgencyMap[data.urgency],
       category: data.category,
       tags: data.tags ?? '[]',
-      startDate: data.start_date ? data.start_date.getTime() : null,
-      targetDate: data.target_date ? data.target_date.getTime() : null,
-      completedAt: data.completed_at ? data.completed_at.getTime() : null,
-      archivedAt: data.archived_at ? data.archived_at.getTime() : null,
-      folderUuid: data.folder_uuid,
-      parentGoalUuid: data.parent_goal_uuid,
-      sortOrder: data.sort_order,
-      reminderConfig: data.reminder_config,
-      createdAt: data.created_at.getTime(),
-      updatedAt: data.updated_at.getTime(),
-      deletedAt: data.deleted_at ? data.deleted_at.getTime() : null,
+      startDate: data.start_date ? data.start_date.getTime() : null, // database field
+      targetDate: data.target_date ? data.target_date.getTime() : null, // database field
+      completedAt: data.completed_at ? data.completed_at.getTime() : null, // database field
+      archivedAt: data.archived_at ? data.archived_at.getTime() : null, // database field
+      folderUuid: data.folder_uuid, // database field
+      parentGoalUuid: data.parent_goal_uuid, // database field
+      sortOrder: data.sort_order, // database field
+      reminderConfig: data.reminder_config, // database field
+      createdAt: data.created_at.getTime(), // database field
+      updatedAt: data.updated_at.getTime(), // database field
+      deletedAt: data.deleted_at ? data.deleted_at.getTime() : null, // database field
     });
   }
 
@@ -106,8 +106,8 @@ export class PrismaGoalRepository implements IGoalRepository {
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        accountUuid: persistence.accountUuid,
-        createdAt: new Date(persistence.createdAt),
+        account_uuid: persistence.accountUuid, // PersistenceDTO → database
+        created_at: new Date(persistence.createdAt), // PersistenceDTO → database
         ...data,
       },
       update: data,
@@ -129,12 +129,12 @@ export class PrismaGoalRepository implements IGoalRepository {
       folderUuid?: string;
     },
   ): Promise<Goal[]> {
-    const where: any = { accountUuid: accountUuid, deletedAt: null };
+    const where: any = { account_uuid: accountUuid, deleted_at: null }; // database fields
     if (options?.status) {
       where.status = options.status;
     }
     if (options?.folderUuid) {
-      where.folder_uuid = options.folderUuid;
+      where.folder_uuid = options.folderUuid; // database field
     }
     const data = await this.prisma.goal.findMany({ where });
     return data.map((d) => this.mapToEntity(d));
@@ -142,7 +142,7 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   async findByFolderUuid(folderUuid: string): Promise<Goal[]> {
     const data = await this.prisma.goal.findMany({
-      where: { folderUuid: folderUuid, deletedAt: null },
+      where: { folder_uuid: folderUuid, deleted_at: null }, // database fields
     });
     return data.map((d) => this.mapToEntity(d));
   }
@@ -154,7 +154,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async softDelete(uuid: string): Promise<void> {
     await this.prisma.goal.update({
       where: { uuid },
-      data: { deletedAt: new Date() },
+      data: { deleted_at: new Date() }, // database field
     });
   }
 
@@ -173,7 +173,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async batchMoveToFolder(uuids: string[], folderUuid: string | null): Promise<void> {
     await this.prisma.goal.updateMany({
       where: { uuid: { in: uuids } },
-      data: { folderUuid: folderUuid },
+      data: { folder_uuid: folderUuid }, // database field
     });
   }
 }
