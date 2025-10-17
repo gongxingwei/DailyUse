@@ -10,7 +10,10 @@ export { Subscription } from './entities/Subscription';
 export { AccountHistory } from './entities/AccountHistory';
 
 // Repositories
-export { type IAccountRepository } from './repositories/IAccountRepository';
+export {
+  type IAccountRepository,
+  type PrismaTransactionClient as AccountPrismaTransactionClient,
+} from './repositories/IAccountRepository';
 
 // Services
 export { AccountDomainService } from './services/AccountDomainService';

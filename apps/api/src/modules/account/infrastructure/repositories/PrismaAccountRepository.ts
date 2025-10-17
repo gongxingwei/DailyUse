@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
-import type { IAccountRepository } from '@dailyuse/domain-server';
+import type {
+  IAccountRepository,
+  AccountPrismaTransactionClient as PrismaTransactionClient,
+} from '@dailyuse/domain-server';
 import { Account } from '@dailyuse/domain-server';
 import type { AccountContracts } from '@dailyuse/contracts';
 
@@ -56,7 +59,8 @@ export class PrismaAccountRepository implements IAccountRepository {
 
   // ===== IAccountRepository 接口实现 =====
 
-  async save(account: Account): Promise<void> {
+  async save(account: Account, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
     const persistence = account.toPersistenceDTO();
     const data = {
       uuid: persistence.uuid,
@@ -78,7 +82,7 @@ export class PrismaAccountRepository implements IAccountRepository {
       deletedAt: persistence.deletedAt ? new Date(persistence.deletedAt) : null,
     };
 
-    await this.prisma.account.upsert({
+    await client.account.upsert({
       where: { uuid: persistence.uuid },
       create: data,
       update: {
@@ -89,8 +93,9 @@ export class PrismaAccountRepository implements IAccountRepository {
     });
   }
 
-  async findById(uuid: string): Promise<Account | null> {
-    const data = await this.prisma.account.findUnique({
+  async findById(uuid: string, tx?: PrismaTransactionClient): Promise<Account | null> {
+    const client = tx || this.prisma;
+    const data = await client.account.findUnique({
       where: { uuid },
     });
 
@@ -101,8 +106,9 @@ export class PrismaAccountRepository implements IAccountRepository {
     return this.mapAccountToEntity(data);
   }
 
-  async findByUsername(username: string): Promise<Account | null> {
-    const data = await this.prisma.account.findUnique({
+  async findByUsername(username: string, tx?: PrismaTransactionClient): Promise<Account | null> {
+    const client = tx || this.prisma;
+    const data = await client.account.findUnique({
       where: { username },
     });
 
@@ -113,8 +119,9 @@ export class PrismaAccountRepository implements IAccountRepository {
     return this.mapAccountToEntity(data);
   }
 
-  async findByEmail(email: string): Promise<Account | null> {
-    const data = await this.prisma.account.findUnique({
+  async findByEmail(email: string, tx?: PrismaTransactionClient): Promise<Account | null> {
+    const client = tx || this.prisma;
+    const data = await client.account.findUnique({
       where: { email },
     });
 
@@ -125,8 +132,9 @@ export class PrismaAccountRepository implements IAccountRepository {
     return this.mapAccountToEntity(data);
   }
 
-  async findByPhone(phoneNumber: string): Promise<Account | null> {
-    const data = await this.prisma.account.findFirst({
+  async findByPhone(phoneNumber: string, tx?: PrismaTransactionClient): Promise<Account | null> {
+    const client = tx || this.prisma;
+    const data = await client.account.findFirst({
       where: { phoneNumber },
     });
 
@@ -137,47 +145,54 @@ export class PrismaAccountRepository implements IAccountRepository {
     return this.mapAccountToEntity(data);
   }
 
-  async existsByUsername(username: string): Promise<boolean> {
-    const count = await this.prisma.account.count({
+  async existsByUsername(username: string, tx?: PrismaTransactionClient): Promise<boolean> {
+    const client = tx || this.prisma;
+    const count = await client.account.count({
       where: { username },
     });
     return count > 0;
   }
 
-  async existsByEmail(email: string): Promise<boolean> {
-    const count = await this.prisma.account.count({
+  async existsByEmail(email: string, tx?: PrismaTransactionClient): Promise<boolean> {
+    const client = tx || this.prisma;
+    const count = await client.account.count({
       where: { email },
     });
     return count > 0;
   }
 
-  async delete(uuid: string): Promise<void> {
-    await this.prisma.account.delete({
+  async delete(uuid: string, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
+    await client.account.delete({
       where: { uuid },
     });
   }
 
-  async findAll(options?: {
-    page?: number;
-    pageSize?: number;
-    status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
-  }): Promise<{ accounts: Account[]; total: number }> {
+  async findAll(
+    options?: {
+      page?: number;
+      pageSize?: number;
+      status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
+    },
+    tx?: PrismaTransactionClient,
+  ): Promise<{ accounts: Account[]; total: number }> {
+    const client = tx || this.prisma;
     const where = options?.status ? { status: options.status } : {};
     const skip = options?.page && options?.pageSize ? (options.page - 1) * options.pageSize : 0;
     const take = options?.pageSize ?? 20;
 
     const [accounts, total] = await Promise.all([
-      this.prisma.account.findMany({
+      client.account.findMany({
         where,
         skip,
         take,
         orderBy: { createdAt: 'desc' },
       }),
-      this.prisma.account.count({ where }),
+      client.account.count({ where }),
     ]);
 
     return {
-      accounts: accounts.map((data) => this.mapAccountToEntity(data)),
+      accounts: accounts.map((data: any) => this.mapAccountToEntity(data)),
       total,
     };
   }

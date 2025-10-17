@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import type { AuthSession as PrismaAuthSession } from '@prisma/client';
-import type { IAuthSessionRepository } from '@dailyuse/domain-server';
+import type {
+  IAuthSessionRepository,
+  AuthSessionPrismaTransactionClient as PrismaTransactionClient,
+} from '@dailyuse/domain-server';
 import { AuthSession } from '@dailyuse/domain-server';
 import type { AuthenticationContracts } from '@dailyuse/contracts';
 
@@ -42,7 +45,8 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
     return new Date(timestamp);
   }
 
-  async save(session: AuthSession): Promise<void> {
+  async save(session: AuthSession, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
     const persistence = session.toPersistenceDTO();
     const {
       uuid,
@@ -88,7 +92,7 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
       revokedAt: this.toDate(revokedAt),
     };
 
-    await this.prisma.authSession.upsert({
+    await client.authSession.upsert({
       where: { uuid },
       create: {
         ...dataForPrisma,
@@ -102,38 +106,56 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
     });
   }
 
-  async findByUuid(uuid: string): Promise<AuthSession | null> {
-    const data = await this.prisma.authSession.findUnique({ where: { uuid } });
+  async findByUuid(uuid: string, tx?: PrismaTransactionClient): Promise<AuthSession | null> {
+    const client = tx || this.prisma;
+    const data = await client.authSession.findUnique({ where: { uuid } });
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<AuthSession[]> {
-    const sessions = await this.prisma.authSession.findMany({
+  async findByAccountUuid(
+    accountUuid: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession[]> {
+    const client = tx || this.prisma;
+    const sessions = await client.authSession.findMany({
       where: { accountUuid },
       orderBy: { createdAt: 'desc' },
     });
-    return sessions.map((s) => this.mapToEntity(s));
+    return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
-  async findByAccessToken(accessToken: string): Promise<AuthSession | null> {
-    const data = await this.prisma.authSession.findUnique({ where: { accessToken } });
+  async findByAccessToken(
+    accessToken: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession | null> {
+    const client = tx || this.prisma;
+    const data = await client.authSession.findUnique({ where: { accessToken } });
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByRefreshToken(refreshToken: string): Promise<AuthSession | null> {
-    const data = await this.prisma.authSession.findUnique({ where: { refreshToken } });
+  async findByRefreshToken(
+    refreshToken: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession | null> {
+    const client = tx || this.prisma;
+    const data = await client.authSession.findUnique({ where: { refreshToken } });
     return data ? this.mapToEntity(data) : null;
   }
 
-  async findByDeviceId(deviceId: string): Promise<AuthSession[]> {
-    const sessions = await this.prisma.authSession.findMany({
+  async findByDeviceId(deviceId: string, tx?: PrismaTransactionClient): Promise<AuthSession[]> {
+    const client = tx || this.prisma;
+    const sessions = await client.authSession.findMany({
       where: { device: { contains: `"deviceId":"${deviceId}"` } },
     });
-    return sessions.map((s) => this.mapToEntity(s));
+    return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
-  async findActiveSessions(accountUuid: string): Promise<AuthSession[]> {
-    const sessions = await this.prisma.authSession.findMany({
+  async findActiveSessions(
+    accountUuid: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession[]> {
+    const client = tx || this.prisma;
+    const sessions = await client.authSession.findMany({
       where: {
         accountUuid,
         status: 'ACTIVE',
@@ -141,42 +163,51 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
       },
       orderBy: { lastAccessedAt: 'desc' },
     });
-    return sessions.map((s) => this.mapToEntity(s));
+    return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
-  async findAll(params?: { skip?: number; take?: number }): Promise<AuthSession[]> {
-    const sessions = await this.prisma.authSession.findMany({
+  async findAll(
+    params?: { skip?: number; take?: number },
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession[]> {
+    const client = tx || this.prisma;
+    const sessions = await client.authSession.findMany({
       skip: params?.skip,
       take: params?.take,
       orderBy: { createdAt: 'desc' },
     });
-    return sessions.map((s) => this.mapToEntity(s));
+    return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
   async findByStatus(
     status: 'ACTIVE' | 'EXPIRED' | 'REVOKED' | 'LOCKED',
     params?: { skip?: number; take?: number },
+    tx?: PrismaTransactionClient,
   ): Promise<AuthSession[]> {
-    const sessions = await this.prisma.authSession.findMany({
+    const client = tx || this.prisma;
+    const sessions = await client.authSession.findMany({
       where: { status },
       skip: params?.skip,
       take: params?.take,
       orderBy: { createdAt: 'desc' },
     });
-    return sessions.map((s) => this.mapToEntity(s));
+    return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
-  async delete(uuid: string): Promise<void> {
-    await this.prisma.authSession.delete({ where: { uuid } });
+  async delete(uuid: string, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
+    await client.authSession.delete({ where: { uuid } });
   }
 
-  async deleteByAccountUuid(accountUuid: string): Promise<number> {
-    const result = await this.prisma.authSession.deleteMany({ where: { accountUuid } });
+  async deleteByAccountUuid(accountUuid: string, tx?: PrismaTransactionClient): Promise<number> {
+    const client = tx || this.prisma;
+    const result = await client.authSession.deleteMany({ where: { accountUuid } });
     return result.count;
   }
 
-  async deleteExpired(): Promise<number> {
-    const result = await this.prisma.authSession.deleteMany({
+  async deleteExpired(tx?: PrismaTransactionClient): Promise<number> {
+    const client = tx || this.prisma;
+    const result = await client.authSession.deleteMany({
       where: {
         OR: [{ status: 'EXPIRED' }, { accessTokenExpiresAt: { lt: new Date() } }],
       },

@@ -10,53 +10,80 @@
 
 import type { Account } from '../aggregates/Account';
 
+/**
+ * Prisma 事务客户端类型
+ * 用于在事务中执行数据库操作
+ */
+export type PrismaTransactionClient = any; // Prisma.TransactionClient
+
 export interface IAccountRepository {
   /**
    * 保存聚合根（创建或更新）
+   * @param account - 账户聚合根
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中保存
    */
-  save(account: Account): Promise<void>;
+  save(account: Account, tx?: PrismaTransactionClient): Promise<void>;
 
   /**
    * 通过 UUID 查找账户
+   * @param uuid - 账户 UUID
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  findById(uuid: string): Promise<Account | null>;
+  findById(uuid: string, tx?: PrismaTransactionClient): Promise<Account | null>;
 
   /**
    * 通过用户名查找账户
+   * @param username - 用户名
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  findByUsername(username: string): Promise<Account | null>;
+  findByUsername(username: string, tx?: PrismaTransactionClient): Promise<Account | null>;
 
   /**
    * 通过邮箱查找账户
+   * @param email - 邮箱地址
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  findByEmail(email: string): Promise<Account | null>;
+  findByEmail(email: string, tx?: PrismaTransactionClient): Promise<Account | null>;
 
   /**
    * 通过手机号查找账户
+   * @param phoneNumber - 手机号码
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  findByPhone(phoneNumber: string): Promise<Account | null>;
+  findByPhone(phoneNumber: string, tx?: PrismaTransactionClient): Promise<Account | null>;
 
   /**
    * 检查用户名是否已存在
+   * @param username - 用户名
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  existsByUsername(username: string): Promise<boolean>;
+  existsByUsername(username: string, tx?: PrismaTransactionClient): Promise<boolean>;
 
   /**
    * 检查邮箱是否已存在
+   * @param email - 邮箱地址
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  existsByEmail(email: string): Promise<boolean>;
+  existsByEmail(email: string, tx?: PrismaTransactionClient): Promise<boolean>;
 
   /**
    * 删除账户
+   * @param uuid - 账户 UUID
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中删除
    */
-  delete(uuid: string): Promise<void>;
+  delete(uuid: string, tx?: PrismaTransactionClient): Promise<void>;
 
   /**
    * 查找所有账户（分页）
+   * @param options - 查询选项（分页、状态过滤）
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
    */
-  findAll(options?: {
-    page?: number;
-    pageSize?: number;
-    status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
-  }): Promise<{ accounts: Account[]; total: number }>;
+  findAll(
+    options?: {
+      page?: number;
+      pageSize?: number;
+      status?: 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'DELETED';
+    },
+    tx?: PrismaTransactionClient,
+  ): Promise<{ accounts: Account[]; total: number }>;
 }

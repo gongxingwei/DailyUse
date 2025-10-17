@@ -1,6 +1,7 @@
 import type { Router as ExpressRouter } from 'express';
 import { Router } from 'express';
 import { AuthenticationController } from './AuthenticationController';
+import { RegistrationController } from '../../../account/interface/http/RegistrationController';
 
 const router: ExpressRouter = Router();
 
@@ -10,6 +11,73 @@ const router: ExpressRouter = Router();
  *   name: Authentication
  *   description: 认证相关接口
  */
+
+/**
+ * @swagger
+ * /api/auth/register:
+ *   post:
+ *     summary: 用户注册
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 description: 用户名 (3-20 字符，字母数字下划线)
+ *               email:
+ *                 type: string
+ *                 description: 邮箱地址
+ *               password:
+ *                 type: string
+ *                 description: 密码 (至少 8 字符，包含大小写字母和数字)
+ *               profile:
+ *                 type: object
+ *                 properties:
+ *                   nickname:
+ *                     type: string
+ *                     description: 昵称
+ *                   avatarUrl:
+ *                     type: string
+ *                     description: 头像 URL
+ *                   bio:
+ *                     type: string
+ *                     description: 个人简介
+ *     responses:
+ *       201:
+ *         description: 注册成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     account:
+ *                       type: object
+ *                       description: 账户信息
+ *                 message:
+ *                   type: string
+ *                   example: Registration successful
+ *       400:
+ *         description: 请求参数错误或验证失败
+ *       409:
+ *         description: 用户名或邮箱已存在
+ *       500:
+ *         description: 服务器错误
+ */
+router.post('/register', RegistrationController.register);
 
 /**
  * @swagger

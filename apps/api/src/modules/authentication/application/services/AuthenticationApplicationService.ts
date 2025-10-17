@@ -1,33 +1,99 @@
-import type { IAuthCredentialRepository, IAuthSessionRepository } from '@dailyuse/domain-server';
+/**
+ * Authentication Application Service
+ * 认证应用服务 - 负责用户登录和认证流程编排
+ *
+ * 职责（遵循 DDD 最佳实践）：
+ * - 用户登录验证
+ * - 密码验证
+ * - 创建会话（Session）
+ * - 记录失败登录
+ * - 锁定/解锁凭证
+ * - 调用 DomainService 进行业务规则验证
+ * - 负责持久化操作
+ * - 发布领域事件
+ */
+
+import type {
+  IAuthCredentialRepository,
+  IAuthSessionRepository,
+  IAccountRepository,
+  AuthCredential,
+  AuthSession,
+  Account,
+} from '@dailyuse/domain-server';
 import { AuthenticationDomainService } from '@dailyuse/domain-server';
 import { AuthenticationContainer } from '../../infrastructure/di/AuthenticationContainer';
-import { createLogger } from '@dailyuse/utils';
-import { AuthenticationContracts } from '@dailyuse/contracts';
-
-// Type aliases at top
-type AuthCredentialClientDTO = AuthenticationContracts.AuthCredentialClientDTO;
-type AuthSessionClientDTO = AuthenticationContracts.AuthSessionClientDTO;
-type DeviceInfo = AuthenticationContracts.DeviceInfoServer;
+import { AccountContainer } from '../../../account/infrastructure/di/AccountContainer';
+import { eventBus, createLogger } from '@dailyuse/utils';
+import { prisma } from '@/config/prisma';
+import bcrypt from 'bcryptjs';
 
 const logger = createLogger('AuthenticationApplicationService');
 
 /**
- * Authentication 应用服务
- * 处理认证相关业务逻辑
+ * 登录请求接口
+ */
+export interface LoginRequest {
+  username: string;
+  password: string;
+  deviceInfo: {
+    deviceId: string;
+    deviceName: string;
+    deviceType: 'WEB' | 'MOBILE' | 'DESKTOP' | 'TABLET' | 'OTHER';
+    platform: string;
+    browser?: string;
+    osVersion?: string;
+  };
+  ipAddress: string;
+  location?: {
+    country?: string;
+    region?: string;
+    city?: string;
+    timezone?: string;
+  };
+}
+
+/**
+ * 登录响应接口
+ */
+export interface LoginResponse {
+  success: boolean;
+  session: {
+    sessionUuid: string;
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  };
+  account: {
+    uuid: string;
+    username: string;
+    email: string;
+    displayName: string;
+  };
+  message: string;
+}
+
+/**
+ * Authentication Application Service
+ * 负责认证流程的核心业务逻辑编排
  */
 export class AuthenticationApplicationService {
   private static instance: AuthenticationApplicationService;
-  private authService: AuthenticationDomainService;
+
   private credentialRepository: IAuthCredentialRepository;
   private sessionRepository: IAuthSessionRepository;
+  private accountRepository: IAccountRepository;
+  private authenticationDomainService: AuthenticationDomainService;
 
   private constructor(
     credentialRepository: IAuthCredentialRepository,
     sessionRepository: IAuthSessionRepository,
+    accountRepository: IAccountRepository,
   ) {
     this.credentialRepository = credentialRepository;
     this.sessionRepository = sessionRepository;
-    this.authService = new AuthenticationDomainService(credentialRepository, sessionRepository);
+    this.accountRepository = accountRepository;
+    this.authenticationDomainService = new AuthenticationDomainService();
   }
 
   /**
@@ -36,14 +102,19 @@ export class AuthenticationApplicationService {
   static async createInstance(
     credentialRepository?: IAuthCredentialRepository,
     sessionRepository?: IAuthSessionRepository,
+    accountRepository?: IAccountRepository,
   ): Promise<AuthenticationApplicationService> {
-    const container = AuthenticationContainer.getInstance();
-    const credRepo = credentialRepository || container.getAuthCredentialRepository();
-    const sessRepo = sessionRepository || container.getAuthSessionRepository();
+    const authContainer = AuthenticationContainer.getInstance();
+    const accountContainer = AccountContainer.getInstance();
+
+    const credRepo = credentialRepository || authContainer.getAuthCredentialRepository();
+    const sessRepo = sessionRepository || authContainer.getAuthSessionRepository();
+    const accRepo = accountRepository || accountContainer.getAccountRepository();
 
     AuthenticationApplicationService.instance = new AuthenticationApplicationService(
       credRepo,
       sessRepo,
+      accRepo,
     );
     return AuthenticationApplicationService.instance;
   }
@@ -60,283 +131,324 @@ export class AuthenticationApplicationService {
   }
 
   /**
-   * 创建密码凭证
+   * 用户登录主流程
+   *
+   * 步骤：
+   * 1. 查询账户（通过用户名）
+   * 2. 查询凭证（通过 accountUuid）
+   * 3. 检查凭证是否锁定（调用 DomainService）
+   * 4. 验证密码（调用 DomainService）
+   * 5. 生成访问令牌和刷新令牌
+   * 6. 创建会话（调用 DomainService）
+   * 7. 持久化会话
+   * 8. 重置失败尝试次数
+   * 9. 发布登录成功事件
+   * 10. 返回登录响应
    */
-  async createPasswordCredential(params: {
-    accountUuid: string;
-    hashedPassword: string;
-  }): Promise<AuthCredentialClientDTO> {
-    const credential = await this.authService.createPasswordCredential(params);
-    return credential.toClientDTO();
-  }
+  async login(request: LoginRequest): Promise<LoginResponse> {
+    logger.info('[AuthenticationApplicationService] Starting login', {
+      username: request.username,
+      deviceType: request.deviceInfo.deviceType,
+    });
 
-  /**
-   * 获取凭证
-   */
-  async getCredential(credentialUuid: string): Promise<AuthCredentialClientDTO | null> {
     try {
-      const credential = await this.authService.getCredential(credentialUuid);
-      return credential ? credential.toClientDTO() : null;
+      // ===== 步骤 1: 查询账户 =====
+      const account = await this.accountRepository.findByUsername(request.username);
+      if (!account) {
+        throw new Error('Invalid username or password');
+      }
+
+      // ===== 步骤 2: 查询凭证 =====
+      const credential = await this.credentialRepository.findByAccountUuid(account.uuid);
+      if (!credential) {
+        throw new Error('Invalid username or password');
+      }
+
+      // ===== 步骤 3: 检查凭证是否锁定 =====
+      const isLocked = this.authenticationDomainService.isCredentialLocked(credential);
+      if (isLocked) {
+        throw new Error('Account is locked due to too many failed login attempts');
+      }
+
+      // ===== 步骤 4: 验证密码 =====
+      const hashedPassword = await bcrypt.hash(request.password, 12);
+      const isPasswordValid = this.authenticationDomainService.verifyPassword(
+        credential,
+        hashedPassword,
+      );
+
+      if (!isPasswordValid) {
+        // 记录失败登录
+        await this.recordFailedLogin(account.uuid);
+        throw new Error('Invalid username or password');
+      }
+
+      // ===== 步骤 5: 生成令牌 =====
+      const { accessToken, refreshToken, expiresAt } = this.generateTokens();
+
+      // ===== 步骤 6: 创建会话 =====
+      const session = await this.createSession({
+        accountUuid: account.uuid,
+        accessToken,
+        refreshToken,
+        deviceInfo: request.deviceInfo,
+        ipAddress: request.ipAddress,
+        location: request.location,
+      });
+
+      // ===== 步骤 7: 重置失败尝试次数 =====
+      await this.resetFailedAttempts(account.uuid);
+
+      // ===== 步骤 8: 发布登录成功事件 =====
+      await this.publishLoginSuccessEvent(account, session);
+
+      logger.info('[AuthenticationApplicationService] Login successful', {
+        accountUuid: account.uuid,
+        username: request.username,
+      });
+
+      return {
+        success: true,
+        session: {
+          sessionUuid: session.uuid,
+          accessToken,
+          refreshToken,
+          expiresAt,
+        },
+        account: {
+          uuid: account.uuid,
+          username: account.username,
+          email: account.email,
+          displayName: account.profile?.displayName || account.username,
+        },
+        message: 'Login successful',
+      };
     } catch (error) {
-      logger.error('Error getting credential', { error });
-      return null;
+      logger.error('[AuthenticationApplicationService] Login failed', {
+        username: request.username,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
-  }
-
-  /**
-   * 根据账户 UUID 获取凭证
-   */
-  async getCredentialByAccountUuid(accountUuid: string): Promise<AuthCredentialClientDTO | null> {
-    try {
-      const credential = await this.authService.getCredentialByAccountUuid(accountUuid);
-      return credential ? credential.toClientDTO() : null;
-    } catch (error) {
-      logger.error('Error getting credential by account', { error });
-      return null;
-    }
-  }
-
-  /**
-   * 验证密码
-   */
-  async verifyPassword(accountUuid: string, hashedPassword: string): Promise<boolean> {
-    return this.authService.verifyPassword(accountUuid, hashedPassword);
-  }
-
-  /**
-   * 修改密码
-   */
-  async changePassword(accountUuid: string, newHashedPassword: string): Promise<void> {
-    await this.authService.changePassword(accountUuid, newHashedPassword);
-  }
-
-  /**
-   * 记录失败登录
-   */
-  async recordFailedLogin(accountUuid: string): Promise<void> {
-    await this.authService.recordFailedLogin(accountUuid);
-  }
-
-  /**
-   * 重置失败尝试次数
-   */
-  async resetFailedAttempts(accountUuid: string): Promise<void> {
-    await this.authService.resetFailedAttempts(accountUuid);
-  }
-
-  /**
-   * 检查凭证是否锁定
-   */
-  async isCredentialLocked(accountUuid: string): Promise<boolean> {
-    return this.authService.isCredentialLocked(accountUuid);
-  }
-
-  /**
-   * 生成记住我令牌
-   */
-  async generateRememberMeToken(params: {
-    accountUuid: string;
-    deviceInfo: any; // DeviceInfo from domain
-    expiresInDays?: number;
-  }): Promise<string> {
-    return this.authService.generateRememberMeToken(params);
-  }
-
-  /**
-   * 验证记住我令牌
-   */
-  async verifyRememberMeToken(params: {
-    accountUuid: string;
-    token: string;
-    deviceFingerprint: string;
-  }): Promise<boolean> {
-    return this.authService.verifyRememberMeToken(params);
-  }
-
-  /**
-   * 刷新记住我令牌
-   */
-  async refreshRememberMeToken(params: {
-    accountUuid: string;
-    oldToken: string;
-    deviceFingerprint: string;
-  }): Promise<string | null> {
-    return this.authService.refreshRememberMeToken(params);
-  }
-
-  /**
-   * 撤销记住我令牌
-   */
-  async revokeRememberMeToken(accountUuid: string, tokenUuid: string): Promise<void> {
-    await this.authService.revokeRememberMeToken(accountUuid, tokenUuid);
-  }
-
-  /**
-   * 撤销所有记住我令牌
-   */
-  async revokeAllRememberMeTokens(accountUuid: string): Promise<void> {
-    await this.authService.revokeAllRememberMeTokens(accountUuid);
-  }
-
-  /**
-   * 生成 API 密钥
-   */
-  async generateApiKey(params: {
-    accountUuid: string;
-    name: string;
-    expiresInDays?: number;
-  }): Promise<string> {
-    return this.authService.generateApiKey(params);
-  }
-
-  /**
-   * 撤销 API 密钥
-   */
-  async revokeApiKey(accountUuid: string, keyUuid: string): Promise<void> {
-    await this.authService.revokeApiKey(accountUuid, keyUuid);
-  }
-
-  /**
-   * 启用双因素认证
-   */
-  async enableTwoFactor(params: {
-    accountUuid: string;
-    method: 'TOTP' | 'SMS' | 'EMAIL' | 'AUTHENTICATOR_APP';
-  }): Promise<string> {
-    return this.authService.enableTwoFactor(params);
-  }
-
-  /**
-   * 禁用双因素认证
-   */
-  async disableTwoFactor(accountUuid: string): Promise<void> {
-    await this.authService.disableTwoFactor(accountUuid);
-  }
-
-  /**
-   * 验证双因素代码
-   */
-  async verifyTwoFactorCode(accountUuid: string, code: string): Promise<boolean> {
-    return this.authService.verifyTwoFactorCode(accountUuid, code);
   }
 
   /**
    * 创建会话
+   *
+   * 步骤：
+   * 1. 调用 DomainService 创建会话聚合根（不持久化）
+   * 2. ApplicationService 持久化会话
+   * 3. 发布会话创建事件
    */
   async createSession(params: {
     accountUuid: string;
     accessToken: string;
     refreshToken: string;
-    device: any; // DeviceInfo from domain
+    deviceInfo: any;
     ipAddress: string;
-    location?: {
-      country?: string;
-      region?: string;
-      city?: string;
-      timezone?: string;
-    };
-  }): Promise<AuthSessionClientDTO> {
-    const session = await this.authService.createSession(params);
-    return session.toClientDTO();
-  }
+    location?: any;
+  }): Promise<AuthSession> {
+    logger.debug('[AuthenticationApplicationService] Creating session', {
+      accountUuid: params.accountUuid,
+    });
 
-  /**
-   * 获取会话
-   */
-  async getSession(sessionUuid: string): Promise<AuthSessionClientDTO | null> {
     try {
-      const session = await this.authService.getSession(sessionUuid);
-      return session ? session.toClientDTO() : null;
+      // ===== 步骤 1: 调用 DomainService 创建会话聚合根 =====
+      const session = this.authenticationDomainService.createSession({
+        accountUuid: params.accountUuid,
+        accessToken: params.accessToken,
+        refreshToken: params.refreshToken,
+        device: params.deviceInfo,
+        ipAddress: params.ipAddress,
+        location: params.location,
+      });
+
+      logger.debug('[AuthenticationApplicationService] Session aggregate created', {
+        sessionUuid: session.uuid,
+      });
+
+      // ===== 步骤 2: ApplicationService 持久化会话 =====
+      await this.sessionRepository.save(session);
+
+      logger.info('[AuthenticationApplicationService] Session persisted successfully', {
+        sessionUuid: session.uuid,
+      });
+
+      // ===== 步骤 3: 发布会话创建事件 =====
+      await this.publishSessionCreatedEvent(session);
+
+      return session;
     } catch (error) {
-      logger.error('Error getting session', { error });
-      return null;
+      logger.error('[AuthenticationApplicationService] Session creation failed', {
+        accountUuid: params.accountUuid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
   }
 
   /**
-   * 根据访问令牌获取会话
+   * 记录失败登录
+   *
+   * 步骤：
+   * 1. 查询凭证
+   * 2. 调用聚合根方法记录失败登录
+   * 3. 持久化
+   * 4. 发布失败登录事件
    */
-  async getSessionByAccessToken(accessToken: string): Promise<AuthSessionClientDTO | null> {
+  async recordFailedLogin(accountUuid: string): Promise<void> {
+    logger.debug('[AuthenticationApplicationService] Recording failed login', {
+      accountUuid,
+    });
+
     try {
-      const session = await this.authService.getSessionByAccessToken(accessToken);
-      return session ? session.toClientDTO() : null;
+      // ===== 步骤 1: 查询凭证 =====
+      const credential = await this.credentialRepository.findByAccountUuid(accountUuid);
+      if (!credential) {
+        throw new Error('Credential not found');
+      }
+
+      // ===== 步骤 2: 调用聚合根方法记录失败登录 =====
+      credential.recordFailedLogin();
+
+      // ===== 步骤 3: 持久化 =====
+      await this.credentialRepository.save(credential);
+
+      logger.info('[AuthenticationApplicationService] Failed login recorded', {
+        accountUuid,
+        failedAttempts: credential.security.failedLoginAttempts,
+      });
+
+      // ===== 步骤 4: 发布失败登录事件 =====
+      await this.publishFailedLoginEvent(accountUuid, credential);
     } catch (error) {
-      logger.error('Error getting session by access token', { error });
-      return null;
+      logger.error('[AuthenticationApplicationService] Failed to record failed login', {
+        accountUuid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
   }
 
   /**
-   * 根据刷新令牌获取会话
+   * 重置失败尝试次数
+   *
+   * 步骤：
+   * 1. 查询凭证
+   * 2. 调用聚合根方法重置失败尝试次数
+   * 3. 持久化
    */
-  async getSessionByRefreshToken(refreshToken: string): Promise<AuthSessionClientDTO | null> {
+  async resetFailedAttempts(accountUuid: string): Promise<void> {
+    logger.debug('[AuthenticationApplicationService] Resetting failed attempts', {
+      accountUuid,
+    });
+
     try {
-      const session = await this.authService.getSessionByRefreshToken(refreshToken);
-      return session ? session.toClientDTO() : null;
+      // ===== 步骤 1: 查询凭证 =====
+      const credential = await this.credentialRepository.findByAccountUuid(accountUuid);
+      if (!credential) {
+        throw new Error('Credential not found');
+      }
+
+      // ===== 步骤 2: 调用聚合根方法重置失败尝试次数 =====
+      credential.resetFailedAttempts();
+
+      // ===== 步骤 3: 持久化 =====
+      await this.credentialRepository.save(credential);
+
+      logger.info('[AuthenticationApplicationService] Failed attempts reset', {
+        accountUuid,
+      });
     } catch (error) {
-      logger.error('Error getting session by refresh token', { error });
-      return null;
+      logger.error('[AuthenticationApplicationService] Failed to reset failed attempts', {
+        accountUuid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
     }
   }
 
   /**
-   * 刷新访问令牌
+   * 生成访问令牌和刷新令牌
    */
-  async refreshAccessToken(params: {
-    sessionUuid: string;
-    newAccessToken: string;
-    expiresInMinutes: number;
-  }): Promise<void> {
-    await this.authService.refreshAccessToken(params);
+  private generateTokens(): {
+    accessToken: string;
+    refreshToken: string;
+    expiresAt: number;
+  } {
+    // 简化实现：实际应该使用 JWT
+    const accessToken = `access_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const refreshToken = `refresh_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    const expiresAt = Date.now() + 3600000; // 1 小时后过期
+
+    return { accessToken, refreshToken, expiresAt };
   }
 
   /**
-   * 验证会话
+   * 发布登录成功事件
    */
-  async validateSession(sessionUuid: string): Promise<boolean> {
-    return this.authService.validateSession(sessionUuid);
+  private async publishLoginSuccessEvent(account: Account, session: AuthSession): Promise<void> {
+    eventBus.publish({
+      eventType: 'authentication:login_success',
+      payload: {
+        accountUuid: account.uuid,
+        username: account.username,
+        sessionUuid: session.uuid,
+        deviceType: session.device.deviceType,
+        ipAddress: session.ipAddress,
+      },
+      timestamp: Date.now(),
+      aggregateId: account.uuid,
+      occurredOn: new Date(),
+    });
+
+    logger.debug('[AuthenticationApplicationService] Login success event published', {
+      accountUuid: account.uuid,
+    });
   }
 
   /**
-   * 记录活动
+   * 发布会话创建事件
    */
-  async recordActivity(sessionUuid: string, activityType: string): Promise<void> {
-    await this.authService.recordActivity(sessionUuid, activityType);
+  private async publishSessionCreatedEvent(session: AuthSession): Promise<void> {
+    eventBus.publish({
+      eventType: 'authentication:session_created',
+      payload: {
+        sessionUuid: session.uuid,
+        accountUuid: session.accountUuid,
+        deviceType: session.device.deviceType,
+      },
+      timestamp: Date.now(),
+      aggregateId: session.uuid,
+      occurredOn: new Date(),
+    });
+
+    logger.debug('[AuthenticationApplicationService] Session created event published', {
+      sessionUuid: session.uuid,
+    });
   }
 
   /**
-   * 撤销会话
+   * 发布失败登录事件
    */
-  async revokeSession(sessionUuid: string): Promise<void> {
-    await this.authService.revokeSession(sessionUuid);
-  }
+  private async publishFailedLoginEvent(
+    accountUuid: string,
+    credential: AuthCredential,
+  ): Promise<void> {
+    eventBus.publish({
+      eventType: 'authentication:login_failed',
+      payload: {
+        accountUuid,
+        failedAttempts: credential.security.failedLoginAttempts,
+        isLocked: credential.isLocked(),
+      },
+      timestamp: Date.now(),
+      aggregateId: accountUuid,
+      occurredOn: new Date(),
+    });
 
-  /**
-   * 撤销所有会话
-   */
-  async revokeAllSessions(accountUuid: string): Promise<void> {
-    await this.authService.revokeAllSessions(accountUuid);
-  }
-
-  /**
-   * 获取活跃会话
-   */
-  async getActiveSessions(accountUuid: string): Promise<AuthSessionClientDTO[]> {
-    const sessions = await this.authService.getActiveSessions(accountUuid);
-    return sessions.map((session) => session.toClientDTO());
-  }
-
-  /**
-   * 清理过期会话
-   */
-  async cleanupExpiredSessions(): Promise<number> {
-    return this.authService.cleanupExpiredSessions();
-  }
-
-  /**
-   * 清理过期凭证
-   */
-  async cleanupExpiredCredentials(): Promise<number> {
-    return this.authService.cleanupExpiredCredentials();
+    logger.debug('[AuthenticationApplicationService] Failed login event published', {
+      accountUuid,
+    });
   }
 }

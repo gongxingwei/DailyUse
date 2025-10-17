@@ -1,6 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import type { AuthCredential as PrismaAuthCredential } from '@prisma/client';
-import type { IAuthCredentialRepository } from '@dailyuse/domain-server';
+import type {
+  IAuthCredentialRepository,
+  AuthCredentialPrismaTransactionClient as PrismaTransactionClient,
+} from '@dailyuse/domain-server';
 import { AuthCredential } from '@dailyuse/domain-server';
 import type { AuthenticationContracts } from '@dailyuse/contracts';
 
@@ -40,7 +43,8 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     return new Date(timestamp);
   }
 
-  async save(credential: AuthCredential): Promise<void> {
+  async save(credential: AuthCredential, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
     const persistence = credential.toPersistenceDTO();
     const {
       uuid,
@@ -88,7 +92,7 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
       revokedAt: this.toDate(revokedAt),
     };
 
-    await this.prisma.authCredential.upsert({
+    await client.authCredential.upsert({
       where: { uuid: persistence.uuid },
       create: dataForPrisma,
       update: {
@@ -104,8 +108,9 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     });
   }
 
-  async findByUuid(uuid: string): Promise<AuthCredential | null> {
-    const data = await this.prisma.authCredential.findUnique({
+  async findByUuid(uuid: string, tx?: PrismaTransactionClient): Promise<AuthCredential | null> {
+    const client = tx || this.prisma;
+    const data = await client.authCredential.findUnique({
       where: { uuid },
     });
 
@@ -116,8 +121,12 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     return this.mapToEntity(data);
   }
 
-  async findByAccountUuid(accountUuid: string): Promise<AuthCredential | null> {
-    const data = await this.prisma.authCredential.findFirst({
+  async findByAccountUuid(
+    accountUuid: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthCredential | null> {
+    const client = tx || this.prisma;
+    const data = await client.authCredential.findFirst({
       where: { accountUuid },
     });
 
@@ -128,58 +137,69 @@ export class PrismaAuthCredentialRepository implements IAuthCredentialRepository
     return this.mapToEntity(data);
   }
 
-  async findAll(params?: { skip?: number; take?: number }): Promise<AuthCredential[]> {
-    const data = await this.prisma.authCredential.findMany({
+  async findAll(
+    params?: { skip?: number; take?: number },
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthCredential[]> {
+    const client = tx || this.prisma;
+    const data = await client.authCredential.findMany({
       skip: params?.skip,
       take: params?.take,
       orderBy: { createdAt: 'desc' },
     });
 
-    return data.map((item) => this.mapToEntity(item));
+    return data.map((item: PrismaAuthCredential) => this.mapToEntity(item));
   }
 
   async findByStatus(
     status: 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'REVOKED',
     params?: { skip?: number; take?: number },
+    tx?: PrismaTransactionClient,
   ): Promise<AuthCredential[]> {
-    const data = await this.prisma.authCredential.findMany({
+    const client = tx || this.prisma;
+    const data = await client.authCredential.findMany({
       where: { metadata: { contains: `"status":"${status}"` } },
       skip: params?.skip,
       take: params?.take,
       orderBy: { createdAt: 'desc' },
     });
-    return data.map((item) => this.mapToEntity(item));
+    return data.map((item: PrismaAuthCredential) => this.mapToEntity(item));
   }
 
   async findByType(
     type: 'PASSWORD' | 'API_KEY' | 'BIOMETRIC' | 'MAGIC_LINK' | 'HARDWARE_KEY',
     params?: { skip?: number; take?: number },
+    tx?: PrismaTransactionClient,
   ): Promise<AuthCredential[]> {
-    const data = await this.prisma.authCredential.findMany({
+    const client = tx || this.prisma;
+    const data = await client.authCredential.findMany({
       where: { type },
       skip: params?.skip,
       take: params?.take,
       orderBy: { createdAt: 'desc' },
     });
 
-    return data.map((item) => this.mapToEntity(item));
+    return data.map((item: PrismaAuthCredential) => this.mapToEntity(item));
   }
 
-  async existsByAccountUuid(accountUuid: string): Promise<boolean> {
-    const count = await this.prisma.authCredential.count({
+  async existsByAccountUuid(accountUuid: string, tx?: PrismaTransactionClient): Promise<boolean> {
+    const client = tx || this.prisma;
+    const count = await client.authCredential.count({
       where: { accountUuid },
     });
     return count > 0;
   }
 
-  async delete(uuid: string): Promise<void> {
-    await this.prisma.authCredential.delete({
+  async delete(uuid: string, tx?: PrismaTransactionClient): Promise<void> {
+    const client = tx || this.prisma;
+    await client.authCredential.delete({
       where: { uuid },
     });
   }
 
-  async deleteExpired(): Promise<number> {
-    const result = await this.prisma.authCredential.deleteMany({
+  async deleteExpired(tx?: PrismaTransactionClient): Promise<number> {
+    const client = tx || this.prisma;
+    const result = await client.authCredential.deleteMany({
       where: { metadata: { contains: '"status":"EXPIRED"' } },
     });
     return result.count;

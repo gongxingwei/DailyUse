@@ -6,9 +6,11 @@ import {
 
 // 每个模块的初始化任务
 
+// 已实现的模块
+import { registerAuthenticationInitializationTasks } from '../../modules/authentication/initialization/authenticationInitialization';
+
 // TODO: 以下模块尚未实现，待实现后取消注释
 // import { registerAccountInitializationTasks } from '../../modules/account';
-// import { registerAuthenticationInitializationTasks } from '../../modules/authentication';
 // import { registerGoalInitializationTasks } from '../../modules/goal';
 // import { registerNotificationInitializationTasks } from '../../modules/notification/initialization/notificationInitialization';
 // import { registerSettingInitializationTasks } from '../../modules/setting/initialization/settingInitialization';
@@ -51,9 +53,10 @@ export function registerAllInitializationTasks(): void {
   const manager = InitializationManager.getInstance();
 
   // 注册各模块的任务
+  registerAuthenticationInitializationTasks(); // ✅ 已实现（事件处理器）
+
   // TODO: 待相应模块实现后取消注释
   // registerAccountInitializationTasks();
-  // registerAuthenticationInitializationTasks();
   // registerGoalInitializationTasks();
   // registerNotificationInitializationTasks();
   // registerSettingInitializationTasks();

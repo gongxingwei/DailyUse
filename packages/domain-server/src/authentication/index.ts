@@ -19,8 +19,14 @@ export { SessionHistory } from './entities/SessionHistory';
 export { DeviceInfo } from './value-objects/DeviceInfo';
 
 // 仓储接口
-export type { IAuthCredentialRepository } from './repositories/IAuthCredentialRepository';
-export type { IAuthSessionRepository } from './repositories/IAuthSessionRepository';
+export type {
+  IAuthCredentialRepository,
+  PrismaTransactionClient as AuthCredentialPrismaTransactionClient,
+} from './repositories/IAuthCredentialRepository';
+export type {
+  IAuthSessionRepository,
+  PrismaTransactionClient as AuthSessionPrismaTransactionClient,
+} from './repositories/IAuthSessionRepository';
 
 // 领域服务
 export { AuthenticationDomainService } from './services/AuthenticationDomainService';
