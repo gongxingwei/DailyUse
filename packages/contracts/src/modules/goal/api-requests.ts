@@ -24,6 +24,9 @@ export interface CreateGoalRequest {
   accountUuid: string;
   title: string;
   description?: string;
+  color?: string; // 主题色（hex 格式，如 #FF5733）
+  feasibilityAnalysis?: string; // 可行性分析
+  motivation?: string; // 实现动机
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
   category?: string;
@@ -48,6 +51,9 @@ export interface CreateGoalRequest {
 export interface UpdateGoalRequest {
   title?: string;
   description?: string;
+  color?: string; // 主题色
+  feasibilityAnalysis?: string; // 可行性分析
+  motivation?: string; // 实现动机
   importance?: ImportanceLevel;
   urgency?: UrgencyLevel;
   category?: string;

@@ -29,6 +29,9 @@ export class GoalDomainService {
     folderUuid?: string;
     parentGoalUuid?: string;
     reminderConfig?: GoalReminderConfigServerDTO;
+    color?: string;
+    feasibilityAnalysis?: string;
+    motivation?: string;
   }): Promise<Goal> {
     // 1. 可以在这里添加服务层面的验证，例如检查 parentGoalUuid 是否有效
     if (params.parentGoalUuid) {
@@ -76,6 +79,9 @@ export class GoalDomainService {
       importance?: ImportanceLevel;
       urgency?: UrgencyLevel;
       category?: string;
+      color?: string;
+      feasibilityAnalysis?: string;
+      motivation?: string;
     },
   ): Promise<Goal> {
     const goal = await this.getGoal(uuid);

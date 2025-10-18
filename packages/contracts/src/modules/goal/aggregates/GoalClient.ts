@@ -19,6 +19,9 @@ export interface GoalClientDTO {
   accountUuid: string;
   title: string;
   description?: string | null;
+  color?: string | null; // 主题色（hex 格式，如 #FF5733）
+  feasibilityAnalysis?: string | null; // 可行性分析
+  motivation?: string | null; // 实现动机
   status: GoalStatus;
   importance: ImportanceLevel;
   urgency: UrgencyLevel;
@@ -69,6 +72,9 @@ export interface GoalClient {
   accountUuid: string;
   title: string;
   description?: string | null;
+  color?: string | null; // 主题色
+  feasibilityAnalysis?: string | null; // 可行性分析
+  motivation?: string | null; // 实现动机
   status: GoalStatus;
   importance: ImportanceLevel;
   urgency: UrgencyLevel;

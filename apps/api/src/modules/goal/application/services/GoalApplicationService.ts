@@ -63,6 +63,9 @@ export class GoalApplicationService {
     deadline?: number;
     tags?: string[];
     metadata?: any;
+    color?: string;
+    feasibilityAnalysis?: string;
+    motivation?: string;
   }): Promise<GoalContracts.GoalClientDTO> {
     const goal = await this.domainService.createGoal({
       ...params,
@@ -105,6 +108,9 @@ export class GoalApplicationService {
       deadline: number;
       tags: string[];
       metadata: any;
+      color: string;
+      feasibilityAnalysis: string;
+      motivation: string;
     }>,
   ): Promise<GoalContracts.GoalClientDTO> {
     const goal = await this.domainService.updateGoalBasicInfo(uuid, updates);

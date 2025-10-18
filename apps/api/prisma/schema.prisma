@@ -559,36 +559,39 @@ model ReminderStatistics {
 // ============================================================
 
 model Goal {
-  uuid             String    @id @default(cuid())
-  account_uuid     String
-  title            String
-  description      String?   @db.Text
-  status           String    @default("pending") // e.g., 'pending', 'in_progress', 'completed', 'archived'
-  importance       Int       @default(2) // 0-4 scale
-  urgency          Int       @default(2) // 0-4 scale
-  category         String?
-  tags             String?   @db.Text // JSON array of strings
-  start_date       DateTime?
-  target_date      DateTime?
-  completed_at     DateTime?
-  archived_at      DateTime?
-  folder_uuid      String?
-  parent_goal_uuid String?
-  sort_order       Int       @default(0)
-  reminder_config  String?   @db.Text // JSON for reminder configuration
-  created_at       DateTime  @default(now())
-  updated_at       DateTime  @updatedAt
-  deleted_at       DateTime?
+  uuid                 String    @id @default(cuid())
+  accountUuid          String    @map("account_uuid")
+  title                String
+  description          String?   @db.Text
+  color                String? // 主题色 (hex format, e.g., #FF5733)
+  feasibilityAnalysis  String?   @map("feasibility_analysis") @db.Text // 可行性分析
+  motivation           String?   @db.Text // 实现动机
+  status               String    @default("pending") // e.g., 'pending', 'in_progress', 'completed', 'archived'
+  importance           Int       @default(2) // 0-4 scale
+  urgency              Int       @default(2) // 0-4 scale
+  category             String?
+  tags                 String?   @db.Text // JSON array of strings
+  startDate            DateTime? @map("start_date")
+  targetDate           DateTime? @map("target_date")
+  completedAt          DateTime? @map("completed_at")
+  archivedAt           DateTime? @map("archived_at")
+  folderUuid           String?   @map("folder_uuid")
+  parentGoalUuid       String?   @map("parent_goal_uuid")
+  sortOrder            Int       @default(0) @map("sort_order")
+  reminderConfig       String?   @map("reminder_config") @db.Text // JSON for reminder configuration
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+  deletedAt            DateTime? @map("deleted_at")
 
   // Relations
-  account    Account @relation(fields: [account_uuid], references: [uuid], onDelete: Cascade)
-  parentGoal Goal?   @relation("GoalHierarchy", fields: [parent_goal_uuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  account    Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parentGoal Goal?   @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
   childGoals Goal[]  @relation("GoalHierarchy")
 
-  @@index([account_uuid])
+  @@index([accountUuid])
   @@index([status])
-  @@index([folder_uuid])
-  @@index([parent_goal_uuid])
+  @@index([folderUuid])
+  @@index([parentGoalUuid])
   @@map("goals")
 }
 

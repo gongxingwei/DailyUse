@@ -49,30 +49,33 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   /**
    * 将 Prisma 模型映射为领域实体
-   * 注意：这里处理 snake_case (数据库) → camelCase (PersistenceDTO) 的映射
+   * 注意：Prisma Client 自动将 @map 的字段转换为 camelCase
    */
   private mapToEntity(data: PrismaGoal): Goal {
     return Goal.fromPersistenceDTO({
       uuid: data.uuid,
-      accountUuid: data.account_uuid, // database field
+      accountUuid: data.accountUuid, // Prisma camelCase
       title: data.title,
       description: data.description,
+      color: data.color, // 新字段
+      feasibilityAnalysis: data.feasibilityAnalysis, // 新字段 (Prisma camelCase)
+      motivation: data.motivation, // 新字段
       status: data.status as GoalStatus,
       importance: this.reverseImportanceMap[data.importance],
       urgency: this.reverseUrgencyMap[data.urgency],
       category: data.category,
       tags: data.tags ?? '[]',
-      startDate: data.start_date ? data.start_date.getTime() : null, // database field
-      targetDate: data.target_date ? data.target_date.getTime() : null, // database field
-      completedAt: data.completed_at ? data.completed_at.getTime() : null, // database field
-      archivedAt: data.archived_at ? data.archived_at.getTime() : null, // database field
-      folderUuid: data.folder_uuid, // database field
-      parentGoalUuid: data.parent_goal_uuid, // database field
-      sortOrder: data.sort_order, // database field
-      reminderConfig: data.reminder_config, // database field
-      createdAt: data.created_at.getTime(), // database field
-      updatedAt: data.updated_at.getTime(), // database field
-      deletedAt: data.deleted_at ? data.deleted_at.getTime() : null, // database field
+      startDate: data.startDate ? data.startDate.getTime() : null, // Prisma camelCase
+      targetDate: data.targetDate ? data.targetDate.getTime() : null, // Prisma camelCase
+      completedAt: data.completedAt ? data.completedAt.getTime() : null, // Prisma camelCase
+      archivedAt: data.archivedAt ? data.archivedAt.getTime() : null, // Prisma camelCase
+      folderUuid: data.folderUuid, // Prisma camelCase
+      parentGoalUuid: data.parentGoalUuid, // Prisma camelCase
+      sortOrder: data.sortOrder, // Prisma camelCase
+      reminderConfig: data.reminderConfig, // Prisma camelCase
+      createdAt: data.createdAt.getTime(), // Prisma camelCase
+      updatedAt: data.updatedAt.getTime(), // Prisma camelCase
+      deletedAt: data.deletedAt ? data.deletedAt.getTime() : null, // Prisma camelCase
     });
   }
 

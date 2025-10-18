@@ -49,6 +49,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
   private _accountUuid: string;
   private _title: string;
   private _description: string | null;
+  private _color: string | null; // 主题色
+  private _feasibilityAnalysis: string | null; // 可行性分析
+  private _motivation: string | null; // 实现动机
   private _status: GoalStatus;
   private _importance: ImportanceLevel;
   private _urgency: UrgencyLevel;
@@ -76,6 +79,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
     accountUuid: string;
     title: string;
     description?: string | null;
+    color?: string | null;
+    feasibilityAnalysis?: string | null;
+    motivation?: string | null;
     status: GoalStatus;
     importance: ImportanceLevel;
     urgency: UrgencyLevel;
@@ -97,6 +103,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
     this._accountUuid = params.accountUuid;
     this._title = params.title;
     this._description = params.description ?? null;
+    this._color = params.color ?? null;
+    this._feasibilityAnalysis = params.feasibilityAnalysis ?? null;
+    this._motivation = params.motivation ?? null;
     this._status = params.status;
     this._importance = params.importance;
     this._urgency = params.urgency;
@@ -129,6 +138,15 @@ export class Goal extends AggregateRoot implements IGoalServer {
   }
   public get description(): string | null {
     return this._description;
+  }
+  public get color(): string | null {
+    return this._color;
+  }
+  public get feasibilityAnalysis(): string | null {
+    return this._feasibilityAnalysis;
+  }
+  public get motivation(): string | null {
+    return this._motivation;
   }
   public get status(): GoalStatus {
     return this._status;
@@ -194,6 +212,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
     accountUuid: string;
     title: string;
     description?: string;
+    color?: string;
+    feasibilityAnalysis?: string;
+    motivation?: string;
     importance?: ImportanceLevel;
     urgency?: UrgencyLevel;
     category?: string;
@@ -217,6 +238,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
       accountUuid: params.accountUuid,
       title: params.title.trim(),
       description: params.description?.trim() || null,
+      color: params.color?.trim() || null,
+      feasibilityAnalysis: params.feasibilityAnalysis?.trim() || null,
+      motivation: params.motivation?.trim() || null,
       status: 'ACTIVE' as GoalStatus,
       importance: params.importance ?? ('MEDIUM' as ImportanceLevel),
       urgency: params.urgency ?? ('MEDIUM' as UrgencyLevel),
@@ -302,6 +326,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
       accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description ?? null,
+      color: dto.color ?? null,
+      feasibilityAnalysis: dto.feasibilityAnalysis ?? null,
+      motivation: dto.motivation ?? null,
       status: dto.status,
       importance: dto.importance,
       urgency: dto.urgency,
@@ -332,6 +359,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
     importance?: ImportanceLevel;
     urgency?: UrgencyLevel;
     category?: string;
+    color?: string;
+    feasibilityAnalysis?: string;
+    motivation?: string;
   }): void {
     const previousData: Partial<GoalServerDTO> = {};
     const changes: string[] = [];
@@ -368,6 +398,27 @@ export class Goal extends AggregateRoot implements IGoalServer {
       previousData.category = this._category;
       this._category = params.category.trim() || null;
       changes.push('category');
+    }
+
+    if (params.color !== undefined && params.color !== this._color) {
+      previousData.color = this._color;
+      this._color = params.color.trim() || null;
+      changes.push('color');
+    }
+
+    if (
+      params.feasibilityAnalysis !== undefined &&
+      params.feasibilityAnalysis !== this._feasibilityAnalysis
+    ) {
+      previousData.feasibilityAnalysis = this._feasibilityAnalysis;
+      this._feasibilityAnalysis = params.feasibilityAnalysis.trim() || null;
+      changes.push('feasibilityAnalysis');
+    }
+
+    if (params.motivation !== undefined && params.motivation !== this._motivation) {
+      previousData.motivation = this._motivation;
+      this._motivation = params.motivation.trim() || null;
+      changes.push('motivation');
     }
 
     if (changes.length > 0) {
@@ -1013,6 +1064,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
       accountUuid: this._accountUuid,
       title: this._title,
       description: this._description,
+      color: this._color,
+      feasibilityAnalysis: this._feasibilityAnalysis,
+      motivation: this._motivation,
       status: this._status,
       importance: this._importance,
       urgency: this._urgency,
@@ -1049,6 +1103,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
       accountUuid: this._accountUuid,
       title: this._title,
       description: this._description,
+      color: this._color,
+      feasibilityAnalysis: this._feasibilityAnalysis,
+      motivation: this._motivation,
       status: this._status,
       importance: this._importance,
       urgency: this._urgency,

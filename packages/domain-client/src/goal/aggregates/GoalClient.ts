@@ -28,6 +28,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
   private _accountUuid: string;
   private _title: string;
   private _description?: string | null;
+  private _color?: string | null; // 主题色
+  private _feasibilityAnalysis?: string | null; // 可行性分析
+  private _motivation?: string | null; // 实现动机
   private _status: GoalStatus;
   private _importance: ImportanceLevel;
   private _urgency: UrgencyLevel;
@@ -54,6 +57,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
     accountUuid: string;
     title: string;
     description?: string | null;
+    color?: string | null;
+    feasibilityAnalysis?: string | null;
+    motivation?: string | null;
     status: GoalStatus;
     importance: ImportanceLevel;
     urgency: UrgencyLevel;
@@ -77,6 +83,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
     this._accountUuid = params.accountUuid;
     this._title = params.title;
     this._description = params.description;
+    this._color = params.color;
+    this._feasibilityAnalysis = params.feasibilityAnalysis;
+    this._motivation = params.motivation;
     this._status = params.status;
     this._importance = params.importance;
     this._urgency = params.urgency;
@@ -109,6 +118,15 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
   }
   public get description(): string | null | undefined {
     return this._description;
+  }
+  public get color(): string | null | undefined {
+    return this._color;
+  }
+  public get feasibilityAnalysis(): string | null | undefined {
+    return this._feasibilityAnalysis;
+  }
+  public get motivation(): string | null | undefined {
+    return this._motivation;
   }
   public get status(): GoalStatus {
     return this._status;
@@ -251,6 +269,17 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
 
   public get reminderSummary(): string | null {
     return this._reminderConfig?.triggerSummary ?? null;
+  }
+
+  /**
+   * 分析信息（兼容前端 UI 使用的属性结构）
+   * 将 motivation 和 feasibilityAnalysis 映射为 analysis 对象
+   */
+  public get analysis(): { motive?: string; feasibility?: string } {
+    return {
+      motive: this._motivation || undefined,
+      feasibility: this._feasibilityAnalysis || undefined,
+    };
   }
 
   // 子实体工厂方法
@@ -468,6 +497,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
       accountUuid: this._accountUuid,
       title: this._title,
       description: this._description,
+      color: this._color,
+      feasibilityAnalysis: this._feasibilityAnalysis,
+      motivation: this._motivation,
       status: this._status,
       importance: this._importance,
       urgency: this._urgency,
@@ -559,6 +591,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
       accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description,
+      color: dto.color,
+      feasibilityAnalysis: dto.feasibilityAnalysis,
+      motivation: dto.motivation,
       status: dto.status,
       importance: dto.importance,
       urgency: dto.urgency,
@@ -588,6 +623,9 @@ export class GoalClient extends AggregateRoot implements IGoalClient {
       accountUuid: dto.accountUuid,
       title: dto.title,
       description: dto.description,
+      color: dto.color,
+      feasibilityAnalysis: dto.feasibilityAnalysis,
+      motivation: dto.motivation,
       status: dto.status,
       importance: dto.importance,
       urgency: dto.urgency,
