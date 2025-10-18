@@ -451,4 +451,182 @@ export class AuthenticationApplicationService {
       accountUuid,
     });
   }
+
+  /**
+   * 用户登出（单设备）
+   *
+   * 步骤：
+   * 1. 通过 accessToken 查询会话
+   * 2. 检查会话状态
+   * 3. 调用聚合根方法注销会话
+   * 4. 持久化会话
+   * 5. 发布登出事件
+   */
+  async logout(params: { accessToken: string }): Promise<{ success: boolean; message: string }> {
+    logger.info('[AuthenticationApplicationService] Starting logout', {
+      accessToken: params.accessToken.substring(0, 20) + '...',
+    });
+
+    try {
+      // ===== 步骤 1: 查询会话 =====
+      const session = await this.sessionRepository.findByAccessToken(params.accessToken);
+      if (!session) {
+        throw new Error('Session not found or already logged out');
+      }
+
+      // ===== 步骤 2: 检查会话状态 =====
+      if (session.status === 'REVOKED') {
+        logger.warn('[AuthenticationApplicationService] Session already revoked', {
+          sessionUuid: session.uuid,
+        });
+        return {
+          success: true,
+          message: 'Already logged out',
+        };
+      }
+
+      // ===== 步骤 3: 调用聚合根方法注销会话 =====
+      session.revoke();
+
+      // ===== 步骤 4: 持久化会话 =====
+      await this.sessionRepository.save(session);
+
+      logger.info('[AuthenticationApplicationService] Session revoked successfully', {
+        sessionUuid: session.uuid,
+        accountUuid: session.accountUuid,
+      });
+
+      // ===== 步骤 5: 发布登出事件 =====
+      await this.publishLogoutEvent(session);
+
+      return {
+        success: true,
+        message: 'Logout successful',
+      };
+    } catch (error) {
+      logger.error('[AuthenticationApplicationService] Logout failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 用户登出（全设备）
+   *
+   * 步骤：
+   * 1. 验证当前 accessToken
+   * 2. 查询账户所有活跃会话
+   * 3. 批量注销所有会话
+   * 4. 持久化所有会话
+   * 5. 发布全设备登出事件
+   */
+  async logoutAll(params: {
+    accountUuid: string;
+    accessToken: string;
+  }): Promise<{ success: boolean; message: string; revokedSessionsCount: number }> {
+    logger.info('[AuthenticationApplicationService] Starting logout all', {
+      accountUuid: params.accountUuid,
+    });
+
+    try {
+      // ===== 步骤 1: 验证当前会话 =====
+      const currentSession = await this.sessionRepository.findByAccessToken(params.accessToken);
+      if (!currentSession) {
+        throw new Error('Current session not found');
+      }
+
+      if (currentSession.accountUuid !== params.accountUuid) {
+        throw new Error('Access token does not belong to this account');
+      }
+
+      // ===== 步骤 2: 查询账户所有活跃会话 =====
+      const sessions = await this.sessionRepository.findActiveSessionsByAccountUuid(
+        params.accountUuid,
+      );
+
+      if (sessions.length === 0) {
+        logger.warn('[AuthenticationApplicationService] No active sessions found', {
+          accountUuid: params.accountUuid,
+        });
+        return {
+          success: true,
+          message: 'No active sessions to revoke',
+          revokedSessionsCount: 0,
+        };
+      }
+
+      // ===== 步骤 3: 批量注销所有会话 =====
+      sessions.forEach((session) => {
+        session.revoke();
+      });
+
+      // ===== 步骤 4: 持久化所有会话 =====
+      await Promise.all(sessions.map((session) => this.sessionRepository.save(session)));
+
+      logger.info('[AuthenticationApplicationService] All sessions revoked successfully', {
+        accountUuid: params.accountUuid,
+        revokedCount: sessions.length,
+      });
+
+      // ===== 步骤 5: 发布全设备登出事件 =====
+      await this.publishLogoutAllEvent(params.accountUuid, sessions.length);
+
+      return {
+        success: true,
+        message: `Successfully logged out from ${sessions.length} device(s)`,
+        revokedSessionsCount: sessions.length,
+      };
+    } catch (error) {
+      logger.error('[AuthenticationApplicationService] Logout all failed', {
+        accountUuid: params.accountUuid,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * 发布登出事件
+   */
+  private async publishLogoutEvent(session: AuthSession): Promise<void> {
+    eventBus.publish({
+      eventType: 'authentication:logout',
+      payload: {
+        accountUuid: session.accountUuid,
+        sessionUuid: session.uuid,
+        deviceType: session.device.deviceType,
+        ipAddress: session.ipAddress,
+        revokedAt: session.revokedAt,
+      },
+      timestamp: Date.now(),
+      aggregateId: session.accountUuid,
+      occurredOn: new Date(),
+    });
+
+    logger.debug('[AuthenticationApplicationService] Logout event published', {
+      sessionUuid: session.uuid,
+    });
+  }
+
+  /**
+   * 发布全设备登出事件
+   */
+  private async publishLogoutAllEvent(accountUuid: string, revokedCount: number): Promise<void> {
+    eventBus.publish({
+      eventType: 'authentication:logout_all',
+      payload: {
+        accountUuid,
+        revokedSessionsCount: revokedCount,
+      },
+      timestamp: Date.now(),
+      aggregateId: accountUuid,
+      occurredOn: new Date(),
+    });
+
+    logger.debug('[AuthenticationApplicationService] Logout all event published', {
+      accountUuid,
+      revokedCount,
+    });
+  }
 }

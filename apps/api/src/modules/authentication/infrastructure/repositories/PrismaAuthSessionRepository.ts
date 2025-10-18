@@ -166,6 +166,14 @@ export class PrismaAuthSessionRepository implements IAuthSessionRepository {
     return sessions.map((s: PrismaAuthSession) => this.mapToEntity(s));
   }
 
+  async findActiveSessionsByAccountUuid(
+    accountUuid: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession[]> {
+    // 别名方法，调用 findActiveSessions
+    return this.findActiveSessions(accountUuid, tx);
+  }
+
   async findAll(
     params?: { skip?: number; take?: number },
     tx?: PrismaTransactionClient,

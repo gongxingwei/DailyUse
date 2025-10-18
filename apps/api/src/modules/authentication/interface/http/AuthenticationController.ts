@@ -199,29 +199,112 @@ export class AuthenticationController {
   }
 
   /**
-   * 登出
+   * 登出（单设备）
    * @route POST /api/auth/logout
-   * @description 撤销当前会话
-   * @todo 需要使用 SessionManagementApplicationService
    */
   static async logout(req: Request, res: Response): Promise<Response> {
     try {
       logger.info('[AuthenticationController] Logout request received');
 
-      // TODO: 使用 SessionManagementApplicationService.revokeSession()
-      return AuthenticationController.responseBuilder.sendSuccess(
-        res,
-        null,
-        'Logout successful - Implementation pending',
-      );
+      // ===== 步骤 1: 提取 accessToken =====
+      const accessToken = req.headers.authorization?.replace('Bearer ', '');
+
+      if (!accessToken) {
+        return AuthenticationController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: 'Access token is required',
+        });
+      }
+
+      // ===== 步骤 2: 调用 ApplicationService =====
+      const service = await AuthenticationController.getAuthService();
+      const result = await service.logout({ accessToken });
+
+      // ===== 步骤 3: 返回成功响应 =====
+      logger.info('[AuthenticationController] Logout successful');
+
+      return AuthenticationController.responseBuilder.sendSuccess(res, result, result.message);
     } catch (error) {
       logger.error('[AuthenticationController] Logout failed', {
         error: error instanceof Error ? error.message : String(error),
       });
 
+      if (error instanceof Error) {
+        if (error.message.includes('not found') || error.message.includes('already logged out')) {
+          return AuthenticationController.responseBuilder.sendError(res, {
+            code: ResponseCode.NOT_FOUND,
+            message: error.message,
+          });
+        }
+      }
+
       return AuthenticationController.responseBuilder.sendError(res, {
         code: ResponseCode.INTERNAL_ERROR,
         message: 'Logout failed',
+      });
+    }
+  }
+
+  /**
+   * 登出（全设备）
+   * @route POST /api/auth/logout-all
+   */
+  static async logoutAll(req: Request, res: Response): Promise<Response> {
+    try {
+      logger.info('[AuthenticationController] Logout all request received');
+
+      // ===== 步骤 1: 提取参数 =====
+      const accessToken = req.headers.authorization?.replace('Bearer ', '');
+      const { accountUuid } = req.body;
+
+      if (!accessToken) {
+        return AuthenticationController.responseBuilder.sendError(res, {
+          code: ResponseCode.UNAUTHORIZED,
+          message: 'Access token is required',
+        });
+      }
+
+      if (!accountUuid) {
+        return AuthenticationController.responseBuilder.sendError(res, {
+          code: ResponseCode.VALIDATION_ERROR,
+          message: 'Account UUID is required',
+        });
+      }
+
+      // ===== 步骤 2: 调用 ApplicationService =====
+      const service = await AuthenticationController.getAuthService();
+      const result = await service.logoutAll({ accountUuid, accessToken });
+
+      // ===== 步骤 3: 返回成功响应 =====
+      logger.info('[AuthenticationController] Logout all successful', {
+        revokedCount: result.revokedSessionsCount,
+      });
+
+      return AuthenticationController.responseBuilder.sendSuccess(res, result, result.message);
+    } catch (error) {
+      logger.error('[AuthenticationController] Logout all failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      if (error instanceof Error) {
+        if (error.message.includes('not found')) {
+          return AuthenticationController.responseBuilder.sendError(res, {
+            code: ResponseCode.NOT_FOUND,
+            message: error.message,
+          });
+        }
+
+        if (error.message.includes('does not belong')) {
+          return AuthenticationController.responseBuilder.sendError(res, {
+            code: ResponseCode.FORBIDDEN,
+            message: error.message,
+          });
+        }
+      }
+
+      return AuthenticationController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: 'Logout all failed',
       });
     }
   }

@@ -81,9 +81,9 @@ router.post('/register', RegistrationController.register);
 
 /**
  * @swagger
- * /api/auth/credentials/password:
+ * /api/auth/login:
  *   post:
- *     summary: 创建密码凭证
+ *     summary: 用户登录
  *     tags: [Authentication]
  *     requestBody:
  *       required: true
@@ -92,159 +92,91 @@ router.post('/register', RegistrationController.register);
  *           schema:
  *             type: object
  *             required:
- *               - accountUuid
- *               - hashedPassword
- *             properties:
- *               accountUuid:
- *                 type: string
- *               hashedPassword:
- *                 type: string
- *     responses:
- *       201:
- *         description: 凭证创建成功
- *       400:
- *         description: 请求参数错误
- *       500:
- *         description: 服务器错误
- */
-router.post('/credentials/password', AuthenticationController.createPasswordCredential);
-
-/**
- * @swagger
- * /api/auth/verify-password:
- *   post:
- *     summary: 验证密码
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accountUuid
- *               - hashedPassword
- *             properties:
- *               accountUuid:
- *                 type: string
- *               hashedPassword:
- *                 type: string
- *     responses:
- *       200:
- *         description: 密码验证结果
- *       500:
- *         description: 服务器错误
- */
-router.post('/verify-password', AuthenticationController.verifyPassword);
-
-/**
- * @swagger
- * /api/auth/password:
- *   put:
- *     summary: 修改密码
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accountUuid
- *               - newHashedPassword
- *             properties:
- *               accountUuid:
- *                 type: string
- *               newHashedPassword:
- *                 type: string
- *     responses:
- *       200:
- *         description: 密码修改成功
- *       500:
- *         description: 服务器错误
- */
-router.put('/password', AuthenticationController.changePassword);
-
-/**
- * @swagger
- * /api/auth/sessions:
- *   post:
- *     summary: 创建会话
- *     tags: [Authentication]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - accountUuid
- *               - accessToken
- *               - refreshToken
- *               - device
+ *               - username
+ *               - password
+ *               - deviceInfo
  *               - ipAddress
  *             properties:
- *               accountUuid:
+ *               username:
  *                 type: string
- *               accessToken:
+ *               password:
  *                 type: string
- *               refreshToken:
- *                 type: string
- *               device:
+ *               deviceInfo:
  *                 type: object
  *               ipAddress:
  *                 type: string
- *               location:
- *                 type: object
  *     responses:
- *       201:
- *         description: 会话创建成功
+ *       200:
+ *         description: 登录成功
+ *       401:
+ *         description: 用户名或密码错误
+ *       403:
+ *         description: 账户已锁定
  *       500:
  *         description: 服务器错误
  */
-router.post('/sessions', AuthenticationController.createSession);
+router.post('/login', AuthenticationController.login);
 
 /**
  * @swagger
- * /api/auth/sessions/active/{accountUuid}:
- *   get:
- *     summary: 获取活跃会话
+ * /api/auth/logout:
+ *   post:
+ *     summary: 用户登出（单设备）
  *     tags: [Authentication]
- *     parameters:
- *       - in: path
- *         name: accountUuid
- *         required: true
- *         schema:
- *           type: string
- *         description: 账户UUID
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
- *         description: 成功获取活跃会话列表
+ *         description: 登出成功
+ *       401:
+ *         description: 未授权
+ *       404:
+ *         description: 会话不存在
  *       500:
  *         description: 服务器错误
  */
-router.get('/sessions/active/:accountUuid', AuthenticationController.getActiveSessions);
+router.post('/logout', AuthenticationController.logout);
 
 /**
  * @swagger
- * /api/auth/sessions/{sessionUuid}:
- *   delete:
- *     summary: 撤销会话
+ * /api/auth/logout-all:
+ *   post:
+ *     summary: 用户登出（全设备）
  *     tags: [Authentication]
- *     parameters:
- *       - in: path
- *         name: sessionUuid
- *         required: true
- *         schema:
- *           type: string
- *         description: 会话UUID
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - accountUuid
+ *             properties:
+ *               accountUuid:
+ *                 type: string
  *     responses:
  *       200:
- *         description: 会话撤销成功
+ *         description: 全设备登出成功
+ *       401:
+ *         description: 未授权
+ *       403:
+ *         description: 禁止访问
  *       500:
  *         description: 服务器错误
  */
-router.delete('/sessions/:sessionUuid', AuthenticationController.revokeSession);
+router.post('/logout-all', AuthenticationController.logoutAll);
+
+// ==================== 以下路由暂未实现，后续补充 ====================
+
+// router.post('/credentials/password', AuthenticationController.createPasswordCredential);
+// router.post('/verify-password', AuthenticationController.verifyPassword);
+
+// router.put('/password', AuthenticationController.changePassword);
+// router.post('/sessions', AuthenticationController.createSession);
+// router.get('/sessions/active/:accountUuid', AuthenticationController.getActiveSessions);
+// router.delete('/sessions/:sessionUuid', AuthenticationController.revokeSession);
 
 /**
  * @swagger

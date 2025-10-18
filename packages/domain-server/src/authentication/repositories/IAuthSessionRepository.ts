@@ -65,6 +65,16 @@ export interface IAuthSessionRepository {
   findActiveSessions(accountUuid: string, tx?: PrismaTransactionClient): Promise<AuthSession[]>;
 
   /**
+   * 根据账户 UUID 查找所有活跃会话（别名方法）
+   * @param accountUuid - 账户 UUID
+   * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询
+   */
+  findActiveSessionsByAccountUuid(
+    accountUuid: string,
+    tx?: PrismaTransactionClient,
+  ): Promise<AuthSession[]>;
+
+  /**
    * 查找所有会话（支持分页）
    * @param params - 分页参数
    * @param tx - 可选的 Prisma 事务客户端，用于在事务中查询

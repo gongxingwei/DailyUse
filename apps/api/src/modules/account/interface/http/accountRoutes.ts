@@ -1,6 +1,7 @@
 import type { Router as ExpressRouter } from 'express';
 import { Router } from 'express';
 import { AccountController } from './AccountController';
+import { AccountDeletionController } from './AccountDeletionController';
 
 const router: ExpressRouter = Router();
 
@@ -199,7 +200,7 @@ router.post('/:uuid/deactivate', AccountController.deactivateAccount);
  * @swagger
  * /api/accounts/{uuid}:
  *   delete:
- *     summary: 删除账户
+ *     summary: 删除账户（管理员用）
  *     tags: [Accounts]
  *     parameters:
  *       - in: path
@@ -217,5 +218,71 @@ router.post('/:uuid/deactivate', AccountController.deactivateAccount);
  *         description: 服务器错误
  */
 router.delete('/:uuid', AccountController.deleteAccount);
+
+/**
+ * @swagger
+ * /api/accounts/delete:
+ *   post:
+ *     summary: 用户主动注销账户
+ *     tags: [Accounts]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - accountUuid
+ *               - password
+ *             properties:
+ *               accountUuid:
+ *                 type: string
+ *                 format: uuid
+ *                 description: 账户UUID
+ *               password:
+ *                 type: string
+ *                 description: 密码（二次验证）
+ *               reason:
+ *                 type: string
+ *                 description: 注销原因
+ *               feedback:
+ *                 type: string
+ *                 description: 用户反馈
+ *               confirmationText:
+ *                 type: string
+ *                 description: 确认文本（必须为"DELETE"）
+ *     responses:
+ *       200:
+ *         description: 账户注销成功
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 code:
+ *                   type: integer
+ *                   example: 200
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     accountUuid:
+ *                       type: string
+ *                     deletedAt:
+ *                       type: number
+ *                 message:
+ *                   type: string
+ *                   example: Account deleted successfully
+ *       400:
+ *         description: 请求参数错误或验证失败
+ *       401:
+ *         description: 密码错误
+ *       404:
+ *         description: 账户不存在
+ *       409:
+ *         description: 账户已被删除
+ *       500:
+ *         description: 服务器错误
+ */
+router.post('/delete', AccountDeletionController.deleteAccount);
 
 export default router;
