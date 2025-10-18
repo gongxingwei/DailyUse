@@ -5,10 +5,16 @@
     "name": "bakersean",
     "email": "lulouhao@stu.sicau.edu.cn"
   },
-  "description": "DailyUse Monorepo",
+  "description": "DailyUse Monorepo - Full-stack productivity suite built with Vue 3, Express, and Nx",
   "version": "0.1.10",
   "type": "module",
+  "packageManager": "pnpm@10.18.3",
+  "engines": {
+    "node": ">=20.11.0 <22.0.0",
+    "pnpm": ">=10.0.0"
+  },
   "scripts": {
+    "preinstall": "npx only-allow pnpm",
     "dev:desktop": "pnpm nx dev desktop",
     "dev:web": "pnpm nx dev web",
     "dev:api": "pnpm nx dev api",
