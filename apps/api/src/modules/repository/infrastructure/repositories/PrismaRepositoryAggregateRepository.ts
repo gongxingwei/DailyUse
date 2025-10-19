@@ -1,11 +1,11 @@
 import { PrismaClient } from '@prisma/client';
 import type { IRepositoryRepository } from '@dailyuse/domain-server';
 import {
-  RepositoryAggregate as Repository,
-  ResourceEntity as Resource,
+  Repository,
+  Resource,
   RepositoryExplorerEntity,
-  ResourceReferenceEntity,
-  LinkedContentEntity,
+  ResourceReference,
+  LinkedContent,
 } from '@dailyuse/domain-server';
 
 /**
@@ -65,7 +65,7 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
         // 加载 ResourceReference
         if (res.sourceReferences) {
           res.sourceReferences.forEach((ref: any) => {
-            const refEntity = ResourceReferenceEntity.fromPersistenceDTO({
+            const refEntity = ResourceReference.fromPersistenceDTO({
               uuid: ref.uuid,
               sourceResourceUuid: ref.sourceResourceUuid,
               targetResourceUuid: ref.targetResourceUuid,
@@ -82,7 +82,7 @@ export class PrismaRepositoryAggregateRepository implements IRepositoryRepositor
         // 加载 LinkedContent
         if (res.linkedContents) {
           res.linkedContents.forEach((content: any) => {
-            const contentEntity = LinkedContentEntity.fromPersistenceDTO({
+            const contentEntity = LinkedContent.fromPersistenceDTO({
               uuid: content.uuid,
               resourceUuid: content.resourceUuid,
               title: content.title,

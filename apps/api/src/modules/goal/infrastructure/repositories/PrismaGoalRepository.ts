@@ -1,6 +1,6 @@
 import type { PrismaClient, Goal as PrismaGoal } from '@prisma/client';
 import type { IGoalRepository } from '@dailyuse/domain-server';
-import { GoalAggregate as Goal } from '@dailyuse/domain-server';
+import { Goal } from '@dailyuse/domain-server';
 import { GoalContracts } from '@dailyuse/contracts';
 
 // 类型别名（从命名空间导入）
@@ -109,8 +109,8 @@ export class PrismaGoalRepository implements IGoalRepository {
       where: { uuid: persistence.uuid },
       create: {
         uuid: persistence.uuid,
-        account_uuid: persistence.accountUuid, // PersistenceDTO → database
-        created_at: new Date(persistence.createdAt), // PersistenceDTO → database
+        accountUuid: persistence.accountUuid, // PersistenceDTO → database
+        createdAt: new Date(persistence.createdAt), // PersistenceDTO → database
         ...data,
       },
       update: data,
@@ -145,7 +145,7 @@ export class PrismaGoalRepository implements IGoalRepository {
 
   async findByFolderUuid(folderUuid: string): Promise<Goal[]> {
     const data = await this.prisma.goal.findMany({
-      where: { folder_uuid: folderUuid, deleted_at: null }, // database fields
+      where: { folderUuid: folderUuid, deletedAt: null }, // database fields
     });
     return data.map((d) => this.mapToEntity(d));
   }
@@ -157,7 +157,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async softDelete(uuid: string): Promise<void> {
     await this.prisma.goal.update({
       where: { uuid },
-      data: { deleted_at: new Date() }, // database field
+      data: { deletedAt: new Date() }, // database field
     });
   }
 
@@ -176,7 +176,7 @@ export class PrismaGoalRepository implements IGoalRepository {
   async batchMoveToFolder(uuids: string[], folderUuid: string | null): Promise<void> {
     await this.prisma.goal.updateMany({
       where: { uuid: { in: uuids } },
-      data: { folder_uuid: folderUuid }, // database field
+      data: { folderUuid: folderUuid }, // database field
     });
   }
 }

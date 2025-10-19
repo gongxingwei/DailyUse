@@ -5,14 +5,15 @@
  */
 
 // ===== 聚合根 =====
-export { Goal as GoalAggregate } from './aggregates/Goal';
-export { GoalFolder as GoalFolderAggregate } from './aggregates/GoalFolder';
-export { GoalStatistics as GoalStatisticsAggregate } from './aggregates/GoalStatistics';
+export { Goal } from './aggregates/Goal';
+export { GoalFolder } from './aggregates/GoalFolder';
+export { GoalStatistics } from './aggregates/GoalStatistics';
+export { FocusSession } from './aggregates/FocusSession';
 
 // ===== 实体 =====
-export { GoalRecord as GoalRecordEntity } from './entities/GoalRecord';
-export { GoalReview as GoalReviewEntity } from './entities/GoalReview';
-export { KeyResult as KeyResultEntity } from './entities/KeyResult';
+export { GoalRecord } from './entities/GoalRecord';
+export { GoalReview } from './entities/GoalReview';
+export { KeyResult } from './entities/KeyResult';
 
 // ===== 值对象 =====
 export { GoalMetadata } from './value-objects/GoalMetadata';
@@ -28,6 +29,7 @@ export * from './services';
 export type { IGoalRepository } from './repositories/IGoalRepository';
 export type { IGoalFolderRepository } from './repositories/IGoalFolderRepository';
 export type { IGoalStatisticsRepository } from './repositories/IGoalStatisticsRepository';
+export type { IFocusSessionRepository } from './repositories/IFocusSessionRepository';
 
 // ===== 基础设施层 =====
 // export {

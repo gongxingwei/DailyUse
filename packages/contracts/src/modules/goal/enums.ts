@@ -7,9 +7,9 @@
  */
 
 // ============ 目标相关枚举 ============
-import { ImportanceLevel,UrgencyLevel } from '../../shared/index';
+import { ImportanceLevel, UrgencyLevel } from '../../shared/index';
 
-export { ImportanceLevel,UrgencyLevel };
+export { ImportanceLevel, UrgencyLevel };
 
 /**
  * 目标状态枚举
@@ -76,4 +76,17 @@ export enum FolderType {
   COMPLETED = 'COMPLETED', // 已完成
   ARCHIVED = 'ARCHIVED', // 已归档
   CUSTOM = 'CUSTOM', // 自定义文件夹
+}
+
+// ============ 专注周期相关枚举 ============
+
+/**
+ * 专注周期状态枚举
+ */
+export enum FocusSessionStatus {
+  DRAFT = 'DRAFT', // 草稿（未开始）
+  IN_PROGRESS = 'IN_PROGRESS', // 进行中
+  PAUSED = 'PAUSED', // 已暂停
+  COMPLETED = 'COMPLETED', // 已完成
+  CANCELLED = 'CANCELLED', // 已取消
 }

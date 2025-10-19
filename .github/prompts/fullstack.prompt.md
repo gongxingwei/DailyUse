@@ -207,6 +207,29 @@ const UrgencyLevel = goalContracts.UrgencyLevel;
 - 构造函数中 uuid 不一定要传入，可以通过基类的 `generateUUID()` 方法生成
 - 类型要严格对应 contracts 包中的定义
 
+**导出规范（重要）**：
+
+- ❌ **不要**给聚合根/实体添加 `Aggregate`/`Entity` 后缀别名
+- ✅ **应该**直接导出类名，保持简洁清晰
+
+```typescript
+// ❌ 错误示例（旧代码风格，需要修改）
+export { Goal as GoalAggregate } from './aggregates/Goal';
+export { GoalRecord as GoalRecordEntity } from './entities/GoalRecord';
+
+// ✅ 正确示例（推荐）
+export { Goal } from './aggregates/Goal';
+export { GoalRecord } from './entities/GoalRecord';
+export { FocusSession } from './aggregates/FocusSession';
+```
+
+**理由**：
+
+1. **DDD 最佳实践**：领域对象类名本身就是领域概念，不应该加技术后缀
+2. **TypeScript 友好**：类名和导入名一致，避免重复重命名（如 `import { GoalAggregate as Goal }`）
+3. **文件路径已足够清晰**：`domain-server/goal/aggregates/Goal.ts` 已明确表明是聚合根
+4. **参考其他模块**：Task、Reminder、Setting 等模块都没有使用别名后缀
+
 ### domain-client 包
 
 **注意文件结构**：

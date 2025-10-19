@@ -1,78 +1,94 @@
-import type { IGoalRepository } from '../repositories/IGoalRepository';
 import { Goal } from '../aggregates/Goal';
-import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { ImportanceLevel, UrgencyLevel } from '@dailyuse/contracts';
 
 type GoalStatus = GoalContracts.GoalStatus;
 type GoalReminderConfigServerDTO = GoalContracts.GoalReminderConfigServerDTO;
+
+const GoalStatus = GoalContracts.GoalStatus;
+
 /**
- * Goal Domain Service
+ * Goal 领域服务
  *
- * 核心职责：
- * - 编排和协调 Goal 模块内的多个聚合根和实体。
- * - 处理跨聚合的复杂业务规则和不变量。
- * - 封装核心业务流程，供 Application Service 调用。
+ * DDD 领域服务职责：
+ * - 创建聚合根（调用工厂方法）
+ * - 跨聚合根的业务逻辑协调
+ * - 复杂的领域规则验证
+ * - 不涉及持久化（由 ApplicationService 负责）
+ *
+ * 注意：
+ * - 不注入 Repository（避免在领域层持久化）
+ * - 只返回聚合根对象，由 ApplicationService 负责保存
+ * - 业务逻辑尽量放在聚合根内部
  */
 export class GoalDomainService {
-  constructor(private readonly goalRepository: IGoalRepository) {}
+  constructor() {
+    // 领域服务不注入仓储
+  }
 
-  public async createGoal(params: {
-    accountUuid: string;
-    title: string;
-    description?: string;
-    importance?: ImportanceLevel;
-    urgency?: UrgencyLevel;
-    category?: string;
-    tags?: string[];
-    startDate?: number;
-    targetDate?: number;
-    folderUuid?: string;
-    parentGoalUuid?: string;
-    reminderConfig?: GoalReminderConfigServerDTO;
-    color?: string;
-    feasibilityAnalysis?: string;
-    motivation?: string;
-  }): Promise<Goal> {
-    // 1. 可以在这里添加服务层面的验证，例如检查 parentGoalUuid 是否有效
-    if (params.parentGoalUuid) {
-      const parentGoal = await this.goalRepository.findById(params.parentGoalUuid);
-      if (!parentGoal) {
-        throw new Error(`Parent goal not found: ${params.parentGoalUuid}`);
+  /**
+   * 创建目标聚合根
+   *
+   * @param params 创建参数
+   * @param parentGoal 可选的父目标（由 ApplicationService 查询后传入）
+   * @returns 新创建的目标聚合根（未持久化）
+   */
+  public createGoal(
+    params: {
+      accountUuid: string;
+      title: string;
+      description?: string;
+      importance?: ImportanceLevel;
+      urgency?: UrgencyLevel;
+      category?: string;
+      tags?: string[];
+      startDate?: number;
+      targetDate?: number;
+      folderUuid?: string;
+      parentGoalUuid?: string;
+      reminderConfig?: GoalReminderConfigServerDTO;
+      color?: string;
+      feasibilityAnalysis?: string;
+      motivation?: string;
+    },
+    parentGoal?: Goal,
+  ): Goal {
+    // 1. 验证标题
+    this.validateGoalTitle(params.title);
+
+    // 2. 验证日期范围
+    this.validateGoalDateRange(params.startDate, params.targetDate);
+
+    // 3. 验证父目标是否存在（如果需要）
+    if (params.parentGoalUuid && !parentGoal) {
+      throw new Error(`Parent goal is required when parentGoalUuid is provided`);
+    }
+
+    // 4. 验证父目标状态（复杂业务规则）
+    if (parentGoal) {
+      if (parentGoal.status === GoalStatus.ARCHIVED) {
+        throw new Error('Cannot create sub-goal under an archived goal');
+      }
+      if (parentGoal.deletedAt !== null && parentGoal.deletedAt !== undefined) {
+        throw new Error('Cannot create sub-goal under a deleted goal');
       }
     }
 
-    // 2. 创建聚合根
+    // 5. 创建聚合根（业务逻辑在聚合根内部）
     const goal = Goal.create(params);
 
-    // 3. 持久化
-    await this.goalRepository.save(goal);
-
-    // 4. 触发领域事件 (如果需要)
-    // this.eventBus.publish(goal.getDomainEvents());
-
+    // 6. 返回聚合根（不持久化）
     return goal;
   }
 
-  public async getGoal(
-    uuid: string,
-    options?: { includeChildren?: boolean },
-  ): Promise<Goal | null> {
-    return this.goalRepository.findById(uuid, options);
-  }
-
-  public async getGoalsForAccount(
-    accountUuid: string,
-    options?: {
-      includeChildren?: boolean;
-      status?: string;
-      folderUuid?: string;
-    },
-  ): Promise<Goal[]> {
-    return this.goalRepository.findByAccountUuid(accountUuid, options);
-  }
-
-  public async updateGoalBasicInfo(
-    uuid: string,
+  /**
+   * 更新目标基本信息
+   *
+   * @param goal 目标聚合根（由 ApplicationService 查询后传入）
+   * @param params 更新参数
+   */
+  public updateGoalBasicInfo(
+    goal: Goal,
     params: {
       title?: string;
       description?: string;
@@ -83,65 +99,29 @@ export class GoalDomainService {
       feasibilityAnalysis?: string;
       motivation?: string;
     },
-  ): Promise<Goal> {
-    const goal = await this.getGoal(uuid);
-    if (!goal) {
-      throw new Error(`Goal not found: ${uuid}`);
+  ): void {
+    // 验证目标状态
+    if (goal.deletedAt !== null && goal.deletedAt !== undefined) {
+      throw new Error('Cannot update a deleted goal');
     }
 
+    // 验证标题（如果更新）
+    if (params.title !== undefined) {
+      this.validateGoalTitle(params.title);
+    }
+
+    // 调用聚合根方法（业务逻辑在聚合根内部）
     goal.updateBasicInfo(params);
-    await this.goalRepository.save(goal);
-    return goal;
   }
 
-  public async changeGoalStatus(uuid: string, newStatus: GoalStatus): Promise<Goal> {
-    const goal = await this.getGoal(uuid);
-    if (!goal) {
-      throw new Error(`Goal not found: ${uuid}`);
-    }
-
-    goal.updateStatus(newStatus);
-    await this.goalRepository.save(goal);
-    return goal;
-  }
-
-  public async completeGoal(uuid: string): Promise<Goal> {
-    const goal = await this.getGoal(uuid);
-    if (!goal) {
-      throw new Error(`Goal not found: ${uuid}`);
-    }
-
-    goal.complete();
-    await this.goalRepository.save(goal);
-    return goal;
-  }
-
-  public async archiveGoal(uuid: string): Promise<Goal> {
-    const goal = await this.getGoal(uuid);
-    if (!goal) {
-      throw new Error(`Goal not found: ${uuid}`);
-    }
-
-    goal.archive();
-    await this.goalRepository.save(goal);
-    return goal;
-  }
-
-  public async deleteGoal(uuid: string, softDelete: boolean = true): Promise<void> {
-    const goal = await this.getGoal(uuid);
-    if (!goal) {
-      throw new Error(`Goal not found: ${uuid}`);
-    }
-
-    if (softDelete) {
-      await this.goalRepository.softDelete(uuid);
-    } else {
-      await this.goalRepository.delete(uuid);
-    }
-  }
-
-  public async addKeyResultToGoal(
-    goalUuid: string,
+  /**
+   * 添加关键结果
+   *
+   * @param goal 目标聚合根
+   * @param params 关键结果参数
+   */
+  public addKeyResultToGoal(
+    goal: Goal,
     params: {
       title: string;
       description?: string;
@@ -150,36 +130,56 @@ export class GoalDomainService {
       unit?: string;
       weight: number;
     },
-  ): Promise<Goal> {
-    const goal = await this.getGoal(goalUuid, { includeChildren: true });
-    if (!goal) {
-      throw new Error(`Goal not found: ${goalUuid}`);
+  ): void {
+    // 验证目标状态
+    if (goal.deletedAt !== null && goal.deletedAt !== undefined) {
+      throw new Error('Cannot add key result to a deleted goal');
+    }
+    if (goal.status === GoalStatus.ARCHIVED) {
+      throw new Error('Cannot add key result to an archived goal');
     }
 
+    // 验证权重范围
+    if (params.weight < 0 || params.weight > 100) {
+      throw new Error('Key result weight must be between 0 and 100');
+    }
+
+    // 创建并添加关键结果
     const keyResult = goal.createKeyResult(params);
     goal.addKeyResult(keyResult);
-
-    await this.goalRepository.save(goal);
-    return goal;
   }
 
-  public async updateKeyResultProgress(
-    goalUuid: string,
+  /**
+   * 更新关键结果进度
+   *
+   * @param goal 目标聚合根
+   * @param keyResultUuid 关键结果 UUID
+   * @param currentValue 当前值
+   * @param note 备注
+   */
+  public updateKeyResultProgress(
+    goal: Goal,
     keyResultUuid: string,
     currentValue: number,
     note?: string,
-  ): Promise<Goal> {
-    const goal = await this.getGoal(goalUuid, { includeChildren: true });
-    if (!goal) {
-      throw new Error(`Goal not found: ${goalUuid}`);
+  ): void {
+    // 验证目标状态
+    if (goal.deletedAt !== null && goal.deletedAt !== undefined) {
+      throw new Error('Cannot update key result of a deleted goal');
     }
+
+    // 调用聚合根方法
     goal.updateKeyResultProgress(keyResultUuid, currentValue, note);
-    await this.goalRepository.save(goal);
-    return goal;
   }
 
-  public async addReviewToGoal(
-    goalUuid: string,
+  /**
+   * 添加目标回顾
+   *
+   * @param goal 目标聚合根
+   * @param params 回顾参数
+   */
+  public addReviewToGoal(
+    goal: Goal,
     params: {
       title: string;
       content: string;
@@ -189,16 +189,46 @@ export class GoalDomainService {
       challenges?: string;
       nextActions?: string;
     },
-  ): Promise<Goal> {
-    const goal = await this.getGoal(goalUuid, { includeChildren: true });
-    if (!goal) {
-      throw new Error(`Goal not found: ${goalUuid}`);
+  ): void {
+    // 验证目标状态
+    if (goal.deletedAt !== null && goal.deletedAt !== undefined) {
+      throw new Error('Cannot add review to a deleted goal');
     }
 
+    // 验证评分范围
+    if (params.rating !== undefined && (params.rating < 1 || params.rating > 5)) {
+      throw new Error('Review rating must be between 1 and 5');
+    }
+
+    // 创建并添加回顾
     const review = goal.createReview(params);
     goal.addReview(review);
+  }
 
-    await this.goalRepository.save(goal);
-    return goal;
+  /**
+   * 验证目标标题
+   *
+   * @param title 标题
+   */
+  private validateGoalTitle(title: string): void {
+    const trimmed = title.trim();
+    if (trimmed.length === 0) {
+      throw new Error('Goal title cannot be empty');
+    }
+    if (trimmed.length > 200) {
+      throw new Error('Goal title is too long (max 200 characters)');
+    }
+  }
+
+  /**
+   * 验证目标日期范围
+   *
+   * @param startDate 开始日期
+   * @param targetDate 目标日期
+   */
+  private validateGoalDateRange(startDate?: number, targetDate?: number): void {
+    if (startDate && targetDate && startDate > targetDate) {
+      throw new Error('Start date cannot be after target date');
+    }
   }
 }

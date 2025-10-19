@@ -156,22 +156,49 @@ export class GoalController {
   }
 
   /**
-   * 更新目标状态
-   * @route PATCH /api/goals/:uuid/status
+   * 激活目标
+   * @route POST /api/goals/:uuid/activate
    */
-  static async updateGoalStatus(req: Request, res: Response): Promise<Response> {
+  static async activateGoal(req: Request, res: Response): Promise<Response> {
     try {
       const { uuid } = req.params;
-      const { status, reason } = req.body;
 
       const service = await GoalController.getGoalService();
-      const goal = await service.updateGoalStatus(uuid, status, reason);
+      const goal = await service.activateGoal(uuid);
 
-      logger.info('Goal status updated successfully', { uuid, status });
-      return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal status updated');
+      logger.info('Goal activated successfully', { uuid });
+      return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal activated successfully');
     } catch (error) {
       if (error instanceof Error) {
-        logger.error('Error updating goal status', { error: error.message });
+        logger.error('Error activating goal', { error: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.INTERNAL_ERROR,
+          message: error.message,
+        });
+      }
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: 'Unknown error occurred',
+      });
+    }
+  }
+
+  /**
+   * 完成目标
+   * @route POST /api/goals/:uuid/complete
+   */
+  static async completeGoal(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+
+      const service = await GoalController.getGoalService();
+      const goal = await service.completeGoal(uuid);
+
+      logger.info('Goal completed successfully', { uuid });
+      return GoalController.responseBuilder.sendSuccess(res, goal, 'Goal completed successfully');
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error('Error completing goal', { error: error.message });
         return GoalController.responseBuilder.sendError(res, {
           code: ResponseCode.INTERNAL_ERROR,
           message: error.message,
@@ -285,6 +312,71 @@ export class GoalController {
     } catch (error) {
       if (error instanceof Error) {
         logger.error('Error updating key result progress', { error: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.INTERNAL_ERROR,
+          message: error.message,
+        });
+      }
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: 'Unknown error occurred',
+      });
+    }
+  }
+
+  /**
+   * 删除关键结果
+   * @route DELETE /api/goals/:uuid/key-results/:keyResultUuid
+   */
+  static async deleteKeyResult(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid, keyResultUuid } = req.params;
+
+      const service = await GoalController.getGoalService();
+      const goal = await service.deleteKeyResult(uuid, keyResultUuid);
+
+      logger.info('Key result deleted successfully', { goalUuid: uuid, keyResultUuid });
+      return GoalController.responseBuilder.sendSuccess(
+        res,
+        goal,
+        'Key result deleted successfully',
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error('Error deleting key result', { error: error.message });
+        return GoalController.responseBuilder.sendError(res, {
+          code: ResponseCode.INTERNAL_ERROR,
+          message: error.message,
+        });
+      }
+      return GoalController.responseBuilder.sendError(res, {
+        code: ResponseCode.INTERNAL_ERROR,
+        message: 'Unknown error occurred',
+      });
+    }
+  }
+
+  /**
+   * 添加目标回顾
+   * @route POST /api/goals/:uuid/reviews
+   */
+  static async addReview(req: Request, res: Response): Promise<Response> {
+    try {
+      const { uuid } = req.params;
+
+      const service = await GoalController.getGoalService();
+      const goal = await service.addReview(uuid, req.body);
+
+      logger.info('Goal review added successfully', { goalUuid: uuid });
+      return GoalController.responseBuilder.sendSuccess(
+        res,
+        goal,
+        'Review added successfully',
+        201,
+      );
+    } catch (error) {
+      if (error instanceof Error) {
+        logger.error('Error adding goal review', { error: error.message });
         return GoalController.responseBuilder.sendError(res, {
           code: ResponseCode.INTERNAL_ERROR,
           message: error.message,

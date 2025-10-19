@@ -1,7 +1,9 @@
 import type { IGoalRepository } from '@dailyuse/domain-server';
 import { GoalContainer } from '../../infrastructure/di/GoalContainer';
-import { GoalDomainService, Goal } from '@dailyuse/domain-server';
+import { GoalDomainService, GoalStatisticsDomainService, Goal } from '@dailyuse/domain-server';
 import type { GoalContracts } from '@dailyuse/contracts';
+
+type GoalStatisticsClientDTO = GoalContracts.GoalStatisticsClientDTO;
 
 /**
  * Goal 应用服务
@@ -12,16 +14,19 @@ import type { GoalContracts } from '@dailyuse/contracts';
  * - 协调多个领域服务
  * - 事务管理
  * - DTO 转换（Domain → ClientDTO）
+ * - 调用 Repository 进行持久化
  *
  * 注意：返回给客户端的数据必须使用 ClientDTO（通过 toClientDTO() 方法）
  */
 export class GoalApplicationService {
   private static instance: GoalApplicationService;
   private domainService: GoalDomainService;
+  private statisticsDomainService: GoalStatisticsDomainService;
   private goalRepository: IGoalRepository;
 
   private constructor(goalRepository: IGoalRepository) {
-    this.domainService = new GoalDomainService(goalRepository);
+    this.domainService = new GoalDomainService();
+    this.statisticsDomainService = new GoalStatisticsDomainService();
     this.goalRepository = goalRepository;
   }
 
@@ -46,7 +51,7 @@ export class GoalApplicationService {
     return GoalApplicationService.instance;
   }
 
-  // ===== Goal 管理 =====
+  // ===== Goal CRUD 操作 =====
 
   /**
    * 创建目标
@@ -60,16 +65,33 @@ export class GoalApplicationService {
     parentGoalUuid?: string;
     folderUuid?: string;
     startDate?: number;
-    deadline?: number;
+    targetDate?: number;
     tags?: string[];
     metadata?: any;
     color?: string;
     feasibilityAnalysis?: string;
     motivation?: string;
   }): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.createGoal({
-      ...params,
-    });
+    // 1. 如果有父目标，先查询
+    let parentGoal: Goal | undefined;
+    if (params.parentGoalUuid) {
+      const found = await this.goalRepository.findById(params.parentGoalUuid);
+      if (!found) {
+        throw new Error(`Parent goal not found: ${params.parentGoalUuid}`);
+      }
+      parentGoal = found;
+    }
+
+    // 2. 委托领域服务创建聚合根（不持久化）
+    const goal = this.domainService.createGoal(params, parentGoal);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 发布领域事件（未来实现）
+    // await this.eventBus.publish(goal.getDomainEvents());
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -80,7 +102,7 @@ export class GoalApplicationService {
     uuid: string,
     options?: { includeChildren?: boolean },
   ): Promise<GoalContracts.GoalClientDTO | null> {
-    const goal = await this.domainService.getGoal(uuid, options);
+    const goal = await this.goalRepository.findById(uuid, options);
     return goal ? goal.toClientDTO() : null;
   }
 
@@ -89,22 +111,27 @@ export class GoalApplicationService {
    */
   async getUserGoals(
     accountUuid: string,
-    options?: { includeChildren?: boolean },
+    options?: {
+      includeChildren?: boolean;
+      status?: string;
+      folderUuid?: string;
+    },
   ): Promise<GoalContracts.GoalClientDTO[]> {
-    const goals = await this.domainService.getGoalsForAccount(accountUuid, options);
+    const goals = await this.goalRepository.findByAccountUuid(accountUuid, options);
     return goals.map((g: Goal) => g.toClientDTO());
   }
 
   /**
-   * 更新目标
+   * 更新目标基本信息
    */
   async updateGoal(
     uuid: string,
     updates: Partial<{
-      name: string;
+      title: string;
       description: string;
       importance: GoalContracts.ImportanceLevel;
       urgency: GoalContracts.UrgencyLevel;
+      category: string;
       deadline: number;
       tags: string[];
       metadata: any;
@@ -113,36 +140,90 @@ export class GoalApplicationService {
       motivation: string;
     }>,
   ): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.updateGoalBasicInfo(uuid, updates);
+    // 1. 查询目标
+    const goal = await this.goalRepository.findById(uuid);
+    if (!goal) {
+      throw new Error(`Goal not found: ${uuid}`);
+    }
+
+    // 2. 委托领域服务更新（业务逻辑）
+    this.domainService.updateGoalBasicInfo(goal, updates);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
   /**
-   * 更新目标状态
-   */
-  async updateGoalStatus(
-    uuid: string,
-    status: GoalContracts.GoalStatus,
-    reason?: string,
-  ): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.changeGoalStatus(uuid, status);
-    return goal.toClientDTO();
-  }
-
-  /**
-   * 删除目标
+   * 删除目标（软删除）
    */
   async deleteGoal(uuid: string): Promise<void> {
-    await this.domainService.deleteGoal(uuid);
+    await this.goalRepository.softDelete(uuid);
   }
 
   /**
    * 归档目标
    */
   async archiveGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.archiveGoal(uuid);
+    // 1. 查询目标
+    const goal = await this.goalRepository.findById(uuid);
+    if (!goal) {
+      throw new Error(`Goal not found: ${uuid}`);
+    }
+
+    // 2. 调用聚合根方法
+    goal.archive();
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
     return goal.toClientDTO();
   }
+
+  /**
+   * 激活目标
+   */
+  async activateGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
+    // 1. 查询目标
+    const goal = await this.goalRepository.findById(uuid);
+    if (!goal) {
+      throw new Error(`Goal not found: ${uuid}`);
+    }
+
+    // 2. 调用聚合根方法
+    goal.activate();
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
+    return goal.toClientDTO();
+  }
+
+  /**
+   * 完成目标
+   */
+  async completeGoal(uuid: string): Promise<GoalContracts.GoalClientDTO> {
+    // 1. 查询目标
+    const goal = await this.goalRepository.findById(uuid);
+    if (!goal) {
+      throw new Error(`Goal not found: ${uuid}`);
+    }
+
+    // 2. 调用聚合根方法
+    goal.complete();
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
+    return goal.toClientDTO();
+  }
+
+  // ===== KeyResult 管理 =====
 
   /**
    * 添加关键结果
@@ -158,7 +239,19 @@ export class GoalApplicationService {
       weight: number;
     },
   ): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.addKeyResultToGoal(goalUuid, keyResult);
+    // 1. 查询目标（包含子实体）
+    const goal = await this.goalRepository.findById(goalUuid, { includeChildren: true });
+    if (!goal) {
+      throw new Error(`Goal not found: ${goalUuid}`);
+    }
+
+    // 2. 委托领域服务添加关键结果
+    this.domainService.addKeyResultToGoal(goal, keyResult);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -171,14 +264,79 @@ export class GoalApplicationService {
     currentValue: number,
     note?: string,
   ): Promise<GoalContracts.GoalClientDTO> {
-    const goal = await this.domainService.updateKeyResultProgress(
-      goalUuid,
-      keyResultUuid,
-      currentValue,
-      note,
-    );
+    // 1. 查询目标（包含子实体）
+    const goal = await this.goalRepository.findById(goalUuid, { includeChildren: true });
+    if (!goal) {
+      throw new Error(`Goal not found: ${goalUuid}`);
+    }
+
+    // 2. 委托领域服务更新进度
+    this.domainService.updateKeyResultProgress(goal, keyResultUuid, currentValue, note);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
     return goal.toClientDTO();
   }
+
+  /**
+   * 删除关键结果
+   */
+  async deleteKeyResult(
+    goalUuid: string,
+    keyResultUuid: string,
+  ): Promise<GoalContracts.GoalClientDTO> {
+    // 1. 查询目标（包含子实体）
+    const goal = await this.goalRepository.findById(goalUuid, { includeChildren: true });
+    if (!goal) {
+      throw new Error(`Goal not found: ${goalUuid}`);
+    }
+
+    // 2. 调用聚合根方法删除关键结果
+    goal.removeKeyResult(keyResultUuid);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
+    return goal.toClientDTO();
+  }
+
+  // ===== GoalReview 管理 =====
+
+  /**
+   * 添加目标回顾
+   */
+  async addReview(
+    goalUuid: string,
+    params: {
+      title: string;
+      content: string;
+      reviewType: string;
+      rating?: number;
+      achievements?: string;
+      challenges?: string;
+      nextActions?: string;
+    },
+  ): Promise<GoalContracts.GoalClientDTO> {
+    // 1. 查询目标（包含子实体）
+    const goal = await this.goalRepository.findById(goalUuid, { includeChildren: true });
+    if (!goal) {
+      throw new Error(`Goal not found: ${goalUuid}`);
+    }
+
+    // 2. 委托领域服务添加回顾
+    this.domainService.addReviewToGoal(goal, params);
+
+    // 3. 持久化
+    await this.goalRepository.save(goal);
+
+    // 4. 返回 ClientDTO
+    return goal.toClientDTO();
+  }
+
+  // ===== 查询操作 =====
 
   /**
    * 搜索目标
@@ -192,36 +350,22 @@ export class GoalApplicationService {
 
   /**
    * 获取目标统计
+   *
+   * 架构说明：
+   * 1. Query: ApplicationService 查询所有目标
+   * 2. Domain: 传递给 StatisticsDomainService 计算统计
+   * 3. Return: 返回统计 DTO（无需持久化）
    */
-  async getGoalStatistics(accountUuid: string): Promise<GoalContracts.GoalStatisticsClientDTO> {
-    // This should be implemented in the domain service and repository
-    // For now, returning a dummy object
-    return {
-      accountUuid,
-      totalGoals: 0,
-      activeGoals: 0,
-      completedGoals: 0,
-      archivedGoals: 0,
-      overdueGoals: 0,
-      totalKeyResults: 0,
-      completedKeyResults: 0,
-      averageProgress: 0,
-      goalsByImportance: {},
-      goalsByUrgency: {},
-      goalsByCategory: {},
-      goalsByStatus: {},
-      goalsCreatedThisWeek: 0,
-      goalsCompletedThisWeek: 0,
-      goalsCreatedThisMonth: 0,
-      goalsCompletedThisMonth: 0,
-      totalReviews: 0,
-      averageRating: null,
-      lastCalculatedAt: Date.now(),
-      completionRate: 0,
-      keyResultCompletionRate: 0,
-      overdueRate: 0,
-      weeklyTrend: 'STABLE',
-      monthlyTrend: 'STABLE',
-    };
+  async getGoalStatistics(accountUuid: string): Promise<GoalStatisticsClientDTO> {
+    // 1. 查询账户的所有目标（包括归档，用于完整统计）
+    const goals = await this.goalRepository.findByAccountUuid(accountUuid, {
+      includeChildren: true, // 包含子目标
+    });
+
+    // 2. 委托给 StatisticsDomainService 计算
+    const statistics = this.statisticsDomainService.calculateStatistics(accountUuid, goals);
+
+    // 3. 返回 DTO（ServerDTO 和 ClientDTO 结构相同）
+    return statistics as GoalStatisticsClientDTO;
   }
 }

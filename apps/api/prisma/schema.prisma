@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  shadowDatabaseUrl = env("SHADOW_DATABASE_URL")
 }
 
 // ============================================================
@@ -36,6 +37,7 @@ model Account {
 
   // Relations
   goals                Goal[]
+  focusSessions        FocusSession[]
   repositories         Repository[]
   repositoryExplorers  RepositoryExplorer[]
   repositoryStatistics RepositoryStatistics[]
@@ -559,40 +561,79 @@ model ReminderStatistics {
 // ============================================================
 
 model Goal {
-  uuid                 String    @id @default(cuid())
-  accountUuid          String    @map("account_uuid")
-  title                String
-  description          String?   @db.Text
-  color                String? // 主题色 (hex format, e.g., #FF5733)
-  feasibilityAnalysis  String?   @map("feasibility_analysis") @db.Text // 可行性分析
-  motivation           String?   @db.Text // 实现动机
-  status               String    @default("pending") // e.g., 'pending', 'in_progress', 'completed', 'archived'
-  importance           Int       @default(2) // 0-4 scale
-  urgency              Int       @default(2) // 0-4 scale
-  category             String?
-  tags                 String?   @db.Text // JSON array of strings
-  startDate            DateTime? @map("start_date")
-  targetDate           DateTime? @map("target_date")
-  completedAt          DateTime? @map("completed_at")
-  archivedAt           DateTime? @map("archived_at")
-  folderUuid           String?   @map("folder_uuid")
-  parentGoalUuid       String?   @map("parent_goal_uuid")
-  sortOrder            Int       @default(0) @map("sort_order")
-  reminderConfig       String?   @map("reminder_config") @db.Text // JSON for reminder configuration
-  createdAt            DateTime  @default(now()) @map("created_at")
-  updatedAt            DateTime  @updatedAt @map("updated_at")
-  deletedAt            DateTime? @map("deleted_at")
+  uuid                String    @id @default(cuid())
+  accountUuid         String    @map("account_uuid")
+  title               String
+  description         String?   @db.Text
+  color               String? // 主题色 (hex format, e.g., #FF5733)
+  feasibilityAnalysis String?   @map("feasibility_analysis") @db.Text // 可行性分析
+  motivation          String?   @db.Text // 实现动机
+  status              String    @default("pending") // e.g., 'pending', 'in_progress', 'completed', 'archived'
+  importance          Int       @default(2) // 0-4 scale
+  urgency             Int       @default(2) // 0-4 scale
+  category            String?
+  tags                String?   @db.Text // JSON array of strings
+  startDate           DateTime? @map("start_date")
+  targetDate          DateTime? @map("target_date")
+  completedAt         DateTime? @map("completed_at")
+  archivedAt          DateTime? @map("archived_at")
+  folderUuid          String?   @map("folder_uuid")
+  parentGoalUuid      String?   @map("parent_goal_uuid")
+  sortOrder           Int       @default(0) @map("sort_order")
+  reminderConfig      String?   @map("reminder_config") @db.Text // JSON for reminder configuration
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+  deletedAt           DateTime? @map("deleted_at")
 
   // Relations
-  account    Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  parentGoal Goal?   @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
-  childGoals Goal[]  @relation("GoalHierarchy")
+  account       Account        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parentGoal    Goal?          @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  childGoals    Goal[]         @relation("GoalHierarchy")
+  focusSessions FocusSession[]
 
   @@index([accountUuid])
   @@index([status])
   @@index([folderUuid])
   @@index([parentGoalUuid])
   @@map("goals")
+}
+
+/// FocusSession 聚合根
+/// 代表一个专注周期（Pomodoro 风格的时间追踪会话）
+model FocusSession {
+  uuid                  String  @id @default(cuid())
+  accountUuid           String  @map("account_uuid")
+  goalUuid              String? @map("goal_uuid") // 可选关联目标
+  status                String  @default("DRAFT") // FocusSessionStatus: 'DRAFT', 'IN_PROGRESS', 'PAUSED', 'COMPLETED', 'CANCELLED'
+  durationMinutes       Int     @map("duration_minutes") // 计划时长（1-240分钟）
+  actualDurationMinutes Int     @default(0) @map("actual_duration_minutes") // 实际专注时长（扣除暂停时间）
+  description           String? @db.Text // 会话描述
+
+  // 时间戳 - 状态转换时间
+  startedAt   DateTime? @map("started_at") // 开始时间（DRAFT → IN_PROGRESS）
+  pausedAt    DateTime? @map("paused_at") // 暂停时间（IN_PROGRESS → PAUSED）
+  resumedAt   DateTime? @map("resumed_at") // 恢复时间（PAUSED → IN_PROGRESS）
+  completedAt DateTime? @map("completed_at") // 完成时间（→ COMPLETED）
+  cancelledAt DateTime? @map("cancelled_at") // 取消时间（→ CANCELLED）
+
+  // 暂停追踪
+  pauseCount            Int @default(0) @map("pause_count") // 暂停次数
+  pausedDurationMinutes Int @default(0) @map("paused_duration_minutes") // 累计暂停时长
+
+  // 审计字段
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  goal    Goal?   @relation(fields: [goalUuid], references: [uuid], onDelete: SetNull)
+
+  @@index([accountUuid])
+  @@index([goalUuid])
+  @@index([status])
+  @@index([accountUuid, status]) // 复合索引：查询用户的活跃会话
+  @@index([createdAt])
+  @@map("focus_sessions")
 }
 
 // ============================================================

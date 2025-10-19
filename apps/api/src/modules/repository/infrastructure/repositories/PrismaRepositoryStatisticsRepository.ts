@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import type { IRepositoryStatisticsRepository } from '@dailyuse/domain-server';
-import { RepositoryStatisticsAggregate as RepositoryStatistics } from '@dailyuse/domain-server';
+import { RepositoryStatistics } from '@dailyuse/domain-server';
 
 /**
  * RepositoryStatistics Prisma 仓储实现

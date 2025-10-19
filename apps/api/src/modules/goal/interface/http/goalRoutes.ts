@@ -154,35 +154,39 @@ router.delete('/:uuid', GoalController.deleteGoal);
 
 /**
  * @swagger
- * /api/goals/{uuid}/status:
- *   patch:
+ * /api/goals/{uuid}/activate:
+ *   post:
  *     tags: [Goal]
- *     summary: 更新目标状态
+ *     summary: 激活目标
  *     parameters:
  *       - in: path
  *         name: uuid
  *         required: true
  *         schema:
  *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - status
- *             properties:
- *               status:
- *                 type: string
- *                 enum: [NOT_STARTED, IN_PROGRESS, COMPLETED, ON_HOLD, CANCELLED, ARCHIVED]
- *               reason:
- *                 type: string
  *     responses:
  *       200:
- *         description: 状态更新成功
+ *         description: 激活成功
  */
-router.patch('/:uuid/status', GoalController.updateGoalStatus);
+router.post('/:uuid/activate', GoalController.activateGoal);
+
+/**
+ * @swagger
+ * /api/goals/{uuid}/complete:
+ *   post:
+ *     tags: [Goal]
+ *     summary: 完成目标
+ *     parameters:
+ *       - in: path
+ *         name: uuid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 完成成功
+ */
+router.post('/:uuid/complete', GoalController.completeGoal);
 
 /**
  * @swagger
@@ -281,6 +285,72 @@ router.post('/:uuid/key-results', GoalController.addKeyResult);
  *         description: 进度更新成功
  */
 router.patch('/:uuid/key-results/:keyResultUuid/progress', GoalController.updateKeyResultProgress);
+
+/**
+ * @swagger
+ * /api/goals/{uuid}/key-results/{keyResultUuid}:
+ *   delete:
+ *     tags: [Goal]
+ *     summary: 删除关键结果
+ *     parameters:
+ *       - in: path
+ *         name: uuid
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: keyResultUuid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: 删除成功
+ */
+router.delete('/:uuid/key-results/:keyResultUuid', GoalController.deleteKeyResult);
+
+/**
+ * @swagger
+ * /api/goals/{uuid}/reviews:
+ *   post:
+ *     tags: [Goal]
+ *     summary: 添加目标回顾
+ *     parameters:
+ *       - in: path
+ *         name: uuid
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - content
+ *               - reviewType
+ *             properties:
+ *               title:
+ *                 type: string
+ *               content:
+ *                 type: string
+ *               reviewType:
+ *                 type: string
+ *               rating:
+ *                 type: number
+ *               achievements:
+ *                 type: string
+ *               challenges:
+ *                 type: string
+ *               nextActions:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 回顾添加成功
+ */
+router.post('/:uuid/reviews', GoalController.addReview);
 
 // ===== 查询和统计 =====
 

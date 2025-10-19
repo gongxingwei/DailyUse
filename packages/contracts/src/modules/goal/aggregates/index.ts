@@ -14,3 +14,7 @@ export * from './GoalFolderClient';
 // GoalStatistics 聚合根
 export * from './GoalStatisticsServer';
 export * from './GoalStatisticsClient';
+
+// FocusSession 聚合根
+export * from './FocusSessionServer';
+export * from './FocusSessionClient';
