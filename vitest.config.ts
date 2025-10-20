@@ -57,16 +57,6 @@ export default defineConfig({
       {
         extends: true,
         test: {
-          name: 'domain-core',
-          root: './packages/domain-core',
-          environment: 'node',
-          include: ['src/**/*.{test,spec}.{js,ts}'],
-          exclude: ['node_modules', 'dist', '.git', '.cache'],
-        },
-      },
-      {
-        extends: true,
-        test: {
           name: 'domain-server',
           root: './packages/domain-server',
           environment: 'node',

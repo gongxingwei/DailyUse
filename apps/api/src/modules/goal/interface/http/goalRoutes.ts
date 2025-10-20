@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { GoalController } from './GoalController';
+import goalStatisticsRoutes from './goalStatisticsRoutes';
 
 /**
  * Goal 模块路由
@@ -399,12 +400,21 @@ router.get('/user/:accountUuid', GoalController.getUserGoals);
  */
 router.get('/search', GoalController.searchGoals);
 
+// ===== 统计路由（新架构 - 事件驱动） =====
+// 挂载 Goal 统计路由（使用独立的 Controller 和路由文件）
+router.use('', goalStatisticsRoutes);
+
 /**
+ * @deprecated 旧统计接口（已废弃）
+ * 请使用 GET /api/goals/statistics 替代
+ *
  * @swagger
  * /api/goals/statistics/{accountUuid}:
  *   get:
  *     tags: [Goal]
- *     summary: 获取目标统计
+ *     summary: 获取目标统计（已废弃）
+ *     deprecated: true
+ *     description: 此接口已废弃，请使用 GET /api/goals/statistics（从 token 提取 accountUuid）
  *     parameters:
  *       - in: path
  *         name: accountUuid

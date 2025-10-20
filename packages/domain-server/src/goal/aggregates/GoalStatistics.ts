@@ -189,6 +189,13 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
   }
 
   /**
+   * 创建空统计（与 createDefault 相同，用于兼容性）
+   */
+  public static createEmpty(accountUuid: string): GoalStatistics {
+    return GoalStatistics.createDefault(accountUuid);
+  }
+
+  /**
    * 从 Server DTO 重建聚合根
    */
   public static fromServerDTO(dto: GoalStatisticsServerDTO): GoalStatistics {
@@ -530,5 +537,237 @@ export class GoalStatistics extends AggregateRoot implements IGoalStatisticsServ
       averageRating: this._averageRating,
       lastCalculatedAt: this._lastCalculatedAt,
     };
+  }
+
+  // ===== 事件处理方法（增量更新） =====
+
+  /**
+   * 处理目标创建事件
+   */
+  public onGoalCreated(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._totalGoals++;
+
+    // 更新按重要性统计
+    if (event.payload.importance) {
+      const key = event.payload.importance;
+      this._goalsByImportance[key] = (this._goalsByImportance[key] || 0) + 1;
+    }
+
+    // 更新按紧急度统计
+    if (event.payload.urgency) {
+      const key = event.payload.urgency;
+      this._goalsByUrgency[key] = (this._goalsByUrgency[key] || 0) + 1;
+    }
+
+    // 更新按分类统计
+    if (event.payload.category) {
+      const category = event.payload.category;
+      this._goalsByCategory[category] = (this._goalsByCategory[category] || 0) + 1;
+    }
+
+    // 更新按状态统计
+    if (event.payload.newStatus) {
+      const status = event.payload.newStatus;
+      this._goalsByStatus[status] = (this._goalsByStatus[status] || 0) + 1;
+
+      if (status === 'ACTIVE') {
+        this._activeGoals++;
+      }
+    }
+
+    // 检查是否在本周/本月创建
+    const weekStart = this.getWeekStart(Date.now());
+    const monthStart = this.getMonthStart(Date.now());
+
+    if (event.timestamp >= weekStart) {
+      this._goalsCreatedThisWeek++;
+    }
+
+    if (event.timestamp >= monthStart) {
+      this._goalsCreatedThisMonth++;
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理目标删除事件
+   */
+  public onGoalDeleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._totalGoals = Math.max(0, this._totalGoals - 1);
+
+    // 更新按重要性统计
+    if (event.payload.importance) {
+      const key = event.payload.importance;
+      this._goalsByImportance[key] = Math.max(0, (this._goalsByImportance[key] || 0) - 1);
+    }
+
+    // 更新按紧急度统计
+    if (event.payload.urgency) {
+      const key = event.payload.urgency;
+      this._goalsByUrgency[key] = Math.max(0, (this._goalsByUrgency[key] || 0) - 1);
+    }
+
+    // 更新按分类统计
+    if (event.payload.category) {
+      const category = event.payload.category;
+      this._goalsByCategory[category] = Math.max(0, (this._goalsByCategory[category] || 0) - 1);
+    }
+
+    // 更新按状态统计
+    if (event.payload.previousStatus) {
+      const status = event.payload.previousStatus;
+      this._goalsByStatus[status] = Math.max(0, (this._goalsByStatus[status] || 0) - 1);
+
+      if (status === 'ACTIVE') {
+        this._activeGoals = Math.max(0, this._activeGoals - 1);
+      } else if (status === 'COMPLETED') {
+        this._completedGoals = Math.max(0, this._completedGoals - 1);
+      } else if (status === 'ARCHIVED') {
+        this._archivedGoals = Math.max(0, this._archivedGoals - 1);
+      }
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理目标状态变更事件
+   */
+  public onGoalStatusChanged(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    const { previousStatus, newStatus } = event.payload;
+
+    if (!previousStatus || !newStatus) return;
+
+    // 减少旧状态计数
+    this._goalsByStatus[previousStatus] = Math.max(
+      0,
+      (this._goalsByStatus[previousStatus] || 0) - 1,
+    );
+    if (previousStatus === 'ACTIVE') {
+      this._activeGoals = Math.max(0, this._activeGoals - 1);
+    } else if (previousStatus === 'COMPLETED') {
+      this._completedGoals = Math.max(0, this._completedGoals - 1);
+    }
+
+    // 增加新状态计数
+    this._goalsByStatus[newStatus] = (this._goalsByStatus[newStatus] || 0) + 1;
+    if (newStatus === 'ACTIVE') {
+      this._activeGoals++;
+    } else if (newStatus === 'COMPLETED') {
+      this._completedGoals++;
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理目标完成事件
+   */
+  public onGoalCompleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._completedGoals++;
+
+    // 检查是否在本周/本月完成
+    const weekStart = this.getWeekStart(Date.now());
+    const monthStart = this.getMonthStart(Date.now());
+
+    if (event.timestamp >= weekStart) {
+      this._goalsCompletedThisWeek++;
+    }
+
+    if (event.timestamp >= monthStart) {
+      this._goalsCompletedThisMonth++;
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理目标归档事件
+   */
+  public onGoalArchived(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._archivedGoals++;
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理目标激活事件
+   */
+  public onGoalActivated(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._activeGoals++;
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理关键结果创建事件
+   */
+  public onKeyResultCreated(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    const count = event.payload.keyResultCount || 1;
+    this._totalKeyResults += count;
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理关键结果删除事件
+   */
+  public onKeyResultDeleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    const count = event.payload.keyResultCount || 1;
+    this._totalKeyResults = Math.max(0, this._totalKeyResults - count);
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理关键结果完成事件
+   */
+  public onKeyResultCompleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._completedKeyResults++;
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理回顾创建事件
+   */
+  public onReviewCreated(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._totalReviews++;
+
+    // 更新平均评分
+    if (event.payload.rating !== undefined) {
+      const currentTotal = (this._averageRating || 0) * (this._totalReviews - 1);
+      const newTotal = currentTotal + event.payload.rating;
+      this._averageRating = newTotal / this._totalReviews;
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理回顾删除事件
+   */
+  public onReviewDeleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    this._totalReviews = Math.max(0, this._totalReviews - 1);
+
+    // 更新平均评分
+    if (event.payload.rating !== undefined && this._averageRating !== null) {
+      if (this._totalReviews === 0) {
+        this._averageRating = null;
+      } else {
+        const currentTotal = this._averageRating * (this._totalReviews + 1);
+        const newTotal = currentTotal - event.payload.rating;
+        this._averageRating = newTotal / this._totalReviews;
+      }
+    }
+
+    this._lastCalculatedAt = Date.now();
+  }
+
+  /**
+   * 处理专注会话完成事件
+   */
+  public onFocusSessionCompleted(event: GoalContracts.GoalStatisticsUpdateEvent): void {
+    if (event.payload.focusMinutes) {
+      // 这里可以添加专注会话相关的统计
+      // 目前 GoalStatistics 没有专注会话字段，可以后续扩展
+    }
+    this._lastCalculatedAt = Date.now();
   }
 }

@@ -25,6 +25,8 @@ const mockDataStore = {
   reminderExecution: new Map(),
   // Repository相关表
   repositoryStatistics: new Map(),
+  // Goal Statistics
+  goalStatistics: new Map(),
   // 添加其他需要的表...
 };
 
@@ -385,6 +387,9 @@ export const mockPrismaClient = {
 
   // Repository相关表
   repositoryStatistics: createMockModel('repositoryStatistics'),
+
+  // Goal Statistics
+  goalStatistics: createMockModel('goalStatistics'),
 
   // 事务和连接操作
   $transaction: vi.fn(async (operations: any[]) => {

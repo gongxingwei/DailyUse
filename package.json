@@ -10,7 +10,7 @@
   "type": "module",
   "packageManager": "pnpm@10.18.3",
   "engines": {
-    "node": ">=20.11.0 <22.0.0",
+    "node": ">=22.20.0",
     "pnpm": ">=10.0.0"
   },
   "scripts": {
@@ -36,7 +36,6 @@
     "test:web": "vitest --project=web",
     "test:desktop": "vitest --project=desktop",
     "test:contracts": "vitest --project=contracts",
-    "test:core": "vitest --project=domain-core",
     "test:ui-lib": "vitest --project=ui",
     "test:utils": "vitest --project=utils",
     "format": "pnpm prettier --write .",
@@ -51,7 +50,6 @@
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
     "@dailyuse/domain-client": "workspace:*",
-    "@dailyuse/domain-core": "workspace:*",
     "@dailyuse/domain-server": "workspace:*",
     "@dailyuse/ui": "workspace:*",
     "@dailyuse/utils": "workspace:*",
@@ -94,6 +92,7 @@
     "jiti": "2.4.2",
     "jsdom": "^26.1.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "lodash": "4.17.21",
     "nx": "^21.4.1",
     "prettier": "^3.0.0",
     "reflect-metadata": "^0.2.2",

@@ -24,7 +24,6 @@
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
     "@dailyuse/domain-client": "workspace:*",
-    "@dailyuse/domain-core": "workspace:*",
     "@dailyuse/domain-server": "workspace:*",
     "@dailyuse/ui": "workspace:*",
     "@dailyuse/utils": "workspace:*",

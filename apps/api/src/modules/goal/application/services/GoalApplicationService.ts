@@ -1,7 +1,9 @@
 import type { IGoalRepository } from '@dailyuse/domain-server';
 import { GoalContainer } from '../../infrastructure/di/GoalContainer';
-import { GoalDomainService, GoalStatisticsDomainService, Goal } from '@dailyuse/domain-server';
+import { GoalDomainService, Goal } from '@dailyuse/domain-server';
 import type { GoalContracts } from '@dailyuse/contracts';
+import { GoalEventPublisher } from './GoalEventPublisher';
+import { GoalStatisticsApplicationService } from './GoalStatisticsApplicationService';
 
 type GoalStatisticsClientDTO = GoalContracts.GoalStatisticsClientDTO;
 
@@ -21,12 +23,10 @@ type GoalStatisticsClientDTO = GoalContracts.GoalStatisticsClientDTO;
 export class GoalApplicationService {
   private static instance: GoalApplicationService;
   private domainService: GoalDomainService;
-  private statisticsDomainService: GoalStatisticsDomainService;
   private goalRepository: IGoalRepository;
 
   private constructor(goalRepository: IGoalRepository) {
     this.domainService = new GoalDomainService();
-    this.statisticsDomainService = new GoalStatisticsDomainService();
     this.goalRepository = goalRepository;
   }
 
@@ -88,8 +88,8 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 发布领域事件（未来实现）
-    // await this.eventBus.publish(goal.getDomainEvents());
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
 
     // 5. 返回 ClientDTO
     return goal.toClientDTO();
@@ -152,7 +152,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -179,7 +182,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -199,7 +205,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -219,7 +228,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -251,7 +263,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -276,7 +291,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -299,7 +317,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -332,7 +353,10 @@ export class GoalApplicationService {
     // 3. 持久化
     await this.goalRepository.save(goal);
 
-    // 4. 返回 ClientDTO
+    // 4. 发布领域事件
+    await GoalEventPublisher.publishGoalEvents(goal);
+
+    // 5. 返回 ClientDTO
     return goal.toClientDTO();
   }
 
@@ -351,21 +375,17 @@ export class GoalApplicationService {
   /**
    * 获取目标统计
    *
+   * 注意：这个方法已重构为事件驱动架构，应该直接使用 GoalStatisticsApplicationService
+   *
    * 架构说明：
-   * 1. Query: ApplicationService 查询所有目标
-   * 2. Domain: 传递给 StatisticsDomainService 计算统计
-   * 3. Return: 返回统计 DTO（无需持久化）
+   * 1. Query: 从数据库读取持久化的统计（O(1) 查询）
+   * 2. Lazy Init: 如果不存在则自动创建
+   * 3. Return: 返回统计 DTO
    */
   async getGoalStatistics(accountUuid: string): Promise<GoalStatisticsClientDTO> {
-    // 1. 查询账户的所有目标（包括归档，用于完整统计）
-    const goals = await this.goalRepository.findByAccountUuid(accountUuid, {
-      includeChildren: true, // 包含子目标
-    });
-
-    // 2. 委托给 StatisticsDomainService 计算
-    const statistics = this.statisticsDomainService.calculateStatistics(accountUuid, goals);
-
-    // 3. 返回 DTO（ServerDTO 和 ClientDTO 结构相同）
-    return statistics as GoalStatisticsClientDTO;
+    // 委托给 GoalStatisticsApplicationService（新架构）
+    const statisticsService = await GoalStatisticsApplicationService.getInstance();
+    const statistics = await statisticsService.getOrCreateStatistics(accountUuid);
+    return statistics;
   }
 }

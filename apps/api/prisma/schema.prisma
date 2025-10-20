@@ -37,6 +37,7 @@ model Account {
 
   // Relations
   goals                Goal[]
+  goalStatistics       GoalStatistics?
   focusSessions        FocusSession[]
   repositories         Repository[]
   repositoryExplorers  RepositoryExplorer[]
@@ -634,6 +635,65 @@ model FocusSession {
   @@index([accountUuid, status]) // 复合索引：查询用户的活跃会话
   @@index([createdAt])
   @@map("focus_sessions")
+}
+
+/// GoalStatistics 聚合根
+/// 账户级别的目标统计信息（事件驱动增量更新）
+model GoalStatistics {
+  id          Int    @id @default(autoincrement())
+  accountUuid String @unique @map("account_uuid")
+
+  // 基础统计
+  totalGoals     Int @default(0) @map("total_goals")
+  activeGoals    Int @default(0) @map("active_goals")
+  completedGoals Int @default(0) @map("completed_goals")
+  archivedGoals  Int @default(0) @map("archived_goals")
+  overdueGoals   Int @default(0) @map("overdue_goals")
+
+  // 关键结果统计
+  totalKeyResults     Int @default(0) @map("total_key_results")
+  completedKeyResults Int @default(0) @map("completed_key_results")
+
+  // 平均进度
+  averageProgress Float @default(0) @map("average_progress")
+
+  // 按重要性分组 (JSON: Record<ImportanceLevel, number>)
+  goalsByImportance String @default("{}") @map("goals_by_importance") @db.Text
+
+  // 按紧急度分组 (JSON: Record<UrgencyLevel, number>)
+  goalsByUrgency String @default("{}") @map("goals_by_urgency") @db.Text
+
+  // 按分类分组 (JSON: Record<string, number>)
+  goalsByCategory String @default("{}") @map("goals_by_category") @db.Text
+
+  // 按状态分组 (JSON: Record<GoalStatus, number>)
+  goalsByStatus String @default("{}") @map("goals_by_status") @db.Text
+
+  // 时间段统计
+  goalsCreatedThisWeek   Int @default(0) @map("goals_created_this_week")
+  goalsCompletedThisWeek Int @default(0) @map("goals_completed_this_week")
+  goalsCreatedThisMonth  Int @default(0) @map("goals_created_this_month")
+  goalsCompletedThisMonth Int @default(0) @map("goals_completed_this_month")
+
+  // 回顾统计
+  totalReviews  Int   @default(0) @map("total_reviews")
+  averageRating Float? @map("average_rating")
+
+  // 专注会话统计
+  totalFocusSessions     Int @default(0) @map("total_focus_sessions")
+  completedFocusSessions Int @default(0) @map("completed_focus_sessions")
+  totalFocusMinutes      Int @default(0) @map("total_focus_minutes")
+
+  // 时间戳
+  lastCalculatedAt DateTime @default(now()) @map("last_calculated_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([accountUuid])
+  @@map("goal_statistics")
 }
 
 // ============================================================

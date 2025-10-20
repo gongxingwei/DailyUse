@@ -332,3 +332,72 @@ export interface ImportGoalsResponse {
     error: string;
   }>;
 }
+
+// ============ 统计相关 ============
+
+/**
+ * 统计更新事件
+ *
+ * 用于事件驱动的增量统计更新
+ */
+export interface GoalStatisticsUpdateEvent {
+  type:
+    | 'goal.created'
+    | 'goal.deleted'
+    | 'goal.status_changed'
+    | 'goal.completed'
+    | 'goal.archived'
+    | 'goal.activated'
+    | 'key_result.created'
+    | 'key_result.deleted'
+    | 'key_result.completed'
+    | 'review.created'
+    | 'review.deleted'
+    | 'focus_session.completed';
+  accountUuid: string;
+  timestamp: number;
+  payload: {
+    previousStatus?: GoalStatus;
+    newStatus?: GoalStatus;
+    importance?: ImportanceLevel;
+    urgency?: UrgencyLevel;
+    category?: string;
+    keyResultCount?: number;
+    rating?: number;
+    focusMinutes?: number;
+    [key: string]: any;
+  };
+}
+
+/**
+ * 重新计算统计请求
+ */
+export interface RecalculateGoalStatisticsRequest {
+  accountUuid: string;
+  force?: boolean; // 是否强制重算（即使已存在）
+}
+
+/**
+ * 重新计算统计响应
+ */
+export interface RecalculateGoalStatisticsResponse {
+  success: boolean;
+  message: string;
+  statistics: GoalStatisticsServerDTO;
+}
+
+/**
+ * 初始化统计请求
+ */
+export interface InitializeGoalStatisticsRequest {
+  accountUuid: string;
+}
+
+/**
+ * 初始化统计响应
+ */
+export interface InitializeGoalStatisticsResponse {
+  success: boolean;
+  message: string;
+  statistics: GoalStatisticsServerDTO;
+}

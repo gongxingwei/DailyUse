@@ -2,9 +2,11 @@ import type {
   IGoalRepository,
   IGoalFolderRepository,
   IFocusSessionRepository,
+  IGoalStatisticsRepository,
 } from '@dailyuse/domain-server';
 import { PrismaGoalRepository } from '../repositories/PrismaGoalRepository';
 import { PrismaFocusSessionRepository } from '../repositories/PrismaFocusSessionRepository';
+import { PrismaGoalStatisticsRepository } from '../repositories/PrismaGoalStatisticsRepository';
 // TODO: GoalFolder 表尚未迁移到数据库，需要先创建 Prisma migration
 // import { PrismaGoalFolderRepository } from '../repositories/PrismaGoalFolderRepository';
 import { prisma } from '@/config/prisma';
@@ -25,6 +27,7 @@ export class GoalContainer {
   private goalRepository?: IGoalRepository;
   private goalFolderRepository?: IGoalFolderRepository;
   private focusSessionRepository?: IFocusSessionRepository;
+  private goalStatisticsRepository?: IGoalStatisticsRepository;
 
   private constructor() {}
 
@@ -90,11 +93,29 @@ export class GoalContainer {
   }
 
   /**
+   * 获取目标统计仓储实例（懒加载）
+   */
+  getGoalStatisticsRepository(): IGoalStatisticsRepository {
+    if (!this.goalStatisticsRepository) {
+      this.goalStatisticsRepository = new PrismaGoalStatisticsRepository(prisma);
+    }
+    return this.goalStatisticsRepository;
+  }
+
+  /**
+   * 设置目标统计仓储实例（用于测试）
+   */
+  setGoalStatisticsRepository(repository: IGoalStatisticsRepository): void {
+    this.goalStatisticsRepository = repository;
+  }
+
+  /**
    * 重置容器（用于测试）
    */
   reset(): void {
     this.goalRepository = undefined;
     this.goalFolderRepository = undefined;
     this.focusSessionRepository = undefined;
+    this.goalStatisticsRepository = undefined;
   }
 }
