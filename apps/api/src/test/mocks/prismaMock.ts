@@ -33,6 +33,27 @@ const mockDataStore = {
   // 添加其他需要的表...
 };
 
+// 用于防止并发更新的锁
+const locks = new Map<string, Promise<any>>();
+
+// 获取锁并执行操作
+async function withLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+  // 等待之前的操作完成
+  while (locks.has(key)) {
+    await locks.get(key);
+  }
+
+  // 创建新的锁
+  const promise = operation();
+  locks.set(key, promise);
+
+  try {
+    return await promise;
+  } finally {
+    locks.delete(key);
+  }
+}
+
 // 生成测试用的UUID
 function generateTestUuid(prefix = 'test'): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -153,7 +174,14 @@ function createMockModel(tableName: keyof typeof mockDataStore) {
       const key = Object.keys(args.where)[0];
       const value = args.where[key];
 
-      return Array.from(store.values()).find((record) => record[key] === value) || null;
+      const record = Array.from(store.values()).find((record) => record[key] === value) || null;
+
+      // ✅ 处理 include 参数
+      if (record && args?.include) {
+        return includeRelations(tableName, record, args.include);
+      }
+
+      return record;
     }),
 
     findFirst: vi.fn(async (args?: any) => {
@@ -335,30 +363,41 @@ function createMockModel(tableName: keyof typeof mockDataStore) {
       const key = Object.keys(where)[0];
       const value = where[key];
 
-      const existingRecord = Array.from(store.values()).find((record) => record[key] === value);
+      // 使用锁确保 upsert 操作的原子性
+      const lockKey = `${tableName}:${key}:${value}`;
 
-      if (existingRecord) {
-        // 更新
-        const updatedRecord = {
-          ...existingRecord,
-          ...update,
-          updatedAt: new Date(),
-        };
-        store.set(existingRecord.uuid, updatedRecord);
-        return updatedRecord;
-      } else {
-        // 创建
-        const uuid = create.uuid || generateTestUuid();
-        const now = new Date();
-        const newRecord = {
-          uuid,
-          createdAt: now,
-          updatedAt: now,
-          ...create,
-        };
-        store.set(uuid, newRecord);
-        return newRecord;
-      }
+      return withLock(lockKey, async () => {
+        // 重新查找以确保获取最新的记录
+        const existingRecord = Array.from(store.values()).find((record) => record[key] === value);
+
+        if (existingRecord) {
+          // 更新
+          const updatedRecord = {
+            ...existingRecord,
+            ...update,
+            updatedAt: new Date(),
+          };
+
+          // 使用记录的主键或唯一键来存储
+          const storageKey =
+            existingRecord.uuid || existingRecord.id || existingRecord[key] || value;
+          store.set(storageKey, updatedRecord);
+          return updatedRecord;
+        } else {
+          // 创建
+          const now = new Date();
+          const newRecord = {
+            createdAt: now,
+            updatedAt: now,
+            ...create,
+          };
+
+          // 如果create中没有uuid或id,但有where条件的key,则使用它作为存储键
+          const storageKey = newRecord.uuid || newRecord.id || newRecord[key] || value;
+          store.set(storageKey, newRecord);
+          return newRecord;
+        }
+      });
     }),
   };
 }

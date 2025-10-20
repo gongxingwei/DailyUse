@@ -31,10 +31,37 @@ type RecalculateGoalStatisticsResponse = GoalContracts.RecalculateGoalStatistics
  * 负责协调统计聚合根的持久化和事件处理
  */
 export class GoalStatisticsDomainService {
+  // 用于保护并发统计更新的锁
+  private readonly locks = new Map<string, Promise<void>>();
+
   constructor(
     private readonly statisticsRepo: IGoalStatisticsRepository,
     private readonly goalRepo: IGoalRepository,
   ) {}
+
+  /**
+   * 使用锁来保护操作，确保同一 accountUuid 的操作是串行的
+   */
+  private async withLock<T>(key: string, operation: () => Promise<T>): Promise<T> {
+    // 等待之前的操作完成
+    while (this.locks.has(key)) {
+      await this.locks.get(key);
+    }
+
+    // 创建新的锁
+    let resolve!: () => void;
+    const promise = new Promise<void>((r) => {
+      resolve = r;
+    });
+    this.locks.set(key, promise);
+
+    try {
+      return await operation();
+    } finally {
+      this.locks.delete(key);
+      resolve();
+    }
+  }
 
   /**
    * 获取或创建统计信息
@@ -137,69 +164,73 @@ export class GoalStatisticsDomainService {
    * - 实时响应目标事件
    * - 增量更新统计数据
    * - 避免全量重算
+   * - 使用锁确保同一账户的统计更新是串行的，避免并发冲突
    */
   public async handleStatisticsUpdateEvent(event: GoalStatisticsUpdateEvent): Promise<void> {
-    // 1. 获取或创建统计
-    const statistics = await this.getOrCreateStatistics(event.accountUuid);
+    // 使用锁保护整个"读取-修改-保存"流程
+    return this.withLock(event.accountUuid, async () => {
+      // 1. 获取或创建统计
+      const statistics = await this.getOrCreateStatistics(event.accountUuid);
 
-    // 2. 根据事件类型更新统计
-    switch (event.type) {
-      case 'goal.created':
-        statistics.onGoalCreated(event);
-        break;
+      // 2. 根据事件类型更新统计
+      switch (event.type) {
+        case 'goal.created':
+          statistics.onGoalCreated(event);
+          break;
 
-      case 'goal.deleted':
-        statistics.onGoalDeleted(event);
-        break;
+        case 'goal.deleted':
+          statistics.onGoalDeleted(event);
+          break;
 
-      case 'goal.status_changed':
-        statistics.onGoalStatusChanged(event);
-        break;
+        case 'goal.status_changed':
+          statistics.onGoalStatusChanged(event);
+          break;
 
-      case 'goal.completed':
-        statistics.onGoalCompleted(event);
-        break;
+        case 'goal.completed':
+          statistics.onGoalCompleted(event);
+          break;
 
-      case 'goal.archived':
-        statistics.onGoalArchived(event);
-        break;
+        case 'goal.archived':
+          statistics.onGoalArchived(event);
+          break;
 
-      case 'goal.activated':
-        statistics.onGoalActivated(event);
-        break;
+        case 'goal.activated':
+          statistics.onGoalActivated(event);
+          break;
 
-      case 'key_result.created':
-        statistics.onKeyResultCreated(event);
-        break;
+        case 'key_result.created':
+          statistics.onKeyResultCreated(event);
+          break;
 
-      case 'key_result.deleted':
-        statistics.onKeyResultDeleted(event);
-        break;
+        case 'key_result.deleted':
+          statistics.onKeyResultDeleted(event);
+          break;
 
-      case 'key_result.completed':
-        statistics.onKeyResultCompleted(event);
-        break;
+        case 'key_result.completed':
+          statistics.onKeyResultCompleted(event);
+          break;
 
-      case 'review.created':
-        statistics.onReviewCreated(event);
-        break;
+        case 'review.created':
+          statistics.onReviewCreated(event);
+          break;
 
-      case 'review.deleted':
-        statistics.onReviewDeleted(event);
-        break;
+        case 'review.deleted':
+          statistics.onReviewDeleted(event);
+          break;
 
-      case 'focus_session.completed':
-        statistics.onFocusSessionCompleted(event);
-        break;
+        case 'focus_session.completed':
+          statistics.onFocusSessionCompleted(event);
+          break;
 
-      default:
-        // 未知事件类型，记录警告
-        console.warn(`Unknown goal statistics update event type: ${(event as any).type}`);
-        return;
-    }
+        default:
+          // 未知事件类型，记录警告
+          console.warn(`Unknown goal statistics update event type: ${(event as any).type}`);
+          return;
+      }
 
-    // 3. 保存更新后的统计
-    await this.statisticsRepo.upsert(statistics);
+      // 3. 保存更新后的统计
+      await this.statisticsRepo.upsert(statistics);
+    });
   }
 
   /**

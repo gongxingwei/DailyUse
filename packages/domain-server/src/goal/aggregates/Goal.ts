@@ -554,6 +554,7 @@ export class Goal extends AggregateRoot implements IGoalServer {
   public archive(): void {
     if (this._archivedAt) return;
 
+    this._status = GoalStatus.ARCHIVED; // 更新状态
     this._archivedAt = Date.now();
     this._updatedAt = this._archivedAt;
 
@@ -675,6 +676,7 @@ export class Goal extends AggregateRoot implements IGoalServer {
     description?: string;
     valueType: string;
     targetValue: number;
+    currentValue?: number;
     unit?: string;
     weight: number;
   }): KeyResult {
@@ -683,10 +685,11 @@ export class Goal extends AggregateRoot implements IGoalServer {
       title: params.title,
       description: params.description,
       progress: {
-        currentValue: 0,
+        currentValue: params.currentValue ?? 0,
         targetValue: params.targetValue,
         valueType: params.valueType as any,
         aggregationMethod: 'LAST' as any,
+        unit: params.unit,
       },
       order: this._keyResults.length,
     });

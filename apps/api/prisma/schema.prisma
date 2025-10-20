@@ -591,12 +591,80 @@ model Goal {
   parentGoal    Goal?          @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
   childGoals    Goal[]         @relation("GoalHierarchy")
   focusSessions FocusSession[]
+  keyResults    KeyResult[]
+  goalReviews   GoalReview[]
 
   @@index([accountUuid])
   @@index([status])
   @@index([folderUuid])
   @@index([parentGoalUuid])
   @@map("goals")
+}
+
+/// KeyResult 实体
+/// 目标的关键结果，用于衡量目标完成度
+model KeyResult {
+  uuid            String    @id @default(cuid())
+  goalUuid        String    @map("goal_uuid")
+  title           String
+  description     String?   @db.Text
+  valueType       String    @map("value_type") // 'INCREMENTAL', 'ABSOLUTE', 'PERCENTAGE', 'BINARY'
+  aggregationMethod String  @map("aggregation_method") // 'SUM', 'AVERAGE', 'MAX', 'MIN', 'LAST'
+  targetValue     Float     @map("target_value")
+  currentValue    Float     @default(0) @map("current_value")
+  unit            String?
+  weight          Float     @default(1)
+  order           Int       @default(0)
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  goal    Goal          @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  records GoalRecord[]
+
+  @@index([goalUuid])
+  @@map("key_results")
+}
+
+/// GoalRecord 实体
+/// 目标进度记录（用于时间序列数据）
+model GoalRecord {
+  uuid          String   @id @default(cuid())
+  keyResultUuid String   @map("key_result_uuid")
+  value         Float
+  note          String?  @db.Text
+  recordedAt    DateTime @map("recorded_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  // Relations
+  keyResult KeyResult @relation(fields: [keyResultUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([keyResultUuid])
+  @@index([recordedAt])
+  @@map("goal_records")
+}
+
+/// GoalReview 实体
+/// 目标复盘记录
+model GoalReview {
+  uuid                String   @id @default(cuid())
+  goalUuid            String   @map("goal_uuid")
+  reviewType          String   @map("review_type") // 'PERIODIC', 'MILESTONE', 'COMPLETION'
+  content             String   @db.Text
+  achievements        String?  @db.Text // JSON array
+  challenges          String?  @db.Text // JSON array
+  lessonsLearned      String?  @map("lessons_learned") @db.Text
+  nextSteps           String?  @map("next_steps") @db.Text
+  rating              Int? // 1-5
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  goal Goal @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+
+  @@index([goalUuid])
+  @@index([createdAt])
+  @@map("goal_reviews")
 }
 
 /// FocusSession 聚合根

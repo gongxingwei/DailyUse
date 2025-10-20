@@ -13,6 +13,7 @@ import accountRouter from './modules/account/interface/http/accountRoutes';
 import authenticationRouter from './modules/authentication/interface/http/authenticationRoutes';
 import taskRouter from './modules/task/interface/http/routes/taskTemplateRoutes';
 import goalRouter from './modules/goal/interface/http/goalRoutes';
+import goalFolderRouter from './modules/goal/interface/http/goalFolderRoutes';
 import focusSessionRouter from './modules/goal/interface/http/focusSessionRoutes';
 import reminderRouter from './modules/reminder/interface/http/reminderRoutes';
 import scheduleRouter from './modules/schedule/interface/http/routes/scheduleRoutes';
@@ -80,11 +81,11 @@ api.use('/tasks', authMiddleware, taskRouter);
 // 挂载目标管理路由 - 需要认证
 api.use('/goals', authMiddleware, goalRouter);
 
+// 挂载目标文件夹管理路由 - 需要认证
+api.use('/goal-folders', authMiddleware, goalFolderRouter);
+
 // 挂载专注周期管理路由 - 需要认证（路由内部已有 authMiddleware）
 api.use('', focusSessionRouter);
-
-// 挂载目标目录管理路由 - 需要认证
-// api.use('/goal-dirs', authMiddleware, goalDirRouter);
 
 /**
  * 提醒模块

@@ -1,6 +1,6 @@
 import type { PrismaClient, Goal as PrismaGoal } from '@prisma/client';
 import type { IGoalRepository } from '@dailyuse/domain-server';
-import { Goal } from '@dailyuse/domain-server';
+import { Goal, KeyResult } from '@dailyuse/domain-server';
 import { GoalContracts } from '@dailyuse/contracts';
 
 // 类型别名（从命名空间导入）
@@ -51,8 +51,8 @@ export class PrismaGoalRepository implements IGoalRepository {
    * 将 Prisma 模型映射为领域实体
    * 注意：Prisma Client 自动将 @map 的字段转换为 camelCase
    */
-  private mapToEntity(data: PrismaGoal): Goal {
-    return Goal.fromPersistenceDTO({
+  private mapToEntity(data: PrismaGoal & { keyResults?: any[] }): Goal {
+    const goal = Goal.fromPersistenceDTO({
       uuid: data.uuid,
       accountUuid: data.accountUuid, // Prisma camelCase
       title: data.title,
@@ -77,11 +77,39 @@ export class PrismaGoalRepository implements IGoalRepository {
       updatedAt: data.updatedAt.getTime(), // Prisma camelCase
       deletedAt: data.deletedAt ? data.deletedAt.getTime() : null, // Prisma camelCase
     });
+
+    // 恢复 KeyResults（如果有）
+    if (data.keyResults && data.keyResults.length > 0) {
+      for (const krData of data.keyResults) {
+        const keyResult = KeyResult.fromPersistenceDTO({
+          uuid: krData.uuid,
+          goalUuid: krData.goalUuid,
+          title: krData.title,
+          description: krData.description,
+          progress: JSON.stringify({
+            valueType: krData.valueType,
+            aggregation_method: krData.aggregationMethod,
+            target_value: krData.targetValue,
+            current_value: krData.currentValue,
+            unit: krData.unit,
+          }),
+          order: krData.order,
+          createdAt:
+            krData.createdAt instanceof Date ? krData.createdAt.getTime() : krData.createdAt,
+          updatedAt:
+            krData.updatedAt instanceof Date ? krData.updatedAt.getTime() : krData.updatedAt,
+        });
+        goal.addKeyResult(keyResult);
+      }
+    }
+
+    return goal;
   }
 
   /**
    * 保存领域实体到数据库
    * 注意：这里处理 camelCase (PersistenceDTO) → snake_case (数据库) 的映射
+   * 级联保存子实体：KeyResults（暂不保存 Reviews，因为接口不完整）
    */
   async save(goal: Goal): Promise<void> {
     const persistence = goal.toPersistenceDTO();
@@ -115,11 +143,53 @@ export class PrismaGoalRepository implements IGoalRepository {
       },
       update: data,
     });
+
+    // 级联保存 KeyResults（使用 ServerDTO 获取完整数据）
+    const serverDTO = goal.toServerDTO(true); // includeChildren=true
+    if (serverDTO.keyResults && serverDTO.keyResults.length > 0) {
+      for (const kr of serverDTO.keyResults) {
+        await (this.prisma as any).keyResult.upsert({
+          where: { uuid: kr.uuid },
+          create: {
+            uuid: kr.uuid,
+            goalUuid: goal.uuid,
+            title: kr.title,
+            description: kr.description || null,
+            valueType: kr.progress.valueType,
+            aggregationMethod: kr.progress.aggregationMethod,
+            targetValue: kr.progress.targetValue,
+            currentValue: kr.progress.currentValue,
+            unit: kr.progress.unit || null,
+            order: kr.order,
+            createdAt: new Date(kr.createdAt),
+            updatedAt: new Date(kr.updatedAt),
+          },
+          update: {
+            title: kr.title,
+            description: kr.description || null,
+            valueType: kr.progress.valueType,
+            aggregationMethod: kr.progress.aggregationMethod,
+            targetValue: kr.progress.targetValue,
+            currentValue: kr.progress.currentValue,
+            unit: kr.progress.unit || null,
+            order: kr.order,
+            updatedAt: new Date(kr.updatedAt),
+          },
+        });
+      }
+    }
   }
 
   async findById(uuid: string, options?: { includeChildren?: boolean }): Promise<Goal | null> {
+    const includeOptions = options?.includeChildren
+      ? {
+          keyResults: true,
+        }
+      : undefined;
+
     const data = await this.prisma.goal.findUnique({
       where: { uuid },
+      include: includeOptions as any, // 使用 any 绕过类型检查（因为 keyResults 关系还未在 Prisma Client 中生成）
     });
     return data ? this.mapToEntity(data) : null;
   }

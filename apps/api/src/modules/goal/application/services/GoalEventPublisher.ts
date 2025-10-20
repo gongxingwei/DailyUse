@@ -29,14 +29,18 @@ export class GoalEventPublisher {
     // 监听 goal.created 事件
     eventBus.on('goal.created', async (event: DomainEvent) => {
       try {
-        const { goal, accountUuid } = event.payload as {
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in goal.created event');
+          return;
+        }
+
+        const { goal } = event.payload as {
           goal: GoalContracts.GoalServerDTO;
-          accountUuid: string;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'goal.created',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             importance: goal.importance,
@@ -55,8 +59,12 @@ export class GoalEventPublisher {
     // 监听 goal.deleted 事件
     eventBus.on('goal.deleted', async (event: DomainEvent) => {
       try {
-        const { accountUuid, importance, urgency, category, status } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in goal.deleted event');
+          return;
+        }
+
+        const { importance, urgency, category, status } = event.payload as {
           importance: GoalContracts.ImportanceLevel;
           urgency: GoalContracts.UrgencyLevel;
           category?: string;
@@ -65,7 +73,7 @@ export class GoalEventPublisher {
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'goal.deleted',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             importance,
@@ -84,15 +92,19 @@ export class GoalEventPublisher {
     // 监听 goal.status_changed 事件
     eventBus.on('goal.status_changed', async (event: DomainEvent) => {
       try {
-        const { accountUuid, previousStatus, newStatus } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in goal.status_changed event');
+          return;
+        }
+
+        const { previousStatus, newStatus } = event.payload as {
           previousStatus: GoalContracts.GoalStatus;
           newStatus: GoalContracts.GoalStatus;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'goal.status_changed',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             previousStatus,
@@ -139,11 +151,14 @@ export class GoalEventPublisher {
     // 监听 goal.archived 事件
     eventBus.on('goal.archived', async (event: DomainEvent) => {
       try {
-        const { accountUuid } = event.payload as { accountUuid: string };
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in goal.archived event');
+          return;
+        }
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'goal.archived',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             newStatus: GoalStatus.ARCHIVED,
@@ -159,14 +174,18 @@ export class GoalEventPublisher {
     // 监听 goal.activated 事件
     eventBus.on('goal.activated', async (event: DomainEvent) => {
       try {
-        const { accountUuid, previousStatus } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in goal.activated event');
+          return;
+        }
+
+        const { previousStatus } = event.payload as {
           previousStatus: GoalContracts.GoalStatus;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'goal.activated',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             previousStatus,
@@ -183,11 +202,14 @@ export class GoalEventPublisher {
     // 监听 key_result.created 事件
     eventBus.on('key_result.created', async (event: DomainEvent) => {
       try {
-        const { accountUuid } = event.payload as { accountUuid: string };
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in key_result.created event');
+          return;
+        }
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'key_result.created',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {},
         });
@@ -201,14 +223,18 @@ export class GoalEventPublisher {
     // 监听 key_result.deleted 事件
     eventBus.on('key_result.deleted', async (event: DomainEvent) => {
       try {
-        const { accountUuid, wasCompleted } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in key_result.deleted event');
+          return;
+        }
+
+        const { wasCompleted } = event.payload as {
           wasCompleted: boolean;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'key_result.deleted',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             wasCompleted,
@@ -224,11 +250,16 @@ export class GoalEventPublisher {
     // 监听 key_result.completed 事件
     eventBus.on('key_result.completed', async (event: DomainEvent) => {
       try {
-        const { accountUuid } = event.payload as { accountUuid: string };
+        if (!event.accountUuid) {
+          console.error(
+            '❌ [GoalEventPublisher] Missing accountUuid in key_result.completed event',
+          );
+          return;
+        }
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'key_result.completed',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {},
         });
@@ -244,14 +275,18 @@ export class GoalEventPublisher {
     // 监听 review.created 事件
     eventBus.on('review.created', async (event: DomainEvent) => {
       try {
-        const { accountUuid, rating } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in review.created event');
+          return;
+        }
+
+        const { rating } = event.payload as {
           rating?: number;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'review.created',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             rating,
@@ -267,14 +302,18 @@ export class GoalEventPublisher {
     // 监听 review.deleted 事件
     eventBus.on('review.deleted', async (event: DomainEvent) => {
       try {
-        const { accountUuid, rating } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error('❌ [GoalEventPublisher] Missing accountUuid in review.deleted event');
+          return;
+        }
+
+        const { rating } = event.payload as {
           rating?: number;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'review.deleted',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             rating,
@@ -290,14 +329,20 @@ export class GoalEventPublisher {
     // 监听 focus_session.completed 事件
     eventBus.on('focus_session.completed', async (event: DomainEvent) => {
       try {
-        const { accountUuid, durationMinutes } = event.payload as {
-          accountUuid: string;
+        if (!event.accountUuid) {
+          console.error(
+            '❌ [GoalEventPublisher] Missing accountUuid in focus_session.completed event',
+          );
+          return;
+        }
+
+        const { durationMinutes } = event.payload as {
           durationMinutes: number;
         };
 
         await statisticsService.handleStatisticsUpdateEvent({
           type: 'focus_session.completed',
-          accountUuid,
+          accountUuid: event.accountUuid,
           timestamp: event.occurredOn.getTime(),
           payload: {
             durationMinutes,
@@ -341,6 +386,27 @@ export class GoalEventPublisher {
    */
   static reset(): void {
     console.log('🔄 [GoalEventPublisher] Resetting event listeners...');
+
+    // 移除所有 Goal 相关的事件监听器
+    const eventTypes = [
+      'goal.created',
+      'goal.deleted',
+      'goal.status_changed',
+      'goal.completed',
+      'goal.archived',
+      'goal.activated',
+      'key_result.created',
+      'key_result.deleted',
+      'key_result.completed',
+      'review.created',
+      'review.deleted',
+      'focus_session.completed',
+    ];
+
+    for (const eventType of eventTypes) {
+      eventBus.off(eventType);
+    }
+
     this.isInitialized = false;
   }
 }

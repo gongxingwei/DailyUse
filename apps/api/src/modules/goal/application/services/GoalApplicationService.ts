@@ -266,8 +266,8 @@ export class GoalApplicationService {
     // 4. 发布领域事件
     await GoalEventPublisher.publishGoalEvents(goal);
 
-    // 5. 返回 ClientDTO
-    return goal.toClientDTO();
+    // 5. 返回 ClientDTO（包含子实体）
+    return goal.toClientDTO(true);
   }
 
   /**
@@ -294,8 +294,8 @@ export class GoalApplicationService {
     // 4. 发布领域事件
     await GoalEventPublisher.publishGoalEvents(goal);
 
-    // 5. 返回 ClientDTO
-    return goal.toClientDTO();
+    // 5. 返回 ClientDTO（包含子实体）
+    return goal.toClientDTO(true);
   }
 
   /**
@@ -320,8 +320,8 @@ export class GoalApplicationService {
     // 4. 发布领域事件
     await GoalEventPublisher.publishGoalEvents(goal);
 
-    // 5. 返回 ClientDTO
-    return goal.toClientDTO();
+    // 5. 返回 ClientDTO（包含子实体）
+    return goal.toClientDTO(true);
   }
 
   // ===== GoalReview 管理 =====

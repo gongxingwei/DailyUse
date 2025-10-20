@@ -127,6 +127,7 @@ export class GoalDomainService {
       description?: string;
       valueType: string;
       targetValue: number;
+      currentValue?: number;
       unit?: string;
       weight: number;
     },
