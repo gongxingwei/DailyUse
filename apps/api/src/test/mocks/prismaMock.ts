@@ -11,6 +11,9 @@ const mockDataStore = {
   scheduleTask: new Map(),
   scheduleExecution: new Map(),
   account: new Map(),
+  // Authentication相关表
+  authCredential: new Map(),
+  authSession: new Map(),
   // Task相关表
   taskTemplate: new Map(),
   taskInstance: new Map(),
@@ -369,6 +372,10 @@ export const mockPrismaClient = {
   // Account相关表
   account: createMockModel('account'),
 
+  // Authentication相关表
+  authCredential: createMockModel('authCredential'),
+  authSession: createMockModel('authSession'),
+
   // Task相关表
   taskTemplate: createMockModel('taskTemplate'),
   taskInstance: createMockModel('taskInstance'),
@@ -391,15 +398,8 @@ export const mockPrismaClient = {
   // Goal Statistics
   goalStatistics: createMockModel('goalStatistics'),
 
-  // 事务和连接操作
-  $transaction: vi.fn(async (operations: any[]) => {
-    // 简单的事务模拟：依次执行所有操作
-    const results = [];
-    for (const operation of operations) {
-      results.push(await operation);
-    }
-    return results;
-  }),
+  // 事务和连接操作 - 先定义为 null，稍后初始化
+  $transaction: null as any,
 
   $connect: vi.fn(async () => {
     // 模拟连接成功
@@ -417,6 +417,29 @@ export const mockPrismaClient = {
     return [];
   }),
 } as unknown as PrismaClient;
+
+// 初始化 $transaction 函数（需要在 mockPrismaClient 定义后）
+mockPrismaClient.$transaction = vi.fn(async (operations: any) => {
+  // 支持两种事务模式：
+  // 1. 数组形式：prisma.$transaction([op1, op2])
+  // 2. 回调形式：prisma.$transaction(async (tx) => { ... })
+
+  if (typeof operations === 'function') {
+    // 回调形式：传递 mockPrismaClient 作为事务上下文
+    return await operations(mockPrismaClient);
+  }
+
+  // 数组形式：依次执行所有操作
+  if (Array.isArray(operations)) {
+    const results = [];
+    for (const operation of operations) {
+      results.push(await operation);
+    }
+    return results;
+  }
+
+  throw new Error('$transaction expects either a function or an array');
+}) as any;
 
 // 工具函数：重置Mock数据
 export function resetMockData() {

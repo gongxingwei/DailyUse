@@ -160,7 +160,7 @@ export class AccountDeletionApplicationService {
       }
 
       // ===== 步骤 5: 事务操作（Saga 模式） =====
-      const result = await prisma.$transaction(async (tx) => {
+      const result = await prisma.$transaction(async (tx: any) => {
         // 5a. 软删除账户
         account.softDelete();
         await this.accountRepository.save(account, tx);

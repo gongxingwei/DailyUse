@@ -149,7 +149,7 @@ export class RegistrationApplicationService {
       });
 
       // ===== 步骤 5: 发布领域事件（事务成功后）=====
-      await this.publishDomainEvents(result.account, result.credential);
+      await this.publishDomainEvents(result.account, result.credential, request.password);
 
       // ===== 步骤 6: 返回 AccountClientDTO =====
       const accountClientDTO = result.account.toClientDTO();
@@ -260,7 +260,7 @@ export class RegistrationApplicationService {
     const { username, email, displayName, hashedPassword } = params;
 
     // ✅ 正确的实现：ApplicationService 负责持久化
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: any) => {
       // 1. 调用 DomainService 创建 Account 聚合根（不持久化）
       const account = this.accountDomainService.createAccount({
         username,
@@ -279,35 +279,22 @@ export class RegistrationApplicationService {
         accountUuid: account.uuid,
       });
 
-      // 3. 调用 DomainService 创建 AuthCredential 聚合根（不持久化）
-      const credential = this.authenticationDomainService.createPasswordCredential({
-        accountUuid: account.uuid,
-        hashedPassword,
-      });
+      // ⚠️ 事件驱动架构：AuthCredential 由 AccountCreatedHandler 异步创建
+      // 优势：解耦 Account 和 Authentication 模块，实现最终一致性
+      // const credential = this.authenticationDomainService.createPasswordCredential({
+      //   accountUuid: account.uuid,
+      //   hashedPassword,
+      // });
+      // await this.credentialRepository.save(credential, tx);
 
-      logger.debug('[RegistrationApplicationService] AuthCredential aggregate created', {
-        credentialUuid: credential.uuid,
-      });
-
-      // 4. ApplicationService 负责持久化 Credential（传递事务上下文 tx）
-      await this.credentialRepository.save(credential, tx);
-
-      logger.debug('[RegistrationApplicationService] AuthCredential persisted in transaction', {
-        credentialUuid: credential.uuid,
-      });
-
-      return { account, credential };
-    });
-
-    logger.info('[RegistrationApplicationService] Transaction committed successfully', {
-      accountUuid: result.account.uuid,
-      credentialUuid: result.credential.uuid,
+      return { account, credential: null };
     });
 
     logger.info(
-      '✅ [RegistrationApplicationService] 架构重构完成！' +
-        'DomainService 只负责创建聚合根，ApplicationService 负责持久化。' +
-        '下一步：更新 Repository 接口以支持 tx 参数。',
+      '[RegistrationApplicationService] Transaction committed (Account only, Credential via event)',
+      {
+        accountUuid: result.account.uuid,
+      },
     );
 
     return result;
@@ -321,8 +308,12 @@ export class RegistrationApplicationService {
    * - 统计服务：更新用户统计
    * - 审计服务：记录注册日志
    */
-  private async publishDomainEvents(account: any, credential: any): Promise<void> {
-    // 发布 AccountCreated 事件
+  private async publishDomainEvents(
+    account: any,
+    credential: any,
+    plainPassword?: string,
+  ): Promise<void> {
+    // 发布 AccountCreated 事件（包含明文密码供 AccountCreatedHandler 使用）
     eventBus.publish({
       eventType: 'account:created',
       payload: {
@@ -330,28 +321,19 @@ export class RegistrationApplicationService {
         username: account.username,
         email: account.email,
         displayName: account.profile?.displayName || account.username,
+        plainPassword, // 传递明文密码给事件处理器
       },
       timestamp: Date.now(),
       aggregateId: account.uuid,
       occurredOn: new Date(),
     });
 
-    // 发布 CredentialCreated 事件
-    eventBus.publish({
-      eventType: 'credential:created',
-      payload: {
-        credentialUuid: credential.uuid,
-        accountUuid: account.uuid,
-        credentialType: credential.credentialType,
-      },
-      timestamp: Date.now(),
-      aggregateId: credential.uuid,
-      occurredOn: new Date(),
-    });
+    // ⚠️ 在事件驱动架构中，Credential 由 AccountCreatedHandler 创建
+    // 因此这里不发布 credential:created 事件
+    // （该事件由 AccountCreatedHandler 在创建 Credential 后发布）
 
-    logger.debug('[RegistrationApplicationService] Domain events published', {
+    logger.debug('[RegistrationApplicationService] AccountCreated event published', {
       accountUuid: account.uuid,
-      credentialUuid: credential.uuid,
     });
   }
 }

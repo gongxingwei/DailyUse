@@ -18,7 +18,7 @@
 import type { IAuthCredentialRepository } from '@dailyuse/domain-server';
 import { AuthenticationDomainService } from '@dailyuse/domain-server';
 import { AuthenticationContainer } from '../../infrastructure/di/AuthenticationContainer';
-import { createLogger } from '@dailyuse/utils';
+import { createLogger, eventBus } from '@dailyuse/utils';
 import bcrypt from 'bcryptjs';
 
 const logger = createLogger('AccountCreatedHandler');
@@ -86,8 +86,18 @@ export class AccountCreatedHandler {
         accountUuid,
       });
 
-      // 3. 发布 credential:created 事件（可选，用于其他服务）
-      // 注意：这里不需要再发布事件，因为已经在 DomainService 中处理
+      // 3. 发布 credential:created 事件
+      eventBus.publish({
+        eventType: 'credential:created',
+        payload: {
+          credentialUuid: credential.uuid,
+          accountUuid,
+          credentialType: 'PASSWORD',
+        },
+        timestamp: Date.now(),
+        aggregateId: credential.uuid,
+        occurredOn: new Date(),
+      });
     } catch (error) {
       logger.error('[AccountCreatedHandler] Failed to create AuthCredential', {
         accountUuid,

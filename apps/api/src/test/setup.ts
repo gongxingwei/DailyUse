@@ -13,6 +13,11 @@ vi.mock('../config/prisma.js', () => ({
   disconnectPrisma: vi.fn(),
 }));
 
+// Mock Prisma shared module (used in tests)
+vi.mock('../shared/db/prisma.js', () => ({
+  default: mockPrismaClient,
+}));
+
 // Mock PrismaClient 构造函数
 vi.mock('@prisma/client', () => ({
   PrismaClient: vi.fn().mockImplementation(() => mockPrismaClient),
