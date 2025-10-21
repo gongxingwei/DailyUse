@@ -331,7 +331,7 @@ export class TaskTemplateController {
 
 ### **Day 2-3 (2025-10-23 ~ 2025-10-24): Domain 层单元测试**
 
-#### **任务 2.1: 配置测试环境** (1h)
+#### **✅ 任务 2.1: 配置测试环境** (完成 ✔️)
 
 **文件**: `packages/domain-server/vitest.config.ts`
 
