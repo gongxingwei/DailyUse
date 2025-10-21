@@ -278,7 +278,7 @@ export class TaskTemplate extends AggregateRoot {
 }
 ```
 
-#### **任务 1.4: 更新 Controller 错误处理** (1h)
+#### **✅ 任务 1.4: 更新 Controller 错误处理** (完成 ✔️)
 
 **文件**: `apps/api/src/modules/task/interface/http/controllers/TaskTemplateController.ts`
 
