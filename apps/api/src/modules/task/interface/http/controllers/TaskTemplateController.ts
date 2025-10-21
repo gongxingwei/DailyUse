@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { TaskTemplateApplicationService } from '../../../application/services/TaskTemplateApplicationService';
 import { ResponseCode, createResponseBuilder } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
+import { isTaskError } from '@dailyuse/domain-server';
 
 // 创建 logger 实例
 const logger = createLogger('TaskTemplateController');
@@ -44,6 +45,63 @@ export class TaskTemplateController {
   }
 
   /**
+   * 统一错误处理
+   * 将领域错误转换为 HTTP 响应
+   */
+  private static handleError(res: Response, error: unknown): Response {
+    logger.error('Request error', { error });
+
+    // 检查是否为领域错误
+    if (isTaskError(error)) {
+      // 映射 HTTP 状态码到 ResponseCode
+      const responseCode = TaskTemplateController.mapHttpStatusToResponseCode(error.httpStatus);
+      
+      return TaskTemplateController.responseBuilder.sendError(res, {
+        code: responseCode,
+        message: error.message,
+        errorCode: error.code,
+        debug: error.context,
+      });
+    }
+
+    // 处理认证错误
+    if (error instanceof Error && error.message === 'Authentication required') {
+      return TaskTemplateController.responseBuilder.sendError(res, {
+        code: ResponseCode.UNAUTHORIZED,
+        message: error.message,
+      });
+    }
+
+    // 处理未知错误
+    return TaskTemplateController.responseBuilder.sendError(res, {
+      code: ResponseCode.INTERNAL_ERROR,
+      message: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+
+  /**
+   * 映射 HTTP 状态码到 ResponseCode
+   */
+  private static mapHttpStatusToResponseCode(httpStatus: number): ResponseCode {
+    switch (httpStatus) {
+      case 400:
+        return ResponseCode.BAD_REQUEST;
+      case 401:
+        return ResponseCode.UNAUTHORIZED;
+      case 403:
+        return ResponseCode.FORBIDDEN;
+      case 404:
+        return ResponseCode.NOT_FOUND;
+      case 409:
+        return ResponseCode.CONFLICT;
+      case 500:
+        return ResponseCode.INTERNAL_ERROR;
+      default:
+        return ResponseCode.INTERNAL_ERROR;
+    }
+  }
+
+  /**
    * 创建任务模板
    * @route POST /api/task-templates
    */
@@ -66,11 +124,7 @@ export class TaskTemplateController {
         201,
       );
     } catch (error) {
-      logger.error('Error creating task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -99,11 +153,7 @@ export class TaskTemplateController {
         'Task template retrieved successfully',
       );
     } catch (error) {
-      logger.error('Error getting task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -139,11 +189,7 @@ export class TaskTemplateController {
         'Task templates retrieved successfully',
       );
     } catch (error) {
-      logger.error('Error getting task templates', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -164,11 +210,7 @@ export class TaskTemplateController {
         'Task template activated successfully',
       );
     } catch (error) {
-      logger.error('Error activating task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -189,11 +231,7 @@ export class TaskTemplateController {
         'Task template paused successfully',
       );
     } catch (error) {
-      logger.error('Error pausing task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -214,11 +252,7 @@ export class TaskTemplateController {
         'Task template archived successfully',
       );
     } catch (error) {
-      logger.error('Error archiving task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -240,11 +274,7 @@ export class TaskTemplateController {
         `${instances.length} task instances generated successfully`,
       );
     } catch (error) {
-      logger.error('Error generating task instances', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -270,11 +300,7 @@ export class TaskTemplateController {
         'Task template bound to goal successfully',
       );
     } catch (error) {
-      logger.error('Error binding task template to goal', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -295,11 +321,7 @@ export class TaskTemplateController {
         'Task template unbound from goal successfully',
       );
     } catch (error) {
-      logger.error('Error unbinding task template from goal', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 
@@ -320,11 +342,7 @@ export class TaskTemplateController {
         'Task template deleted successfully',
       );
     } catch (error) {
-      logger.error('Error deleting task template', { error });
-      return TaskTemplateController.responseBuilder.sendError(res, {
-        code: ResponseCode.INTERNAL_ERROR,
-        message: error instanceof Error ? error.message : 'Unknown error',
-      });
+      return TaskTemplateController.handleError(res, error);
     }
   }
 }
