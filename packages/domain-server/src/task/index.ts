@@ -30,3 +30,6 @@ export type { ITaskInstanceRepository, ITaskTemplateRepository } from './reposit
 
 // 领域服务
 export { TaskInstanceGenerationService, TaskExpirationService } from './services';
+
+// 错误类
+export * from './errors';
