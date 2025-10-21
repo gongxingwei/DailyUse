@@ -30,7 +30,7 @@ Week 5-6: Sprint 2b - 周期性任务 + 时间块
 
 ### **Day 1 (2025-10-22 周二): 统一错误处理**
 
-#### **任务 1.1: 创建 DomainError 基类** (2h)
+#### **✅ 任务 1.1: 创建 DomainError 基类** (完成 ✔️)
 
 **文件**: `packages/utils/src/errors/DomainError.ts`
 
@@ -138,7 +138,7 @@ export class ForbiddenError extends DomainError {
 }
 ```
 
-#### **任务 1.2: 创建 Task 模块专用错误** (1h)
+#### **✅ 任务 1.2: 创建 Task 模块专用错误** (完成 ✔️)
 
 **文件**: `packages/domain-server/src/task/errors/TaskErrors.ts`
 
@@ -206,7 +206,7 @@ export class InvalidRecurrenceRuleError extends BusinessRuleViolationError {
 }
 ```
 
-#### **任务 1.3: 重构 TaskTemplate 使用新错误** (1h)
+#### **✅ 任务 1.3: 重构 TaskTemplate 使用新错误** (完成 ✔️)
 
 **文件**: `packages/domain-server/src/task/aggregates/TaskTemplate.ts`
 
