@@ -72,16 +72,19 @@ Setting → Goal → Task → Reminder/Schedule/Notification
 
 ## 📊 Sprint 规划概览
 
-### Sprint 时间线
+### Sprint 时间线 (已调整)
 
 ```
-Sprint 1 (Week 1-2):   SETTING-001                    [23 SP]
-Sprint 2 (Week 3-4):   GOAL-002 + GOAL-003           [48 SP] ⚠️
-Sprint 3 (Week 5-6):   GOAL-004 + TASK-002           [30 SP]
-Sprint 4 (Week 7-8):   TASK-001 + TASK-006           [33 SP]
-Sprint 5 (Week 9-10):  SCHEDULE-001 + REMINDER-001   [33 SP]
-Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
+Sprint 1  (Week 1-2):   SETTING-001                    [23 SP]
+Sprint 2a (Week 3-4):   GOAL-002                       [25 SP] ✅ 已拆分
+Sprint 2b (Week 5-6):   GOAL-003                       [23 SP] ✅ 已拆分
+Sprint 3  (Week 7-8):   GOAL-004 + TASK-002            [30 SP]
+Sprint 4  (Week 9-10):  TASK-001 + TASK-006            [33 SP]
+Sprint 5  (Week 11-12): SCHEDULE-001 + REMINDER-001    [33 SP]
+Sprint 6  (Week 13-14): NOTIFICATION-001               [15 SP]
 ```
+
+**重要调整**: Sprint 2 原计划 48 SP 超载，已拆分为 Sprint 2a (25 SP) 和 Sprint 2b (23 SP)。详见 [技术决策文档](./TECHNICAL_DECISIONS.md#adr-001)。
 
 ### Sprint 详细分解
 
@@ -111,10 +114,10 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 
 ---
 
-#### Sprint 2: 核心目标管理 (Week 3-4)
-**Epics**: GOAL-002 + GOAL-003  
-**Story Points**: 48 SP ⚠️ **（建议拆分为 2 个 Sprint）**  
-**核心目标**: OKR 目标管理核心功能
+#### Sprint 2a: KR 权重快照 (Week 3-4)
+**Epic**: GOAL-002  
+**Story Points**: 25 SP ✅  
+**核心目标**: 实现 KR 权重管理和历史快照
 
 **EPIC-GOAL-002: KR 权重快照** (25 SP)
 - Contracts & Domain (3 SP)
@@ -126,30 +129,47 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 - UI - 快照历史 (3 SP)
 - E2E Testing (2 SP)
 
+**关键产出**:
+- ✅ KR 权重系统
+- ✅ 权重变更快照
+- ✅ 时间旅行查看
+- ✅ Goal 模块基础架构
+
+**依赖**: Setting 模块（主题、语言）
+
+**技术 Spike**: DAG 可视化技术评估 (准备 Sprint 4)
+
+---
+
+#### Sprint 2b: 专注周期聚焦模式 (Week 5-6)
+**Epic**: GOAL-003  
+**Story Points**: 23 SP ✅  
+**核心目标**: 实现临时聚焦模式，屏蔽非核心目标
+
 **EPIC-GOAL-003: 专注周期聚焦模式** (23 SP)
 - Contracts & Domain (3 SP)
 - Application Service (3 SP)
 - Infrastructure (2 SP)
 - API (3 SP)
 - Client (2 SP)
-- UI - 聚焦面板 (4 SP)
-- UI - 进度追踪 (4 SP)
-- E2E Testing (2 SP)
+- UI - 聚焦配置面板 (3 SP)
+- UI - 聚焦模式视图 (4 SP)
+- UI - 聚焦管理 (2 SP)
+- 定时任务 & E2E (2 SP)
 
 **关键产出**:
-- ✅ KR 权重系统 + 历史快照
 - ✅ 专注周期模式
-- ✅ 进度可视化
+- ✅ 目标显隐控制
+- ✅ 聚焦周期管理
+- ✅ 自动结束定时任务
 
-**依赖**: Setting 模块（主题、语言）
+**依赖**: Sprint 2a (Goal 基础架构)
 
-**⚠️ 风险提示**: 48 SP 超出单个 Sprint 容量，建议：
-- **方案 A**: 拆分为 Sprint 2a 和 Sprint 2b
-- **方案 B**: 优先 GOAL-002，GOAL-003 延后到 Sprint 3
+**✅ 调整原因**: Sprint 2 原 48 SP 超载，拆分后每个 Sprint 容量合理。详见 [ADR-001](./TECHNICAL_DECISIONS.md#adr-001)。
 
 ---
 
-#### Sprint 3: 目标进度 + 任务优先级 (Week 5-6)
+#### Sprint 3: 目标进度 + 任务优先级 (Week 7-8)
 **Epics**: GOAL-004 + TASK-002  
 **Story Points**: 30 SP  
 **核心目标**: 自动化进度计算 + 任务优先级管理
@@ -181,7 +201,7 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 
 ---
 
-#### Sprint 4: 任务依赖系统 (Week 7-8)
+#### Sprint 4: 任务依赖系统 (Week 9-10)
 **Epics**: TASK-001 + TASK-006  
 **Story Points**: 33 SP  
 **核心目标**: DAG 依赖图 + 依赖关系管理
@@ -213,13 +233,15 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 **依赖**: Task 模块基础（TASK-002）
 
 **技术亮点**:
-- React Flow / Cytoscape.js 图可视化
+- ✅ **graphlib** + **@vue-flow/core** + **dagre** (已决策)
 - O(V+E) 时间复杂度的 DFS 循环检测
 - 拓扑排序 + 最长路径算法
 
+**技术决策**: 详见 [ADR-002](./TECHNICAL_DECISIONS.md#adr-002)
+
 ---
 
-#### Sprint 5: 日程 + 提醒优化 (Week 9-10)
+#### Sprint 5: 日程 + 提醒优化 (Week 11-12)
 **Epics**: SCHEDULE-001 + REMINDER-001  
 **Story Points**: 33 SP  
 **核心目标**: 智能日程管理 + 自适应提醒
@@ -252,7 +274,7 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 
 ---
 
-#### Sprint 6: 通知聚合 + 收尾 (Week 11-12)
+#### Sprint 6: 通知聚合 + 收尾 (Week 13-14)
 **Epic**: NOTIFICATION-001  
 **Story Points**: 15 SP  
 **核心目标**: 统一通知中心 + 系统集成测试
@@ -268,9 +290,12 @@ Sprint 6 (Week 11-12): NOTIFICATION-001              [15 SP]
 
 **关键产出**:
 - ✅ 多渠道推送（应用内/桌面/邮件）
+- ✅ **BullMQ + Redis** 消息队列（已决策）
 - ✅ 统一通知中心 UI
 - ✅ 已读/未读管理
 - ✅ 通知分组与聚合
+
+**技术决策**: 详见 [ADR-003](./TECHNICAL_DECISIONS.md#adr-003)
 
 **额外任务** (非 Epic 范围):
 - 系统集成测试
@@ -379,53 +404,67 @@ E2E Testing:          15 SP  (9.3%)
 
 ### 高风险项 (P0)
 
-#### 1. Sprint 2 工作量过大 (48 SP)
+#### 1. Sprint 2 工作量过大 (48 SP) - ✅ 已解决
 **风险描述**: 
 - GOAL-002 (25 SP) + GOAL-003 (23 SP) = 48 SP
 - 超出标准 Sprint 容量（建议 25-35 SP）
 - 可能导致 Sprint 失败或延期
 
-**缓解策略**:
-- **方案 A**: 拆分为 Sprint 2a 和 Sprint 2b，各 24 SP
-- **方案 B**: Sprint 2 仅实现 GOAL-002，GOAL-003 移至 Sprint 3
-- **方案 C**: 压缩 GOAL-003 范围，保留核心功能（MVP）
+**缓解策略** - ✅ 已采纳:
+- ✅ **方案 A 已执行**: 拆分为 Sprint 2a (GOAL-002, 25 SP) 和 Sprint 2b (GOAL-003, 23 SP)
+- ✅ 项目总工期调整为 14 周 (原 12 周)
+- ✅ 风险等级从 P0 降至 P1
 
-**优先级**: 🔴 高  
-**负责人**: PM + Tech Lead
+**决策状态**: ✅ 已批准 (2025-10-21)  
+**详见**: [ADR-001: Sprint 2 容量拆分](./TECHNICAL_DECISIONS.md#adr-001)
 
 ---
 
-#### 2. DAG 算法复杂度 (TASK-001)
+#### 2. DAG 算法复杂度 (TASK-001) - ✅ 技术选型已确定
 **风险描述**:
 - 循环依赖检测（DFS 算法）
 - 关键路径计算（拓扑排序 + 最长路径）
-- React Flow 集成学习曲线
+- Vue 3 图可视化库集成学习曲线
 
-**缓解策略**:
-- 提前进行技术预研（Spike Story）
-- 使用成熟的图算法库（如 graphlib）
+**缓解策略** - ✅ 已决策:
+- ✅ **使用 graphlib** (图算法库) - 成熟稳定，20KB 轻量
+- ✅ **使用 @vue-flow/core** (Vue 3 流程图组件) - 易用性高
+- ✅ **使用 dagre** (布局算法) - 层次化布局
+- ⏳ Sprint 2a-2b 期间进行技术 Spike 验证
 - 分阶段实现：先基础图 → 再循环检测 → 最后关键路径
 
 **技术债务**:
-- 大数据量下的性能优化（懒加载、虚拟滚动）
-- 复杂图的可读性优化（自动布局算法）
+- 大数据量下的性能优化（虚拟滚动、Web Worker）
+- 复杂图的可读性优化（Canvas 降级渲染）
 
+**决策状态**: ✅ 已批准 (2025-10-21)  
+**详见**: [ADR-002: DAG 可视化技术选型](./TECHNICAL_DECISIONS.md#adr-002)  
 **优先级**: 🟡 中  
 **负责人**: 后端 Lead + 前端 Lead
 
 ---
 
-#### 3. 多渠道通知可靠性 (NOTIFICATION-001)
+#### 3. 多渠道通知可靠性 (NOTIFICATION-001) - ✅ 技术选型已确定
 **风险描述**:
 - 桌面推送依赖 Electron Notification API
 - 邮件发送需要 SMTP 配置
 - 消息队列可能丢失（无持久化）
 
-**缓解策略**:
-- 使用消息队列（Bull/BullMQ）确保消息不丢失
-- 实现重试机制（指数退避）
+**缓解策略** - ✅ 已决策:
+- ✅ **使用 BullMQ + Redis** (消息队列) - TypeScript 原生支持
+- ✅ **实现重试机制** (指数退避，最多 3 次)
+- ✅ **消息持久化** (Redis AOF + RDB)
+- ✅ **死信队列** (失败任务自动移至 DLQ)
+- ⏳ Sprint 4-5 期间进行技术 Spike 验证
 - 桌面推送降级方案（应用内通知）
 
+**技术架构**:
+- 并发控制: 限流 100 任务/10 秒
+- 监控: Bull Board UI 仪表板
+- 优先级队列: 紧急通知优先处理
+
+**决策状态**: ✅ 已批准 (2025-10-21)  
+**详见**: [ADR-003: 消息队列技术选型](./TECHNICAL_DECISIONS.md#adr-003)  
 **优先级**: 🟡 中  
 **负责人**: 后端 Lead
 
