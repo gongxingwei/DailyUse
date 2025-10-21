@@ -14,6 +14,15 @@ import {
 } from '../value-objects';
 import { TaskTemplateHistory } from '../entities';
 import { TaskInstance } from './TaskInstance';
+import {
+  TaskTemplateNotFoundError,
+  InvalidTaskTemplateStateError,
+  TaskTemplateArchivedError,
+  RecurrenceRuleNotImplementedError,
+  InvalidGoalBindingError,
+  InvalidDateRangeError,
+  InstanceGenerationFailedError,
+} from '../errors';
 
 type ITaskTemplate = TaskContracts.TaskTemplateServer;
 type TaskTemplateServerDTO = TaskContracts.TaskTemplateServerDTO;
@@ -179,10 +188,28 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 生成指定日期范围内的任务实例
    */
   public generateInstances(fromDate: number, toDate: number): TaskInstance[] {
+    // Validate date range
+    if (fromDate >= toDate) {
+      throw new InvalidDateRangeError(fromDate, toDate);
+    }
+
+    // Check if template is archived
+    if (this._status === 'ARCHIVED') {
+      throw new TaskTemplateArchivedError(this.uuid);
+    }
+
     const instances: TaskInstance[] = [];
 
+    // Only generate instances for active templates
     if (this._status !== 'ACTIVE') {
-      return instances;
+      throw new InvalidTaskTemplateStateError(
+        'Can only generate instances for active templates',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'generateInstances'
+        }
+      );
     }
 
     if (this._taskType === 'ONE_TIME') {
@@ -295,57 +322,110 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 激活模板
    */
   public activate(): void {
-    if (this._status === 'PAUSED' || this._status === 'ARCHIVED') {
-      this._status = 'ACTIVE' as TaskTemplateStatus;
-      this._updatedAt = Date.now();
-      this.addHistory('resumed');
+    if (this._status === 'DELETED') {
+      throw new InvalidTaskTemplateStateError(
+        'Cannot activate a deleted template',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'activate'
+        }
+      );
     }
+    if (this._status === 'ACTIVE') {
+      throw new InvalidTaskTemplateStateError(
+        'Template is already active',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'activate'
+        }
+      );
+    }
+    this._status = 'ACTIVE' as TaskTemplateStatus;
+    this._updatedAt = Date.now();
+    this.addHistory('resumed');
   }
 
   /**
    * 暂停模板
    */
   public pause(): void {
-    if (this._status === 'ACTIVE') {
-      this._status = 'PAUSED' as TaskTemplateStatus;
-      this._updatedAt = Date.now();
-      this.addHistory('paused');
+    if (this._status !== 'ACTIVE') {
+      throw new InvalidTaskTemplateStateError(
+        'Can only pause active templates',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'pause'
+        }
+      );
     }
+    this._status = 'PAUSED' as TaskTemplateStatus;
+    this._updatedAt = Date.now();
+    this.addHistory('paused');
   }
 
   /**
    * 归档模板
    */
   public archive(): void {
-    if (this._status !== 'DELETED' && this._status !== 'ARCHIVED') {
-      this._status = 'ARCHIVED' as TaskTemplateStatus;
-      this._updatedAt = Date.now();
-      this.addHistory('archived');
+    if (this._status === 'DELETED') {
+      throw new InvalidTaskTemplateStateError(
+        'Cannot archive a deleted template',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'archive'
+        }
+      );
     }
+    if (this._status === 'ARCHIVED') {
+      throw new TaskTemplateArchivedError(this.uuid);
+    }
+    this._status = 'ARCHIVED' as TaskTemplateStatus;
+    this._updatedAt = Date.now();
+    this.addHistory('archived');
   }
 
   /**
    * 软删除模板
    */
   public softDelete(): void {
-    if (this._status !== 'DELETED') {
-      this._status = 'DELETED' as TaskTemplateStatus;
-      this._deletedAt = Date.now();
-      this._updatedAt = Date.now();
-      this.addHistory('deleted');
+    if (this._status === 'DELETED') {
+      throw new InvalidTaskTemplateStateError(
+        'Template is already deleted',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'softDelete'
+        }
+      );
     }
+    this._status = 'DELETED' as TaskTemplateStatus;
+    this._deletedAt = Date.now();
+    this._updatedAt = Date.now();
+    this.addHistory('deleted');
   }
 
   /**
    * 恢复模板
    */
   public restore(): void {
-    if (this._status === 'DELETED') {
-      this._status = 'ACTIVE' as TaskTemplateStatus;
-      this._deletedAt = null;
-      this._updatedAt = Date.now();
-      this.addHistory('restored');
+    if (this._status !== 'DELETED') {
+      throw new InvalidTaskTemplateStateError(
+        'Can only restore deleted templates',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'restore'
+        }
+      );
     }
+    this._status = 'ACTIVE' as TaskTemplateStatus;
+    this._deletedAt = null;
+    this._updatedAt = Date.now();
+    this.addHistory('restored');
   }
 
   // ===== 时间规则方法 =====
@@ -424,6 +504,33 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 绑定到目标
    */
   public bindToGoal(goalUuid: string, keyResultUuid: string, incrementValue: number): void {
+    // Validate parameters
+    if (!goalUuid || !keyResultUuid) {
+      throw new InvalidGoalBindingError(
+        'Goal UUID and Key Result UUID are required',
+        {
+          goalUuid,
+          reason: 'Missing required parameters'
+        }
+      );
+    }
+
+    // Check if already bound
+    if (this._goalBinding) {
+      throw new InvalidGoalBindingError(
+        'Template is already bound to a goal',
+        {
+          goalUuid: this._goalBinding.goalUuid,
+          reason: 'Template already has a goal binding'
+        }
+      );
+    }
+
+    // Check if template is archived
+    if (this._status === 'ARCHIVED') {
+      throw new TaskTemplateArchivedError(this.uuid);
+    }
+
     this._goalBinding = new TaskGoalBinding({
       goalUuid,
       keyResultUuid,
@@ -437,11 +544,24 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 解除目标绑定
    */
   public unbindFromGoal(): void {
-    if (this._goalBinding) {
-      this._goalBinding = null;
-      this._updatedAt = Date.now();
-      this.addHistory('goal_unbound');
+    // Check if template has goal binding
+    if (!this._goalBinding) {
+      throw new InvalidGoalBindingError(
+        'Template is not bound to any goal',
+        {
+          reason: 'No goal binding exists'
+        }
+      );
     }
+
+    // Check if template is archived
+    if (this._status === 'ARCHIVED') {
+      throw new TaskTemplateArchivedError(this.uuid);
+    }
+
+    this._goalBinding = null;
+    this._updatedAt = Date.now();
+    this.addHistory('goal_unbound');
   }
 
   /**
@@ -472,6 +592,33 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
    * 创建实例
    */
   public createInstance(params: any): string {
+    // Check if template is archived or deleted
+    if (this._status === 'ARCHIVED') {
+      throw new TaskTemplateArchivedError(this.uuid);
+    }
+    if (this._status === 'DELETED') {
+      throw new InvalidTaskTemplateStateError(
+        'Cannot create instance from deleted template',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'createInstance'
+        }
+      );
+    }
+
+    // Validate instance date
+    if (!params.instanceDate || typeof params.instanceDate !== 'number') {
+      throw new InvalidTaskTemplateStateError(
+        'Invalid instance date provided',
+        {
+          templateUuid: this.uuid,
+          currentStatus: this._status,
+          attemptedAction: 'createInstance'
+        }
+      );
+    }
+
     const instance = TaskInstance.create({
       templateUuid: this.uuid,
       accountUuid: this._accountUuid,
@@ -670,6 +817,38 @@ export class TaskTemplate extends AggregateRoot implements ITaskTemplate {
     color?: string;
     generateAheadDays?: number;
   }): TaskTemplate {
+    // Validate required parameters
+    if (!params.accountUuid || params.accountUuid.trim().length === 0) {
+      throw new InvalidTaskTemplateStateError(
+        'Account UUID is required',
+        {
+          templateUuid: '',
+          currentStatus: 'N/A',
+          attemptedAction: 'create'
+        }
+      );
+    }
+    if (!params.title || params.title.trim().length === 0) {
+      throw new InvalidTaskTemplateStateError(
+        'Title is required',
+        {
+          templateUuid: '',
+          currentStatus: 'N/A',
+          attemptedAction: 'create'
+        }
+      );
+    }
+    if (!params.timeConfig) {
+      throw new InvalidTaskTemplateStateError(
+        'Time configuration is required',
+        {
+          templateUuid: '',
+          currentStatus: 'N/A',
+          attemptedAction: 'create'
+        }
+      );
+    }
+
     const now = Date.now();
     const template = new TaskTemplate({
       accountUuid: params.accountUuid,
