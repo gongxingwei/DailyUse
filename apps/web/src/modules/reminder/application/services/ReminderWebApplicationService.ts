@@ -1023,25 +1023,16 @@ export class ReminderWebApplicationService {
   /**
    * 初始化 Reminder-Schedule 集成
    * 确保状态同步服务正常运行
+   * 注意: domain-core 已移除，此方法需要重构
    */
   private async initializeScheduleIntegration(): Promise<void> {
     try {
       console.log('🔄 启动 Reminder-Schedule 集成服务...');
 
-      // 动态导入集成服务，避免循环依赖
-      const { reminderScheduleIntegration, reminderScheduleSyncManager } = await import(
-        '@dailyuse/domain-core'
-      );
+      // TODO: 重构集成服务，domain-core 已移除
+      // 需要将集成逻辑移至 domain-client 或 domain-server
 
-      // 检查同步管理器是否已初始化
-      if (reminderScheduleSyncManager) {
-        console.log('✅ Schedule 同步管理器已就绪');
-      }
-
-      // 检查集成服务状态
-      if (reminderScheduleIntegration) {
-        console.log('✅ Reminder-Schedule 集成服务已就绪');
-      }
+      console.log('⚠️ Schedule 集成服务需要重构（domain-core 已移除）');
     } catch (error) {
       console.error('❌ Reminder-Schedule 集成服务启动失败:', error);
       // 集成服务失败不应阻止 Reminder 模块的基本功能

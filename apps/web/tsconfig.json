@@ -62,8 +62,8 @@
       "@/*": ["./src/*"]
 
       // 跨包引用通过 package.json name + references 实现
-      // 例如：import { Goal } from '@dailyuse/domain-core'
-      // TypeScript 会从 packages/domain-core/dist 读取类型
+      // 例如：import { ... } from '@dailyuse/domain-client'
+      // TypeScript 会从 packages/domain-client/dist 读取类型
     }
   },
 

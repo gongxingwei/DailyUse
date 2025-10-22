@@ -13,7 +13,6 @@ export default defineConfig(({ mode }) => {
         '@dailyuse/domain': path.resolve(__dirname, '../../packages/domain/src'),
         '@dailyuse/contracts': path.resolve(__dirname, '../../packages/contracts/src'),
         '@dailyuse/domain-client': path.resolve(__dirname, '../../packages/domain-client/src'),
-        '@dailyuse/domain-core': path.resolve(__dirname, '../../packages/domain-core/src'),
         '@dailyuse/domain-server': path.resolve(__dirname, '../../packages/domain-server/src'),
         '@dailyuse/ui': path.resolve(__dirname, '../../packages/ui/src'),
         '@dailyuse/assets': path.resolve(__dirname, '../../packages/assets/src'),
