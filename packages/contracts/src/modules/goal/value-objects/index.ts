@@ -8,3 +8,4 @@ export * from './GoalTimeRange';
 export * from './KeyResultProgress';
 export * from './KeyResultSnapshot';
 export * from './GoalReminderConfig';
+export * from './KeyResultWeightSnapshot';

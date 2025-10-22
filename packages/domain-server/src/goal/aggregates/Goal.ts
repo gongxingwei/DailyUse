@@ -13,6 +13,7 @@ import { AggregateRoot } from '@dailyuse/utils';
 import { GoalContracts } from '@dailyuse/contracts';
 import { KeyResult } from '../entities/KeyResult';
 import { GoalReview } from '../entities/GoalReview';
+import { KeyResultWeightSnapshot, KeyResultNotFoundInGoalError } from '../value-objects';
 
 // 类型别名（从命名空间导入）
 type IGoalServer = GoalContracts.GoalServer;
@@ -72,6 +73,7 @@ export class Goal extends AggregateRoot implements IGoalServer {
   // ===== 子实体集合 =====
   private _keyResults: KeyResult[];
   private _reviews: GoalReview[];
+  private _weightSnapshots: KeyResultWeightSnapshot[];
 
   // ===== 构造函数（私有） =====
   private constructor(params: {
@@ -124,6 +126,7 @@ export class Goal extends AggregateRoot implements IGoalServer {
     this._deletedAt = params.deletedAt ?? null;
     this._keyResults = [];
     this._reviews = [];
+    this._weightSnapshots = [];
   }
 
   // ===== Getter 属性 =====
@@ -201,6 +204,9 @@ export class Goal extends AggregateRoot implements IGoalServer {
   }
   public get reviews(): GoalReview[] {
     return [...this._reviews];
+  }
+  public get weightSnapshots(): ReadonlyArray<KeyResultWeightSnapshot> {
+    return this._weightSnapshots;
   }
 
   // ===== 工厂方法 =====
@@ -828,6 +834,65 @@ export class Goal extends AggregateRoot implements IGoalServer {
   public areAllKeyResultsCompleted(): boolean {
     if (this._keyResults.length === 0) return false;
     return this._keyResults.every((kr) => kr.isCompleted());
+  }
+
+  // ===== 权重快照管理 =====
+
+  /**
+   * 记录 KR 权重变更快照
+   *
+   * @param krUuid - KeyResult UUID
+   * @param oldWeight - 调整前权重
+   * @param newWeight - 调整后权重
+   * @param trigger - 触发方式
+   * @param operatorUuid - 操作人 UUID
+   * @param reason - 调整原因（可选）
+   * @throws {KeyResultNotFoundInGoalError} 如果 KR 不存在于该 Goal 中
+   */
+  public recordWeightSnapshot(
+    krUuid: string,
+    oldWeight: number,
+    newWeight: number,
+    trigger: GoalContracts.SnapshotTrigger,
+    operatorUuid: string,
+    reason?: string,
+  ): void {
+    // 验证 KR 存在
+    const kr = this._keyResults.find((k) => k.uuid === krUuid);
+    if (!kr) {
+      throw new KeyResultNotFoundInGoalError(krUuid, this.uuid);
+    }
+
+    // 创建快照
+    const snapshot = new KeyResultWeightSnapshot(
+      AggregateRoot.generateUUID(),
+      this.uuid,
+      krUuid,
+      oldWeight,
+      newWeight,
+      Date.now(),
+      trigger,
+      operatorUuid,
+      reason,
+    );
+
+    // 添加到快照数组
+    this._weightSnapshots.push(snapshot);
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 获取所有权重快照
+   */
+  public getAllWeightSnapshots(): ReadonlyArray<KeyResultWeightSnapshot> {
+    return this._weightSnapshots;
+  }
+
+  /**
+   * 获取特定 KR 的权重快照
+   */
+  public getWeightSnapshotsByKeyResult(krUuid: string): ReadonlyArray<KeyResultWeightSnapshot> {
+    return this._weightSnapshots.filter((snapshot) => snapshot.keyResultUuid === krUuid);
   }
 
   // ===== 回顾管理 =====
