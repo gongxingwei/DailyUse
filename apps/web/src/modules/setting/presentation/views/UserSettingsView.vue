@@ -73,6 +73,11 @@
               <WorkflowSettings :auto-save="true" />
             </v-window-item>
 
+            <!-- 通知 -->
+            <v-window-item value="notifications">
+              <NotificationSettings :auto-save="true" />
+            </v-window-item>
+
             <!-- 快捷键 -->
             <v-window-item value="shortcuts">
               <ShortcutSettings :auto-save="true" />
@@ -100,6 +105,7 @@ import { useUserSetting } from '../composables/useUserSetting';
 import AppearanceSettings from '../components/AppearanceSettings.vue';
 import LocaleSettings from '../components/LocaleSettings.vue';
 import WorkflowSettings from '../components/WorkflowSettings.vue';
+import NotificationSettings from '../components/NotificationSettings.vue';
 import ShortcutSettings from '../components/ShortcutSettings.vue';
 import PrivacySettings from '../components/PrivacySettings.vue';
 import ExperimentalSettings from '../components/ExperimentalSettings.vue';
@@ -109,6 +115,7 @@ const tabs = [
   { key: 'appearance', label: '外观', icon: 'mdi-palette' },
   { key: 'locale', label: '语言和地区', icon: 'mdi-earth' },
   { key: 'workflow', label: '工作流', icon: 'mdi-cog-outline' },
+  { key: 'notifications', label: '通知', icon: 'mdi-bell' },
   { key: 'shortcuts', label: '快捷键', icon: 'mdi-keyboard' },
   { key: 'privacy', label: '隐私', icon: 'mdi-shield-account' },
   { key: 'experimental', label: '实验性功能', icon: 'mdi-flask' },

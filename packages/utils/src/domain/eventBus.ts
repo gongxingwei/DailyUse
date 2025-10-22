@@ -255,7 +255,8 @@ export const eventBus = EventBus.getInstance();
 // 导出类供测试使用
 export { EventBus };
 
-// 导出跨平台事件系统相关类型
+// 导出跨平台事件系统相关类和类型
+export { CrossPlatformEventBus } from './CrossPlatformEventBus';
 export type {
   IUnifiedEvent,
   IRequestResponse,

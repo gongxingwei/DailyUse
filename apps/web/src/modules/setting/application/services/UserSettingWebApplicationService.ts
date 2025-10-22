@@ -7,16 +7,61 @@ import { userSettingApiClient } from '../../infrastructure/api/userSettingApiCli
 import { useUserSettingStore } from '../../presentation/stores/userSettingStore';
 import { SettingDomain } from '@dailyuse/domain-client';
 import { type SettingContracts } from '@dailyuse/contracts';
+import { CrossPlatformEventBus } from '@dailyuse/utils';
+
+/**
+ * 用户设置事件类型枚举
+ */
+export enum UserSettingEventType {
+  THEME_CHANGED = 'user-setting:theme-changed',
+  LANGUAGE_CHANGED = 'user-setting:language-changed',
+  NOTIFICATIONS_CHANGED = 'user-setting:notifications-changed',
+  SHORTCUTS_CHANGED = 'user-setting:shortcuts-changed',
+  PRIVACY_CHANGED = 'user-setting:privacy-changed',
+  WORKFLOW_CHANGED = 'user-setting:workflow-changed',
+  EXPERIMENTAL_CHANGED = 'user-setting:experimental-changed',
+  SETTING_UPDATED = 'user-setting:updated',
+  SETTING_CREATED = 'user-setting:created',
+  SETTING_DELETED = 'user-setting:deleted',
+  ERROR = 'user-setting:error',
+}
+
+/**
+ * 事件数据类型映射
+ */
+export interface UserSettingEventData {
+  [UserSettingEventType.THEME_CHANGED]: { theme: string };
+  [UserSettingEventType.LANGUAGE_CHANGED]: { language: string };
+  [UserSettingEventType.NOTIFICATIONS_CHANGED]: { enabled: boolean };
+  [UserSettingEventType.SHORTCUTS_CHANGED]: { action: string; shortcut: string | null };
+  [UserSettingEventType.PRIVACY_CHANGED]: Record<string, any>;
+  [UserSettingEventType.WORKFLOW_CHANGED]: Record<string, any>;
+  [UserSettingEventType.EXPERIMENTAL_CHANGED]: Record<string, any>;
+  [UserSettingEventType.SETTING_UPDATED]: { uuid: string };
+  [UserSettingEventType.SETTING_CREATED]: { uuid: string };
+  [UserSettingEventType.SETTING_DELETED]: { uuid: string };
+  [UserSettingEventType.ERROR]: { error: Error; context?: string };
+}
+
+/**
+ * 类型安全的事件处理器
+ */
+export type UserSettingEventHandler<T extends UserSettingEventType> = (
+  data: UserSettingEventData[T],
+) => void;
 
 const { UserSetting } = SettingDomain;
 
 /**
  * UserSetting Web 应用服务
  * 负责协调 API 客户端和 Store 之间的数据流
- * 实现缓存优先的数据同步策略
+ * 实现缓存优先的数据同步策略 + 乐观更新 + 事件系统
  */
 export class UserSettingWebApplicationService {
   private static instance: UserSettingWebApplicationService | null = null;
+
+  // 事件总线 - 使用共享的跨平台事件系统
+  private eventBus: CrossPlatformEventBus = new CrossPlatformEventBus();
 
   /**
    * 懒加载获取 UserSetting Store
@@ -244,9 +289,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateTheme(uuid, theme);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发主题变更事件
+      this.eventBus.send(UserSettingEventType.THEME_CHANGED, { theme });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新主题失败:', error);
+      this.emitError(error as Error, 'updateTheme');
       throw error;
     }
   }
@@ -262,9 +312,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateLanguage(uuid, language);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发语言变更事件
+      this.eventBus.send(UserSettingEventType.LANGUAGE_CHANGED, { language });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新语言失败:', error);
+      this.emitError(error as Error, 'updateLanguage');
       throw error;
     }
   }
@@ -281,9 +336,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateShortcut(uuid, action, shortcut);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发快捷键变更事件
+      this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新快捷键失败:', error);
+      this.emitError(error as Error, 'updateShortcut');
       throw error;
     }
   }
@@ -299,9 +359,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.deleteShortcut(uuid, action);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发快捷键变更事件（删除）
+      this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut: null });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 删除快捷键失败:', error);
+      this.emitError(error as Error, 'deleteShortcut');
       throw error;
     }
   }
@@ -320,5 +385,91 @@ export class UserSettingWebApplicationService {
    */
   public clearUserSettingCache(): void {
     this.userSettingStore.clearAll();
+  }
+
+  // ===== Event System Methods (事件系统方法) =====
+
+  /**
+   * 注册事件监听器
+   * @returns 取消监听的函数
+   */
+  public on<T extends UserSettingEventType>(
+    event: T,
+    handler: UserSettingEventHandler<T>,
+  ): () => void {
+    this.eventBus.on(event, handler);
+    return () => this.eventBus.off(event, handler);
+  }
+
+  /**
+   * 移除事件监听器
+   */
+  public off<T extends UserSettingEventType>(
+    event: T,
+    handler: UserSettingEventHandler<T>,
+  ): void {
+    this.eventBus.off(event, handler);
+  }
+
+  /**
+   * 清除所有事件监听器
+   */
+  public clearAllListeners(): void {
+    this.eventBus.removeAllListeners();
+  }
+
+  /**
+   * 获取事件总线实例（供高级用法）
+   */
+  public getEventBus(): CrossPlatformEventBus {
+    return this.eventBus;
+  }
+
+  /**
+   * 触发错误事件
+   */
+  private emitError(error: Error, context?: string): void {
+    this.eventBus.send(UserSettingEventType.ERROR, { error, context });
+  }
+
+  /**
+   * 便捷方法：监听主题变更
+   */
+  public onThemeChanged(handler: (theme: string) => void): () => void {
+    return this.on(UserSettingEventType.THEME_CHANGED, ({ theme }) => handler(theme));
+  }
+
+  /**
+   * 便捷方法：监听语言变更
+   */
+  public onLanguageChanged(handler: (language: string) => void): () => void {
+    return this.on(UserSettingEventType.LANGUAGE_CHANGED, ({ language }) => handler(language));
+  }
+
+  /**
+   * 便捷方法：监听通知设置变更
+   */
+  public onNotificationsChanged(handler: (enabled: boolean) => void): () => void {
+    return this.on(UserSettingEventType.NOTIFICATIONS_CHANGED, ({ enabled }) =>
+      handler(enabled),
+    );
+  }
+
+  /**
+   * 便捷方法：监听快捷键变更
+   */
+  public onShortcutsChanged(
+    handler: (action: string, shortcut: string | null) => void,
+  ): () => void {
+    return this.on(UserSettingEventType.SHORTCUTS_CHANGED, ({ action, shortcut }) =>
+      handler(action, shortcut),
+    );
+  }
+
+  /**
+   * 便捷方法：监听错误
+   */
+  public onError(handler: (error: Error, context?: string) => void): () => void {
+    return this.on(UserSettingEventType.ERROR, ({ error, context }) => handler(error, context));
   }
 }
