@@ -3,3 +3,4 @@
  */
 
 export { SettingApplicationService } from './services/SettingApplicationService';
+export { UserSettingApplicationService } from './services/UserSettingApplicationService';
