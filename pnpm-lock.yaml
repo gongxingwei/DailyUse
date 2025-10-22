@@ -275,7 +275,7 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(vitest@3.2.4)
       prisma:
-        specifier: ^6.15.0
+        specifier: ^6.17.1
         version: 6.17.1(magicast@0.3.5)(typescript@5.8.3)
       reflect-metadata:
         specifier: ^0.2.2
@@ -9735,7 +9735,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.9)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.11)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
     transitivePeerDependencies:
       - supports-color
 
@@ -9800,7 +9800,7 @@ snapshots:
       sirv: 3.0.2
       tinyglobby: 0.2.15
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.9)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.11)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
 
   '@vitest/utils@3.2.4':
     dependencies:

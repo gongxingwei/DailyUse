@@ -518,16 +518,50 @@ model AppConfig {
 /// UserSetting - Separate Aggregate
 /// 用户设置（用户级别的配置聚合）
 model UserSetting {
-  uuid          String   @id @default(cuid())
-  accountUuid   String   @unique @map("account_uuid")
-  preferences   String   @default("{}") @db.Text // JSON: user preferences
-  theme         String   @default("light")
-  language      String   @default("zh-CN")
-  timezone      String   @default("Asia/Shanghai")
-  notifications String   @default("{}") @db.Text // JSON: notification settings
-  privacy       String   @default("{}") @db.Text // JSON: privacy settings
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  uuid        String   @id @default(cuid())
+  accountUuid String   @unique @map("account_uuid")
+  
+  // Appearance - 扁平化字段（与 PersistenceDTO 一一对应）
+  appearanceTheme         String  @default("AUTO") @map("appearance_theme")
+  appearanceAccentColor   String  @default("#3B82F6") @map("appearance_accent_color")
+  appearanceFontSize      String  @default("MEDIUM") @map("appearance_font_size")
+  appearanceFontFamily    String? @map("appearance_font_family")
+  appearanceCompactMode   Boolean @default(false) @map("appearance_compact_mode")
+  
+  // Locale - 扁平化字段
+  localeLanguage      String @default("zh-CN") @map("locale_language")
+  localeTimezone      String @default("Asia/Shanghai") @map("locale_timezone")
+  localeDateFormat    String @default("YYYY-MM-DD") @map("locale_date_format")
+  localeTimeFormat    String @default("24H") @map("locale_time_format")
+  localeWeekStartsOn  Int    @default(1) @map("locale_week_starts_on") // 0-6
+  localeCurrency      String @default("CNY") @map("locale_currency")
+  
+  // Workflow - 扁平化字段
+  workflowDefaultTaskView      String  @default("LIST") @map("workflow_default_task_view")
+  workflowDefaultGoalView      String  @default("LIST") @map("workflow_default_goal_view")
+  workflowDefaultScheduleView  String  @default("WEEK") @map("workflow_default_schedule_view")
+  workflowAutoSave             Boolean @default(true) @map("workflow_auto_save")
+  workflowAutoSaveInterval     Int     @default(30000) @map("workflow_auto_save_interval") // milliseconds
+  workflowConfirmBeforeDelete  Boolean @default(true) @map("workflow_confirm_before_delete")
+  
+  // Shortcuts - enabled + custom (JSON)
+  shortcutsEnabled Boolean @default(true) @map("shortcuts_enabled")
+  shortcutsCustom  String  @default("{}") @map("shortcuts_custom") @db.Text // JSON: Record<string, string>
+  
+  // Privacy - 扁平化字段
+  privacyProfileVisibility    String  @default("PRIVATE") @map("privacy_profile_visibility")
+  privacyShowOnlineStatus     Boolean @default(true) @map("privacy_show_online_status")
+  privacyAllowSearchByEmail   Boolean @default(true) @map("privacy_allow_search_by_email")
+  privacyAllowSearchByPhone   Boolean @default(false) @map("privacy_allow_search_by_phone")
+  privacyShareUsageData       Boolean @default(false) @map("privacy_share_usage_data")
+  
+  // Experimental - enabled + features (JSON)
+  experimentalEnabled  Boolean @default(false) @map("experimental_enabled")
+  experimentalFeatures String  @default("[]") @map("experimental_features") @db.Text // JSON: string[]
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
   account Account @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)

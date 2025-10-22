@@ -109,6 +109,20 @@
   "pnpm": {
     "overrides": {
       "@electron/rebuild": "^4.0.1"
-    }
+    },
+    "ignoredBuiltDependencies": [
+      "@nestjs/core",
+      "@parcel/watcher",
+      "@prisma/client",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "@swc/core",
+      "better-sqlite3",
+      "electron-winstaller",
+      "esbuild",
+      "nx",
+      "prisma",
+      "vue-demi"
+    ]
   }
 }
