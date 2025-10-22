@@ -7,11 +7,48 @@ import { userSettingApiClient } from '../../infrastructure/api/userSettingApiCli
 import { useUserSettingStore } from '../../presentation/stores/userSettingStore';
 import { SettingDomain } from '@dailyuse/domain-client';
 import { type SettingContracts } from '@dailyuse/contracts';
-import {
-  UserSettingEventEmitter,
-  UserSettingEventType,
-  type UserSettingEventHandler,
-} from '../events/UserSettingEventEmitter';
+import { CrossPlatformEventBus } from '@dailyuse/utils';
+
+/**
+ * 用户设置事件类型枚举
+ */
+export enum UserSettingEventType {
+  THEME_CHANGED = 'user-setting:theme-changed',
+  LANGUAGE_CHANGED = 'user-setting:language-changed',
+  NOTIFICATIONS_CHANGED = 'user-setting:notifications-changed',
+  SHORTCUTS_CHANGED = 'user-setting:shortcuts-changed',
+  PRIVACY_CHANGED = 'user-setting:privacy-changed',
+  WORKFLOW_CHANGED = 'user-setting:workflow-changed',
+  EXPERIMENTAL_CHANGED = 'user-setting:experimental-changed',
+  SETTING_UPDATED = 'user-setting:updated',
+  SETTING_CREATED = 'user-setting:created',
+  SETTING_DELETED = 'user-setting:deleted',
+  ERROR = 'user-setting:error',
+}
+
+/**
+ * 事件数据类型映射
+ */
+export interface UserSettingEventData {
+  [UserSettingEventType.THEME_CHANGED]: { theme: string };
+  [UserSettingEventType.LANGUAGE_CHANGED]: { language: string };
+  [UserSettingEventType.NOTIFICATIONS_CHANGED]: { enabled: boolean };
+  [UserSettingEventType.SHORTCUTS_CHANGED]: { action: string; shortcut: string | null };
+  [UserSettingEventType.PRIVACY_CHANGED]: Record<string, any>;
+  [UserSettingEventType.WORKFLOW_CHANGED]: Record<string, any>;
+  [UserSettingEventType.EXPERIMENTAL_CHANGED]: Record<string, any>;
+  [UserSettingEventType.SETTING_UPDATED]: { uuid: string };
+  [UserSettingEventType.SETTING_CREATED]: { uuid: string };
+  [UserSettingEventType.SETTING_DELETED]: { uuid: string };
+  [UserSettingEventType.ERROR]: { error: Error; context?: string };
+}
+
+/**
+ * 类型安全的事件处理器
+ */
+export type UserSettingEventHandler<T extends UserSettingEventType> = (
+  data: UserSettingEventData[T],
+) => void;
 
 const { UserSetting } = SettingDomain;
 
@@ -23,8 +60,8 @@ const { UserSetting } = SettingDomain;
 export class UserSettingWebApplicationService {
   private static instance: UserSettingWebApplicationService | null = null;
 
-  // 事件发射器 - 用于通知设置变更
-  private eventEmitter: UserSettingEventEmitter = new UserSettingEventEmitter();
+  // 事件总线 - 使用共享的跨平台事件系统
+  private eventBus: CrossPlatformEventBus = new CrossPlatformEventBus();
 
   /**
    * 懒加载获取 UserSetting Store
@@ -254,7 +291,7 @@ export class UserSettingWebApplicationService {
       this.userSettingStore.updateUserSettingData(entity);
       
       // 触发主题变更事件
-      this.eventEmitter.emit(UserSettingEventType.THEME_CHANGED, { theme });
+      this.eventBus.send(UserSettingEventType.THEME_CHANGED, { theme });
       
       return entity;
     } catch (error) {
@@ -277,7 +314,7 @@ export class UserSettingWebApplicationService {
       this.userSettingStore.updateUserSettingData(entity);
       
       // 触发语言变更事件
-      this.eventEmitter.emit(UserSettingEventType.LANGUAGE_CHANGED, { language });
+      this.eventBus.send(UserSettingEventType.LANGUAGE_CHANGED, { language });
       
       return entity;
     } catch (error) {
@@ -301,7 +338,7 @@ export class UserSettingWebApplicationService {
       this.userSettingStore.updateUserSettingData(entity);
       
       // 触发快捷键变更事件
-      this.eventEmitter.emit(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut });
+      this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut });
       
       return entity;
     } catch (error) {
@@ -324,7 +361,7 @@ export class UserSettingWebApplicationService {
       this.userSettingStore.updateUserSettingData(entity);
       
       // 触发快捷键变更事件（删除）
-      this.eventEmitter.emit(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut: null });
+      this.eventBus.send(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut: null });
       
       return entity;
     } catch (error) {
@@ -360,17 +397,8 @@ export class UserSettingWebApplicationService {
     event: T,
     handler: UserSettingEventHandler<T>,
   ): () => void {
-    return this.eventEmitter.on(event, handler);
-  }
-
-  /**
-   * 注册一次性事件监听器
-   */
-  public once<T extends UserSettingEventType>(
-    event: T,
-    handler: UserSettingEventHandler<T>,
-  ): void {
-    this.eventEmitter.once(event, handler);
+    this.eventBus.on(event, handler);
+    return () => this.eventBus.off(event, handler);
   }
 
   /**
@@ -380,21 +408,28 @@ export class UserSettingWebApplicationService {
     event: T,
     handler: UserSettingEventHandler<T>,
   ): void {
-    this.eventEmitter.off(event, handler);
+    this.eventBus.off(event, handler);
   }
 
   /**
    * 清除所有事件监听器
    */
   public clearAllListeners(): void {
-    this.eventEmitter.clear();
+    this.eventBus.removeAllListeners();
+  }
+
+  /**
+   * 获取事件总线实例（供高级用法）
+   */
+  public getEventBus(): CrossPlatformEventBus {
+    return this.eventBus;
   }
 
   /**
    * 触发错误事件
    */
   private emitError(error: Error, context?: string): void {
-    this.eventEmitter.emit(UserSettingEventType.ERROR, { error, context });
+    this.eventBus.send(UserSettingEventType.ERROR, { error, context });
   }
 
   /**
