@@ -190,7 +190,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { useUserSetting } from '../../composables/useUserSetting';
+import { useUserSetting } from '../composables/useUserSetting';
 
 // Props
 const props = withDefaults(
