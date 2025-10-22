@@ -621,12 +621,13 @@ model Goal {
   deletedAt           DateTime? @map("deleted_at")
 
   // Relations
-  account       Account        @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  parentGoal    Goal?          @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
-  childGoals    Goal[]         @relation("GoalHierarchy")
-  focusSessions FocusSession[]
-  keyResults    KeyResult[]
-  goalReviews   GoalReview[]
+  account         Account                    @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parentGoal      Goal?                      @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  childGoals      Goal[]                     @relation("GoalHierarchy")
+  focusSessions   FocusSession[]
+  keyResults      KeyResult[]
+  goalReviews     GoalReview[]
+  weightSnapshots KeyResultWeightSnapshot[]
 
   @@index([accountUuid])
   @@index([status])
@@ -653,11 +654,39 @@ model KeyResult {
   updatedAt       DateTime  @updatedAt @map("updated_at")
 
   // Relations
-  goal    Goal          @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
-  records GoalRecord[]
+  goal            Goal                       @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  records         GoalRecord[]
+  weightSnapshots KeyResultWeightSnapshot[]
 
   @@index([goalUuid])
   @@map("key_results")
+}
+
+/// KeyResultWeightSnapshot 值对象
+/// 关键结果权重快照，用于追踪权重变更历史
+model KeyResultWeightSnapshot {
+  uuid            String   @id @default(cuid())
+  goalUuid        String   @map("goal_uuid")
+  keyResultUuid   String   @map("key_result_uuid")
+  oldWeight       Float    @map("old_weight")
+  newWeight       Float    @map("new_weight")
+  weightDelta     Float    @map("weight_delta")
+  snapshotTime    BigInt   @map("snapshot_time") // 毫秒时间戳
+  trigger         String // 'manual' | 'auto' | 'restore' | 'import'
+  reason          String?  @db.Text
+  operatorUuid    String   @map("operator_uuid")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  // Relations
+  goal      Goal      @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  keyResult KeyResult @relation(fields: [keyResultUuid], references: [uuid], onDelete: Cascade)
+
+  // Indexes
+  @@index([goalUuid])
+  @@index([keyResultUuid])
+  @@index([snapshotTime])
+  @@index([goalUuid, snapshotTime])
+  @@map("key_result_weight_snapshots")
 }
 
 /// GoalRecord 实体
