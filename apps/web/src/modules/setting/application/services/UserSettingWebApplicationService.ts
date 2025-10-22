@@ -7,16 +7,24 @@ import { userSettingApiClient } from '../../infrastructure/api/userSettingApiCli
 import { useUserSettingStore } from '../../presentation/stores/userSettingStore';
 import { SettingDomain } from '@dailyuse/domain-client';
 import { type SettingContracts } from '@dailyuse/contracts';
+import {
+  UserSettingEventEmitter,
+  UserSettingEventType,
+  type UserSettingEventHandler,
+} from '../events/UserSettingEventEmitter';
 
 const { UserSetting } = SettingDomain;
 
 /**
  * UserSetting Web 应用服务
  * 负责协调 API 客户端和 Store 之间的数据流
- * 实现缓存优先的数据同步策略
+ * 实现缓存优先的数据同步策略 + 乐观更新 + 事件系统
  */
 export class UserSettingWebApplicationService {
   private static instance: UserSettingWebApplicationService | null = null;
+
+  // 事件发射器 - 用于通知设置变更
+  private eventEmitter: UserSettingEventEmitter = new UserSettingEventEmitter();
 
   /**
    * 懒加载获取 UserSetting Store
@@ -244,9 +252,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateTheme(uuid, theme);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发主题变更事件
+      this.eventEmitter.emit(UserSettingEventType.THEME_CHANGED, { theme });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新主题失败:', error);
+      this.emitError(error as Error, 'updateTheme');
       throw error;
     }
   }
@@ -262,9 +275,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateLanguage(uuid, language);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发语言变更事件
+      this.eventEmitter.emit(UserSettingEventType.LANGUAGE_CHANGED, { language });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新语言失败:', error);
+      this.emitError(error as Error, 'updateLanguage');
       throw error;
     }
   }
@@ -281,9 +299,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.updateShortcut(uuid, action, shortcut);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发快捷键变更事件
+      this.eventEmitter.emit(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 更新快捷键失败:', error);
+      this.emitError(error as Error, 'updateShortcut');
       throw error;
     }
   }
@@ -299,9 +322,14 @@ export class UserSettingWebApplicationService {
       const dto = await userSettingApiClient.deleteShortcut(uuid, action);
       const entity = UserSetting.fromClientDTO(dto);
       this.userSettingStore.updateUserSettingData(entity);
+      
+      // 触发快捷键变更事件（删除）
+      this.eventEmitter.emit(UserSettingEventType.SHORTCUTS_CHANGED, { action, shortcut: null });
+      
       return entity;
     } catch (error) {
       console.error('[UserSettingWebApplicationService] 删除快捷键失败:', error);
+      this.emitError(error as Error, 'deleteShortcut');
       throw error;
     }
   }
@@ -320,5 +348,93 @@ export class UserSettingWebApplicationService {
    */
   public clearUserSettingCache(): void {
     this.userSettingStore.clearAll();
+  }
+
+  // ===== Event System Methods (事件系统方法) =====
+
+  /**
+   * 注册事件监听器
+   * @returns 取消监听的函数
+   */
+  public on<T extends UserSettingEventType>(
+    event: T,
+    handler: UserSettingEventHandler<T>,
+  ): () => void {
+    return this.eventEmitter.on(event, handler);
+  }
+
+  /**
+   * 注册一次性事件监听器
+   */
+  public once<T extends UserSettingEventType>(
+    event: T,
+    handler: UserSettingEventHandler<T>,
+  ): void {
+    this.eventEmitter.once(event, handler);
+  }
+
+  /**
+   * 移除事件监听器
+   */
+  public off<T extends UserSettingEventType>(
+    event: T,
+    handler: UserSettingEventHandler<T>,
+  ): void {
+    this.eventEmitter.off(event, handler);
+  }
+
+  /**
+   * 清除所有事件监听器
+   */
+  public clearAllListeners(): void {
+    this.eventEmitter.clear();
+  }
+
+  /**
+   * 触发错误事件
+   */
+  private emitError(error: Error, context?: string): void {
+    this.eventEmitter.emit(UserSettingEventType.ERROR, { error, context });
+  }
+
+  /**
+   * 便捷方法：监听主题变更
+   */
+  public onThemeChanged(handler: (theme: string) => void): () => void {
+    return this.on(UserSettingEventType.THEME_CHANGED, ({ theme }) => handler(theme));
+  }
+
+  /**
+   * 便捷方法：监听语言变更
+   */
+  public onLanguageChanged(handler: (language: string) => void): () => void {
+    return this.on(UserSettingEventType.LANGUAGE_CHANGED, ({ language }) => handler(language));
+  }
+
+  /**
+   * 便捷方法：监听通知设置变更
+   */
+  public onNotificationsChanged(handler: (enabled: boolean) => void): () => void {
+    return this.on(UserSettingEventType.NOTIFICATIONS_CHANGED, ({ enabled }) =>
+      handler(enabled),
+    );
+  }
+
+  /**
+   * 便捷方法：监听快捷键变更
+   */
+  public onShortcutsChanged(
+    handler: (action: string, shortcut: string | null) => void,
+  ): () => void {
+    return this.on(UserSettingEventType.SHORTCUTS_CHANGED, ({ action, shortcut }) =>
+      handler(action, shortcut),
+    );
+  }
+
+  /**
+   * 便捷方法：监听错误
+   */
+  public onError(handler: (error: Error, context?: string) => void): () => void {
+    return this.on(UserSettingEventType.ERROR, ({ error, context }) => handler(error, context));
   }
 }
