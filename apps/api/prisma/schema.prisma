@@ -518,47 +518,47 @@ model AppConfig {
 /// UserSetting - Separate Aggregate
 /// 用户设置（用户级别的配置聚合）
 model UserSetting {
-  uuid        String   @id @default(cuid())
-  accountUuid String   @unique @map("account_uuid")
-  
+  uuid        String @id @default(cuid())
+  accountUuid String @unique @map("account_uuid")
+
   // Appearance - 扁平化字段（与 PersistenceDTO 一一对应）
-  appearanceTheme         String  @default("AUTO") @map("appearance_theme")
-  appearanceAccentColor   String  @default("#3B82F6") @map("appearance_accent_color")
-  appearanceFontSize      String  @default("MEDIUM") @map("appearance_font_size")
-  appearanceFontFamily    String? @map("appearance_font_family")
-  appearanceCompactMode   Boolean @default(false) @map("appearance_compact_mode")
-  
+  appearanceTheme       String  @default("AUTO") @map("appearance_theme")
+  appearanceAccentColor String  @default("#3B82F6") @map("appearance_accent_color")
+  appearanceFontSize    String  @default("MEDIUM") @map("appearance_font_size")
+  appearanceFontFamily  String? @map("appearance_font_family")
+  appearanceCompactMode Boolean @default(false) @map("appearance_compact_mode")
+
   // Locale - 扁平化字段
-  localeLanguage      String @default("zh-CN") @map("locale_language")
-  localeTimezone      String @default("Asia/Shanghai") @map("locale_timezone")
-  localeDateFormat    String @default("YYYY-MM-DD") @map("locale_date_format")
-  localeTimeFormat    String @default("24H") @map("locale_time_format")
-  localeWeekStartsOn  Int    @default(1) @map("locale_week_starts_on") // 0-6
-  localeCurrency      String @default("CNY") @map("locale_currency")
-  
+  localeLanguage     String @default("zh-CN") @map("locale_language")
+  localeTimezone     String @default("Asia/Shanghai") @map("locale_timezone")
+  localeDateFormat   String @default("YYYY-MM-DD") @map("locale_date_format")
+  localeTimeFormat   String @default("24H") @map("locale_time_format")
+  localeWeekStartsOn Int    @default(1) @map("locale_week_starts_on") // 0-6
+  localeCurrency     String @default("CNY") @map("locale_currency")
+
   // Workflow - 扁平化字段
-  workflowDefaultTaskView      String  @default("LIST") @map("workflow_default_task_view")
-  workflowDefaultGoalView      String  @default("LIST") @map("workflow_default_goal_view")
-  workflowDefaultScheduleView  String  @default("WEEK") @map("workflow_default_schedule_view")
-  workflowAutoSave             Boolean @default(true) @map("workflow_auto_save")
-  workflowAutoSaveInterval     Int     @default(30000) @map("workflow_auto_save_interval") // milliseconds
-  workflowConfirmBeforeDelete  Boolean @default(true) @map("workflow_confirm_before_delete")
-  
+  workflowDefaultTaskView     String  @default("LIST") @map("workflow_default_task_view")
+  workflowDefaultGoalView     String  @default("LIST") @map("workflow_default_goal_view")
+  workflowDefaultScheduleView String  @default("WEEK") @map("workflow_default_schedule_view")
+  workflowAutoSave            Boolean @default(true) @map("workflow_auto_save")
+  workflowAutoSaveInterval    Int     @default(30000) @map("workflow_auto_save_interval") // milliseconds
+  workflowConfirmBeforeDelete Boolean @default(true) @map("workflow_confirm_before_delete")
+
   // Shortcuts - enabled + custom (JSON)
   shortcutsEnabled Boolean @default(true) @map("shortcuts_enabled")
   shortcutsCustom  String  @default("{}") @map("shortcuts_custom") @db.Text // JSON: Record<string, string>
-  
+
   // Privacy - 扁平化字段
-  privacyProfileVisibility    String  @default("PRIVATE") @map("privacy_profile_visibility")
-  privacyShowOnlineStatus     Boolean @default(true) @map("privacy_show_online_status")
-  privacyAllowSearchByEmail   Boolean @default(true) @map("privacy_allow_search_by_email")
-  privacyAllowSearchByPhone   Boolean @default(false) @map("privacy_allow_search_by_phone")
-  privacyShareUsageData       Boolean @default(false) @map("privacy_share_usage_data")
-  
+  privacyProfileVisibility  String  @default("PRIVATE") @map("privacy_profile_visibility")
+  privacyShowOnlineStatus   Boolean @default(true) @map("privacy_show_online_status")
+  privacyAllowSearchByEmail Boolean @default(true) @map("privacy_allow_search_by_email")
+  privacyAllowSearchByPhone Boolean @default(false) @map("privacy_allow_search_by_phone")
+  privacyShareUsageData     Boolean @default(false) @map("privacy_share_usage_data")
+
   // Experimental - enabled + features (JSON)
   experimentalEnabled  Boolean @default(false) @map("experimental_enabled")
   experimentalFeatures String  @default("[]") @map("experimental_features") @db.Text // JSON: string[]
-  
+
   // Timestamps
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -621,9 +621,9 @@ model Goal {
   deletedAt           DateTime? @map("deleted_at")
 
   // Relations
-  account         Account                    @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
-  parentGoal      Goal?                      @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
-  childGoals      Goal[]                     @relation("GoalHierarchy")
+  account         Account                   @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
+  parentGoal      Goal?                     @relation("GoalHierarchy", fields: [parentGoalUuid], references: [uuid], onDelete: NoAction, onUpdate: NoAction)
+  childGoals      Goal[]                    @relation("GoalHierarchy")
   focusSessions   FocusSession[]
   keyResults      KeyResult[]
   goalReviews     GoalReview[]
@@ -639,22 +639,22 @@ model Goal {
 /// KeyResult 实体
 /// 目标的关键结果，用于衡量目标完成度
 model KeyResult {
-  uuid            String    @id @default(cuid())
-  goalUuid        String    @map("goal_uuid")
-  title           String
-  description     String?   @db.Text
-  valueType       String    @map("value_type") // 'INCREMENTAL', 'ABSOLUTE', 'PERCENTAGE', 'BINARY'
-  aggregationMethod String  @map("aggregation_method") // 'SUM', 'AVERAGE', 'MAX', 'MIN', 'LAST'
-  targetValue     Float     @map("target_value")
-  currentValue    Float     @default(0) @map("current_value")
-  unit            String?
-  weight          Float     @default(1)
-  order           Int       @default(0)
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  uuid              String   @id @default(cuid())
+  goalUuid          String   @map("goal_uuid")
+  title             String
+  description       String?  @db.Text
+  valueType         String   @map("value_type") // 'INCREMENTAL', 'ABSOLUTE', 'PERCENTAGE', 'BINARY'
+  aggregationMethod String   @map("aggregation_method") // 'SUM', 'AVERAGE', 'MAX', 'MIN', 'LAST'
+  targetValue       Float    @map("target_value")
+  currentValue      Float    @default(0) @map("current_value")
+  unit              String?
+  weight            Float    @default(1)
+  order             Int      @default(0)
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   // Relations
-  goal            Goal                       @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
+  goal            Goal                      @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
   records         GoalRecord[]
   weightSnapshots KeyResultWeightSnapshot[]
 
@@ -665,17 +665,17 @@ model KeyResult {
 /// KeyResultWeightSnapshot 值对象
 /// 关键结果权重快照，用于追踪权重变更历史
 model KeyResultWeightSnapshot {
-  uuid            String   @id @default(cuid())
-  goalUuid        String   @map("goal_uuid")
-  keyResultUuid   String   @map("key_result_uuid")
-  oldWeight       Float    @map("old_weight")
-  newWeight       Float    @map("new_weight")
-  weightDelta     Float    @map("weight_delta")
-  snapshotTime    BigInt   @map("snapshot_time") // 毫秒时间戳
-  trigger         String // 'manual' | 'auto' | 'restore' | 'import'
-  reason          String?  @db.Text
-  operatorUuid    String   @map("operator_uuid")
-  createdAt       DateTime @default(now()) @map("created_at")
+  uuid          String   @id @default(cuid())
+  goalUuid      String   @map("goal_uuid")
+  keyResultUuid String   @map("key_result_uuid")
+  oldWeight     Float    @map("old_weight")
+  newWeight     Float    @map("new_weight")
+  weightDelta   Float    @map("weight_delta")
+  snapshotTime  BigInt   @map("snapshot_time") // 毫秒时间戳
+  trigger       String // 'manual' | 'auto' | 'restore' | 'import'
+  reason        String?  @db.Text
+  operatorUuid  String   @map("operator_uuid")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   // Relations
   goal      Goal      @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
@@ -710,17 +710,17 @@ model GoalRecord {
 /// GoalReview 实体
 /// 目标复盘记录
 model GoalReview {
-  uuid                String   @id @default(cuid())
-  goalUuid            String   @map("goal_uuid")
-  reviewType          String   @map("review_type") // 'PERIODIC', 'MILESTONE', 'COMPLETION'
-  content             String   @db.Text
-  achievements        String?  @db.Text // JSON array
-  challenges          String?  @db.Text // JSON array
-  lessonsLearned      String?  @map("lessons_learned") @db.Text
-  nextSteps           String?  @map("next_steps") @db.Text
-  rating              Int? // 1-5
-  createdAt           DateTime @default(now()) @map("created_at")
-  updatedAt           DateTime @updatedAt @map("updated_at")
+  uuid           String   @id @default(cuid())
+  goalUuid       String   @map("goal_uuid")
+  reviewType     String   @map("review_type") // 'PERIODIC', 'MILESTONE', 'COMPLETION'
+  content        String   @db.Text
+  achievements   String?  @db.Text // JSON array
+  challenges     String?  @db.Text // JSON array
+  lessonsLearned String?  @map("lessons_learned") @db.Text
+  nextSteps      String?  @map("next_steps") @db.Text
+  rating         Int? // 1-5
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
 
   // Relations
   goal Goal @relation(fields: [goalUuid], references: [uuid], onDelete: Cascade)
@@ -801,13 +801,13 @@ model GoalStatistics {
   goalsByStatus String @default("{}") @map("goals_by_status") @db.Text
 
   // 时间段统计
-  goalsCreatedThisWeek   Int @default(0) @map("goals_created_this_week")
-  goalsCompletedThisWeek Int @default(0) @map("goals_completed_this_week")
-  goalsCreatedThisMonth  Int @default(0) @map("goals_created_this_month")
+  goalsCreatedThisWeek    Int @default(0) @map("goals_created_this_week")
+  goalsCompletedThisWeek  Int @default(0) @map("goals_completed_this_week")
+  goalsCreatedThisMonth   Int @default(0) @map("goals_created_this_month")
   goalsCompletedThisMonth Int @default(0) @map("goals_completed_this_month")
 
   // 回顾统计
-  totalReviews  Int   @default(0) @map("total_reviews")
+  totalReviews  Int    @default(0) @map("total_reviews")
   averageRating Float? @map("average_rating")
 
   // 专注会话统计

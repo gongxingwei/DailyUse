@@ -48,6 +48,41 @@
         "command": "tsc --noEmit",
         "cwd": "apps/api"
       }
+    },
+    "prisma:generate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm prisma:generate",
+        "cwd": "apps/api"
+      }
+    },
+    "prisma:migrate": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm prisma:migrate",
+        "cwd": "apps/api"
+      }
+    },
+    "prisma:studio": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm prisma:studio",
+        "cwd": "apps/api"
+      }
+    },
+    "prisma:seed": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm prisma:seed",
+        "cwd": "apps/api"
+      }
+    },
+    "db:push": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "pnpm prisma db push",
+        "cwd": "apps/api"
+      }
     }
   }
 }

@@ -15,15 +15,32 @@
   },
   "scripts": {
     "preinstall": "npx only-allow pnpm",
+    
+    "// ========== Development ==========": "",
     "dev:desktop": "pnpm nx dev desktop",
     "dev:web": "pnpm nx dev web",
     "dev:api": "pnpm nx dev api",
+    "dev:all": "pnpm nx run-many --target=dev --projects=api,web --parallel=2",
+    
+    "// ========== Build ==========": "",
     "build": "pnpm nx run-many --target=build --all",
     "build:desktop": "pnpm nx build desktop",
     "build:web": "pnpm nx build web",
     "build:api": "pnpm nx build api",
-    "lint": "pnpm nx run-many --target=lint --all",
-    "lint:fix": "pnpm nx run-many --target=lint --all --fix",
+    "build:packages": "pnpm nx run-many --target=build --projects=contracts,domain-server,domain-client,ui,utils",
+    
+    "// ========== Prisma (API Database) ==========": "",
+    "prisma": "prisma --schema=./apps/api/prisma/schema.prisma",
+    "prisma:generate": "prisma generate --schema=./apps/api/prisma/schema.prisma",
+    "prisma:migrate": "cd apps/api && prisma migrate dev",
+    "prisma:migrate:deploy": "cd apps/api && prisma migrate deploy",
+    "prisma:studio": "prisma studio --schema=./apps/api/prisma/schema.prisma",
+    "prisma:seed": "pnpm --filter @dailyuse/api db:seed",
+    "prisma:reset": "cd apps/api && prisma migrate reset",
+    "db:push": "prisma db push --schema=./apps/api/prisma/schema.prisma",
+    "db:seed": "pnpm prisma:seed",
+    
+    "// ========== Testing ==========": "",
     "test": "vitest",
     "test:run": "vitest run",
     "test:ui": "vitest --ui",
@@ -38,14 +55,25 @@
     "test:contracts": "vitest --project=contracts",
     "test:ui-lib": "vitest --project=ui",
     "test:utils": "vitest --project=utils",
+    
+    "// ========== Code Quality ==========": "",
+    "lint": "pnpm nx run-many --target=lint --all",
+    "lint:fix": "pnpm nx run-many --target=lint --all --fix",
     "format": "pnpm prettier --write .",
     "format:check": "pnpm prettier --check .",
+    "typecheck": "pnpm nx run-many --target=typecheck --all",
+    
+    "// ========== Nx Utilities ==========": "",
     "graph": "pnpm nx graph",
     "affected:build": "pnpm nx affected --target=build",
     "affected:test": "pnpm nx affected --target=test",
     "affected:lint": "pnpm nx affected --target=lint",
     "clean": "pnpm nx reset",
-    "install:all": "pnpm install"
+    "install:all": "pnpm install",
+    
+    "// ========== Package Management ==========": "",
+    "packages:build": "pnpm nx run-many --target=build --projects=contracts,domain-server,domain-client,ui,utils --parallel=3",
+    "packages:watch": "pnpm nx run-many --target=watch --projects=contracts,domain-server,domain-client,ui,utils --parallel=5"
   },
   "dependencies": {
     "@dailyuse/contracts": "workspace:*",
