@@ -197,6 +197,51 @@ export interface AppConfigResponse {
 // ============ UserSetting API ============
 
 /**
+ * 创建用户设置请求
+ */
+export interface CreateUserSettingRequest {
+  accountUuid: string;
+  appearance?: {
+    theme?: 'LIGHT' | 'DARK' | 'AUTO';
+    accentColor?: string;
+    fontSize?: 'SMALL' | 'MEDIUM' | 'LARGE';
+    fontFamily?: string | null;
+    compactMode?: boolean;
+  };
+  locale?: {
+    language?: string;
+    timezone?: string;
+    dateFormat?: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY';
+    timeFormat?: '12H' | '24H';
+    weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+    currency?: string;
+  };
+  workflow?: {
+    defaultTaskView?: 'LIST' | 'KANBAN' | 'CALENDAR';
+    defaultGoalView?: 'LIST' | 'TREE' | 'TIMELINE';
+    defaultScheduleView?: 'DAY' | 'WEEK' | 'MONTH';
+    autoSave?: boolean;
+    autoSaveInterval?: number;
+    confirmBeforeDelete?: boolean;
+  };
+  shortcuts?: {
+    enabled?: boolean;
+    custom?: Record<string, string>;
+  };
+  privacy?: {
+    profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY';
+    showOnlineStatus?: boolean;
+    allowSearchByEmail?: boolean;
+    allowSearchByPhone?: boolean;
+    shareUsageData?: boolean;
+  };
+  experimental?: {
+    enabled?: boolean;
+    features?: string[];
+  };
+}
+
+/**
  * 更新用户设置请求
  */
 export interface UpdateUserSettingRequest {
@@ -251,6 +296,68 @@ export interface UserSettingResponse {
     code: string;
     message: string;
   };
+}
+
+/**
+ * 更新外观设置请求
+ */
+export interface UpdateAppearanceRequest {
+  theme?: 'LIGHT' | 'DARK' | 'AUTO';
+  accentColor?: string;
+  fontSize?: 'SMALL' | 'MEDIUM' | 'LARGE';
+  fontFamily?: string | null;
+  compactMode?: boolean;
+}
+
+/**
+ * 更新语言区域设置请求
+ */
+export interface UpdateLocaleRequest {
+  language?: string;
+  timezone?: string;
+  dateFormat?: 'YYYY-MM-DD' | 'DD/MM/YYYY' | 'MM/DD/YYYY';
+  timeFormat?: '12H' | '24H';
+  weekStartsOn?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
+  currency?: string;
+}
+
+/**
+ * 更新工作流设置请求
+ */
+export interface UpdateWorkflowRequest {
+  defaultTaskView?: 'LIST' | 'KANBAN' | 'CALENDAR';
+  defaultGoalView?: 'LIST' | 'TREE' | 'TIMELINE';
+  defaultScheduleView?: 'DAY' | 'WEEK' | 'MONTH';
+  autoSave?: boolean;
+  autoSaveInterval?: number;
+  confirmBeforeDelete?: boolean;
+}
+
+/**
+ * 更新隐私设置请求
+ */
+export interface UpdatePrivacyRequest {
+  profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY';
+  showOnlineStatus?: boolean;
+  allowSearchByEmail?: boolean;
+  allowSearchByPhone?: boolean;
+  shareUsageData?: boolean;
+}
+
+/**
+ * 更新实验性功能请求
+ */
+export interface UpdateExperimentalRequest {
+  enabled?: boolean;
+  features?: string[];
+}
+
+/**
+ * 更新快捷键请求
+ */
+export interface UpdateShortcutRequest {
+  action: string;
+  shortcut: string;
 }
 
 // ============ 批量操作 API ============

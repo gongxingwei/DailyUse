@@ -2,55 +2,7 @@
  * Task 模块专用错误类
  * 继承自 utils 包的 DomainError 基类
  */
-
-// ==================== DomainError 基类定义（从 @dailyuse/utils 复制） ====================
-// 由于当前构建问题，暂时在此处定义基类
-// TODO: 修复 utils 包构建后，改为从 @dailyuse/utils 导入
-
-/**
- * Domain Error Base Class
- * 所有领域错误的基类，提供统一的错误结构和 API 响应格式
- */
-export abstract class DomainError extends Error {
-  public readonly code: string;
-  public readonly context?: Record<string, unknown>;
-  public readonly httpStatus: number;
-  public readonly timestamp: number;
-
-  constructor(
-    code: string,
-    message: string,
-    context?: Record<string, unknown>,
-    httpStatus: number = 400
-  ) {
-    super(message);
-    this.name = this.constructor.name;
-    this.code = code;
-    this.context = context;
-    this.httpStatus = httpStatus;
-    this.timestamp = Date.now();
-    Error.captureStackTrace(this, this.constructor);
-  }
-
-  toJSON(): {
-    code: string;
-    message: string;
-    timestamp: number;
-    context?: Record<string, unknown>;
-  } {
-    return {
-      code: this.code,
-      message: this.message,
-      timestamp: this.timestamp,
-      ...(this.context && { context: this.context }),
-    };
-  }
-
-  toLogString(): string {
-    const contextStr = this.context ? ` | Context: ${JSON.stringify(this.context)}` : '';
-    return `[${this.code}] ${this.message}${contextStr} | Stack: ${this.stack}`;
-  }
-}
+import { DomainError } from '@dailyuse/utils';
 
 // ==================== Task 模块错误类 ====================
 
@@ -376,10 +328,12 @@ export function extractTaskErrorInfo(error: unknown): {
     };
   }
 
-  if (error instanceof Error) {
+  // Handle standard Error objects
+  const err = error as any;
+  if (err && typeof err === 'object' && 'message' in err) {
     return {
       code: 'UNKNOWN_ERROR',
-      message: error.message,
+      message: String(err.message),
       httpStatus: 500,
     };
   }

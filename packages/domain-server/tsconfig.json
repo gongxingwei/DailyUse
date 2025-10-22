@@ -70,7 +70,7 @@
   "include": ["src"],
 
   // 排除的文件
-  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"]
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.spec.ts"],
 
   // ============================================================
   // 项目引用配置（依赖的包）
@@ -78,5 +78,5 @@
 
   // 注意：使用 tsup 时，references 会导致问题
   // TypeScript 会通过 node_modules 自动解析依赖包的类型
-  // "references": [{ "path": "../contracts" }, { "path": "../domain-core" }, { "path": "../utils" }]
+  "references": [{ "path": "../contracts" }, { "path": "../utils" }]
 }

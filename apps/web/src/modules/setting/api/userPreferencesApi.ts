@@ -7,11 +7,13 @@ import { apiClient } from '@/shared/api/instances';
 import { SettingContracts } from '@dailyuse/contracts';
 
 // 导出 contracts 中的类型
-export type UserPreferencesDTO = SettingContracts.UserPreferencesDTO;
-export type UpdateUserPreferencesRequestDTO = SettingContracts.UpdateUserPreferencesRequestDTO;
-export type SwitchThemeModeRequestDTO = SettingContracts.SwitchThemeModeRequestDTO;
-export type ChangeLanguageRequestDTO = SettingContracts.ChangeLanguageRequestDTO;
-export type SetNotificationsRequestDTO = SettingContracts.SetNotificationsRequestDTO;
+// Note: 这些类型在 contracts 中不存在，使用 any 作为临时方案
+// 建议迁移到新的 UserSetting API (userSettingApiClient.ts)
+export type UserPreferencesDTO = any;
+export type UpdateUserPreferencesRequestDTO = any;
+export type SwitchThemeModeRequestDTO = any;
+export type ChangeLanguageRequestDTO = any;
+export type SetNotificationsRequestDTO = any;
 
 /**
  * 用户偏好设置 API

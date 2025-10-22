@@ -30,6 +30,8 @@ const mockDataStore = {
   repositoryStatistics: new Map(),
   // Goal Statistics
   goalStatistics: new Map(),
+  // Setting相关表
+  userSetting: new Map(),
   // 添加其他需要的表...
 };
 
@@ -436,6 +438,9 @@ export const mockPrismaClient = {
 
   // Goal Statistics
   goalStatistics: createMockModel('goalStatistics'),
+
+  // Setting相关表
+  userSetting: createMockModel('userSetting'),
 
   // 事务和连接操作 - 先定义为 null，稍后初始化
   $transaction: null as any,

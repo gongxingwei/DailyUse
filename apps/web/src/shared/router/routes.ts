@@ -293,11 +293,11 @@ export const appRoutes: RouteRecordRaw[] = [
         ],
       },
 
-      // 应用设置
+      // 应用设置 - 使用新的 Vuetify 组件系统
       {
         path: '/settings',
         name: 'settings',
-        component: () => import('@/modules/setting/presentation/components/SettingsLayout.vue'),
+        component: () => import('@/modules/setting/presentation/views/UserSettingsView.vue'),
         meta: {
           title: '应用设置',
           showInNav: true,
@@ -305,52 +305,7 @@ export const appRoutes: RouteRecordRaw[] = [
           order: 8,
           requiresAuth: true,
         },
-        children: [
-          {
-            path: '',
-            redirect: '/settings/general',
-          },
-          {
-            path: 'general',
-            name: 'settings-general',
-            component: () =>
-              import('@/modules/setting/presentation/components/GeneralSettings.vue'),
-            meta: {
-              title: '常规设置',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'theme',
-            name: 'settings-theme',
-            component: () => import('@/modules/setting/presentation/components/ThemeSettings.vue'),
-            meta: {
-              title: '主题设置',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'notifications',
-            name: 'settings-notifications',
-            component: () =>
-              import('@/modules/setting/presentation/components/NotificationSettings.vue'),
-            meta: {
-              title: '通知设置',
-              requiresAuth: true,
-            },
-          },
-          {
-            path: 'advanced',
-            name: 'settings-advanced',
-            component: () =>
-              import('@/modules/setting/presentation/components/AdvancedSettings.vue'),
-            meta: {
-              title: '高级设置',
-              requiresAuth: true,
-            },
-          },
-          // Theme module has been removed - theme management is now in Setting module
-        ],
+        // 新版本使用内部标签导航，不需要子路由
       },
 
       // 测试页面 (开发环境)

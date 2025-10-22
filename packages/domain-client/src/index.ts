@@ -18,3 +18,6 @@ export * as ScheduleDomain from './schedule';
 
 // 任务模块
 export * as TaskDomain from './task';
+
+// 设置模块
+export * as SettingDomain from './setting';

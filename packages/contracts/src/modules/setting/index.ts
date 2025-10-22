@@ -155,8 +155,15 @@ export type {
   AppConfigResponse,
 
   // UserSetting API
+  CreateUserSettingRequest,
   UpdateUserSettingRequest,
   UserSettingResponse,
+  UpdateAppearanceRequest,
+  UpdateLocaleRequest,
+  UpdateWorkflowRequest,
+  UpdatePrivacyRequest,
+  UpdateExperimentalRequest,
+  UpdateShortcutRequest,
 
   // Batch Operations
   BatchUpdateSettingsRequest,

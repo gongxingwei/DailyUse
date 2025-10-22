@@ -250,12 +250,46 @@ export class UserSettingServer extends AggregateRoot implements IUserSettingServ
     return {
       uuid: this.uuid,
       accountUuid: this._accountUuid,
-      appearance: JSON.stringify(this._appearance),
-      locale: JSON.stringify(this._locale),
-      workflow: JSON.stringify(this._workflow),
-      shortcuts: JSON.stringify(this._shortcuts),
-      privacy: JSON.stringify(this._privacy),
-      experimental: JSON.stringify(this._experimental),
+      
+      // Appearance - 扁平化
+      appearanceTheme: this._appearance.theme,
+      appearanceAccentColor: this._appearance.accentColor,
+      appearanceFontSize: this._appearance.fontSize,
+      appearanceFontFamily: this._appearance.fontFamily ?? null,
+      appearanceCompactMode: this._appearance.compactMode,
+      
+      // Locale - 扁平化
+      localeLanguage: this._locale.language,
+      localeTimezone: this._locale.timezone,
+      localeDateFormat: this._locale.dateFormat,
+      localeTimeFormat: this._locale.timeFormat,
+      localeWeekStartsOn: this._locale.weekStartsOn,
+      localeCurrency: this._locale.currency,
+      
+      // Workflow - 扁平化
+      workflowDefaultTaskView: this._workflow.defaultTaskView,
+      workflowDefaultGoalView: this._workflow.defaultGoalView,
+      workflowDefaultScheduleView: this._workflow.defaultScheduleView,
+      workflowAutoSave: this._workflow.autoSave,
+      workflowAutoSaveInterval: this._workflow.autoSaveInterval,
+      workflowConfirmBeforeDelete: this._workflow.confirmBeforeDelete,
+      
+      // Shortcuts - custom 为 JSON
+      shortcutsEnabled: this._shortcuts.enabled,
+      shortcutsCustom: JSON.stringify(this._shortcuts.custom),
+      
+      // Privacy - 扁平化
+      privacyProfileVisibility: this._privacy.profileVisibility,
+      privacyShowOnlineStatus: this._privacy.showOnlineStatus,
+      privacyAllowSearchByEmail: this._privacy.allowSearchByEmail,
+      privacyAllowSearchByPhone: this._privacy.allowSearchByPhone,
+      privacyShareUsageData: this._privacy.shareUsageData,
+      
+      // Experimental - features 为 JSON
+      experimentalEnabled: this._experimental.enabled,
+      experimentalFeatures: JSON.stringify(this._experimental.features),
+      
+      // Timestamps
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
     };
@@ -404,37 +438,59 @@ export class UserSettingServer extends AggregateRoot implements IUserSettingServ
   }
 
   static fromPersistenceDTO(dto: SettingContracts.UserSettingPersistenceDTO): UserSettingServer {
-    const appearance = JSON.parse(dto.appearance);
-    const locale = JSON.parse(dto.locale);
-    const workflow = JSON.parse(dto.workflow);
-    const shortcuts = JSON.parse(dto.shortcuts);
-    const privacy = JSON.parse(dto.privacy);
-    const experimental = JSON.parse(dto.experimental);
+    // 从扁平化的 DTO 重建嵌套结构
+    const appearance: UserSettingServer['_appearance'] = {
+      theme: dto.appearanceTheme as ThemeMode,
+      accentColor: dto.appearanceAccentColor,
+      fontSize: dto.appearanceFontSize as FontSize,
+      fontFamily: dto.appearanceFontFamily,
+      compactMode: dto.appearanceCompactMode,
+    };
+
+    const locale: UserSettingServer['_locale'] = {
+      language: dto.localeLanguage,
+      timezone: dto.localeTimezone,
+      dateFormat: dto.localeDateFormat as DateFormat,
+      timeFormat: dto.localeTimeFormat as TimeFormat,
+      weekStartsOn: dto.localeWeekStartsOn as 0 | 1 | 2 | 3 | 4 | 5 | 6,
+      currency: dto.localeCurrency,
+    };
+
+    const workflow: UserSettingServer['_workflow'] = {
+      defaultTaskView: dto.workflowDefaultTaskView as TaskViewType,
+      defaultGoalView: dto.workflowDefaultGoalView as GoalViewType,
+      defaultScheduleView: dto.workflowDefaultScheduleView as ScheduleViewType,
+      autoSave: dto.workflowAutoSave,
+      autoSaveInterval: dto.workflowAutoSaveInterval,
+      confirmBeforeDelete: dto.workflowConfirmBeforeDelete,
+    };
+
+    const shortcuts: UserSettingServer['_shortcuts'] = {
+      enabled: dto.shortcutsEnabled,
+      custom: JSON.parse(dto.shortcutsCustom),
+    };
+
+    const privacy: UserSettingServer['_privacy'] = {
+      profileVisibility: dto.privacyProfileVisibility as ProfileVisibility,
+      showOnlineStatus: dto.privacyShowOnlineStatus,
+      allowSearchByEmail: dto.privacyAllowSearchByEmail,
+      allowSearchByPhone: dto.privacyAllowSearchByPhone,
+      shareUsageData: dto.privacyShareUsageData,
+    };
+
+    const experimental: UserSettingServer['_experimental'] = {
+      enabled: dto.experimentalEnabled,
+      features: JSON.parse(dto.experimentalFeatures),
+    };
 
     return new UserSettingServer(
       dto.uuid,
       dto.accountUuid,
-      {
-        ...appearance,
-        theme: appearance.theme as ThemeMode,
-        fontSize: appearance.fontSize as FontSize,
-      },
-      {
-        ...locale,
-        dateFormat: locale.dateFormat as DateFormat,
-        timeFormat: locale.timeFormat as TimeFormat,
-      },
-      {
-        ...workflow,
-        defaultTaskView: workflow.defaultTaskView as TaskViewType,
-        defaultGoalView: workflow.defaultGoalView as GoalViewType,
-        defaultScheduleView: workflow.defaultScheduleView as ScheduleViewType,
-      },
+      appearance,
+      locale,
+      workflow,
       shortcuts,
-      {
-        ...privacy,
-        profileVisibility: privacy.profileVisibility as ProfileVisibility,
-      },
+      privacy,
       experimental,
       dto.createdAt,
       dto.updatedAt,

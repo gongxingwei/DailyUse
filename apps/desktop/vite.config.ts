@@ -11,7 +11,6 @@ const nativeModules = ['better-sqlite3', 'bcrypt', 'electron'];
 // 本地工作区包（避免被 optimizeDeps 处理）
 const workspacePkgs = [
   '@dailyuse/utils',
-  '@dailyuse/domain-core',
   '@dailyuse/domain-client',
   '@dailyuse/domain-server',
   '@dailyuse/contracts',
