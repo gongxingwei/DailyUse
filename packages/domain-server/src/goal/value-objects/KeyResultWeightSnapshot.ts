@@ -5,11 +5,12 @@
  * 包含权重变化的完整上下文信息（谁、什么时候、为什么、怎么变的）。
  */
 
-import type {
-  KeyResultWeightSnapshotServerDTO,
-  SnapshotTrigger,
-} from '@dailyuse/contracts';
+import { GoalContracts } from '@dailyuse/contracts';
 import { InvalidWeightError } from './KeyResultWeightSnapshotErrors';
+
+type KeyResultWeightSnapshotServerDTO =
+  GoalContracts.KeyResultWeightSnapshotServerDTO;
+type SnapshotTrigger = GoalContracts.SnapshotTrigger;
 
 export class KeyResultWeightSnapshot {
   constructor(
@@ -82,7 +83,7 @@ export class KeyResultWeightSnapshot {
       dto.snapshotTime,
       dto.trigger,
       dto.operatorUuid,
-      dto.reason,
+      dto.reason ?? undefined,
       dto.createdAt
     );
   }

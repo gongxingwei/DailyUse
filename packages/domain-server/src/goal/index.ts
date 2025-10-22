@@ -20,6 +20,7 @@ export { GoalMetadata } from './value-objects/GoalMetadata';
 export { GoalTimeRange } from './value-objects/GoalTimeRange';
 export { KeyResultProgress } from './value-objects/KeyResultProgress';
 export { KeyResultSnapshot } from './value-objects/KeyResultSnapshot';
+export { KeyResultWeightSnapshot } from './value-objects/KeyResultWeightSnapshot';
 // export { GoalReminderConfig } from './value-objects/GoalReminderConfig';
 
 // ===== 领域服务 =====
@@ -30,6 +31,10 @@ export type { IGoalRepository } from './repositories/IGoalRepository';
 export type { IGoalFolderRepository } from './repositories/IGoalFolderRepository';
 export type { IGoalStatisticsRepository } from './repositories/IGoalStatisticsRepository';
 export type { IFocusSessionRepository } from './repositories/IFocusSessionRepository';
+export type {
+  IWeightSnapshotRepository,
+  SnapshotQueryResult,
+} from './repositories/IWeightSnapshotRepository';
 
 // ===== 基础设施层 =====
 // export {
