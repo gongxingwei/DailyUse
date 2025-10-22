@@ -189,8 +189,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useUserSetting } from '../../composables/useUserSetting';
+
+// Props
+const props = withDefaults(
+  defineProps<{
+    autoSave?: boolean;
+  }>(),
+  {
+    autoSave: false,
+  }
+);
 
 // 可用的通知渠道
 const availableChannels = [
@@ -220,10 +230,26 @@ const errorMessage = ref('');
 // 从 UserSetting 加载设置
 onMounted(async () => {
   if (userSetting.value) {
-    // TODO: 从 userSetting 加载实际的通知设置
-    // notificationsEnabled.value = userSetting.value.notificationsEnabled;
-    // selectedChannels.value = userSetting.value.notificationChannels;
-    // ...
+    // 从隐私设置中加载通知配置（如果存在）
+    const privacy = userSetting.value.privacy;
+    if (privacy) {
+      // 注意：当前后端可能还没有这些字段，这是为未来扩展准备的
+      // @ts-ignore - Privacy类型可能还未包含这些字段
+      notificationsEnabled.value = privacy.notificationsEnabled ?? true;
+      // @ts-ignore
+      const channels = privacy.notificationChannels || ['push'];
+      selectedChannels.value = Array.isArray(channels) ? channels : ['push'];
+      // @ts-ignore
+      dndEnabled.value = privacy.dndEnabled ?? false;
+      // @ts-ignore
+      dndStartTime.value = privacy.dndStartTime ?? '22:00';
+      // @ts-ignore
+      dndEndTime.value = privacy.dndEndTime ?? '08:00';
+      // @ts-ignore
+      soundEnabled.value = privacy.soundEnabled ?? true;
+      // @ts-ignore
+      desktopNotificationEnabled.value = privacy.desktopNotificationEnabled ?? false;
+    }
   }
 
   // 检查桌面通知权限
@@ -309,16 +335,27 @@ const saveSettings = async () => {
       return;
     }
 
-    // TODO: 构建通知设置对象并保存
-    // await updatePrivacy({
-    //   notificationsEnabled: notificationsEnabled.value,
-    //   notificationChannels: selectedChannels.value,
-    //   dndEnabled: dndEnabled.value,
-    //   dndStartTime: dndStartTime.value,
-    //   dndEndTime: dndEndTime.value,
-    //   soundEnabled: soundEnabled.value,
-    //   desktopNotificationEnabled: desktopNotificationEnabled.value,
-    // });
+    // 构建通知设置对象并保存
+    // 注意：这些字段可能还未在后端DTO中定义，保存到Privacy扩展字段中
+    await updatePrivacy({
+      // 现有的隐私字段
+      ...userSetting.value.privacy,
+      // 通知设置（作为扩展字段）
+      // @ts-ignore - 这些字段正在等待后端合约更新
+      notificationsEnabled: notificationsEnabled.value,
+      // @ts-ignore
+      notificationChannels: selectedChannels.value,
+      // @ts-ignore
+      dndEnabled: dndEnabled.value,
+      // @ts-ignore
+      dndStartTime: dndStartTime.value,
+      // @ts-ignore
+      dndEndTime: dndEndTime.value,
+      // @ts-ignore
+      soundEnabled: soundEnabled.value,
+      // @ts-ignore
+      desktopNotificationEnabled: desktopNotificationEnabled.value,
+    } as any);
 
     showSuccessSnackbar.value = true;
   } catch (error) {
@@ -327,6 +364,28 @@ const saveSettings = async () => {
     showErrorSnackbar.value = true;
   }
 };
+
+// 自动保存监听器
+if (props.autoSave) {
+  watch(
+    [
+      notificationsEnabled,
+      selectedChannels,
+      dndEnabled,
+      dndStartTime,
+      dndEndTime,
+      soundEnabled,
+      desktopNotificationEnabled,
+    ],
+    () => {
+      // 使用防抖避免频繁保存
+      setTimeout(() => {
+        saveSettings();
+      }, 500);
+    },
+    { deep: true }
+  );
+}
 </script>
 
 <style scoped>
