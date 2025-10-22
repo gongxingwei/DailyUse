@@ -163,6 +163,10 @@
                             <v-icon start>mdi-target</v-icon>
                             关键结果
                         </v-tab>
+                        <v-tab value="dag">
+                            <v-icon start>mdi-graph-outline</v-icon>
+                            权重关系图
+                        </v-tab>
                         <v-tab value="repositories">
                             <v-icon start>mdi-source-repository</v-icon>
                             关联仓库
@@ -180,6 +184,17 @@
                                         </v-col>
                                     </v-row>
                                     <v-empty-state v-else icon="mdi-target" title="暂无关键结果" text="添加关键结果来跟踪目标进度" />
+                                </div>
+                            </v-window-item>
+
+                            <!-- 权重关系图标签页 -->
+                            <v-window-item value="dag" class="h-100">
+                                <div class="scrollable-content">
+                                    <GoalDAGVisualization 
+                                        v-if="goal"
+                                        :goal-uuid="goal.uuid"
+                                        @node-click="handleNodeClick"
+                                    />
                                 </div>
                             </v-window-item>
 
@@ -229,6 +244,7 @@ import GoalDialog from '@/modules/goal/presentation/components/dialogs/GoalDialo
 import GoalReviewListCard from '@/modules/goal/presentation/components/cards/GoalReviewListCard.vue';
 import ConfirmDialog from '@/shared/components/ConfirmDialog.vue';
 import KeyResultCard from '@/modules/goal/presentation/components/cards/KeyResultCard.vue';
+import GoalDAGVisualization from '@/modules/goal/presentation/components/dag/GoalDAGVisualization.vue';
 // import RepoInfoCard from '@/modules/Repository/presentation/components/RepoInfoCard.vue';
 // utils
 import { format } from 'date-fns';
@@ -354,6 +370,16 @@ const gotoGoalReviewDetailView = (goalUuid: string) => {
 const openGoalReviewListCard = () => {
     console.log('Opening goal review list card');
     goalReviewListCardRef.value?.openDialog();
+};
+
+// DAG 节点点击处理
+const handleNodeClick = (data: { id: string; type: 'goal' | 'kr' }) => {
+    console.log('DAG node clicked:', data);
+    if (data.type === 'kr') {
+        // 可以跳转到 KR 详情或滚动到对应的 KeyResultCard
+        activeTab.value = 'keyResults';
+        // TODO: 滚动到对应的 KR Card
+    }
 };
 
 </script>
