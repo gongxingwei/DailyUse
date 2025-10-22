@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
       globals: true,
       environment: 'happy-dom',
       setupFiles: ['./src/test/setup.ts'],
-      include: ['src/**/__tests__/**/*.test.ts'],
+      include: ['src/**/__tests__/**/*.test.ts', 'src/**/*.spec.ts'],
       exclude: ['node_modules', 'dist', '.git', '.cache'],
     },
   };

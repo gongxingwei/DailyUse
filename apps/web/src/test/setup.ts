@@ -2,6 +2,15 @@ import '@testing-library/jest-dom';
 import { createPinia, setActivePinia } from 'pinia';
 import { beforeEach, vi } from 'vitest';
 import { config } from '@vue/test-utils';
+import { createVuetify } from 'vuetify';
+import * as components from 'vuetify/components';
+import * as directives from 'vuetify/directives';
+
+// 创建 Vuetify 实例
+const vuetify = createVuetify({
+  components,
+  directives,
+});
 
 // 创建全局 Pinia 实例
 beforeEach(() => {
@@ -9,7 +18,7 @@ beforeEach(() => {
   setActivePinia(pinia);
 
   // 配置 Vue Test Utils 全局属性
-  config.global.plugins = [pinia];
+  config.global.plugins = [pinia, vuetify];
 });
 
 // Mock browser APIs

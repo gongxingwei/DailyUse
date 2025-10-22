@@ -77,7 +77,7 @@
         </v-alert>
 
         <!-- DAG 图表 -->
-        <div v-else class="dag-container">
+        <div v-else ref="containerRef" class="dag-container">
           <v-chart
             ref="chartRef"
             class="chart"
@@ -131,6 +131,7 @@ import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
 import VChart from 'vue-echarts';
 import { useGoal } from '../../composables/useGoal';
+import { useResizeObserver } from '@vueuse/core';
 
 use([
   TitleComponent,
@@ -148,10 +149,12 @@ const emit = defineEmits<{
   (e: 'node-click', data: { id: string; type: 'goal' | 'kr' }): void;
 }>();
 
-const { currentGoal, isLoading, fetchGoal } = useGoal();
+const { currentGoal, isLoading, getGoalAggregateView } = useGoal();
 const chartRef = ref();
+const containerRef = ref<HTMLElement>();
 const layoutType = ref<'force' | 'hierarchical'>('force');
 const hasCustomLayout = ref(false);
+const containerSize = ref({ width: 800, height: 600 });
 
 // 计算属性
 const hasKeyResults = computed(() => {
@@ -160,7 +163,7 @@ const hasKeyResults = computed(() => {
 
 const totalWeight = computed(() => {
   if (!currentGoal.value?.keyResults) return 0;
-  return currentGoal.value.keyResults.reduce((sum, kr) => sum + kr.weight, 0);
+  return currentGoal.value.keyResults.reduce((sum: number, kr: any) => sum + kr.weight, 0);
 });
 
 // 颜色映射函数
@@ -195,7 +198,7 @@ const calculateHierarchicalLayout = () => {
 
   // KR 节点均匀分布
   const krSpacing = krs.length > 1 ? containerWidth / (krs.length + 1) : containerWidth / 2;
-  krs.forEach((kr, index) => {
+  krs.forEach((kr: any, index: number) => {
     nodes.push({
       id: kr.uuid,
       name: kr.title,
@@ -209,7 +212,7 @@ const calculateHierarchicalLayout = () => {
     });
   });
 
-  const links = krs.map((kr) => ({
+  const links = krs.map((kr: any) => ({
     source: currentGoal.value!.uuid,
     target: kr.uuid,
     lineStyle: {
@@ -235,7 +238,7 @@ const calculateForceLayout = () => {
       itemStyle: { color: '#2196F3' },
       category: 0,
     },
-    ...krs.map((kr) => ({
+    ...krs.map((kr: any) => ({
       id: kr.uuid,
       name: kr.title,
       value: kr.weight,
@@ -245,7 +248,7 @@ const calculateForceLayout = () => {
     })),
   ];
 
-  const links = krs.map((kr) => ({
+  const links = krs.map((kr: any) => ({
     source: currentGoal.value!.uuid,
     target: kr.uuid,
     lineStyle: {
@@ -454,6 +457,25 @@ watch(layoutType, (newType) => {
   }
 });
 
+// 响应式容器尺寸监听
+useResizeObserver(containerRef, (entries) => {
+  const entry = entries[0];
+  const { width, height } = entry.contentRect;
+  
+  if (width > 0 && height > 0) {
+    containerSize.value = { width, height };
+    
+    // 如果是分层布局，重新计算节点位置
+    if (layoutType.value === 'hierarchical') {
+      nextTick(() => {
+        if (chartRef.value) {
+          chartRef.value.setOption(dagOption.value, true);
+        }
+      });
+    }
+  }
+});
+
 // 初始化
 onMounted(async () => {
   // 加载布局类型偏好
@@ -468,7 +490,7 @@ onMounted(async () => {
 
   // 加载 Goal 数据
   if (props.goalUuid && props.goalUuid !== currentGoal.value?.uuid) {
-    await fetchGoal(props.goalUuid);
+    await getGoalAggregateView(props.goalUuid);
   }
 });
 </script>
@@ -480,15 +502,21 @@ onMounted(async () => {
 
 .dag-container {
   width: 100%;
-  min-height: 600px;
+  min-width: 600px;
+  min-height: 400px;
+  height: 600px;
   border: 1px solid rgba(0, 0, 0, 0.12);
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.02);
+  position: relative;
 }
 
 .chart {
   width: 100%;
-  height: 600px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
 .legend-section {
