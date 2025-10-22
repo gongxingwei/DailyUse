@@ -322,6 +322,37 @@ export interface UpdateLocaleRequest {
 }
 
 /**
+ * 更新工作流设置请求
+ */
+export interface UpdateWorkflowRequest {
+  defaultTaskView?: 'LIST' | 'KANBAN' | 'CALENDAR';
+  defaultGoalView?: 'LIST' | 'TREE' | 'TIMELINE';
+  defaultScheduleView?: 'DAY' | 'WEEK' | 'MONTH';
+  autoSave?: boolean;
+  autoSaveInterval?: number;
+  confirmBeforeDelete?: boolean;
+}
+
+/**
+ * 更新隐私设置请求
+ */
+export interface UpdatePrivacyRequest {
+  profileVisibility?: 'PUBLIC' | 'PRIVATE' | 'FRIENDS_ONLY';
+  showOnlineStatus?: boolean;
+  allowSearchByEmail?: boolean;
+  allowSearchByPhone?: boolean;
+  shareUsageData?: boolean;
+}
+
+/**
+ * 更新实验性功能请求
+ */
+export interface UpdateExperimentalRequest {
+  enabled?: boolean;
+  features?: string[];
+}
+
+/**
  * 更新快捷键请求
  */
 export interface UpdateShortcutRequest {

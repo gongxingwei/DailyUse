@@ -160,6 +160,9 @@ export type {
   UserSettingResponse,
   UpdateAppearanceRequest,
   UpdateLocaleRequest,
+  UpdateWorkflowRequest,
+  UpdatePrivacyRequest,
+  UpdateExperimentalRequest,
   UpdateShortcutRequest,
 
   // Batch Operations
