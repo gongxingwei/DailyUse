@@ -15,6 +15,7 @@ import taskRouter from './modules/task/interface/http/routes/taskTemplateRoutes'
 import goalRouter from './modules/goal/interface/http/goalRoutes';
 import goalFolderRouter from './modules/goal/interface/http/goalFolderRoutes';
 import focusSessionRouter from './modules/goal/interface/http/focusSessionRoutes';
+import weightSnapshotRouter from './modules/goal/interface/http/weightSnapshotRoutes';
 import reminderRouter from './modules/reminder/interface/http/reminderRoutes';
 import scheduleRouter from './modules/schedule/interface/http/routes/scheduleRoutes';
 import notificationRouter from './modules/notification/interface/http/notificationRoutes';
@@ -87,6 +88,9 @@ api.use('/goal-folders', authMiddleware, goalFolderRouter);
 
 // 挂载专注周期管理路由 - 需要认证（路由内部已有 authMiddleware）
 api.use('', focusSessionRouter);
+
+// 挂载权重快照管理路由 - 需要认证
+api.use('', authMiddleware, weightSnapshotRouter);
 
 /**
  * 提醒模块

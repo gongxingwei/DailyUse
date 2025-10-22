@@ -12,7 +12,7 @@ import { createResponseBuilder, ResponseCode } from '@dailyuse/contracts';
 import { createLogger } from '@dailyuse/utils';
 import { PrismaWeightSnapshotRepository } from '../../infrastructure/repositories/PrismaWeightSnapshotRepository';
 import { PrismaGoalRepository } from '../../infrastructure/repositories/PrismaGoalRepository';
-import { prisma } from '../../../../shared/database/prisma';
+import prisma from '../../../../shared/db/prisma';
 import { InvalidWeightSumError, GoalNotFoundError, KeyResultNotFoundError } from '../../application/errors/WeightSnapshotErrors';
 
 const logger = createLogger('WeightSnapshotController');
@@ -95,19 +95,23 @@ export class WeightSnapshotController {
       // TODO: 获取当前用户 UUID（从 auth middleware）
       const operatorUuid = 'system'; // Placeholder
 
-      // 1. 获取当前 Goal
-      const goal = await goalService.getGoal(goalUuid, { includeChildren: true });
+      // 1. 验证 Goal 存在
+      const goal = await goalService.getGoal(goalUuid, { includeChildren: false });
       if (!goal) {
         throw new GoalNotFoundError(goalUuid);
       }
 
-      // 2. 找到目标 KR
-      const kr = goal.keyResults?.find((k) => k.uuid === krUuid);
-      if (!kr) {
+      // 2. 查询 KR 和当前权重（从数据库获取准确的 weight 值）
+      const krData = await prisma.keyResult.findUnique({
+        where: { uuid: krUuid },
+        select: { uuid: true, goalUuid: true, weight: true, title: true },
+      });
+
+      if (!krData || krData.goalUuid !== goalUuid) {
         throw new KeyResultNotFoundError(krUuid);
       }
 
-      const oldWeight = kr.weight;
+      const oldWeight = krData.weight;
 
       // 3. 创建快照
       await service.createSnapshot({
@@ -120,12 +124,20 @@ export class WeightSnapshotController {
         reason,
       });
 
-      // 4. 更新 KR 权重（TODO: 需要在 GoalApplicationService 中添加 updateKeyResultWeight 方法）
-      // await goalService.updateKeyResultWeight(krUuid, newWeight);
+      // 4. 更新 KR 权重
+      await prisma.keyResult.update({
+        where: { uuid: krUuid },
+        data: { weight: newWeight },
+      });
 
-      // 5. 校验权重总和
+      // 5. 校验权重总和（查询 Goal 的所有 KR）
+      const allKRs = await prisma.keyResult.findMany({
+        where: { goalUuid },
+        select: { uuid: true, weight: true },
+      });
+
       const weights: Record<string, number> = {};
-      goal.keyResults?.forEach((k) => {
+      allKRs.forEach((k) => {
         weights[k.uuid] = k.uuid === krUuid ? newWeight : k.weight;
       });
 
@@ -141,7 +153,10 @@ export class WeightSnapshotController {
       logger.info('KR weight updated successfully', { krUuid, oldWeight, newWeight });
       return WeightSnapshotController.responseBuilder.sendSuccess(
         res,
-        { kr, snapshot: { oldWeight, newWeight, delta: newWeight - oldWeight } },
+        {
+          keyResult: { uuid: krData.uuid, title: krData.title, oldWeight, newWeight },
+          snapshot: { oldWeight, newWeight, delta: newWeight - oldWeight },
+        },
         'Weight updated successfully',
       );
     } catch (error) {
@@ -179,22 +194,26 @@ export class WeightSnapshotController {
       const page = parseInt(req.query.page as string) || 1;
       const pageSize = Math.min(parseInt(req.query.pageSize as string) || 20, 100);
 
-      logger.info('Fetching goal snapshots', { goalUuid, page, pageSize });
+      logger.info('Fetching Goal snapshots', { goalUuid, page, pageSize });
 
       const service = await WeightSnapshotController.getSnapshotService();
       const result = await service.getSnapshotsByGoal(goalUuid, { page, pageSize });
 
       const snapshots = result.snapshots.map((s) => s.toServerDTO());
 
-      return WeightSnapshotController.responseBuilder.sendSuccess(res, {
-        snapshots,
-        pagination: {
-          total: result.total,
-          page,
-          pageSize,
-          totalPages: Math.ceil(result.total / pageSize),
+      return WeightSnapshotController.responseBuilder.sendSuccess(
+        res,
+        {
+          snapshots,
+          pagination: {
+            total: result.total,
+            page,
+            pageSize,
+            totalPages: Math.ceil(result.total / pageSize),
+          },
         },
-      });
+        'Snapshots retrieved successfully',
+      );
     } catch (error) {
       return WeightSnapshotController.handleError(error, res);
     }
@@ -219,15 +238,19 @@ export class WeightSnapshotController {
 
       const snapshots = result.snapshots.map((s) => s.toServerDTO());
 
-      return WeightSnapshotController.responseBuilder.sendSuccess(res, {
-        snapshots,
-        pagination: {
-          total: result.total,
-          page,
-          pageSize,
-          totalPages: Math.ceil(result.total / pageSize),
+      return WeightSnapshotController.responseBuilder.sendSuccess(
+        res,
+        {
+          snapshots,
+          pagination: {
+            total: result.total,
+            page,
+            pageSize,
+            totalPages: Math.ceil(result.total / pageSize),
+          },
         },
-      });
+        'KeyResult snapshots retrieved successfully',
+      );
     } catch (error) {
       return WeightSnapshotController.handleError(error, res);
     }
@@ -313,7 +336,11 @@ export class WeightSnapshotController {
         })),
       };
 
-      return WeightSnapshotController.responseBuilder.sendSuccess(res, data);
+      return WeightSnapshotController.responseBuilder.sendSuccess(
+        res,
+        data,
+        'Weight trend data retrieved successfully',
+      );
     } catch (error) {
       return WeightSnapshotController.handleError(error, res);
     }
@@ -385,11 +412,17 @@ export class WeightSnapshotController {
         throw new GoalNotFoundError(goalUuid);
       }
 
+      // 查询所有 KR 的当前权重（从数据库）
+      const allKRs = await prisma.keyResult.findMany({
+        where: { goalUuid },
+        select: { uuid: true, title: true, weight: true },
+      });
+
       // 为每个时间点查询快照
       const comparisons: Record<string, number[]> = {};
       const deltas: Record<string, number[]> = {};
 
-      goal.keyResults?.forEach((kr) => {
+      allKRs.forEach((kr) => {
         comparisons[kr.uuid] = [];
         deltas[kr.uuid] = [];
       });
@@ -404,7 +437,7 @@ export class WeightSnapshotController {
 
       // 为每个时间点找到最接近的快照
       for (const timePoint of timePoints) {
-        goal.keyResults?.forEach((kr) => {
+        allKRs.forEach((kr) => {
           // 找到该 KR 在该时间点之前的最新快照
           const relevantSnapshots = snapshots.filter(
             (s) => s.keyResultUuid === kr.uuid && s.snapshotTime <= timePoint,
@@ -423,7 +456,7 @@ export class WeightSnapshotController {
       }
 
       // 计算权重变化量（delta）
-      goal.keyResults?.forEach((kr) => {
+      allKRs.forEach((kr) => {
         const weights = comparisons[kr.uuid];
         for (let i = 1; i < weights.length; i++) {
           deltas[kr.uuid].push(weights[i] - weights[i - 1]);
@@ -431,7 +464,7 @@ export class WeightSnapshotController {
       });
 
       const data = {
-        keyResults: goal.keyResults?.map((kr) => ({
+        keyResults: allKRs.map((kr) => ({
           uuid: kr.uuid,
           title: kr.title,
         })),
@@ -440,7 +473,11 @@ export class WeightSnapshotController {
         deltas,
       };
 
-      return WeightSnapshotController.responseBuilder.sendSuccess(res, data);
+      return WeightSnapshotController.responseBuilder.sendSuccess(
+        res,
+        data,
+        'Weight comparison retrieved successfully',
+      );
     } catch (error) {
       return WeightSnapshotController.handleError(error, res);
     }
@@ -453,22 +490,18 @@ export class WeightSnapshotController {
     if (error instanceof InvalidWeightSumError) {
       logger.warn('Invalid weight sum', { error: error.message });
       return WeightSnapshotController.responseBuilder.sendError(res, {
-        code: 'INVALID_WEIGHT_SUM' as ResponseCode,
+        code: ResponseCode.VALIDATION_ERROR,
         message: error.message,
-        details: error.context,
+        debug: error.context,
       });
     }
 
     if (error instanceof GoalNotFoundError || error instanceof KeyResultNotFoundError) {
       logger.warn('Resource not found', { error: error.message });
-      return WeightSnapshotController.responseBuilder.sendError(
-        res,
-        {
-          code: ResponseCode.NOT_FOUND,
-          message: error.message,
-        },
-        404,
-      );
+      return WeightSnapshotController.responseBuilder.sendError(res, {
+        code: ResponseCode.NOT_FOUND,
+        message: error.message,
+      });
     }
 
     if (error instanceof Error) {
