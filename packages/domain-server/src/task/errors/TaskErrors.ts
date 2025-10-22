@@ -2,6 +2,7 @@
  * Task 模块专用错误类
  * 继承自 utils 包的 DomainError 基类
  */
+import { DomainError } from '@dailyuse/utils';
 
 // ==================== DomainError 基类定义（从 @dailyuse/utils 复制） ====================
 // 由于当前构建问题，暂时在此处定义基类

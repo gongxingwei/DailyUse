@@ -345,4 +345,22 @@ export class UserSettingApplicationService {
 
     await this.repository.delete(uuid);
   }
+
+  // ===== 辅助方法 =====
+
+  /**
+   * 获取或创建用户设置
+   * 确保用户设置存在
+   */
+  async getOrCreate(
+    accountUuid: string,
+  ): Promise<SettingContracts.UserSettingClientDTO> {
+    const existing = await this.repository.findByAccountUuid(accountUuid);
+    if (existing) {
+      return existing.toClientDTO();
+    }
+
+    // 创建默认设置
+    return this.createUserSetting({ accountUuid });
+  }
 }
