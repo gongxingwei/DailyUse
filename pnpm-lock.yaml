@@ -527,6 +527,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      echarts:
+        specifier: ^5.6.0
+        version: 5.6.0
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.0
@@ -551,6 +554,9 @@ importers:
       vue:
         specifier: ^3.4.21
         version: 3.5.22(typescript@5.8.3)
+      vue-echarts:
+        specifier: ^7.0.3
+        version: 7.0.3(@vue/runtime-core@3.5.22)(echarts@5.6.0)(vue@3.5.22(typescript@5.8.3))
       vue-i18n:
         specifier: ^10.0.4
         version: 10.0.8(vue@3.5.22(typescript@5.8.3))
@@ -9735,7 +9741,7 @@ snapshots:
       std-env: 3.10.0
       test-exclude: 7.0.1
       tinyrainbow: 2.0.0
-      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@22.18.11)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
+      vitest: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.9)(@vitest/ui@3.2.4)(happy-dom@18.0.1)(jsdom@26.1.0)(sass-embedded@1.93.2)(sass@1.93.2)
     transitivePeerDependencies:
       - supports-color
 
