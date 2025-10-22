@@ -20,7 +20,16 @@ export default defineConfig(({ mode }) => {
         '@dailyuse/assets/audio': path.resolve(__dirname, '../../packages/assets/src/audio'),
       },
     },
-    plugins: [vue()],
+    plugins: [
+      vue({
+        template: {
+          transformAssetUrls: {
+            base: null,
+            includeAbsolute: false,
+          },
+        },
+      }),
+    ],
     server: {
       port: 5173,
       open: false,

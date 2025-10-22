@@ -1,7 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mount, VueWrapper, shallowMount } from '@vue/test-utils';
+import { mount, VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import { ref, computed } from 'vue';
+import { ref } from 'vue';
+import GoalDAGVisualization from './GoalDAGVisualization.vue';
 
 // Mock ECharts
 vi.mock('vue-echarts', () => ({
@@ -23,19 +24,6 @@ vi.mock('../../composables/useGoal', () => ({
   useGoal: vi.fn(),
 }));
 
-// Mock the component itself to avoid template parsing issues
-vi.mock('./GoalDAGVisualization.vue', () => ({
-  default: {
-    name: 'GoalDAGVisualization',
-    template: '<div class="goal-dag-visualization"><div class="mock-chart"></div></div>',
-    props: {
-      goalUuid: { type: String, required: true },
-    },
-    emits: ['node-click'],
-  },
-}));
-
-import GoalDAGVisualization from './GoalDAGVisualization.vue';
 import { useGoal } from '../../composables/useGoal';
 
 describe('GoalDAGVisualization', () => {
