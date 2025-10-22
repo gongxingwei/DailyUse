@@ -1,6 +1,6 @@
 import '@testing-library/jest-dom';
 import { createPinia, setActivePinia } from 'pinia';
-import { beforeEach, vi } from 'vitest';
+import { vi } from 'vitest';
 import { config } from '@vue/test-utils';
 import { createVuetify } from 'vuetify';
 import * as components from 'vuetify/components';
@@ -13,13 +13,11 @@ const vuetify = createVuetify({
 });
 
 // 创建全局 Pinia 实例
-beforeEach(() => {
-  const pinia = createPinia();
-  setActivePinia(pinia);
+const pinia = createPinia();
+setActivePinia(pinia);
 
-  // 配置 Vue Test Utils 全局属性
-  config.global.plugins = [pinia, vuetify];
-});
+// 配置 Vue Test Utils 全局属性
+config.global.plugins = [pinia, vuetify];
 
 // Mock browser APIs
 Object.defineProperty(window, 'matchMedia', {

@@ -49,6 +49,20 @@
             重置布局
           </v-tooltip>
         </v-btn>
+        
+        <!-- 导出按钮 -->
+        <v-btn
+          icon="mdi-download"
+          variant="text"
+          size="small"
+          class="ml-2"
+          @click="exportDialog?.open()"
+        >
+          <v-icon>mdi-download</v-icon>
+          <v-tooltip activator="parent" location="bottom">
+            导出 (Ctrl+E)
+          </v-tooltip>
+        </v-btn>
       </v-card-title>
 
       <v-card-text>
@@ -115,6 +129,9 @@
         </div>
       </v-card-text>
     </v-card>
+    
+    <!-- Export Dialog -->
+    <ExportDialog ref="exportDialog" @export="handleExport" />
   </div>
 </template>
 
@@ -132,6 +149,8 @@ import type { EChartsOption } from 'echarts';
 import VChart from 'vue-echarts';
 import { useGoal } from '../../composables/useGoal';
 import { useResizeObserver } from '@vueuse/core';
+import ExportDialog from './ExportDialog.vue';
+import { dagExportService, type ExportOptions } from '../../../application/services/DAGExportService';
 
 use([
   TitleComponent,
@@ -151,6 +170,7 @@ const emit = defineEmits<{
 
 const { currentGoal, isLoading, getGoalAggregateView } = useGoal();
 const chartRef = ref();
+const exportDialog = ref();
 const containerRef = ref<HTMLElement>();
 const layoutType = ref<'force' | 'hierarchical'>('force');
 const hasCustomLayout = ref(false);
@@ -474,6 +494,67 @@ useResizeObserver(containerRef, (entries) => {
       });
     }
   }
+});
+
+// 导出处理
+const handleExport = async (options: ExportOptions) => {
+  try {
+    const chartInstance = chartRef.value?.chart;
+    if (!chartInstance) {
+      console.error('Chart instance not found');
+      return;
+    }
+
+    let blob: Blob;
+
+    // 根据格式选择导出方法
+    switch (options.format) {
+      case 'png':
+        blob = await dagExportService.exportPNG(chartInstance, options);
+        break;
+      case 'svg':
+        blob = await dagExportService.exportSVG(chartInstance, options);
+        break;
+      case 'pdf':
+        blob = await dagExportService.exportPDF(chartInstance, options, {
+          title: currentGoal.value?.title || 'Goal DAG',
+          author: 'DailyUse User',
+          date: new Date().toLocaleString('zh-CN'),
+        });
+        break;
+    }
+
+    // 生成文件名并下载
+    const filename = dagExportService.generateFilename(
+      currentGoal.value?.title || 'goal',
+      options.format
+    );
+    dagExportService.downloadBlob(blob, filename);
+
+    // 关闭对话框
+    exportDialog.value?.close();
+    
+    console.log(`Successfully exported ${options.format.toUpperCase()}: ${filename}`);
+  } catch (error) {
+    console.error('Export failed:', error);
+    alert('导出失败，请重试');
+  }
+};
+
+// 键盘快捷键
+onMounted(() => {
+  const handleKeydown = (e: KeyboardEvent) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+      e.preventDefault();
+      exportDialog.value?.open();
+    }
+  };
+
+  window.addEventListener('keydown', handleKeydown);
+  
+  return () => {
+    window.removeEventListener('keydown', handleKeydown);
+  };
 });
 
 // 初始化

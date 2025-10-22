@@ -47,6 +47,17 @@ export default defineConfig(({ mode }) => {
       setupFiles: ['./src/test/setup.ts'],
       include: ['src/**/__tests__/**/*.test.ts', 'src/**/*.spec.ts'],
       exclude: ['node_modules', 'dist', '.git', '.cache'],
+      css: {
+        modules: {
+          classNameStrategy: 'non-scoped',
+        },
+      },
+      // Mock CSS and asset imports
+      server: {
+        deps: {
+          inline: ['vuetify'],
+        },
+      },
     },
   };
 });
