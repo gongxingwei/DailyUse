@@ -24,3 +24,4 @@ export * from './value-objects';
 export * from './entities';
 export * from './aggregates';
 export * from './api-requests';
+export * from './rules/StatusRule';
