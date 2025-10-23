@@ -4,3 +4,4 @@
 
 export { TaskInstanceGenerationService } from './TaskInstanceGenerationService';
 export { TaskExpirationService } from './TaskExpirationService';
+export { TaskDependencyService } from './TaskDependencyService';
