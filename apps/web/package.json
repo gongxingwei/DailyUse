@@ -9,6 +9,8 @@
     "preview": "nx vite:preview",
     "test": "vitest",
     "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "test:dag": "jest src/modules/goal/presentation/components/dag/GoalDAGVisualization.spec.ts",
     "bench": "vitest bench --run --config vitest.bench.config.ts",
     "bench:watch": "vitest bench --config vitest.bench.config.ts",
     "lint": "nx eslint --fix",

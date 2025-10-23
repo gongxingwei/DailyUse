@@ -3,7 +3,7 @@ import { useReminder } from '../useReminder';
 import { createTestPinia, nextTick } from '@/test/helpers';
 
 // Mock 依赖
-vi.mock('../../application/services/ReminderWebApplicationService', () => ({
+vi.mock('../../../application/services/ReminderWebApplicationService', () => ({
   ReminderWebApplicationService: vi.fn().mockImplementation(() => ({
     getReminderInstances: vi.fn(),
     createTemplate: vi.fn(),
@@ -261,3 +261,7 @@ describe('useReminder', () => {
     });
   });
 });
+
+
+
+

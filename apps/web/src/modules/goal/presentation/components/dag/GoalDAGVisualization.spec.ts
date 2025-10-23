@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
 import { mount, VueWrapper } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { ref } from 'vue';
 import GoalDAGVisualization from './GoalDAGVisualization.vue';
 
 // Mock ECharts
-vi.mock('vue-echarts', () => ({
+jest.mock('vue-echarts', () => ({
   default: {
     name: 'VChart',
     template: '<div class="mock-chart" @click="$emit(\'click\', $attrs)"></div>',
@@ -15,13 +15,13 @@ vi.mock('vue-echarts', () => ({
 }));
 
 // Mock VueUse
-vi.mock('@vueuse/core', () => ({
-  useResizeObserver: vi.fn(),
+jest.mock('@vueuse/core', () => ({
+  useResizeObserver: jest.fn(),
 }));
 
 // Mock useGoal composable
-vi.mock('../../composables/useGoal', () => ({
-  useGoal: vi.fn(),
+jest.mock('../../composables/useGoal', () => ({
+  useGoal: jest.fn(),
 }));
 
 import { useGoal } from '../../composables/useGoal';
@@ -44,10 +44,10 @@ describe('GoalDAGVisualization', () => {
     };
 
     // Mock useGoal
-    vi.mocked(useGoal).mockReturnValue({
+    (useGoal as jest.MockedFunction<typeof useGoal>).mockReturnValue({
       currentGoal: ref(mockGoalData),
       isLoading: ref(false),
-      getGoalAggregateView: vi.fn(),
+      getGoalAggregateView: jest.fn(),
     } as any);
 
     // Clear localStorage
@@ -56,7 +56,7 @@ describe('GoalDAGVisualization', () => {
 
   afterEach(() => {
     wrapper?.unmount();
-    vi.clearAllMocks();
+    jest.clearAllMocks();
   });
 
   describe('Rendering', () => {
@@ -76,14 +76,14 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('shows empty state when no keyResults', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      (useGoal as jest.MockedFunction<typeof useGoal>).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Empty Goal',
           keyResults: [],
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -94,10 +94,10 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('shows loading state', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      (useGoal as jest.MockedFunction<typeof useGoal>).mockReturnValue({
         currentGoal: ref(mockGoalData),
         isLoading: ref(true),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -108,7 +108,7 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('shows warning when weight sum !== 100', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
@@ -118,7 +118,7 @@ describe('GoalDAGVisualization', () => {
           ],
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -317,7 +317,7 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('distributes KRs evenly in hierarchical layout', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
@@ -328,7 +328,7 @@ describe('GoalDAGVisualization', () => {
           ],
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -391,10 +391,10 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('handles missing keyResults in totalWeight', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({ uuid: 'goal-1', title: 'Test Goal' }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -407,7 +407,7 @@ describe('GoalDAGVisualization', () => {
 
   describe('Edge Cases', () => {
     it('handles single KeyResult', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
@@ -416,7 +416,7 @@ describe('GoalDAGVisualization', () => {
           ],
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -435,14 +435,14 @@ describe('GoalDAGVisualization', () => {
         weight: 10,
       }));
 
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
           keyResults,
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {
@@ -455,7 +455,7 @@ describe('GoalDAGVisualization', () => {
     });
 
     it('handles zero weight KeyResults', () => {
-      vi.mocked(useGoal).mockReturnValue({
+      jest.mocked(useGoal).mockReturnValue({
         currentGoal: ref({
           uuid: 'goal-1',
           title: 'Test Goal',
@@ -464,7 +464,7 @@ describe('GoalDAGVisualization', () => {
           ],
         }),
         isLoading: ref(false),
-        getGoalAggregateView: vi.fn(),
+        getGoalAggregateView: jest.fn(),
       } as any);
 
       wrapper = mount(GoalDAGVisualization, {

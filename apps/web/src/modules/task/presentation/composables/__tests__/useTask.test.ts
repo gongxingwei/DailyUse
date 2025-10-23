@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, jest, beforeEach, afterEach } from 'vitest';
 import { useTask } from '../useTask';
 
 // Mock 依赖
-vi.mock('../../application/services/TaskWebApplicationService', () => ({
+vi.mock('../../../application/services/TaskWebApplicationService', () => ({
   TaskWebApplicationService: vi.fn().mockImplementation(() => ({
     createTaskTemplate: vi.fn(),
     updateTaskTemplate: vi.fn(),
@@ -197,3 +197,6 @@ describe('useTask', () => {
     });
   });
 });
+
+
+

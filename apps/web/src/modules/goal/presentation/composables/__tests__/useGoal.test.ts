@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { useGoal } from '../useGoal';
 
 // Mock 依赖
-vi.mock('../../application/services/GoalWebApplicationService', () => ({
+vi.mock('../../../application/services/GoalWebApplicationService', () => ({
   GoalWebApplicationService: vi.fn().mockImplementation(() => ({
     getGoals: vi.fn(),
     createGoal: vi.fn(),
@@ -325,3 +325,7 @@ describe('useGoal', () => {
     });
   });
 });
+
+
+
+

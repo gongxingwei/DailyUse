@@ -31,7 +31,7 @@ vi.mock('../stores/useAuthStore', () => ({
 }));
 
 // Mock AuthApplicationService
-vi.mock('../../application/services/AuthApplicationService', () => ({
+vi.mock('../../../application/services/AuthApplicationService', () => ({
   AuthApplicationService: {
     getInstance: () =>
       Promise.resolve({
@@ -135,3 +135,7 @@ describe('useAuthentication', () => {
     expect(auth.currentOperation.value).toBe(null);
   });
 });
+
+
+
+
