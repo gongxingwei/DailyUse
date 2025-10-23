@@ -16,6 +16,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
   private _title: string;
   private _description?: string | null;
   private _progress: KeyResultProgressClient;
+  private _weight: number; // 权重 (0-100)
   private _order: number;
   private _createdAt: number;
   private _updatedAt: number;
@@ -27,6 +28,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
     title: string;
     description?: string | null;
     progress: KeyResultProgressClient;
+    weight?: number;
     order: number;
     createdAt: number;
     updatedAt: number;
@@ -37,6 +39,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
     this._title = params.title;
     this._description = params.description;
     this._progress = params.progress;
+    this._weight = params.weight ?? 0; // 默认权重为 0
     this._order = params.order;
     this._createdAt = params.createdAt;
     this._updatedAt = params.updatedAt;
@@ -58,6 +61,9 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
   }
   public get progress(): GoalContracts.KeyResultProgressClientDTO {
     return this._progress.toClientDTO();
+  }
+  public get weight(): number {
+    return this._weight;
   }
   public get order(): number {
     return this._order;
@@ -181,6 +187,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
       title: this._title,
       description: this._description,
       progress: this._progress.toClientDTO(),
+      weight: this._weight,
       order: this._order,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
@@ -204,6 +211,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
       title: this._title,
       description: this._description,
       progress: this._progress.toServerDTO(),
+      weight: this._weight,
       order: this._order,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
@@ -218,6 +226,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
       title: dto.title,
       description: dto.description,
       progress: KeyResultProgressClient.fromClientDTO(dto.progress),
+      weight: dto.weight,
       order: dto.order,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
@@ -232,6 +241,7 @@ export class KeyResultClient extends Entity implements IKeyResultClient {
       title: dto.title,
       description: dto.description,
       progress: KeyResultProgressClient.fromServerDTO(dto.progress),
+      weight: dto.weight,
       order: dto.order,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,

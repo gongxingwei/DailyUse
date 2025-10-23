@@ -21,3 +21,6 @@ export * as TaskDomain from './task';
 
 // 设置模块
 export * as SettingDomain from './setting';
+
+// 重新导出常用类型（便于直接导入）
+export * from './goal';

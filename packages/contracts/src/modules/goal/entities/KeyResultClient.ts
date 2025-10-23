@@ -12,6 +12,7 @@ export interface KeyResultClientDTO {
   title: string;
   description?: string | null;
   progress: KeyResultProgressClientDTO;
+  weight: number; // 权重 (0-100)
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -33,6 +34,7 @@ export interface KeyResultClient {
   title: string;
   description?: string | null;
   progress: KeyResultProgressClientDTO;
+  weight: number; // 权重 (0-100)
   order: number;
   createdAt: number;
   updatedAt: number;

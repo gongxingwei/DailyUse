@@ -18,10 +18,24 @@
                         </div>
                     </div>
 
-                    <v-btn color="primary" size="large" prepend-icon="mdi-plus" variant="elevated"
-                        @click="goalDialogRef?.openDialog()">
-                        创建目标
-                    </v-btn>
+                    <div class="d-flex gap-2">
+                        <v-btn 
+                            color="secondary" 
+                            size="large" 
+                            prepend-icon="mdi-compare" 
+                            variant="outlined"
+                            @click="goToComparison">
+                            对比目标
+                        </v-btn>
+                        <v-btn 
+                            color="primary" 
+                            size="large" 
+                            prepend-icon="mdi-plus" 
+                            variant="elevated"
+                            @click="goalDialogRef?.openDialog()">
+                            创建目标
+                        </v-btn>
+                    </div>
                 </div>
             </v-card-text>
         </v-card>
@@ -137,6 +151,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted, reactive } from 'vue';
+import { useRouter } from 'vue-router';
 import { useGoal } from '../composables/useGoal';
 import { useGoalStore } from '../stores/goalStore';
 import type { Goal, GoalDir } from '@dailyuse/domain-client';
@@ -148,6 +163,7 @@ import GoalDialog from '../components/dialogs/GoalDialog.vue';
 import GoalDirDialog from '../components/dialogs/GoalDirDialog.vue';
 // composables
 
+const router = useRouter();
 
 const {
     isLoading,
@@ -247,6 +263,13 @@ const getGoalCountByStatus = (status: string) => {
  */
 const onSelectedGoalDir = (dirUuid: string) => {
     selectedDirUuid.value = dirUuid;
+};
+
+/**
+ * 跳转到多目标对比页面
+ */
+const goToComparison = () => {
+    router.push('/goals/compare');
 };
 
 /**

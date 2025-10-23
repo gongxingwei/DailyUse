@@ -155,6 +155,15 @@ export const appRoutes: RouteRecordRaw[] = [
             },
           },
           {
+            path: 'compare',
+            name: 'goal-comparison',
+            component: () => import('@/modules/goal/presentation/views/MultiGoalComparisonView.vue'),
+            meta: {
+              title: '多目标对比',
+              requiresAuth: true,
+            },
+          },
+          {
             path: ':id',
             name: 'goal-detail',
             component: () => import('@/modules/goal/presentation/views/GoalDetailView.vue'),

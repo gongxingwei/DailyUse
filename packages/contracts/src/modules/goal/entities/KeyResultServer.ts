@@ -12,6 +12,7 @@ export interface KeyResultServerDTO {
   title: string;
   description?: string | null;
   progress: KeyResultProgressServerDTO;
+  weight: number; // 权重 (0-100)
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -28,6 +29,7 @@ export interface KeyResultPersistenceDTO {
   title: string;
   description?: string | null;
   progress: string; // JSON string
+  weight: number; // 权重 (0-100)
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -39,6 +41,7 @@ export interface KeyResultServer {
   title: string;
   description?: string | null;
   progress: KeyResultProgressServerDTO;
+  weight: number; // 权重 (0-100)
   order: number;
   createdAt: number;
   updatedAt: number;
@@ -49,6 +52,7 @@ export interface KeyResultServer {
   updateProgress(newValue: number, note?: string): GoalRecordServerDTO;
   calculatePercentage(): number;
   isCompleted(): boolean;
+  updateWeight(weight: number): void; // 更新权重
   updateOrder(order: number): void;
   addRecord(record: GoalRecordServerDTO): void;
   recalculateProgress(): void; // 根据聚合方式重新计算进度
@@ -65,6 +69,7 @@ export interface KeyResultServerStatic {
     title: string;
     description?: string;
     progress: KeyResultProgressServerDTO;
+    weight?: number; // 权重，默认 0
     order?: number;
   }): KeyResultServer;
   fromServerDTO(dto: KeyResultServerDTO): KeyResultServer;

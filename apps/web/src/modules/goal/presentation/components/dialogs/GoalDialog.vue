@@ -26,6 +26,21 @@
           <!-- 基本信息 -->
           <v-window-item :value="0">
             <v-form @submit.prevent class="px-4 py-2">
+              <!-- 使用模板按钮 -->
+              <v-alert v-if="!isEditing" type="info" variant="tonal" density="compact" class="mb-4">
+                <div class="d-flex align-center justify-space-between">
+                  <span>快速开始：从专业模板创建目标</span>
+                  <v-btn
+                    variant="elevated"
+                    color="secondary"
+                    prepend-icon="mdi-lightbulb-outline"
+                    @click="templateBrowserRef?.open()"
+                  >
+                    浏览模板
+                  </v-btn>
+                </div>
+              </v-alert>
+
               <v-row>
                 <v-col cols="11">
                   <v-text-field v-model="goalName" :rules="nameRules" label="目标" placeholder="一段话来描述自己的目标" required />
@@ -112,15 +127,32 @@
                   关键结果是衡量目标达成的具体指标
                 </p>
               </div>
-              <v-btn :color="goalColor" variant="elevated" prepend-icon="mdi-plus" block class="add-kr-btn"
-                @click="keyResultDialogRef?.openForCreateKeyResultInGoalEditing(goalModel as Goal)">
-                {{ goalModel.keyResults.length === 0 ? '添加第一个关键结果' : '添加更多关键结果' }}
-              </v-btn>
+              <v-row class="mt-2">
+                <v-col cols="12" md="8">
+                  <v-btn :color="goalColor" variant="elevated" prepend-icon="mdi-plus" block class="add-kr-btn"
+                    @click="keyResultDialogRef?.openForCreateKeyResultInGoalEditing(goalModel as Goal)">
+                    {{ goalModel.keyResults.length === 0 ? '添加第一个关键结果' : '添加更多关键结果' }}
+                  </v-btn>
+                </v-col>
+                <v-col cols="12" md="4">
+                  <v-btn
+                    color="secondary"
+                    variant="tonal"
+                    prepend-icon="mdi-robot"
+                    block
+                    :disabled="goalModel.keyResults.length < 2"
+                    @click="weightSuggestionRef?.open()"
+                  >
+                    AI 权重推荐
+                  </v-btn>
+                </v-col>
+              </v-row>
               <v-alert type="info" variant="tonal" class="mt-4" density="compact">
                 <template v-slot:prepend>
                   <v-icon>mdi-lightbulb-outline</v-icon>
                 </template>
-                建议为每个目标设置 2-4 个关键结果，确保目标的可衡量性
+                建议为每个目标设置 2-4 个关键结果，确保目标的可衡量性。
+                添加 2 个以上 KR 后可使用 AI 权重推荐功能。
               </v-alert>
             </div>
           </v-window-item>
@@ -163,6 +195,17 @@
 
   <!-- 内嵌的关键结果对话框 -->
   <KeyResultDialog ref="keyResultDialogRef" />
+  <!-- AI 权重推荐面板 -->
+  <WeightSuggestionPanel
+    ref="weightSuggestionRef"
+    :key-results="goalModel.keyResults"
+    @apply="handleApplyWeightStrategy"
+  />
+  <!-- 目标模板浏览器 -->
+  <TemplateBrowser
+    ref="templateBrowserRef"
+    @apply="handleApplyTemplate"
+  />
   <!-- 确认对话框 -->
   <DuConfirmDialog v-model="confirmDialog.show" :title="confirmDialog.title" :message="confirmDialog.message"
     confirm-text="确认" cancel-text="取消" @update:modelValue="confirmDialog.show = $event"
@@ -173,10 +216,14 @@
 import { ref, computed, watch } from 'vue';
 // components
 import KeyResultDialog from './KeyResultDialog.vue';
+import WeightSuggestionPanel from '../weight/WeightSuggestionPanel.vue';
+import TemplateBrowser from '../template/TemplateBrowser.vue';
 import { DuConfirmDialog } from '@dailyuse/ui';
 // types
 import { useGoalStore } from '../../stores/goalStore';
-import { KeyResult, Goal } from '@dailyuse/domain-client';
+import { GoalClient as Goal, KeyResultClient as KeyResult } from '@dailyuse/domain-client';
+import type { WeightStrategy } from '../../../application/services/WeightRecommendationService';
+import type { GoalTemplate } from '../../../domain/templates/GoalTemplates';
 // composables
 import { useGoal } from '../../composables/useGoal';
 
@@ -189,6 +236,8 @@ const propGoal = ref<Goal | null>(null);
 
 // 组件对象
 const keyResultDialogRef = ref<InstanceType<typeof KeyResultDialog> | null>(null);
+const weightSuggestionRef = ref<InstanceType<typeof WeightSuggestionPanel> | null>(null);
+const templateBrowserRef = ref<InstanceType<typeof TemplateBrowser> | null>(null);
 
 // 本地表单对象
 const loading = ref(false);
@@ -209,6 +258,57 @@ const confirmDialog = ref<{
   onConfirm: () => { },
   onCancel: () => { },
 });
+
+// Apply AI weight strategy
+const handleApplyWeightStrategy = (strategy: WeightStrategy) => {
+  if (!goalModel.value.keyResults || goalModel.value.keyResults.length === 0) {
+    return;
+  }
+
+  // 应用权重到每个 KeyResult
+  // 注意：keyResults 在运行时是普通对象，不是 KeyResultClient 实例
+  (goalModel.value.keyResults as any[]).forEach((kr: any, index: number) => {
+    if (strategy.weights[index] !== undefined) {
+      kr.weight = strategy.weights[index];
+    }
+  });
+
+  console.log(`Applied ${strategy.label} strategy:`, strategy.weights);
+};
+
+// 应用目标模板
+const handleApplyTemplate = (template: GoalTemplate) => {
+  // 填充目标基本信息
+  goalName.value = template.title;
+  goalDescription.value = template.description;
+  
+  // 设置建议的时间范围
+  if (template.suggestedDuration) {
+    const today = new Date();
+    const endDate = new Date(today);
+    endDate.setDate(endDate.getDate() + template.suggestedDuration);
+    
+    startTimeFormatted.value = today.toISOString().split('T')[0];
+    endTimeFormatted.value = endDate.toISOString().split('T')[0];
+  }
+
+  // 清空现有关键结果（如果有）
+  if (goalModel.value.keyResults && goalModel.value.keyResults.length > 0) {
+    goalModel.value.keyResults = [];
+  }
+
+  // TODO: 从模板创建关键结果
+  // 由于 KeyResult 的创建需要通过 KeyResultDialog，这里只记录日志
+  // 用户需要手动添加关键结果，但会看到模板的建议值
+  console.log(`Applied template: ${template.title}`);
+  console.log(`Suggested KeyResults (${template.keyResults.length}):`, template.keyResults);
+  
+  // 切换到 KeyResults tab，引导用户添加 KR
+  activeTab.value = 1;
+  
+  // 可选：显示提示信息
+  alert(`已应用模板"${template.title}"！\n建议添加 ${template.keyResults.length} 个关键结果，请点击"添加关键结果"按钮继续。`);
+};
 
 const startRemoveKeyResult = (goal: Goal, keyResultUuid: string) => {
   confirmDialog.value = {

@@ -1,5 +1,107 @@
 # 🏗️ DailyUse 前端架构规范
 
+## 🎯 核心原则
+
+### 1. Domain 层代码必须放在独立包中
+
+**规则**：
+- ❌ **禁止**在 `apps/web/src/modules/*/domain/` 创建领域代码
+- ✅ **必须**将领域代码放入：
+  - `packages/domain-client/` (客户端领域模型)
+  - `packages/domain-server/` (服务端领域模型)
+
+**原因**：
+- 领域模型需要在前端和后端共享
+- 确保业务逻辑的一致性
+- 便于跨应用复用（Web、Desktop）
+- 类型定义和业务规则的单一来源
+
+**正确示例**：
+```typescript
+// ✅ 正确：领域实体在 domain-client 包中
+// packages/domain-client/src/goal/aggregates/GoalClient.ts
+export class GoalClient extends AggregateRoot {
+  // 领域模型定义
+}
+
+// ✅ 正确：前端应用导入
+// apps/web/src/modules/goal/application/services/GoalService.ts
+import { GoalClient } from '@dailyuse/domain-client';
+```
+
+**错误示例**：
+```typescript
+// ❌ 错误：不要在应用中创建领域代码
+// apps/web/src/modules/goal/domain/entities/Goal.ts ❌
+export class Goal {
+  // 这应该在 packages/domain-client/ 中！
+}
+```
+
+**临时例外**（仅限以下场景）：
+- `domain/templates/` - 模板数据（非核心领域逻辑）
+- `domain/constants/` - UI 特定常量
+- 迁移期间的过渡代码（需要添加 TODO 注释标记迁移计划）
+
+---
+
+### 2. Monorepo 依赖管理规范
+
+**规则**：
+- ✅ **所有 Node.js 依赖必须在根目录的 `package.json` 中声明**
+- ✅ **应用和包只能使用根目录安装的依赖**
+- ❌ **禁止在子包的 `package.json` 中添加新依赖**
+
+**原因**：
+- 确保版本一致性（避免多个版本冲突）
+- 减少 `node_modules` 大小（PNPM workspace 共享）
+- 统一依赖管理和升级
+- 避免构建和运行时错误
+
+**正确操作流程**：
+```bash
+# ✅ 正确：在根目录添加依赖
+cd /path/to/DailyUse
+pnpm add html2canvas jspdf -w
+
+# ✅ 正确：为特定包添加开发依赖
+pnpm add -D vitest --filter @dailyuse/domain-client
+```
+
+**错误操作**：
+```bash
+# ❌ 错误：不要在子目录直接安装
+cd apps/web
+pnpm add axios  # ❌ 应该在根目录执行！
+```
+
+**package.json 配置规范**：
+```json
+// ✅ 根目录 package.json
+{
+  "dependencies": {
+    "vue": "^3.4.0",
+    "axios": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.0"
+  }
+}
+
+// ✅ 子包 package.json (只声明 workspace 依赖)
+{
+  "name": "@dailyuse/web",
+  "dependencies": {
+    "@dailyuse/domain-client": "workspace:*",
+    "@dailyuse/ui": "workspace:*"
+    // 外部依赖从根目录继承，不需要重复声明
+  }
+}
+```
+
+---
+
 ## 📂 目录结构规范
 
 ### 模块分层架构 (Clean Architecture)
@@ -336,6 +438,7 @@ mv src/modules/goal/services/DAGExportService.ts \
 
 提交代码前检查：
 
+### 架构分层
 - [ ] 所有应用服务都在 `application/services/`
 - [ ] 所有领域服务都在 `domain/services/`
 - [ ] API 客户端都在 `infrastructure/api/`
@@ -343,6 +446,17 @@ mv src/modules/goal/services/DAGExportService.ts \
 - [ ] 没有 `utils/`、`helpers/`、`common/` 等模糊目录
 - [ ] 依赖方向正确（外层 → 内层）
 - [ ] 命名遵循约定（`*Service`, `*DomainService`, `*Api`）
+
+### Domain 层规范 ⭐
+- [ ] **所有领域实体、值对象都在 `packages/domain-client/` 或 `packages/domain-server/`**
+- [ ] 应用中 `apps/*/src/modules/*/domain/` 目录仅包含模板、常量等非核心代码
+- [ ] 如有迁移中的代码，添加了 `// TODO: 迁移到 @dailyuse/domain-client` 注释
+
+### 依赖管理规范 ⭐
+- [ ] **所有新依赖都在根目录 `package.json` 中添加**
+- [ ] 子包 `package.json` 中只有 `workspace:*` 依赖
+- [ ] 使用 `pnpm add <package> -w` 添加根依赖
+- [ ] 使用 `pnpm add <package> --filter <package-name>` 添加特定包的开发依赖
 
 ---
 
@@ -356,6 +470,12 @@ mv src/modules/goal/services/DAGExportService.ts \
 
 ## 🔄 更新日志
 
+- **2025-10-23**: 添加核心原则规范 ⭐
+  - **Domain 层必须放在独立包中** (domain-client/domain-server)
+  - **Monorepo 依赖必须在根目录统一管理**
+  - 更新检查清单
+  - 添加临时例外说明
+
 - **2024-10-22**: 创建初始规范
   - 定义四层架构
   - 明确各层职责
@@ -365,5 +485,5 @@ mv src/modules/goal/services/DAGExportService.ts \
 ---
 
 **维护者**: Development Team  
-**最后更新**: 2024-10-22  
-**版本**: 1.0.0
+**最后更新**: 2025-10-23  
+**版本**: 1.1.0

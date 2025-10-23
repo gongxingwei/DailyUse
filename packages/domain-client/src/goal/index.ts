@@ -11,3 +11,6 @@ export * from './entities';
 
 // 聚合根
 export * from './aggregates';
+
+// 类型别名（便于导入）
+export * from './types';

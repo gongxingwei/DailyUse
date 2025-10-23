@@ -38,6 +38,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
   private _title: string;
   private _description: string | null;
   private _progress: KeyResultProgressServerDTO;
+  private _weight: number; // 权重 (0-100)
   private _order: number;
   private _createdAt: number;
   private _updatedAt: number;
@@ -50,6 +51,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
     title: string;
     description?: string | null;
     progress: KeyResultProgressServerDTO;
+    weight?: number;
     order: number;
     createdAt: number;
     updatedAt: number;
@@ -60,6 +62,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
     this._title = params.title;
     this._description = params.description ?? null;
     this._progress = params.progress;
+    this._weight = params.weight ?? 0; // 默认权重为 0
     this._order = params.order;
     this._createdAt = params.createdAt;
     this._updatedAt = params.updatedAt;
@@ -81,6 +84,9 @@ export class KeyResult extends Entity implements IKeyResultServer {
   }
   public get progress(): KeyResultProgressServerDTO {
     return this._progress;
+  }
+  public get weight(): number {
+    return this._weight;
   }
   public get order(): number {
     return this._order;
@@ -139,6 +145,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
       title: dto.title,
       description: dto.description ?? null,
       progress: dto.progress,
+      weight: dto.weight,
       order: dto.order,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
@@ -166,6 +173,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
       title: dto.title,
       description: dto.description ?? null,
       progress,
+      weight: dto.weight,
       order: dto.order,
       createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
@@ -192,6 +200,17 @@ export class KeyResult extends Entity implements IKeyResultServer {
    */
   public updateDescription(description: string): void {
     this._description = description.trim() || null;
+    this._updatedAt = Date.now();
+  }
+
+  /**
+   * 更新权重
+   */
+  public updateWeight(weight: number): void {
+    if (weight < 0 || weight > 100) {
+      throw new Error('Weight must be between 0 and 100');
+    }
+    this._weight = weight;
     this._updatedAt = Date.now();
   }
 
@@ -314,6 +333,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
       title: this._title,
       description: this._description,
       progress: this._progress,
+      weight: this._weight,
       order: this._order,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -374,6 +394,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
       title: this._title,
       description: this._description,
       progress: progressClientDTO,
+      weight: this._weight,
       order: this._order,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
@@ -409,6 +430,7 @@ export class KeyResult extends Entity implements IKeyResultServer {
       title: this._title,
       description: this._description,
       progress: JSON.stringify(progressPersistence),
+      weight: this._weight,
       order: this._order,
       createdAt: this._createdAt,
       updatedAt: this._updatedAt,
