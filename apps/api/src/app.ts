@@ -11,7 +11,7 @@ import cookieParser from 'cookie-parser';
 import compression from 'compression';
 import accountRouter from './modules/account/interface/http/accountRoutes';
 import authenticationRouter from './modules/authentication/interface/http/authenticationRoutes';
-import taskRouter from './modules/task/interface/http/routes/taskTemplateRoutes';
+import taskRouter from './modules/task/interface/http/routes/index';
 import goalRouter from './modules/goal/interface/http/goalRoutes';
 import goalFolderRouter from './modules/goal/interface/http/goalFolderRoutes';
 import focusSessionRouter from './modules/goal/interface/http/focusSessionRoutes';
