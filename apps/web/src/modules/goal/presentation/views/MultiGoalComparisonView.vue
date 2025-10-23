@@ -138,17 +138,15 @@
               </v-col>
             </v-row>
 
-            <!-- DAG 可视化 (简化版) -->
-            <div class="dag-preview">
-              <v-card variant="outlined" class="pa-4">
-                <div class="text-caption text-grey mb-2">目标结构预览</div>
-                <!-- 这里先用占位符，后续集成 GoalDAGVisualization -->
-                <div class="text-center pa-8 text-grey-lighten-1">
-                  <v-icon size="64">mdi-graph-outline</v-icon>
-                  <div class="mt-2">DAG 可视化</div>
-                  <div class="text-caption">(开发中)</div>
-                </div>
-              </v-card>
+            <!-- DAG 可视化 -->
+            <div class="dag-preview mt-4">
+              <goal-dag-visualization
+                :ref="(el: any) => registerDagRef(goal.uuid, el)"
+                :goal-uuid="goal.uuid"
+                :sync-viewport="true"
+                :compact="true"
+                @viewport-change="(viewport: any) => handleViewportChange(goal.uuid, viewport)"
+              />
             </div>
           </v-card-text>
         </v-card>
@@ -266,6 +264,7 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import MultiGoalSelector from '../components/comparison/MultiGoalSelector.vue';
+import GoalDAGVisualization from '../components/dag/GoalDAGVisualization.vue';
 
 // Router
 const router = useRouter();
@@ -273,21 +272,30 @@ const router = useRouter();
 // State
 const selectedGoals = ref<any[]>([]);
 const selectorRef = ref<InstanceType<typeof MultiGoalSelector> | null>(null);
+const dagRefs = ref<Map<string, InstanceType<typeof GoalDAGVisualization>>>(new Map());
+
+// 视口同步状态
+const currentViewport = ref<{ zoom: number; center: [number, number] } | null>(null);
+const isUpdatingViewport = ref(false);
 
 // Methods
 const handleGoalSelection = (goals: any[]) => {
   selectedGoals.value = goals;
+  // 清空 DAG refs
+  dagRefs.value.clear();
 };
 
 const removeGoal = (goalUuid: string) => {
   const index = selectedGoals.value.findIndex(g => g.uuid === goalUuid);
   if (index !== -1) {
     selectedGoals.value.splice(index, 1);
+    dagRefs.value.delete(goalUuid);
   }
 };
 
 const resetSelection = () => {
   selectedGoals.value = [];
+  dagRefs.value.clear();
   selectorRef.value?.clearSelection();
 };
 
@@ -298,6 +306,33 @@ const goBack = () => {
 const handleExport = () => {
   // TODO: 实现导出功能 (STORY-016 Task 5)
   console.log('Export comparison view');
+};
+
+// 视口同步处理
+const handleViewportChange = (goalUuid: string, viewport: { zoom: number; center: [number, number] }) => {
+  if (isUpdatingViewport.value) return;
+
+  isUpdatingViewport.value = true;
+  currentViewport.value = viewport;
+
+  // 同步所有其他 DAG 图表
+  dagRefs.value.forEach((dagRef, uuid) => {
+    if (uuid !== goalUuid && dagRef && dagRef.updateViewport) {
+      dagRef.updateViewport(viewport);
+    }
+  });
+
+  // 延迟重置标志
+  setTimeout(() => {
+    isUpdatingViewport.value = false;
+  }, 100);
+};
+
+// 注册 DAG 组件引用
+const registerDagRef = (goalUuid: string, ref: any) => {
+  if (ref) {
+    dagRefs.value.set(goalUuid, ref);
+  }
 };
 
 // UI Helpers

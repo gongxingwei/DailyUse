@@ -1,7 +1,7 @@
 <template>
   <div class="goal-dag-visualization">
     <v-card>
-      <v-card-title class="d-flex align-center">
+      <v-card-title v-if="!compact" class="d-flex align-center">
         <v-icon class="mr-2">mdi-graph-outline</v-icon>
         目标权重分布图
         
@@ -68,7 +68,7 @@
       <v-card-text>
         <!-- 权重异常提示 -->
         <v-alert
-          v-if="totalWeight !== 100"
+          v-if="!compact && totalWeight !== 100"
           type="warning"
           variant="tonal"
           class="mb-4"
@@ -91,7 +91,7 @@
         </v-alert>
 
         <!-- DAG 图表 -->
-        <div v-else ref="containerRef" class="dag-container">
+        <div v-else ref="containerRef" class="dag-container" :class="{ 'compact': compact }">
           <v-chart
             ref="chartRef"
             class="chart"
@@ -102,7 +102,7 @@
         </div>
 
         <!-- 图例说明 -->
-        <div v-if="hasKeyResults" class="legend-section mt-4">
+        <div v-if="!compact && hasKeyResults" class="legend-section mt-4">
           <v-divider class="mb-3" />
           <div class="d-flex align-center flex-wrap gap-3">
             <v-chip size="small" color="primary" variant="flat">
@@ -162,10 +162,13 @@ use([
 
 const props = defineProps<{
   goalUuid: string;
+  syncViewport?: boolean; // 是否启用视口同步
+  compact?: boolean; // 紧凑模式（用于对比视图）
 }>();
 
 const emit = defineEmits<{
   (e: 'node-click', data: { id: string; type: 'goal' | 'kr' }): void;
+  (e: 'viewport-change', viewport: { zoom: number; center: [number, number] }): void;
 }>();
 
 const { currentGoal, isLoading, getGoalAggregateView } = useGoal();
@@ -175,6 +178,11 @@ const containerRef = ref<HTMLElement>();
 const layoutType = ref<'force' | 'hierarchical'>('force');
 const hasCustomLayout = ref(false);
 const containerSize = ref({ width: 800, height: 600 });
+
+// 视口同步相关状态
+const currentZoom = ref(1);
+const currentCenter = ref<[number, number]>([0, 0]);
+const isUpdatingViewport = ref(false); // 防止循环更新
 
 // 计算属性
 const hasKeyResults = computed(() => {
@@ -463,6 +471,24 @@ watch(chartRef, (chart) => {
             saveLayout(props.goalUuid, positions);
           }
         }, 500);
+
+        // 视口同步：发送缩放和平移事件
+        if (props.syncViewport && !isUpdatingViewport.value) {
+          const option = instance.getOption();
+          const series = option.series?.[0];
+          if (series) {
+            const zoom = series.zoom || 1;
+            const center = series.center || [0, 0];
+            
+            currentZoom.value = zoom;
+            currentCenter.value = center as [number, number];
+            
+            emit('viewport-change', {
+              zoom,
+              center: center as [number, number],
+            });
+          }
+        }
       }
     });
   }
@@ -557,6 +583,44 @@ onMounted(() => {
   };
 });
 
+// 视口同步方法：从外部更新视口
+const updateViewport = (viewport: { zoom: number; center: [number, number] }) => {
+  if (!chartRef.value || !props.syncViewport) return;
+
+  isUpdatingViewport.value = true;
+
+  try {
+    const instance = chartRef.value.chart;
+    const currentOption = instance.getOption();
+    
+    // 更新图表配置
+    instance.setOption({
+      series: [{
+        ...currentOption.series[0],
+        zoom: viewport.zoom,
+        center: viewport.center,
+      }],
+    }, { notMerge: false, lazyUpdate: false });
+
+    currentZoom.value = viewport.zoom;
+    currentCenter.value = viewport.center;
+  } catch (error) {
+    console.error('Failed to update viewport:', error);
+  } finally {
+    // 延迟重置标志，避免立即触发事件
+    setTimeout(() => {
+      isUpdatingViewport.value = false;
+    }, 100);
+  }
+};
+
+// 暴露方法给父组件
+defineExpose({
+  updateViewport,
+  chartRef,
+  exportDialog,
+});
+
 // 初始化
 onMounted(async () => {
   // 加载布局类型偏好
@@ -590,6 +654,12 @@ onMounted(async () => {
   border-radius: 4px;
   background-color: rgba(0, 0, 0, 0.02);
   position: relative;
+}
+
+.dag-container.compact {
+  min-width: 300px;
+  min-height: 300px;
+  height: 400px;
 }
 
 .chart {
