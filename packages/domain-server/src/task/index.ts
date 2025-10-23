@@ -26,10 +26,18 @@ export { TaskTemplateHistory } from './entities';
 export { TaskInstance, TaskTemplate } from './aggregates';
 
 // 仓储接口
-export type { ITaskInstanceRepository, ITaskTemplateRepository } from './repositories';
+export type {
+  ITaskInstanceRepository,
+  ITaskTemplateRepository,
+  ITaskDependencyRepository,
+} from './repositories';
 
 // 领域服务
-export { TaskInstanceGenerationService, TaskExpirationService } from './services';
+export {
+  TaskInstanceGenerationService,
+  TaskExpirationService,
+  TaskDependencyService,
+} from './services';
 
 // 错误类
 export * from './errors';
