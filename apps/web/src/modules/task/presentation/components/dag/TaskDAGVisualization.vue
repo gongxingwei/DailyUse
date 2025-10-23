@@ -1,11 +1,11 @@
 <template>
-  <div class="task-dag-visualization">
+  <div class="task-dag-visualization" data-testid="task-dag-visualization">
     <v-card elevation="2">
       <v-card-title class="d-flex align-center justify-space-between">
         <div class="d-flex align-center gap-2">
           <v-icon color="primary">mdi-graph-outline</v-icon>
           <span class="text-h6">任务依赖关系图</span>
-          <v-chip v-if="hasCriticalPath" color="error" size="small" variant="flat">
+          <v-chip v-if="hasCriticalPath" color="error" size="small" variant="flat" data-testid="critical-path-chip">
             关键路径: {{ criticalPathDuration }}分钟
           </v-chip>
         </div>
@@ -17,12 +17,13 @@
             mandatory
             density="compact"
             variant="outlined"
+            data-testid="layout-toggle"
           >
-            <v-btn value="force" size="small">
+            <v-btn value="force" size="small" data-testid="layout-force-btn">
               <v-icon start>mdi-graph</v-icon>
               力导向
             </v-btn>
-            <v-btn value="hierarchical" size="small">
+            <v-btn value="hierarchical" size="small" data-testid="layout-hierarchical-btn">
               <v-icon start>mdi-file-tree</v-icon>
               分层
             </v-btn>
@@ -33,6 +34,7 @@
             :color="showCriticalPath ? 'error' : 'default'"
             :variant="showCriticalPath ? 'flat' : 'outlined'"
             size="small"
+            data-testid="critical-path-toggle"
             @click="toggleCriticalPath"
           >
             <v-icon start>mdi-alert-decagram</v-icon>
@@ -45,6 +47,7 @@
             icon="mdi-refresh"
             size="small"
             variant="text"
+            data-testid="reset-layout-btn"
             @click="resetLayout"
           />
 
@@ -53,24 +56,26 @@
             icon="mdi-download"
             size="small"
             variant="text"
+            data-testid="export-dag-btn"
             @click="exportDialog?.open()"
           />
         </div>
       </v-card-title>
 
       <v-card-text>
-        <div ref="containerRef" class="dag-container" :class="{ compact }">
+        <div ref="containerRef" class="dag-container" :class="{ compact }" data-testid="dag-container">
           <v-chart
             ref="chartRef"
             class="chart"
             :option="dagOption"
             autoresize
+            data-testid="dag-chart"
             @click="handleNodeClick"
           />
         </div>
 
         <!-- 图例说明 -->
-        <div v-if="!compact" class="legend-section mt-4">
+        <div v-if="!compact" class="legend-section mt-4" data-testid="dag-legend">
           <v-row>
             <v-col cols="12" md="6">
               <div class="text-subtitle-2 mb-2">任务状态</div>

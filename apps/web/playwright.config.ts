@@ -24,11 +24,18 @@ export default defineConfig({
   workers: 1, // E2E 测试使用单个 worker 避免冲突
 
   // 报告配置
-  reporter: [
-    ['html', { outputFolder: 'playwright-report' }],
-    ['list'],
-    ['json', { outputFile: 'test-results/results.json' }],
-  ],
+  reporter: process.env.CI
+    ? [
+        ['html', { outputFolder: 'playwright-report', open: 'never' }],
+        ['json', { outputFile: 'test-results/results.json' }],
+        ['list'],
+        ['github'], // GitHub Actions 集成
+      ]
+    : [
+        ['html', { outputFolder: 'playwright-report' }],
+        ['list'],
+        ['json', { outputFile: 'test-results/results.json' }],
+      ],
 
   // 全局配置
   use: {

@@ -6,9 +6,10 @@
     :scrim="true"
     transition="dialog-top-transition"
     class="command-palette-dialog"
+    data-testid="command-palette-dialog"
     @keydown.esc="handleClose"
   >
-    <v-card class="command-palette-card">
+    <v-card class="command-palette-card" data-testid="command-palette">
       <!-- Search Input -->
       <div class="pa-4 pb-0">
         <v-text-field
@@ -21,6 +22,7 @@
           autofocus
           clearable
           prepend-inner-icon="mdi-magnify"
+          data-testid="command-palette-input"
           @keydown.down.prevent="handleArrowDown"
           @keydown.up.prevent="handleArrowUp"
           @keydown.enter.prevent="handleEnter"
@@ -32,6 +34,7 @@
               size="x-small"
               color="primary"
               variant="flat"
+              data-testid="command-mode-indicator"
             >
               Command
             </v-chip>
@@ -39,7 +42,7 @@
         </v-text-field>
 
         <!-- Search Stats -->
-        <div v-if="searchQuery && !isCommandMode" class="text-caption text-medium-emphasis mt-2">
+        <div v-if="searchQuery && !isCommandMode" class="text-caption text-medium-emphasis mt-2" data-testid="search-stats">
           Found {{ filteredResults.length }} result{{ filteredResults.length !== 1 ? 's' : '' }}
           <span v-if="searchTime > 0">({{ searchTime }}ms)</span>
         </div>
@@ -48,15 +51,15 @@
       <v-divider class="my-2" />
 
       <!-- Results Container -->
-      <div class="results-container pa-2">
+      <div class="results-container pa-2" data-testid="results-container">
         <!-- Loading State -->
-        <div v-if="isLoading" class="text-center pa-8">
+        <div v-if="isLoading" class="text-center pa-8" data-testid="loading-state">
           <v-progress-circular indeterminate color="primary" />
           <div class="text-caption text-medium-emphasis mt-2">Searching...</div>
         </div>
 
         <!-- Empty Search - Show Recent Items -->
-        <div v-else-if="!searchQuery && recentItems.length > 0">
+        <div v-else-if="!searchQuery && recentItems.length > 0" data-testid="recent-items">
           <div class="text-caption text-medium-emphasis px-2 mb-2">
             <v-icon size="small" class="mr-1">mdi-history</v-icon>
             Recent Items
@@ -65,6 +68,9 @@
             <v-list-item
               v-for="(item, index) in recentItems"
               :key="item.id"
+              :data-testid="`recent-item-${index}`"
+              :data-item-id="item.id"
+              :data-item-type="item.type"
               :class="{ 'bg-grey-lighten-4': selectedIndex === index }"
               @click="handleSelectRecentItem(item)"
               @mouseenter="selectedIndex = index"
@@ -86,6 +92,7 @@
               size="small"
               variant="text"
               color="error"
+              data-testid="clear-history-btn"
               @click="handleClearHistory"
             >
               <v-icon size="small" class="mr-1">mdi-delete-outline</v-icon>
@@ -95,7 +102,7 @@
         </div>
 
         <!-- Command Mode - Show Commands -->
-        <div v-else-if="isCommandMode">
+        <div v-else-if="isCommandMode" data-testid="command-mode">
           <div class="text-caption text-medium-emphasis px-2 mb-2">
             <v-icon size="small" class="mr-1">mdi-flash</v-icon>
             Quick Actions
@@ -104,6 +111,8 @@
             <v-list-item
               v-for="(command, index) in filteredCommands"
               :key="command.id"
+              :data-testid="`command-item-${index}`"
+              :data-command-id="command.id"
               :class="{ 'bg-grey-lighten-4': selectedIndex === index }"
               @click="handleSelectCommand(command)"
               @mouseenter="selectedIndex = index"
@@ -129,9 +138,9 @@
         </div>
 
         <!-- Search Results -->
-        <div v-else-if="searchQuery">
+        <div v-else-if="searchQuery" data-testid="search-results">
           <!-- No Results -->
-          <div v-if="filteredResults.length === 0" class="text-center pa-8">
+          <div v-if="filteredResults.length === 0" class="text-center pa-8" data-testid="no-results">
             <v-icon size="64" color="grey-lighten-1">mdi-magnify-close</v-icon>
             <div class="text-h6 text-medium-emphasis mt-2">No results found</div>
             <div class="text-caption text-medium-emphasis">
@@ -140,7 +149,7 @@
           </div>
 
           <!-- Results by Type -->
-          <div v-else>
+          <div v-else data-testid="search-results-list">
             <!-- Goals -->
             <div v-if="goalResults.length > 0" class="mb-4">
               <div class="text-caption text-medium-emphasis px-2 mb-2">

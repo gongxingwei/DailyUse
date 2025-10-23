@@ -8,6 +8,11 @@
  */
 <template>
   <div
+    data-testid="draggable-task-card"
+    :data-task-uuid="template.uuid"
+    :data-dragging="isDragging && draggedTask?.uuid === template.uuid"
+    :data-valid-drop="isValidDrop && dropTarget?.uuid === template.uuid"
+    :data-invalid-drop="!isValidDrop && dropTarget?.uuid === template.uuid && isDragging"
     :class="{
       'draggable-task-card': true,
       'draggable-task-card--dragging': isDragging && draggedTask?.uuid === template.uuid,
@@ -22,18 +27,18 @@
     @drop.prevent="onDrop"
   >
     <!-- Drag Handle (visible on hover) -->
-    <div v-if="enableDrag && !isDragging" class="drag-handle">
+    <div v-if="enableDrag && !isDragging" class="drag-handle" data-testid="drag-handle">
       <v-icon size="small" color="grey">mdi-drag-vertical</v-icon>
     </div>
     
     <!-- Drop Zone Indicator (when valid drop target) -->
-    <div v-if="isValidDrop && dropTarget?.uuid === template.uuid" class="drop-zone-indicator">
+    <div v-if="isValidDrop && dropTarget?.uuid === template.uuid" class="drop-zone-indicator" data-testid="drop-zone-valid">
       <v-icon color="success" size="large">mdi-plus-circle</v-icon>
       <span class="drop-zone-text">松开创建依赖关系</span>
     </div>
     
     <!-- Invalid Drop Indicator -->
-    <div v-else-if="!isValidDrop && dropTarget?.uuid === template.uuid && isDragging" class="drop-zone-indicator invalid">
+    <div v-else-if="!isValidDrop && dropTarget?.uuid === template.uuid && isDragging" class="drop-zone-indicator invalid" data-testid="drop-zone-invalid">
       <v-icon color="error" size="large">mdi-close-circle</v-icon>
       <span class="drop-zone-text">无法创建依赖</span>
     </div>

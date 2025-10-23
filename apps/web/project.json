@@ -46,6 +46,42 @@
         "command": "vue-tsc --noEmit",
         "cwd": "apps/web"
       }
+    },
+    "e2e": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{workspaceRoot}/apps/web/test-results",
+        "{workspaceRoot}/apps/web/playwright-report"
+      ],
+      "options": {
+        "command": "playwright test",
+        "cwd": "apps/web"
+      },
+      "configurations": {
+        "ci": {
+          "command": "playwright test --reporter=html,json,list"
+        },
+        "headed": {
+          "command": "playwright test --headed"
+        },
+        "debug": {
+          "command": "playwright test --debug"
+        }
+      }
+    },
+    "e2e:ui": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright test --ui",
+        "cwd": "apps/web"
+      }
+    },
+    "e2e:report": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "playwright show-report",
+        "cwd": "apps/web"
+      }
     }
   }
 }

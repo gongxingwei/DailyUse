@@ -9,6 +9,33 @@ export const TEST_USER = {
 };
 
 /**
+ * 测试数据工厂
+ */
+export function createTestTask(title: string, options?: {
+  description?: string;
+  duration?: number;
+  status?: 'pending' | 'in-progress' | 'completed' | 'blocked';
+}) {
+  return {
+    title,
+    description: options?.description || `Test description for ${title}`,
+    duration: options?.duration || 60,
+    status: options?.status || 'pending',
+  };
+}
+
+export function createTestGoal(title: string, options?: {
+  description?: string;
+  deadline?: string;
+}) {
+  return {
+    title,
+    description: options?.description || `Test goal: ${title}`,
+    deadline: options?.deadline || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+  };
+}
+
+/**
  * 登录辅助函数
  */
 export async function login(
@@ -341,3 +368,257 @@ export async function cleanupReminder(page: Page, reminderName: string) {
     console.log('[Cleanup] 清理失败:', error);
   }
 }
+
+/**
+ * ========================================
+ * Task Module Helpers
+ * ========================================
+ */
+
+/**
+ * 导航到 Task 页面
+ */
+export async function navigateToTasks(page: Page) {
+  console.log('[Navigation] 导航到 Task 页面');
+
+  try {
+    // 方式1: 直接访问
+    await page.goto('/tasks', { waitUntil: 'networkidle' });
+  } catch {
+    // 方式2: 通过菜单点击
+    await page.click('a[href="/tasks"], a:has-text("Task"), a:has-text("任务")');
+    await page.waitForURL(/\/tasks/);
+  }
+
+  console.log('[Navigation] 已到达 Task 页面');
+}
+
+/**
+ * 创建 Task
+ */
+export async function createTask(
+  page: Page,
+  taskData: {
+    title: string;
+    description?: string;
+    duration?: number;
+    status?: string;
+  },
+) {
+  console.log(`[Task] 创建任务: ${taskData.title}`);
+
+  // 点击创建按钮
+  await page.click(
+    'button:has-text("创建"), button:has-text("新建"), button:has-text("Create Task")',
+  );
+
+  // 等待表单弹窗
+  await page.waitForSelector('form, [role="dialog"]', { timeout: 5000 });
+
+  // 填写标题
+  await page.fill(
+    'input[name="title"], input[placeholder*="标题"], input[label*="标题"]',
+    taskData.title,
+  );
+
+  // 填写描述
+  if (taskData.description) {
+    await page.fill(
+      'textarea[name="description"], textarea[placeholder*="描述"]',
+      taskData.description,
+    );
+  }
+
+  // 填写时长
+  if (taskData.duration !== undefined) {
+    await page.fill(
+      'input[name="duration"], input[type="number"]',
+      taskData.duration.toString(),
+    );
+  }
+
+  // 提交表单
+  await page.click('button[type="submit"], button:has-text("确定"), button:has-text("保存")');
+
+  // 等待创建成功
+  await page.waitForTimeout(1000);
+
+  console.log('[Task] 任务创建成功');
+}
+
+/**
+ * 创建 Task 依赖
+ */
+export async function createTaskDependency(
+  page: Page,
+  options: {
+    targetTaskTitle: string;
+    predecessorTaskTitle: string;
+    dependencyType?: 'finish-to-start' | 'start-to-start' | 'finish-to-finish' | 'start-to-finish';
+  },
+) {
+  console.log(
+    `[Task] 创建依赖: ${options.targetTaskTitle} -> ${options.predecessorTaskTitle}`,
+  );
+
+  // 点击目标任务
+  await page.click(`[data-testid="draggable-task-card"]:has-text("${options.targetTaskTitle}")`);
+
+  // 点击添加依赖按钮
+  await page.click('button:has-text("添加依赖"), [data-testid="add-dependency-btn"]');
+
+  // 等待对话框
+  await page.waitForSelector('[role="dialog"]');
+
+  // 选择前置任务
+  await page.selectOption(
+    '[name="predecessorTask"], select',
+    { label: options.predecessorTaskTitle },
+  );
+
+  // 选择依赖类型
+  if (options.dependencyType) {
+    await page.selectOption('[name="dependencyType"], select', options.dependencyType);
+  }
+
+  // 保存
+  await page.click('button:has-text("保存"), button:has-text("确定")');
+
+  // 等待完成
+  await page.waitForTimeout(1000);
+
+  console.log('[Task] 依赖创建成功');
+}
+
+/**
+ * 通过拖放创建依赖
+ */
+export async function dragTaskToCreateDependency(
+  page: Page,
+  sourceTaskTitle: string,
+  targetTaskTitle: string,
+) {
+  console.log(`[Task] 拖放创建依赖: ${sourceTaskTitle} -> ${targetTaskTitle}`);
+
+  const sourceCard = page.locator(
+    `[data-testid="draggable-task-card"]:has-text("${sourceTaskTitle}")`,
+  );
+  const targetCard = page.locator(
+    `[data-testid="draggable-task-card"]:has-text("${targetTaskTitle}")`,
+  );
+
+  // 使用 Playwright 的 dragTo 方法
+  await sourceCard.dragTo(targetCard);
+
+  // 等待动画和 API 调用
+  await page.waitForTimeout(1500);
+
+  console.log('[Task] 拖放依赖创建成功');
+}
+
+/**
+ * 打开 Task DAG 可视化
+ */
+export async function openTaskDAG(page: Page) {
+  console.log('[Task] 打开 DAG 可视化');
+
+  await page.click('button:has-text("DAG"), button:has-text("依赖关系图")');
+
+  // 等待 DAG 加载
+  await page.waitForSelector('[data-testid="task-dag-visualization"]', { timeout: 5000 });
+  await page.waitForTimeout(1000); // 等待图表渲染
+
+  console.log('[Task] DAG 可视化已打开');
+}
+
+/**
+ * 验证依赖关系是否存在
+ */
+export async function verifyDependencyExists(
+  page: Page,
+  sourceTaskTitle: string,
+  targetTaskTitle: string,
+): Promise<boolean> {
+  // 方式1: 在任务卡片中查找依赖指示器
+  const targetCard = page.locator(
+    `[data-testid="draggable-task-card"]:has-text("${targetTaskTitle}")`,
+  );
+  await targetCard.click();
+
+  const dependencyText = page.locator(`text=/依赖.*${sourceTaskTitle}/i`);
+  const exists = (await dependencyText.count()) > 0;
+
+  console.log(`[Task] 依赖关系 ${sourceTaskTitle} -> ${targetTaskTitle}: ${exists ? '存在' : '不存在'}`);
+  return exists;
+}
+
+/**
+ * 清理测试任务
+ */
+export async function cleanupTask(page: Page, taskTitle: string) {
+  console.log(`[Cleanup] 清理测试任务: ${taskTitle}`);
+
+  try {
+    await navigateToTasks(page);
+
+    const taskCard = page.locator(`[data-testid="draggable-task-card"]:has-text("${taskTitle}")`);
+
+    if ((await taskCard.count()) > 0) {
+      // 点击删除按钮
+      await taskCard.locator('button:has-text("删除"), button[aria-label*="删除"]').click();
+
+      // 确认删除
+      await page.click('button:has-text("确定"), button:has-text("确认")');
+
+      await page.waitForTimeout(1000);
+      console.log('[Cleanup] 清理成功');
+    }
+  } catch (error) {
+    console.log('[Cleanup] 清理失败:', error);
+  }
+}
+
+/**
+ * ========================================
+ * Command Palette Helpers
+ * ========================================
+ */
+
+/**
+ * 打开命令面板
+ */
+export async function openCommandPalette(page: Page) {
+  console.log('[CommandPalette] 打开命令面板');
+
+  const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
+  await page.keyboard.press(`${modifier}+KeyK`);
+
+  // 等待命令面板出现
+  await page.waitForSelector('[data-testid="command-palette"]', { timeout: 3000 });
+  await page.waitForTimeout(300);
+
+  console.log('[CommandPalette] 命令面板已打开');
+}
+
+/**
+ * 在命令面板中搜索
+ */
+export async function searchInCommandPalette(page: Page, query: string) {
+  console.log(`[CommandPalette] 搜索: "${query}"`);
+
+  const searchInput = page.getByTestId('command-palette-input');
+  await searchInput.fill(query);
+  await page.waitForTimeout(300); // Debounce
+
+  console.log('[CommandPalette] 搜索完成');
+}
+
+/**
+ * 关闭命令面板
+ */
+export async function closeCommandPalette(page: Page) {
+  console.log('[CommandPalette] 关闭命令面板');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(300);
+}
+
