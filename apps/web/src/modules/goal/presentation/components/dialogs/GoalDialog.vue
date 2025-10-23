@@ -188,6 +188,13 @@
               </v-row>
             </div>
           </v-window-item>
+
+          <!-- Auto Status Rules Tab -->
+          <v-window-item :value="3">
+            <div class="rules-section px-4 py-2">
+              <StatusRuleEditor />
+            </div>
+          </v-window-item>
         </v-window>
       </v-card-text>
     </v-card>
@@ -218,6 +225,7 @@ import { ref, computed, watch } from 'vue';
 import KeyResultDialog from './KeyResultDialog.vue';
 import WeightSuggestionPanel from '../weight/WeightSuggestionPanel.vue';
 import TemplateBrowser from '../template/TemplateBrowser.vue';
+import StatusRuleEditor from '../rules/StatusRuleEditor.vue';
 import { DuConfirmDialog } from '@dailyuse/ui';
 // types
 import { useGoalStore } from '../../stores/goalStore';
@@ -367,7 +375,8 @@ const activeTab = ref(0);
 const tabs = [
   { name: '基本信息', icon: 'mdi-information', color: 'primary' },
   { name: '关键结果', icon: 'mdi-target', color: 'success' },
-  { name: '动机分析', icon: 'mdi-lightbulb', color: 'warning' }
+  { name: '动机分析', icon: 'mdi-lightbulb', color: 'warning' },
+  { name: '规则设置', icon: 'mdi-robot', color: 'info' }
 ];
 
 // 预定义颜色
