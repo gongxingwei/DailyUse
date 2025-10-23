@@ -174,6 +174,52 @@
         </p>
       </v-col>
     </v-row>
+
+    <!-- 导出对话框 -->
+    <v-dialog v-model="exportDialog" max-width="400">
+      <v-card>
+        <v-card-title>
+          <v-icon class="mr-2">mdi-download</v-icon>
+          导出对比视图
+        </v-card-title>
+
+        <v-card-text>
+          <v-alert type="info" variant="tonal" density="compact" class="mb-4">
+            将当前对比视图导出为 PNG 图片
+          </v-alert>
+
+          <div class="export-info">
+            <div class="d-flex align-center mb-2">
+              <v-icon class="mr-2" size="small">mdi-check-circle</v-icon>
+              <span class="text-body-2">包含 {{ selectedGoals.length }} 个目标</span>
+            </div>
+            <div class="d-flex align-center mb-2">
+              <v-icon class="mr-2" size="small">mdi-check-circle</v-icon>
+              <span class="text-body-2">包含 DAG 可视化图</span>
+            </div>
+            <div class="d-flex align-center mb-2">
+              <v-icon class="mr-2" size="small">mdi-check-circle</v-icon>
+              <span class="text-body-2">包含对比统计数据</span>
+            </div>
+            <div class="d-flex align-center">
+              <v-icon class="mr-2" size="small">mdi-check-circle</v-icon>
+              <span class="text-body-2">高分辨率输出 (2x)</span>
+            </div>
+          </div>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn variant="text" @click="exportDialog = false">
+            取消
+          </v-btn>
+          <v-btn color="primary" variant="elevated" @click="confirmExport">
+            <v-icon start>mdi-download</v-icon>
+            导出
+          </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -191,6 +237,7 @@ const router = useRouter();
 const selectedGoals = ref<any[]>([]);
 const selectorRef = ref<InstanceType<typeof MultiGoalSelector> | null>(null);
 const dagRefs = ref<Map<string, InstanceType<typeof GoalDAGVisualization>>>(new Map());
+const exportDialog = ref(false);
 
 // 视口同步状态
 const currentViewport = ref<{ zoom: number; center: [number, number] } | null>(null);
@@ -222,8 +269,60 @@ const goBack = () => {
 };
 
 const handleExport = () => {
-  // TODO: 实现导出功能 (STORY-016 Task 5)
-  console.log('Export comparison view');
+  exportDialog.value = true;
+};
+
+const confirmExport = async () => {
+  if (selectedGoals.value.length < 2) {
+    console.warn('至少需要 2 个目标才能导出对比视图');
+    exportDialog.value = false;
+    return;
+  }
+
+  try {
+    // 使用 html2canvas 捕获整个对比视图
+    const { default: html2canvas } = await import('html2canvas');
+    
+    // 获取对比视图容器
+    const comparisonContainer = document.querySelector('.multi-goal-comparison-view');
+    if (!comparisonContainer) {
+      console.error('找不到对比视图容器');
+      exportDialog.value = false;
+      return;
+    }
+
+    // 关闭对话框
+    exportDialog.value = false;
+
+    // 等待对话框关闭动画完成
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    // 生成截图
+    const canvas = await html2canvas(comparisonContainer as HTMLElement, {
+      backgroundColor: '#ffffff',
+      scale: 2, // 高分辨率
+      logging: false,
+      useCORS: true,
+    });
+
+    // 转换为 Blob 并下载
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+        link.download = `goal-comparison-${selectedGoals.value.length}-goals-${timestamp}.png`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+        
+        console.log('对比视图已导出');
+      }
+    }, 'image/png');
+  } catch (error) {
+    console.error('导出对比视图失败:', error);
+    exportDialog.value = false;
+  }
 };
 
 // 视口同步处理
