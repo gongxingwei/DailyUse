@@ -10,6 +10,14 @@
 
     <!-- 全局 Snackbar 组件 -->
     <GlobalSnackbar />
+
+    <!-- 命令面板 (Cmd/Ctrl + K) -->
+    <CommandPalette
+      v-model="showCommandPalette"
+      :goals="[]"
+      :tasks="[]"
+      :reminders="[]"
+    />
   </v-app>
 </template>
 
@@ -18,9 +26,11 @@ import { onMounted, ref } from 'vue';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
 import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
+import CommandPalette from '@/shared/components/command-palette/CommandPalette.vue';
 import { logo128 as logo } from '@dailyuse/assets/images';
 
 const isLoading = ref(true);
+const showCommandPalette = ref(false);
 const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 
