@@ -164,6 +164,15 @@ export const appRoutes: RouteRecordRaw[] = [
             },
           },
           {
+            path: 'rules-demo',
+            name: 'goal-rules-demo',
+            component: () => import('@/modules/goal/presentation/views/StatusRulesDemoView.vue'),
+            meta: {
+              title: '规则测试器',
+              requiresAuth: true,
+            },
+          },
+          {
             path: ':id',
             name: 'goal-detail',
             component: () => import('@/modules/goal/presentation/views/GoalDetailView.vue'),
