@@ -111,6 +111,16 @@ export const appRoutes: RouteRecordRaw[] = [
             },
           },
           {
+            path: 'dependency-validation-demo',
+            name: 'task-dependency-demo',
+            component: () => import('@/modules/task/presentation/views/DependencyValidationDemoView.vue'),
+            meta: {
+              title: '依赖验证演示 (STORY-024)',
+              requiresAuth: true,
+              showInNav: import.meta.env.DEV, // 仅开发环境显示
+            },
+          },
+          {
             path: ':id',
             name: 'task-detail',
             component: () => import('@/modules/task/presentation/views/TaskDetailView.vue'),

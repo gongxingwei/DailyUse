@@ -184,7 +184,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { TaskContracts } from '@dailyuse/contracts';
 import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
@@ -194,6 +194,7 @@ import {
   taskTemplateApiClient, 
   taskDependencyApiClient 
 } from '@/modules/task/infrastructure/api/taskApiClient';
+import { taskAutoStatusService } from '@/modules/task/application/services/TaskAutoStatusService';
 
 // 类型别名
 type TaskClientDTO = TaskForDAG;
@@ -374,6 +375,48 @@ const isOverdue = (dateString: string): boolean => {
   return new Date(dateString) < new Date();
 };
 
+// Event subscriptions cleanup
+let unsubscribeStatus: (() => void) | null = null;
+let unsubscribeReady: (() => void) | null = null;
+let unsubscribeBlocked: (() => void) | null = null;
+
+// Setup event listeners for auto-status updates
+const setupEventListeners = () => {
+  // Subscribe to status change events
+  unsubscribeStatus = taskAutoStatusService.onStatusChanged((event) => {
+    console.log('[TaskListView] Task status changed:', event);
+    
+    // Update local task list
+    const task = tasks.value.find(t => t.uuid === event.taskUuid);
+    if (task) {
+      task.status = event.newStatus;
+    }
+  });
+
+  // Subscribe to task ready events
+  unsubscribeReady = taskAutoStatusService.onTaskReady((event) => {
+    console.log('[TaskListView] Task ready:', event);
+    
+    // TODO: Show notification to user
+    // 可以使用 Vuetify 的 Snackbar 或第三方通知库
+    // Example: useNotification().success({
+    //   title: '任务已就绪',
+    //   message: `${event.title} 可以开始了`,
+    // });
+  });
+
+  // Subscribe to task blocked events
+  unsubscribeBlocked = taskAutoStatusService.onTaskBlocked((event) => {
+    console.log('[TaskListView] Task blocked:', event);
+    
+    // TODO: Show notification to user
+    // Example: useNotification().warning({
+    //   title: '任务被阻塞',
+    //   message: `等待 ${event.blockingTasks.length} 个前置任务完成`,
+    // });
+  });
+};
+
 // 切换到 DAG 视图时加载依赖
 watch(() => viewMode.value, async (newMode) => {
   if (newMode === 'dag' && dependencies.value.length === 0 && tasks.value.length > 0) {
@@ -384,6 +427,14 @@ watch(() => viewMode.value, async (newMode) => {
 // Lifecycle
 onMounted(async () => {
   await loadTasks();
+  setupEventListeners();
+});
+
+onUnmounted(() => {
+  // Cleanup event listeners
+  if (unsubscribeStatus) unsubscribeStatus();
+  if (unsubscribeReady) unsubscribeReady();
+  if (unsubscribeBlocked) unsubscribeBlocked();
 });
 </script>
 
