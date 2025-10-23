@@ -14,19 +14,20 @@
     <!-- 命令面板 (Cmd/Ctrl + K) -->
     <CommandPalette
       v-model="showCommandPalette"
-      :goals="[]"
-      :tasks="[]"
-      :reminders="[]"
+      :goals="goals"
+      :tasks="tasks"
+      :reminders="reminders"
     />
   </v-app>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { onMounted, ref, computed } from 'vue';
 import { useSettingStore } from '@/modules/setting/presentation/stores/settingStore';
 import { useAccountStore } from '@/modules/account/presentation/stores/accountStore';
 import GlobalSnackbar from '@/shared/components/GlobalSnackbar.vue';
 import CommandPalette from '@/shared/components/command-palette/CommandPalette.vue';
+import { searchDataProvider } from '@/shared/services/SearchDataProvider';
 import { logo128 as logo } from '@dailyuse/assets/images';
 
 const isLoading = ref(true);
@@ -34,12 +35,21 @@ const showCommandPalette = ref(false);
 const settingStore = useSettingStore();
 const accountStore = useAccountStore();
 
+// Computed properties for search data (reactive to cache updates)
+const goals = computed(() => searchDataProvider.getGoals());
+const tasks = computed(() => searchDataProvider.getTasks());
+const reminders = computed(() => searchDataProvider.getReminders());
+
 onMounted(async () => {
   try {
     // 并行初始化各个系统
     await Promise.all([
       // 初始化设置
       settingStore.initializeSettings(),
+      // 加载搜索数据 (后台加载，不阻塞应用启动)
+      searchDataProvider.loadData().catch((error) => {
+        console.error('搜索数据加载失败:', error);
+      }),
     ]);
 
     // 恢复账户信息

@@ -1,6 +1,8 @@
 import { apiClient } from '@/shared/api/instances';
 import { type TaskContracts } from '@dailyuse/contracts';
 
+type CreateTaskTemplateRequest = TaskContracts.CreateTaskTemplateRequest;
+
 /**
  * Task Template API 客户端
  * 负责任务模板相关的API调用
