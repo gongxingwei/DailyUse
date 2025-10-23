@@ -18,6 +18,18 @@
 
             <!-- 操作按钮组 -->
             <div class="action-buttons">
+                <!-- 查看依赖关系图按钮 -->
+                <v-btn 
+                    v-if="taskStore.getAllTaskTemplates.length > 0" 
+                    color="info" 
+                    variant="outlined" 
+                    size="large"
+                    prepend-icon="mdi-graph-outline" 
+                    @click="showDependencyDialog = true" 
+                    class="view-dag-button">
+                    查看依赖关系图
+                </v-btn>
+
                 <!-- 删除所有模板按钮 -->
                 <v-btn v-if="taskStore.getAllTaskTemplates.length > 0" color="error" variant="outlined" size="large"
                     prepend-icon="mdi-delete-sweep" @click="showDeleteAllDialog = true" class="delete-all-button">
@@ -53,9 +65,14 @@
                 </v-card-text>
             </v-card>
 
-            <!-- 使用 TaskTemplateCard 组件 -->
-            <TaskTemplateCard v-for="template in filteredTemplates" :key="template.uuid" :template="template"
-                :status-filters="statusFilters" />
+            <!-- 使用 DraggableTaskCard 组件 (支持拖放创建依赖关系) -->
+            <DraggableTaskCard 
+                v-for="template in filteredTemplates" 
+                :key="template.uuid" 
+                :template="template"
+                :enable-drag="true"
+                @dependency-created="handleDependencyCreated"
+            />
         </div>
 
         
@@ -109,24 +126,60 @@
 
         <!-- 任务模板编辑对话框 -->
         <TaskTemplateDialog ref="taskTemplateDialogRef" />
+
+        <!-- 依赖关系图对话框 -->
+        <v-dialog v-model="showDependencyDialog" max-width="1400px" max-height="800px">
+            <v-card>
+                <v-card-title class="d-flex justify-space-between align-center">
+                    <span class="text-h6">
+                        <v-icon>mdi-graph-outline</v-icon>
+                        任务依赖关系图
+                    </span>
+                    <v-btn icon variant="text" @click="showDependencyDialog = false">
+                        <v-icon>mdi-close</v-icon>
+                    </v-btn>
+                </v-card-title>
+                <v-card-text style="height: 600px;">
+                    <TaskDAGVisualization
+                        v-if="showDependencyDialog"
+                        :tasks="taskStore.getAllTaskTemplates"
+                        :dependencies="allDependencies"
+                        :compact="false"
+                    />
+                </v-card-text>
+                <v-card-actions>
+                    <v-spacer />
+                    <v-btn variant="text" @click="showDependencyDialog = false">
+                        关闭
+                    </v-btn>
+                </v-card-actions>
+            </v-card>
+        </v-dialog>
     </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watchEffect } from 'vue';
 import { useTaskStore } from '../stores/taskStore';
-import TaskTemplateCard from './cards/TaskTemplateCard.vue';
+import DraggableTaskCard from './cards/DraggableTaskCard.vue';
+import TaskDAGVisualization from './dag/TaskDAGVisualization.vue';
 import TaskTemplateDialog from './dialogs/TaskTemplateDialog.vue';
 import TemplateSelectionDialog from './dialogs/TemplateSelectionDialog.vue';
-import { TaskTemplate } from '@dailyuse/domain-client';
+import type { TaskContracts } from '@dailyuse/contracts';
 // composables
 import { useTask } from '../composables/useTask';
+import { taskDependencyApiClient } from '../../infrastructure/api/taskApiClient';
+
+type TaskDependencyClientDTO = TaskContracts.TaskDependencyClientDTO;
+type TaskTemplateClientDTO = TaskContracts.TaskTemplateClientDTO;
 
 const taskStore = useTaskStore();
 const currentStatus = ref('active'); // 设置为 active，因为新创建的模板现在直接激活
 const showDeleteDialog = ref(false);
 const showDeleteAllDialog = ref(false);
-const selectedTemplate = ref<TaskTemplate | null>(null);
+const selectedTemplate = ref<TaskTemplateClientDTO | null>(null);
+const showDependencyDialog = ref(false);
+const allDependencies = ref<TaskDependencyClientDTO[]>([]);
 
 // component refs
 const taskTemplateDialogRef = ref<InstanceType<typeof TaskTemplateDialog> | null>(null);
@@ -230,6 +283,58 @@ const getEmptyStateIconColor = () => {
     return getStatusChipColor(currentStatus.value);
 };
 
+/**
+ * Handle dependency created event from DraggableTaskCard
+ * Refresh the dependencies list for DAG visualization
+ */
+const handleDependencyCreated = async (sourceUuid: string, targetUuid: string) => {
+    console.log('✅ [TaskTemplateManagement] 依赖关系已创建:', {
+        source: sourceUuid,
+        target: targetUuid
+    });
+    
+    // Refresh dependencies list
+    await loadAllDependencies();
+    
+    // Optionally show success message or open DAG dialog
+    // showDependencyDialog.value = true;
+};
+
+/**
+ * Load all task dependencies for DAG visualization
+ */
+const loadAllDependencies = async () => {
+    try {
+        // Get all template UUIDs
+        const templateUuids = taskStore.getAllTaskTemplates.map(t => t.uuid);
+        
+        // Load dependencies for each template
+        const dependenciesPromises = templateUuids.map(uuid => 
+            taskDependencyApiClient.getDependencies(uuid)
+        );
+        
+        const results = await Promise.all(dependenciesPromises);
+        
+        // Flatten and deduplicate dependencies
+        const allDeps: TaskDependencyClientDTO[] = results.flat();
+        const uniqueDeps = Array.from(
+            new Map(allDeps.map((dep: TaskDependencyClientDTO) => [dep.uuid, dep])).values()
+        );
+        
+        allDependencies.value = uniqueDeps;
+        
+        console.log('📊 [TaskTemplateManagement] 加载依赖关系:', {
+            totalTemplates: templateUuids.length,
+            totalDependencies: uniqueDeps.length
+        });
+    } catch (error) {
+        console.error('❌ [TaskTemplateManagement] 加载依赖关系失败:', error);
+    }
+};
+
+// Load dependencies on mount
+loadAllDependencies();
+
 
 // const pauseTemplate = (template: TaskTemplate) => {
 //     handlePauseTaskTemplate(template.uuid)
@@ -290,6 +395,11 @@ const getEmptyStateIconColor = () => {
 }
 
 .create-button {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.view-dag-button {
     font-weight: 600;
     letter-spacing: 0.5px;
 }
