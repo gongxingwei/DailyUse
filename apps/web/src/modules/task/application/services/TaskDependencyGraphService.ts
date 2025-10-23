@@ -6,9 +6,10 @@
  */
 
 import { TaskContracts } from '@dailyuse/contracts';
+import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
 
 // 类型别名，简化代码
-type TaskClientDTO = TaskContracts.TaskInstanceClientDTO;
+type TaskClientDTO = TaskForDAG;
 type TaskDependencyClientDTO = TaskContracts.TaskDependencyClientDTO;
 
 /**
@@ -42,7 +43,7 @@ export interface GraphNode {
     uuid: string;
     title: string;
     status: string;
-    priority: string;
+    priority?: string;
     estimatedMinutes?: number;
     dueDate?: string;
     tags?: string[];
@@ -140,11 +141,12 @@ export class TaskDependencyGraphService {
       const status = taskDependencyStatus.get(task.uuid) || 'PENDING';
       const color = this.getTaskColor(task, status);
       const symbolSize = this.calculateNodeSize(task);
+      const priority = task.priority || 'MEDIUM';
 
       return {
         id: task.uuid,
         name: task.title,
-        value: task.priority === 'CRITICAL' ? 100 : task.priority === 'HIGH' ? 75 : task.priority === 'MEDIUM' ? 50 : 25,
+        value: priority === 'CRITICAL' ? 100 : priority === 'HIGH' ? 75 : priority === 'MEDIUM' ? 50 : 25,
         category: this.getTaskCategory(task),
         symbolSize,
         label: {
@@ -287,8 +289,9 @@ export class TaskDependencyGraphService {
     let baseSize = 50;
 
     // 根据优先级调整大小
-    if (task.priority === 'CRITICAL') baseSize += 20;
-    else if (task.priority === 'HIGH') baseSize += 10;
+    const priority = task.priority || 'MEDIUM';
+    if (priority === 'CRITICAL') baseSize += 20;
+    else if (priority === 'HIGH') baseSize += 10;
 
     // 根据预估时长调整大小（可选）
     if (task.estimatedMinutes) {

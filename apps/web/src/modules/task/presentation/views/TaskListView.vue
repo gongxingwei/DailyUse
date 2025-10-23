@@ -105,7 +105,7 @@
                 v-for="task in filteredTasks"
                 :key="task.uuid"
                 :title="task.title"
-                :subtitle="task.description"
+                :subtitle="task.description || undefined"
                 @click="handleTaskClick(task)"
               >
                 <template #prepend>
@@ -119,6 +119,7 @@
                   <div class="d-flex align-center gap-2">
                     <!-- 优先级标签 -->
                     <v-chip
+                      v-if="task.priority"
                       :color="getPriorityColor(task.priority)"
                       size="small"
                       variant="flat"
@@ -186,11 +187,16 @@
 import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { TaskContracts } from '@dailyuse/contracts';
+import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
+import { taskTemplateToDAG } from '@/modules/task/types/task-dag.types';
 import TaskDAGVisualization from '@/modules/task/presentation/components/dag/TaskDAGVisualization.vue';
-// import { taskApiClient } from '@/modules/task/infrastructure/api/taskApiClient';
+import { 
+  taskTemplateApiClient, 
+  taskDependencyApiClient 
+} from '@/modules/task/infrastructure/api/taskApiClient';
 
 // 类型别名
-type TaskClientDTO = TaskContracts.TaskInstanceClientDTO;
+type TaskClientDTO = TaskForDAG;
 type TaskDependencyClientDTO = TaskContracts.TaskDependencyClientDTO;
 
 const router = useRouter();
@@ -253,14 +259,22 @@ const filteredTasks = computed(() => {
 const loadTasks = async () => {
   loading.value = true;
   try {
-    // TODO: 调用实际的 API
-    // tasks.value = await taskApiClient.getTasks();
+    // 加载任务模板（用于 DAG 可视化）
+    const response = await taskTemplateApiClient.getTemplates({
+      status: 'ACTIVE',
+      limit: 100,
+    });
     
-    // 临时模拟数据
-    tasks.value = [];
-    dependencies.value = [];
+    // 转换为 DAG 格式
+    if (response.data) {
+      tasks.value = response.data.map((template: any) => 
+        taskTemplateToDAG(template as TaskContracts.TaskTemplateClientDTO)
+      );
+    }
   } catch (error) {
     console.error('Failed to load tasks:', error);
+    // 降级到空数组
+    tasks.value = [];
   } finally {
     loading.value = false;
   }
@@ -268,13 +282,25 @@ const loadTasks = async () => {
 
 const loadDependencies = async () => {
   try {
-    // TODO: 加载所有任务的依赖关系
-    // const allDependencies = [];
-    // for (const task of tasks.value) {
-    //   const deps = await taskApiClient.taskDependency.getDependencies(task.uuid);
-    //   allDependencies.push(...deps);
-    // }
-    // dependencies.value = allDependencies;
+    // 加载所有任务的依赖关系
+    const allDependencies: TaskDependencyClientDTO[] = [];
+    
+    for (const task of tasks.value) {
+      try {
+        const deps = await taskDependencyApiClient.getDependencies(task.uuid);
+        allDependencies.push(...deps);
+      } catch (error) {
+        console.error(`Failed to load dependencies for task ${task.uuid}:`, error);
+        // 继续加载其他任务的依赖
+      }
+    }
+    
+    // 去重（基于 uuid）
+    const uniqueDeps = Array.from(
+      new Map(allDependencies.map(dep => [dep.uuid, dep])).values()
+    );
+    
+    dependencies.value = uniqueDeps;
   } catch (error) {
     console.error('Failed to load dependencies:', error);
   }
@@ -290,23 +316,26 @@ const handleTaskClick = (task: TaskClientDTO) => {
 
 const toggleTaskStatus = async (task: TaskClientDTO) => {
   try {
-    const newStatus = task.status === 'COMPLETED' ? 'IN_PROGRESS' : 'COMPLETED';
-    // TODO: 调用 API 更新状态
-    // await taskApiClient.updateTask(task.uuid, { status: newStatus });
+    // TODO: 实现状态切换
+    // 由于 TaskForDAG 可能来自 Template 或 Instance，需要判断
+    console.log('Toggle task status:', task.uuid);
+    
+    // 临时直接修改本地状态
+    const newStatus = task.status === 'COMPLETED' ? 'ACTIVE' : 'COMPLETED';
     task.status = newStatus;
   } catch (error) {
     console.error('Failed to toggle task status:', error);
   }
 };
 
-const getPriorityColor = (priority: string): string => {
+const getPriorityColor = (priority?: string): string => {
   const colors: Record<string, string> = {
     CRITICAL: 'error',
     HIGH: 'warning',
     MEDIUM: 'info',
     LOW: 'success',
   };
-  return colors[priority] || 'default';
+  return colors[priority || 'MEDIUM'] || 'default';
 };
 
 const getStatusColor = (status: string): string => {
@@ -347,7 +376,7 @@ const isOverdue = (dateString: string): boolean => {
 
 // 切换到 DAG 视图时加载依赖
 watch(() => viewMode.value, async (newMode) => {
-  if (newMode === 'dag' && dependencies.value.length === 0) {
+  if (newMode === 'dag' && dependencies.value.length === 0 && tasks.value.length > 0) {
     await loadDependencies();
   }
 });
