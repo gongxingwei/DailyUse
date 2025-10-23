@@ -945,6 +945,12 @@ model TaskTemplate {
   folderUuid        String?   @map("folder_uuid")
   lastGeneratedDate DateTime? @map("last_generated_date")
   generateAheadDays Int       @map("generate_ahead_days")
+  
+  // Dependency status fields
+  isBlocked        Boolean @default(false) @map("is_blocked")
+  dependencyStatus String  @default("NONE") @map("dependency_status") // DependencyStatus: 'NONE', 'WAITING', 'READY', 'BLOCKED'
+  blockingReason   String? @map("blocking_reason") @db.Text
+  
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   deletedAt         DateTime? @map("deleted_at")
@@ -979,6 +985,10 @@ model TaskTemplate {
   account   Account               @relation(fields: [accountUuid], references: [uuid], onDelete: Cascade)
   instances TaskInstance[]
   history   TaskTemplateHistory[]
+  
+  // Dependency relations
+  predecessors TaskDependency[] @relation("TaskSuccessors")
+  successors   TaskDependency[] @relation("TaskPredecessors")
 
   @@index([accountUuid])
   @@index([status])
@@ -1030,6 +1040,27 @@ model TaskTemplateHistory {
 
   @@index([templateUuid])
   @@map("task_template_history")
+}
+
+/// TaskDependency 实体
+/// 任务依赖关系 - 定义任务之间的前后置关系
+model TaskDependency {
+  uuid                String   @id @default(cuid())
+  predecessorTaskUuid String   @map("predecessor_task_uuid")
+  successorTaskUuid   String   @map("successor_task_uuid")
+  dependencyType      String   @default("FINISH_TO_START") @map("dependency_type") // DependencyType
+  lagDays             Int?     @map("lag_days")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  predecessor TaskTemplate @relation("TaskPredecessors", fields: [predecessorTaskUuid], references: [uuid], onDelete: Cascade)
+  successor   TaskTemplate @relation("TaskSuccessors", fields: [successorTaskUuid], references: [uuid], onDelete: Cascade)
+
+  @@unique([predecessorTaskUuid, successorTaskUuid])
+  @@index([predecessorTaskUuid])
+  @@index([successorTaskUuid])
+  @@map("task_dependencies")
 }
 
 /// TaskStatistics 聚合根

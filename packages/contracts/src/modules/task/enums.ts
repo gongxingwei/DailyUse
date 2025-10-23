@@ -88,3 +88,69 @@ export enum ReminderTimeUnit {
   HOURS = 'HOURS',
   DAYS = 'DAYS',
 }
+
+// ============ 依赖关系枚举 ============
+
+/**
+ * 依赖类型
+ * 定义任务之间的依赖关系类型
+ */
+export enum DependencyType {
+  /**
+   * 完成-开始（最常见）
+   * Predecessor 完成后，Successor 才能开始
+   * Example: "写代码" 完成后，"代码审查" 才能开始
+   */
+  FINISH_TO_START = 'FINISH_TO_START',
+
+  /**
+   * 开始-开始
+   * Predecessor 开始后，Successor 才能开始
+   * Example: "设计" 开始后，"原型开发" 才能开始
+   */
+  START_TO_START = 'START_TO_START',
+
+  /**
+   * 完成-完成
+   * Predecessor 完成后，Successor 才能完成
+   * Example: "前端开发" 完成后，"整体测试" 才能完成
+   */
+  FINISH_TO_FINISH = 'FINISH_TO_FINISH',
+
+  /**
+   * 开始-完成（少见）
+   * Predecessor 开始后，Successor 才能完成
+   * Example: "交接培训" 开始后，"旧系统维护" 才能完成
+   */
+  START_TO_FINISH = 'START_TO_FINISH',
+}
+
+/**
+ * 依赖状态
+ * 表示任务的依赖满足情况
+ */
+export enum DependencyStatus {
+  /**
+   * 无依赖
+   * 任务没有前置依赖，可以立即开始
+   */
+  NONE = 'NONE',
+
+  /**
+   * 等待中
+   * 任务有前置依赖，但前置任务尚未完成
+   */
+  WAITING = 'WAITING',
+
+  /**
+   * 就绪
+   * 所有前置依赖已满足，任务可以开始
+   */
+  READY = 'READY',
+
+  /**
+   * 被阻塞
+   * 前置任务被阻塞或有问题，导致此任务也被阻塞
+   */
+  BLOCKED = 'BLOCKED',
+}

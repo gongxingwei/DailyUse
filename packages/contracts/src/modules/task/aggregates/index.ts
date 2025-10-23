@@ -34,3 +34,23 @@ export type {
 } from './TaskStatisticsServer';
 
 export type { TaskStatisticsClientDTO, TaskStatisticsClient, ChartData, TrendData } from './TaskStatisticsClient';
+
+// TaskDependency
+export type {
+  TaskDependencyServerDTO,
+  TaskTemplateWithDependenciesServerDTO,
+  CircularDependencyValidationResult,
+  DependencyChainServerDTO,
+} from './TaskDependencyServer';
+
+export type {
+  TaskDependencyClientDTO,
+  TaskTemplateWithDependenciesClientDTO,
+  DependencyChainClientDTO,
+  CreateTaskDependencyRequest,
+  UpdateTaskDependencyRequest,
+  ValidateDependencyRequest,
+  ValidateDependencyResponse,
+  BatchCreateDependenciesRequest,
+  BatchCreateDependenciesResponse,
+} from './TaskDependencyClient';
