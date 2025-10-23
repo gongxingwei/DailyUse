@@ -384,10 +384,92 @@ export class TaskStatisticsApiClient {
 }
 
 // 创建单例实例
+/**
+ * Task Dependency API 客户端
+ * 负责任务依赖关系相关的API调用
+ */
+export class TaskDependencyApiClient {
+  private readonly baseUrl = '/tasks';
+
+  /**
+   * 创建任务依赖关系
+   */
+  async createDependency(
+    taskUuid: string,
+    request: TaskContracts.CreateTaskDependencyRequest,
+  ): Promise<TaskContracts.TaskDependencyClientDTO> {
+    const data = await apiClient.post(`${this.baseUrl}/${taskUuid}/dependencies`, request);
+    return data;
+  }
+
+  /**
+   * 获取任务的所有前置依赖
+   */
+  async getDependencies(taskUuid: string): Promise<TaskContracts.TaskDependencyClientDTO[]> {
+    const data = await apiClient.get(`${this.baseUrl}/${taskUuid}/dependencies`);
+    return data;
+  }
+
+  /**
+   * 获取依赖此任务的所有任务（后续任务）
+   */
+  async getDependents(taskUuid: string): Promise<TaskContracts.TaskDependencyClientDTO[]> {
+    const data = await apiClient.get(`${this.baseUrl}/${taskUuid}/dependents`);
+    return data;
+  }
+
+  /**
+   * 删除依赖关系
+   */
+  async deleteDependency(uuid: string): Promise<void> {
+    await apiClient.delete(`/tasks/dependencies/${uuid}`);
+  }
+
+  /**
+   * 验证依赖关系（不实际创建）
+   */
+  async validateDependency(
+    request: TaskContracts.ValidateDependencyRequest,
+  ): Promise<TaskContracts.ValidateDependencyResponse> {
+    const data = await apiClient.post('/tasks/dependencies/validate', request);
+    return data;
+  }
+
+  /**
+   * 获取任务的完整依赖链信息
+   */
+  async getDependencyChain(taskUuid: string): Promise<TaskContracts.DependencyChainClientDTO> {
+    const data = await apiClient.get(`${this.baseUrl}/${taskUuid}/dependency-chain`);
+    return data;
+  }
+
+  /**
+   * 更新依赖关系
+   */
+  async updateDependency(
+    uuid: string,
+    request: TaskContracts.UpdateTaskDependencyRequest,
+  ): Promise<TaskContracts.TaskDependencyClientDTO> {
+    const data = await apiClient.put(`/tasks/dependencies/${uuid}`, request);
+    return data;
+  }
+
+  /**
+   * 批量创建依赖关系
+   */
+  async createDependenciesBatch(
+    request: TaskContracts.BatchCreateDependenciesRequest,
+  ): Promise<TaskContracts.BatchCreateDependenciesResponse> {
+    const data = await apiClient.post('/tasks/dependencies/batch', request);
+    return data;
+  }
+}
+
 export const taskTemplateApiClient = new TaskTemplateApiClient();
 export const taskInstanceApiClient = new TaskInstanceApiClient();
 export const taskMetaTemplateApiClient = new TaskMetaTemplateApiClient();
 export const taskStatisticsApiClient = new TaskStatisticsApiClient();
+export const taskDependencyApiClient = new TaskDependencyApiClient();
 
 // 导出所有API客户端
 export const taskApiClients = {
