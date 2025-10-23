@@ -1,6 +1,12 @@
-import type { ITaskInstanceRepository, ITaskTemplateRepository } from '@dailyuse/domain-server';
+import type {
+  ITaskInstanceRepository,
+  ITaskTemplateRepository,
+  ITaskDependencyRepository,
+  TaskDependencyService,
+} from '@dailyuse/domain-server';
 import { PrismaTaskInstanceRepository } from '../repositories/PrismaTaskInstanceRepository';
 import { PrismaTaskTemplateRepository } from '../repositories/PrismaTaskTemplateRepository';
+import { PrismaTaskDependencyRepository } from '../repositories/PrismaTaskDependencyRepository';
 import { prisma } from '@/config/prisma';
 
 /**
@@ -11,6 +17,8 @@ export class TaskContainer {
   private static instance: TaskContainer;
   private taskInstanceRepository: ITaskInstanceRepository | null = null;
   private taskTemplateRepository: ITaskTemplateRepository | null = null;
+  private taskDependencyRepository: ITaskDependencyRepository | null = null;
+  private taskDependencyService: TaskDependencyService | null = null;
 
   private constructor() {}
 
@@ -58,5 +66,45 @@ export class TaskContainer {
    */
   setTaskTemplateRepository(repository: ITaskTemplateRepository): void {
     this.taskTemplateRepository = repository;
+  }
+
+  /**
+   * 获取 TaskDependency 仓储
+   * 使用懒加载，第一次访问时创建实例
+   */
+  getTaskDependencyRepository(): ITaskDependencyRepository {
+    if (!this.taskDependencyRepository) {
+      this.taskDependencyRepository = new PrismaTaskDependencyRepository(prisma);
+    }
+    return this.taskDependencyRepository!;
+  }
+
+  /**
+   * 设置 TaskDependency 仓储（用于测试）
+   */
+  setTaskDependencyRepository(repository: ITaskDependencyRepository): void {
+    this.taskDependencyRepository = repository;
+  }
+
+  /**
+   * 获取 TaskDependency 领域服务
+   * 使用懒加载，第一次访问时创建实例
+   */
+  getTaskDependencyService(): TaskDependencyService {
+    if (!this.taskDependencyService) {
+      const { TaskDependencyService } = require('@dailyuse/domain-server');
+      this.taskDependencyService = new TaskDependencyService(
+        this.getTaskDependencyRepository(),
+        this.getTaskTemplateRepository(),
+      );
+    }
+    return this.taskDependencyService!;
+  }
+
+  /**
+   * 设置 TaskDependency 领域服务（用于测试）
+   */
+  setTaskDependencyService(service: TaskDependencyService): void {
+    this.taskDependencyService = service;
   }
 }
