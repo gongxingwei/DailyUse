@@ -153,93 +153,10 @@
       </v-col>
     </v-row>
 
-    <!-- 对比统计面板 (占位符) -->
+    <!-- 对比统计面板 -->
     <v-row v-if="selectedGoals.length >= 2" class="mt-4">
       <v-col cols="12">
-        <v-card>
-          <v-card-title>
-            <v-icon class="mr-2">mdi-chart-box</v-icon>
-            对比统计
-          </v-card-title>
-          <v-card-text>
-            <v-simple-table>
-              <template #default>
-                <thead>
-                  <tr>
-                    <th class="text-left">指标</th>
-                    <th
-                      v-for="goal in selectedGoals"
-                      :key="goal.uuid"
-                      class="text-left"
-                    >
-                      {{ goal.title }}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>关键结果数量</td>
-                    <td
-                      v-for="goal in selectedGoals"
-                      :key="`kr-${goal.uuid}`"
-                    >
-                      {{ goal.keyResults?.length || 0 }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>整体进度</td>
-                    <td
-                      v-for="goal in selectedGoals"
-                      :key="`progress-${goal.uuid}`"
-                    >
-                      <v-progress-linear
-                        :model-value="goal.progressPercentage || 0"
-                        :color="getProgressColor(goal.progressPercentage || 0)"
-                        height="8"
-                        rounded
-                      />
-                      <span class="text-caption ml-2">
-                        {{ goal.progressPercentage || 0 }}%
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>状态</td>
-                    <td
-                      v-for="goal in selectedGoals"
-                      :key="`status-${goal.uuid}`"
-                    >
-                      <v-chip
-                        size="small"
-                        :color="getStatusColor(goal)"
-                      >
-                        {{ getStatusText(goal) }}
-                      </v-chip>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>创建时间</td>
-                    <td
-                      v-for="goal in selectedGoals"
-                      :key="`created-${goal.uuid}`"
-                    >
-                      {{ formatDate(goal.createdAt) }}
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>更新时间</td>
-                    <td
-                      v-for="goal in selectedGoals"
-                      :key="`updated-${goal.uuid}`"
-                    >
-                      {{ formatDate(goal.updatedAt) }}
-                    </td>
-                  </tr>
-                </tbody>
-              </template>
-            </v-simple-table>
-          </v-card-text>
-        </v-card>
+        <comparison-stats-panel :goals="selectedGoals" />
       </v-col>
     </v-row>
 
@@ -265,6 +182,7 @@ import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import MultiGoalSelector from '../components/comparison/MultiGoalSelector.vue';
 import GoalDAGVisualization from '../components/dag/GoalDAGVisualization.vue';
+import ComparisonStatsPanel from '../components/comparison/ComparisonStatsPanel.vue';
 
 // Router
 const router = useRouter();
@@ -362,23 +280,6 @@ const getStatusText = (goal: any): string => {
   };
   return textMap[goal.status] || goal.status;
 };
-
-const getProgressColor = (progress: number): string => {
-  if (progress >= 80) return 'success';
-  if (progress >= 50) return 'primary';
-  if (progress >= 20) return 'warning';
-  return 'error';
-};
-
-const formatDate = (timestamp: number | null | undefined): string => {
-  if (!timestamp) return '-';
-  const date = new Date(timestamp);
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  });
-};
 </script>
 
 <style scoped>
@@ -392,14 +293,5 @@ const formatDate = (timestamp: number | null | undefined): string => {
 
 .dag-preview {
   margin-top: 16px;
-}
-
-.v-simple-table {
-  width: 100%;
-}
-
-.v-simple-table th,
-.v-simple-table td {
-  padding: 12px !important;
 }
 </style>
