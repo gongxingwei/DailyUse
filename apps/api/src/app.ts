@@ -9,7 +9,8 @@ import cors from 'cors';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import compression from 'compression';
-import accountRouter from './modules/account/interface/http/accountRoutes';
+// TEMPORARY: Comment out AccountController until we properly refactor it
+// import accountRouter from './modules/account/interface/http/accountRoutes';
 import authenticationRouter from './modules/authentication/interface/http/authenticationRoutes';
 import taskRouter from './modules/task/interface/http/routes/index';
 import goalRouter from './modules/goal/interface/http/goalRoutes';
@@ -26,7 +27,7 @@ import editorRouter from './modules/editor/interface/http/routes/editorRoutes';
 import repositoryRouter from './modules/repository/interface/http/routes/repositoryRoutes';
 import metricsRouter from './modules/metrics/interface/http/routes/metricsRoutes';
 
-import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
+import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares/index';
 import { setupSwagger } from './config/swagger';
 import { createLogger } from '@dailyuse/utils';
 import { performanceMiddleware } from './middleware/performance.middleware';
@@ -69,7 +70,8 @@ api.get('/health', (_req: Request, res: Response) => {
 });
 
 // 挂载账户路由到api路由器
-api.use('', accountRouter);
+// TEMPORARY: Comment out account router until we properly refactor AccountController
+// api.use('', accountRouter);
 
 // 挂载认证路由到 api 路由器 (登录/登出/刷新等) - 不需要认证
 api.use('', authenticationRouter);

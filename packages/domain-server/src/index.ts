@@ -3,37 +3,31 @@
  */
 
 // Account 模块
-export * from './account';
+export * from './account/index';
 
 // Authentication 模块
-export * from './authentication';
+export * from './authentication/index';
 
 // Repository 模块
-export * from './repository';
+export * from './repository/index';
 
 // Task 模块
-export * from './task';
+export * from './task/index';
 
 // Setting 模块
-export * from './setting';
+export * from './setting/index';
 
 // Goal 模块
-export * from './goal';
+export * from './goal/index';
 
 // Reminder 模块
-export * from './reminder';
+export * from './reminder/index';
 
 // Notification 模块
-export * from './notification';
+export * from './notification/index';
 
 // Editor 模块
-export * from './editor';
+export * from './editor/index';
 
 // Schedule 模块
-export * from './schedule';
-
-// Export the domain modules for importable aggregates
-export * from './account';
-export * from './goal';
-export * from './reminder';
-export * from './task';
+export * from './schedule/index';
