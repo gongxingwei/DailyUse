@@ -108,4 +108,15 @@ body,
   height: 100%;
   margin: 0;
 }
+
+/* Theme transition styles */
+body.theme-transition,
+body.theme-transition *,
+body.theme-transition *::before,
+body.theme-transition *::after {
+  transition: background-color 0.3s ease-in-out, 
+              color 0.3s ease-in-out, 
+              border-color 0.3s ease-in-out !important;
+  transition-delay: 0s !important;
+}
 </style>

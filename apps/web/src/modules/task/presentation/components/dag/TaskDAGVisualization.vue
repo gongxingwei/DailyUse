@@ -127,6 +127,7 @@ import {
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
 import type { EChartsOption } from 'echarts';
+import { useEChartsTheme, getEChartsThemeColors } from '@/shared/composables/useEChartsTheme';
 
 import { TaskContracts } from '@dailyuse/contracts';
 import type { TaskForDAG } from '@/modules/task/types/task-dag.types';
@@ -181,6 +182,9 @@ const containerSize = ref({ width: 0, height: 0 });
 const isUpdatingViewport = ref(false);
 const currentZoom = ref(1);
 const currentCenter = ref<[number, number]>([0, 0]);
+
+// Theme integration
+useEChartsTheme(chartRef, () => dagOption.value);
 
 // 图例数据
 const taskStatusLegend = [
@@ -257,8 +261,10 @@ const displayGraphData = computed<GraphData>(() => {
 
 const dagOption = computed<EChartsOption>(() => {
   const { nodes, edges, categories } = displayGraphData.value;
+  const themeColors = getEChartsThemeColors();
 
   const baseOption: EChartsOption = {
+    backgroundColor: themeColors.backgroundColor,
     tooltip: {
       trigger: 'item',
       formatter: (params: any) => {
