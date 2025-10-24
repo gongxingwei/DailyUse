@@ -24,10 +24,12 @@ import userSettingRoutes from './modules/setting/interface/http/routes/userSetti
 // import themeRoutes from './modules/theme/interface/http/themeRoutes';
 import editorRouter from './modules/editor/interface/http/routes/editorRoutes';
 import repositoryRouter from './modules/repository/interface/http/routes/repositoryRoutes';
+import metricsRouter from './modules/metrics/interface/http/routes/metricsRoutes';
 
 import { authMiddleware, optionalAuthMiddleware } from './shared/middlewares';
 import { setupSwagger } from './config/swagger';
 import { createLogger } from '@dailyuse/utils';
+import { performanceMiddleware } from './middleware/performance.middleware';
 
 const logger = createLogger('Express');
 const app: Express = express();
@@ -56,6 +58,9 @@ app.use(
   }),
 );
 app.use(compression());
+
+// Performance monitoring middleware
+app.use(performanceMiddleware);
 
 // API v1 router
 const api = Router();
@@ -123,6 +128,12 @@ api.use('/repositories', authMiddleware, repositoryRouter);
 api.use('/settings/preferences', authMiddleware, userPreferencesRoutes);
 // 挂载用户设置路由 - 需要认证
 api.use('/user-settings', authMiddleware, userSettingRoutes);
+
+/**
+ * metrics 性能指标模块
+ */
+// 挂载性能指标路由 - 需要认证
+api.use('/metrics', authMiddleware, metricsRouter);
 
 /**
  * theme 主题模块
