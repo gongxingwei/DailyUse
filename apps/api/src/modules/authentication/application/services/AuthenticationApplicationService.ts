@@ -27,6 +27,7 @@ import { AccountContainer } from '../../../account/infrastructure/di/AccountCont
 import { eventBus, createLogger } from '@dailyuse/utils';
 import { prisma } from '@/config/prisma';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 
 const logger = createLogger('AuthenticationApplicationService');
 
@@ -171,10 +172,10 @@ export class AuthenticationApplicationService {
       }
 
       // ===== 步骤 4: 验证密码 =====
-      const hashedPassword = await bcrypt.hash(request.password, 12);
-      const isPasswordValid = this.authenticationDomainService.verifyPassword(
-        credential,
-        hashedPassword,
+      // 使用 bcrypt.compare 比较明文密码和哈希密码
+      const isPasswordValid = await bcrypt.compare(
+        request.password,
+        credential.passwordCredential?.hashedPassword || '',
       );
 
       if (!isPasswordValid) {
@@ -184,7 +185,7 @@ export class AuthenticationApplicationService {
       }
 
       // ===== 步骤 5: 生成令牌 =====
-      const { accessToken, refreshToken, expiresAt } = this.generateTokens();
+      const { accessToken, refreshToken, expiresAt } = this.generateTokens(account.uuid);
 
       // ===== 步骤 6: 创建会话 =====
       const session = await this.createSession({
@@ -371,15 +372,36 @@ export class AuthenticationApplicationService {
   /**
    * 生成访问令牌和刷新令牌
    */
-  private generateTokens(): {
+  private generateTokens(accountUuid: string): {
     accessToken: string;
     refreshToken: string;
     expiresAt: number;
   } {
-    // 简化实现：实际应该使用 JWT
-    const accessToken = `access_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const refreshToken = `refresh_${Date.now()}_${Math.random().toString(36).substring(7)}`;
-    const expiresAt = Date.now() + 3600000; // 1 小时后过期
+    const secret = process.env.JWT_SECRET || 'default-secret';
+    const expiresIn = 3600; // 1 hour in seconds
+    const expiresAt = Date.now() + expiresIn * 1000; // milliseconds
+
+    // Generate JWT access token
+    const accessToken = jwt.sign(
+      {
+        accountUuid,
+        type: 'access',
+        iat: Math.floor(Date.now() / 1000),
+      },
+      secret,
+      { expiresIn },
+    );
+
+    // Generate JWT refresh token (longer expiry)
+    const refreshToken = jwt.sign(
+      {
+        accountUuid,
+        type: 'refresh',
+        iat: Math.floor(Date.now() / 1000),
+      },
+      secret,
+      { expiresIn: 7 * 24 * 3600 }, // 7 days
+    );
 
     return { accessToken, refreshToken, expiresAt };
   }

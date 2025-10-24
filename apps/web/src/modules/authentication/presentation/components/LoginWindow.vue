@@ -115,7 +115,7 @@ const isCurrentFormValid = computed(() => {
 
 const passwordAuthenticationForm = ref<AuthByPasswordForm>({
   username: 'Test1',
-  password: 'Llh123123',
+  password: 'Llh123123!',
   remember: false,
 });
 

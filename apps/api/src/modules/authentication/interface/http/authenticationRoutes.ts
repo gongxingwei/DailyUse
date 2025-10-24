@@ -2,6 +2,7 @@ import type { Router as ExpressRouter } from 'express';
 import { Router } from 'express';
 import { AuthenticationController } from './AuthenticationController';
 import { RegistrationController } from '../../../account/interface/http/RegistrationController';
+import { deviceInfoMiddleware } from '../../../../shared/middlewares/index';
 
 const router: ExpressRouter = Router();
 
@@ -77,7 +78,7 @@ const router: ExpressRouter = Router();
  *       500:
  *         description: 服务器错误
  */
-router.post('/register', RegistrationController.register);
+router.post('/register', deviceInfoMiddleware, RegistrationController.register);
 
 /**
  * @swagger
@@ -115,7 +116,7 @@ router.post('/register', RegistrationController.register);
  *       500:
  *         description: 服务器错误
  */
-router.post('/login', AuthenticationController.login);
+router.post('/login', deviceInfoMiddleware, AuthenticationController.login);
 
 /**
  * @swagger

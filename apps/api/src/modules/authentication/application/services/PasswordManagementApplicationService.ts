@@ -136,10 +136,10 @@ export class PasswordManagementApplicationService {
       }
 
       // ===== 步骤 3: 验证当前密码 =====
-      const currentPasswordHash = await bcrypt.hash(request.currentPassword, 12);
-      const isCurrentPasswordValid = this.authenticationDomainService.verifyPassword(
-        credential,
-        currentPasswordHash,
+      // 使用 bcrypt.compare 比较明文密码和哈希密码
+      const isCurrentPasswordValid = await bcrypt.compare(
+        request.currentPassword,
+        credential.passwordCredential?.hashedPassword || '',
       );
 
       if (!isCurrentPasswordValid) {

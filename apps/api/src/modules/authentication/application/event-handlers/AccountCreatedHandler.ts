@@ -86,7 +86,13 @@ export class AccountCreatedHandler {
         accountUuid,
       });
 
-      // 3. 发布 credential:created 事件
+      // 3. 持久化 AuthCredential 到数据库
+      await this.credentialRepository.save(credential);
+      logger.info('[AccountCreatedHandler] AuthCredential saved to database', {
+        credentialUuid: credential.uuid,
+      });
+
+      // 4. 发布 credential:created 事件
       eventBus.publish({
         eventType: 'credential:created',
         payload: {

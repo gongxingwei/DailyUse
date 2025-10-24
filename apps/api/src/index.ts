@@ -23,11 +23,17 @@ const PORT = process.env.PORT || 3888;
   try {
     logger.info('Starting DailyUse API server...', getStartupInfo());
 
-    await connectPrisma();
-    logger.info('Database connected successfully');
+    // Try to connect to database, but don't fail if it's unavailable
+    try {
+      await connectPrisma();
+      logger.info('Database connected successfully');
 
-    await initializeApp();
-    logger.info('Application initialized successfully');
+      await initializeApp();
+      logger.info('Application initialized successfully');
+    } catch (dbError) {
+      logger.warn('Database connection failed, starting in limited mode', dbError);
+      logger.warn('Performance metrics endpoint will still be available');
+    }
 
     // 🎯 注册事件处理器（事件驱动架构）
     // registerEventHandlers(prisma, sseController); // DISABLED: Schedule module needs refactoring
