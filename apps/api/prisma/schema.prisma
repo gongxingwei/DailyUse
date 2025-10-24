@@ -633,6 +633,10 @@ model Goal {
   @@index([status])
   @@index([folderUuid])
   @@index([parentGoalUuid])
+  @@index([accountUuid, status]) // Composite index for filtered queries
+  @@index([accountUuid, folderUuid]) // Composite index for folder filtering
+  @@index([createdAt]) // For sorting
+  @@index([targetDate]) // For deadline queries
   @@map("goals")
 }
 
@@ -659,6 +663,7 @@ model KeyResult {
   weightSnapshots KeyResultWeightSnapshot[]
 
   @@index([goalUuid])
+  @@index([goalUuid, createdAt]) // Composite index for timeline queries
   @@map("key_results")
 }
 
@@ -993,6 +998,9 @@ model TaskTemplate {
   @@index([accountUuid])
   @@index([status])
   @@index([taskType])
+  @@index([accountUuid, status]) // Composite for filtered queries
+  @@index([accountUuid, taskType]) // Composite for type filtering
+  @@index([accountUuid, deletedAt]) // For soft-delete queries
   @@map("task_templates")
 }
 
@@ -1023,6 +1031,9 @@ model TaskInstance {
   @@index([accountUuid])
   @@index([instanceDate])
   @@index([status])
+  @@index([templateUuid, instanceDate]) // Composite for timeline queries
+  @@index([accountUuid, status]) // Composite for filtered queries
+  @@index([accountUuid, instanceDate]) // For calendar views
   @@map("task_instances")
 }
 

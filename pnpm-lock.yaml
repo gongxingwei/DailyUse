@@ -177,6 +177,9 @@ importers:
       prettier:
         specifier: ^3.0.0
         version: 3.6.2
+      prisma:
+        specifier: ^6.17.1
+        version: 6.17.1(magicast@0.3.5)(typescript@5.8.3)
       reflect-metadata:
         specifier: ^0.2.2
         version: 0.2.2
