@@ -121,7 +121,7 @@ const isCurrentFormValid = computed(() => {
 
 const passwordAuthenticationForm = ref<PasswordAuthenticationRequest>({
   username: 'Test1',
-  password: 'Llh123123',
+  password: 'test1@example.com',
   remember: false,
 });
 

@@ -132,7 +132,7 @@ const openApiSpec = {
                   },
                   password: {
                     type: 'string',
-                    example: 'Llh123123',
+                    example: 'test1@example.com',
                   },
                   accountType: {
                     type: 'string',

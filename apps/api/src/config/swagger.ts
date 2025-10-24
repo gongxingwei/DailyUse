@@ -146,7 +146,7 @@ const options = {
             password: {
               type: 'string',
               description: '密码',
-              example: 'Llh123123',
+              example: 'test1@example.com',
             },
             accountType: {
               type: 'string',

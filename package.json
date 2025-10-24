@@ -121,6 +121,7 @@
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0",
     "jiti": "2.4.2",
+    "jscpd": "4.0.5",
     "jsdom": "^26.1.0",
     "jsonc-eslint-parser": "^2.1.0",
     "lodash": "4.17.21",
