@@ -4,6 +4,16 @@ import pluginVue from "eslint-plugin-vue";
 
 export default tseslint.config([
   {
+    ignores: [
+      "**/dist/**",
+      "**/node_modules/**",
+      "**/coverage/**",
+      "**/.nx/**",
+      "**/dist-electron/**",
+      "**/*.d.ts"
+    ]
+  },
+  {
     files: ["**/*.{js,mjs,cjs,ts,mts,cts,vue}"],
     languageOptions: { globals: { ...globals.browser, ...globals.node } },
     

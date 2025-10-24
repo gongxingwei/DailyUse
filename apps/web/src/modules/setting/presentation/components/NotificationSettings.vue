@@ -234,21 +234,15 @@ onMounted(async () => {
     const privacy = userSetting.value.privacy;
     if (privacy) {
       // 注意：当前后端可能还没有这些字段，这是为未来扩展准备的
-      // @ts-ignore - Privacy类型可能还未包含这些字段
-      notificationsEnabled.value = privacy.notificationsEnabled ?? true;
-      // @ts-ignore
-      const channels = privacy.notificationChannels || ['push'];
+      const privacyAny = privacy as any; // Type-safe workaround for未来字段扩展
+      notificationsEnabled.value = privacyAny.notificationsEnabled ?? true;
+      const channels = privacyAny.notificationChannels || ['push'];
       selectedChannels.value = Array.isArray(channels) ? channels : ['push'];
-      // @ts-ignore
-      dndEnabled.value = privacy.dndEnabled ?? false;
-      // @ts-ignore
-      dndStartTime.value = privacy.dndStartTime ?? '22:00';
-      // @ts-ignore
-      dndEndTime.value = privacy.dndEndTime ?? '08:00';
-      // @ts-ignore
-      soundEnabled.value = privacy.soundEnabled ?? true;
-      // @ts-ignore
-      desktopNotificationEnabled.value = privacy.desktopNotificationEnabled ?? false;
+      dndEnabled.value = privacyAny.dndEnabled ?? false;
+      dndStartTime.value = privacyAny.dndStartTime ?? '22:00';
+      dndEndTime.value = privacyAny.dndEndTime ?? '08:00';
+      soundEnabled.value = privacyAny.soundEnabled ?? true;
+      desktopNotificationEnabled.value = privacyAny.desktopNotificationEnabled ?? false;
     }
   }
 
@@ -340,20 +334,13 @@ const saveSettings = async () => {
     await updatePrivacy({
       // 现有的隐私字段
       ...userSetting.value.privacy,
-      // 通知设置（作为扩展字段）
-      // @ts-ignore - 这些字段正在等待后端合约更新
+      // 通知设置（作为扩展字段，等待后端合约更新）
       notificationsEnabled: notificationsEnabled.value,
-      // @ts-ignore
       notificationChannels: selectedChannels.value,
-      // @ts-ignore
       dndEnabled: dndEnabled.value,
-      // @ts-ignore
       dndStartTime: dndStartTime.value,
-      // @ts-ignore
       dndEndTime: dndEndTime.value,
-      // @ts-ignore
       soundEnabled: soundEnabled.value,
-      // @ts-ignore
       desktopNotificationEnabled: desktopNotificationEnabled.value,
     } as any);
 

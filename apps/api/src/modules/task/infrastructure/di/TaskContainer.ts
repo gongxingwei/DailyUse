@@ -2,8 +2,8 @@ import type {
   ITaskInstanceRepository,
   ITaskTemplateRepository,
   ITaskDependencyRepository,
-  TaskDependencyService,
 } from '@dailyuse/domain-server';
+import { TaskDependencyService } from '@dailyuse/domain-server';
 import { PrismaTaskInstanceRepository } from '../repositories/PrismaTaskInstanceRepository';
 import { PrismaTaskTemplateRepository } from '../repositories/PrismaTaskTemplateRepository';
 import { PrismaTaskDependencyRepository } from '../repositories/PrismaTaskDependencyRepository';
@@ -92,7 +92,6 @@ export class TaskContainer {
    */
   getTaskDependencyService(): TaskDependencyService {
     if (!this.taskDependencyService) {
-      const { TaskDependencyService } = require('@dailyuse/domain-server');
       this.taskDependencyService = new TaskDependencyService(
         this.getTaskDependencyRepository(),
         this.getTaskTemplateRepository(),

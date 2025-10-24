@@ -145,7 +145,7 @@ export class WeightRecommendationService {
   ): WeightStrategy {
     // 按优先级分数分配权重
     const total = priorities.reduce((sum, p) => sum + p, 0);
-    let weights = priorities.map(p => Math.round((p / total) * 100));
+    const weights = priorities.map(p => Math.round((p / total) * 100));
 
     // 调整确保总和为 100
     const sum = weights.reduce((a, b) => a + b, 0);

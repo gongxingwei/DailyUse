@@ -45,7 +45,6 @@ export class DAGExportService {
     options: ExportOptions
   ): Promise<Blob> {
     try {
-      // @ts-ignore - ECharts typing doesn't include renderToSVGString yet
       const svgString = chartInstance.renderToSVGString?.();
       
       if (!svgString) {
